@@ -1749,7 +1749,37 @@
       "source": "https://www.wowhead.com/forever/quest=1198/in-search-of-thaelrid",
       "start": {
         "npcID": 4786,
-        "name": "Dawnwatcher Shaedlass"
+        "name": "Dawnwatcher Shaedlass",
+        "mapID": 1457,
+        "zoneName": "Darnassus",
+        "x": 55.4,
+        "y": 24.4,
+        "reportedLocations": [
+          {
+            "mapID": 1457,
+            "zoneName": "Darnassus",
+            "x": 55.4,
+            "y": 24.4
+          },
+          {
+            "mapID": 1457,
+            "zoneName": "Darnassus",
+            "x": 55.4,
+            "y": 24.6
+          },
+          {
+            "mapID": 1457,
+            "zoneName": "Darnassus",
+            "x": 55.6,
+            "y": 24.4
+          },
+          {
+            "mapID": 1457,
+            "zoneName": "Darnassus",
+            "x": 55.6,
+            "y": 24.6
+          }
+        ]
       },
       "finish": {
         "npcID": 4787,
@@ -1799,11 +1829,83 @@
       "source": "https://www.wowhead.com/forever/quest=971/knowledge-in-the-deeps",
       "start": {
         "npcID": 2786,
-        "name": "Gerrig Bonegrip"
+        "name": "Gerrig Bonegrip",
+        "mapID": 1455,
+        "zoneName": "Ironforge",
+        "x": 50.2,
+        "y": 7,
+        "reportedLocations": [
+          {
+            "mapID": 1455,
+            "zoneName": "Ironforge",
+            "x": 50.2,
+            "y": 7
+          },
+          {
+            "mapID": 1455,
+            "zoneName": "Ironforge",
+            "x": 50.4,
+            "y": 5.4
+          },
+          {
+            "mapID": 1455,
+            "zoneName": "Ironforge",
+            "x": 50.4,
+            "y": 6
+          },
+          {
+            "mapID": 1455,
+            "zoneName": "Ironforge",
+            "x": 50.6,
+            "y": 5.4
+          },
+          {
+            "mapID": 1455,
+            "zoneName": "Ironforge",
+            "x": 50.6,
+            "y": 6.2
+          }
+        ]
       },
       "finish": {
         "npcID": 2786,
-        "name": "Gerrig Bonegrip"
+        "name": "Gerrig Bonegrip",
+        "mapID": 1455,
+        "zoneName": "Ironforge",
+        "x": 50.2,
+        "y": 7,
+        "reportedLocations": [
+          {
+            "mapID": 1455,
+            "zoneName": "Ironforge",
+            "x": 50.2,
+            "y": 7
+          },
+          {
+            "mapID": 1455,
+            "zoneName": "Ironforge",
+            "x": 50.4,
+            "y": 5.4
+          },
+          {
+            "mapID": 1455,
+            "zoneName": "Ironforge",
+            "x": 50.4,
+            "y": 6
+          },
+          {
+            "mapID": 1455,
+            "zoneName": "Ironforge",
+            "x": 50.6,
+            "y": 5.4
+          },
+          {
+            "mapID": 1455,
+            "zoneName": "Ironforge",
+            "x": 50.6,
+            "y": 6.2
+          }
+        ]
       },
       "requirementsKnown": false
     },
@@ -1818,13 +1920,68 @@
       "source": "https://www.wowhead.com/forever/quest=1199/twilight-falls",
       "start": {
         "npcID": 4784,
-        "name": "Argent Guard Manados"
+        "name": "Argent Guard Manados",
+        "mapID": 1457,
+        "zoneName": "Darnassus",
+        "x": 55.2,
+        "y": 23.4,
+        "reportedLocations": [
+          {
+            "mapID": 1457,
+            "zoneName": "Darnassus",
+            "x": 55.2,
+            "y": 23.4
+          },
+          {
+            "mapID": 1457,
+            "zoneName": "Darnassus",
+            "x": 55.2,
+            "y": 23.6
+          },
+          {
+            "mapID": 1457,
+            "zoneName": "Darnassus",
+            "x": 55.6,
+            "y": 24.2
+          }
+        ]
       },
       "finish": {
         "npcID": 4784,
-        "name": "Argent Guard Manados"
+        "name": "Argent Guard Manados",
+        "mapID": 1457,
+        "zoneName": "Darnassus",
+        "x": 55.2,
+        "y": 23.4,
+        "reportedLocations": [
+          {
+            "mapID": 1457,
+            "zoneName": "Darnassus",
+            "x": 55.2,
+            "y": 23.4
+          },
+          {
+            "mapID": 1457,
+            "zoneName": "Darnassus",
+            "x": 55.2,
+            "y": 23.6
+          },
+          {
+            "mapID": 1457,
+            "zoneName": "Darnassus",
+            "x": 55.6,
+            "y": 24.2
+          }
+        ]
       },
-      "requirementsKnown": false
+      "requirementsKnown": false,
+      "objectiveItems": [
+        {
+          "itemID": 5879,
+          "quantity": 10,
+          "name": "Twilight Pendant"
+        }
+      ]
     },
     {
       "id": 1275,
@@ -1843,7 +2000,14 @@
         "npcID": 8997,
         "name": "Gershala Nightwhisper"
       },
-      "requirementsKnown": false
+      "requirementsKnown": false,
+      "objectiveItems": [
+        {
+          "itemID": 5952,
+          "name": "Corrupted Brain Stem",
+          "quantity": 8
+        }
+      ]
     },
     {
       "id": 95036,
@@ -1930,7 +2094,19 @@
         "npcID": 6247,
         "name": "Doan Karhan"
       },
-      "requirementsKnown": false
+      "requirementsKnown": false,
+      "objectiveItems": [
+        {
+          "itemID": 6914,
+          "quantity": 3,
+          "name": "Soran'ruk Fragment"
+        },
+        {
+          "itemID": 6915,
+          "quantity": 1,
+          "name": "Large Soran'ruk Fragment"
+        }
+      ]
     },
     {
       "id": 6564,
@@ -1989,7 +2165,14 @@
         6562,
         6563
       ],
-      "requirementsKnown": false
+      "requirementsKnown": false,
+      "objectiveItems": [
+        {
+          "itemID": 16784,
+          "quantity": 20,
+          "name": "Sapphire of Aku'Mai"
+        }
+      ]
     },
     {
       "id": 6562,
@@ -20818,7 +21001,36 @@
       "start": {
         "npcID": 14436,
         "name": "Mor'zul Bloodbringer",
-        "zoneName": "Burning Steppes"
+        "zoneName": "Burning Steppes",
+        "mapID": 1428,
+        "x": 12.4,
+        "y": 31.4,
+        "reportedLocations": [
+          {
+            "mapID": 1428,
+            "zoneName": "Burning Steppes",
+            "x": 12.4,
+            "y": 31.4
+          },
+          {
+            "mapID": 1428,
+            "zoneName": "Burning Steppes",
+            "x": 12.4,
+            "y": 31.6
+          },
+          {
+            "mapID": 1428,
+            "zoneName": "Burning Steppes",
+            "x": 12.6,
+            "y": 31.4
+          },
+          {
+            "mapID": 1428,
+            "zoneName": "Burning Steppes",
+            "x": 12.6,
+            "y": 31.6
+          }
+        ]
       },
       "finish": {
         "npcID": 14504,
