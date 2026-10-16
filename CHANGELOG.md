@@ -29,6 +29,8 @@
   prerequisite steps.
 - Preserved multiple possible NPC/object starting points and known source zones
   without inventing map coordinates.
+- Added corroborated prerequisite links where compatible sources agree; unknown
+  full requirements continue to show as unverified.
 - Added initial Scholomance, Stratholme and Blackrock Spire quest lists with
   separate wing evidence, shared story variants and a confirmed dragon-scale starter.
 - Added Ruins of Lordaeron, Maraudon, Drowned City and Blackrock Depths quest
