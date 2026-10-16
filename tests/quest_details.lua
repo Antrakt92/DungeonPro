@@ -141,4 +141,50 @@ check("Optional restricted objective metadata is omitted and empty arrays preser
     local result = addon.QuestObjectives(166)
     assert(type(result) == "table" and next(result) == nil)
 end)
+check("Empty offered text preserves the last valid cached description", function()
+    GetQuestID = function() return 166 end
+    GetQuestText = function() return "Valid offered text" end
+    addon.quests = { [166] = { name = "Fallback" } }
+    addon.CaptureQuestText()
+    GetQuestText = function() return "" end
+    addon.CaptureQuestText()
+    assert(addon.Description(166) == "Valid offered text")
+end)
+check("Failed title loads retry with a bound and coalesce repeated reads", function()
+    local callbacks, calls = {}, 0
+    C_Timer = { After = function(_, fn) callbacks[#callbacks + 1] = fn end }
+    addon.quests = { [167] = { name = "Fallback" } }
+    addon.Notify = function() addon.QuestName(167) end
+    C_QuestLog.RequestLoadQuestByID = function()
+        calls = calls + 1
+        error("Temporary failure")
+    end
+    for i = 1, 10 do assert(addon.QuestName(167) == "Fallback") end
+    assert(calls == 1 and #callbacks == 1)
+    callbacks[1](); assert(calls == 2 and #callbacks == 2)
+    callbacks[2](); assert(calls == 3 and #callbacks == 2)
+    for i = 1, 10 do addon.QuestName(167) end
+    assert(calls == 3)
+    C_QuestLog.GetTitleForQuestID = function() return "Localized title" end
+    assert(addon.QuestName(167) == "Localized title")
+end)
+check("Synchronous title failure events keep pending state and delayed recovery", function()
+    local callbacks, calls = {}, 0
+    C_Timer = { After = function(_, fn) callbacks[#callbacks + 1] = fn end }
+    addon.quests = { [168] = { name = "Fallback" } }
+    addon.Notify = function() addon.QuestName(168) end
+    C_QuestLog.RequestLoadQuestByID = function(id)
+        calls = calls + 1; addon.QuestDataResult(id, false)
+    end
+    addon.QuestName(168); assert(calls == 1 and #callbacks == 1)
+    addon.QuestDataResult(168, false); addon.QuestDataResult(999, false)
+    assert(#callbacks == 1)
+    callbacks[1](); assert(calls == 2)
+    C_QuestLog.RequestLoadQuestByID = function(id)
+        calls = calls + 1; addon.QuestDataResult(id, true)
+    end
+    callbacks[2](); assert(calls == 3)
+    for i = 1, 5 do addon.QuestName(168) end
+    assert(calls == 3 and #callbacks == 2)
+end)
 print("Quest detail modeled checks passed: " .. total .. " (native client unverified)")

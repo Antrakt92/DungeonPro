@@ -1,6 +1,23 @@
 local _, addon = ...
 local requested = {}
 
+function addon.QuestDataResult(id, success)
+    id = addon.Clean(id, "number")
+    success = addon.Clean(success, "boolean")
+    local request = id and requested[id]
+    if not request or not request.pending or success == nil then return end
+    request.pending = false
+    if success or request.attempts >= 3 then request.finished = true; return end
+    request.waiting = true
+    local function retry()
+        if requested[id] ~= request then return end
+        request.waiting = false
+        addon.Notify()
+    end
+    if C_Timer and type(C_Timer.After) == "function" then C_Timer.After(2, retry)
+    else request.waiting = false end
+end
+
 function addon.Context()
     local quest = C_QuestLog or {}
     local function unitPart(fn, index, expected)
@@ -22,9 +39,14 @@ end
 function addon.QuestName(id)
     local title = addon.Read(C_QuestLog and C_QuestLog.GetTitleForQuestID, "string", id)
     if title and title ~= "" then return title end
-    if not requested[id] and C_QuestLog and type(C_QuestLog.RequestLoadQuestByID) == "function" then
-        requested[id] = true
-        pcall(C_QuestLog.RequestLoadQuestByID, id)
+    local request = requested[id]
+    if (not request or not (request.pending or request.waiting or request.finished)) and
+        C_QuestLog and type(C_QuestLog.RequestLoadQuestByID) == "function" then
+        request = request or { attempts = 0 }
+        requested[id] = request
+        request.attempts, request.pending = request.attempts + 1, true
+        local ok = pcall(C_QuestLog.RequestLoadQuestByID, id)
+        if not ok then addon.QuestDataResult(id, false) end
     end
     return (addon.quests[id] or {}).name or ("#" .. id)
 end
@@ -95,8 +117,10 @@ end
 function addon.CaptureQuestText()
     local id = addon.Read(GetQuestID, "number")
     local text = addon.Read(GetQuestText, "string")
-    if id and addon.quests[id] and text and #text <= 30000 then
-        addon.char.texts[id] = { text = text, locale = GetLocale() }
+    local locale = addon.Read(GetLocale, "string")
+    if id and addon.quests[id] and text and text ~= "" and #text <= 30000 and locale and
+        addon.char and type(addon.char.texts) == "table" then
+        addon.char.texts[id] = { text = text, locale = locale }
     end
 end
 

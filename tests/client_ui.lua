@@ -146,4 +146,19 @@ check("Close and reopen preserve selection", function()
     SlashCmdList.DUNGEONPREP(""); assert(not addon.UI.frame:IsShown())
     SlashCmdList.DUNGEONPREP(""); assert(addon.UI.frame:IsShown() and addon.UI.quest == 166)
 end)
+check("Quest-data events pass success to bounded delayed title recovery", function()
+    local savedTimer, savedRequest = C_Timer, C_QuestLog.RequestLoadQuestByID
+    local callbacks, calls = {}, 0
+    C_Timer = { After = function(delay, fn)
+        if delay == 2 then callbacks[#callbacks + 1] = fn else fn() end
+    end }
+    C_QuestLog.RequestLoadQuestByID = function(id) assert(id == 65); calls = calls + 1 end
+    eventFrame.scripts.OnEvent(eventFrame, "QUEST_DATA_LOAD_RESULT", 65, false)
+    assert(#callbacks == 1 and calls == 0)
+    callbacks[1](); assert(calls == 1)
+    eventFrame.scripts.OnEvent(eventFrame, "QUEST_DATA_LOAD_RESULT", 65, true)
+    eventFrame.scripts.OnEvent(eventFrame, "QUEST_DATA_LOAD_RESULT", 65, false)
+    assert(#callbacks == 1 and calls == 1)
+    C_Timer, C_QuestLog.RequestLoadQuestByID = savedTimer, savedRequest
+end)
 print("Client/UI modeled checks passed: " .. total .. " (no pixel or native-client validation)")

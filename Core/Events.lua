@@ -10,7 +10,7 @@ local function refresh()
 end
 
 events:RegisterEvent("ADDON_LOADED")
-events:SetScript("OnEvent", function(_, event, arg1)
+events:SetScript("OnEvent", function(_, event, arg1, arg2)
     if event == "ADDON_LOADED" then
         if arg1 ~= name or initialized then return end
         local _, _, _, interface = GetBuildInfo()
@@ -33,6 +33,7 @@ events:SetScript("OnEvent", function(_, event, arg1)
         return
     end
     if not initialized then return end
+    if event == "QUEST_DATA_LOAD_RESULT" then addon.QuestDataResult(arg1, arg2) end
     if event == "QUEST_DETAIL" then addon.CaptureQuestText() end
     if event == "QUEST_ACCEPTED" or event == "QUEST_TURNED_IN" then addon.Navigation.Stop() end
     refresh()
