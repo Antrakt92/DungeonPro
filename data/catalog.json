@@ -1014,10 +1014,21 @@
         "Alliance"
       ],
       "start": {
+        "itemID": 274268,
         "name": "Dark Iron Map",
-        "mapID": 1426,
-        "x": 65,
-        "y": 58
+        "zoneName": "Dun Morogh",
+        "dropSources": [
+          {
+            "npcID": 6124,
+            "name": "Captain Beld",
+            "locationName": "Dun Morogh"
+          },
+          {
+            "npcID": 6123,
+            "name": "Dark Iron Spy",
+            "locationName": "Dun Morogh"
+          }
+        ]
       },
       "races": [
         3,
@@ -1040,14 +1051,17 @@
         "name": "Earthseer Farsen",
         "mapID": 1426,
         "x": 64.8,
-        "y": 58.4
+        "y": 58.4,
+        "npcID": 264936,
+        "zoneName": "Dun Morogh"
       },
       "finish": {
         "name": "King Magni Bronzebeard",
         "mapID": 1455,
-        "x": 39.1,
-        "y": 56.2,
-        "npcID": 2784
+        "x": 39.4,
+        "y": 55.4,
+        "npcID": 2784,
+        "zoneName": "Ironforge"
       },
       "requires": [
         {
@@ -1076,8 +1090,10 @@
       "start": {
         "name": "Afadra Dunwall",
         "mapID": 1455,
-        "x": 34,
-        "y": 48.8
+        "x": 32.8,
+        "y": 48.6,
+        "npcID": 264943,
+        "zoneName": "Ironforge"
       }
     },
     {
@@ -1088,7 +1104,9 @@
       "requirementsKnown": false,
       "source": "https://www.wowhead.com/forever/quest=96395",
       "start": {
-        "name": "Ghostly Attendant"
+        "name": "Ghostly Attendant",
+        "npcID": 265002,
+        "zoneName": "Hall of Thanes"
       },
       "startsInside": true
     },
@@ -1106,7 +1124,9 @@
         "name": "Thom Filch",
         "mapID": 1455,
         "x": 32.6,
-        "y": 44.6
+        "y": 44.6,
+        "npcID": 265003,
+        "zoneName": "Ironforge"
       }
     },
     {
@@ -7789,7 +7809,11 @@
       "source": "https://www.wowhead.com/forever/quest=4341/kharan-mighthammer",
       "start": {
         "npcID": 2784,
-        "name": "King Magni Bronzebeard"
+        "name": "King Magni Bronzebeard",
+        "zoneName": "Ironforge",
+        "mapID": 1455,
+        "x": 39.4,
+        "y": 55.4
       },
       "finish": {
         "npcID": 9021,
@@ -7837,7 +7861,11 @@
       },
       "finish": {
         "npcID": 2784,
-        "name": "King Magni Bronzebeard"
+        "name": "King Magni Bronzebeard",
+        "zoneName": "Ironforge",
+        "mapID": 1455,
+        "x": 39.4,
+        "y": 55.4
       },
       "storyline": [
         4342,
@@ -7858,7 +7886,11 @@
       "source": "https://www.wowhead.com/forever/quest=4362/the-fate-of-the-kingdom",
       "start": {
         "npcID": 2784,
-        "name": "King Magni Bronzebeard"
+        "name": "King Magni Bronzebeard",
+        "zoneName": "Ironforge",
+        "mapID": 1455,
+        "x": 39.4,
+        "y": 55.4
       },
       "finish": {
         "npcID": 8929,
@@ -7887,7 +7919,11 @@
       },
       "finish": {
         "npcID": 2784,
-        "name": "King Magni Bronzebeard"
+        "name": "King Magni Bronzebeard",
+        "zoneName": "Ironforge",
+        "mapID": 1455,
+        "x": 39.4,
+        "y": 55.4
       },
       "storyline": [
         4342,
@@ -8192,12 +8228,15 @@
       "source": "https://www.wowhead.com/forever/quest=9015/the-challenge",
       "start": {
         "npcID": 16032,
-        "name": "Falrin Treeshaper"
+        "name": "Falrin Treeshaper",
+        "zoneName": "Dire Maul",
+        "dungeonKey": "dire"
       },
       "finish": {
         "npcID": 16016,
         "name": "Anthion Harmon"
-      }
+      },
+      "startsInside": true
     },
     {
       "id": 92401,
@@ -8691,6 +8730,11 @@
       "requirementsKnown": false,
       "factions": [
         "Horde"
+      ],
+      "storyline": [
+        4903,
+        4941,
+        4974
       ]
     },
     {
@@ -8731,6 +8775,10 @@
       "factions": [
         "Alliance",
         "Horde"
+      ],
+      "storyline": [
+        4742,
+        4743
       ]
     },
     {
@@ -8791,6 +8839,10 @@
       "factions": [
         "Alliance",
         "Horde"
+      ],
+      "storyline": [
+        5065,
+        4788
       ]
     },
     {
@@ -8830,6 +8882,11 @@
       "requirementsKnown": false,
       "factions": [
         "Horde"
+      ],
+      "storyline": [
+        4981,
+        4982,
+        4983
       ]
     },
     {
@@ -8849,6 +8906,11 @@
       "requirementsKnown": false,
       "factions": [
         "Alliance"
+      ],
+      "storyline": [
+        5001,
+        5002,
+        5081
       ]
     },
     {
@@ -8868,6 +8930,11 @@
       "requirementsKnown": false,
       "factions": [
         "Alliance"
+      ],
+      "storyline": [
+        5001,
+        5002,
+        5081
       ]
     },
     {
@@ -8887,6 +8954,10 @@
       "requirementsKnown": false,
       "factions": [
         "Horde"
+      ],
+      "storyline": [
+        4769,
+        4768
       ]
     },
     {
@@ -8906,6 +8977,11 @@
       "requirementsKnown": false,
       "factions": [
         "Horde"
+      ],
+      "storyline": [
+        4903,
+        4941,
+        4974
       ]
     },
     {
@@ -8925,6 +9001,11 @@
       "requirementsKnown": false,
       "factions": [
         "Horde"
+      ],
+      "storyline": [
+        6585,
+        6601,
+        6602
       ]
     },
     {
@@ -8944,6 +9025,11 @@
       "requirementsKnown": false,
       "factions": [
         "Alliance"
+      ],
+      "storyline": [
+        4766,
+        4764,
+        4765
       ]
     },
     {
@@ -8963,6 +9049,10 @@
       "requirementsKnown": false,
       "factions": [
         "Alliance"
+      ],
+      "storyline": [
+        5089,
+        5102
       ]
     },
     {
@@ -8982,6 +9072,11 @@
       "requirementsKnown": false,
       "factions": [
         "Alliance"
+      ],
+      "storyline": [
+        6403,
+        6501,
+        6502
       ]
     },
     {
@@ -9018,6 +9113,12 @@
       "factions": [
         "Alliance",
         "Horde"
+      ],
+      "storyline": [
+        5160,
+        5161,
+        5162,
+        5164
       ]
     },
     {
@@ -9078,6 +9179,12 @@
       "factions": [
         "Alliance",
         "Horde"
+      ],
+      "storyline": [
+        6821,
+        6822,
+        6823,
+        6824
       ]
     },
     {
@@ -11186,6 +11293,2248 @@
       },
       "requirementsKnown": false,
       "source": "https://www.wowhead.com/forever/quest=373"
+    },
+    {
+      "id": 4743,
+      "name": "Seal of Ascension",
+      "level": 60,
+      "minLevel": 57,
+      "factions": [
+        "Alliance",
+        "Horde"
+      ],
+      "requirementsKnown": false,
+      "source": "https://www.wowhead.com/forever/quest=4743/seal-of-ascension",
+      "finish": {
+        "npcID": 10299,
+        "name": "Scarshield Infiltrator"
+      },
+      "start": {
+        "npcID": 10299,
+        "name": "Scarshield Infiltrator"
+      },
+      "storyline": [
+        4742,
+        4743
+      ]
+    },
+    {
+      "id": 4769,
+      "name": "Vivian Lagrave and the Darkstone Tablet",
+      "level": 60,
+      "minLevel": 57,
+      "factions": [
+        "Horde"
+      ],
+      "requirementsKnown": false,
+      "source": "https://www.wowhead.com/forever/quest=4769/vivian-lagrave-and-the-darkstone-tablet",
+      "finish": {
+        "npcID": 9078,
+        "name": "Shadowmage Vivian Lagrave"
+      },
+      "start": {
+        "npcID": 5204,
+        "name": "Apothecary Zinge"
+      },
+      "storyline": [
+        4769,
+        4768
+      ]
+    },
+    {
+      "id": 5089,
+      "name": "General Drakkisath's Command",
+      "level": 60,
+      "minLevel": 55,
+      "factions": [
+        "Alliance"
+      ],
+      "requirementsKnown": false,
+      "source": "https://www.wowhead.com/forever/quest=5089/general-drakkisaths-command",
+      "finish": {
+        "npcID": 9560,
+        "name": "Marshal Maxwell"
+      },
+      "start": {
+        "itemID": 12780,
+        "name": "General Drakkisath's Command",
+        "dropSources": [
+          {
+            "npcID": 9568,
+            "name": "Overlord Wyrmthalak",
+            "locationName": "Blackrock Spire"
+          }
+        ]
+      },
+      "storyline": [
+        5089,
+        5102
+      ]
+    },
+    {
+      "id": 4766,
+      "name": "Mayara Brightwing",
+      "level": 60,
+      "minLevel": 57,
+      "factions": [
+        "Alliance"
+      ],
+      "requirementsKnown": false,
+      "source": "https://www.wowhead.com/forever/quest=4766/mayara-brightwing",
+      "finish": {
+        "npcID": 9565,
+        "name": "Mayara Brightwing"
+      },
+      "start": {
+        "npcID": 2285,
+        "name": "Count Remington Ridgewell"
+      },
+      "storyline": [
+        4766,
+        4764,
+        4765
+      ]
+    },
+    {
+      "id": 4765,
+      "name": "Delivery to Ridgewell",
+      "level": 60,
+      "minLevel": 57,
+      "factions": [
+        "Alliance"
+      ],
+      "requirementsKnown": false,
+      "source": "https://www.wowhead.com/forever/quest=4765/delivery-to-ridgewell",
+      "finish": {
+        "npcID": 2285,
+        "name": "Count Remington Ridgewell"
+      },
+      "start": {
+        "npcID": 9565,
+        "name": "Mayara Brightwing"
+      },
+      "storyline": [
+        4766,
+        4764,
+        4765
+      ]
+    },
+    {
+      "id": 4981,
+      "name": "Operative Bijou",
+      "level": 59,
+      "minLevel": 55,
+      "factions": [
+        "Horde"
+      ],
+      "requirementsKnown": false,
+      "source": "https://www.wowhead.com/forever/quest=4981/operative-bijou",
+      "finish": {
+        "npcID": 10257,
+        "name": "Bijou"
+      },
+      "start": {
+        "npcID": 9080,
+        "name": "Lexlort"
+      },
+      "storyline": [
+        4981,
+        4982,
+        4983
+      ]
+    },
+    {
+      "id": 4907,
+      "name": "Tinkee Steamboil",
+      "level": 60,
+      "minLevel": 57,
+      "factions": [
+        "Alliance",
+        "Horde"
+      ],
+      "requirementsKnown": false,
+      "source": "https://www.wowhead.com/forever/quest=4907/tinkee-steamboil",
+      "finish": {
+        "npcID": 10267,
+        "name": "Tinkee Steamboil"
+      },
+      "start": {
+        "npcID": 10468,
+        "name": "Felnok Steelspring"
+      },
+      "storyline": [
+        4907,
+        4734
+      ]
+    },
+    {
+      "id": 4734,
+      "name": "Egg Freezing",
+      "level": 60,
+      "minLevel": 57,
+      "factions": [
+        "Alliance",
+        "Horde"
+      ],
+      "requirementsKnown": false,
+      "source": "https://www.wowhead.com/forever/quest=4734/egg-freezing",
+      "finish": {
+        "npcID": 10267,
+        "name": "Tinkee Steamboil",
+        "zoneName": "Burning Steppes"
+      },
+      "start": {
+        "npcID": 10267,
+        "name": "Tinkee Steamboil",
+        "zoneName": "Burning Steppes"
+      },
+      "storyline": [
+        4907,
+        4734
+      ]
+    },
+    {
+      "id": 6569,
+      "name": "Oculus Illusions",
+      "level": 60,
+      "minLevel": 55,
+      "factions": [
+        "Horde"
+      ],
+      "requirementsKnown": false,
+      "source": "https://www.wowhead.com/forever/quest=6569/oculus-illusions",
+      "finish": {
+        "npcID": 11872,
+        "name": "Myranda the Hag",
+        "zoneName": "Western Plaguelands"
+      },
+      "start": {
+        "npcID": 11872,
+        "name": "Myranda the Hag",
+        "zoneName": "Western Plaguelands"
+      },
+      "storyline": [
+        6566,
+        6567,
+        6568,
+        6569,
+        6570
+      ]
+    },
+    {
+      "id": 4983,
+      "name": "Bijou's Reconnaissance Report",
+      "level": 59,
+      "minLevel": 55,
+      "factions": [
+        "Horde"
+      ],
+      "requirementsKnown": false,
+      "source": "https://www.wowhead.com/forever/quest=4983/bijous-reconnaissance-report",
+      "finish": {
+        "npcID": 9080,
+        "name": "Lexlort"
+      },
+      "start": {
+        "npcID": 10257,
+        "name": "Bijou"
+      },
+      "storyline": [
+        4981,
+        4982,
+        4983
+      ]
+    },
+    {
+      "id": 5002,
+      "name": "Message to Maxwell",
+      "level": 59,
+      "minLevel": 55,
+      "factions": [
+        "Alliance"
+      ],
+      "requirementsKnown": false,
+      "source": "https://www.wowhead.com/forever/quest=5002/message-to-maxwell",
+      "finish": {
+        "npcID": 9560,
+        "name": "Marshal Maxwell"
+      },
+      "start": {
+        "npcID": 10257,
+        "name": "Bijou"
+      },
+      "storyline": [
+        5001,
+        5002,
+        5081
+      ]
+    },
+    {
+      "id": 6566,
+      "name": "What the Wind Carries",
+      "source": "https://www.wowhead.com/forever/quest=6566/what-the-wind-carries",
+      "level": 60,
+      "minLevel": 55,
+      "factions": [
+        "Horde"
+      ],
+      "requirementsKnown": false,
+      "start": {
+        "npcID": 4949,
+        "name": "Thrall",
+        "zoneName": "Orgrimmar"
+      },
+      "finish": {
+        "npcID": 4949,
+        "name": "Thrall",
+        "zoneName": "Orgrimmar"
+      },
+      "storyline": [
+        6566,
+        6567,
+        6568,
+        6569,
+        6570
+      ]
+    },
+    {
+      "id": 6567,
+      "name": "The Champion of the Horde",
+      "source": "https://www.wowhead.com/forever/quest=6567/the-champion-of-the-horde",
+      "level": 60,
+      "minLevel": 55,
+      "factions": [
+        "Horde"
+      ],
+      "requirementsKnown": false,
+      "start": {
+        "npcID": 4949,
+        "name": "Thrall"
+      },
+      "finish": {
+        "npcID": 10182,
+        "name": "Rexxar"
+      },
+      "storyline": [
+        6566,
+        6567,
+        6568,
+        6569,
+        6570
+      ]
+    },
+    {
+      "id": 6568,
+      "name": "The Testament of Rexxar",
+      "source": "https://www.wowhead.com/forever/quest=6568/the-testament-of-rexxar",
+      "level": 60,
+      "minLevel": 55,
+      "factions": [
+        "Horde"
+      ],
+      "requirementsKnown": false,
+      "start": {
+        "npcID": 10182,
+        "name": "Rexxar"
+      },
+      "finish": {
+        "npcID": 11872,
+        "name": "Myranda the Hag"
+      },
+      "storyline": [
+        6566,
+        6567,
+        6568,
+        6569,
+        6570
+      ]
+    },
+    {
+      "id": 6570,
+      "name": "Emberstrife",
+      "source": "https://www.wowhead.com/forever/quest=6570/emberstrife",
+      "level": 60,
+      "minLevel": 55,
+      "factions": [
+        "Horde"
+      ],
+      "requirementsKnown": false,
+      "start": {
+        "npcID": 11872,
+        "name": "Myranda the Hag"
+      },
+      "finish": {
+        "npcID": 10321,
+        "name": "Emberstrife"
+      },
+      "storyline": [
+        6566,
+        6567,
+        6568,
+        6569,
+        6570
+      ]
+    },
+    {
+      "id": 4941,
+      "name": "Eitrigg's Wisdom",
+      "source": "https://www.wowhead.com/forever/quest=4941/eitriggs-wisdom",
+      "level": 60,
+      "minLevel": 55,
+      "factions": [
+        "Horde"
+      ],
+      "requirementsKnown": false,
+      "start": {
+        "npcID": 9077,
+        "name": "Warlord Goretooth",
+        "zoneName": "Badlands"
+      },
+      "finish": {
+        "npcID": 4949,
+        "name": "Thrall",
+        "zoneName": "Orgrimmar"
+      },
+      "storyline": [
+        4903,
+        4941,
+        4974
+      ]
+    },
+    {
+      "id": 5065,
+      "name": "The Lost Tablets of Mosh'aru",
+      "source": "https://www.wowhead.com/forever/quest=5065/the-lost-tablets-of-mosharu",
+      "level": 58,
+      "minLevel": 40,
+      "factions": [
+        "Alliance",
+        "Horde"
+      ],
+      "requirementsKnown": false,
+      "start": {
+        "npcID": 10460,
+        "name": "Prospector Ironboot",
+        "zoneName": "Tanaris"
+      },
+      "finish": {
+        "npcID": 10460,
+        "name": "Prospector Ironboot",
+        "zoneName": "Tanaris"
+      },
+      "storyline": [
+        5065,
+        4788
+      ]
+    },
+    {
+      "id": 5161,
+      "name": "Wrath of the Blue Flight",
+      "source": "https://www.wowhead.com/forever/quest=5161/wrath-of-the-blue-flight",
+      "level": 60,
+      "minLevel": 57,
+      "factions": [
+        "Alliance",
+        "Horde"
+      ],
+      "requirementsKnown": false,
+      "start": {
+        "npcID": 10929,
+        "name": "Haleh",
+        "zoneName": "Winterspring"
+      },
+      "finish": {
+        "npcID": 10929,
+        "name": "Haleh",
+        "zoneName": "Winterspring"
+      },
+      "storyline": [
+        5160,
+        5161,
+        5162,
+        5164
+      ]
+    },
+    {
+      "id": 5162,
+      "name": "Wrath of the Blue Flight",
+      "source": "https://www.wowhead.com/forever/quest=5162/wrath-of-the-blue-flight",
+      "level": 60,
+      "minLevel": 57,
+      "factions": [
+        "Alliance",
+        "Horde"
+      ],
+      "requirementsKnown": false,
+      "start": {
+        "npcID": 10929,
+        "name": "Haleh",
+        "zoneName": "Winterspring"
+      },
+      "finish": {
+        "npcID": 10976,
+        "name": "Jeziba",
+        "zoneName": "Western Plaguelands"
+      },
+      "storyline": [
+        5160,
+        5161,
+        5162,
+        5164
+      ]
+    },
+    {
+      "id": 5164,
+      "name": "Catalogue of the Wayward",
+      "source": "https://www.wowhead.com/forever/quest=5164/catalogue-of-the-wayward",
+      "level": 60,
+      "minLevel": 57,
+      "factions": [
+        "Alliance",
+        "Horde"
+      ],
+      "requirementsKnown": false,
+      "start": {
+        "npcID": 10976,
+        "name": "Jeziba",
+        "zoneName": "Western Plaguelands"
+      },
+      "finish": {
+        "objectID": 176192,
+        "name": "Catalogue of the Wayward",
+        "zoneName": "Western Plaguelands"
+      },
+      "storyline": [
+        5160,
+        5161,
+        5162,
+        5164
+      ]
+    },
+    {
+      "id": 6403,
+      "name": "The Great Masquerade",
+      "source": "https://www.wowhead.com/forever/quest=6403/the-great-masquerade",
+      "level": 60,
+      "minLevel": 50,
+      "factions": [
+        "Alliance"
+      ],
+      "requirementsKnown": false,
+      "start": {
+        "npcID": 12580,
+        "name": "Reginald Windsor"
+      },
+      "finish": {
+        "npcID": 1748,
+        "name": "Highlord Bolvar Fordragon",
+        "zoneName": "Stormwind City"
+      },
+      "storyline": [
+        6403,
+        6501,
+        6502
+      ]
+    },
+    {
+      "id": 6501,
+      "name": "The Dragon's Eye",
+      "source": "https://www.wowhead.com/forever/quest=6501/the-dragons-eye",
+      "level": 60,
+      "minLevel": 50,
+      "factions": [
+        "Alliance"
+      ],
+      "requirementsKnown": false,
+      "start": {
+        "npcID": 1748,
+        "name": "Highlord Bolvar Fordragon",
+        "zoneName": "Stormwind City"
+      },
+      "finish": {
+        "npcID": 10929,
+        "name": "Haleh",
+        "zoneName": "Winterspring"
+      },
+      "storyline": [
+        6403,
+        6501,
+        6502
+      ]
+    },
+    {
+      "id": 6585,
+      "name": "The Test of Skulls, Axtroz",
+      "source": "https://www.wowhead.com/forever/quest=6585/the-test-of-skulls-axtroz",
+      "level": 60,
+      "minLevel": 55,
+      "factions": [
+        "Alliance",
+        "Horde"
+      ],
+      "requirementsKnown": false,
+      "start": {
+        "npcID": 10321,
+        "name": "Emberstrife",
+        "zoneName": "Dustwallow Marsh"
+      },
+      "finish": {
+        "npcID": 10321,
+        "name": "Emberstrife",
+        "zoneName": "Dustwallow Marsh"
+      },
+      "storyline": [
+        6585,
+        6601,
+        6602
+      ]
+    },
+    {
+      "id": 6601,
+      "name": "Ascension...",
+      "source": "https://www.wowhead.com/forever/quest=6601/ascension",
+      "level": 60,
+      "minLevel": 55,
+      "factions": [
+        "Horde"
+      ],
+      "requirementsKnown": false,
+      "start": {
+        "npcID": 10321,
+        "name": "Emberstrife"
+      },
+      "finish": {
+        "npcID": 10182,
+        "name": "Rexxar"
+      },
+      "storyline": [
+        6585,
+        6601,
+        6602
+      ]
+    },
+    {
+      "id": 6822,
+      "name": "The Molten Core",
+      "source": "https://www.wowhead.com/forever/quest=6822/the-molten-core",
+      "level": 60,
+      "minLevel": 55,
+      "factions": [
+        "Alliance",
+        "Horde"
+      ],
+      "requirementsKnown": false,
+      "start": {
+        "npcID": 13278,
+        "name": "Duke Hydraxis"
+      },
+      "finish": {
+        "npcID": 13278,
+        "name": "Duke Hydraxis"
+      },
+      "storyline": [
+        6821,
+        6822,
+        6823,
+        6824
+      ]
+    },
+    {
+      "id": 6823,
+      "name": "Agent of Hydraxis",
+      "source": "https://www.wowhead.com/forever/quest=6823/agent-of-hydraxis",
+      "level": 60,
+      "minLevel": 55,
+      "factions": [
+        "Alliance",
+        "Horde"
+      ],
+      "requirementsKnown": false,
+      "start": {
+        "npcID": 13278,
+        "name": "Duke Hydraxis",
+        "zoneName": "Azshara"
+      },
+      "finish": {
+        "npcID": 13278,
+        "name": "Duke Hydraxis",
+        "zoneName": "Azshara"
+      },
+      "storyline": [
+        6821,
+        6822,
+        6823,
+        6824
+      ]
+    },
+    {
+      "id": 6824,
+      "name": "Hands of the Enemy",
+      "source": "https://www.wowhead.com/forever/quest=6824/hands-of-the-enemy",
+      "level": 60,
+      "minLevel": 55,
+      "factions": [
+        "Alliance",
+        "Horde"
+      ],
+      "requirementsKnown": false,
+      "start": {
+        "npcID": 13278,
+        "name": "Duke Hydraxis",
+        "zoneName": "Azshara"
+      },
+      "finish": {
+        "npcID": 13278,
+        "name": "Duke Hydraxis",
+        "zoneName": "Azshara"
+      },
+      "storyline": [
+        6821,
+        6822,
+        6823,
+        6824
+      ]
+    },
+    {
+      "id": 7507,
+      "name": "Foror's Compendium",
+      "level": 60,
+      "minLevel": 60,
+      "factions": [
+        "Alliance",
+        "Horde"
+      ],
+      "requirementsKnown": false,
+      "source": "https://www.wowhead.com/forever/quest=7507/forors-compendium",
+      "start": {
+        "itemID": 18401,
+        "name": "Nostro's Compendium of Dragon Slaying",
+        "dungeonKey": "dire",
+        "dropSources": [
+          {
+            "npcID": 11501,
+            "name": "King Gordok",
+            "locationName": "Dire Maul"
+          },
+          {
+            "npcID": 14323,
+            "name": "Guard Slip'kik",
+            "locationName": "Dire Maul"
+          },
+          {
+            "npcID": 11487,
+            "name": "Magister Kalendris",
+            "locationName": "Dire Maul"
+          },
+          {
+            "npcID": 11496,
+            "name": "Immol'thar",
+            "locationName": "Dire Maul"
+          },
+          {
+            "npcID": 14321,
+            "name": "Guard Fengus",
+            "locationName": "Dire Maul"
+          },
+          {
+            "npcID": 11492,
+            "name": "Alzzin the Wildshaper",
+            "locationName": "Dire Maul"
+          },
+          {
+            "npcID": 13280,
+            "name": "Hydrospawn",
+            "locationName": "Dire Maul"
+          },
+          {
+            "npcID": 11490,
+            "name": "Zevrim Thornhoof",
+            "locationName": "Dire Maul"
+          },
+          {
+            "npcID": 14354,
+            "name": "Pusillin",
+            "locationName": "Dire Maul"
+          }
+        ]
+      },
+      "finish": {
+        "npcID": 14368,
+        "name": "Lorekeeper Lydros",
+        "zoneName": "Dire Maul",
+        "dungeonKey": "dire"
+      }
+    },
+    {
+      "id": 8949,
+      "name": "Falrin's Vendetta",
+      "level": 60,
+      "minLevel": 58,
+      "factions": [
+        "Alliance",
+        "Horde"
+      ],
+      "requirementsKnown": false,
+      "source": "https://www.wowhead.com/forever/quest=8949/falrins-vendetta",
+      "start": {
+        "npcID": 16032,
+        "name": "Falrin Treeshaper",
+        "zoneName": "Dire Maul",
+        "dungeonKey": "dire"
+      },
+      "finish": {
+        "npcID": 16032,
+        "name": "Falrin Treeshaper",
+        "zoneName": "Dire Maul",
+        "dungeonKey": "dire"
+      },
+      "startsInside": true
+    },
+    {
+      "id": 7508,
+      "name": "The Forging of Quel'Serrar",
+      "level": 60,
+      "minLevel": 60,
+      "factions": [
+        "Alliance",
+        "Horde"
+      ],
+      "requirementsKnown": false,
+      "source": "https://www.wowhead.com/forever/quest=7508/the-forging-of-quelserrar",
+      "finish": {
+        "npcID": 14368,
+        "name": "Lorekeeper Lydros",
+        "zoneName": "Dire Maul",
+        "dungeonKey": "dire"
+      },
+      "start": {
+        "itemID": 18513,
+        "name": "A Dull and Flat Elven Blade",
+        "itemMinLevel": 60
+      },
+      "storyline": [
+        7508,
+        7509
+      ]
+    },
+    {
+      "id": 7441,
+      "name": "Pusillin and the Elder Azj'Tordin",
+      "level": 58,
+      "minLevel": 54,
+      "factions": [
+        "Alliance",
+        "Horde"
+      ],
+      "requirementsKnown": false,
+      "source": "https://www.wowhead.com/forever/quest=7441/pusillin-and-the-elder-azjtordin",
+      "start": {
+        "npcID": 14355,
+        "name": "Azj'Tordin",
+        "zoneName": "Feralas"
+      },
+      "finish": {
+        "npcID": 14355,
+        "name": "Azj'Tordin",
+        "zoneName": "Feralas"
+      }
+    },
+    {
+      "id": 5518,
+      "name": "The Gordok Ogre Suit",
+      "level": 60,
+      "minLevel": 56,
+      "factions": [
+        "Alliance",
+        "Horde"
+      ],
+      "requirementsKnown": false,
+      "source": "https://www.wowhead.com/forever/quest=5518/the-gordok-ogre-suit",
+      "start": {
+        "npcID": 14338,
+        "name": "Knot Thimblejack"
+      },
+      "finish": {
+        "npcID": 14338,
+        "name": "Knot Thimblejack"
+      }
+    },
+    {
+      "id": 7503,
+      "name": "The Greatest Race of Hunters",
+      "level": 60,
+      "minLevel": 54,
+      "factions": [
+        "Alliance",
+        "Horde"
+      ],
+      "requirementsKnown": false,
+      "source": "https://www.wowhead.com/forever/quest=7503/the-greatest-race-of-hunters",
+      "finish": {
+        "npcID": 14382,
+        "name": "Lorekeeper Mykos"
+      },
+      "start": {
+        "itemID": 18361,
+        "name": "The Greatest Race of Hunters",
+        "dungeonKey": "dire",
+        "dropSources": [
+          {
+            "npcID": 11501,
+            "name": "King Gordok",
+            "locationName": "Dire Maul"
+          },
+          {
+            "npcID": 11490,
+            "name": "Zevrim Thornhoof",
+            "locationName": "Dire Maul"
+          },
+          {
+            "npcID": 13280,
+            "name": "Hydrospawn",
+            "locationName": "Dire Maul"
+          },
+          {
+            "npcID": 11488,
+            "name": "Illyanna Ravenoak",
+            "locationName": "Dire Maul"
+          },
+          {
+            "npcID": 11496,
+            "name": "Immol'thar",
+            "locationName": "Dire Maul"
+          },
+          {
+            "npcID": 14323,
+            "name": "Guard Slip'kik",
+            "locationName": "Dire Maul"
+          },
+          {
+            "npcID": 11492,
+            "name": "Alzzin the Wildshaper",
+            "locationName": "Dire Maul"
+          },
+          {
+            "npcID": 11487,
+            "name": "Magister Kalendris",
+            "locationName": "Dire Maul"
+          },
+          {
+            "npcID": 14354,
+            "name": "Pusillin",
+            "locationName": "Dire Maul"
+          },
+          {
+            "npcID": 14325,
+            "name": "Captain Kromcrush",
+            "locationName": "Dire Maul"
+          }
+        ],
+        "itemMinLevel": 54,
+        "itemClasses": [
+          "HUNTER"
+        ]
+      }
+    },
+    {
+      "id": 7463,
+      "name": "Arcane Refreshment",
+      "level": 60,
+      "minLevel": 60,
+      "factions": [
+        "Alliance",
+        "Horde"
+      ],
+      "classes": [
+        "MAGE"
+      ],
+      "requirementsKnown": false,
+      "source": "https://www.wowhead.com/forever/quest=7463/arcane-refreshment",
+      "start": {
+        "npcID": 14368,
+        "name": "Lorekeeper Lydros",
+        "zoneName": "Dire Maul",
+        "dungeonKey": "dire"
+      },
+      "finish": {
+        "npcID": 14368,
+        "name": "Lorekeeper Lydros",
+        "zoneName": "Dire Maul",
+        "dungeonKey": "dire"
+      },
+      "startsInside": true
+    },
+    {
+      "id": 7502,
+      "name": "Harnessing Shadows",
+      "level": 60,
+      "minLevel": 54,
+      "factions": [
+        "Alliance",
+        "Horde"
+      ],
+      "requirementsKnown": false,
+      "source": "https://www.wowhead.com/forever/quest=7502/harnessing-shadows",
+      "finish": {
+        "npcID": 14382,
+        "name": "Lorekeeper Mykos"
+      },
+      "start": {
+        "itemID": 18360,
+        "name": "Harnessing Shadows",
+        "dungeonKey": "dire",
+        "dropSources": [
+          {
+            "npcID": 11496,
+            "name": "Immol'thar",
+            "locationName": "Dire Maul"
+          },
+          {
+            "npcID": 11501,
+            "name": "King Gordok",
+            "locationName": "Dire Maul"
+          },
+          {
+            "npcID": 14321,
+            "name": "Guard Fengus",
+            "locationName": "Dire Maul"
+          },
+          {
+            "npcID": 11489,
+            "name": "Tendris Warpwood",
+            "locationName": "Dire Maul"
+          },
+          {
+            "npcID": 14325,
+            "name": "Captain Kromcrush",
+            "locationName": "Dire Maul"
+          },
+          {
+            "npcID": 11487,
+            "name": "Magister Kalendris",
+            "locationName": "Dire Maul"
+          },
+          {
+            "npcID": 11490,
+            "name": "Zevrim Thornhoof",
+            "locationName": "Dire Maul"
+          },
+          {
+            "npcID": 13280,
+            "name": "Hydrospawn",
+            "locationName": "Dire Maul"
+          },
+          {
+            "npcID": 11492,
+            "name": "Alzzin the Wildshaper",
+            "locationName": "Dire Maul"
+          },
+          {
+            "npcID": 11488,
+            "name": "Illyanna Ravenoak",
+            "locationName": "Dire Maul"
+          },
+          {
+            "npcID": 14354,
+            "name": "Pusillin",
+            "locationName": "Dire Maul"
+          }
+        ],
+        "itemMinLevel": 54,
+        "itemClasses": [
+          "WARLOCK"
+        ]
+      }
+    },
+    {
+      "id": 7506,
+      "name": "The Emerald Dream...",
+      "level": 60,
+      "minLevel": 54,
+      "factions": [
+        "Alliance",
+        "Horde"
+      ],
+      "requirementsKnown": false,
+      "source": "https://www.wowhead.com/forever/quest=7506/the-emerald-dream",
+      "finish": {
+        "npcID": 14381,
+        "name": "Lorekeeper Javon"
+      },
+      "start": {
+        "itemID": 18364,
+        "name": "The Emerald Dream",
+        "dungeonKey": "dire",
+        "dropSources": [
+          {
+            "npcID": 11501,
+            "name": "King Gordok",
+            "locationName": "Dire Maul"
+          },
+          {
+            "npcID": 11487,
+            "name": "Magister Kalendris",
+            "locationName": "Dire Maul"
+          },
+          {
+            "npcID": 14321,
+            "name": "Guard Fengus",
+            "locationName": "Dire Maul"
+          },
+          {
+            "npcID": 13280,
+            "name": "Hydrospawn",
+            "locationName": "Dire Maul"
+          },
+          {
+            "npcID": 11492,
+            "name": "Alzzin the Wildshaper",
+            "locationName": "Dire Maul"
+          },
+          {
+            "npcID": 11489,
+            "name": "Tendris Warpwood",
+            "locationName": "Dire Maul"
+          },
+          {
+            "npcID": 11490,
+            "name": "Zevrim Thornhoof",
+            "locationName": "Dire Maul"
+          },
+          {
+            "npcID": 14323,
+            "name": "Guard Slip'kik",
+            "locationName": "Dire Maul"
+          },
+          {
+            "npcID": 14354,
+            "name": "Pusillin",
+            "locationName": "Dire Maul"
+          },
+          {
+            "npcID": 11488,
+            "name": "Illyanna Ravenoak",
+            "locationName": "Dire Maul"
+          },
+          {
+            "npcID": 11496,
+            "name": "Immol'thar",
+            "locationName": "Dire Maul"
+          },
+          {
+            "npcID": 14325,
+            "name": "Captain Kromcrush",
+            "locationName": "Dire Maul"
+          }
+        ],
+        "itemMinLevel": 54,
+        "itemClasses": [
+          "DRUID"
+        ]
+      }
+    },
+    {
+      "id": 7498,
+      "name": "Garona: A Study on Stealth and Treachery",
+      "level": 60,
+      "minLevel": 54,
+      "factions": [
+        "Alliance",
+        "Horde"
+      ],
+      "requirementsKnown": false,
+      "source": "https://www.wowhead.com/forever/quest=7498/garona-a-study-on-stealth-and-treachery",
+      "finish": {
+        "npcID": 14383,
+        "name": "Lorekeeper Kildrath"
+      },
+      "start": {
+        "itemID": 18356,
+        "name": "Garona: A Study on Stealth and Treachery",
+        "dungeonKey": "dire",
+        "dropSources": [
+          {
+            "npcID": 11501,
+            "name": "King Gordok",
+            "locationName": "Dire Maul"
+          },
+          {
+            "npcID": 14323,
+            "name": "Guard Slip'kik",
+            "locationName": "Dire Maul"
+          },
+          {
+            "npcID": 11488,
+            "name": "Illyanna Ravenoak",
+            "locationName": "Dire Maul"
+          },
+          {
+            "npcID": 14321,
+            "name": "Guard Fengus",
+            "locationName": "Dire Maul"
+          },
+          {
+            "npcID": 13280,
+            "name": "Hydrospawn",
+            "locationName": "Dire Maul"
+          },
+          {
+            "npcID": 11489,
+            "name": "Tendris Warpwood",
+            "locationName": "Dire Maul"
+          },
+          {
+            "npcID": 11490,
+            "name": "Zevrim Thornhoof",
+            "locationName": "Dire Maul"
+          },
+          {
+            "npcID": 11492,
+            "name": "Alzzin the Wildshaper",
+            "locationName": "Dire Maul"
+          },
+          {
+            "npcID": 11487,
+            "name": "Magister Kalendris",
+            "locationName": "Dire Maul"
+          },
+          {
+            "npcID": 11496,
+            "name": "Immol'thar",
+            "locationName": "Dire Maul"
+          },
+          {
+            "npcID": 14325,
+            "name": "Captain Kromcrush",
+            "locationName": "Dire Maul"
+          },
+          {
+            "npcID": 14354,
+            "name": "Pusillin",
+            "locationName": "Dire Maul"
+          }
+        ],
+        "itemMinLevel": 54,
+        "itemClasses": [
+          "ROGUE"
+        ]
+      }
+    },
+    {
+      "id": 7461,
+      "name": "The Madness Within",
+      "level": 60,
+      "minLevel": 56,
+      "factions": [
+        "Alliance",
+        "Horde"
+      ],
+      "start": {
+        "npcID": 14358,
+        "name": "Shen'dralar Ancient",
+        "zoneName": "Dire Maul",
+        "dungeonKey": "dire"
+      },
+      "finish": {
+        "npcID": 14358,
+        "name": "Shen'dralar Ancient",
+        "zoneName": "Dire Maul",
+        "dungeonKey": "dire"
+      },
+      "requirementsKnown": false,
+      "source": "https://www.wowhead.com/forever/quest=7461/the-madness-within",
+      "storyline": [
+        7461,
+        7877
+      ],
+      "startsInside": true
+    },
+    {
+      "id": 7483,
+      "name": "Libram of Rapidity",
+      "level": 60,
+      "minLevel": 54,
+      "factions": [
+        "Alliance",
+        "Horde"
+      ],
+      "start": {
+        "npcID": 14368,
+        "name": "Lorekeeper Lydros",
+        "zoneName": "Dire Maul",
+        "dungeonKey": "dire"
+      },
+      "finish": {
+        "npcID": 14368,
+        "name": "Lorekeeper Lydros",
+        "zoneName": "Dire Maul",
+        "dungeonKey": "dire"
+      },
+      "repeatable": true,
+      "requirementsKnown": false,
+      "source": "https://www.wowhead.com/forever/quest=7483/libram-of-rapidity",
+      "startsInside": true
+    },
+    {
+      "id": 5525,
+      "name": "Free Knot!",
+      "level": 60,
+      "minLevel": 56,
+      "factions": [
+        "Alliance",
+        "Horde"
+      ],
+      "start": {
+        "npcID": 14338,
+        "name": "Knot Thimblejack"
+      },
+      "finish": {
+        "npcID": 14338,
+        "name": "Knot Thimblejack"
+      },
+      "requirementsKnown": false,
+      "source": "https://www.wowhead.com/forever/quest=5525/free-knot"
+    },
+    {
+      "id": 7499,
+      "name": "Codex of Defense",
+      "level": 60,
+      "minLevel": 54,
+      "factions": [
+        "Alliance",
+        "Horde"
+      ],
+      "finish": {
+        "npcID": 14383,
+        "name": "Lorekeeper Kildrath"
+      },
+      "requirementsKnown": false,
+      "source": "https://www.wowhead.com/forever/quest=7499/codex-of-defense",
+      "start": {
+        "itemID": 18357,
+        "name": "Codex of Defense",
+        "dungeonKey": "dire",
+        "dropSources": [
+          {
+            "npcID": 11501,
+            "name": "King Gordok",
+            "locationName": "Dire Maul"
+          },
+          {
+            "npcID": 11490,
+            "name": "Zevrim Thornhoof",
+            "locationName": "Dire Maul"
+          },
+          {
+            "npcID": 13280,
+            "name": "Hydrospawn",
+            "locationName": "Dire Maul"
+          },
+          {
+            "npcID": 11492,
+            "name": "Alzzin the Wildshaper",
+            "locationName": "Dire Maul"
+          },
+          {
+            "npcID": 11489,
+            "name": "Tendris Warpwood",
+            "locationName": "Dire Maul"
+          },
+          {
+            "npcID": 14323,
+            "name": "Guard Slip'kik",
+            "locationName": "Dire Maul"
+          },
+          {
+            "npcID": 11488,
+            "name": "Illyanna Ravenoak",
+            "locationName": "Dire Maul"
+          },
+          {
+            "npcID": 14325,
+            "name": "Captain Kromcrush",
+            "locationName": "Dire Maul"
+          },
+          {
+            "npcID": 14321,
+            "name": "Guard Fengus",
+            "locationName": "Dire Maul"
+          },
+          {
+            "npcID": 14354,
+            "name": "Pusillin",
+            "locationName": "Dire Maul"
+          },
+          {
+            "npcID": 11487,
+            "name": "Magister Kalendris",
+            "locationName": "Dire Maul"
+          },
+          {
+            "npcID": 11496,
+            "name": "Immol'thar",
+            "locationName": "Dire Maul"
+          }
+        ],
+        "itemMinLevel": 54,
+        "itemClasses": [
+          "WARRIOR"
+        ]
+      }
+    },
+    {
+      "id": 7482,
+      "name": "Elven Legends",
+      "level": 60,
+      "minLevel": 54,
+      "factions": [
+        "Alliance"
+      ],
+      "start": {
+        "npcID": 14374,
+        "name": "Scholar Runethorn",
+        "zoneName": "Feralas"
+      },
+      "finish": {
+        "npcID": 14374,
+        "name": "Scholar Runethorn",
+        "zoneName": "Feralas"
+      },
+      "requirementsKnown": false,
+      "source": "https://www.wowhead.com/forever/quest=7482/elven-legends"
+    },
+    {
+      "id": 5528,
+      "name": "The Gordok Taste Test",
+      "level": 60,
+      "minLevel": 56,
+      "factions": [
+        "Alliance",
+        "Horde"
+      ],
+      "start": {
+        "npcID": 14322,
+        "name": "Stomper Kreeg"
+      },
+      "finish": {
+        "npcID": 14322,
+        "name": "Stomper Kreeg"
+      },
+      "requirementsKnown": false,
+      "source": "https://www.wowhead.com/forever/quest=5528/the-gordok-taste-test"
+    },
+    {
+      "id": 7500,
+      "name": "The Arcanist's Cookbook",
+      "level": 60,
+      "minLevel": 54,
+      "factions": [
+        "Alliance",
+        "Horde"
+      ],
+      "finish": {
+        "npcID": 14383,
+        "name": "Lorekeeper Kildrath"
+      },
+      "requirementsKnown": false,
+      "source": "https://www.wowhead.com/forever/quest=7500/the-arcanists-cookbook",
+      "start": {
+        "itemID": 18358,
+        "name": "The Arcanist's Cookbook",
+        "dungeonKey": "dire",
+        "dropSources": [
+          {
+            "npcID": 11501,
+            "name": "King Gordok",
+            "locationName": "Dire Maul"
+          },
+          {
+            "npcID": 11490,
+            "name": "Zevrim Thornhoof",
+            "locationName": "Dire Maul"
+          },
+          {
+            "npcID": 13280,
+            "name": "Hydrospawn",
+            "locationName": "Dire Maul"
+          },
+          {
+            "npcID": 11492,
+            "name": "Alzzin the Wildshaper",
+            "locationName": "Dire Maul"
+          },
+          {
+            "npcID": 11487,
+            "name": "Magister Kalendris",
+            "locationName": "Dire Maul"
+          },
+          {
+            "npcID": 14325,
+            "name": "Captain Kromcrush",
+            "locationName": "Dire Maul"
+          },
+          {
+            "npcID": 11488,
+            "name": "Illyanna Ravenoak",
+            "locationName": "Dire Maul"
+          },
+          {
+            "npcID": 11496,
+            "name": "Immol'thar",
+            "locationName": "Dire Maul"
+          },
+          {
+            "npcID": 14323,
+            "name": "Guard Slip'kik",
+            "locationName": "Dire Maul"
+          },
+          {
+            "npcID": 14321,
+            "name": "Guard Fengus",
+            "locationName": "Dire Maul"
+          },
+          {
+            "npcID": 11489,
+            "name": "Tendris Warpwood",
+            "locationName": "Dire Maul"
+          },
+          {
+            "npcID": 14354,
+            "name": "Pusillin",
+            "locationName": "Dire Maul"
+          }
+        ],
+        "itemMinLevel": 54,
+        "itemClasses": [
+          "MAGE"
+        ]
+      }
+    },
+    {
+      "id": 7488,
+      "name": "Lethtendris's Web",
+      "level": 57,
+      "minLevel": 54,
+      "factions": [
+        "Alliance"
+      ],
+      "start": {
+        "npcID": 7877,
+        "name": "Latronicus Moonspear",
+        "zoneName": "Feralas"
+      },
+      "finish": {
+        "npcID": 7877,
+        "name": "Latronicus Moonspear",
+        "zoneName": "Feralas"
+      },
+      "requirementsKnown": false,
+      "source": "https://www.wowhead.com/forever/quest=7488/lethtendriss-web",
+      "storyline": [
+        7494,
+        7488
+      ]
+    },
+    {
+      "id": 7505,
+      "name": "Frost Shock and You",
+      "level": 60,
+      "minLevel": 54,
+      "factions": [
+        "Horde"
+      ],
+      "finish": {
+        "npcID": 14381,
+        "name": "Lorekeeper Javon"
+      },
+      "requirementsKnown": false,
+      "source": "https://www.wowhead.com/forever/quest=7505/frost-shock-and-you",
+      "start": {
+        "itemID": 18363,
+        "name": "Frost Shock and You",
+        "dungeonKey": "dire",
+        "dropSources": [
+          {
+            "npcID": 11501,
+            "name": "King Gordok",
+            "locationName": "Dire Maul"
+          },
+          {
+            "npcID": 11487,
+            "name": "Magister Kalendris",
+            "locationName": "Dire Maul"
+          },
+          {
+            "npcID": 11496,
+            "name": "Immol'thar",
+            "locationName": "Dire Maul"
+          },
+          {
+            "npcID": 11490,
+            "name": "Zevrim Thornhoof",
+            "locationName": "Dire Maul"
+          },
+          {
+            "npcID": 11489,
+            "name": "Tendris Warpwood",
+            "locationName": "Dire Maul"
+          },
+          {
+            "npcID": 14323,
+            "name": "Guard Slip'kik",
+            "locationName": "Dire Maul"
+          },
+          {
+            "npcID": 14321,
+            "name": "Guard Fengus",
+            "locationName": "Dire Maul"
+          },
+          {
+            "npcID": 13280,
+            "name": "Hydrospawn",
+            "locationName": "Dire Maul"
+          },
+          {
+            "npcID": 11492,
+            "name": "Alzzin the Wildshaper",
+            "locationName": "Dire Maul"
+          },
+          {
+            "npcID": 11488,
+            "name": "Illyanna Ravenoak",
+            "locationName": "Dire Maul"
+          },
+          {
+            "npcID": 14325,
+            "name": "Captain Kromcrush",
+            "locationName": "Dire Maul"
+          },
+          {
+            "npcID": 14354,
+            "name": "Pusillin",
+            "locationName": "Dire Maul"
+          }
+        ],
+        "itemMinLevel": 54,
+        "itemClasses": [
+          "SHAMAN"
+        ]
+      }
+    },
+    {
+      "id": 7489,
+      "name": "Lethtendris's Web",
+      "level": 57,
+      "minLevel": 54,
+      "factions": [
+        "Horde"
+      ],
+      "start": {
+        "npcID": 7776,
+        "name": "Talo Thornhoof",
+        "zoneName": "Feralas"
+      },
+      "finish": {
+        "npcID": 7776,
+        "name": "Talo Thornhoof",
+        "zoneName": "Feralas"
+      },
+      "requirementsKnown": false,
+      "source": "https://www.wowhead.com/forever/quest=7489/lethtendriss-web",
+      "storyline": [
+        7492,
+        7489
+      ]
+    },
+    {
+      "id": 1193,
+      "name": "A Broken Trap",
+      "level": 60,
+      "minLevel": 56,
+      "factions": [
+        "Alliance",
+        "Horde"
+      ],
+      "start": {
+        "objectID": 179485,
+        "name": "Broken Trap"
+      },
+      "finish": {
+        "objectID": 179485,
+        "name": "Broken Trap"
+      },
+      "repeatable": true,
+      "requirementsKnown": false,
+      "source": "https://www.wowhead.com/forever/quest=1193/a-broken-trap"
+    },
+    {
+      "id": 7481,
+      "name": "Elven Legends",
+      "level": 60,
+      "minLevel": 54,
+      "factions": [
+        "Horde"
+      ],
+      "start": {
+        "npcID": 14373,
+        "name": "Sage Korolusk",
+        "zoneName": "Feralas"
+      },
+      "finish": {
+        "npcID": 14373,
+        "name": "Sage Korolusk",
+        "zoneName": "Feralas"
+      },
+      "requirementsKnown": false,
+      "source": "https://www.wowhead.com/forever/quest=7481/elven-legends"
+    },
+    {
+      "id": 7492,
+      "name": "Camp Mojache",
+      "level": 57,
+      "minLevel": 54,
+      "factions": [
+        "Horde"
+      ],
+      "startAlternatives": [
+        {
+          "npcID": 10879,
+          "name": "Harbinger Balthazad",
+          "zoneName": "Undercity"
+        },
+        {
+          "npcID": 10880,
+          "name": "Warcaller Gorlach"
+        },
+        {
+          "npcID": 10881,
+          "name": "Bluff Runner Windstrider"
+        }
+      ],
+      "finish": {
+        "npcID": 7776,
+        "name": "Talo Thornhoof",
+        "zoneName": "Feralas"
+      },
+      "requirementsKnown": false,
+      "source": "https://www.wowhead.com/forever/quest=7492/camp-mojache",
+      "storyline": [
+        7492,
+        7489
+      ]
+    },
+    {
+      "id": 7703,
+      "name": "Unfinished Gordok Business",
+      "level": 60,
+      "minLevel": 56,
+      "factions": [
+        "Alliance",
+        "Horde"
+      ],
+      "start": {
+        "npcID": 14325,
+        "name": "Captain Kromcrush"
+      },
+      "finish": {
+        "npcID": 14325,
+        "name": "Captain Kromcrush"
+      },
+      "requirementsKnown": false,
+      "source": "https://www.wowhead.com/forever/quest=7703/unfinished-gordok-business"
+    },
+    {
+      "id": 7504,
+      "name": "Holy Bologna: What the Light Won't Tell You",
+      "level": 60,
+      "minLevel": 54,
+      "factions": [
+        "Alliance",
+        "Horde"
+      ],
+      "finish": {
+        "npcID": 14381,
+        "name": "Lorekeeper Javon"
+      },
+      "requirementsKnown": false,
+      "source": "https://www.wowhead.com/forever/quest=7504/holy-bologna-what-the-light-wont-tell-you",
+      "start": {
+        "itemID": 18362,
+        "name": "Holy Bologna: What the Light Won't Tell You",
+        "dungeonKey": "dire",
+        "dropSources": [
+          {
+            "npcID": 11501,
+            "name": "King Gordok",
+            "locationName": "Dire Maul"
+          },
+          {
+            "npcID": 11492,
+            "name": "Alzzin the Wildshaper",
+            "locationName": "Dire Maul"
+          },
+          {
+            "npcID": 11489,
+            "name": "Tendris Warpwood",
+            "locationName": "Dire Maul"
+          },
+          {
+            "npcID": 14321,
+            "name": "Guard Fengus",
+            "locationName": "Dire Maul"
+          },
+          {
+            "npcID": 11490,
+            "name": "Zevrim Thornhoof",
+            "locationName": "Dire Maul"
+          },
+          {
+            "npcID": 13280,
+            "name": "Hydrospawn",
+            "locationName": "Dire Maul"
+          },
+          {
+            "npcID": 11487,
+            "name": "Magister Kalendris",
+            "locationName": "Dire Maul"
+          },
+          {
+            "npcID": 11488,
+            "name": "Illyanna Ravenoak",
+            "locationName": "Dire Maul"
+          },
+          {
+            "npcID": 14325,
+            "name": "Captain Kromcrush",
+            "locationName": "Dire Maul"
+          },
+          {
+            "npcID": 11496,
+            "name": "Immol'thar",
+            "locationName": "Dire Maul"
+          },
+          {
+            "npcID": 14323,
+            "name": "Guard Slip'kik",
+            "locationName": "Dire Maul"
+          },
+          {
+            "npcID": 14354,
+            "name": "Pusillin",
+            "locationName": "Dire Maul"
+          }
+        ],
+        "itemMinLevel": 54,
+        "itemClasses": [
+          "PRIEST"
+        ]
+      }
+    },
+    {
+      "id": 8950,
+      "name": "The Instigator's Enchantment",
+      "level": 60,
+      "minLevel": 58,
+      "factions": [
+        "Alliance",
+        "Horde"
+      ],
+      "start": {
+        "npcID": 16032,
+        "name": "Falrin Treeshaper",
+        "zoneName": "Dire Maul",
+        "dungeonKey": "dire"
+      },
+      "finish": {
+        "npcID": 16032,
+        "name": "Falrin Treeshaper",
+        "zoneName": "Dire Maul",
+        "dungeonKey": "dire"
+      },
+      "requirementsKnown": false,
+      "source": "https://www.wowhead.com/forever/quest=8950/the-instigators-enchantment",
+      "startsInside": true
+    },
+    {
+      "id": 7501,
+      "name": "The Light and How To Swing It",
+      "level": 60,
+      "minLevel": 54,
+      "factions": [
+        "Alliance"
+      ],
+      "finish": {
+        "npcID": 14382,
+        "name": "Lorekeeper Mykos"
+      },
+      "requirementsKnown": false,
+      "source": "https://www.wowhead.com/forever/quest=7501/the-light-and-how-to-swing-it",
+      "start": {
+        "itemID": 18359,
+        "name": "The Light and How to Swing It",
+        "dungeonKey": "dire",
+        "dropSources": [
+          {
+            "npcID": 11501,
+            "name": "King Gordok",
+            "locationName": "Dire Maul"
+          },
+          {
+            "npcID": 11490,
+            "name": "Zevrim Thornhoof",
+            "locationName": "Dire Maul"
+          },
+          {
+            "npcID": 13280,
+            "name": "Hydrospawn",
+            "locationName": "Dire Maul"
+          },
+          {
+            "npcID": 11492,
+            "name": "Alzzin the Wildshaper",
+            "locationName": "Dire Maul"
+          },
+          {
+            "npcID": 11487,
+            "name": "Magister Kalendris",
+            "locationName": "Dire Maul"
+          },
+          {
+            "npcID": 11496,
+            "name": "Immol'thar",
+            "locationName": "Dire Maul"
+          },
+          {
+            "npcID": 14321,
+            "name": "Guard Fengus",
+            "locationName": "Dire Maul"
+          }
+        ],
+        "itemMinLevel": 54,
+        "itemClasses": [
+          "PALADIN"
+        ]
+      }
+    },
+    {
+      "id": 7485,
+      "name": "Libram of Protection",
+      "level": 60,
+      "minLevel": 54,
+      "factions": [
+        "Alliance",
+        "Horde"
+      ],
+      "start": {
+        "npcID": 14368,
+        "name": "Lorekeeper Lydros",
+        "zoneName": "Dire Maul",
+        "dungeonKey": "dire"
+      },
+      "finish": {
+        "npcID": 14368,
+        "name": "Lorekeeper Lydros",
+        "zoneName": "Dire Maul",
+        "dungeonKey": "dire"
+      },
+      "repeatable": true,
+      "requirementsKnown": false,
+      "source": "https://www.wowhead.com/forever/quest=7485/libram-of-protection",
+      "startsInside": true
+    },
+    {
+      "id": 7429,
+      "name": "Free Knot!",
+      "level": 60,
+      "minLevel": 56,
+      "factions": [
+        "Alliance",
+        "Horde"
+      ],
+      "start": {
+        "npcID": 14338,
+        "name": "Knot Thimblejack"
+      },
+      "finish": {
+        "npcID": 14338,
+        "name": "Knot Thimblejack"
+      },
+      "repeatable": true,
+      "requirementsKnown": false,
+      "source": "https://www.wowhead.com/forever/quest=7429/free-knot"
+    },
+    {
+      "id": 7484,
+      "name": "Libram of Focus",
+      "level": 60,
+      "minLevel": 54,
+      "factions": [
+        "Alliance",
+        "Horde"
+      ],
+      "start": {
+        "npcID": 14368,
+        "name": "Lorekeeper Lydros",
+        "zoneName": "Dire Maul",
+        "dungeonKey": "dire"
+      },
+      "finish": {
+        "npcID": 14368,
+        "name": "Lorekeeper Lydros",
+        "zoneName": "Dire Maul",
+        "dungeonKey": "dire"
+      },
+      "repeatable": true,
+      "requirementsKnown": false,
+      "source": "https://www.wowhead.com/forever/quest=7484/libram-of-focus",
+      "startsInside": true
+    },
+    {
+      "id": 8948,
+      "name": "Anthion's Old Friend",
+      "level": 60,
+      "minLevel": 58,
+      "factions": [
+        "Alliance",
+        "Horde"
+      ],
+      "start": {
+        "npcID": 16016,
+        "name": "Anthion Harmon"
+      },
+      "finish": {
+        "npcID": 16032,
+        "name": "Falrin Treeshaper",
+        "zoneName": "Dire Maul",
+        "dungeonKey": "dire"
+      },
+      "requirementsKnown": false,
+      "source": "https://www.wowhead.com/forever/quest=8948/anthions-old-friend"
+    },
+    {
+      "id": 7877,
+      "name": "The Treasure of the Shen'dralar",
+      "level": 60,
+      "minLevel": 56,
+      "factions": [
+        "Alliance",
+        "Horde"
+      ],
+      "start": {
+        "npcID": 14358,
+        "name": "Shen'dralar Ancient",
+        "zoneName": "Dire Maul",
+        "dungeonKey": "dire"
+      },
+      "finish": {
+        "objectID": 179517,
+        "name": "Treasure of the Shen'dralar"
+      },
+      "requirementsKnown": false,
+      "source": "https://www.wowhead.com/forever/quest=7877/the-treasure-of-the-shendralar",
+      "storyline": [
+        7461,
+        7877
+      ],
+      "startsInside": true
+    },
+    {
+      "id": 5519,
+      "name": "The Gordok Ogre Suit",
+      "level": 60,
+      "minLevel": 56,
+      "factions": [
+        "Alliance",
+        "Horde"
+      ],
+      "start": {
+        "npcID": 14338,
+        "name": "Knot Thimblejack"
+      },
+      "finish": {
+        "npcID": 14338,
+        "name": "Knot Thimblejack"
+      },
+      "requirementsKnown": false,
+      "source": "https://www.wowhead.com/forever/quest=5519/the-gordok-ogre-suit"
+    },
+    {
+      "id": 7494,
+      "name": "Feathermoon Stronghold",
+      "level": 57,
+      "minLevel": 54,
+      "factions": [
+        "Alliance"
+      ],
+      "startAlternatives": [
+        {
+          "npcID": 2198,
+          "name": "Crier Goodman",
+          "zoneName": "Stormwind City"
+        },
+        {
+          "npcID": 10877,
+          "name": "Courier Hammerfall"
+        },
+        {
+          "npcID": 10878,
+          "name": "Herald Moonstalker"
+        }
+      ],
+      "finish": {
+        "npcID": 7877,
+        "name": "Latronicus Moonspear",
+        "zoneName": "Feralas"
+      },
+      "requirementsKnown": false,
+      "source": "https://www.wowhead.com/forever/quest=7494/feathermoon-stronghold",
+      "storyline": [
+        7494,
+        7488
+      ]
+    },
+    {
+      "id": 98423,
+      "name": "The Treaty of Understanding",
+      "level": 16,
+      "minLevel": 9,
+      "factions": [
+        "Alliance"
+      ],
+      "requirementsKnown": false,
+      "source": "https://www.wowhead.com/forever/quest=98423/the-treaty-of-understanding",
+      "start": {
+        "itemID": 281030,
+        "name": "Treaty of Understanding",
+        "dungeonKey": "thanes"
+      },
+      "finish": {
+        "npcID": 2784,
+        "name": "King Magni Bronzebeard",
+        "zoneName": "Ironforge",
+        "mapID": 1455,
+        "x": 39.4,
+        "y": 55.4
+      },
+      "startsInside": true
+    },
+    {
+      "id": 96392,
+      "name": "Farsen's Watch",
+      "level": 13,
+      "minLevel": 9,
+      "factions": [
+        "Alliance"
+      ],
+      "races": [
+        3,
+        4,
+        7,
+        95
+      ],
+      "requirementsKnown": false,
+      "source": "https://www.wowhead.com/forever/quest=96392/farsens-watch",
+      "start": {
+        "npcID": 264936,
+        "name": "Earthseer Farsen",
+        "zoneName": "Dun Morogh",
+        "mapID": 1426,
+        "x": 64.8,
+        "y": 58.4
+      },
+      "finish": {
+        "npcID": 264936,
+        "name": "Earthseer Farsen",
+        "zoneName": "Dun Morogh",
+        "mapID": 1426,
+        "x": 64.8,
+        "y": 58.4
+      }
+    },
+    {
+      "id": 7509,
+      "name": "The Forging of Quel'Serrar",
+      "level": 60,
+      "minLevel": 60,
+      "factions": [
+        "Alliance",
+        "Horde"
+      ],
+      "classes": [
+        "WARRIOR",
+        "PALADIN"
+      ],
+      "start": {
+        "npcID": 14368,
+        "name": "Lorekeeper Lydros",
+        "zoneName": "Dire Maul",
+        "dungeonKey": "dire"
+      },
+      "finish": {
+        "npcID": 14368,
+        "name": "Lorekeeper Lydros",
+        "zoneName": "Dire Maul",
+        "dungeonKey": "dire"
+      },
+      "requirementsKnown": false,
+      "source": "https://www.wowhead.com/forever/quest=7509/the-forging-of-quelserrar",
+      "storyline": [
+        7508,
+        7509
+      ],
+      "startsInside": true
+    },
+    {
+      "id": 5526,
+      "name": "Shards of the Felvine",
+      "level": 60,
+      "minLevel": 56,
+      "factions": [
+        "Alliance",
+        "Horde"
+      ],
+      "start": {
+        "npcID": 11801,
+        "name": "Rabine Saturna",
+        "zoneName": "Moonglade"
+      },
+      "finish": {
+        "npcID": 11801,
+        "name": "Rabine Saturna",
+        "zoneName": "Moonglade"
+      },
+      "requirementsKnown": false,
+      "source": "https://www.wowhead.com/forever/quest=5526/shards-of-the-felvine",
+      "storyline": [
+        5527,
+        5526
+      ]
+    },
+    {
+      "id": 5527,
+      "name": "A Reliquary of Purity",
+      "level": 60,
+      "minLevel": 56,
+      "factions": [
+        "Alliance",
+        "Horde"
+      ],
+      "start": {
+        "npcID": 11801,
+        "name": "Rabine Saturna",
+        "zoneName": "Moonglade"
+      },
+      "finish": {
+        "npcID": 11801,
+        "name": "Rabine Saturna",
+        "zoneName": "Moonglade"
+      },
+      "requirementsKnown": false,
+      "source": "https://www.wowhead.com/forever/quest=5527/a-reliquary-of-purity",
+      "storyline": [
+        5527,
+        5526
+      ]
     }
   ],
   "dungeons": [
@@ -11579,7 +13928,8 @@
         5047,
         4735,
         6821,
-        5127
+        5127,
+        6569
       ],
       "source": "https://www.wowhead.com/forever/guide/dungeons-overview-locations-details",
       "instanceID": 229
@@ -11589,8 +13939,46 @@
       "name": "Dire Maul",
       "minLevel": 55,
       "maxLevel": 60,
-      "coverage": "pending",
-      "quests": [],
+      "coverage": "partial",
+      "quests": [
+        7507,
+        8949,
+        7508,
+        7441,
+        5518,
+        7503,
+        7463,
+        7502,
+        7506,
+        7498,
+        7461,
+        7483,
+        5525,
+        7499,
+        7482,
+        5528,
+        7500,
+        7488,
+        7505,
+        7489,
+        1193,
+        7481,
+        7492,
+        7703,
+        7504,
+        8950,
+        7501,
+        7485,
+        7429,
+        8967,
+        7484,
+        8948,
+        7877,
+        8990,
+        5519,
+        7494,
+        5526
+      ],
       "source": "https://www.wowhead.com/forever/guide/dungeons-overview-locations-details",
       "instanceID": 429
     },
@@ -11654,7 +14042,8 @@
         96393,
         96394,
         96395,
-        96403
+        96403,
+        98423
       ],
       "source": "https://www.wowhead.com/forever/guide/dungeons-overview-locations-details"
     },

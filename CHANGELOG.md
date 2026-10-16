@@ -31,6 +31,10 @@
   without inventing map coordinates.
 - Preserved the correct quest and language when the selected quest changes during
   a description read.
+- Added Dire Maul quests, book starters and acquisition sources, plus further
+  Blackrock Spire story steps.
+- Added the Treaty of Understanding in Hall of Thanes and corrected sourced
+  giver locations and Dark Iron Map acquisition information.
 - Showed class and level requirements of quest-starting items separately from
   the quest’s own availability.
 - Added early travel and story steps for dungeon chains, plus seven sourced
