@@ -7748,6 +7748,13 @@
             1469
           ]
         }
+      ],
+      "objectiveItems": [
+        {
+          "itemID": 6288,
+          "quantity": 10,
+          "name": "Atal'ai Tablet"
+        }
       ]
     },
     {
@@ -7818,6 +7825,13 @@
           "ids": [
             1444
           ]
+        }
+      ],
+      "objectiveItems": [
+        {
+          "itemID": 6181,
+          "quantity": 20,
+          "name": "Fetish of Hakkar"
         }
       ]
     },
@@ -10473,7 +10487,14 @@
       "finish": {
         "npcID": 13656,
         "name": "Willow"
-      }
+      },
+      "objectiveItems": [
+        {
+          "itemID": 17684,
+          "quantity": 25,
+          "name": "Theradric Crystal Carving"
+        }
+      ]
     },
     {
       "id": 7029,
@@ -10648,7 +10669,14 @@
       "finish": {
         "npcID": 7311,
         "name": "Uthel'nay"
-      }
+      },
+      "objectiveItems": [
+        {
+          "itemID": 17756,
+          "quantity": 10,
+          "name": "Shadowshard Fragment"
+        }
+      ]
     },
     {
       "id": 7070,
@@ -10667,7 +10695,14 @@
       "finish": {
         "npcID": 4967,
         "name": "Archmage Tervosh"
-      }
+      },
+      "objectiveItems": [
+        {
+          "itemID": 17756,
+          "quantity": 10,
+          "name": "Shadowshard Fragment"
+        }
+      ]
     },
     {
       "id": 7201,
@@ -18870,7 +18905,14 @@
         4142,
         4143
       ],
-      "storylineEvidence": "https://www.wowhead.com/forever/quest=4143/haze-of-evil"
+      "storylineEvidence": "https://www.wowhead.com/forever/quest=4143/haze-of-evil",
+      "objectiveItems": [
+        {
+          "itemID": 11318,
+          "quantity": 5,
+          "name": "Atal'ai Haze"
+        }
+      ]
     },
     {
       "id": 4146,
