@@ -30,6 +30,7 @@ events:SetScript("OnEvent", function(_, event, arg1, arg2)
         end
         if not addon.RestoreDB() then print("Dungeon Pro: unsupported saved data version"); return end
         initialized = true
+        if addon.Minimap then addon.Minimap:Initialize() end
         for _, e in ipairs({ "QUEST_LOG_UPDATE", "QUEST_DATA_LOAD_RESULT", "ITEM_DATA_LOAD_RESULT", "QUEST_ACCEPTED", "QUEST_REMOVED",
             "QUEST_TURNED_IN", "PLAYER_LEVEL_UP", "PLAYER_ENTERING_WORLD", "QUEST_DETAIL", "PLAYER_LOGOUT",
             "GOSSIP_SHOW", "GOSSIP_CLOSED", "GOSSIP_OPTIONS_REFRESHED", "QUEST_GREETING", "QUEST_FINISHED",
@@ -40,14 +41,22 @@ events:SetScript("OnEvent", function(_, event, arg1, arg2)
         SLASH_DUNGEONPRO2 = "/DungeonPro"
         SLASH_DUNGEONPRO3 = "/dprep"
         SLASH_DUNGEONPRO4 = "/dungeonprep"
+        SLASH_DUNGEONPRORELOAD1 = "/rl"
+        SlashCmdList.DUNGEONPRORELOAD = function()
+            local reload = addon.Clean(ReloadUI, "function")
+            if reload then reload() end
+        end
         SlashCmdList.DUNGEONPRO = function(msg)
             if msg == "clear" then addon.Navigation.Stop()
             elseif msg == "probe" then addon.ProbeClient()
+            elseif msg == "minimap" and addon.Minimap then addon.Minimap:ToggleVisibility()
+            elseif msg == "minimap reset" and addon.Minimap then addon.Minimap:Reset()
             else addon.UI:Toggle() end
         end
         return
     end
     if not initialized then return end
+    if event == "PLAYER_ENTERING_WORLD" and addon.Minimap then addon.Minimap:Initialize() end
     if addon.DialogueRewardEvent then addon.DialogueRewardEvent(event) end
     if event ~= "QUEST_DATA_LOAD_RESULT" and event ~= "ITEM_DATA_LOAD_RESULT" and event ~= "BAG_UPDATE_DELAYED" then
         addon.OfferEvent(event)

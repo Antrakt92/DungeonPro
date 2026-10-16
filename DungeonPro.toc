@@ -15,4 +15,5 @@ Core\Planner.lua
 Core\Client.lua
 UI\Window.lua
 UI\Navigation.lua
+UI\Minimap.lua
 Core\Events.lua

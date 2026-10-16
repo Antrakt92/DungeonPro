@@ -27,6 +27,9 @@
 - Added the current quest-log count and its client-provided capacity.
 - Added optional item icons and native hover tooltips to quest rewards.
 - Showed minimum level and listed class/race limits on quest detail cards.
+- Added `/rl` as a shortcut for reloading the interface.
+- Added a movable minimap button, with commands to hide or reset it.
+- Showed sourced objective-item quantities separately from current carried counts.
 - Added missing dungeon quests and their supporting mage and faction story chains.
 - Kept newly accepted quests visible alongside past completion history, and
   retained that history when checking prerequisite chains.

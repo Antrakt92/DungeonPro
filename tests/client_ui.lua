@@ -34,7 +34,7 @@ function methods:CreateFontString() return create("FontString") end
 function methods:CreateTexture() return create("Texture") end
 for _, name in ipairs({ "SetAllPoints", "SetFont", "SetJustifyH", "SetTextColor", "SetColorTexture", "SetHighlightTexture",
     "SetAutoFocus", "SetFocus", "ClearFocus", "HighlightText", "SetScrollChild", "SetScale", "SetFrameStrata",
-    "EnableMouse", "SetMovable", "RegisterForDrag", "StartMoving", "StopMovingOrSizing", "SetBackdrop",
+    "EnableMouse", "SetMovable", "RegisterForDrag", "RegisterForClicks", "StartMoving", "StopMovingOrSizing", "SetBackdrop",
     "SetBackdropColor", "SetBackdropBorderColor" }) do methods[name] = function() end end
 CreateFrame = create
 GetLocale = function() return "ruRU" end
@@ -861,5 +861,79 @@ check("All-character inspection explains actual paladin race and level limits wi
     LOCALIZED_CLASS_NAMES_MALE, C_CreatureInfo = classes, creatures
     ui.quest, ui.detailHistory, ui.includeUnavailable = previous, history, all; ui:Refresh()
     assert(not shown(addon.L("QUEST_CLASSES", "Native Paladin")))
+end)
+check("The rl alias invokes native reload only on command and preserves other addon handlers", function()
+    local saved, calls, others = ReloadUI, 0, 0
+    assert(SLASH_DUNGEONPRORELOAD1 == "/rl" and type(SlashCmdList.DUNGEONPRORELOAD) == "function")
+    local other = function() others = others + 1 end
+    SlashCmdList.OTHERRELOAD = other
+    ReloadUI = function(...) assert(select("#", ...) == 0); calls = calls + 1 end
+    eventFrame.scripts.OnEvent(eventFrame, "QUEST_LOG_UPDATE")
+    assert(calls == 0)
+    local shown = addon.UI.frame:IsShown()
+    SlashCmdList.DUNGEONPRORELOAD("ignored like reload")
+    assert(calls == 1 and addon.UI.frame:IsShown() == shown and others == 0)
+    assert(SlashCmdList.OTHERRELOAD == other)
+    ReloadUI = function() calls = calls + 10 end
+    SlashCmdList.DUNGEONPRORELOAD(""); assert(calls == 11)
+    ReloadUI = nil; SlashCmdList.DUNGEONPRORELOAD(""); assert(calls == 11)
+    SlashCmdList.OTHERRELOAD = nil; ReloadUI = saved
+end)
+check("Sourced objective quantities and current carried counts remain separate from quest readiness", function()
+    local ui, previous, history = addon.UI, addon.UI.quest, addon.UI.detailHistory
+    local item, count = C_Item, 0
+    C_Item = {
+        GetItemNameByID = function(id) if id == 6443 then return "Native Deviate Hide" end end,
+        GetItemCount = function(id, bank, uses, reagent, account)
+            assert(id == 6443 and bank == false and uses == false and reagent == false and account == false)
+            return count
+        end,
+    }
+    local function shown(value)
+        for _, line in ipairs(ui.details) do if line.shown and line.text == value then return true end end
+        return false
+    end
+    local pins = #waypoints
+    ui:InspectQuest(1486); ui:Refresh()
+    assert(shown(addon.L("OBJECTIVE_ITEMS")) and shown(addon.L("OBJECTIVE_ITEM", "Native Deviate Hide", 20)))
+    assert(shown(addon.L("ITEM_CARRIED", 0)) and shown(addon.L("OBJECTIVE_ITEMS_NOTICE")))
+    for _, value in ipairs({ 20, 25 }) do
+        count = value; eventFrame.scripts.OnEvent(eventFrame, "BAG_UPDATE_DELAYED")
+        assert(shown(addon.L("ITEM_CARRIED", value)) and not shown(addon.L("ITEM_CARRIED", 0)))
+        assert(ui.engine:State(1486).status == "UNKNOWN" and not ui.action and #waypoints == pins)
+    end
+    count = nil; eventFrame.scripts.OnEvent(eventFrame, "BAG_UPDATE_DELAYED")
+    assert(shown(addon.L("OBJECTIVE_ITEM", "Native Deviate Hide", 20)) and not shown(addon.L("ITEM_CARRIED", 25)))
+    C_Item = item; ui.quest, ui.detailHistory = previous, history; ui:Refresh()
+end)
+check("Native minimap arrival initializes the launcher and commands persist only its own preferences", function()
+    local native, cursor, prefs = Minimap, GetCursorPosition, addon.db.minimap
+    Minimap = create("Frame"); Minimap:SetWidth(198)
+    Minimap.GetEffectiveScale = function() return 1 end
+    Minimap.GetCenter = function() return 500, 400 end
+    GetCursorPosition = function() return 600, 400 end
+    local saved, pins = copy(addon.char), #waypoints
+    eventFrame.scripts.OnEvent(eventFrame, "PLAYER_ENTERING_WORLD")
+    local button = assert(addon.Minimap.button)
+    assert(button:IsShown() and button.point[2] == Minimap and addon.db.minimap)
+    local shown = addon.UI.frame:IsShown()
+    button.scripts.OnMouseDown(button, "LeftButton"); button.scripts.OnClick(button, "LeftButton")
+    assert(addon.UI.frame:IsShown() ~= shown)
+    button.scripts.OnMouseDown(button, "LeftButton"); button.scripts.OnDragStart(button, "LeftButton")
+    assert(button.scripts.OnUpdate); button.scripts.OnUpdate(button)
+    button.scripts.OnDragStop(button)
+    assert(button.scripts.OnUpdate == nil and addon.db.minimap.angle == 0)
+    local dragged = addon.UI.frame:IsShown()
+    button.scripts.OnClick(button, "LeftButton"); assert(addon.UI.frame:IsShown() == dragged)
+    button.scripts.OnMouseDown(button, "LeftButton"); button.scripts.OnClick(button, "LeftButton")
+    assert(addon.UI.frame:IsShown() ~= dragged)
+    SlashCmdList.DUNGEONPRO("minimap"); assert(not button:IsShown() and addon.db.minimap.hide == true)
+    SlashCmdList.DUNGEONPRO("minimap"); assert(button:IsShown() and addon.db.minimap.hide == false)
+    SlashCmdList.DUNGEONPRO("minimap reset")
+    assert(button:IsShown() and addon.db.minimap.angle == 225 and addon.db.minimap.hide == false)
+    assert(#waypoints == pins and addon.char.selectedDungeon == saved.selectedDungeon)
+    Minimap, GetCursorPosition, addon.db.minimap = native, cursor, prefs
+    assert(addon.Minimap:Initialize() == false and not button:IsShown())
+    if addon.UI.frame:IsShown() ~= shown then addon.UI:Toggle() end
 end)
 print("Client/UI modeled checks passed: " .. total .. " (no pixel or native-client validation)")

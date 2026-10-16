@@ -42,6 +42,7 @@ def main():
     run(lua, "tests/offered_objectives.lua")
     run(lua, "tests/probe.lua")
     run(lua, "tests/navigation.lua")
+    run(lua, "tests/minimap.lua")
     run(sys.executable, "-m", "unittest", "discover", "-s", "tests", "-p", "test_*.py", "-v")
     run(sys.executable, "scripts/package.py")
     run("git", "diff", "--check")

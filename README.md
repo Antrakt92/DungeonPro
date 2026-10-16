@@ -41,6 +41,8 @@ Level ranges are provisional recommendations.
   requirements. Their completion does not confirm you still hold the item.
 - Starter and material items show a current carried count when the client
   provides it, excluding bank storage. Possession does not confirm quest eligibility.
+- Sourced objective items show their required quantities and current carried
+  counts separately. These are reference amounts, not quest-log progress.
 - The window shows current quest-log occupancy and the client-provided standard
   quest limit when available, separately from dungeon preparation status.
 - Explicitly sourced repeatable quests have their own label.
@@ -71,6 +73,7 @@ Level ranges are provisional recommendations.
   quest-log progress. It clears when that dialogue ends.
 - Quest objectives from the client appear when available. The window adjusts to
   screen width and height and recovers saved positions outside the visible area.
+- A minimap button opens the browser. Drag it around the minimap to reposition it.
 - Interface dictionaries for English, Russian, German, French, Spanish, Italian,
   Portuguese, Korean, Simplified Chinese and Traditional Chinese. enGB and esMX
   use English and Spanish. Translations and layout still need in-game review.
@@ -89,8 +92,11 @@ This build has not yet passed native-client or visual acceptance.
 
 - `/DP` or `/DungeonPro`: open or close the browser.
 - `/DP clear`: clear the built-in guide.
+- `/DP minimap`: hide or show the minimap button.
+- `/DP minimap reset`: show the button at its default position.
 - `/DP probe`: save a small capability/quest-line report in this addon's own
   character settings. It does not export character identity or quest text.
+- `/rl`: reload the interface, like `/reload`.
 
 Development aliases `/dprep` and `/dungeonprep` are also supported.
 
