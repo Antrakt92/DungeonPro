@@ -834,9 +834,16 @@ function UI:RefreshDetail()
         for index = 1, math.min(objectiveItems and #objectiveItems or 0, 100) do
             local entry = addon.Clean(objectiveItems[index], "table")
             local itemID = entry and addon.Clean(entry.itemID, "number")
-            local quantity = entry and addon.Clean(entry.quantity, "number")
+            local rawQuantity = entry and rawget(entry, "quantity")
+            local quantityReadable = true
+            if type(issecretvalue) == "function" then
+                local ok, restricted = pcall(issecretvalue, rawQuantity)
+                quantityReadable = ok and addon.Clean(restricted, "boolean") == false
+            end
+            local quantityUnknown = quantityReadable and rawQuantity == nil
+            local quantity = quantityReadable and addon.Clean(rawQuantity, "number")
             if itemID and itemID > 0 and itemID <= 9007199254740991 and itemID % 1 == 0 and
-                quantity and quantity > 0 and quantity <= 9007199254740991 and quantity % 1 == 0 and not seenItems[itemID] then
+                (quantityUnknown or (quantity and quantity > 0 and quantity <= 9007199254740991 and quantity % 1 == 0)) and not seenItems[itemID] then
                 seenItems[itemID] = true
                 local name = addon.Read(addon.ItemName, "string", itemID)
                 if self.quest ~= renderQuest or self.rewardGeneration ~= rewardGeneration then return end
@@ -849,7 +856,7 @@ function UI:RefreshDetail()
                 if not shownObjectives then
                     line(addon.L("OBJECTIVE_ITEMS")); line(addon.L("OBJECTIVE_ITEMS_NOTICE")); shownObjectives = true
                 end
-                line(addon.L("OBJECTIVE_ITEM", name, quantity))
+                line(quantityUnknown and addon.L("OBJECTIVE_ITEM_UNKNOWN", name) or addon.L("OBJECTIVE_ITEM", name, quantity))
                 if count then line(count) end
             end
         end

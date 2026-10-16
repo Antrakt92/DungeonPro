@@ -60,8 +60,9 @@ def validate(data):
             seen_items = set()
             for item in items:
                 if (type(item) is not dict or set(item) - {"itemID", "quantity", "name"} or
-                        any(not integer(item.get(field)) or item[field] > 2 ** 53 - 1
-                            for field in ("itemID", "quantity"))):
+                        not integer(item.get("itemID")) or item["itemID"] > 2 ** 53 - 1 or
+                        ("quantity" in item and
+                         (not integer(item["quantity"]) or item["quantity"] > 2 ** 53 - 1))):
                     raise ValueError(f"Invalid objective item identity/quantity: {q['id']}")
                 if "name" in item and (not nonempty_string(item["name"]) or len(item["name"]) > 500):
                     raise ValueError(f"Invalid objective item name: {q['id']}")

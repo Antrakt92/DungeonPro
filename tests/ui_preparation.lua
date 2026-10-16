@@ -2403,4 +2403,65 @@ check("Same-card source copying survives refresh but a hidden quest change clear
     assert(ui.quest == 2 and #ui.detailHistory == 0 and not box.shown and not box.focused and box.text == "")
     addon.db.locale, ui.quest, ui.detailHistory = locale, quest, history; ui:Refresh()
 end)
+check("Unknown objective quantity remains explicit through known and unknown redraws in ten locales", function()
+    local itemName, count, locale = addon.ItemName, addon.CarriedItemCount, addon.db.locale
+    local entry = { itemID = 83001, name = "Source relic" }
+    addon.quests[9991] = { id = 9991, minLevel = 1, requirementsKnown = false, objectiveItems = { entry } }
+    addon.ItemName = function() return "Native relic" end; addon.CarriedItemCount = function() return 0 end
+    showDetail(9991)
+    assert(detailHas(addon.L("OBJECTIVE_ITEM_UNKNOWN", "Native relic")) and detailHas(addon.L("ITEM_CARRIED", 0)))
+    assert(ui.engine:State(9991).status == "UNKNOWN" and not ui.action and not ui.guide.enabled)
+    entry.quantity = 2; ui:RefreshDetail()
+    assert(detailHas(addon.L("OBJECTIVE_ITEM", "Native relic", 2)) and not detailHas(addon.L("OBJECTIVE_ITEM_UNKNOWN", "Native relic")))
+    entry.quantity = nil; addon.ItemName = nil; addon.CarriedItemCount = nil
+    local dictionaries = 0
+    for code, strings in pairs(addon.locales) do
+        assert(type(strings.OBJECTIVE_ITEM_UNKNOWN) == "string" and strings.OBJECTIVE_ITEM_UNKNOWN:find("%%s"))
+        addon.db.locale = code; ui:RefreshDetail(); dictionaries = dictionaries + 1
+        assert(detailHas(addon.L("OBJECTIVE_ITEM_UNKNOWN", "Source relic")) and not detailHas(addon.L("ITEM_CARRIED", 0)))
+        assert(not detailHas(addon.L("OBJECTIVE_ITEM", "Native relic", 2)) and ui.engine:State(9991).status == "UNKNOWN" and not ui.action)
+    end
+    assert(dictionaries == 10)
+    addon.ItemName, addon.CarriedItemCount, addon.db.locale = itemName, count, locale
+    addon.quests[9991] = nil; showDetail(2); assert(not detailHas(addon.L("OBJECTIVE_ITEMS")))
+end)
+check("Present malformed or restricted objective quantity never becomes unknown", function()
+    local checker, itemName = issecretvalue, addon.ItemName
+    local restricted, reads = {}, 0
+    issecretvalue = function(value) return value == restricted end
+    addon.ItemName = function() reads = reads + 1; return "Should not read" end
+    addon.quests[9992] = { id = 9992, minLevel = 1, requirementsKnown = false, objectiveItems = {} }
+    for _, value in ipairs({ false, 0, -1, 1.5, "2", {}, restricted, math.huge, 9007199254740992 }) do
+        addon.quests[9992].objectiveItems = { { itemID = 83002, quantity = value } }; showDetail(9992)
+        assert(not detailHas(addon.L("OBJECTIVE_ITEMS")) and reads == 0)
+    end
+    addon.ItemName, issecretvalue = itemName, checker; addon.quests[9992] = nil; showDetail(2)
+end)
+check("Unknown objective quantity retains stale-render protection for both optional producers", function()
+    local itemName, count = addon.ItemName, addon.CarriedItemCount
+    for _, helper in ipairs({ "ItemName", "CarriedItemCount" }) do
+        for _, sameQuest in ipairs({ false, true }) do
+            local entries = { { itemID = 83003, name = "Source relic" } }
+            addon.quests[9993] = { id = 9993, minLevel = 1, requirementsKnown = false, objectiveItems = entries }
+            addon.ItemName = function() return "Fresh relic" end; addon.CarriedItemCount = function() return 0 end
+            local armed, nestedHeight = true, nil
+            addon[helper] = function()
+                if armed then
+                    armed = false
+                    if sameQuest then ui:RefreshDetail() else showDetail(2) end
+                    nestedHeight = ui.detail.height
+                    return helper == "ItemName" and "Stale relic" or 9
+                end
+                return helper == "ItemName" and "Fresh relic" or 0
+            end
+            showDetail(9993)
+            assert(not armed and ui.quest == (sameQuest and 9993 or 2) and ui.detail.height == nestedHeight)
+            assert(not detailHas(addon.L("OBJECTIVE_ITEM_UNKNOWN", "Stale relic")) and not detailHas(addon.L("ITEM_CARRIED", 9)))
+            assert(detailHas(addon.L("OBJECTIVE_ITEMS")) == sameQuest)
+            if sameQuest then assert(detailHas(addon.L("OBJECTIVE_ITEM_UNKNOWN", "Fresh relic")) and detailHas(addon.L("ITEM_CARRIED", 0))) end
+            assert(entries[1].quantity == nil and addon.quests[9993].requirementsKnown == false)
+        end
+    end
+    addon.ItemName, addon.CarriedItemCount = itemName, count; addon.quests[9993] = nil; showDetail(2)
+end)
 print("Preparation UI modeled checks passed: " .. total .. " (no native layout validation)")

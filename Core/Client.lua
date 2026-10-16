@@ -436,9 +436,15 @@ function addon.CarriedItemCount(id)
                 for index = 1, #objectives do
                     local entry = addon.Clean(objectives[index], "table")
                     if entry then
-                        local itemID = dialogueInteger(entry.itemID, 1, 9007199254740991)
-                        local quantity = dialogueInteger(entry.quantity, 1, 9007199254740991)
-                        if itemID == id and quantity then return true end
+                        local itemID = dialogueInteger(rawget(entry, "itemID"), 1, 9007199254740991)
+                        local quantity = rawget(entry, "quantity")
+                        local readable = true
+                        if type(issecretvalue) == "function" then
+                            local ok, restricted = pcall(issecretvalue, quantity)
+                            readable = ok and addon.Clean(restricted, "boolean") == false
+                        end
+                        if readable and itemID == id and (type(quantity) == "nil" or
+                            dialogueInteger(quantity, 1, 9007199254740991)) then return true end
                     end
                 end
             end

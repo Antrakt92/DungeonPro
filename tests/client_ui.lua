@@ -936,4 +936,34 @@ check("Native minimap arrival initializes the launcher and commands persist only
     assert(addon.Minimap:Initialize() == false and not button:IsShown())
     if addon.UI.frame:IsShown() ~= shown then addon.UI:Toggle() end
 end)
+check("An actual sourced objective with unknown quantity shows possession without inventing a goal or readiness", function()
+    local ui, previous, history = addon.UI, addon.UI.quest, addon.UI.detailHistory
+    local item, level, all = C_Item, UnitLevel, ui.includeUnavailable
+    local count = 0
+    UnitLevel = function() return 60 end
+    C_Item = {
+        GetItemNameByID = function(id) if id == 9316 then return "Native Prismatic Card" end end,
+        GetItemCount = function(id, bank, uses, reagent, account)
+            assert(id == 9316 and bank == false and uses == false and reagent == false and account == false)
+            return count
+        end,
+    }
+    local function shown(value)
+        for _, line in ipairs(ui.details) do if line.shown and line.text == value then return true end end
+        return false
+    end
+    local q, pins = addon.quests[2930], #waypoints
+    assert(q.objectiveItems[1].itemID == 9316 and q.objectiveItems[1].quantity == nil)
+    ui.includeUnavailable = true; ui:InspectQuest(2930); ui:Refresh()
+    assert(shown(addon.L("OBJECTIVE_ITEM_UNKNOWN", "Native Prismatic Card")))
+    assert(shown(addon.L("ITEM_CARRIED", 0)) and not shown(addon.L("OBJECTIVE_ITEM", "Native Prismatic Card", 1)))
+    count = 3; eventFrame.scripts.OnEvent(eventFrame, "BAG_UPDATE_DELAYED")
+    assert(shown(addon.L("ITEM_CARRIED", 3)) and not shown(addon.L("ITEM_CARRIED", 0)))
+    assert(shown(addon.L("OBJECTIVE_ITEM_UNKNOWN", "Native Prismatic Card")))
+    assert(ui.engine:State(2930).status == "UNKNOWN" and not ui.action and #waypoints == pins)
+    count = nil; eventFrame.scripts.OnEvent(eventFrame, "BAG_UPDATE_DELAYED")
+    assert(not shown(addon.L("ITEM_CARRIED", 3)) and shown(addon.L("OBJECTIVE_ITEM_UNKNOWN", "Native Prismatic Card")))
+    C_Item, UnitLevel, ui.includeUnavailable = item, level, all
+    ui.quest, ui.detailHistory = previous, history; ui:Refresh()
+end)
 print("Client/UI modeled checks passed: " .. total .. " (no pixel or native-client validation)")

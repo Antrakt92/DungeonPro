@@ -41,8 +41,9 @@ Level ranges are provisional recommendations.
   requirements. Their completion does not confirm you still hold the item.
 - Starter and material items show a current carried count when the client
   provides it, excluding bank storage. Possession does not confirm quest eligibility.
-- Sourced objective items show their required quantities and current carried
-  counts separately. These are reference amounts, not quest-log progress.
+- Sourced objective items show confirmed quantities; an unverified amount is
+  labeled explicitly. Current carried counts appear separately from these
+  reference objectives and do not replace quest-log progress.
 - The window shows current quest-log occupancy and the client-provided standard
   quest limit when available, separately from dungeon preparation status.
 - Explicitly sourced repeatable quests have their own label.

@@ -695,9 +695,39 @@ class CatalogTests(unittest.TestCase):
         self.assertFalse(quest["requirementsKnown"])
         self.assertNotIn("requires", quest)
 
+    def test_omitted_objective_quantities_are_retained_without_a_default(self):
+        data = self.minimal_catalog()
+        data["quests"][0]["requirementsKnown"] = False
+        data["quests"][0]["objectiveItems"] = [
+            {"itemID": 10001, "name": "Known item, unknown count"},
+            {"itemID": 10002, "quantity": 2},
+            {"itemID": 10003},
+        ]
+        before = copy.deepcopy(data)
+        catalog.validate(data)
+        generated = catalog.generate(data)
+        self.assertEqual(data, before)
+        self.assertEqual(generated.count('["quantity"]'), 1)
+        self.assertIn('["quantity"] = 2', generated)
+        self.assertNotIn('["quantity"] = 1', generated)
+        self.assertFalse(data["quests"][0]["requirementsKnown"])
+        self.assertNotIn("requires", data["quests"][0])
+
+    def test_unknown_quantity_does_not_relax_present_values_or_duplicate_identity(self):
+        for quantity in (None, False, True, 0, -1, 1.5, "1", float("inf"), 2 ** 53):
+            with self.subTest(quantity=quantity):
+                data = self.minimal_catalog()
+                data["quests"][0]["objectiveItems"] = [{"itemID": 10001, "quantity": quantity}]
+                with self.assertRaisesRegex(ValueError, "objective item"):
+                    catalog.validate(data)
+        data = self.minimal_catalog()
+        data["quests"][0]["objectiveItems"] = [{"itemID": 10001}, {"itemID": 10001, "quantity": 2}]
+        with self.assertRaisesRegex(ValueError, "Duplicate objective item"):
+            catalog.validate(data)
+
     def test_invalid_objective_items_are_rejected(self):
         invalid = [None, False, {}, [], [None], [False], [1], [[]], [{}],
-                   [{"itemID": 1}], [{"quantity": 1}],
+                   [{"quantity": 1}],
                    [{"itemID": 1, "quantity": 1, "requires": []}],
                    [{"itemID": 1, "quantity": 1}] * 101,
                    [{"itemID": 1, "quantity": 1}, {"itemID": 1, "quantity": 2}]]

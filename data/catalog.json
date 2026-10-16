@@ -1096,7 +1096,17 @@
             "y": 93.6
           }
         ]
-      }
+      },
+      "objectiveItems": [
+        {
+          "itemID": 14395,
+          "name": "Spells of Shadow"
+        },
+        {
+          "itemID": 14396,
+          "name": "Incantations from the Nether"
+        }
+      ]
     },
     {
       "id": 5761,
@@ -1619,7 +1629,13 @@
         "x": 44.2,
         "y": 39.8
       },
-      "requirementsKnown": false
+      "requirementsKnown": false,
+      "objectiveItems": [
+        {
+          "itemID": 5442,
+          "name": "Head of Arugal"
+        }
+      ]
     },
     {
       "id": 870,
@@ -2476,6 +2492,12 @@
       "storyline": [
         2931,
         2930
+      ],
+      "objectiveItems": [
+        {
+          "itemID": 9316,
+          "name": "Prismatic Punch Card"
+        }
       ]
     },
     {
@@ -2501,7 +2523,17 @@
         "mapID": 1454,
         "x": 75.8,
         "y": 25.2
-      }
+      },
+      "objectiveItems": [
+        {
+          "itemID": 9153,
+          "name": "Rig Blueprints"
+        },
+        {
+          "itemID": 9299,
+          "name": "Thermaplugg's Safe Combination"
+        }
+      ]
     },
     {
       "id": 2929,
@@ -3294,7 +3326,13 @@
         "mapID": 1456,
         "x": 36.2,
         "y": 59.8
-      }
+      },
+      "objectiveItems": [
+        {
+          "itemID": 5793,
+          "name": "Razorflank's Heart"
+        }
+      ]
     },
     {
       "id": 1109,
@@ -4718,7 +4756,13 @@
       "finish": {
         "npcID": 2785,
         "name": "Theldurin the Lost"
-      }
+      },
+      "objectiveItems": [
+        {
+          "itemID": 4631,
+          "name": "Tablet of Ryun'eh"
+        }
+      ]
     },
     {
       "id": 2418,
