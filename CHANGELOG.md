@@ -18,6 +18,8 @@
 - Preserved the current guide when TomTom or map callbacks replace an older request.
 - Kept early quests unverified where the full acceptance conditions lack evidence,
   with a clearer label for quests absent from the current quest log.
+- Corrected a Hidden Enemies starting NPC and updated Neeru's reported positions.
+- Kept known prerequisite work visible while other acceptance conditions are unknown.
 - Kept newly accepted quests visible alongside past completion history, and
   retained that history when checking prerequisite chains.
 - Added localized names for the current quest NPC, with catalogue names as fallback.

@@ -877,12 +877,50 @@
         "Horde"
       ],
       "start": {
-        "name": "Thrall",
+        "name": "Neeru Fireblade",
+        "npcID": 3216,
+        "zoneName": "Orgrimmar",
         "mapID": 1454,
-        "x": 32,
-        "y": 37.8,
-        "npcID": 4949,
-        "zoneName": "Orgrimmar"
+        "x": 49.4,
+        "y": 50.4,
+        "reportedLocations": [
+          {
+            "mapID": 1454,
+            "x": 49.4,
+            "y": 50.4,
+            "zoneName": "Orgrimmar"
+          },
+          {
+            "mapID": 1454,
+            "x": 49.4,
+            "y": 50.6,
+            "zoneName": "Orgrimmar"
+          },
+          {
+            "mapID": 1454,
+            "x": 49.4,
+            "y": 51.6,
+            "zoneName": "Orgrimmar"
+          },
+          {
+            "mapID": 1454,
+            "x": 49.6,
+            "y": 50.4,
+            "zoneName": "Orgrimmar"
+          },
+          {
+            "mapID": 1454,
+            "x": 49.6,
+            "y": 50.6,
+            "zoneName": "Orgrimmar"
+          },
+          {
+            "mapID": 1454,
+            "x": 49.6,
+            "y": 51.6,
+            "zoneName": "Orgrimmar"
+          }
+        ]
       },
       "finish": {
         "name": "Thrall",
@@ -1007,10 +1045,49 @@
       ],
       "start": {
         "name": "Neeru Fireblade",
+        "npcID": 3216,
+        "zoneName": "Orgrimmar",
         "mapID": 1454,
-        "x": 49.5,
-        "y": 50.6,
-        "npcID": 3216
+        "x": 49.4,
+        "y": 50.4,
+        "reportedLocations": [
+          {
+            "mapID": 1454,
+            "x": 49.4,
+            "y": 50.4,
+            "zoneName": "Orgrimmar"
+          },
+          {
+            "mapID": 1454,
+            "x": 49.4,
+            "y": 50.6,
+            "zoneName": "Orgrimmar"
+          },
+          {
+            "mapID": 1454,
+            "x": 49.4,
+            "y": 51.6,
+            "zoneName": "Orgrimmar"
+          },
+          {
+            "mapID": 1454,
+            "x": 49.6,
+            "y": 50.4,
+            "zoneName": "Orgrimmar"
+          },
+          {
+            "mapID": 1454,
+            "x": 49.6,
+            "y": 50.6,
+            "zoneName": "Orgrimmar"
+          },
+          {
+            "mapID": 1454,
+            "x": 49.6,
+            "y": 51.6,
+            "zoneName": "Orgrimmar"
+          }
+        ]
       }
     },
     {

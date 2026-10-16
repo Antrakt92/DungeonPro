@@ -654,4 +654,42 @@ check("The sourced journal container guides independently of the item-started qu
     addon.Navigation.Stop()
     ui.quest, ui.detailHistory = previous, history; ui:Refresh()
 end)
+check("Hidden Enemies starter visits Neeru while preserving the separate Thrall turn-in", function()
+    local ui, previous, history = addon.UI, addon.UI.quest, addon.UI.detailHistory
+    local q, before = addon.quests[5730], #waypoints
+    assert(q.start.npcID == 3216 and q.finish.npcID == 4949 and q.requirementsKnown == false)
+    assert(addon.quests[5761].start.npcID == 3216 and #q.start.reportedLocations == 6)
+    ui:InspectQuest(5730)
+    assert(ui.engine:State(5730).status == "UNAVAILABLE" and not ui.action and #waypoints == before)
+    assert(ui.giverAction.place == q.start and ui.giver.enabled)
+    ui.giver.scripts.OnClick()
+    local actual = waypoints[#waypoints]
+    assert(#waypoints == before + 1 and actual.mapID == 1454)
+    assert(actual.x == 0.494 and actual.y == 0.504)
+    assert(q.finish.npcID == 4949 and ui.engine:State(5730).status == "UNAVAILABLE")
+    addon.Navigation.Stop()
+    ui.quest, ui.detailHistory = previous, history; ui:Refresh()
+end)
+check("Actual partial Defias chain keeps held prerequisite work without claiming the final pickup", function()
+    local ui, previous, history = addon.UI, addon.UI.quest, addon.UI.detailHistory
+    local active, ready = C_QuestLog.IsOnQuest, C_QuestLog.ReadyForTurnIn
+    C_QuestLog.IsOnQuest = function(id) return id == 65 end
+    local canTurnIn = false
+    C_QuestLog.ReadyForTurnIn = function(id) return id == 65 and canTurnIn end
+    ui:InspectQuest(166); ui:Refresh()
+    local actions, unknown = ui.engine:Next(166)
+    assert(ui.engine:State(166).status == "UNKNOWN" and unknown and #actions == 1)
+    assert(ui.action.id == 65 and ui.action.kind == "complete" and ui.action.place == nil and not ui.guide.enabled)
+    canTurnIn = true; eventFrame.scripts.OnEvent(eventFrame, "QUEST_LOG_UPDATE")
+    assert(ui.action.id == 65 and ui.action.kind == "turnin" and ui.guide.enabled)
+    assert(ui.engine:State(166).status == "UNKNOWN" and addon.quests[166].requirementsKnown == false)
+    local before, place = #waypoints, addon.quests[65].finish
+    ui.guide.scripts.OnClick()
+    local actual = waypoints[#waypoints]
+    assert(#waypoints == before + 1 and actual.mapID == place.mapID)
+    assert(actual.x == place.x / 100 and actual.y == place.y / 100)
+    addon.Navigation.Stop()
+    C_QuestLog.IsOnQuest, C_QuestLog.ReadyForTurnIn = active, ready
+    ui.quest, ui.detailHistory = previous, history; ui:Refresh()
+end)
 print("Client/UI modeled checks passed: " .. total .. " (no pixel or native-client validation)")

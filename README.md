@@ -19,6 +19,7 @@ Level ranges are provisional recommendations.
   character restrictions and unverified data.
 - Recursive prerequisite planning where acceptance conditions are verified;
   unverified chains remain available for inspection.
+  Known prerequisite work can still be shown while other conditions are unknown.
 - A next-step view collects the dungeon's preparation actions, combines shared
   prerequisites and groups pickups before entry, inside pickups, level gates,
   quests in progress and unresolved requirements.
