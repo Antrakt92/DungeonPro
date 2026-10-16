@@ -1121,11 +1121,17 @@
       "source": "https://www.wowhead.com/forever/quest=914/leaders-of-the-fang",
       "start": {
         "npcID": 5770,
-        "name": "Nara Wildmane"
+        "name": "Nara Wildmane",
+        "mapID": 1456,
+        "x": 75.6,
+        "y": 31.2
       },
       "finish": {
         "npcID": 5770,
-        "name": "Nara Wildmane"
+        "name": "Nara Wildmane",
+        "mapID": 1456,
+        "x": 75.6,
+        "y": 31.2
       },
       "storyline": [
         1489,
@@ -1162,11 +1168,17 @@
       "source": "https://www.wowhead.com/forever/quest=1491/smart-drinks",
       "start": {
         "npcID": 3446,
-        "name": "Mebok Mizzyrix"
+        "name": "Mebok Mizzyrix",
+        "mapID": 1413,
+        "x": 62.4,
+        "y": 37.6
       },
       "finish": {
         "npcID": 3446,
-        "name": "Mebok Mizzyrix"
+        "name": "Mebok Mizzyrix",
+        "mapID": 1413,
+        "x": 62.4,
+        "y": 37.6
       }
     },
     {
@@ -1226,11 +1238,17 @@
       "source": "https://www.wowhead.com/forever/quest=959/trouble-at-the-docks",
       "start": {
         "npcID": 3665,
-        "name": "Crane Operator Bigglefuzz"
+        "name": "Crane Operator Bigglefuzz",
+        "mapID": 1413,
+        "x": 63.0,
+        "y": 37.4
       },
       "finish": {
         "npcID": 3665,
-        "name": "Crane Operator Bigglefuzz"
+        "name": "Crane Operator Bigglefuzz",
+        "mapID": 1413,
+        "x": 63.0,
+        "y": 37.4
       }
     },
     {
@@ -1265,11 +1283,17 @@
       "source": "https://www.wowhead.com/forever/quest=962/serpentbloom",
       "start": {
         "npcID": 3419,
-        "name": "Apothecary Zamah"
+        "name": "Apothecary Zamah",
+        "mapID": 1456,
+        "x": 23.6,
+        "y": 21.4
       },
       "finish": {
         "npcID": 3419,
-        "name": "Apothecary Zamah"
+        "name": "Apothecary Zamah",
+        "mapID": 1456,
+        "x": 23.6,
+        "y": 21.4
       }
     },
     {
@@ -1281,7 +1305,23 @@
         "Horde"
       ],
       "requirementsKnown": false,
-      "source": "https://www.wowhead.com/forever/quest=1490/nara-wildmane"
+      "source": "https://www.wowhead.com/forever/quest=1490/nara-wildmane",
+      "start": {
+        "npcID": 5769,
+        "name": "Arch Druid Hamuul Runetotem"
+      },
+      "finish": {
+        "npcID": 5770,
+        "name": "Nara Wildmane",
+        "mapID": 1456,
+        "x": 75.6,
+        "y": 31.2
+      },
+      "storyline": [
+        1489,
+        1490,
+        914
+      ]
     }
   ],
   "dungeons": [

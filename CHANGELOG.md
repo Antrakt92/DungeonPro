@@ -6,10 +6,15 @@
 - Added map guidance, a direction arrow and optional TomTom support.
 - Added initial quest facts for The Deadmines, Ragefire Chasm and The Hall of Thanes.
 - Added explicit notices for incomplete data and interface translations.
+- Added translated explanations for locked quests and missing information.
+- Preserved saved descriptions after empty client responses and added bounded
+  retries when localized quest-title loading fails.
 - Added a next-step list for dungeon preparation and client-provided objectives.
 - Grouped preparation steps by outside pickups, inside pickups, level gates,
   progress and unknown requirements, with translated headings.
 - Added initial Wailing Caverns quests and corrected Rahauro's approach waypoint.
+- Added sourced approach waypoints for four Wailing Caverns quest-givers and
+  completed the known giver information for Nara Wildmane's story step.
 - Kept unresolved locked quests visible and stopped unfinished quests from
   directing players to their turn-in NPC before objectives are complete.
 - Improved window sizing on shorter screens and recovery of saved positions.
