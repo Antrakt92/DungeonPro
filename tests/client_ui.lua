@@ -53,7 +53,10 @@ STANDARD_TEXT_FONT = "Fonts\\ARIALN.TTF"
 C_QuestLog = { IsQuestFlaggedCompleted = function() return false end, IsOnQuest = function() return false end,
     ReadyForTurnIn = function() return false end, GetTitleForQuestID = function() return nil end,
     RequestLoadQuestByID = function() requests = requests + 1 end }
-C_Timer = { After = function(_, fn) fn() end }
+local delayed = {}
+C_Timer = { After = function(delay, fn)
+    if delay < 1 then fn() else delayed[#delayed + 1] = { delay, fn } end
+end }
 CreateVector2D = function(x, y) return { x = x, y = y } end
 C_Map = { GetMapInfo = function() return { name = "Westfall" } end,
     GetBestMapForUnit = function() return 1436 end,
@@ -148,9 +151,10 @@ check("Close and reopen preserve selection", function()
 end)
 check("Quest-data events pass success to bounded delayed title recovery", function()
     local savedTimer, savedRequest = C_Timer, C_QuestLog.RequestLoadQuestByID
-    local callbacks, calls = {}, 0
+    local callbacks, watchdogs, calls = {}, {}, 0
     C_Timer = { After = function(delay, fn)
-        if delay == 2 then callbacks[#callbacks + 1] = fn else fn() end
+        if delay == 2 then callbacks[#callbacks + 1] = fn
+        elseif delay == 10 then watchdogs[#watchdogs + 1] = fn else fn() end
     end }
     C_QuestLog.RequestLoadQuestByID = function(id) assert(id == 65); calls = calls + 1 end
     eventFrame.scripts.OnEvent(eventFrame, "QUEST_DATA_LOAD_RESULT", 65, false)
@@ -158,6 +162,8 @@ check("Quest-data events pass success to bounded delayed title recovery", functi
     callbacks[1](); assert(calls == 1)
     eventFrame.scripts.OnEvent(eventFrame, "QUEST_DATA_LOAD_RESULT", 65, true)
     eventFrame.scripts.OnEvent(eventFrame, "QUEST_DATA_LOAD_RESULT", 65, false)
+    assert(#watchdogs == 1)
+    watchdogs[1]()
     assert(#callbacks == 1 and calls == 1)
     C_Timer, C_QuestLog.RequestLoadQuestByID = savedTimer, savedRequest
 end)

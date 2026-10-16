@@ -187,6 +187,39 @@ check("Synchronous title failure events keep pending state and delayed recovery"
     for i = 1, 5 do addon.QuestName(168) end
     assert(calls == 3 and #callbacks == 2)
 end)
+check("Silent title requests time out and stale watchdogs cannot fail a newer attempt", function()
+    local isolated = {}
+    assert(loadfile("Core/Namespace.lua"))("DungeonPrep", isolated)
+    assert(loadfile("Core/Client.lua"))("DungeonPrep", isolated)
+    isolated.quests = { [169] = { name = "Fallback" } }
+    local queue, calls = {}, 0
+    C_Timer = { After = function(delay, fn) queue[#queue + 1] = { delay, fn } end }
+    C_QuestLog = { RequestLoadQuestByID = function() calls = calls + 1 end }
+    isolated.Notify = function() isolated.QuestName(169) end
+    assert(isolated.QuestName(169) == "Fallback" and calls == 1)
+    assert(#queue == 1 and queue[1][1] == 10)
+    local old = queue[1][2]
+    old(); assert(#queue == 2 and queue[2][1] == 2)
+    queue[2][2](); assert(calls == 2 and #queue == 3)
+    old(); assert(#queue == 3 and calls == 2)
+    queue[3][2](); queue[4][2](); assert(calls == 3 and #queue == 5)
+    queue[5][2](); assert(#queue == 5)
+    for _ = 1, 10 do isolated.QuestName(169) end
+    assert(calls == 3)
+end)
+check("Successful title events invalidate a pending request watchdog", function()
+    local isolated = {}
+    assert(loadfile("Core/Namespace.lua"))("DungeonPrep", isolated)
+    assert(loadfile("Core/Client.lua"))("DungeonPrep", isolated)
+    isolated.quests = { [170] = { name = "Fallback" } }
+    local callbacks, calls = {}, 0
+    C_Timer = { After = function(_, fn) callbacks[#callbacks + 1] = fn end }
+    C_QuestLog = { RequestLoadQuestByID = function() calls = calls + 1 end }
+    isolated.QuestName(170)
+    assert(#callbacks == 1)
+    isolated.QuestDataResult(170, true); callbacks[1]()
+    isolated.QuestName(170); assert(calls == 1 and #callbacks == 1)
+end)
 check("Invalid and future schemas preserve saved roots and active state exactly", function()
     local savedDB, savedChar, activeDB, activeChar = DungeonPrepDB, DungeonPrepCharDB, addon.db, addon.char
     for _, schema in ipairs({ 0 / 0, math.huge, -math.huge, -1, 0, 0.5, 1.5, false, "1", {}, 2, 99, secret }) do

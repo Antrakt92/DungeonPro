@@ -46,7 +46,16 @@ function addon.QuestName(id)
         requested[id] = request
         request.attempts, request.pending = request.attempts + 1, true
         local ok = pcall(C_QuestLog.RequestLoadQuestByID, id)
-        if not ok then addon.QuestDataResult(id, false) end
+        if not ok then addon.QuestDataResult(id, false)
+        elseif request.pending and C_Timer and type(C_Timer.After) == "function" then
+            local attempt = request.attempts
+            -- A missing result event must not leave this ID pending forever.
+            C_Timer.After(10, function()
+                if requested[id] == request and request.pending and request.attempts == attempt then
+                    addon.QuestDataResult(id, false)
+                end
+            end)
+        end
     end
     return (addon.quests[id] or {}).name or ("#" .. id)
 end
