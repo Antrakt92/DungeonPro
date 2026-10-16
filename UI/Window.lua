@@ -266,6 +266,7 @@ function UI:RefreshDetail()
     end
     for _, b in ipairs(self.chainButtons) do b:Hide() end
     for _, b in ipairs(self.branchButtons) do b:Hide() end
+    for _, b in ipairs(self.requirementButtons) do b:Hide(); b:SetEnabled(false); b:SetScript("OnClick", nil) end
     for _, b in ipairs(self.materialButtons) do b:Hide() end
     for _, buttons in ipairs({ self.startButtons, self.finishButtons }) do
         for _, b in ipairs(buttons) do
@@ -405,10 +406,16 @@ function UI:RefreshDetail()
         self.map:SetEnabled(action ~= nil and action.place ~= nil and action.place.mapID ~= nil)
         self.guide:SetEnabled(action ~= nil and action.place ~= nil and action.place.x ~= nil)
         local branchIndex = 0
+        local requirementIndex = 0
+        if q.requires and #q.requires > 0 then
+            line(addon.L("REQUIREMENT_GROUPS"))
+            line(addon.L("REQUIREMENT_NOTICE"))
+        end
         for groupIndex, group in ipairs(q.requires or {}) do
+            line(addon.L("REQUIREMENT_GROUP", groupIndex))
+            line(addon.L(group.mode == "active" and "REQUIREMENT_ACTIVE" or "REQUIREMENT_COMPLETE"))
             if #group.ids > 1 then
                 local index = groupIndex
-                line(addon.L("BRANCH_GROUP", index))
                 local choices = addon.Clean(addon.char.choices, "table")
                 local saved = choices and addon.Clean(choices[id], "table")
                 local selected = saved and addon.Clean(saved[index], "number")
@@ -440,6 +447,17 @@ function UI:RefreshDetail()
                     option(addon.QuestName(parent) .. " — " .. addon.L(status), parent,
                         status ~= "UNAVAILABLE", parent == selected)
                 end
+            elseif #group.ids == 1 then
+                requirementIndex = requirementIndex + 1
+                local parent = group.ids[1]
+                local row = self:MakeRow(self.detail, self.requirementButtons, requirementIndex, 59)
+                row.questID = parent
+                row.title:SetText(addon.QuestName(parent))
+                local status = engine:State(parent).status
+                row.note:SetText("|cff" .. COLOR[status] .. addon.L(status) .. "|r")
+                row:SetEnabled(true)
+                row:SetScript("OnClick", function() self.quest = parent; self:RefreshDetail() end)
+                y = self:LayoutRow(row, 59, y)
             end
         end
         line(addon.L((q.storyline or q.storylineGroups) and "STORY" or "CHAIN"))
@@ -662,6 +680,7 @@ function UI:Create()
     self.footer = label(frame, "", 22, -668, 640, 11)
     self.frame, self.cards, self.rows, self.details, self.chainButtons, self.branchButtons = frame, {}, {}, {}, {}, {}
     self.materialButtons = {}
+    self.requirementButtons = {}
     self.startButtons, self.finishButtons = {}, {}
     UISpecialFrames[#UISpecialFrames + 1] = "DungeonProWindow"
     for _, d in ipairs(addon.dungeons) do if d.key == addon.char.selectedDungeon then self.dungeon = d end end

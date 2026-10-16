@@ -1011,4 +1011,41 @@ check("Catalogue labels distinguish listed targets from character eligibility an
     ui.search, ui.range, ui.includeUnavailable, ui.dungeon, ui.quest = search, range, includeUnavailable, selected, quest
     ui:Refresh()
 end)
+check("Prerequisite groups expose AND and OR structure and distinguish acceptance from completion", function()
+    local context = { level = 20, faction = "Alliance", active = function(id) return id == 971 end,
+        completed = function(id) return id == 972 end }
+    addon.quests[970] = { id = 970, minLevel = 1, requirementsKnown = true,
+        requires = { { ids = { 971 } }, { ids = { 972, 973 }, mode = "active" } } }
+    addon.quests[971] = { id = 971, minLevel = 1, requirementsKnown = true }
+    addon.quests[972] = { id = 972, minLevel = 1, requirementsKnown = true }
+    addon.quests[973] = { id = 973, minLevel = 1, requirementsKnown = true, factions = { "Horde" } }
+    measurement = function(fs) return fs.text == "Quest 971" and 72 or 18 end
+    showDetail(970, context)
+    assert(detailHas(addon.L("REQUIREMENT_GROUPS")) and detailHas(addon.L("REQUIREMENT_NOTICE")))
+    assert(detailHas(addon.L("REQUIREMENT_GROUP", 1)) and detailHas(addon.L("REQUIREMENT_GROUP", 2)))
+    assert(detailHas(addon.L("REQUIREMENT_COMPLETE")) and detailHas(addon.L("REQUIREMENT_ACTIVE")))
+    assert(ui.engine:State(970).status == "LOCKED" and ui.action.id == 971 and ui.action.kind == "complete")
+    local row = ui.requirementButtons[1]
+    assert(row.shown and row.questID == 971 and row.title.text == "Quest 971" and row.height == 108)
+    assert(row.note.text:find(addon.L("ACTIVE"), 1, true))
+    local unavailable
+    for _, b in ipairs(ui.branchButtons) do if b.shown and b.parentID == 973 then unavailable = b end end
+    assert(unavailable and not unavailable.enabled and not unavailable.scripts.OnClick)
+    row.scripts.OnClick()
+    assert(ui.quest == 971 and ui.engine:State(971).status == "ACTIVE")
+    assert(not row.shown and not row.enabled and not row.scripts.OnClick)
+    showDetail(970, context)
+    assert(ui.requirementButtons[1] == row and row.shown)
+    addon.quests[970].requirementsKnown = false
+    addon.quests[970].requires = { { ids = { 974 } } }
+    showDetail(970, context)
+    assert(ui.engine:State(970).status == "UNKNOWN" and ui.action == nil)
+    assert(row.questID == 974 and row.height == 59 and row.note.text:find(addon.L("UNKNOWN"), 1, true))
+    row.scripts.OnClick()
+    assert(ui.quest == 974 and detailHas(addon.L("REASON_missing")))
+    assert(not detailHas(addon.L("REQUIREMENT_GROUPS")) and not row.shown and not row.scripts.OnClick)
+    for _, id in ipairs({ 970, 971, 972, 973 }) do addon.quests[id] = nil end
+    measurement = nil
+    showDetail(2)
+end)
 print("Preparation UI modeled checks passed: " .. total .. " (no native layout validation)")

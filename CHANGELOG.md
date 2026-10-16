@@ -6,6 +6,11 @@
 - Added map guidance, a direction arrow and optional TomTom support.
 - Added initial quest facts for The Deadmines, Ragefire Chasm and The Hall of Thanes.
 - Added explicit notices for incomplete data and interface translations.
+- Renamed the addon to Dungeon Pro, with `/DP` and `/DungeonPro` commands.
+- Added current quest-offer rewards, experience and objective summaries, kept
+  separate from quest-log progress and preparation requirements.
+- Clarified prerequisite groups and whether a step needs acceptance or completion.
+- Expanded later dungeon quest lists and sourced quest-giver locations.
 - Added translated explanations for locked quests and missing information.
 - Added character filtering with an option to inspect restricted quests, and
   remembered browsing filters per character.
