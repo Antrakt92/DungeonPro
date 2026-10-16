@@ -1,7 +1,7 @@
 local addon, total = {}, 0
-assert(loadfile("Core/Namespace.lua"))("DungeonPrep", addon)
-assert(loadfile("Core/Client.lua"))("DungeonPrep", addon)
-assert(loadfile("Core/Planner.lua"))("DungeonPrep", addon)
+assert(loadfile("Core/Namespace.lua"))("DungeonPro", addon)
+assert(loadfile("Core/Client.lua"))("DungeonPro", addon)
+assert(loadfile("Core/Planner.lua"))("DungeonPro", addon)
 local secret, now, player, npc, rows, calls, notifications = {}, 0, "", "", {}, 0, 0
 local function reset()
     addon.ClearOffers()

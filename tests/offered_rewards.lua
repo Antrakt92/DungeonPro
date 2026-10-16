@@ -1,6 +1,6 @@
 local addon, total = {}, 0
-assert(loadfile("Core/Namespace.lua"))("DungeonPrep", addon)
-assert(loadfile("Core/Client.lua"))("DungeonPrep", addon)
+assert(loadfile("Core/Namespace.lua"))("DungeonPro", addon)
+assert(loadfile("Core/Client.lua"))("DungeonPro", addon)
 local secret, state = {}, {}
 local fixed, choice, itemHook
 local function forbidden()

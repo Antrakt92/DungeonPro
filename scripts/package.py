@@ -7,6 +7,7 @@ import zipfile
 from pathlib import Path, PurePosixPath
 
 ROOT = Path(__file__).resolve().parents[1]
+ADDON_NAME = "DungeonPro"
 
 
 def exact_path(root, name):
@@ -19,11 +20,12 @@ def exact_path(root, name):
 
 
 def package(root=ROOT, output=None):
-    toc = (root / "DungeonPrep.toc").read_text(encoding="utf-8")
+    toc_name = f"{ADDON_NAME}.toc"
+    toc = exact_path(root, toc_name).read_text(encoding="utf-8")
     version = re.search(r"^## Version: ([0-9]+\.[0-9]+\.[0-9]+)$", toc, re.MULTILINE).group(1)
-    names = ["DungeonPrep.toc", "README.md", "CHANGELOG.md", "LICENSE"]
+    names = [toc_name, "README.md", "CHANGELOG.md", "LICENSE"]
     names += [line.strip().replace("\\", "/") for line in toc.splitlines() if line.strip() and not line.startswith("#")]
-    output = output or root / "dist" / f"DungeonPrep-{version}-Forever-dev.zip"
+    output = output or root / "dist" / f"{ADDON_NAME}-{version}-Forever-dev.zip"
     output.parent.mkdir(parents=True, exist_ok=True)
     with zipfile.ZipFile(output, "w", compression=zipfile.ZIP_DEFLATED) as archive:
         for name in names:
@@ -32,14 +34,14 @@ def package(root=ROOT, output=None):
             path = exact_path(root, name)
             if not path.resolve().is_relative_to(root.resolve()):
                 raise ValueError("Package path escapes project")
-            info = zipfile.ZipInfo("DungeonPrep/" + name, (2026, 1, 1, 0, 0, 0))
+            info = zipfile.ZipInfo(f"{ADDON_NAME}/" + name, (2026, 1, 1, 0, 0, 0))
             info.compress_type = zipfile.ZIP_DEFLATED
             archive.writestr(info, path.read_bytes())
     with zipfile.ZipFile(output) as archive:
         assert archive.testzip() is None
         assert len(archive.namelist()) == len(set(archive.namelist())) == len(names)
         for name in names:
-            assert archive.read("DungeonPrep/" + name) == (root / name).read_bytes()
+            assert archive.read(f"{ADDON_NAME}/" + name) == (root / name).read_bytes()
     return output, hashlib.sha256(output.read_bytes()).hexdigest()
 
 

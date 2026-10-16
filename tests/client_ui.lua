@@ -68,19 +68,19 @@ C_Map = { GetMapInfo = function() return { name = "Westfall" } end,
     SetUserWaypoint = function(p) waypoints[#waypoints + 1] = p; return true end }
 UiMapPoint = { CreateFromCoordinates = function(mapID, x, y) return { mapID = mapID, x = x, y = y } end }
 local addon = {}
-for line in io.lines("DungeonPrep.toc") do
-    if line:match("%.lua$") then assert(loadfile((line:gsub("\\", "/"))))("DungeonPrep", addon) end
+for line in io.lines("DungeonPro.toc") do
+    if line:match("%.lua$") then assert(loadfile((line:gsub("\\", "/"))))("DungeonPro", addon) end
 end
 local function check(name, fn)
     local ok, err = pcall(fn); assert(ok, name .. ": " .. tostring(err)); total = total + 1; print("PASS " .. name)
 end
 local eventFrame = objects[#objects]
 check("Addon initializes on the matching Forever client", function()
-    eventFrame.scripts.OnEvent(eventFrame, "ADDON_LOADED", "DungeonPrep")
-    assert(SlashCmdList.DUNGEONPREP and addon.db and addon.char)
+    eventFrame.scripts.OnEvent(eventFrame, "ADDON_LOADED", "DungeonPro")
+    assert(SlashCmdList.DUNGEONPRO and addon.db and addon.char)
 end)
 check("Window opens and filters without requiring cached quest titles", function()
-    SlashCmdList.DUNGEONPREP("")
+    SlashCmdList.DUNGEONPRO("")
     assert(addon.UI.frame:IsShown()); assert(#addon.UI.cards == 29)
     for _, d in ipairs(addon.dungeons) do if d.key == "dm" then addon.UI.dungeon = d end end
     addon.UI:Refresh(); assert(#addon.UI.rows == 6)
@@ -144,13 +144,13 @@ check("Offered text is captured without altering another quest's text", function
     assert(addon.Description(132) ~= "An offered quest description")
 end)
 check("Native storyline probe is optional and tolerates missing APIs", function()
-    SlashCmdList.DUNGEONPREP("probe")
+    SlashCmdList.DUNGEONPRO("probe")
     assert(addon.char.probe.interface == 16001 and next(addon.char.probe.questLines) == nil)
     assert(addon.char.probe.api.lines == false and addon.char.probe.api.logText == false)
 end)
 check("Close and reopen preserve selection", function()
-    SlashCmdList.DUNGEONPREP(""); assert(not addon.UI.frame:IsShown())
-    SlashCmdList.DUNGEONPREP(""); assert(addon.UI.frame:IsShown() and addon.UI.quest == 166)
+    SlashCmdList.DUNGEONPRO(""); assert(not addon.UI.frame:IsShown())
+    SlashCmdList.DUNGEONPRO(""); assert(addon.UI.frame:IsShown() and addon.UI.quest == 166)
 end)
 check("Quest-data events pass success to bounded delayed title recovery", function()
     local savedTimer, savedRequest = C_Timer, C_QuestLog.RequestLoadQuestByID

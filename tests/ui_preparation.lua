@@ -23,8 +23,10 @@ for _, name in ipairs({ "SetFont", "SetJustifyH", "SetTextColor", "SetAllPoints"
     "SetHighlightTexture", "SetFrameStrata", "EnableMouse", "SetMovable", "RegisterForDrag",
     "StartMoving", "StopMovingOrSizing", "SetBackdrop", "SetBackdropColor", "SetBackdropBorderColor",
     "SetAutoFocus", "SetScrollChild" }) do methods[name] = function() end end
-local function object()
-    return setmetatable({ scripts = {} }, { __index = methods })
+local function object(_, name)
+    local frame = setmetatable({ scripts = {}, name = name }, { __index = methods })
+    if name then _G[name] = frame end
+    return frame
 end
 function methods:CreateTexture() local texture = object(); texture.shown = true; return texture end
 function methods:CreateFontString() return object() end
@@ -35,9 +37,10 @@ GetScreenWidth = function() return screenWidth end
 GetScreenHeight = function() return screenHeight end
 GetLocale = function() return "enUS" end
 local addon, done = {}, { [7] = true }
-assert(loadfile("Core/Namespace.lua"))("DungeonPrep", addon)
-assert(loadfile("Locales/Strings.lua"))("DungeonPrep", addon)
-assert(loadfile("Core/Planner.lua"))("DungeonPrep", addon)
+assert(loadfile("Core/Namespace.lua"))("DungeonPro", addon)
+assert(loadfile("Locales/Strings.lua"))("DungeonPro", addon)
+assert(loadfile("Locales/Translations.lua"))("DungeonPro", addon)
+assert(loadfile("Core/Planner.lua"))("DungeonPro", addon)
 addon.db = { locale = "enUS", window = { x = 999999, y = -999999 } }
 addon.char = { filters = { range = "true", preparation = 1, includeUnavailable = "true", other = "preserve" } }
 addon.Context = function() return {
@@ -60,7 +63,7 @@ addon.quests[4].startsInside = true
 addon.quests[5].minLevel = 30
 addon.dungeons = { { key = "fixture", name = "Dungeon", minLevel = 10, maxLevel = 30,
     coverage = "reviewed", quests = { 100, 101, 3, 4, 5, 6, 7 } } }
-assert(loadfile("UI/Window.lua"))("DungeonPrep", addon)
+assert(loadfile("UI/Window.lua"))("DungeonPro", addon)
 local ui, total = addon.UI, 0
 local function check(name, fn)
     local ok, err = pcall(fn)
@@ -73,6 +76,17 @@ local function visibleRows()
     return result
 end
 ui:Create(); ui.frame:Show(); ui.dungeon = addon.dungeons[1]; ui:Refresh()
+check("Dungeon Pro uses the localized product title and its own escape-close frame", function()
+    assert(ui.title.text == addon.L("TITLE") and ui.title.text == "Dungeon Pro")
+    assert(ui.frame.name == "DungeonProWindow" and _G.DungeonProWindow == ui.frame)
+    assert(UISpecialFrames[#UISpecialFrames] == "DungeonProWindow" and _G.DungeonPrepWindow == nil)
+    local count = 0
+    for _, strings in pairs(addon.locales) do
+        assert(strings.TITLE == "Dungeon Pro")
+        count = count + 1
+    end
+    assert(count == 10)
+end)
 check("Character filters default safely and reject non-boolean saved values", function()
     assert(not ui.range and not ui.preparation and not ui.includeUnavailable)
     assert(ui.characterButton.text == addon.L("MY_CHARACTER"))

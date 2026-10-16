@@ -562,7 +562,7 @@ end
 function UI:Create()
     self:LoadFilters()
     FONT = STANDARD_TEXT_FONT or "Fonts\\ARIALN.TTF"
-    local frame = CreateFrame("Frame", "DungeonPrepWindow", UIParent, "BackdropTemplate")
+    local frame = CreateFrame("Frame", "DungeonProWindow", UIParent, "BackdropTemplate")
     frame:SetSize(1100, 700); frame:SetPoint("CENTER")
     self.frame = frame
     self:Fit()
@@ -593,7 +593,7 @@ function UI:Create()
     frame:SetBackdrop({ bgFile = "Interface\\Buttons\\WHITE8X8", edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border", edgeSize = 16 })
     frame:SetBackdropColor(0.045, 0.065, 0.085, 0.98)
     frame:SetBackdropBorderColor(0.7, 0.55, 0.27, 1)
-    label(frame, "DungeonPrep", 22, -18, 360, 24)
+    self.title = label(frame, addon.L("TITLE"), 22, -18, 360, 24)
     self.subtitle = label(frame, "", 22, -49, 500, 13)
     local close = CreateFrame("Button", nil, frame, "UIPanelCloseButton"); close:SetPoint("TOPRIGHT", -4, -4)
     local search = CreateFrame("EditBox", nil, frame, "InputBoxTemplate")
@@ -653,7 +653,7 @@ function UI:Create()
     self.frame, self.cards, self.rows, self.details, self.chainButtons, self.branchButtons = frame, {}, {}, {}, {}, {}
     self.materialButtons = {}
     self.startButtons, self.finishButtons = {}, {}
-    UISpecialFrames[#UISpecialFrames + 1] = "DungeonPrepWindow"
+    UISpecialFrames[#UISpecialFrames + 1] = "DungeonProWindow"
     for _, d in ipairs(addon.dungeons) do if d.key == addon.char.selectedDungeon then self.dungeon = d end end
     frame:SetScript("OnShow", function() self:Fit(); self:Refresh() end)
     frame:Hide()

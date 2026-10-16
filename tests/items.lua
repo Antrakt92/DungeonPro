@@ -2,8 +2,8 @@ local addon, total, timers, names, cached, requests, notices, lastID
 local secret = {}
 local function reset()
     addon, timers, names, cached, requests, notices = {}, {}, {}, false, 0, 0
-    assert(loadfile("Core/Namespace.lua"))("DungeonPrep", addon)
-    assert(loadfile("Core/Client.lua"))("DungeonPrep", addon)
+    assert(loadfile("Core/Namespace.lua"))("DungeonPro", addon)
+    assert(loadfile("Core/Client.lua"))("DungeonPro", addon)
     addon.listeners[1] = function() notices = notices + 1 end
     issecretvalue = function(value) return value == secret end
     C_Item = {

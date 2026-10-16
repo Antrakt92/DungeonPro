@@ -1,7 +1,7 @@
 local addon = {}
-assert(loadfile("Core/Namespace.lua"))("DungeonPrep", addon)
-assert(loadfile("Core/Planner.lua"))("DungeonPrep", addon)
-assert(loadfile("Database/Catalog.lua"))("DungeonPrep", addon)
+assert(loadfile("Core/Namespace.lua"))("DungeonPro", addon)
+assert(loadfile("Core/Planner.lua"))("DungeonPro", addon)
+assert(loadfile("Database/Catalog.lua"))("DungeonPro", addon)
 local classes = { "WARRIOR", "PALADIN", "HUNTER", "ROGUE", "PRIEST", "DEATHKNIGHT", "SHAMAN",
     "MAGE", "WARLOCK", "MONK", "DRUID", "DEMONHUNTER", "EVOKER" }
 local races, seen = { 1 }, { [1] = true }

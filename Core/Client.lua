@@ -455,8 +455,12 @@ function addon.CaptureQuestText()
 end
 
 function addon.RestoreDB()
-    local db = type(DungeonPrepDB) == "table" and DungeonPrepDB or {}
-    local char = type(DungeonPrepCharDB) == "table" and DungeonPrepCharDB or {}
+    local db, char = DungeonProDB, DungeonProCharDB
+    if type(db) == "nil" then db = DungeonPrepDB end
+    if type(char) == "nil" then char = DungeonPrepCharDB end
+    if type(db) ~= "nil" and not addon.Clean(db, "table") then return false end
+    if type(char) ~= "nil" and not addon.Clean(char, "table") then return false end
+    db, char = db or {}, char or {}
     if type(db.schema) ~= "nil" then
         local schema = addon.Clean(db.schema, "number")
         if not schema or schema < 1 or schema % 1 ~= 0 or schema > 1 then return false end
@@ -467,7 +471,7 @@ function addon.RestoreDB()
     if type(char.texts) ~= "table" then char.texts = {} end
     if type(char.filters) ~= "table" then char.filters = {} end
     addon.db, addon.char = db, char
-    DungeonPrepDB, DungeonPrepCharDB = db, char
+    DungeonProDB, DungeonProCharDB = db, char
     return true
 end
 
@@ -501,6 +505,6 @@ function addon.ProbeClient()
         end
     end
     addon.char.probe = result
-    print("DungeonPrep: client probe saved. No quest text or character identity exported.")
+    print("Dungeon Pro: client probe saved. No quest text or character identity exported.")
     return result
 end

@@ -20,10 +20,24 @@ class PackageTests(unittest.TestCase):
             path, _ = packager.package(output=Path(tmp) / "addon.zip")
             with zipfile.ZipFile(path) as archive:
                 names = archive.namelist()
-                self.assertIn("DungeonPrep/DungeonPrep.toc", names)
-                self.assertIn("DungeonPrep/Database/Catalog.lua", names)
+                self.assertIn("DungeonPro/DungeonPro.toc", names)
+                self.assertIn("DungeonPro/Database/Catalog.lua", names)
                 self.assertFalse(any("tests/" in p or "scripts/" in p or "data/" in p for p in names))
-                self.assertTrue(all(p.startswith("DungeonPrep/") for p in names))
+                self.assertTrue(all(p.startswith("DungeonPro/") for p in names))
+
+    def test_default_archive_name_and_required_toc_follow_the_new_addon_identifier(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "DungeonPro.toc").write_text("## Version: 1.2.3\nCore.lua\n", encoding="utf-8")
+            for name in ("README.md", "CHANGELOG.md", "LICENSE", "Core.lua"):
+                (root / name).write_text("fixture\n", encoding="utf-8")
+            path, _ = packager.package(root=root)
+            self.assertEqual(path, root / "dist" / "DungeonPro-1.2.3-Forever-dev.zip")
+            with zipfile.ZipFile(path) as archive:
+                self.assertIn("DungeonPro/DungeonPro.toc", archive.namelist())
+            (root / "DungeonPro.toc").rename(root / "DungeonPrep.toc")
+            with self.assertRaisesRegex(ValueError, "DungeonPro.toc"):
+                packager.package(root=root)
 
     def test_build_is_deterministic(self):
         with tempfile.TemporaryDirectory() as tmp:

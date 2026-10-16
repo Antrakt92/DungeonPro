@@ -15,10 +15,10 @@ function methods:CreateFontString() return object() end
 CreateFrame = object
 UIParent = object()
 local addon = {}
-assert(loadfile("Core/Namespace.lua"))("DungeonPrep", addon)
+assert(loadfile("Core/Namespace.lua"))("DungeonPro", addon)
 addon.L = function(key) return key end
 addon.QuestName = function() return "Quest" end
-assert(loadfile("UI/Navigation.lua"))("DungeonPrep", addon)
+assert(loadfile("UI/Navigation.lua"))("DungeonPro", addon)
 local nav, total, nativeCalls, clears, current = addon.Navigation, 0
 local point = { mapID = 1, x = 60, y = 70 }
 local action = { id = 1, kind = "visit", place = point }

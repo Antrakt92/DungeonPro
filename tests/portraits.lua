@@ -1,6 +1,6 @@
 local addon, total = {}, 0
-assert(loadfile("Core/Namespace.lua"))("DungeonPrep", addon)
-assert(loadfile("Core/Client.lua"))("DungeonPrep", addon)
+assert(loadfile("Core/Namespace.lua"))("DungeonPro", addon)
+assert(loadfile("Core/Client.lua"))("DungeonPro", addon)
 local secret, selected, index, display, name, calls, writes = {}, nil, nil, nil, nil, 0, 0
 local function reset()
     selected, index, display, name, calls, writes = 95036, 7, 12345, "Native Portrait", 0, 0

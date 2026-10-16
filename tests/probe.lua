@@ -1,6 +1,6 @@
 local addon, count, secret = {}, 0, {}
-assert(loadfile("Core/Namespace.lua"))("DungeonPrep", addon)
-assert(loadfile("Core/Client.lua"))("DungeonPrep", addon)
+assert(loadfile("Core/Namespace.lua"))("DungeonPro", addon)
+assert(loadfile("Core/Client.lua"))("DungeonPro", addon)
 addon.char = { untouched = {} }
 GetBuildInfo = function() return "1.60.1", "70425", "", 16001 end
 issecretvalue = function(value) return value == secret end

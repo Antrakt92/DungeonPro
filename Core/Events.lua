@@ -26,9 +26,9 @@ events:SetScript("OnEvent", function(_, event, arg1, arg2)
         if arg1 ~= name or initialized then return end
         local _, _, _, interface = GetBuildInfo()
         if interface ~= 16001 or WOW_PROJECT_ID ~= 18 then
-            print("DungeonPrep: " .. addon.L("UNSUPPORTED")); return
+            print("Dungeon Pro: " .. addon.L("UNSUPPORTED")); return
         end
-        if not addon.RestoreDB() then print("DungeonPrep: unsupported saved data version"); return end
+        if not addon.RestoreDB() then print("Dungeon Pro: unsupported saved data version"); return end
         initialized = true
         for _, e in ipairs({ "QUEST_LOG_UPDATE", "QUEST_DATA_LOAD_RESULT", "ITEM_DATA_LOAD_RESULT", "QUEST_ACCEPTED", "QUEST_REMOVED",
             "QUEST_TURNED_IN", "PLAYER_LEVEL_UP", "PLAYER_ENTERING_WORLD", "QUEST_DETAIL", "PLAYER_LOGOUT",
@@ -36,9 +36,11 @@ events:SetScript("OnEvent", function(_, event, arg1, arg2)
             "QUEST_PROGRESS", "QUEST_COMPLETE", "QUEST_ITEM_UPDATE", "PLAYER_LEAVING_WORLD" }) do
             events:RegisterEvent(e)
         end
-        SLASH_DUNGEONPREP1 = "/dprep"
-        SLASH_DUNGEONPREP2 = "/dungeonprep"
-        SlashCmdList.DUNGEONPREP = function(msg)
+        SLASH_DUNGEONPRO1 = "/dpro"
+        SLASH_DUNGEONPRO2 = "/dungeonpro"
+        SLASH_DUNGEONPRO3 = "/dprep"
+        SLASH_DUNGEONPRO4 = "/dungeonprep"
+        SlashCmdList.DUNGEONPRO = function(msg)
             if msg == "clear" then addon.Navigation.Stop()
             elseif msg == "probe" then addon.ProbeClient()
             else addon.UI:Toggle() end

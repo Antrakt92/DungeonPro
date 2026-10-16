@@ -1,4 +1,4 @@
-# DungeonPrep
+# Dungeon Pro
 
 Prepare your dungeon quests before entering: see what you already carry, follow
 prerequisite quests and find the next available step.
@@ -64,14 +64,16 @@ as a mandatory prerequisite.
 
 ## Try the development build
 
-Build with `python scripts/package.py`. Extract the ZIP's `DungeonPrep` folder
+Build with `python scripts/package.py`. Extract the ZIP's `DungeonPro` folder
 into your **Forever client's** `Interface/AddOns` folder, then reload the UI.
 This build has not yet passed native-client or visual acceptance.
 
-- `/dprep` or `/dungeonprep`: open or close the browser.
-- `/dprep clear`: clear the built-in guide.
-- `/dprep probe`: save a small capability/quest-line report in this addon's own
+- `/dpro` or `/dungeonpro`: open or close the browser.
+- `/dpro clear`: clear the built-in guide.
+- `/dpro probe`: save a small capability/quest-line report in this addon's own
   character settings. It does not export character identity or quest text.
+
+Development aliases `/dprep` and `/dungeonprep` are also supported.
 
 The language button cycles through the interface languages. Search checks both
 localized and English dungeon names. English A–Z matches ignore letter case;

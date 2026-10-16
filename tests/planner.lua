@@ -1,7 +1,7 @@
 local addon = {}
-assert(loadfile("Core/Namespace.lua"))("DungeonPrep", addon)
-assert(loadfile("Core/Planner.lua"))("DungeonPrep", addon)
-assert(loadfile("Database/Catalog.lua"))("DungeonPrep", addon)
+assert(loadfile("Core/Namespace.lua"))("DungeonPro", addon)
+assert(loadfile("Core/Planner.lua"))("DungeonPro", addon)
+assert(loadfile("Database/Catalog.lua"))("DungeonPro", addon)
 local P, passed = addon.Planner, 0
 local function check(name, fn)
     local ok, err = pcall(fn)
@@ -367,10 +367,10 @@ check("Runtime completion links bound malformed or excessive input without mutat
 end)
 check("Future schema is preserved", function()
     GetLocale = function() return "enUS" end
-    assert(loadfile("Core/Client.lua"))("DungeonPrep", addon)
-    DungeonPrepDB = { schema = 99, sentinel = {} }
-    local previous = DungeonPrepDB
-    eq(addon.RestoreDB(), false); eq(DungeonPrepDB, previous); eq(DungeonPrepDB.schema, 99)
+    assert(loadfile("Core/Client.lua"))("DungeonPro", addon)
+    DungeonProDB = { schema = 99, sentinel = {} }
+    local previous = DungeonProDB
+    eq(addon.RestoreDB(), false); eq(DungeonProDB, previous); eq(DungeonProDB.schema, 99)
 end)
 check("Class API exceptions become unknown restrictions", function()
     UnitClass = function() error("blocked") end

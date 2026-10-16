@@ -1,10 +1,10 @@
 ## Interface: 16001
-## Title: DungeonPrep
+## Title: Dungeon Pro
 ## Notes: Prepare your dungeon quests and find the next step in their chains.
 ## Author: Antrakt92
 ## Version: 0.1.0
-## SavedVariables: DungeonPrepDB
-## SavedVariablesPerCharacter: DungeonPrepCharDB
+## SavedVariables: DungeonProDB
+## SavedVariablesPerCharacter: DungeonProCharDB
 ## IconTexture: Interface\Icons\INV_Misc_Map_01
 
 Core\Namespace.lua

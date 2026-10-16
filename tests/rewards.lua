@@ -1,6 +1,6 @@
 local addon, total = {}, 0
-assert(loadfile("Core/Namespace.lua"))("DungeonPrep", addon)
-assert(loadfile("Core/Client.lua"))("DungeonPrep", addon)
+assert(loadfile("Core/Namespace.lua"))("DungeonPro", addon)
+assert(loadfile("Core/Client.lua"))("DungeonPro", addon)
 local selected, logIndex, fixedCount, choiceCount, money = 65, 1, 1, 1, 12345
 local fixed, choice = {}, {}
 local secret = {}

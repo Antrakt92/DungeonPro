@@ -3,8 +3,8 @@ local locale, selected, textCalls = "ruRU", 200, 0
 local secret = {}
 issecretvalue = function(value) return value == secret end
 GetLocale = function() return locale end
-assert(loadfile("Core/Namespace.lua"))("DungeonPrep", addon)
-assert(loadfile("Core/Client.lua"))("DungeonPrep", addon)
+assert(loadfile("Core/Namespace.lua"))("DungeonPro", addon)
+assert(loadfile("Core/Client.lua"))("DungeonPro", addon)
 addon.L = function(key) return key end
 addon.char = { texts = {} }
 local function check(name, fn)
@@ -233,8 +233,8 @@ check("Synchronous title failure events keep pending state and delayed recovery"
 end)
 check("Silent title requests time out and stale watchdogs cannot fail a newer attempt", function()
     local isolated = {}
-    assert(loadfile("Core/Namespace.lua"))("DungeonPrep", isolated)
-    assert(loadfile("Core/Client.lua"))("DungeonPrep", isolated)
+    assert(loadfile("Core/Namespace.lua"))("DungeonPro", isolated)
+    assert(loadfile("Core/Client.lua"))("DungeonPro", isolated)
     isolated.quests = { [169] = { name = "Fallback" } }
     local queue, calls = {}, 0
     C_Timer = { After = function(delay, fn) queue[#queue + 1] = { delay, fn } end }
@@ -253,8 +253,8 @@ check("Silent title requests time out and stale watchdogs cannot fail a newer at
 end)
 check("Successful title events invalidate a pending request watchdog", function()
     local isolated = {}
-    assert(loadfile("Core/Namespace.lua"))("DungeonPrep", isolated)
-    assert(loadfile("Core/Client.lua"))("DungeonPrep", isolated)
+    assert(loadfile("Core/Namespace.lua"))("DungeonPro", isolated)
+    assert(loadfile("Core/Client.lua"))("DungeonPro", isolated)
     isolated.quests = { [170] = { name = "Fallback" } }
     local callbacks, calls = {}, 0
     C_Timer = { After = function(_, fn) callbacks[#callbacks + 1] = fn end }
@@ -265,44 +265,106 @@ check("Successful title events invalidate a pending request watchdog", function(
     isolated.QuestName(170); assert(calls == 1 and #callbacks == 1)
 end)
 check("Invalid and future schemas preserve saved roots and active state exactly", function()
-    local savedDB, savedChar, activeDB, activeChar = DungeonPrepDB, DungeonPrepCharDB, addon.db, addon.char
+    local savedDB, savedChar, activeDB, activeChar = DungeonProDB, DungeonProCharDB, addon.db, addon.char
     for _, schema in ipairs({ 0 / 0, math.huge, -math.huge, -1, 0, 0.5, 1.5, false, "1", {}, 2, 99, secret }) do
         local marker, charMarker = {}, {}
         local db = { schema = schema, locale = false, window = false, marker = marker }
         local char = { texts = false, filters = false, marker = charMarker }
-        DungeonPrepDB, DungeonPrepCharDB = db, char
+        DungeonProDB, DungeonProCharDB = db, char
         assert(addon.RestoreDB() == false)
-        assert(DungeonPrepDB == db and DungeonPrepCharDB == char)
+        assert(DungeonProDB == db and DungeonProCharDB == char)
         assert(addon.db == activeDB and addon.char == activeChar)
         assert(db.marker == marker and db.locale == false and db.window == false)
         assert(char.marker == charMarker and char.texts == false and char.filters == false)
         if type(schema) == "number" and schema ~= schema then assert(db.schema ~= db.schema)
         else assert(db.schema == schema) end
     end
-    DungeonPrepDB, DungeonPrepCharDB = savedDB, savedChar
+    DungeonProDB, DungeonProCharDB = savedDB, savedChar
 end)
 check("Current and absent schemas retain valid roots nested identities and unrelated fields", function()
-    local savedDB, savedChar, activeDB, activeChar = DungeonPrepDB, DungeonPrepCharDB, addon.db, addon.char
+    local savedDB, savedChar, activeDB, activeChar = DungeonProDB, DungeonProCharDB, addon.db, addon.char
     for _, withSchema in ipairs({ false, true }) do
         local window, texts, filters, marker = {}, {}, {}, {}
         local db = { locale = "ruRU", window = window, marker = marker }
         if withSchema then db.schema = 1 end
         local char = { texts = texts, filters = filters, marker = marker }
-        DungeonPrepDB, DungeonPrepCharDB = db, char
+        DungeonProDB, DungeonProCharDB = db, char
         assert(addon.RestoreDB() == true)
         assert(db.schema == 1 and db.locale == "ruRU" and db.marker == marker)
-        assert(DungeonPrepDB == db and addon.db == db and db.window == window)
-        assert(DungeonPrepCharDB == char and addon.char == char and char.texts == texts and char.filters == filters)
+        assert(DungeonProDB == db and addon.db == db and db.window == window)
+        assert(DungeonProCharDB == char and addon.char == char and char.texts == texts and char.filters == filters)
         assert(char.marker == marker)
     end
-    DungeonPrepDB, DungeonPrepCharDB, addon.db, addon.char = savedDB, savedChar, activeDB, activeChar
+    DungeonProDB, DungeonProCharDB, addon.db, addon.char = savedDB, savedChar, activeDB, activeChar
+end)
+check("Renamed saved roots adopt loaded legacy roots without replacing nested settings", function()
+    local newDB, newChar, legacyDB, legacyChar = DungeonProDB, DungeonProCharDB, DungeonPrepDB, DungeonPrepCharDB
+    local activeDB, activeChar = addon.db, addon.char
+    local window, texts, filters, marker = {}, {}, {}, {}
+    local db = { schema = 1, locale = "ruRU", window = window, marker = marker }
+    local char = { texts = texts, filters = filters, marker = marker }
+    DungeonProDB, DungeonProCharDB, DungeonPrepDB, DungeonPrepCharDB = nil, nil, db, char
+    assert(addon.RestoreDB())
+    assert(DungeonProDB == db and DungeonProCharDB == char and addon.db == db and addon.char == char)
+    assert(DungeonPrepDB == db and DungeonPrepCharDB == char)
+    assert(db.window == window and char.texts == texts and char.filters == filters and char.marker == marker)
+    DungeonProDB, DungeonProCharDB, DungeonPrepDB, DungeonPrepCharDB = newDB, newChar, legacyDB, legacyChar
+    addon.db, addon.char = activeDB, activeChar
+end)
+check("New saved roots win independently over legacy settings without altering the ignored root", function()
+    local newDB, newChar, legacyDB, legacyChar = DungeonProDB, DungeonProCharDB, DungeonPrepDB, DungeonPrepCharDB
+    local activeDB, activeChar = addon.db, addon.char
+    for _, accountNew in ipairs({ false, true }) do
+        for _, characterNew in ipairs({ false, true }) do
+            local db, char = { schema = 1, locale = "enUS", window = {} }, { texts = {}, filters = {} }
+            local oldDB = { schema = accountNew and 99 or 1, locale = "ruRU", window = {} }
+            local oldChar = { texts = {}, filters = {} }
+            DungeonProDB, DungeonProCharDB = accountNew and db or nil, characterNew and char or nil
+            DungeonPrepDB, DungeonPrepCharDB = oldDB, oldChar
+            assert(addon.RestoreDB())
+            assert(DungeonProDB == (accountNew and db or oldDB))
+            assert(DungeonProCharDB == (characterNew and char or oldChar))
+            assert(DungeonPrepDB == oldDB and DungeonPrepCharDB == oldChar)
+            assert(oldDB.locale == "ruRU" and oldDB.schema == (accountNew and 99 or 1))
+        end
+    end
+    DungeonProDB, DungeonProCharDB, DungeonPrepDB, DungeonPrepCharDB = newDB, newChar, legacyDB, legacyChar
+    addon.db, addon.char = activeDB, activeChar
+end)
+check("Invalid legacy schema fails atomically before adopting or normalizing either root", function()
+    local newDB, newChar, legacyDB, legacyChar = DungeonProDB, DungeonProCharDB, DungeonPrepDB, DungeonPrepCharDB
+    local activeDB, activeChar = addon.db, addon.char
+    for _, schema in ipairs({ 99, "1", false, secret, 0/0 }) do
+        local db, char = { schema = schema, window = false, locale = false }, { texts = false, filters = false }
+        DungeonProDB, DungeonProCharDB, DungeonPrepDB, DungeonPrepCharDB = nil, nil, db, char
+        assert(addon.RestoreDB() == false)
+        assert(DungeonProDB == nil and DungeonProCharDB == nil)
+        assert(DungeonPrepDB == db and DungeonPrepCharDB == char and db.window == false and db.locale == false)
+        assert(char.texts == false and char.filters == false and addon.db == activeDB and addon.char == activeChar)
+    end
+    DungeonProDB, DungeonProCharDB, DungeonPrepDB, DungeonPrepCharDB = newDB, newChar, legacyDB, legacyChar
+end)
+check("An invalid new root is preserved and cannot fall through to a valid legacy root", function()
+    local newDB, newChar, legacyDB, legacyChar = DungeonProDB, DungeonProCharDB, DungeonPrepDB, DungeonPrepCharDB
+    local activeDB, activeChar = addon.db, addon.char
+    for _, bad in ipairs({ false, "invalid", 123, secret, { schema = 99, window = false } }) do
+        DungeonProDB, DungeonProCharDB = bad, nil
+        DungeonPrepDB, DungeonPrepCharDB = { schema = 1 }, { texts = {}, filters = {} }
+        assert(addon.RestoreDB() == false and DungeonProDB == bad and DungeonProCharDB == nil)
+        assert(addon.db == activeDB and addon.char == activeChar)
+        if type(bad) ~= "table" or bad == secret then
+            DungeonProDB, DungeonProCharDB = { schema = 1, window = false }, bad
+            assert(addon.RestoreDB() == false and DungeonProCharDB == bad and DungeonProDB.window == false)
+        end
+    end
+    DungeonProDB, DungeonProCharDB, DungeonPrepDB, DungeonPrepCharDB = newDB, newChar, legacyDB, legacyChar
 end)
 check("Broken or missing title schedulers release pending requests within three attempts", function()
     local savedTimer = C_Timer
     for _, timer in ipairs({ {}, { After = true }, { After = function() error("scheduler failed") end } }) do
         local isolated, calls, notifications = {}, 0, 0
-        assert(loadfile("Core/Namespace.lua"))("DungeonPrep", isolated)
-        assert(loadfile("Core/Client.lua"))("DungeonPrep", isolated)
+        assert(loadfile("Core/Namespace.lua"))("DungeonPro", isolated)
+        assert(loadfile("Core/Client.lua"))("DungeonPro", isolated)
         isolated.quests[777] = { name = "Fallback" }
         isolated.Notify = function() notifications = notifications + 1; isolated.QuestName(777) end
         C_Timer = timer
@@ -314,8 +376,8 @@ check("Broken or missing title schedulers release pending requests within three 
 end)
 check("A throwing retry scheduler permits bounded later title requests", function()
     local isolated, calls = {}, 0
-    assert(loadfile("Core/Namespace.lua"))("DungeonPrep", isolated)
-    assert(loadfile("Core/Client.lua"))("DungeonPrep", isolated)
+    assert(loadfile("Core/Namespace.lua"))("DungeonPro", isolated)
+    assert(loadfile("Core/Client.lua"))("DungeonPro", isolated)
     isolated.quests[778] = { name = "Fallback" }
     isolated.Notify = function() error("must not notify immediately") end
     C_QuestLog = { RequestLoadQuestByID = function(id) calls = calls + 1; isolated.QuestDataResult(id, false) end }

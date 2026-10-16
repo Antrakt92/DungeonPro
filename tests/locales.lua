@@ -1,7 +1,7 @@
 local addon = {}
 GetLocale = function() return "enUS" end
-assert(loadfile("Locales/Strings.lua"))("DungeonPrep", addon)
-assert(loadfile("Locales/Translations.lua"))("DungeonPrep", addon)
+assert(loadfile("Locales/Strings.lua"))("DungeonPro", addon)
+assert(loadfile("Locales/Translations.lua"))("DungeonPro", addon)
 local n = 0
 for locale, strings in pairs(addon.locales) do
     for key, english in pairs(addon.locales.enUS) do
