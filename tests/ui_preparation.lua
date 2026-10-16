@@ -8,6 +8,7 @@ function methods:GetPoint() return unpack(self.point) end
 function methods:ClearAllPoints() self.point = nil end
 function methods:SetScript(event, fn) self.scripts[event] = fn end
 function methods:SetText(value) self.text = value end
+function methods:SetTexture(value) self.texture = value end
 function methods:GetText() return self.text or "" end
 function methods:SetEnabled(value) self.enabled = value end
 function methods:GetStringHeight() if measurement then return measurement(self) end; return 18 end
@@ -19,13 +20,13 @@ function methods:Hide() self.shown = false end
 function methods:Show() self.shown = true end
 function methods:SetShown(value) if value then self:Show() else self:Hide() end end
 for _, name in ipairs({ "SetFont", "SetJustifyH", "SetTextColor", "SetAllPoints", "SetColorTexture",
-    "SetHighlightTexture", "SetTexture", "SetFrameStrata", "EnableMouse", "SetMovable", "RegisterForDrag",
+    "SetHighlightTexture", "SetFrameStrata", "EnableMouse", "SetMovable", "RegisterForDrag",
     "StartMoving", "StopMovingOrSizing", "SetBackdrop", "SetBackdropColor", "SetBackdropBorderColor",
     "SetAutoFocus", "SetScrollChild" }) do methods[name] = function() end end
 local function object()
     return setmetatable({ scripts = {} }, { __index = methods })
 end
-function methods:CreateTexture() return object() end
+function methods:CreateTexture() local texture = object(); texture.shown = true; return texture end
 function methods:CreateFontString() return object() end
 CreateFrame = object
 UIParent, UISpecialFrames = object(), {}
@@ -592,5 +593,69 @@ check("Material rows wrap, clear on redraw and tolerate an older planner", funct
     addon.quests[800], addon.quests[801], addon.quests[802], done[802] = nil, nil, nil, nil
     showDetail(2)
     for _, b in ipairs(ui.materialButtons) do assert(not b.shown) end
+end)
+check("Native quest portrait renders a display ID in its own measured flow space", function()
+    local beforeHeight
+    showDetail(2); beforeHeight = ui.detail.height
+    local rendered, portraitCalls = {}, 0
+    addon.QuestPortrait = function(id) assert(id == 2); return { displayID = 12345, name = "Native" } end
+    SetPortraitTextureFromCreatureDisplayID = function(texture, displayID)
+        portraitCalls = portraitCalls + 1
+        assert(not texture.shown, "portrait must stay hidden until rendering succeeds")
+        rendered.texture, rendered.displayID = texture, displayID
+        texture:SetTexture("rendered portrait")
+    end
+    measurement = function(fs) if fs.text == addon.L("QUEST_PORTRAIT") then return 54 end; return 18 end
+    showDetail(2)
+    assert(ui.portrait.shown and ui.portrait.width == 64 and ui.portrait.height == 64)
+    assert(rendered.texture == ui.portrait and rendered.displayID == 12345 and portraitCalls == 1)
+    assert(detailHas(addon.L("QUEST_PORTRAIT")))
+    assert(ui.detail.height == beforeHeight + 54 + 8 + 64 + 8)
+    local portraitBottom = -ui.portrait.point[3] + 64
+    local following
+    for _, fs in ipairs(ui.details) do
+        if fs.shown and fs.text:find(addon.L("START"), 1, true) then following = -fs.point[3] end
+    end
+    assert(following and following >= portraitBottom + 8)
+    measurement = nil
+end)
+check("Portrait redraw reuses one texture and clears it when switching quests", function()
+    local first = ui.portrait
+    addon.QuestPortrait = function(id) return id == 2 and { displayID = 54321 } or nil end
+    showDetail(2)
+    assert(ui.portrait == first and first.shown and first.texture == "rendered portrait")
+    showDetail(3)
+    assert(not first.shown and first.texture == nil and not detailHas(addon.L("QUEST_PORTRAIT")))
+    showDetail(2)
+    assert(ui.portrait == first and first.shown)
+    ui.quest = nil; ui:RefreshDetail()
+    assert(not first.shown and first.texture == nil)
+end)
+check("Missing or throwing portrait producer and renderer leave no stale image", function()
+    local first = ui.portrait
+    addon.QuestPortrait = nil; showDetail(2)
+    assert(not first.shown and first.texture == nil)
+    addon.QuestPortrait = function() error("portrait not available") end; showDetail(2)
+    assert(not first.shown and not detailHas(addon.L("QUEST_PORTRAIT")))
+    addon.QuestPortrait = function() return { displayID = 12345 } end
+    SetPortraitTextureFromCreatureDisplayID = nil; showDetail(2)
+    assert(not first.shown and first.texture == nil)
+    SetPortraitTextureFromCreatureDisplayID = function(texture)
+        texture:SetTexture("partial failed image"); error("renderer failed")
+    end
+    showDetail(2)
+    assert(not first.shown and first.texture == nil and not detailHas(addon.L("QUEST_PORTRAIT")))
+end)
+check("Portrait UI rejects invalid and restricted display IDs without fallback", function()
+    local calls, restricted = 0, {}
+    SetPortraitTextureFromCreatureDisplayID = function() calls = calls + 1 end
+    for _, displayID in ipairs({ 0, -1, 1.5, "12345", math.huge, 0 / 0, restricted }) do
+        addon.QuestPortrait = function() return { displayID = displayID } end
+        issecretvalue = function(value) return value == restricted end
+        showDetail(2)
+        assert(not ui.portrait.shown and ui.portrait.texture == nil and not detailHas(addon.L("QUEST_PORTRAIT")))
+    end
+    assert(calls == 0)
+    addon.QuestPortrait, SetPortraitTextureFromCreatureDisplayID, issecretvalue = nil, nil, nil
 end)
 print("Preparation UI modeled checks passed: " .. total .. " (no native layout validation)")

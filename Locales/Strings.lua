@@ -1,6 +1,7 @@
 local _, addon = ...
 local strings = {
     enUS = {
+        QUEST_PORTRAIT = "Quest portrait",
         TITLE = "DungeonPrep", SUBTITLE = "Prepare before you enter", SEARCH = "Search dungeons",
         RANGE = "My level", ALL = "All levels", QUESTS = "Dungeon quests", CHAIN = "Quest chain",
         NEXT = "Next step", STORY = "Story order (requirements still being checked)", MAP = "Show on map", GUIDE = "Guide me", CLEAR = "Clear guide",
@@ -45,6 +46,7 @@ local strings = {
         ONLY_EN_RU = "Language", COPY = "Select the link and press Ctrl+C.",
     },
     ruRU = {
+        QUEST_PORTRAIT = "Портрет из журнала",
         TITLE = "DungeonPrep", SUBTITLE = "Подготовься перед походом", SEARCH = "Поиск подземелий",
         RANGE = "Мой уровень", ALL = "Все уровни", QUESTS = "Задания подземелья", CHAIN = "Цепочка заданий",
         NEXT = "Следующий шаг", STORY = "Порядок сюжета (условия ещё проверяются)", MAP = "Показать на карте", GUIDE = "Указать направление", CLEAR = "Убрать указатель",

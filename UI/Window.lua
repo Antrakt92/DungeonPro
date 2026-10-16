@@ -250,6 +250,7 @@ end
 
 function UI:RefreshDetail()
     local pool, n, y = self.details, 0, 0
+    if self.portrait then self.portrait:Hide(); self.portrait:SetTexture(nil) end
     self.action = nil
     self.giverAction, self.giverHasCoordinates = nil, false
     self.giver:SetEnabled(false)
@@ -271,6 +272,23 @@ function UI:RefreshDetail()
         line(addon.QuestName(id), 24)
         local state = engine:State(id)
         line("|cff" .. COLOR[state.status] .. addon.L(state.status) .. "|r")
+        local portrait = addon.Read(addon.QuestPortrait, "table", id)
+        local displayID = portrait and addon.Clean(portrait.displayID, "number")
+        if displayID and displayID > 0 and displayID % 1 == 0 and
+            type(SetPortraitTextureFromCreatureDisplayID) == "function" then
+            if not self.portrait then
+                self.portrait = self.detail:CreateTexture(nil, "ARTWORK")
+                self.portrait:SetSize(64, 64)
+                self.portrait:Hide()
+            end
+            self.portrait:ClearAllPoints()
+            local rendered = pcall(SetPortraitTextureFromCreatureDisplayID, self.portrait, displayID)
+            if rendered then
+                line(addon.L("QUEST_PORTRAIT"))
+                self.portrait:SetPoint("TOPLEFT", 4, -y); self.portrait:Show()
+                y = y + 64 + 8
+            else self.portrait:SetTexture(nil) end
+        end
         if addon.Clean(q.repeatable, "boolean") == true then line(addon.L("REPEATABLE")) end
         if state.reason then
             local reason = "REASON_" .. state.reason

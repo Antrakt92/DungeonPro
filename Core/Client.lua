@@ -174,6 +174,29 @@ function addon.QuestRewards(id)
     return { items = fixed, choices = choice, money = money }
 end
 
+function addon.QuestPortrait(id)
+    local function positiveInteger(value)
+        value = addon.Clean(value, "number")
+        if value and value > 0 and value % 1 == 0 then return value end
+    end
+    id = positiveInteger(id)
+    if not id then return nil end
+    local quest = C_QuestLog or {}
+    if addon.Read(quest.GetSelectedQuest, "number") ~= id then return nil end
+    local index = positiveInteger(addon.Read(quest.GetLogIndexForQuestID, "number", id))
+    if not index or type(quest.GetQuestLogPortraitGiver) ~= "function" then return nil end
+    -- The optional argument is a log index, and the portrait is not an NPC ID.
+    local ok, displayID, _, name = pcall(quest.GetQuestLogPortraitGiver, index)
+    displayID = positiveInteger(displayID)
+    if not ok or not displayID then return nil end
+    if addon.Read(quest.GetSelectedQuest, "number") ~= id or
+        positiveInteger(addon.Read(quest.GetLogIndexForQuestID, "number", id)) ~= index then return nil end
+    local result = { displayID = displayID }
+    name = addon.Clean(name, "string")
+    if name and name ~= "" and #name <= 1024 then result.name = name end
+    return result
+end
+
 function addon.CaptureQuestText()
     local id = addon.Read(GetQuestID, "number")
     local text = addon.Read(GetQuestText, "string")
