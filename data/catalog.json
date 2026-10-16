@@ -3058,7 +3058,8 @@
         "name": "Small Scroll",
         "dungeonKey": "rfk",
         "dropNPCID": 4421,
-        "dropName": "Charlga Razorflank"
+        "dropName": "Charlga Razorflank",
+        "itemMinLevel": 28
       },
       "finish": {
         "npcID": 2425,
@@ -3948,7 +3949,8 @@
             "name": "Shadowforge Surveyor",
             "locationName": "Badlands"
           }
-        ]
+        ],
+        "itemMinLevel": 37
       },
       "finish": {
         "npcID": 6826,
@@ -6022,7 +6024,11 @@
       "source": "https://www.wowhead.com/forever/quest=3373/the-essence-of-eranikus",
       "start": {
         "itemID": 10454,
-        "name": "Essence of Eranikus"
+        "name": "Essence of Eranikus",
+        "itemMinLevel": 48,
+        "dropNPCID": 5709,
+        "dropName": "Shade of Eranikus",
+        "dungeonKey": "st"
       },
       "finish": {
         "objectID": 148512,
@@ -8097,7 +8103,8 @@
             "name": "Overmaster Pyron",
             "locationName": "Eastern Kingdoms"
           }
-        ]
+        ],
+        "itemMinLevel": 50
       }
     },
     {
@@ -8635,7 +8642,8 @@
       },
       "start": {
         "itemID": 18628,
-        "name": "Thorium Brotherhood Contract"
+        "name": "Thorium Brotherhood Contract",
+        "itemMinLevel": 60
       }
     },
     {
@@ -9981,7 +9989,8 @@
             "name": "Plagued Hatchling",
             "locationName": "Scholomance"
           }
-        ]
+        ],
+        "itemMinLevel": 55
       },
       "finish": {
         "npcID": 11035,
