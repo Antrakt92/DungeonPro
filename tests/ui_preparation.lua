@@ -761,4 +761,42 @@ check("Known source zones display without inventing a client map or navigation",
     assert(ui.giver.enabled and not ui.giverHasCoordinates)
     addon.quests[2].start, addon.quests[2].finish, C_Map = start, finish, maps
 end)
+check("Narrative groups show shared bullets without expanding acceptance prerequisites", function()
+    addon.quests[910] = { id = 910, minLevel = 1, requirementsKnown = false,
+        storylineGroups = { { 911, 912 }, { 910 } } }
+    addon.quests[911] = { id = 911, minLevel = 1, requirementsKnown = true, requires = { { ids = { 1 } } } }
+    addon.quests[912] = { id = 912, minLevel = 1, requirementsKnown = true, factions = { "Horde" } }
+    local context = { level = 20, faction = "Alliance", completed = function() return false end,
+        active = function() return false end }
+    showDetail(910, context)
+    assert(ui.engine:State(910).status == "UNKNOWN" and ui.action == nil)
+    assert(detailHas(addon.L("STORY_GROUP_NOTICE")))
+    assert(detailHas(addon.L("STORY_GROUP", 1)) and detailHas(addon.L("STORY_GROUP", 2)))
+    local labels = {}
+    for _, b in ipairs(ui.chainButtons) do if b.shown then labels[#labels + 1] = b.label.text end end
+    assert(#labels == 3, "an unlisted acceptance prerequisite must not enter the narrative groups")
+    assert(labels[1]:find("• Quest 911", 1, true) and labels[2]:find("• Quest 912", 1, true))
+    assert(not labels[1]:find("1. ", 1, true) and not labels[2]:find("2. ", 1, true))
+    assert(ui.engine:State(912).status == "UNAVAILABLE")
+    ui.chainButtons[2].scripts.OnClick()
+    assert(ui.quest == 912 and ui.engine:State(912).status == "UNAVAILABLE" and ui.action == nil)
+    assert(not detailHas(addon.L("STORY_GROUP_NOTICE")))
+    addon.quests[910], addon.quests[911], addon.quests[912] = nil, nil, nil
+end)
+check("Narrative group rows wrap, recycle, and preserve ordinary ordered story labels", function()
+    addon.quests[910] = { id = 910, minLevel = 1, requirementsKnown = false,
+        storylineGroups = { { 911, 910 } } }
+    addon.quests[911] = { id = 911, minLevel = 1, requirementsKnown = false }
+    measurement = function(fs) if fs.text and fs.text:find("Quest 911", 1, true) then return 72 end; return 18 end
+    showDetail(910)
+    assert(ui.chainButtons[1].height == 78)
+    assert(-ui.chainButtons[2].point[3] >= -ui.chainButtons[1].point[3] + 78)
+    measurement = nil
+    addon.quests[910].storylineGroups = nil
+    addon.quests[910].storyline = { 910 }
+    showDetail(910)
+    assert(ui.chainButtons[1].height == 34 and ui.chainButtons[1].label.text:find("1. Quest 910", 1, true))
+    assert(not ui.chainButtons[2].shown and not detailHas(addon.L("STORY_GROUP", 1)))
+    addon.quests[910], addon.quests[911] = nil, nil
+end)
 print("Preparation UI modeled checks passed: " .. total .. " (no native layout validation)")

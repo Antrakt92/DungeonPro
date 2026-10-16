@@ -409,14 +409,16 @@ function UI:RefreshDetail()
                 end
             end
         end
-        line(addon.L(q.storyline and "STORY" or "CHAIN"))
+        line(addon.L((q.storyline or q.storylineGroups) and "STORY" or "CHAIN"))
         local seen, chainIndex = {}, 0
-        local function visit(qid, depth)
+        local function visit(qid, depth, grouped)
             if seen[qid] or depth > 50 then return end
             seen[qid] = true
             local def = addon.quests[qid]
-            for _, group in ipairs(def and def.requires or {}) do
-                for _, parent in ipairs(group.ids) do visit(parent, depth + 1) end
+            if not grouped then
+                for _, group in ipairs(def and def.requires or {}) do
+                    for _, parent in ipairs(group.ids) do visit(parent, depth + 1) end
+                end
             end
             chainIndex = chainIndex + 1
             local b = self.chainButtons[chainIndex]
@@ -429,13 +431,19 @@ function UI:RefreshDetail()
             end
             b:ClearAllPoints(); b:SetPoint("TOPLEFT", 4, -y)
             local qs = engine:State(qid).status
-            b.label:SetText("|cff" .. COLOR[qs] .. chainIndex .. ". " .. addon.QuestName(qid) .. "|r")
+            b.label:SetText("|cff" .. COLOR[qs] .. (grouped and "• " or (chainIndex .. ". ")) .. addon.QuestName(qid) .. "|r")
             local height = math.max(34, measuredHeight(b.label, 18) + 6)
             b:SetHeight(height)
             b:SetScript("OnClick", function() self.quest = qid; self:RefreshDetail() end)
             b:Show(); y = y + height + 3
         end
-        if q.storyline then
+        if q.storylineGroups then
+            line(addon.L("STORY_GROUP_NOTICE"))
+            for groupIndex, group in ipairs(q.storylineGroups) do
+                line(addon.L("STORY_GROUP", groupIndex))
+                for _, stepID in ipairs(group) do visit(stepID, 0, true) end
+            end
+        elseif q.storyline then
             for _, stepID in ipairs(q.storyline) do visit(stepID, 0) end
         else visit(id, 0) end
         local materials = addon.Read(engine.CompletionSteps, "table", engine, id)

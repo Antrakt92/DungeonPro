@@ -111,6 +111,22 @@ def validate(data):
                     if type(v) not in (int, float) or not math.isfinite(v) or not 0 <= v <= 100 or "mapID" not in p:
                         raise ValueError("Invalid coordinate")
     for q in quests.values():
+        if "storylineGroups" in q:
+            groups = q["storylineGroups"]
+            if "storyline" in q:
+                raise ValueError("Ambiguous ordered and grouped storyline")
+            if type(groups) is not list or not 1 <= len(groups) <= 100:
+                raise ValueError("Invalid storyline groups")
+            seen_story = set()
+            for group in groups:
+                if type(group) is not list or not 1 <= len(group) <= 100:
+                    raise ValueError("Invalid storyline group")
+                for qid in group:
+                    if not integer(qid) or qid not in quests:
+                        raise ValueError("Missing or invalid grouped storyline quest")
+                    if qid in seen_story:
+                        raise ValueError("Duplicate grouped storyline quest")
+                    seen_story.add(qid)
         if any(qid not in quests for qid in q.get("storyline", [])):
             raise ValueError("Missing storyline quest")
         if "completionQuests" in q:

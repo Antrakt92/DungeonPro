@@ -26,7 +26,8 @@ Level ranges are provisional recommendations.
 - Initial paladin and warlock quests are also listed for their associated
   dungeons, beyond the ordinary dungeon categories. Their preparation chains
   and some dungeon associations still need checking.
-- Separate story order for chains whose hard prerequisites still need checking.
+- Separate story order and shared story groups for chains whose hard
+  prerequisites still need checking.
 - Item-started quests show the known item and drop dungeon separately, including
   quests whose starter drops in a different dungeon. Multiple starting NPCs,
   objects or item-drop sources stay visible separately; a location visit does

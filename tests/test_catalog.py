@@ -296,6 +296,32 @@ class CatalogTests(unittest.TestCase):
         self.data["quests"][0]["start"] = {"npcID": 1, "zoneName": "Alterac Mountains"}
         catalog.validate(self.data)
 
+    def test_storyline_groups_preserve_shared_rows_without_acceptance_edges(self):
+        q, other, third = self.data["quests"][:3]
+        q.pop("storyline", None)
+        q["storylineGroups"] = [[q["id"], other["id"]], [third["id"]]]
+        before = copy.deepcopy(q.get("requires"))
+        known = q["requirementsKnown"]
+        catalog.validate(self.data)
+        self.assertEqual(q.get("requires"), before)
+        self.assertEqual(q["requirementsKnown"], known)
+        self.assertIn('["storylineGroups"] = { { ', catalog.generate(self.data))
+
+    def test_storyline_groups_reject_malformed_dangling_duplicate_and_mixed_forms(self):
+        first, second = [q["id"] for q in self.data["quests"][:2]]
+        invalid = (None, True, {}, [], [[first]] * 101, [first], [[]], [[first] * 101],
+                   [[True]], [[str(first)]], [[99999999]], [[first, first]], [[first], [first]])
+        for value in invalid:
+            with self.subTest(value=value):
+                data = copy.deepcopy(self.data)
+                data["quests"][0].pop("storyline", None)
+                data["quests"][0]["storylineGroups"] = value
+                with self.assertRaises(ValueError):
+                    catalog.validate(data)
+        self.data["quests"][0].update(storyline=[first], storylineGroups=[[first, second]])
+        with self.assertRaisesRegex(ValueError, "Ambiguous"):
+            catalog.validate(self.data)
+
 
 if __name__ == "__main__":
     unittest.main()

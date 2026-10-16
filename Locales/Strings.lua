@@ -1,6 +1,8 @@
 local _, addon = ...
 local strings = {
     enUS = {
+        STORY_GROUP = "Story group %d",
+        STORY_GROUP_NOTICE = "The source shows these quests together. This does not confirm prerequisites or which quests your character can accept.",
         START_ALTERNATIVES = "Possible starting points — availability unconfirmed",
         ITEM_STARTER = "Quest-starting item: %s", ITEM_DROP_SOURCE = "Drops from %s in %s.",
         QUEST_PORTRAIT = "Quest portrait",
@@ -48,6 +50,8 @@ local strings = {
         ONLY_EN_RU = "Language", COPY = "Select the link and press Ctrl+C.",
     },
     ruRU = {
+        STORY_GROUP = "Группа сюжета %d",
+        STORY_GROUP_NOTICE = "Источник объединяет эти задания. Это не подтверждает требования или доступность заданий вашему персонажу.",
         START_ALTERNATIVES = "Возможные места начала — доступность не подтверждена",
         ITEM_STARTER = "Предмет для начала задания: %s", ITEM_DROP_SOURCE = "Выпадает с %s в %s.",
         QUEST_PORTRAIT = "Портрет из журнала",

@@ -25,6 +25,8 @@
   supporting story records and sourced Scarlet Monastery giver locations.
 - Listed distinct sources when a quest-starting item drops from several creatures.
 - Added initial Zul’Farrak, Temple of Atal’Hakkar and Excavation Site quest lists.
+- Kept source-grouped story quests together without turning them into mandatory
+  prerequisite steps.
 - Preserved multiple possible NPC/object starting points and known source zones
   without inventing map coordinates.
 - Added initial Razorfen Kraul and Razorfen Downs quests, item starters and
