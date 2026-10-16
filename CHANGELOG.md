@@ -29,6 +29,8 @@
   prerequisite steps.
 - Preserved multiple possible NPC/object starting points and known source zones
   without inventing map coordinates.
+- Added initial Scholomance, Stratholme and Blackrock Spire quest lists with
+  separate wing evidence, shared story variants and a confirmed dragon-scale starter.
 - Added Ruins of Lordaeron, Maraudon, Drowned City and Blackrock Depths quest
   lists, reviewed story steps and confirmed quest-starting items.
 - Added initial Razorfen Kraul and Razorfen Downs quests, item starters and
