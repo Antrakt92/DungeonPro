@@ -83,6 +83,72 @@ end)
 check("Quest already in log overrides incomplete catalogue requirements", function()
     eq(P.New(addon.quests, ctx({}, { [92753] = true })):State(92753).status, "ACTIVE")
 end)
+check("Reaccepted completed-history targets keep active progress and ready turn-in actions", function()
+    for _, ready in ipairs({ false, true }) do
+        local finish = { npcID = 123, mapID = 1, x = 10, y = 20 }
+        local quest = q(1, nil, { repeatable = true, requirementsKnown = false,
+            factions = { "Horde" }, classes = { "WARRIOR" }, races = { 1 }, finish = finish })
+        local c = ctx({ [1] = true }, { [1] = true }); c.ready = function() return ready end
+        local engine = P.New({ [1] = quest }, c)
+        local state = engine:State(1)
+        eq(state.status, ready and "READY" or "ACTIVE"); eq(state.completedHistory, true)
+        local actions, uncertain = engine:Next(1)
+        eq(#actions, 1); eq(actions[1].kind, ready and "turnin" or "complete")
+        eq(actions[1].place, ready and finish or nil); eq(uncertain, false)
+        local plan = engine:Dungeon({ quests = { 1 }, coverage = "reviewed" })
+        eq(#plan.rows, 1); eq(plan.counts[state.status], 1); eq(plan.counts.COMPLETED, nil)
+        eq(#plan.actions, 1); eq(plan.ready, true)
+        local partial = engine:Dungeon({ quests = { 1 }, coverage = "partial" })
+        eq(partial.ready, false); eq(partial.unknown, true)
+        eq(quest.requirementsKnown, false)
+    end
+end)
+check("Historical completion of a reaccepted prerequisite satisfies both group modes without extra work", function()
+    for _, ready in ipairs({ false, true }) do
+        local quests = { [1] = q(1, nil, { classes = { "WARRIOR" } }),
+            [2] = q(2, { { ids = { 1 } } }), [3] = q(3, { { ids = { 1 }, mode = "active" } }),
+            [4] = q(4, { { ids = { 1 } }, { ids = { 5 } } }), [5] = q(5) }
+        local c = ctx({ [1] = true }, { [1] = true }); c.ready = function() return ready end
+        local engine = P.New(quests, c)
+        eq(engine:State(1).status, ready and "READY" or "ACTIVE")
+        for _, id in ipairs({ 2, 3 }) do
+            eq(engine:State(id).status, "AVAILABLE")
+            local actions, uncertain = engine:Next(id)
+            eq(#actions, 1); eq(actions[1].id, id); eq(actions[1].kind, "pickup"); eq(uncertain, false)
+        end
+        eq(engine:State(4).status, "LOCKED")
+        local actions, uncertain = engine:Next(4)
+        eq(#actions, 1); eq(actions[1].id, 5); eq(uncertain, false)
+    end
+end)
+check("Missing completion history never satisfies a completed-mode child from active evidence alone", function()
+    for _, unknown in ipairs({ false, true }) do
+        for _, ready in ipairs({ false, true }) do
+            local quests = { [1] = q(1), [2] = q(2, { { ids = { 1 } } }),
+                [3] = q(3, { { ids = { 1 }, mode = "active" } }) }
+            local c = ctx({}, { [1] = true })
+            c.completed = function(id) if id == 1 and unknown then return nil end; return false end
+            c.ready = function() return ready end
+            local engine = P.New(quests, c)
+            eq(engine:State(1).completedHistory, false)
+            eq(engine:State(2).status, "LOCKED"); eq(engine:State(3).status, "AVAILABLE")
+            local actions = engine:Next(2)
+            eq(#actions, 1); eq(actions[1].id, 1); eq(actions[1].kind, ready and "turnin" or "complete")
+        end
+    end
+    local engine = P.New({ [1] = q(1), [2] = q(2, { { ids = { 1 } } }) }, ctx({ [1] = true }))
+    eq(engine:State(1).status, "COMPLETED"); eq(engine:State(1).completedHistory, true)
+    eq(engine:State(2).status, "AVAILABLE"); eq(#engine:Next(1), 0)
+    local c = ctx({ [1] = true }); c.active = function() return nil end
+    engine = P.New({ [1] = q(1), [2] = q(2, { { ids = { 1 } } }) }, c)
+    eq(engine:State(1).status, "COMPLETED"); eq(engine:State(1).completedHistory, true)
+    eq(engine:State(2).status, "UNKNOWN")
+    c.active = function(id) if id ~= 1 then return false end end
+    engine = P.New({ [1] = q(1), [2] = q(2, { { ids = { 1 } } }) }, c)
+    eq(engine:State(1).status, "COMPLETED"); eq(engine:State(2).status, "AVAILABLE")
+    local missing = engine:State(999)
+    eq(missing.status, "UNKNOWN"); eq(missing.completedHistory, false)
+end)
 check("Faction restrictions remove quests from the dungeon totals", function()
     local d = { quests = { 5728 }, coverage = "reviewed" }
     eq(#P.New(addon.quests, ctx()):Dungeon(d).rows, 0)

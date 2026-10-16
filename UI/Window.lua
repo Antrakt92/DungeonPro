@@ -6,6 +6,15 @@ local COLOR = { COMPLETED = "66dd99", READY = "ffe066", ACTIVE = "88bfff", AVAIL
     LOCKED = "f0b080", UNKNOWN = "b4aacd", UNAVAILABLE = "999999" }
 local FONT
 
+local function statusLabel(state, value)
+    local label = value or addon.L(state.status)
+    if (state.status == "ACTIVE" or state.status == "READY") and
+        addon.Clean(state.completedHistory, "boolean") == true then
+        label = label .. " — " .. addon.L("COMPLETED_BEFORE")
+    end
+    return label
+end
+
 local function searchText(value)
     -- Only ASCII bytes are folded; UTF-8 sequences pass through unchanged.
     return value:gsub("[A-Z]", function(letter) return string.char(letter:byte() + 32) end)
@@ -260,7 +269,7 @@ function UI:RefreshQuests()
                 elseif state.reason == "level" then
                     note = addon.L("level") .. " " .. addon.quests[id].minLevel
                 end
-                row.note:SetText("|cff" .. COLOR[state.status] .. note .. "|r")
+                row.note:SetText("|cff" .. COLOR[state.status] .. statusLabel(state, note) .. "|r")
                 row:SetScript("OnClick", function() self:InspectQuest(id) end)
             end
             offset = self:LayoutRow(row, entry.heading and 32 or 59, offset)
@@ -309,7 +318,7 @@ function UI:RefreshDetail()
         local q = addon.quests[id] or {}
         line(addon.QuestName(id), 24)
         local state = engine:State(id)
-        line("|cff" .. COLOR[state.status] .. addon.L(state.status) .. "|r")
+        line("|cff" .. COLOR[state.status] .. statusLabel(state) .. "|r")
         local offer = addon.Read(addon.CurrentOffer, "table", id)
         if offer and addon.Clean(offer.offeredNow, "boolean") == true then line(addon.L("OFFERED_NOW")) end
         local portrait = addon.Read(addon.DialoguePortrait, "table", id) or
@@ -476,9 +485,9 @@ function UI:RefreshDetail()
                 end
                 option(addon.L("BRANCH_AUTO"), nil, true, selected == nil)
                 for _, parentID in ipairs(group.ids) do
-                    local parent, status = parentID, engine:State(parentID).status
-                    option(addon.QuestName(parent) .. " — " .. addon.L(status), parent,
-                        status ~= "UNAVAILABLE", parent == selected)
+                    local parent, parentState = parentID, engine:State(parentID)
+                    option(addon.QuestName(parent) .. " — " .. statusLabel(parentState), parent,
+                        parentState.status ~= "UNAVAILABLE", parent == selected)
                 end
             elseif #group.ids == 1 then
                 requirementIndex = requirementIndex + 1
@@ -486,8 +495,8 @@ function UI:RefreshDetail()
                 local row = self:MakeRow(self.detail, self.requirementButtons, requirementIndex, 59)
                 row.questID = parent
                 row.title:SetText(addon.QuestName(parent))
-                local status = engine:State(parent).status
-                row.note:SetText("|cff" .. COLOR[status] .. addon.L(status) .. "|r")
+                local parentState = engine:State(parent)
+                row.note:SetText("|cff" .. COLOR[parentState.status] .. statusLabel(parentState) .. "|r")
                 row:SetEnabled(true)
                 row:SetScript("OnClick", function() self:InspectQuest(parent) end)
                 y = self:LayoutRow(row, 59, y)
@@ -514,8 +523,9 @@ function UI:RefreshDetail()
                 self.chainButtons[chainIndex] = b
             end
             b:ClearAllPoints(); b:SetPoint("TOPLEFT", 4, -y)
-            local qs = engine:State(qid).status
-            b.label:SetText("|cff" .. COLOR[qs] .. (grouped and "• " or (chainIndex .. ". ")) .. addon.QuestName(qid) .. "|r")
+            local questState = engine:State(qid)
+            b.label:SetText("|cff" .. COLOR[questState.status] .. (grouped and "• " or (chainIndex .. ". ")) ..
+                statusLabel(questState, addon.QuestName(qid)) .. "|r")
             local height = math.max(34, measuredHeight(b.label, 18) + 6)
             b:SetHeight(height)
             b:SetEnabled(true)
@@ -541,7 +551,7 @@ function UI:RefreshDetail()
                 row.questID, row.itemID = other, entry.itemID
                 row.title:SetText(addon.QuestName(other))
                 local status = entry.state.status
-                row.note:SetText("|cff" .. COLOR[status] .. addon.L(status) .. "|r\n" ..
+                row.note:SetText("|cff" .. COLOR[status] .. statusLabel(entry.state) .. "|r\n" ..
                     (addon.Read(addon.ItemName, "string", entry.itemID) or addon.L("MATERIAL_ITEM", entry.itemID)) .. (entry.unknown and status ~= "UNKNOWN" and (" — " .. addon.L("UNKNOWN")) or ""))
                 row:SetEnabled(true)
                 row:SetScript("OnClick", function() self:InspectQuest(other) end)

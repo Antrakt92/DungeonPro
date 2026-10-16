@@ -13,6 +13,8 @@
 - Added Back navigation for supporting quest cards and optional client-provided
   dungeon images and current-offer portraits.
 - Expanded later dungeon quest lists and sourced quest-giver locations.
+- Kept newly accepted quests visible alongside past completion history, and
+  retained that history when checking prerequisite chains.
 - Added translated explanations for locked quests and missing information.
 - Added character filtering with an option to inspect restricted quests, and
   remembered browsing filters per character.

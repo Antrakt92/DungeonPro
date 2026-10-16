@@ -7,6 +7,11 @@ local function contains(list, value)
     return false
 end
 
+local function prerequisiteSatisfied(state, mode)
+    return state.completedHistory == true or (mode == "active" and
+        (state.status == "ACTIVE" or state.status == "READY"))
+end
+
 function Planner.Eligible(q, context)
     local unknown
     for _, rule in ipairs({ { "factions", "faction" }, { "classes", "class" }, { "races", "race" } }) do
@@ -25,19 +30,22 @@ function Planner.New(quests, context, choices)
 
     function engine:State(id)
         if self.states[id] then return self.states[id] end
+        local completedHistory = false
         local function save(status, reason)
-            local result = { status = status, reason = reason, id = id }
+            local result = { status = status, reason = reason, id = id, completedHistory = completedHistory }
             self.states[id] = result
             return result
         end
         local q = self.quests[id]
         if not q then return save("UNKNOWN", "missing") end
         local done = self.context.completed(id)
-        if done == true then return save("COMPLETED") end
+        -- Past completion can satisfy a prerequisite while a new run remains active.
+        completedHistory = done == true
         local active = self.context.active(id)
         if active == true then
             return save(self.context.ready and self.context.ready(id) == true and "READY" or "ACTIVE")
         end
+        if done == true then return save("COMPLETED") end
         local eligible, restriction = Planner.Eligible(q, self.context)
         if eligible == false then return save("UNAVAILABLE", restriction) end
         if eligible == nil or done == nil or active == nil then return save("UNKNOWN", "character") end
@@ -51,8 +59,7 @@ function Planner.New(quests, context, choices)
             local satisfied, uncertain = false, false
             for _, parent in ipairs(group.ids) do
                 local state = self:State(parent)
-                if state.status == "COMPLETED" or (group.mode == "active" and
-                    (state.status == "ACTIVE" or state.status == "READY")) then satisfied = true end
+                if prerequisiteSatisfied(state, group.mode) then satisfied = true end
                 if state.status == "UNKNOWN" then uncertain = true end
             end
             if not satisfied then
@@ -91,8 +98,7 @@ function Planner.New(quests, context, choices)
         for groupIndex, group in ipairs(q.requires or {}) do
             local satisfied = false
             for _, parent in ipairs(group.ids) do
-                local ps = self:State(parent).status
-                if ps == "COMPLETED" or (group.mode == "active" and (ps == "ACTIVE" or ps == "READY")) then
+                if prerequisiteSatisfied(self:State(parent), group.mode) then
                     satisfied = true
                 end
             end

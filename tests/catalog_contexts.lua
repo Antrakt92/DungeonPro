@@ -16,15 +16,22 @@ for _, faction in ipairs({ "Alliance", "Horde" }) do
     for _, class in ipairs(classes) do
         for _, race in ipairs(races) do
             for _, level in ipairs({ 1, 20, 60 }) do
-                for _, mode in ipairs({ "new", "unknown", "active", "ready", "completed" }) do
+                for _, mode in ipairs({ "new", "unknown", "active", "ready", "completed", "reaccepted", "reacceptedReady" }) do
+                    local held = mode == "active" or mode == "ready" or mode == "reaccepted" or mode == "reacceptedReady"
+                    local history = mode == "completed" or mode == "reaccepted" or mode == "reacceptedReady"
                     local context = { level = level, faction = faction, class = class, race = race,
-                        completed = function() if mode ~= "unknown" then return mode == "completed" end end,
-                        active = function() if mode ~= "unknown" then return mode == "active" or mode == "ready" end end,
-                        ready = function() return mode == "ready" end }
+                        completed = function() if mode ~= "unknown" then return history end end,
+                        active = function() if mode ~= "unknown" then return held end end,
+                        ready = function() return mode == "ready" or mode == "reacceptedReady" end }
                     local engine = addon.Planner.New(addon.quests, context)
                     contexts = contexts + 1
                     for id, q in pairs(addon.quests) do
                         local state = engine:State(id)
+                        assert(state.completedHistory == history, "Completion evidence lost or invented: " .. id)
+                        if held then
+                            local expected = context.ready(id) and "READY" or "ACTIVE"
+                            assert(state.status == expected, "Current log quest hidden by old history or restrictions: " .. id)
+                        end
                         assert(q.requirementsKnown == true or state.status ~= "AVAILABLE",
                             "Incomplete requirements authorized pickup: " .. id)
                         if mode == "unknown" then

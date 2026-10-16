@@ -446,10 +446,26 @@ check("OR alternatives support explicit persisted choices, automatic reset and s
     ui.quest = nil; ui:Refresh()
 end)
 check("Completed preparation keeps the prepared result instead of empty data warning", function()
+    local context = addon.Context
+    addon.Context = function()
+        local value = context()
+        value.active = function() return false end
+        return value
+    end
     for id in pairs(addon.quests) do done[id] = true end
     ui.preparationButton.scripts.OnClick()
     assert(#visibleRows() == 0 and ui.coverage.text == addon.L("PREPARED"))
     for _, row in ipairs(ui.rows) do assert(not row.shown) end
+    addon.Context = context
+end)
+check("Completion history cannot hide the current held quest from preparation progress", function()
+    assert(done[6] == true)
+    ui:Refresh()
+    assert(ui.engine:State(6).status == "ACTIVE" and ui.engine:State(6).completedHistory == true)
+    local rows = visibleRows()
+    assert(#rows == 1 and rows[1].title.text == "Quest 6")
+    assert(rows[1].note.text:find(addon.L("complete"), 1, true))
+    assert(ui.coverage.text == addon.L("PREPARED"), "held repeat work does not revoke preparation")
 end)
 check("Reopening recalculates fit after a screen change", function()
     screenWidth, screenHeight = 800, 900
@@ -1132,5 +1148,48 @@ check("Detail scroll resets on changed card identity but preserves same-card rea
     assert(scroll.verticalScroll == 30 and scroll.scrollWrites == writes, "same nil-card redraw is not new navigation")
     addon.db.locale, ui.quest, ui.detailHistory = locale, quest, history
     ui:Refresh()
+end)
+check("Held quests with past completion show history consistently without implying repeatability", function()
+    local function context(done)
+        return { level = 20, completed = function(id) return id == 993 or ((id == 991 or id == 992) and done) end,
+            active = function(id) return id == 991 or id == 992 end, ready = function(id) return id == 992 end }
+    end
+    for _, id in ipairs({ 990, 991, 992, 993 }) do
+        addon.quests[id] = { id = id, minLevel = 1, requirementsKnown = true }
+    end
+    addon.quests[990].requires = { { ids = { 991 } }, { ids = { 992, 993 } } }
+    addon.quests[990].completionQuests = { { id = 991, itemID = 7000 } }
+    local marker = addon.L("COMPLETED_BEFORE")
+    local function headerContains(value)
+        for _, fs in ipairs(ui.details) do if fs.shown and fs.text:find(value, 1, true) then return true end end
+        return false
+    end
+    showDetail(991, context(true))
+    assert(headerContains(addon.L("ACTIVE") .. " — " .. marker) and not detailHas(addon.L("REPEATABLE")))
+    assert(ui.action.id == 991 and ui.action.kind == "complete")
+    showDetail(992, context(true))
+    assert(headerContains(addon.L("READY") .. " — " .. marker) and ui.action.kind == "turnin")
+    showDetail(990, context(true))
+    assert(ui.engine:State(990).status == "AVAILABLE" and ui.action.id == 990)
+    assert(ui.requirementButtons[1].note.text:find(addon.L("ACTIVE") .. " — " .. marker, 1, true))
+    local branchMarked, chainMarked = false, 0
+    for _, b in ipairs(ui.branchButtons) do
+        if b.shown and b.parentID == 992 then branchMarked = b.label.text:find(addon.L("READY") .. " — " .. marker, 1, true) end
+        if b.shown and b.parentID == 993 then assert(not b.label.text:find(marker, 1, true)) end
+    end
+    for _, b in ipairs(ui.chainButtons) do if b.shown and b.label.text:find(marker, 1, true) then chainMarked = chainMarked + 1 end end
+    assert(branchMarked and chainMarked == 2 and ui.materialButtons[1].note.text:find(marker, 1, true))
+    showDetail(993, context(true))
+    assert(ui.engine:State(993).status == "COMPLETED" and not headerContains(marker))
+    showDetail(991, context(false))
+    assert(ui.engine:State(991).status == "ACTIVE" and not headerContains(marker))
+    showDetail(991, context(nil))
+    assert(ui.engine:State(991).status == "ACTIVE" and not headerContains(marker))
+    ui.engine.states[991].completedHistory = "true"; ui:RefreshDetail()
+    assert(not headerContains(marker))
+    ui.engine.states[991].status, ui.engine.states[991].completedHistory = "UNKNOWN", true
+    ui:RefreshDetail(); assert(not headerContains(marker))
+    for _, id in ipairs({ 990, 991, 992, 993 }) do addon.quests[id] = nil end
+    showDetail(2)
 end)
 print("Preparation UI modeled checks passed: " .. total .. " (no native layout validation)")
