@@ -1,6 +1,6 @@
 local _, addon = ...
 local strings = {
-    enUS = { ["REWARD_DIALOGUE"] = "Rewards in the open quest dialogue", ["REWARD_HIDDEN"] = "The client is not displaying rewards for this quest.", ["REWARD_XP"] = "Experience: %d",
+    enUS = { ["OBJECTIVE_DIALOGUE"] = "Objective in the open quest dialogue", ["OBJECTIVE_PROGRESS"] = "Quest log objective progress", ["REWARD_DIALOGUE"] = "Rewards in the open quest dialogue", ["REWARD_HIDDEN"] = "The client is not displaying rewards for this quest.", ["REWARD_XP"] = "Experience: %d",
         POSSIBLE_TURNINS = "Possible turn-in points — availability unconfirmed",
         STORY_GROUP = "Story group %d",
         STORY_GROUP_NOTICE = "The source shows these quests together. This does not confirm prerequisites or which quests your character can accept.",
@@ -53,7 +53,7 @@ local strings = {
         UNSUPPORTED = "This build supports WoW Forever only.",
         ONLY_EN_RU = "Language", COPY = "Select the link and press Ctrl+C.",
     },
-    ruRU = { ["REWARD_DIALOGUE"] = "Награды в открытом диалоге задания", ["REWARD_HIDDEN"] = "Клиент не показывает награды этого задания.", ["REWARD_XP"] = "Опыт: %d",
+    ruRU = { ["OBJECTIVE_DIALOGUE"] = "Цель в открытом диалоге задания", ["OBJECTIVE_PROGRESS"] = "Прогресс целей задания в журнале", ["REWARD_DIALOGUE"] = "Награды в открытом диалоге задания", ["REWARD_HIDDEN"] = "Клиент не показывает награды этого задания.", ["REWARD_XP"] = "Опыт: %d",
         POSSIBLE_TURNINS = "Возможные места сдачи — доступность не подтверждена",
         STORY_GROUP = "Группа сюжета %d",
         STORY_GROUP_NOTICE = "Источник объединяет эти задания. Это не подтверждает требования или доступность заданий вашему персонажу.",

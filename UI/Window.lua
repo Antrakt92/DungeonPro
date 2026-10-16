@@ -495,7 +495,16 @@ function UI:RefreshDetail()
             end
         end
         line(addon.Description(id))
+        local dialogueObjective
+        if type(addon.DialogueObjectiveText) == "function" then
+            dialogueObjective = addon.Read(addon.DialogueObjectiveText, "string", id)
+        end
+        if dialogueObjective and dialogueObjective ~= "" and #dialogueObjective <= 30000 then
+            line(addon.L("OBJECTIVE_DIALOGUE"))
+            line(dialogueObjective)
+        end
         local objectives = addon.QuestObjectives and addon.QuestObjectives(id)
+        if objectives and #objectives > 0 then line(addon.L("OBJECTIVE_PROGRESS")) end
         for _, objective in ipairs(objectives or {}) do
             line("|cff" .. (objective.finished and COLOR.COMPLETED or COLOR.ACTIVE) .. objective.text .. "|r")
         end

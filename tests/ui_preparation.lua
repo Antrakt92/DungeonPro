@@ -933,4 +933,52 @@ check("Hidden dialogue rewards never become an empty list or fall through to que
     assert(not detailHas(addon.L("REWARD_HIDDEN")))
     addon.DialogueRewards, addon.QuestRewards = nil, nil
 end)
+check("Live dialogue objective prose stays separate from accepted progress and hidden rewards", function()
+    local oldObjective, oldProgress, oldRewards = addon.DialogueObjectiveText, addon.QuestObjectives, addon.DialogueRewards
+    showDetail(2)
+    local previousState, previousKind = ui.engine:State(2).status, ui.action and ui.action.kind
+    local open, calls = true, 0
+    addon.DialogueObjectiveText = function(id)
+        calls = calls + 1
+        if open and id == 2 then return "Bring the sealed report to its recipient." end
+    end
+    addon.QuestObjectives = function(id)
+        if id == 2 then return { { text = "Report delivered: 0/1", finished = false } } end
+    end
+    addon.DialogueRewards = function() return { source = "dialogue", hidden = true } end
+    showDetail(2)
+    assert(detailHas(addon.L("OBJECTIVE_DIALOGUE")))
+    assert(detailHas("Bring the sealed report to its recipient."))
+    assert(detailHas(addon.L("OBJECTIVE_PROGRESS")))
+    local summaryIndex, progressIndex, progressText
+    for i, fs in ipairs(ui.details) do
+        if fs.shown and fs.text == addon.L("OBJECTIVE_DIALOGUE") then summaryIndex = i end
+        if fs.shown and fs.text == addon.L("OBJECTIVE_PROGRESS") then progressIndex = i end
+        if fs.shown and fs.text:find("Report delivered: 0/1", 1, true) then progressText = true end
+    end
+    assert(summaryIndex < progressIndex and progressText and detailHas(addon.L("REWARD_HIDDEN")))
+    assert(ui.engine:State(2).status == previousState and (ui.action and ui.action.kind) == previousKind)
+    showDetail(1)
+    assert(not detailHas(addon.L("OBJECTIVE_DIALOGUE")) and not detailHas(addon.L("OBJECTIVE_PROGRESS")))
+    assert(not detailHas("Bring the sealed report to its recipient."))
+    showDetail(2)
+    assert(detailHas(addon.L("OBJECTIVE_DIALOGUE")) and calls == 3)
+    open = false; ui:Refresh()
+    assert(not detailHas(addon.L("OBJECTIVE_DIALOGUE")) and not detailHas("Bring the sealed report to its recipient."))
+    assert(detailHas(addon.L("OBJECTIVE_PROGRESS")) and detailHas(addon.L("REWARD_HIDDEN")))
+    addon.DialogueObjectiveText, addon.QuestObjectives, addon.DialogueRewards = oldObjective, oldProgress, oldRewards
+end)
+check("Missing or unusable dialogue objective summaries leave no recycled heading or text", function()
+    local previous = addon.DialogueObjectiveText
+    addon.DialogueObjectiveText = function() return "Temporary dialogue summary" end
+    showDetail(2); assert(detailHas("Temporary dialogue summary"))
+    for _, producer in ipairs({ false, function() return nil end, function() return "" end,
+        function() return 42 end, function() return string.rep("x", 30001) end,
+        function() error("dialogue unavailable") end }) do
+        addon.DialogueObjectiveText = producer
+        ui:Refresh()
+        assert(not detailHas(addon.L("OBJECTIVE_DIALOGUE")) and not detailHas("Temporary dialogue summary"))
+    end
+    addon.DialogueObjectiveText = previous
+end)
 print("Preparation UI modeled checks passed: " .. total .. " (no native layout validation)")

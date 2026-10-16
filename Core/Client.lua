@@ -30,6 +30,14 @@ local function currentDialogueReward(snapshot)
     return current
 end
 
+local function liveDialogueReward(snapshot)
+    -- A matching native quest ID can outlive its closed detail window.
+    local shown = addon.Read(function() return QuestFrame:IsShown() end, "boolean") == true and
+        addon.Read(function() return QuestFrameDetailPanel:IsShown() end, "boolean") == true
+    if shown and currentDialogueReward(snapshot) then return true end
+    if dialogueReward == snapshot then clearDialogueReward() end
+end
+
 function addon.DialogueRewardEvent(event)
     event = addon.Clean(event, "string")
     if event == "QUEST_DETAIL" then
@@ -53,15 +61,8 @@ function addon.DialogueRewards(id)
     id = dialogueInteger(id, 1)
     local snapshot = dialogueReward
     if not id or not snapshot or snapshot.id ~= id or not currentDialogueReward(snapshot) then return nil end
-    -- A matching native quest ID can outlive its closed detail window.
-    local function open()
-        return addon.Read(function() return QuestFrame:IsShown() end, "boolean") == true and
-            addon.Read(function() return QuestFrameDetailPanel:IsShown() end, "boolean") == true
-    end
     local function live()
-        local shown = open()
-        if shown and currentDialogueReward(snapshot) then return true end
-        if dialogueReward == snapshot then clearDialogueReward() end
+        return liveDialogueReward(snapshot)
     end
     if not live() then return nil end
     local visible = addon.Read(C_QuestLog and C_QuestLog.ShouldShowQuestRewards, "boolean", id)
@@ -107,6 +108,17 @@ function addon.DialogueRewards(id)
     local xp = dialogueInteger(addon.Read(GetRewardXP, "number"), 0)
     if not live() then return nil end
     return { items = fixed, choices = choice, money = money, xp = xp, source = "dialogue" }
+end
+
+function addon.DialogueObjectiveText(id)
+    id = dialogueInteger(id, 1)
+    local snapshot = dialogueReward
+    if not id or not snapshot or snapshot.id ~= id or not currentDialogueReward(snapshot) or
+        not liveDialogueReward(snapshot) then return nil end
+    -- Offered summary text is separate from accepted quest objective counters.
+    local text = addon.Read(GetObjectiveText, "string")
+    if not liveDialogueReward(snapshot) then return nil end
+    if text and text ~= "" and #text <= 30000 then return text end
 end
 
 function addon.ClearOffers()

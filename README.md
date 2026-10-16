@@ -51,6 +51,8 @@ Level ranges are provisional recommendations.
   and does not replace prerequisite or availability checks.
 - Rewards, choices, money and experience from the quest dialogue while you
   view an offer, including quests started by an item.
+- A quest's objective summary from the open offer appears separately from
+  quest-log progress. It clears when that dialogue ends.
 - Quest objectives from the client appear when available. The window adjusts to
   screen width and height and recovers saved positions outside the visible area.
 - Interface dictionaries for English, Russian, German, French, Spanish, Italian,

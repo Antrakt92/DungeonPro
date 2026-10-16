@@ -404,4 +404,56 @@ check("Native dialogue events render offered rewards and item refreshes without 
     addon.QuestRewards, addon.UI.quest = selectedRewards, previousQuest
     addon.UI:Refresh()
 end)
+check("Real dialogue events keep objective prose separate and clear it on every ownership transition", function()
+    local keys = { "GetQuestID", "UnitGUID", "QuestFrame", "QuestFrameDetailPanel", "GetObjectiveText", "GetQuestText" }
+    local saved = {}; for _, key in ipairs(keys) do saved[key] = _G[key] end
+    local priorQuest, predicate, progress, selected = addon.UI.quest, C_QuestLog.ShouldShowQuestRewards,
+        C_QuestLog.GetQuestObjectives, C_QuestLog.GetSelectedQuest
+    local id, text, panel, calls = 65, "Current offer objective only", true, 0
+    GetQuestID = function() return id end
+    UnitGUID = function(unit) return unit == "player" and "Player-objective-integration" or nil end
+    QuestFrame = { IsShown = function() return true end }
+    QuestFrameDetailPanel = { IsShown = function() return panel end }
+    GetObjectiveText = function(...) assert(select("#", ...) == 0); calls = calls + 1; return text end
+    GetQuestText = function() return "Separate offered description" end
+    C_QuestLog.ShouldShowQuestRewards = function() return false end
+    C_QuestLog.GetSelectedQuest = function() return 166 end
+    C_QuestLog.GetQuestObjectives = function() return {} end
+    local function shown(value)
+        for _, fs in ipairs(addon.UI.details) do if fs.shown and fs.text == value then return true end end
+        return false
+    end
+    local function event(name)
+        assert(eventFrame.events[name], name .. " must be registered")
+        eventFrame.scripts.OnEvent(eventFrame, name, id)
+    end
+    addon.UI.quest = id; event("QUEST_FINISHED"); addon.UI:Refresh()
+    local status, action = addon.UI.engine:State(id).status, addon.UI.action
+    assert(not shown(text) and calls == 0)
+    event("QUEST_DETAIL")
+    assert(shown(text) and shown(addon.L("OBJECTIVE_DIALOGUE")) and shown(addon.L("REWARD_HIDDEN")))
+    assert(not shown(addon.L("OBJECTIVE_PROGRESS")))
+    assert(addon.UI.engine:State(id).status == status)
+    assert((not action and not addon.UI.action) or (action and addon.UI.action.id == action.id))
+    assert(addon.char.texts[id].text == "Separate offered description", "summary must not overwrite cached description")
+    for _, transition in ipairs({ "QUEST_FINISHED", "QUEST_PROGRESS", "QUEST_COMPLETE", "QUEST_ACCEPTED",
+        "QUEST_REMOVED", "QUEST_TURNED_IN", "GOSSIP_SHOW", "GOSSIP_CLOSED", "GOSSIP_OPTIONS_REFRESHED",
+        "QUEST_GREETING", "PLAYER_LEAVING_WORLD", "PLAYER_ENTERING_WORLD", "PLAYER_LOGOUT" }) do
+        event("QUEST_DETAIL"); assert(shown(text))
+        event(transition)
+        assert(not shown(text) and not shown(addon.L("OBJECTIVE_DIALOGUE")), transition .. " retained summary")
+    end
+    event("QUEST_DETAIL"); local before = calls
+    addon.UI.quest = 166; addon.UI:RefreshDetail()
+    assert(not shown(text) and calls == before, "another selected card must not read current offer text")
+    addon.UI.quest = 65; addon.UI:RefreshDetail(); assert(shown(text))
+    panel = false; addon.UI:Refresh(); assert(not shown(text))
+    panel = true; addon.UI:Refresh(); assert(not shown(text), "raw ID match must not revive closed ownership")
+    event("QUEST_DETAIL"); assert(shown(text))
+    text = "Fresh objective after item event"; event("QUEST_ITEM_UPDATE"); assert(shown(text))
+    event("QUEST_FINISHED")
+    for _, key in ipairs(keys) do _G[key] = saved[key] end
+    C_QuestLog.ShouldShowQuestRewards, C_QuestLog.GetQuestObjectives, C_QuestLog.GetSelectedQuest = predicate, progress, selected
+    addon.UI.quest = priorQuest; addon.UI:Refresh()
+end)
 print("Client/UI modeled checks passed: " .. total .. " (no pixel or native-client validation)")
