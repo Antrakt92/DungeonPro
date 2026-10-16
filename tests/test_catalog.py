@@ -160,6 +160,41 @@ class CatalogTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "drop sources"):
             catalog.validate(self.data)
 
+    def test_starter_item_requirements_preserve_separate_quest_restrictions(self):
+        quest = self.data["quests"][0]
+        before = {key: copy.deepcopy(quest.get(key)) for key in ("classes", "minLevel", "requirementsKnown", "requires")}
+        quest["start"] = {"itemID": 18469, "itemClasses": ["WARRIOR", "PALADIN"], "itemMinLevel": 54}
+        catalog.validate(self.data)
+        for key, value in before.items():
+            self.assertEqual(quest.get(key), value)
+        generated = catalog.generate(self.data)
+        self.assertIn('["itemClasses"] = { "WARRIOR", "PALADIN" }', generated)
+        self.assertIn('["itemMinLevel"] = 54', generated)
+
+    def test_starter_item_requirements_reject_invalid_types_and_tokens(self):
+        invalid = {
+            "itemClasses": [None, [], {}, "MAGE", [True], [8], ["mage"], ["MGAE"], ["MAGE", "MAGE"]],
+            "itemMinLevel": [None, False, 0, -1, 54.0, "54", [], {}, float("inf")],
+        }
+        for field, values in invalid.items():
+            for value in values:
+                with self.subTest(field=field, value=value):
+                    data = copy.deepcopy(self.data)
+                    data["quests"][0]["start"] = {"itemID": 18469, field: value}
+                    with self.assertRaisesRegex(ValueError, "starter item"):
+                        catalog.validate(data)
+
+    def test_item_requirements_are_only_valid_on_item_starts(self):
+        for field in ("itemClasses", "itemMinLevel"):
+            value = ["MAGE"] if field == "itemClasses" else 54
+            for key, place in (("start", {"npcID": 234}), ("start", {"objectID": 123}),
+                               ("finish", {"itemID": 18469})):
+                with self.subTest(field=field, key=key, place=place):
+                    data = copy.deepcopy(self.data)
+                    data["quests"][0][key] = {**place, field: value}
+                    with self.assertRaisesRegex(ValueError, "without starter item"):
+                        catalog.validate(data)
+
     def test_coordinates_require_both_axes_and_a_map(self):
         for field in ("start", "finish"):
             for missing in ("x", "y", "mapID"):

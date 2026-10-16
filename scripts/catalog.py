@@ -89,6 +89,18 @@ def validate(data):
                 raise ValueError(f"Ambiguous quest place identity: {q['id']}")
             if "dropNPCID" in p and "itemID" not in p:
                 raise ValueError(f"Item drop source without starter item: {q['id']}")
+            if "itemClasses" in p or "itemMinLevel" in p:
+                if key != "start" or "itemID" not in p:
+                    raise ValueError(f"Item requirements without starter item: {q['id']}")
+            if "itemClasses" in p:
+                classes = p["itemClasses"]
+                if (type(classes) is not list or not classes or
+                    any(type(value) is not str or value not in CLASSES for value in classes)):
+                    raise ValueError(f"Invalid starter item classes: {q['id']}")
+                if len(classes) != len(set(classes)):
+                    raise ValueError(f"Duplicate starter item classes: {q['id']}")
+            if "itemMinLevel" in p and not integer(p["itemMinLevel"]):
+                raise ValueError(f"Invalid starter item minimum level: {q['id']}")
             if "dungeonKey" in p and (type(p["dungeonKey"]) is not str or not p["dungeonKey"]):
                 raise ValueError(f"Invalid pickup dungeon: {q['id']}")
             if "dropSources" in p:

@@ -836,4 +836,57 @@ check("Alternative turn-ins are explicit location visits without readiness or ac
     assert(ui.finishButtons[1].height == 59 and not ui.finishButtons[1].enabled and not ui.finishButtons[3].shown)
     addon.quests[3801] = nil
 end)
+check("Starter item requirements stay informational for unknown and available quests", function()
+    local oldNames = LOCALIZED_CLASS_NAMES_MALE
+    LOCALIZED_CLASS_NAMES_MALE = { WARRIOR = "Localized warrior", PALADIN = "Localized paladin" }
+    addon.quests[920] = { id = 920, minLevel = 1, requirementsKnown = false,
+        start = { itemID = 18469, itemClasses = { "WARRIOR", "PALADIN" }, itemMinLevel = 54 } }
+    local context = { level = 20, class = "MAGE", completed = function() return false end,
+        active = function() return false end }
+    showDetail(920, context)
+    assert(detailHas(addon.L("ITEM_CLASSES", "Localized warrior, Localized paladin")))
+    assert(detailHas(addon.L("ITEM_MIN_LEVEL", 54)) and detailHas(addon.L("ITEM_REQUIREMENTS_NOTICE")))
+    assert(addon.Planner.Eligible(addon.quests[920], context) == true)
+    assert(ui.engine:State(920).status == "UNKNOWN" and ui.action == nil)
+    local actions, uncertain = ui.engine:Next(920)
+    assert(#actions == 0 and uncertain)
+    addon.quests[920].requirementsKnown = true
+    showDetail(920, context)
+    assert(ui.engine:State(920).status == "AVAILABLE" and ui.action.kind == "pickup" and ui.action.id == 920)
+    context.class, context.level = "WARRIOR", 60
+    showDetail(920, context)
+    assert(ui.engine:State(920).status == "AVAILABLE" and ui.action.kind == "pickup")
+    addon.quests[920].classes = { "MAGE" }
+    showDetail(920, context)
+    assert(ui.engine:State(920).status == "UNAVAILABLE" and ui.action == nil)
+    showDetail(2)
+    assert(not detailHas(addon.L("ITEM_MIN_LEVEL", 54)) and not detailHas(addon.L("ITEM_REQUIREMENTS_NOTICE")))
+    addon.quests[920], LOCALIZED_CLASS_NAMES_MALE = nil, oldNames
+end)
+check("Starter item class labels use native localization and safe token fallback", function()
+    local oldNames, oldList = LOCALIZED_CLASS_NAMES_MALE, LocalizedClassList
+    LOCALIZED_CLASS_NAMES_MALE = nil
+    local calls = 0
+    LocalizedClassList = function(female)
+        assert(female == false); calls = calls + 1
+        return { WARRIOR = calls == 1 and "First locale" or "Second locale" }
+    end
+    addon.quests[920] = { id = 920, minLevel = 1, requirementsKnown = false,
+        start = { itemID = 18469, itemClasses = { "WARRIOR", "PALADIN" } } }
+    showDetail(920)
+    assert(detailHas(addon.L("ITEM_CLASSES", "First locale, PALADIN")))
+    showDetail(920)
+    assert(detailHas(addon.L("ITEM_CLASSES", "Second locale, PALADIN")))
+    LocalizedClassList = function() error("native unavailable") end
+    showDetail(920)
+    assert(detailHas(addon.L("ITEM_CLASSES", "WARRIOR, PALADIN")))
+    LOCALIZED_CLASS_NAMES_MALE = setmetatable({}, { __index = function() error("restricted lookup") end })
+    showDetail(920)
+    assert(detailHas(addon.L("ITEM_CLASSES", "WARRIOR, PALADIN")))
+    addon.quests[920].start.itemID = nil
+    showDetail(920)
+    assert(not detailHas(addon.L("ITEM_CLASSES", "WARRIOR, PALADIN")))
+    assert(not detailHas(addon.L("ITEM_REQUIREMENTS_NOTICE")))
+    addon.quests[920], LOCALIZED_CLASS_NAMES_MALE, LocalizedClassList = nil, oldNames, oldList
+end)
 print("Preparation UI modeled checks passed: " .. total .. " (no native layout validation)")

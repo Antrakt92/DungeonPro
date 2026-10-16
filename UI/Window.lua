@@ -346,6 +346,29 @@ function UI:RefreshDetail()
             alternativePlaces(q.startAlternatives, self.startButtons, "START_ALTERNATIVES")
         else line(addon.L("START") .. ": " .. place(q.start)) end
         local start = q.start
+        if start and start.itemID then
+            local shown = false
+            local classes = addon.Clean(start.itemClasses, "table")
+            if classes then
+                local localized = addon.Clean(LOCALIZED_CLASS_NAMES_MALE, "table") or
+                    addon.Read(LocalizedClassList, "table", false)
+                local names, seen = {}, {}
+                for i = 1, math.min(#classes, 13) do
+                    local token = addon.Clean(classes[i], "string")
+                    if token and #token > 0 and #token <= 100 and not seen[token] then
+                        seen[token] = true
+                        local name = localized and addon.Read(function() return localized[token] end, "string")
+                        names[#names + 1] = name and name ~= "" and #name <= 500 and name or token
+                    end
+                end
+                if #names > 0 then line(addon.L("ITEM_CLASSES", table.concat(names, ", "))); shown = true end
+            end
+            local minimum = addon.Clean(start.itemMinLevel, "number")
+            if minimum and minimum > 0 and minimum % 1 == 0 then
+                line(addon.L("ITEM_MIN_LEVEL", minimum)); shown = true
+            end
+            if shown then line(addon.L("ITEM_REQUIREMENTS_NOTICE")) end
+        end
         if start and start.itemID and start.dropNPCID then
             local dungeonName = addon.L("UNKNOWN_PLACE")
             for _, dungeon in ipairs(addon.dungeons) do

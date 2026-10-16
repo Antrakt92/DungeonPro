@@ -31,6 +31,8 @@
   without inventing map coordinates.
 - Preserved the correct quest and language when the selected quest changes during
   a description read.
+- Showed class and level requirements of quest-starting items separately from
+  the quest’s own availability.
 - Added early travel and story steps for dungeon chains, plus seven sourced
   Lordaeron quest-giver locations.
 - Added corroborated prerequisite links where compatible sources agree; unknown
