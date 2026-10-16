@@ -6,6 +6,7 @@ local function reset()
     assert(loadfile("Core/Client.lua"))("DungeonPro", addon)
     addon.listeners[1] = function() notices = notices + 1 end
     issecretvalue = function(value) return value == secret end
+    GetLocale = function() return "enUS" end
     C_Item = {
         GetItemNameByID = function(id) lastID = id; return names[id] end,
         IsItemDataCachedByID = function(id) lastID = id; return cached end,
@@ -145,6 +146,55 @@ check("Different item IDs maintain independent coalesced request state", functio
     addon.ItemName(7083); addon.ItemName(272448)
     assert(requests == 3)
     names[272448] = "Other Gem"; assert(addon.ItemName(272448) == "Other Gem")
+end)
+check("Malformed native item libraries fail quietly without requests", function()
+    for _, value in ipairs({ false, 3, "unavailable", secret }) do
+        C_Item = value
+        local ok, result = pcall(addon.ItemName, 7083)
+        assert(ok and result == nil and requests == 0)
+    end
+end)
+check("Native item names cannot escape a replaced namespace getter or locale", function()
+    for mode = 1, 5 do
+        reset()
+        C_Item.GetItemNameByID = function()
+            if mode == 1 then C_Item = {}
+            elseif mode == 2 then C_Item.GetItemNameByID = function() return "New name" end
+            elseif mode == 3 then GetLocale = function() return "deDE" end
+            elseif mode == 4 then issecretvalue = function() return false end
+            else C_Item.RequestLoadItemDataByID = function() error("replaced request forbidden") end end
+            return "Old name"
+        end
+        assert(addon.ItemName(7083) == nil and requests == 0 and #timers == 0)
+    end
+end)
+check("Cached status cannot authorize a stale native item request after scope changes", function()
+    for mode = 1, 3 do
+        reset()
+        local staleRequests = 0
+        C_Item.RequestLoadItemDataByID = function() staleRequests = staleRequests + 1 end
+        C_Item.IsItemDataCachedByID = function()
+            if mode == 1 then C_Item = {}
+            elseif mode == 2 then GetLocale = function() return "ruRU" end
+            else C_Item.RequestLoadItemDataByID = function() error("replacement request forbidden") end end
+            return false
+        end
+        assert(addon.ItemName(7083) == nil and staleRequests == 0 and #timers == 0)
+    end
+end)
+check("A reentrant cache read keeps the inner pending request and its single watchdog", function()
+    local nested = false
+    C_Item.IsItemDataCachedByID = function(id)
+        if not nested then nested = true; assert(addon.ItemName(id) == nil) end
+        return false
+    end
+    assert(addon.ItemName(7083) == nil and requests == 1)
+    assert(#timers == 1 and timers[1].delay == 10)
+    for _ = 1, 5 do assert(addon.ItemName(7083) == nil) end
+    assert(requests == 1 and #timers == 1)
+    fire(10); fire(2)
+    assert(notices == 1)
+    assert(addon.ItemName(7083) == nil and requests == 2 and #timers == 1)
 end)
 issecretvalue = nil
 print("Item name adapter modeled checks passed: " .. total .. " (native client unverified)")

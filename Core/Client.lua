@@ -465,20 +465,33 @@ end
 function addon.ItemName(id)
     id = addon.Clean(id, "number")
     if not id or id < 1 or id % 1 ~= 0 then return nil end
-    local item = C_Item or {}
-    local name = addon.Read(item.GetItemNameByID, "string", id)
+    local item = addon.Clean(C_Item, "table")
+    local scope = restrictionNameScope()
+    if not item or not scope then return nil end
+    local nameGetter = addon.Clean(item.GetItemNameByID, "function")
+    local cacheGetter = addon.Clean(item.IsItemDataCachedByID, "function")
+    local loader = addon.Clean(item.RequestLoadItemDataByID, "function")
+    local function current()
+        return scope() and addon.Clean(C_Item, "table") == item and
+            addon.Clean(item.GetItemNameByID, "function") == nameGetter and
+            addon.Clean(item.IsItemDataCachedByID, "function") == cacheGetter and
+            addon.Clean(item.RequestLoadItemDataByID, "function") == loader
+    end
+    local name = addon.Read(nameGetter, "string", id)
+    if not current() then return nil end
     local request = requestedItems[id]
     if name and name ~= "" and #name <= 1024 then
         if request then request.pending, request.waiting, request.finished = false, false, true end
         return name
     end
-    if addon.Read(item.IsItemDataCachedByID, "boolean", id) ~= false or
-        type(item.RequestLoadItemDataByID) ~= "function" then return nil end
+    local cached = addon.Read(cacheGetter, "boolean", id)
+    if not current() or cached ~= false or not loader then return nil end
+    request = requestedItems[id]
     if request and (request.pending or request.waiting or request.finished) then return nil end
     request = request or { attempts = 0 }
     requestedItems[id] = request
     request.attempts, request.pending = request.attempts + 1, true
-    local ok = pcall(item.RequestLoadItemDataByID, id)
+    local ok = pcall(loader, id)
     if not ok then addon.ItemDataResult(id, false)
     elseif request.pending then
         local attempt = request.attempts
