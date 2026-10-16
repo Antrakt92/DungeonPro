@@ -19955,7 +19955,24 @@
           8422
         ]
       ],
-      "storylineEvidence": "https://www.wowhead.com/forever/quest=8421/the-wrong-stuff"
+      "storylineEvidence": "https://www.wowhead.com/forever/quest=8421/the-wrong-stuff",
+      "objectiveItems": [
+        {
+          "itemID": 20606,
+          "quantity": 2,
+          "name": "Amber Voodoo Feather"
+        },
+        {
+          "itemID": 20607,
+          "quantity": 2,
+          "name": "Blue Voodoo Feather"
+        },
+        {
+          "itemID": 20608,
+          "quantity": 2,
+          "name": "Green Voodoo Feather"
+        }
+      ]
     },
     {
       "id": 9053,
@@ -20784,7 +20801,24 @@
         8416,
         8418
       ],
-      "storylineEvidence": "https://www.wowhead.com/forever/quest=8416/inert-scourgestones"
+      "storylineEvidence": "https://www.wowhead.com/forever/quest=8416/inert-scourgestones",
+      "objectiveItems": [
+        {
+          "itemID": 20606,
+          "quantity": 2,
+          "name": "Amber Voodoo Feather"
+        },
+        {
+          "itemID": 20607,
+          "quantity": 2,
+          "name": "Blue Voodoo Feather"
+        },
+        {
+          "itemID": 20608,
+          "quantity": 2,
+          "name": "Green Voodoo Feather"
+        }
+      ]
     },
     {
       "id": 8232,
