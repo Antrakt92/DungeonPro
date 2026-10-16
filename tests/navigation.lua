@@ -231,4 +231,190 @@ check("Invalid destinations preserve existing guide ownership", function()
     assert(nativeCalls == 1 and clears == 0)
     nav.Stop(); assert(clears == 1)
 end)
+check("TomTom replacement during AddWaypoint cleans only the actual creator", function()
+    local ownRemoved, foreignRemoved = 0, 0
+    local foreign = { RemoveWaypoint = function() foreignRemoved = foreignRemoved + 1 end }
+    local original = { AddWaypoint = function() TomTom = foreign; return 901 end,
+        RemoveWaypoint = function(_, uid) assert(uid == 901); ownRemoved = ownRemoved + 1 end }
+    TomTom = original
+    assert(nav.Start(action) and nativeCalls == 0); nav.Stop()
+    assert(ownRemoved == 1 and foreignRemoved == 0)
+end)
+check("A guide superseded during AddWaypoint releases only its stale returned identity", function()
+    local calls, removed = 0, {}
+    TomTom = { AddWaypoint = function()
+        calls = calls + 1; local uid = calls
+        if uid == 1 then assert(nav.Start({ id = 2, kind = "visit", place = point })) end
+        return uid
+    end, RemoveWaypoint = function(_, uid) removed[#removed + 1] = uid end }
+    assert(not nav.Start(action) and nativeCalls == 0)
+    assert(#removed == 1 and removed[1] == 1)
+    nav.QuestChanged(1); assert(#removed == 1)
+    nav.QuestChanged(2); assert(#removed == 2 and removed[2] == 2)
+end)
+check("A replacement using the same TomTom identity is not removed as stale", function()
+    local calls, removed = 0, 0
+    local uid = {}
+    TomTom = { AddWaypoint = function()
+        calls = calls + 1
+        if calls == 1 then assert(nav.Start({ id = 2, kind = "visit", place = point })) end
+        return uid
+    end, RemoveWaypoint = function(_, identity) assert(rawequal(identity, uid)); removed = removed + 1 end }
+    assert(not nav.Start(action) and calls == 2 and removed == 0)
+    nav.QuestChanged(2); assert(removed == 1)
+end)
+check("Same action reused by a callback still creates a distinct navigation generation", function()
+    local calls, removed = 0, {}
+    TomTom = { AddWaypoint = function()
+        calls = calls + 1; local uid = calls
+        if uid == 1 then assert(nav.Start(action)) end
+        return uid
+    end, RemoveWaypoint = function(_, uid) removed[#removed + 1] = uid end }
+    assert(not nav.Start(action) and calls == 2 and #removed == 1 and removed[1] == 1)
+    nav.QuestChanged(1); assert(#removed == 2 and removed[2] == 2)
+end)
+check("Stale waypoint cleanup may start another guide without corrupting its ownership", function()
+    local calls, removed = 0, {}
+    TomTom = { AddWaypoint = function()
+        calls = calls + 1; local uid = calls
+        if uid == 1 then assert(nav.Start({ id = 2, kind = "visit", place = point })) end
+        return uid
+    end, RemoveWaypoint = function(_, uid)
+        removed[#removed + 1] = uid
+        if uid == 1 then assert(nav.Start({ id = 3, kind = "visit", place = point })) end
+    end }
+    assert(not nav.Start(action) and calls == 3)
+    assert(#removed == 2 and removed[1] == 1 and removed[2] == 2)
+    nav.QuestChanged(2); assert(#removed == 2)
+    nav.QuestChanged(3); assert(#removed == 3 and removed[3] == 3)
+end)
+check("Stopping during AddWaypoint does not resurrect the old frame or claim its returned identity", function()
+    local removed = 0
+    TomTom = { AddWaypoint = function() nav.Stop(); return 901 end,
+        RemoveWaypoint = function(_, uid) assert(uid == 901); removed = removed + 1 end }
+    assert(not nav.Start(action) and removed == 1 and nativeCalls == 0)
+    for _, item in ipairs(frames) do if item.scripts.OnUpdate then assert(not item.shown) end end
+    nav.Stop(); assert(removed == 1)
+end)
+check("Stop cannot clear a replacement native point created during its ownership inspection", function()
+    assert(nav.Start(action) and nativeCalls == 1)
+    local inspecting = false
+    C_Map.GetUserWaypoint = function()
+        if not inspecting then
+            inspecting = true; current = nil
+            assert(nav.Start({ id = 2, kind = "visit", place = point }))
+        end
+        return current
+    end
+    nav.Stop()
+    assert(nativeCalls == 2 and clears == 0 and current ~= nil)
+    local shown = false
+    for _, item in ipairs(frames) do if item.shown and item.scripts.OnUpdate then shown = true end end
+    assert(shown)
+    nav.QuestChanged(2); assert(clears == 1 and current == nil)
+end)
+check("CanSet cancellation prevents native point creation and guide resurrection", function()
+    C_Map.CanSetUserWaypointOnMap = function() nav.Stop(); return true end
+    assert(not nav.Start(action) and nativeCalls == 0)
+    for _, item in ipairs(frames) do if item.scripts.OnUpdate then assert(not item.shown) end end
+end)
+check("Native constructor supersession cannot overwrite a newer guide point", function()
+    local original, entered = UiMapPoint.CreateFromCoordinates, false
+    UiMapPoint.CreateFromCoordinates = function(mapID, x, y)
+        if not entered then entered = true; assert(nav.Start({ id = 2, place = { mapID = 2, x = 30, y = 40 } })) end
+        return original(mapID, x, y)
+    end
+    assert(not nav.Start(action) and nativeCalls == 1 and current.uiMapID == 2)
+    nav.QuestChanged(1); assert(clears == 0)
+    nav.QuestChanged(2); assert(clears == 1)
+end)
+check("A manual waypoint appearing during construction is never overwritten or owned", function()
+    local original = UiMapPoint.CreateFromCoordinates
+    local manual = { uiMapID = 2, position = { x = 0.15, y = 0.25 } }
+    UiMapPoint.CreateFromCoordinates = function(mapID, x, y)
+        current = manual; return original(mapID, x, y)
+    end
+    assert(nav.Start(action) and nativeCalls == 0 and current == manual)
+    nav.Stop(); assert(clears == 0 and current == manual)
+end)
+check("Cancellation during a successful setter cleans only its exact stale point", function()
+    C_Map.SetUserWaypoint = function(p)
+        nativeCalls = nativeCalls + 1; current = p; nav.Stop(); return true
+    end
+    assert(not nav.Start(action) and nativeCalls == 1 and current == nil and clears == 1)
+    for _, item in ipairs(frames) do if item.scripts.OnUpdate then assert(not item.shown) end end
+    nav.Stop(); assert(clears == 1)
+end)
+check("Supersession inside the setter preserves a newer owned matching native point", function()
+    local entered = false
+    C_Map.SetUserWaypoint = function(p)
+        nativeCalls = nativeCalls + 1; current = p
+        if not entered then
+            entered = true; current = nil
+            assert(nav.Start({ id = 2, place = point }))
+        end
+        return true
+    end
+    assert(not nav.Start(action) and nativeCalls == 2 and current ~= nil and clears == 0)
+    nav.QuestChanged(2); assert(clears == 1 and current == nil)
+end)
+check("Stale native setter cleanup preserves a different player pin", function()
+    local manual = { uiMapID = 2, position = { x = 0.15, y = 0.25 } }
+    C_Map.SetUserWaypoint = function()
+        nativeCalls = nativeCalls + 1; nav.Stop(); current = manual; return true
+    end
+    assert(not nav.Start(action) and current == manual and clears == 0)
+    nav.Stop(); assert(current == manual and clears == 0)
+end)
+check("Supertracking supersession stops the old map and frame path", function()
+    local entered, maps = false, {}
+    C_SuperTrack = { SetSuperTrackedUserWaypoint = function()
+        if not entered then entered = true; assert(nav.Start({ id = 2, place = { mapID = 2, x = 30, y = 40 } })) end
+    end }
+    C_Map.OpenWorldMap = function(mapID) maps[#maps + 1] = mapID end
+    assert(not nav.Start(action) and current.uiMapID == 2 and #maps == 1 and maps[1] == 2)
+    nav.QuestChanged(2); assert(current == nil)
+end)
+check("Map-open cancellation and player-facing cancellation return without stale HUD writes", function()
+    C_Map.OpenWorldMap = function() nav.Stop() end
+    assert(not nav.Start(action))
+    for _, item in ipairs(frames) do if item.scripts.OnUpdate then assert(not item.shown) end end
+    C_Map.OpenWorldMap = function() error("cancelled request must not open map") end
+    GetPlayerFacing = function() nav.Stop(); return 0 end
+    local ok, started = pcall(nav.Start, action)
+    assert(ok and started == false)
+    for _, item in ipairs(frames) do if item.scripts.OnUpdate then assert(not item.shown) end end
+end)
+check("Stale native cleanup inspection cannot clear a guide created by its callback", function()
+    local reads, replacing = 0, false
+    C_Map.GetUserWaypoint = function()
+        reads = reads + 1
+        if reads == 3 and not replacing then
+            replacing = true; current = nil
+            assert(nav.Start({ id = 2, place = point }))
+        end
+        return current
+    end
+    C_Map.SetUserWaypoint = function(p)
+        nativeCalls = nativeCalls + 1; current = p
+        if not replacing then nav.Stop() end
+        return true
+    end
+    assert(not nav.Start(action) and replacing and nativeCalls == 2 and current ~= nil and clears == 0)
+    nav.QuestChanged(2); assert(clears == 1 and current == nil)
+end)
+check("A title refresh starting another guide cannot overwrite the newer HUD label", function()
+    local questName, entered = addon.QuestName, false
+    addon.QuestName = function(id)
+        if id == 1 and not entered then entered = true; assert(nav.Start({ id = 2, place = point })) end
+        return "Quest " .. id
+    end
+    assert(not nav.Start(action))
+    local shown = false
+    for _, item in ipairs(frames) do if item.shown and item.scripts.OnUpdate then
+        assert(item.label.text:find("Quest 2", 1, true) == 1); shown = true
+    end end
+    assert(shown)
+    addon.QuestName = questName
+end)
 print("Navigation modeled checks passed: " .. total .. " (no native map validation)")
