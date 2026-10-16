@@ -46,6 +46,8 @@ def validate(data):
                 raise ValueError(f"Duplicate {field} restriction: {q['id']}")
         if "startsInside" in q and type(q["startsInside"]) is not bool:
             raise ValueError(f"Invalid startsInside flag: {q['id']}")
+        if "repeatable" in q and type(q["repeatable"]) is not bool:
+            raise ValueError(f"Invalid repeatable flag: {q['id']}")
         if not q.get("source", "").startswith("https://www.wowhead.com/forever/"):
             raise ValueError(f"Missing Forever source: {q['id']}")
         for key in ("start", "finish"):
@@ -71,6 +73,20 @@ def validate(data):
     for q in quests.values():
         if any(qid not in quests for qid in q.get("storyline", [])):
             raise ValueError("Missing storyline quest")
+        if "completionQuests" in q:
+            related = q["completionQuests"]
+            if type(related) is not list or len(related) > 100:
+                raise ValueError(f"Invalid completion quest links: {q['id']}")
+            seen_related = set()
+            for entry in related:
+                if type(entry) is not dict or not integer(entry.get("id")) or not integer(entry.get("itemID")):
+                    raise ValueError(f"Invalid completion quest link: {q['id']}")
+                qid = entry["id"]
+                if qid == q["id"] or qid in seen_related:
+                    raise ValueError(f"Duplicate or self-referencing completion quest: {q['id']}")
+                if qid not in quests:
+                    raise ValueError(f"Missing completion quest definition: {q['id']}")
+                seen_related.add(qid)
         for g in q.get("requires", []):
             if not g.get("ids") or g.get("mode", "completed") not in ("completed", "active"):
                 raise ValueError("Invalid requirement group")

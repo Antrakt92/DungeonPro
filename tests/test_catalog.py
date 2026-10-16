@@ -95,6 +95,21 @@ class CatalogTests(unittest.TestCase):
                     with self.assertRaisesRegex(ValueError, "npcID entity ID"):
                         catalog.validate(data)
 
+    def test_repeatable_requires_explicit_boolean_without_changing_requirements(self):
+        for value in (None, "false", 0, 1, [], {}):
+            with self.subTest(value=value):
+                data = copy.deepcopy(self.data)
+                data["quests"][0]["repeatable"] = value
+                with self.assertRaisesRegex(ValueError, "repeatable"):
+                    catalog.validate(data)
+        quest = self.data["quests"][0]
+        known, requires = quest["requirementsKnown"], copy.deepcopy(quest.get("requires"))
+        for value in (False, True):
+            quest["repeatable"] = value
+            catalog.validate(self.data)
+            self.assertEqual(quest["requirementsKnown"], known)
+            self.assertEqual(quest.get("requires"), requires)
+
     def test_object_starters_remain_distinct_from_npcs(self):
         for field in ("start", "finish"):
             for value in (None, True, "142487", 0, -1, 142487.0):
@@ -144,6 +159,52 @@ class CatalogTests(unittest.TestCase):
         d["coverage"] = "reviewed"
         with self.assertRaisesRegex(ValueError, "Empty dungeon"):
             catalog.validate(self.data)
+
+    def test_completion_quests_validate_references_and_item_identity(self):
+        quest, other = self.data["quests"][:2]
+        quest["completionQuests"] = [{"id": other["id"], "itemID": 7083}]
+        catalog.validate(self.data)
+        self.assertIn('["completionQuests"]', catalog.generate(self.data))
+        quest["completionQuests"] = []
+        catalog.validate(self.data)
+
+    def test_completion_quests_require_bounded_lists_and_typed_entries(self):
+        other = self.data["quests"][1]["id"]
+        for value in (None, True, {}, "quest", [None], [True], [1], ["quest"],
+                      [{"id": other}], [{"itemID": 7083}], [{"id": other, "itemID": 7083}] * 101):
+            with self.subTest(value=value):
+                data = copy.deepcopy(self.data)
+                data["quests"][0]["completionQuests"] = value
+                with self.assertRaisesRegex(ValueError, "completion quest"):
+                    catalog.validate(data)
+        for field in ("id", "itemID"):
+            for value in (None, True, "7083", 0, -1, 1.5, float("inf"), float("nan")):
+                with self.subTest(field=field, value=value):
+                    data = copy.deepcopy(self.data)
+                    entry = {"id": other, "itemID": 7083}
+                    entry[field] = value
+                    data["quests"][0]["completionQuests"] = [entry]
+                    with self.assertRaisesRegex(ValueError, "completion quest"):
+                        catalog.validate(data)
+
+    def test_completion_quests_reject_missing_duplicate_and_self_links(self):
+        quest, other = self.data["quests"][:2]
+        for entries, message in (
+            ([{"id": 99999999, "itemID": 7083}], "Missing completion"),
+            ([{"id": quest["id"], "itemID": 7083}], "self-referencing"),
+            ([{"id": other["id"], "itemID": 7083}, {"id": other["id"], "itemID": 272448}], "Duplicate"),
+        ):
+            with self.subTest(entries=entries):
+                data = copy.deepcopy(self.data)
+                data["quests"][0]["completionQuests"] = entries
+                with self.assertRaisesRegex(ValueError, message):
+                    catalog.validate(data)
+
+    def test_completion_links_do_not_become_acceptance_dependency_cycles(self):
+        quest, other = self.data["quests"][:2]
+        quest["completionQuests"] = [{"id": other["id"], "itemID": 7083}]
+        other["completionQuests"] = [{"id": quest["id"], "itemID": 272448}]
+        catalog.validate(self.data)
 
 
 if __name__ == "__main__":

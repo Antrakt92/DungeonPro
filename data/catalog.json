@@ -315,7 +315,7 @@
         "name": "Shoni the Shilent",
         "mapID": 1453,
         "x": 55.4,
-        "y": 12.6,
+        "y": 12.4,
         "npcID": 6579
       }
     },
@@ -1675,7 +1675,13 @@
         "npcID": 248840,
         "name": "Trevan Rol"
       },
-      "requirementsKnown": false
+      "requirementsKnown": false,
+      "completionQuests": [
+        {
+          "id": 95042,
+          "itemID": 272448
+        }
+      ]
     },
     {
       "id": 1654,
@@ -1701,7 +1707,13 @@
         "npcID": 6181,
         "name": "Jordan Stilwell"
       },
-      "requirementsKnown": false
+      "requirementsKnown": false,
+      "completionQuests": [
+        {
+          "id": 1442,
+          "itemID": 7083
+        }
+      ]
     },
     {
       "id": 1740,
@@ -1979,11 +1991,17 @@
       "source": "https://www.wowhead.com/forever/quest=2930/data-rescue",
       "start": {
         "npcID": 7950,
-        "name": "Master Mechanic Castpipe"
+        "name": "Master Mechanic Castpipe",
+        "mapID": 1455,
+        "x": 70,
+        "y": 47.4
       },
       "finish": {
         "npcID": 7950,
-        "name": "Master Mechanic Castpipe"
+        "name": "Master Mechanic Castpipe",
+        "mapID": 1455,
+        "x": 70,
+        "y": 47.4
       },
       "storyline": [
         2931,
@@ -2002,11 +2020,17 @@
       "source": "https://www.wowhead.com/forever/quest=2841/rig-wars",
       "start": {
         "npcID": 3412,
-        "name": "Nogg"
+        "name": "Nogg",
+        "mapID": 1454,
+        "x": 75.8,
+        "y": 25.2
       },
       "finish": {
         "npcID": 3412,
-        "name": "Nogg"
+        "name": "Nogg",
+        "mapID": 1454,
+        "x": 75.8,
+        "y": 25.2
       }
     },
     {
@@ -2021,11 +2045,17 @@
       "source": "https://www.wowhead.com/forever/quest=2929/the-grand-betrayal",
       "start": {
         "npcID": 7937,
-        "name": "High Tinker Mekkatorque"
+        "name": "High Tinker Mekkatorque",
+        "mapID": 1455,
+        "x": 69,
+        "y": 49
       },
       "finish": {
         "npcID": 7937,
-        "name": "High Tinker Mekkatorque"
+        "name": "High Tinker Mekkatorque",
+        "mapID": 1455,
+        "x": 69,
+        "y": 49
       }
     },
     {
@@ -2060,11 +2090,17 @@
       "source": "https://www.wowhead.com/forever/quest=2926/gnogaine",
       "start": {
         "npcID": 1268,
-        "name": "Ozzie Togglevolt"
+        "name": "Ozzie Togglevolt",
+        "mapID": 1426,
+        "x": 45.8,
+        "y": 49.2
       },
       "finish": {
         "npcID": 1268,
-        "name": "Ozzie Togglevolt"
+        "name": "Ozzie Togglevolt",
+        "mapID": 1426,
+        "x": 45.8,
+        "y": 49.2
       }
     },
     {
@@ -2079,12 +2115,25 @@
       "source": "https://www.wowhead.com/forever/quest=2962/the-only-cure-is-more-green-glow",
       "start": {
         "npcID": 1268,
-        "name": "Ozzie Togglevolt"
+        "name": "Ozzie Togglevolt",
+        "mapID": 1426,
+        "x": 45.8,
+        "y": 49.2
       },
       "finish": {
         "npcID": 1268,
-        "name": "Ozzie Togglevolt"
-      }
+        "name": "Ozzie Togglevolt",
+        "mapID": 1426,
+        "x": 45.8,
+        "y": 49.2
+      },
+      "requires": [
+        {
+          "ids": [
+            2926
+          ]
+        }
+      ]
     },
     {
       "id": 2928,
@@ -2098,11 +2147,17 @@
       "source": "https://www.wowhead.com/forever/quest=2928/gyrodrillmatic-excavationators",
       "start": {
         "npcID": 6579,
-        "name": "Shoni the Shilent"
+        "name": "Shoni the Shilent",
+        "mapID": 1453,
+        "x": 55.4,
+        "y": 12.4
       },
       "finish": {
         "npcID": 6579,
-        "name": "Shoni the Shilent"
+        "name": "Shoni the Shilent",
+        "mapID": 1453,
+        "x": 55.4,
+        "y": 12.4
       }
     },
     {
@@ -2117,11 +2172,17 @@
       "source": "https://www.wowhead.com/forever/quest=2922/save-techbots-brain",
       "start": {
         "npcID": 7944,
-        "name": "Tinkmaster Overspark"
+        "name": "Tinkmaster Overspark",
+        "mapID": 1455,
+        "x": 69.4,
+        "y": 50.4
       },
       "finish": {
         "npcID": 7944,
-        "name": "Tinkmaster Overspark"
+        "name": "Tinkmaster Overspark",
+        "mapID": 1455,
+        "x": 69.4,
+        "y": 50.4
       },
       "storyline": [
         2923,
@@ -2176,11 +2237,17 @@
       "source": "https://www.wowhead.com/forever/quest=2924/essential-artificials",
       "start": {
         "npcID": 6169,
-        "name": "Klockmort Spannerspan"
+        "name": "Klockmort Spannerspan",
+        "mapID": 1455,
+        "x": 68.2,
+        "y": 46.2
       },
       "finish": {
         "npcID": 6169,
-        "name": "Klockmort Spannerspan"
+        "name": "Klockmort Spannerspan",
+        "mapID": 1455,
+        "x": 68.2,
+        "y": 46.2
       },
       "storyline": [
         2925,
@@ -2203,7 +2270,10 @@
       },
       "finish": {
         "npcID": 7950,
-        "name": "Master Mechanic Castpipe"
+        "name": "Master Mechanic Castpipe",
+        "mapID": 1455,
+        "x": 70,
+        "y": 47.4
       },
       "storyline": [
         2931,
@@ -2226,7 +2296,10 @@
       },
       "finish": {
         "npcID": 7944,
-        "name": "Tinkmaster Overspark"
+        "name": "Tinkmaster Overspark",
+        "mapID": 1455,
+        "x": 69.4,
+        "y": 50.4
       },
       "storyline": [
         2923,
@@ -2249,7 +2322,10 @@
       },
       "finish": {
         "npcID": 6169,
-        "name": "Klockmort Spannerspan"
+        "name": "Klockmort Spannerspan",
+        "mapID": 1455,
+        "x": 68.2,
+        "y": 46.2
       },
       "storyline": [
         2925,
@@ -2300,6 +2376,13 @@
       "storyline": [
         2842,
         2843
+      ],
+      "requires": [
+        {
+          "ids": [
+            2842
+          ]
+        }
       ]
     },
     {
@@ -2326,6 +2409,265 @@
         "name": "Ulric Frostveil"
       },
       "requirementsKnown": false
+    },
+    {
+      "id": 2949,
+      "name": "Return of the Ring",
+      "level": 34,
+      "minLevel": 28,
+      "factions": [
+        "Horde"
+      ],
+      "requirementsKnown": false,
+      "source": "https://www.wowhead.com/forever/quest=2949/return-of-the-ring",
+      "start": {
+        "objectID": 142487,
+        "name": "The Sparklematic 5200"
+      },
+      "finish": {
+        "npcID": 3412,
+        "name": "Nogg",
+        "mapID": 1454,
+        "x": 75.8,
+        "y": 25.2
+      },
+      "storyline": [
+        2949,
+        2950
+      ]
+    },
+    {
+      "id": 2947,
+      "name": "Return of the Ring",
+      "level": 34,
+      "minLevel": 28,
+      "factions": [
+        "Alliance"
+      ],
+      "requirementsKnown": false,
+      "source": "https://www.wowhead.com/forever/quest=2947/return-of-the-ring",
+      "start": {
+        "objectID": 142487,
+        "name": "The Sparklematic 5200"
+      },
+      "finish": {
+        "npcID": 6826,
+        "name": "Talvash del Kissel"
+      }
+    },
+    {
+      "id": 2927,
+      "name": "The Day After",
+      "level": 27,
+      "minLevel": 20,
+      "factions": [
+        "Alliance"
+      ],
+      "requirementsKnown": false,
+      "source": "https://www.wowhead.com/forever/quest=2927/the-day-after",
+      "start": {
+        "npcID": 6569,
+        "name": "Gnoarn"
+      },
+      "finish": {
+        "npcID": 1268,
+        "name": "Ozzie Togglevolt",
+        "mapID": 1426,
+        "x": 45.8,
+        "y": 49.2
+      }
+    },
+    {
+      "id": 2952,
+      "name": "The Sparklematic 5200!",
+      "level": 30,
+      "minLevel": 25,
+      "factions": [
+        "Alliance",
+        "Horde"
+      ],
+      "requirementsKnown": false,
+      "source": "https://www.wowhead.com/forever/quest=2952/the-sparklematic-5200",
+      "start": {
+        "objectID": 142487,
+        "name": "The Sparklematic 5200"
+      },
+      "finish": {
+        "objectID": 142487,
+        "name": "The Sparklematic 5200"
+      }
+    },
+    {
+      "id": 2953,
+      "name": "More Sparklematic Action",
+      "level": 30,
+      "minLevel": 25,
+      "factions": [
+        "Alliance",
+        "Horde"
+      ],
+      "requirementsKnown": false,
+      "source": "https://www.wowhead.com/forever/quest=2953/more-sparklematic-action",
+      "start": {
+        "objectID": 142487,
+        "name": "The Sparklematic 5200"
+      },
+      "finish": {
+        "objectID": 142487,
+        "name": "The Sparklematic 5200"
+      },
+      "repeatable": true
+    },
+    {
+      "id": 4605,
+      "name": "The Sparklematic 5200!",
+      "level": 30,
+      "minLevel": 25,
+      "factions": [
+        "Alliance",
+        "Horde"
+      ],
+      "requirementsKnown": false,
+      "source": "https://www.wowhead.com/forever/quest=4605/the-sparklematic-5200",
+      "start": {
+        "objectID": 175084,
+        "name": "The Sparklematic 5200"
+      },
+      "finish": {
+        "objectID": 175084,
+        "name": "The Sparklematic 5200"
+      }
+    },
+    {
+      "id": 4604,
+      "name": "More Sparklematic Action",
+      "level": 30,
+      "minLevel": 25,
+      "factions": [
+        "Alliance",
+        "Horde"
+      ],
+      "requirementsKnown": false,
+      "source": "https://www.wowhead.com/forever/quest=4604/more-sparklematic-action",
+      "start": {
+        "objectID": 175085,
+        "name": "The Sparklematic 5200"
+      },
+      "finish": {
+        "objectID": 175085,
+        "name": "The Sparklematic 5200"
+      },
+      "repeatable": true
+    },
+    {
+      "id": 4606,
+      "name": "The Sparklematic 5200!",
+      "level": 30,
+      "minLevel": 25,
+      "factions": [
+        "Alliance",
+        "Horde"
+      ],
+      "requirementsKnown": false,
+      "source": "https://www.wowhead.com/forever/quest=4606/the-sparklematic-5200",
+      "start": {
+        "objectID": 175085,
+        "name": "The Sparklematic 5200"
+      },
+      "finish": {
+        "objectID": 175085,
+        "name": "The Sparklematic 5200"
+      }
+    },
+    {
+      "id": 4603,
+      "name": "More Sparklematic Action",
+      "level": 30,
+      "minLevel": 25,
+      "factions": [
+        "Alliance",
+        "Horde"
+      ],
+      "requirementsKnown": false,
+      "source": "https://www.wowhead.com/forever/quest=4603/more-sparklematic-action",
+      "start": {
+        "objectID": 175084,
+        "name": "The Sparklematic 5200"
+      },
+      "finish": {
+        "objectID": 175084,
+        "name": "The Sparklematic 5200"
+      },
+      "repeatable": true
+    },
+    {
+      "id": 4601,
+      "name": "The Sparklematic 5200!",
+      "level": 30,
+      "minLevel": 25,
+      "factions": [
+        "Alliance",
+        "Horde"
+      ],
+      "requirementsKnown": false,
+      "source": "https://www.wowhead.com/forever/quest=4601/the-sparklematic-5200",
+      "start": {
+        "objectID": 175084,
+        "name": "The Sparklematic 5200"
+      },
+      "finish": {
+        "objectID": 175084,
+        "name": "The Sparklematic 5200"
+      }
+    },
+    {
+      "id": 4602,
+      "name": "The Sparklematic 5200!",
+      "level": 30,
+      "minLevel": 25,
+      "factions": [
+        "Alliance",
+        "Horde"
+      ],
+      "requirementsKnown": false,
+      "source": "https://www.wowhead.com/forever/quest=4602/the-sparklematic-5200",
+      "start": {
+        "objectID": 175085,
+        "name": "The Sparklematic 5200"
+      },
+      "finish": {
+        "objectID": 175085,
+        "name": "The Sparklematic 5200"
+      }
+    },
+    {
+      "id": 2950,
+      "name": "Nogg's Ring Redo",
+      "level": 35,
+      "minLevel": 28,
+      "factions": [
+        "Horde"
+      ],
+      "requirementsKnown": false,
+      "source": "https://www.wowhead.com/forever/quest=2950/noggs-ring-redo",
+      "start": {
+        "npcID": 3412,
+        "name": "Nogg",
+        "mapID": 1454,
+        "x": 75.8,
+        "y": 25.2
+      },
+      "finish": {
+        "npcID": 3412,
+        "name": "Nogg",
+        "mapID": 1454,
+        "x": 75.8,
+        "y": 25.2
+      },
+      "storyline": [
+        2949,
+        2950
+      ]
     }
   ],
   "dungeons": [
@@ -2462,7 +2804,17 @@
         2945,
         2951,
         2924,
-        2843
+        2843,
+        2949,
+        2947,
+        2952,
+        2953,
+        4605,
+        4604,
+        4606,
+        4603,
+        4601,
+        4602
       ],
       "source": "https://www.wowhead.com/forever/guide/dungeons-overview-locations-details",
       "instanceID": 90

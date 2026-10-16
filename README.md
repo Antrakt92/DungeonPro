@@ -28,6 +28,9 @@ quests have not been added. Level ranges are provisional recommendations.
   dungeons, beyond the ordinary dungeon categories. Their preparation chains
   and some dungeon associations still need checking.
 - Separate story order for chains whose hard prerequisites still need checking.
+- Related quests for completion materials appear separately from acceptance
+  requirements. Their completion does not confirm you still hold the item.
+- Explicitly sourced repeatable quests have their own label.
 - Where prerequisites have alternatives, choose a branch or restore automatic
   planning. Choosing a route does not bypass requirements or confirm availability.
 - World map, optional TomTom and a built-in direction arrow. The arrow points

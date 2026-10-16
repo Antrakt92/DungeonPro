@@ -123,6 +123,29 @@ function Planner.New(quests, context, choices)
         return actions, uncertain
     end
 
+    -- Material sources are informational completion links, never acceptance gates.
+    function engine:CompletionSteps(id)
+        id = addon.Clean(id, "number")
+        if not id or id < 1 or id % 1 ~= 0 then return {} end
+        local q = self.quests[id]
+        local related = q and addon.Clean(q.completionQuests, "table")
+        local result, seen = {}, {}
+        if not related then return result end
+        for i = 1, math.min(#related, 100) do
+            local entry = addon.Clean(related[i], "table")
+            local other = entry and addon.Clean(entry.id, "number")
+            local itemID = entry and addon.Clean(entry.itemID, "number")
+            if other and other > 0 and other % 1 == 0 and other ~= id and not seen[other] and
+                itemID and itemID > 0 and itemID % 1 == 0 then
+                seen[other] = true
+                local actions, unknown = self:Next(other)
+                result[#result + 1] = { id = other, itemID = itemID, state = self:State(other),
+                    actions = actions, unknown = unknown }
+            end
+        end
+        return result
+    end
+
     function engine:Dungeon(dungeon, options)
         local result = { rows = {}, actions = {}, counts = {}, unknown = dungeon.coverage ~= "reviewed", ready = true }
         local seen, relevant = {}, 0

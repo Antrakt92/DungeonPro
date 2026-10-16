@@ -264,12 +264,14 @@ function UI:RefreshDetail()
     end
     for _, b in ipairs(self.chainButtons) do b:Hide() end
     for _, b in ipairs(self.branchButtons) do b:Hide() end
+    for _, b in ipairs(self.materialButtons) do b:Hide() end
     local id, engine = self.quest, self.engine
     if id then
         local q = addon.quests[id] or {}
         line(addon.QuestName(id), 24)
         local state = engine:State(id)
         line("|cff" .. COLOR[state.status] .. addon.L(state.status) .. "|r")
+        if addon.Clean(q.repeatable, "boolean") == true then line(addon.L("REPEATABLE")) end
         if state.reason then
             local reason = "REASON_" .. state.reason
             if state.reason == "requirements" and state.status == "UNKNOWN" then
@@ -378,6 +380,22 @@ function UI:RefreshDetail()
         if q.storyline then
             for _, stepID in ipairs(q.storyline) do visit(stepID, 0) end
         else visit(id, 0) end
+        local materials = addon.Read(engine.CompletionSteps, "table", engine, id)
+        if materials and #materials > 0 then
+            line(addon.L("MATERIAL_QUESTS"))
+            line(addon.L("MATERIAL_NOTICE"))
+            for index, entry in ipairs(materials) do
+                local other = entry.id
+                local row = self:MakeRow(self.detail, self.materialButtons, index, 59)
+                row.questID, row.itemID = other, entry.itemID
+                row.title:SetText(addon.QuestName(other))
+                local status = entry.state.status
+                row.note:SetText("|cff" .. COLOR[status] .. addon.L(status) .. "|r\n" ..
+                    addon.L("MATERIAL_ITEM", entry.itemID) .. (entry.unknown and status ~= "UNKNOWN" and (" — " .. addon.L("UNKNOWN")) or ""))
+                row:SetScript("OnClick", function() self.quest = other; self:RefreshDetail() end)
+                y = self:LayoutRow(row, 59, y)
+            end
+        end
         line(addon.Description(id))
         local objectives = addon.QuestObjectives and addon.QuestObjectives(id)
         for _, objective in ipairs(objectives or {}) do
@@ -529,6 +547,7 @@ function UI:Create()
     self.giver:SetPoint("BOTTOMLEFT", 690, 19)
     self.footer = label(frame, "", 22, -668, 640, 11)
     self.frame, self.cards, self.rows, self.details, self.chainButtons, self.branchButtons = frame, {}, {}, {}, {}, {}
+    self.materialButtons = {}
     UISpecialFrames[#UISpecialFrames + 1] = "DungeonPrepWindow"
     for _, d in ipairs(addon.dungeons) do if d.key == addon.char.selectedDungeon then self.dungeon = d end end
     frame:SetScript("OnShow", function() self:Fit(); self:Refresh() end)

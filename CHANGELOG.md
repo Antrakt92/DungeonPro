@@ -26,6 +26,11 @@
 - Added client-provided item rewards, reward choices and money to quest details.
 - Improved localized dungeon search, added a clear button and explained empty
   search results.
+- Extended Gnomeregan with separate object-quest variants, repeatable labels and
+  seven sourced giver locations.
+- Separated quests that provide completion materials from acceptance requirements.
+- Recovered quest-title requests that receive no result event, with bounded retries.
+- Preserved nearby player map pins and new guides started during waypoint cleanup.
 - Added saved choices for alternative prerequisite branches, with an automatic
   planning option and safe fallback when a branch is unavailable.
 - Adjusted row and chain-button heights for wrapped text and kept navigation

@@ -551,4 +551,46 @@ check("Search matches localized and source names literally while preserving sele
     addon.dungeons, addon.DungeonName, ui.dungeon, ui.quest, addon.char.selectedDungeon = dungeons, dungeonName, selected, quest, savedSelection
     ui:Refresh()
 end)
+check("Completion material quests stay separate from acceptance and inventory claims", function()
+    addon.quests[800] = { id = 800, minLevel = 1, requirementsKnown = true, repeatable = true,
+        completionQuests = { { id = 801, itemID = 701 }, { id = 802, itemID = 702 } } }
+    addon.quests[801] = { id = 801, minLevel = 1, requirementsKnown = false, repeatable = false }
+    addon.quests[802] = { id = 802, minLevel = 1, requirementsKnown = true }
+    done[802] = true
+    showDetail(800)
+    assert(ui.engine:State(800).status == "AVAILABLE" and ui.action.id == 800)
+    assert(detailHas(addon.L("MATERIAL_QUESTS")) and detailHas(addon.L("MATERIAL_NOTICE")))
+    assert(detailHas(addon.L("REPEATABLE")))
+    local first, second = ui.materialButtons[1], ui.materialButtons[2]
+    assert(first.shown and first.questID == 801 and first.itemID == 701)
+    assert(first.note.text:find(addon.L("MATERIAL_ITEM", 701), 1, true))
+    assert(first.note.text:find(addon.L("UNKNOWN"), 1, true))
+    assert(second.shown and second.note.text:find(addon.L("COMPLETED"), 1, true))
+    first.scripts.OnClick()
+    assert(ui.quest == 801 and not ui.action and not ui.guide.enabled)
+    assert(not detailHas(addon.L("MATERIAL_QUESTS")) and not detailHas(addon.L("MATERIAL_NOTICE")))
+    assert(not detailHas(addon.L("REPEATABLE")) and not first.shown and not second.shown)
+    showDetail(800)
+    assert(ui.materialButtons[1] == first and first.shown and ui.action.id == 800)
+end)
+check("Material rows wrap, clear on redraw and tolerate an older planner", function()
+    measurement = function(fs)
+        if fs.text == "Quest 801" then return 72 end
+        if fs.text and fs.text:find(addon.L("MATERIAL_ITEM", 701), 1, true) then return 36 end
+        return 18
+    end
+    showDetail(800)
+    local first, second = ui.materialButtons[1], ui.materialButtons[2]
+    assert(first.height >= 7 + 72 + 4 + 36 + 7)
+    assert(first.point[3] - second.point[3] >= first.height + 4)
+    measurement = nil; showDetail(800)
+    assert(first.height == 59)
+    ui.engine.CompletionSteps = nil; ui:RefreshDetail()
+    assert(not first.shown and not second.shown and not detailHas(addon.L("MATERIAL_QUESTS")))
+    addon.quests[800].repeatable = "true"; showDetail(800)
+    assert(not detailHas(addon.L("REPEATABLE")))
+    addon.quests[800], addon.quests[801], addon.quests[802], done[802] = nil, nil, nil, nil
+    showDetail(2)
+    for _, b in ipairs(ui.materialButtons) do assert(not b.shown) end
+end)
 print("Preparation UI modeled checks passed: " .. total .. " (no native layout validation)")

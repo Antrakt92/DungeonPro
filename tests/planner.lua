@@ -243,6 +243,85 @@ check("Unknown AND requirement retains known work and uncertainty", function()
     local actions, unknown = e:Next(3)
     eq(#actions, 1); eq(actions[1].id, 2); eq(unknown, true)
 end)
+check("Completion material quests never change acceptance availability or main actions", function()
+    for _, pair in ipairs({ { 95036, 95042, 272448 }, { 1654, 1442, 7083 } }) do
+        local main, related, itemID = unpack(pair)
+        local quests = { [main] = q(main), [related] = q(related) }
+        local c = ctx()
+        local before = P.New(quests, c)
+        local initial = before:Dungeon({ quests = { main }, coverage = "reviewed" })
+        quests[main].completionQuests = { { id = related, itemID = itemID } }
+        local e = P.New(quests, c)
+        local steps = e:CompletionSteps(main)
+        eq(#steps, 1); eq(steps[1].id, related); eq(steps[1].itemID, itemID)
+        eq(steps[1].state.status, "AVAILABLE"); eq(steps[1].actions[1].id, related)
+        eq(steps[1].actions[1].kind, "pickup"); eq(steps[1].unknown, false)
+        eq(e:State(main).status, before:State(main).status)
+        eq(e:Next(main)[1].id, main)
+        local after = e:Dungeon({ quests = { main }, coverage = "reviewed" })
+        eq(after.ready, initial.ready); eq(after.unknown, initial.unknown)
+        eq(#after.actions, #initial.actions); eq(after.actions[1].id, main)
+    end
+end)
+check("Completion quest status does not prove item ownership or main quest turn-in readiness", function()
+    local quests = { [1] = q(1, nil, { completionQuests = { { id = 2, itemID = 7083 } } }), [2] = q(2) }
+    local c = ctx({ [2] = true }, { [1] = true })
+    local e = P.New(quests, c)
+    local step = e:CompletionSteps(1)[1]
+    eq(step.state.status, "COMPLETED"); eq(#step.actions, 0); eq(step.unknown, false)
+    eq(step.owned, nil); eq(step.itemOwned, nil)
+    eq(e:State(1).status, "ACTIVE"); eq(e:Next(1)[1].kind, "complete")
+    eq(e:Dungeon({ quests = { 1 }, coverage = "reviewed" }).ready, true)
+end)
+check("Unavailable and unknown completion sources remain honest informational rows", function()
+    local quests = { [1] = q(1, nil, { completionQuests = {
+        { id = 2, itemID = 7083 }, { id = 3, itemID = 272448 },
+    } }), [2] = q(2, nil, { factions = { "Horde" } }), [3] = q(3, nil, { requirementsKnown = false }) }
+    local e = P.New(quests, ctx())
+    local steps = e:CompletionSteps(1)
+    eq(#steps, 2)
+    eq(steps[1].state.status, "UNAVAILABLE"); eq(#steps[1].actions, 0); eq(steps[1].unknown, false)
+    eq(steps[2].state.status, "UNKNOWN"); eq(#steps[2].actions, 0); eq(steps[2].unknown, true)
+    eq(e:State(1).status, "AVAILABLE"); eq(e:Next(1)[1].id, 1)
+end)
+check("Completion sources reuse recursive Next results for active ready and locked quests", function()
+    local place = { mapID = 1456, x = 70.4, y = 29.6 }
+    local quests = { [1] = q(1, nil, { completionQuests = { { id = 2, itemID = 7083 } } }),
+        [2] = q(2, { { ids = { 3 } } }), [3] = q(3, nil, { finish = place }) }
+    local c = ctx({}, { [3] = true })
+    local step = P.New(quests, c):CompletionSteps(1)[1]
+    eq(step.state.status, "LOCKED"); eq(step.actions[1].id, 3); eq(step.actions[1].kind, "complete")
+    c.ready = function() return true end
+    step = P.New(quests, c):CompletionSteps(1)[1]
+    eq(step.actions[1].id, 3); eq(step.actions[1].kind, "turnin"); eq(step.actions[1].place, place)
+end)
+check("Completion links are one-level distinct and cannot recursively traverse material cycles", function()
+    local quests = {
+        [1] = q(1, nil, { completionQuests = { { id = 2, itemID = 7083 }, { id = 2, itemID = 7083 } } }),
+        [2] = q(2, nil, { completionQuests = { { id = 1, itemID = 272448 }, { id = 3, itemID = 123 } } }),
+        [3] = q(3),
+    }
+    local e = P.New(quests, ctx())
+    local steps = e:CompletionSteps(1)
+    eq(#steps, 1); eq(steps[1].id, 2); eq(e.states[3], nil)
+    eq(e:State(1).status, "AVAILABLE"); eq(e:State(2).status, "AVAILABLE")
+    eq(#e:CompletionSteps(99), 0); eq(#e:CompletionSteps(0), 0)
+end)
+check("Runtime completion links bound malformed or excessive input without mutating catalogue", function()
+    local quests = { [1] = q(1, nil, { completionQuests = {} }) }
+    for i = 2, 102 do
+        quests[i] = q(i)
+        quests[1].completionQuests[#quests[1].completionQuests + 1] = { id = i, itemID = 7000 + i }
+    end
+    local e = P.New(quests, ctx())
+    local steps = e:CompletionSteps(1)
+    eq(#steps, 100); eq(steps[100].id, 101); eq(#quests[1].completionQuests, 101)
+    steps[1].itemID = 99; eq(e:CompletionSteps(1)[1].itemID, 7002)
+    quests[1].completionQuests = { false, { id = 1, itemID = 7 }, { id = "2", itemID = 7 },
+        { id = 2, itemID = 0 }, { id = 3, itemID = 7003 } }
+    steps = e:CompletionSteps(1)
+    eq(#steps, 1); eq(steps[1].id, 3)
+end)
 check("Future schema is preserved", function()
     GetLocale = function() return "enUS" end
     assert(loadfile("Core/Client.lua"))("DungeonPrep", addon)
