@@ -1186,7 +1186,14 @@
         "mapID": 1413,
         "x": 62.4,
         "y": 37.6
-      }
+      },
+      "requires": [
+        {
+          "ids": [
+            865
+          ]
+        }
+      ]
     },
     {
       "id": 1489,
@@ -1826,7 +1833,14 @@
         "x": 49.6,
         "y": 18.2
       },
-      "requirementsKnown": false
+      "requirementsKnown": false,
+      "requires": [
+        {
+          "ids": [
+            303
+          ]
+        }
+      ]
     },
     {
       "id": 377,
@@ -1876,7 +1890,14 @@
         "x": 51.4,
         "y": 69.2
       },
-      "requirementsKnown": false
+      "requirementsKnown": false,
+      "requires": [
+        {
+          "ids": [
+            389
+          ]
+        }
+      ]
     },
     {
       "id": 388,
@@ -3864,7 +3885,14 @@
       "finish": {
         "npcID": 2918,
         "name": "Advisor Belgrum"
-      }
+      },
+      "requires": [
+        {
+          "ids": [
+            762
+          ]
+        }
+      ]
     },
     {
       "id": 2283,
@@ -6399,6 +6427,13 @@
       "storyline": [
         1469,
         1475
+      ],
+      "requires": [
+        {
+          "ids": [
+            1452
+          ]
+        }
       ]
     },
     {
@@ -8173,12 +8208,18 @@
       "start": {
         "npcID": 250686,
         "name": "Tabitha Heartweaver",
-        "zoneName": "Silverpine Forest"
+        "zoneName": "Silverpine Forest",
+        "mapID": 1421,
+        "x": 44.4,
+        "y": 42.8
       },
       "finish": {
         "npcID": 250686,
         "name": "Tabitha Heartweaver",
-        "zoneName": "Silverpine Forest"
+        "zoneName": "Silverpine Forest",
+        "mapID": 1421,
+        "x": 44.4,
+        "y": 42.8
       },
       "requirementsKnown": false,
       "factions": [
@@ -8213,12 +8254,18 @@
       "start": {
         "npcID": 266484,
         "name": "Morbin Lightbane",
-        "zoneName": "Undercity"
+        "zoneName": "Undercity",
+        "mapID": 1458,
+        "x": 57.4,
+        "y": 90.4
       },
       "finish": {
         "npcID": 266484,
         "name": "Morbin Lightbane",
-        "zoneName": "Undercity"
+        "zoneName": "Undercity",
+        "mapID": 1458,
+        "x": 57.4,
+        "y": 90.4
       },
       "requirementsKnown": false,
       "factions": [
@@ -8234,12 +8281,18 @@
       "start": {
         "npcID": 251001,
         "name": "Deathguard Kristof",
-        "zoneName": "Tirisfal Glades"
+        "zoneName": "Tirisfal Glades",
+        "mapID": 1420,
+        "x": 65.2,
+        "y": 60.2
       },
       "finish": {
         "npcID": 251001,
         "name": "Deathguard Kristof",
-        "zoneName": "Tirisfal Glades"
+        "zoneName": "Tirisfal Glades",
+        "mapID": 1420,
+        "x": 65.2,
+        "y": 60.2
       },
       "requirementsKnown": false,
       "factions": [
@@ -8284,7 +8337,10 @@
       "finish": {
         "npcID": 15991,
         "name": "Lady Dena Kennedy",
-        "zoneName": "Stormwind City"
+        "zoneName": "Stormwind City",
+        "mapID": 1453,
+        "x": 62.6,
+        "y": 5.8
       },
       "requirementsKnown": false,
       "factions": [
@@ -8319,7 +8375,10 @@
       "finish": {
         "npcID": 7825,
         "name": "Oran Snakewrithe",
-        "zoneName": "Undercity"
+        "zoneName": "Undercity",
+        "mapID": 1458,
+        "x": 73.4,
+        "y": 32.4
       },
       "requirementsKnown": false,
       "factions": [
@@ -8339,12 +8398,18 @@
       "start": {
         "npcID": 11835,
         "name": "Theodore Griffs",
-        "zoneName": "Undercity"
+        "zoneName": "Undercity",
+        "mapID": 1458,
+        "x": 46.2,
+        "y": 70.4
       },
       "finish": {
         "npcID": 11835,
         "name": "Theodore Griffs",
-        "zoneName": "Undercity"
+        "zoneName": "Undercity",
+        "mapID": 1458,
+        "x": 46.2,
+        "y": 70.4
       },
       "requirementsKnown": false,
       "factions": [
@@ -8430,7 +8495,10 @@
       "finish": {
         "npcID": 2055,
         "name": "Master Apothecary Faranell",
-        "zoneName": "Undercity"
+        "zoneName": "Undercity",
+        "mapID": 1458,
+        "x": 48.4,
+        "y": 69.4
       },
       "requirementsKnown": false,
       "factions": [
@@ -8453,7 +8521,10 @@
       "start": {
         "npcID": 2055,
         "name": "Master Apothecary Faranell",
-        "zoneName": "Undercity"
+        "zoneName": "Undercity",
+        "mapID": 1458,
+        "x": 48.4,
+        "y": 69.4
       },
       "finish": {
         "npcID": 271613,
@@ -8484,7 +8555,10 @@
       "finish": {
         "npcID": 2055,
         "name": "Master Apothecary Faranell",
-        "zoneName": "Undercity"
+        "zoneName": "Undercity",
+        "mapID": 1458,
+        "x": 48.4,
+        "y": 69.4
       },
       "requirementsKnown": false,
       "factions": [
@@ -8507,12 +8581,18 @@
       "start": {
         "npcID": 2055,
         "name": "Master Apothecary Faranell",
-        "zoneName": "Undercity"
+        "zoneName": "Undercity",
+        "mapID": 1458,
+        "x": 48.4,
+        "y": 69.4
       },
       "finish": {
         "npcID": 2055,
         "name": "Master Apothecary Faranell",
-        "zoneName": "Undercity"
+        "zoneName": "Undercity",
+        "mapID": 1458,
+        "x": 48.4,
+        "y": 69.4
       },
       "requirementsKnown": false,
       "factions": [
@@ -8535,12 +8615,18 @@
       "start": {
         "npcID": 2055,
         "name": "Master Apothecary Faranell",
-        "zoneName": "Undercity"
+        "zoneName": "Undercity",
+        "mapID": 1458,
+        "x": 48.4,
+        "y": 69.4
       },
       "finish": {
         "npcID": 2055,
         "name": "Master Apothecary Faranell",
-        "zoneName": "Undercity"
+        "zoneName": "Undercity",
+        "mapID": 1458,
+        "x": 48.4,
+        "y": 69.4
       },
       "requirementsKnown": false,
       "factions": [
@@ -10818,6 +10904,288 @@
         5861,
         5862
       ]
+    },
+    {
+      "id": 865,
+      "name": "Raptor Horns",
+      "level": 18,
+      "minLevel": 13,
+      "factions": [
+        "Alliance",
+        "Horde"
+      ],
+      "start": {
+        "npcID": 3446,
+        "name": "Mebok Mizzyrix"
+      },
+      "finish": {
+        "npcID": 3446,
+        "name": "Mebok Mizzyrix"
+      },
+      "requirementsKnown": false,
+      "source": "https://www.wowhead.com/forever/quest=865"
+    },
+    {
+      "id": 303,
+      "name": "The Dark Iron War",
+      "level": 30,
+      "minLevel": 25,
+      "factions": [
+        "Alliance"
+      ],
+      "start": {
+        "npcID": 1074,
+        "name": "Motley Garmason"
+      },
+      "finish": {
+        "npcID": 1074,
+        "name": "Motley Garmason"
+      },
+      "requirementsKnown": false,
+      "source": "https://www.wowhead.com/forever/quest=303"
+    },
+    {
+      "id": 389,
+      "name": "Bazil Thredd",
+      "level": 22,
+      "minLevel": 16,
+      "factions": [
+        "Alliance"
+      ],
+      "start": {
+        "npcID": 1646,
+        "name": "Baros Alexston"
+      },
+      "finish": {
+        "npcID": 1719,
+        "name": "Warden Thelwater"
+      },
+      "requirementsKnown": false,
+      "source": "https://www.wowhead.com/forever/quest=389"
+    },
+    {
+      "id": 762,
+      "name": "An Ambassador of Evil",
+      "level": 44,
+      "minLevel": 35,
+      "factions": [
+        "Alliance"
+      ],
+      "start": {
+        "npcID": 2916,
+        "name": "Historian Karnik"
+      },
+      "finish": {
+        "npcID": 2918,
+        "name": "Advisor Belgrum"
+      },
+      "requirementsKnown": false,
+      "source": "https://www.wowhead.com/forever/quest=762",
+      "storyline": [
+        725,
+        726,
+        762
+      ]
+    },
+    {
+      "id": 1452,
+      "name": "Rhapsody's Kalimdor Kocktail",
+      "level": 43,
+      "minLevel": 38,
+      "factions": [
+        "Alliance"
+      ],
+      "start": {
+        "npcID": 5634,
+        "name": "Rhapsody Shindigger"
+      },
+      "finish": {
+        "npcID": 5634,
+        "name": "Rhapsody Shindigger"
+      },
+      "requirementsKnown": false,
+      "source": "https://www.wowhead.com/forever/quest=1452",
+      "storyline": [
+        1448,
+        1449,
+        1450,
+        1451,
+        1452
+      ]
+    },
+    {
+      "id": 1448,
+      "name": "In Search of The Temple",
+      "level": 43,
+      "minLevel": 38,
+      "factions": [
+        "Alliance"
+      ],
+      "start": {
+        "npcID": 5384,
+        "name": "Brohann Caskbelly"
+      },
+      "finish": {
+        "npcID": 5384,
+        "name": "Brohann Caskbelly"
+      },
+      "requirementsKnown": false,
+      "source": "https://www.wowhead.com/forever/quest=1448",
+      "storyline": [
+        1448,
+        1449,
+        1450,
+        1451,
+        1452
+      ]
+    },
+    {
+      "id": 1449,
+      "name": "To The Hinterlands",
+      "level": 43,
+      "minLevel": 38,
+      "factions": [
+        "Alliance"
+      ],
+      "start": {
+        "npcID": 5384,
+        "name": "Brohann Caskbelly"
+      },
+      "finish": {
+        "npcID": 5635,
+        "name": "Falstad Wildhammer"
+      },
+      "requirementsKnown": false,
+      "source": "https://www.wowhead.com/forever/quest=1449",
+      "storyline": [
+        1448,
+        1449,
+        1450,
+        1451,
+        1452
+      ]
+    },
+    {
+      "id": 1450,
+      "name": "Gryphon Master Talonaxe",
+      "level": 43,
+      "minLevel": 38,
+      "factions": [
+        "Alliance"
+      ],
+      "start": {
+        "npcID": 5635,
+        "name": "Falstad Wildhammer"
+      },
+      "finish": {
+        "npcID": 5636,
+        "name": "Gryphon Master Talonaxe"
+      },
+      "requirementsKnown": false,
+      "source": "https://www.wowhead.com/forever/quest=1450",
+      "storyline": [
+        1448,
+        1449,
+        1450,
+        1451,
+        1452
+      ]
+    },
+    {
+      "id": 1451,
+      "name": "Rhapsody Shindigger",
+      "level": 43,
+      "minLevel": 38,
+      "factions": [
+        "Alliance"
+      ],
+      "start": {
+        "npcID": 5636,
+        "name": "Gryphon Master Talonaxe"
+      },
+      "finish": {
+        "npcID": 5634,
+        "name": "Rhapsody Shindigger"
+      },
+      "requirementsKnown": false,
+      "source": "https://www.wowhead.com/forever/quest=1451",
+      "storyline": [
+        1448,
+        1449,
+        1450,
+        1451,
+        1452
+      ]
+    },
+    {
+      "id": 725,
+      "name": "Passing Word of a Threat",
+      "level": 40,
+      "minLevel": 35,
+      "factions": [
+        "Alliance"
+      ],
+      "start": {
+        "npcID": 2916,
+        "name": "Historian Karnik"
+      },
+      "finish": {
+        "npcID": 2918,
+        "name": "Advisor Belgrum"
+      },
+      "requirementsKnown": false,
+      "source": "https://www.wowhead.com/forever/quest=725",
+      "storyline": [
+        725,
+        726,
+        762
+      ]
+    },
+    {
+      "id": 726,
+      "name": "Passing Word of a Threat",
+      "level": 40,
+      "minLevel": 35,
+      "factions": [
+        "Alliance"
+      ],
+      "start": {
+        "npcID": 2918,
+        "name": "Advisor Belgrum"
+      },
+      "finish": {
+        "npcID": 2916,
+        "name": "Historian Karnik"
+      },
+      "requirementsKnown": false,
+      "source": "https://www.wowhead.com/forever/quest=726",
+      "storyline": [
+        725,
+        726,
+        762
+      ]
+    },
+    {
+      "id": 373,
+      "name": "The Unsent Letter",
+      "level": 22,
+      "minLevel": 16,
+      "factions": [
+        "Alliance"
+      ],
+      "start": {
+        "itemID": 2874,
+        "name": "An Unsent Letter",
+        "dungeonKey": "dm",
+        "dropNPCID": 639,
+        "dropName": "Edwin VanCleef"
+      },
+      "finish": {
+        "npcID": 1646,
+        "name": "Baros Alexston"
+      },
+      "requirementsKnown": false,
+      "source": "https://www.wowhead.com/forever/quest=373"
     }
   ],
   "dungeons": [
