@@ -18403,7 +18403,14 @@
         "name": "Darkreaver's Fallen Charger"
       },
       "source": "https://www.wowhead.com/forever/quest=7647/judgment-and-redemption",
-      "requirementsKnown": false
+      "requirementsKnown": false,
+      "storyline": [
+        7643,
+        7644,
+        7646,
+        7647
+      ],
+      "storylineEvidence": "https://www.wowhead.com/forever/quest=7646/the-divination-scryer"
     },
     {
       "id": 7629,
@@ -18486,7 +18493,14 @@
         ]
       },
       "source": "https://www.wowhead.com/forever/quest=7629/imp-delivery",
-      "requirementsKnown": false
+      "requirementsKnown": false,
+      "storyline": [
+        7623,
+        7624,
+        7625,
+        7629
+      ],
+      "storylineEvidence": "https://www.wowhead.com/forever/quest=7625/xorothian-stardust"
     },
     {
       "id": 8258,
@@ -18556,7 +18570,12 @@
         ]
       },
       "source": "https://www.wowhead.com/forever/quest=8258/the-darkreaver-menace",
-      "requirementsKnown": false
+      "requirementsKnown": false,
+      "storyline": [
+        7667,
+        8258
+      ],
+      "storylineEvidence": "https://www.wowhead.com/forever/quest=7667/material-assistance"
     },
     {
       "id": 8425,
@@ -19523,6 +19542,1203 @@
         9053
       ],
       "storylineEvidence": "https://www.wowhead.com/forever/quest=9051/toxic-test"
+    },
+    {
+      "id": 8418,
+      "name": "Forging the Mightstone",
+      "source": "https://www.wowhead.com/forever/quest=8418/forging-the-mightstone",
+      "level": 52,
+      "minLevel": 50,
+      "factions": [
+        "Alliance"
+      ],
+      "classes": [
+        "PALADIN"
+      ],
+      "start": {
+        "npcID": 10838,
+        "name": "Commander Ashlam Valorfist",
+        "zoneName": "Western Plaguelands",
+        "mapID": 1422,
+        "x": 42.8,
+        "y": 84
+      },
+      "finish": {
+        "npcID": 10838,
+        "name": "Commander Ashlam Valorfist",
+        "zoneName": "Western Plaguelands",
+        "mapID": 1422,
+        "x": 42.8,
+        "y": 84
+      },
+      "requirementsKnown": false,
+      "races": [
+        1,
+        3
+      ],
+      "storyline": [
+        8416,
+        8418
+      ],
+      "storylineEvidence": "https://www.wowhead.com/forever/quest=8416/inert-scourgestones"
+    },
+    {
+      "id": 8232,
+      "name": "The Green Drake",
+      "source": "https://www.wowhead.com/forever/quest=8232/the-green-drake",
+      "level": 52,
+      "minLevel": 50,
+      "factions": [
+        "Alliance",
+        "Horde"
+      ],
+      "classes": [
+        "HUNTER"
+      ],
+      "start": {
+        "npcID": 8405,
+        "name": "Ogtinc",
+        "zoneName": "Azshara",
+        "mapID": 1447,
+        "x": 42.4,
+        "y": 42.6
+      },
+      "finish": {
+        "npcID": 8405,
+        "name": "Ogtinc",
+        "zoneName": "Azshara",
+        "mapID": 1447,
+        "x": 42.4,
+        "y": 42.6
+      },
+      "requirementsKnown": false,
+      "storyline": [
+        8151,
+        8153,
+        8231,
+        8232
+      ],
+      "storylineEvidence": "https://www.wowhead.com/forever/quest=8231/wavethrashing"
+    },
+    {
+      "id": 8236,
+      "name": "The Azure Key",
+      "source": "https://www.wowhead.com/forever/quest=8236/the-azure-key",
+      "level": 52,
+      "minLevel": 50,
+      "factions": [
+        "Alliance",
+        "Horde"
+      ],
+      "classes": [
+        "ROGUE"
+      ],
+      "start": {
+        "npcID": 8379,
+        "name": "Archmage Xylem",
+        "zoneName": "Azshara",
+        "mapID": 1447,
+        "x": 29.2,
+        "y": 40.2,
+        "reportedLocations": [
+          {
+            "mapID": 1447,
+            "zoneName": "Azshara",
+            "x": 29.2,
+            "y": 40.2
+          },
+          {
+            "mapID": 1447,
+            "zoneName": "Azshara",
+            "x": 29.6,
+            "y": 40.4
+          },
+          {
+            "mapID": 1447,
+            "zoneName": "Azshara",
+            "x": 29.6,
+            "y": 40.6
+          }
+        ]
+      },
+      "finish": {
+        "npcID": 6768,
+        "name": "Lord Jorach Ravenholdt",
+        "zoneName": "Alterac Mountains",
+        "mapID": 1416,
+        "x": 86,
+        "y": 79
+      },
+      "requirementsKnown": false,
+      "storyline": [
+        8233,
+        8234,
+        8235,
+        8236
+      ],
+      "storylineEvidence": "https://www.wowhead.com/forever/quest=8235/encoded-fragments"
+    },
+    {
+      "id": 8253,
+      "name": "Destroy Morphaz",
+      "source": "https://www.wowhead.com/forever/quest=8253/destroy-morphaz",
+      "level": 52,
+      "minLevel": 50,
+      "factions": [
+        "Alliance",
+        "Horde"
+      ],
+      "classes": [
+        "MAGE"
+      ],
+      "start": {
+        "npcID": 8379,
+        "name": "Archmage Xylem",
+        "zoneName": "Azshara",
+        "mapID": 1447,
+        "x": 29.2,
+        "y": 40.2,
+        "reportedLocations": [
+          {
+            "mapID": 1447,
+            "zoneName": "Azshara",
+            "x": 29.2,
+            "y": 40.2
+          },
+          {
+            "mapID": 1447,
+            "zoneName": "Azshara",
+            "x": 29.6,
+            "y": 40.4
+          },
+          {
+            "mapID": 1447,
+            "zoneName": "Azshara",
+            "x": 29.6,
+            "y": 40.6
+          }
+        ]
+      },
+      "finish": {
+        "npcID": 8379,
+        "name": "Archmage Xylem",
+        "zoneName": "Azshara",
+        "mapID": 1447,
+        "x": 29.2,
+        "y": 40.2,
+        "reportedLocations": [
+          {
+            "mapID": 1447,
+            "zoneName": "Azshara",
+            "x": 29.2,
+            "y": 40.2
+          },
+          {
+            "mapID": 1447,
+            "zoneName": "Azshara",
+            "x": 29.6,
+            "y": 40.4
+          },
+          {
+            "mapID": 1447,
+            "zoneName": "Azshara",
+            "x": 29.6,
+            "y": 40.6
+          }
+        ]
+      },
+      "requirementsKnown": false,
+      "storyline": [
+        8251,
+        8252,
+        8253
+      ],
+      "storylineEvidence": "https://www.wowhead.com/forever/quest=8252/the-sirens-coral"
+    },
+    {
+      "id": 8416,
+      "name": "Inert Scourgestones",
+      "source": "https://www.wowhead.com/forever/quest=8416/inert-scourgestones",
+      "level": 52,
+      "minLevel": 50,
+      "factions": [
+        "Alliance"
+      ],
+      "classes": [
+        "PALADIN"
+      ],
+      "requirementsKnown": false,
+      "finish": {
+        "npcID": 10838,
+        "name": "Commander Ashlam Valorfist",
+        "zoneName": "Western Plaguelands",
+        "mapID": 1422,
+        "x": 42.8,
+        "y": 84
+      },
+      "start": {
+        "npcID": 1854,
+        "name": "High Priest Thel'danis",
+        "zoneName": "Western Plaguelands"
+      },
+      "races": [
+        1,
+        3
+      ],
+      "storyline": [
+        8416,
+        8418
+      ],
+      "storylineEvidence": "https://www.wowhead.com/forever/quest=8416/inert-scourgestones"
+    },
+    {
+      "id": 8151,
+      "name": "The Hunter's Charm",
+      "source": "https://www.wowhead.com/forever/quest=8151/the-hunters-charm",
+      "level": 52,
+      "minLevel": 50,
+      "factions": [
+        "Alliance",
+        "Horde"
+      ],
+      "classes": [
+        "HUNTER"
+      ],
+      "requirementsKnown": false,
+      "finish": {
+        "npcID": 8405,
+        "name": "Ogtinc",
+        "zoneName": "Azshara",
+        "mapID": 1447,
+        "x": 42.4,
+        "y": 42.6
+      },
+      "startAlternatives": [
+        {
+          "npcID": 3039,
+          "name": "Holt Thunderhorn"
+        },
+        {
+          "npcID": 3352,
+          "name": "Ormak Grimshot"
+        },
+        {
+          "npcID": 4205,
+          "name": "Dorion"
+        },
+        {
+          "npcID": 5116,
+          "name": "Olmin Burningbeard"
+        },
+        {
+          "npcID": 5516,
+          "name": "Ulfir Ironbeard"
+        }
+      ],
+      "storyline": [
+        8151,
+        8153,
+        8231,
+        8232
+      ],
+      "storylineEvidence": "https://www.wowhead.com/forever/quest=8231/wavethrashing"
+    },
+    {
+      "id": 8153,
+      "name": "Courser Antlers",
+      "source": "https://www.wowhead.com/forever/quest=8153/courser-antlers",
+      "level": 52,
+      "minLevel": 50,
+      "factions": [
+        "Alliance",
+        "Horde"
+      ],
+      "classes": [
+        "HUNTER"
+      ],
+      "requirementsKnown": false,
+      "finish": {
+        "npcID": 8405,
+        "name": "Ogtinc",
+        "zoneName": "Azshara",
+        "mapID": 1447,
+        "x": 42.4,
+        "y": 42.6
+      },
+      "start": {
+        "npcID": 8405,
+        "name": "Ogtinc",
+        "zoneName": "Azshara",
+        "mapID": 1447,
+        "x": 42.4,
+        "y": 42.6
+      },
+      "storyline": [
+        8151,
+        8153,
+        8231,
+        8232
+      ],
+      "storylineEvidence": "https://www.wowhead.com/forever/quest=8231/wavethrashing"
+    },
+    {
+      "id": 8231,
+      "name": "Wavethrashing",
+      "source": "https://www.wowhead.com/forever/quest=8231/wavethrashing",
+      "level": 52,
+      "minLevel": 50,
+      "factions": [
+        "Alliance",
+        "Horde"
+      ],
+      "classes": [
+        "HUNTER"
+      ],
+      "requirementsKnown": false,
+      "finish": {
+        "npcID": 8405,
+        "name": "Ogtinc",
+        "zoneName": "Azshara",
+        "mapID": 1447,
+        "x": 42.4,
+        "y": 42.6
+      },
+      "start": {
+        "npcID": 8405,
+        "name": "Ogtinc",
+        "zoneName": "Azshara",
+        "mapID": 1447,
+        "x": 42.4,
+        "y": 42.6
+      },
+      "storyline": [
+        8151,
+        8153,
+        8231,
+        8232
+      ],
+      "storylineEvidence": "https://www.wowhead.com/forever/quest=8231/wavethrashing"
+    },
+    {
+      "id": 8251,
+      "name": "Magic Dust",
+      "source": "https://www.wowhead.com/forever/quest=8251/magic-dust",
+      "level": 52,
+      "minLevel": 50,
+      "factions": [
+        "Alliance",
+        "Horde"
+      ],
+      "classes": [
+        "MAGE"
+      ],
+      "requirementsKnown": false,
+      "finish": {
+        "npcID": 8379,
+        "name": "Archmage Xylem",
+        "zoneName": "Azshara",
+        "mapID": 1447,
+        "x": 29.2,
+        "y": 40.2,
+        "reportedLocations": [
+          {
+            "mapID": 1447,
+            "zoneName": "Azshara",
+            "x": 29.2,
+            "y": 40.2
+          },
+          {
+            "mapID": 1447,
+            "zoneName": "Azshara",
+            "x": 29.6,
+            "y": 40.4
+          },
+          {
+            "mapID": 1447,
+            "zoneName": "Azshara",
+            "x": 29.6,
+            "y": 40.6
+          }
+        ]
+      },
+      "start": {
+        "npcID": 8379,
+        "name": "Archmage Xylem",
+        "zoneName": "Azshara",
+        "mapID": 1447,
+        "x": 29.2,
+        "y": 40.2,
+        "reportedLocations": [
+          {
+            "mapID": 1447,
+            "zoneName": "Azshara",
+            "x": 29.2,
+            "y": 40.2
+          },
+          {
+            "mapID": 1447,
+            "zoneName": "Azshara",
+            "x": 29.6,
+            "y": 40.4
+          },
+          {
+            "mapID": 1447,
+            "zoneName": "Azshara",
+            "x": 29.6,
+            "y": 40.6
+          }
+        ]
+      },
+      "storyline": [
+        8251,
+        8252,
+        8253
+      ],
+      "storylineEvidence": "https://www.wowhead.com/forever/quest=8252/the-sirens-coral"
+    },
+    {
+      "id": 8252,
+      "name": "The Siren's Coral",
+      "source": "https://www.wowhead.com/forever/quest=8252/the-sirens-coral",
+      "level": 52,
+      "minLevel": 50,
+      "factions": [
+        "Alliance",
+        "Horde"
+      ],
+      "classes": [
+        "MAGE"
+      ],
+      "requirementsKnown": false,
+      "finish": {
+        "npcID": 8379,
+        "name": "Archmage Xylem",
+        "zoneName": "Azshara",
+        "mapID": 1447,
+        "x": 29.2,
+        "y": 40.2,
+        "reportedLocations": [
+          {
+            "mapID": 1447,
+            "zoneName": "Azshara",
+            "x": 29.2,
+            "y": 40.2
+          },
+          {
+            "mapID": 1447,
+            "zoneName": "Azshara",
+            "x": 29.6,
+            "y": 40.4
+          },
+          {
+            "mapID": 1447,
+            "zoneName": "Azshara",
+            "x": 29.6,
+            "y": 40.6
+          }
+        ]
+      },
+      "start": {
+        "npcID": 8379,
+        "name": "Archmage Xylem",
+        "zoneName": "Azshara",
+        "mapID": 1447,
+        "x": 29.2,
+        "y": 40.2,
+        "reportedLocations": [
+          {
+            "mapID": 1447,
+            "zoneName": "Azshara",
+            "x": 29.2,
+            "y": 40.2
+          },
+          {
+            "mapID": 1447,
+            "zoneName": "Azshara",
+            "x": 29.6,
+            "y": 40.4
+          },
+          {
+            "mapID": 1447,
+            "zoneName": "Azshara",
+            "x": 29.6,
+            "y": 40.6
+          }
+        ]
+      },
+      "storyline": [
+        8251,
+        8252,
+        8253
+      ],
+      "storylineEvidence": "https://www.wowhead.com/forever/quest=8252/the-sirens-coral"
+    },
+    {
+      "id": 8233,
+      "name": "A Simple Request",
+      "source": "https://www.wowhead.com/forever/quest=8233/a-simple-request",
+      "level": 52,
+      "minLevel": 50,
+      "factions": [
+        "Alliance",
+        "Horde"
+      ],
+      "classes": [
+        "ROGUE"
+      ],
+      "requirementsKnown": false,
+      "finish": {
+        "npcID": 6768,
+        "name": "Lord Jorach Ravenholdt",
+        "zoneName": "Alterac Mountains",
+        "mapID": 1416,
+        "x": 86,
+        "y": 79
+      },
+      "startAlternatives": [
+        {
+          "npcID": 918,
+          "name": "Osborne the Night Man"
+        },
+        {
+          "npcID": 3328,
+          "name": "Ormok"
+        },
+        {
+          "npcID": 4163,
+          "name": "Syurna"
+        },
+        {
+          "npcID": 4583,
+          "name": "Miles Dexter"
+        },
+        {
+          "npcID": 5165,
+          "name": "Hulfdan Blackbeard"
+        }
+      ],
+      "storyline": [
+        8233,
+        8234,
+        8235,
+        8236
+      ],
+      "storylineEvidence": "https://www.wowhead.com/forever/quest=8235/encoded-fragments"
+    },
+    {
+      "id": 8234,
+      "name": "Sealed Azure Bag",
+      "source": "https://www.wowhead.com/forever/quest=8234/sealed-azure-bag",
+      "level": 52,
+      "minLevel": 50,
+      "factions": [
+        "Alliance",
+        "Horde"
+      ],
+      "classes": [
+        "ROGUE"
+      ],
+      "requirementsKnown": false,
+      "finish": {
+        "npcID": 8379,
+        "name": "Archmage Xylem",
+        "zoneName": "Azshara",
+        "mapID": 1447,
+        "x": 29.2,
+        "y": 40.2,
+        "reportedLocations": [
+          {
+            "mapID": 1447,
+            "zoneName": "Azshara",
+            "x": 29.2,
+            "y": 40.2
+          },
+          {
+            "mapID": 1447,
+            "zoneName": "Azshara",
+            "x": 29.6,
+            "y": 40.4
+          },
+          {
+            "mapID": 1447,
+            "zoneName": "Azshara",
+            "x": 29.6,
+            "y": 40.6
+          }
+        ]
+      },
+      "start": {
+        "npcID": 6768,
+        "name": "Lord Jorach Ravenholdt",
+        "zoneName": "Alterac Mountains",
+        "mapID": 1416,
+        "x": 86,
+        "y": 79
+      },
+      "storyline": [
+        8233,
+        8234,
+        8235,
+        8236
+      ],
+      "storylineEvidence": "https://www.wowhead.com/forever/quest=8235/encoded-fragments"
+    },
+    {
+      "id": 8235,
+      "name": "Encoded Fragments",
+      "source": "https://www.wowhead.com/forever/quest=8235/encoded-fragments",
+      "level": 52,
+      "minLevel": 50,
+      "factions": [
+        "Alliance",
+        "Horde"
+      ],
+      "classes": [
+        "ROGUE"
+      ],
+      "requirementsKnown": false,
+      "finish": {
+        "npcID": 8379,
+        "name": "Archmage Xylem",
+        "zoneName": "Azshara",
+        "mapID": 1447,
+        "x": 29.2,
+        "y": 40.2,
+        "reportedLocations": [
+          {
+            "mapID": 1447,
+            "zoneName": "Azshara",
+            "x": 29.2,
+            "y": 40.2
+          },
+          {
+            "mapID": 1447,
+            "zoneName": "Azshara",
+            "x": 29.6,
+            "y": 40.4
+          },
+          {
+            "mapID": 1447,
+            "zoneName": "Azshara",
+            "x": 29.6,
+            "y": 40.6
+          }
+        ]
+      },
+      "start": {
+        "npcID": 8379,
+        "name": "Archmage Xylem",
+        "zoneName": "Azshara",
+        "mapID": 1447,
+        "x": 29.2,
+        "y": 40.2,
+        "reportedLocations": [
+          {
+            "mapID": 1447,
+            "zoneName": "Azshara",
+            "x": 29.2,
+            "y": 40.2
+          },
+          {
+            "mapID": 1447,
+            "zoneName": "Azshara",
+            "x": 29.6,
+            "y": 40.4
+          },
+          {
+            "mapID": 1447,
+            "zoneName": "Azshara",
+            "x": 29.6,
+            "y": 40.6
+          }
+        ]
+      },
+      "storyline": [
+        8233,
+        8234,
+        8235,
+        8236
+      ],
+      "storylineEvidence": "https://www.wowhead.com/forever/quest=8235/encoded-fragments"
+    },
+    {
+      "id": 8413,
+      "name": "Da Voodoo",
+      "source": "https://www.wowhead.com/forever/quest=8413/da-voodoo",
+      "level": 52,
+      "minLevel": 50,
+      "factions": [
+        "Horde"
+      ],
+      "classes": [
+        "SHAMAN"
+      ],
+      "requirementsKnown": false,
+      "finish": {
+        "npcID": 6176,
+        "name": "Bath'rah the Windwatcher",
+        "zoneName": "Alterac Mountains"
+      },
+      "start": {
+        "npcID": 6176,
+        "name": "Bath'rah the Windwatcher",
+        "zoneName": "Alterac Mountains"
+      }
+    },
+    {
+      "id": 7643,
+      "name": "Ancient Equine Spirit",
+      "source": "https://www.wowhead.com/forever/quest=7643/ancient-equine-spirit",
+      "level": 60,
+      "minLevel": 60,
+      "factions": [
+        "Alliance"
+      ],
+      "classes": [
+        "PALADIN"
+      ],
+      "start": {
+        "npcID": 928,
+        "name": "Lord Grayson Shadowbreaker",
+        "zoneName": "Stormwind City",
+        "mapID": 1453,
+        "x": 37.2,
+        "y": 33,
+        "reportedLocations": [
+          {
+            "mapID": 1453,
+            "zoneName": "Stormwind City",
+            "x": 37.2,
+            "y": 33
+          },
+          {
+            "mapID": 1453,
+            "zoneName": "Stormwind City",
+            "x": 37.6,
+            "y": 32.6
+          },
+          {
+            "mapID": 1453,
+            "zoneName": "Stormwind City",
+            "x": 48.4,
+            "y": 50
+          },
+          {
+            "mapID": 1453,
+            "zoneName": "Stormwind City",
+            "x": 48.6,
+            "y": 50
+          }
+        ]
+      },
+      "finish": {
+        "npcID": 14566,
+        "name": "Ancient Equine Spirit",
+        "zoneName": "Dire Maul"
+      },
+      "requirementsKnown": false,
+      "races": [
+        1,
+        3
+      ],
+      "storyline": [
+        7643,
+        7644,
+        7646,
+        7647
+      ],
+      "storylineEvidence": "https://www.wowhead.com/forever/quest=7646/the-divination-scryer"
+    },
+    {
+      "id": 7644,
+      "name": "Blessed Arcanite Barding",
+      "source": "https://www.wowhead.com/forever/quest=7644/blessed-arcanite-barding",
+      "level": 60,
+      "minLevel": 60,
+      "factions": [
+        "Alliance"
+      ],
+      "classes": [
+        "PALADIN"
+      ],
+      "start": {
+        "npcID": 14566,
+        "name": "Ancient Equine Spirit",
+        "zoneName": "Dire Maul"
+      },
+      "finish": {
+        "npcID": 928,
+        "name": "Lord Grayson Shadowbreaker",
+        "zoneName": "Stormwind City",
+        "mapID": 1453,
+        "x": 37.2,
+        "y": 33,
+        "reportedLocations": [
+          {
+            "mapID": 1453,
+            "zoneName": "Stormwind City",
+            "x": 37.2,
+            "y": 33
+          },
+          {
+            "mapID": 1453,
+            "zoneName": "Stormwind City",
+            "x": 37.6,
+            "y": 32.6
+          },
+          {
+            "mapID": 1453,
+            "zoneName": "Stormwind City",
+            "x": 48.4,
+            "y": 50
+          },
+          {
+            "mapID": 1453,
+            "zoneName": "Stormwind City",
+            "x": 48.6,
+            "y": 50
+          }
+        ]
+      },
+      "requirementsKnown": false,
+      "races": [
+        1,
+        3
+      ],
+      "storyline": [
+        7643,
+        7644,
+        7646,
+        7647
+      ],
+      "storylineEvidence": "https://www.wowhead.com/forever/quest=7646/the-divination-scryer"
+    },
+    {
+      "id": 7646,
+      "name": "The Divination Scryer",
+      "source": "https://www.wowhead.com/forever/quest=7646/the-divination-scryer",
+      "level": 60,
+      "minLevel": 60,
+      "factions": [
+        "Alliance"
+      ],
+      "classes": [
+        "PALADIN"
+      ],
+      "start": {
+        "npcID": 928,
+        "name": "Lord Grayson Shadowbreaker",
+        "zoneName": "Stormwind City",
+        "mapID": 1453,
+        "x": 37.2,
+        "y": 33,
+        "reportedLocations": [
+          {
+            "mapID": 1453,
+            "zoneName": "Stormwind City",
+            "x": 37.2,
+            "y": 33
+          },
+          {
+            "mapID": 1453,
+            "zoneName": "Stormwind City",
+            "x": 37.6,
+            "y": 32.6
+          },
+          {
+            "mapID": 1453,
+            "zoneName": "Stormwind City",
+            "x": 48.4,
+            "y": 50
+          },
+          {
+            "mapID": 1453,
+            "zoneName": "Stormwind City",
+            "x": 48.6,
+            "y": 50
+          }
+        ]
+      },
+      "finish": {
+        "npcID": 928,
+        "name": "Lord Grayson Shadowbreaker",
+        "zoneName": "Stormwind City",
+        "mapID": 1453,
+        "x": 37.2,
+        "y": 33,
+        "reportedLocations": [
+          {
+            "mapID": 1453,
+            "zoneName": "Stormwind City",
+            "x": 37.2,
+            "y": 33
+          },
+          {
+            "mapID": 1453,
+            "zoneName": "Stormwind City",
+            "x": 37.6,
+            "y": 32.6
+          },
+          {
+            "mapID": 1453,
+            "zoneName": "Stormwind City",
+            "x": 48.4,
+            "y": 50
+          },
+          {
+            "mapID": 1453,
+            "zoneName": "Stormwind City",
+            "x": 48.6,
+            "y": 50
+          }
+        ]
+      },
+      "requirementsKnown": false,
+      "races": [
+        1,
+        3
+      ],
+      "storyline": [
+        7643,
+        7644,
+        7646,
+        7647
+      ],
+      "storylineEvidence": "https://www.wowhead.com/forever/quest=7646/the-divination-scryer"
+    },
+    {
+      "id": 7623,
+      "name": "Lord Banehollow",
+      "source": "https://www.wowhead.com/forever/quest=7623/lord-banehollow",
+      "level": 58,
+      "minLevel": 60,
+      "factions": [
+        "Alliance",
+        "Horde"
+      ],
+      "classes": [
+        "WARLOCK"
+      ],
+      "start": {
+        "npcID": 14437,
+        "name": "Gorzeeki Wildeyes",
+        "zoneName": "Burning Steppes",
+        "mapID": 1428,
+        "x": 12.4,
+        "y": 31.4,
+        "reportedLocations": [
+          {
+            "mapID": 1428,
+            "zoneName": "Burning Steppes",
+            "x": 12.4,
+            "y": 31.4
+          },
+          {
+            "mapID": 1428,
+            "zoneName": "Burning Steppes",
+            "x": 12.4,
+            "y": 31.6
+          },
+          {
+            "mapID": 1428,
+            "zoneName": "Burning Steppes",
+            "x": 12.6,
+            "y": 31.4
+          },
+          {
+            "mapID": 1428,
+            "zoneName": "Burning Steppes",
+            "x": 12.6,
+            "y": 31.6
+          }
+        ]
+      },
+      "finish": {
+        "npcID": 9516,
+        "name": "Lord Banehollow",
+        "zoneName": "Felwood"
+      },
+      "requirementsKnown": false,
+      "storyline": [
+        7623,
+        7624,
+        7625,
+        7629
+      ],
+      "storylineEvidence": "https://www.wowhead.com/forever/quest=7625/xorothian-stardust"
+    },
+    {
+      "id": 7624,
+      "name": "Ulathek the Traitor",
+      "source": "https://www.wowhead.com/forever/quest=7624/ulathek-the-traitor",
+      "level": 58,
+      "minLevel": 60,
+      "factions": [
+        "Alliance",
+        "Horde"
+      ],
+      "classes": [
+        "WARLOCK"
+      ],
+      "start": {
+        "npcID": 9516,
+        "name": "Lord Banehollow",
+        "zoneName": "Felwood"
+      },
+      "finish": {
+        "npcID": 9516,
+        "name": "Lord Banehollow",
+        "zoneName": "Felwood"
+      },
+      "requirementsKnown": false,
+      "storyline": [
+        7623,
+        7624,
+        7625,
+        7629
+      ],
+      "storylineEvidence": "https://www.wowhead.com/forever/quest=7625/xorothian-stardust"
+    },
+    {
+      "id": 7625,
+      "name": "Xorothian Stardust",
+      "source": "https://www.wowhead.com/forever/quest=7625/xorothian-stardust",
+      "level": 60,
+      "minLevel": 60,
+      "factions": [
+        "Alliance",
+        "Horde"
+      ],
+      "classes": [
+        "WARLOCK"
+      ],
+      "start": {
+        "npcID": 9516,
+        "name": "Lord Banehollow",
+        "zoneName": "Felwood"
+      },
+      "finish": {
+        "npcID": 14437,
+        "name": "Gorzeeki Wildeyes",
+        "zoneName": "Burning Steppes",
+        "mapID": 1428,
+        "x": 12.4,
+        "y": 31.4,
+        "reportedLocations": [
+          {
+            "mapID": 1428,
+            "zoneName": "Burning Steppes",
+            "x": 12.4,
+            "y": 31.4
+          },
+          {
+            "mapID": 1428,
+            "zoneName": "Burning Steppes",
+            "x": 12.4,
+            "y": 31.6
+          },
+          {
+            "mapID": 1428,
+            "zoneName": "Burning Steppes",
+            "x": 12.6,
+            "y": 31.4
+          },
+          {
+            "mapID": 1428,
+            "zoneName": "Burning Steppes",
+            "x": 12.6,
+            "y": 31.6
+          }
+        ]
+      },
+      "requirementsKnown": false,
+      "storyline": [
+        7623,
+        7624,
+        7625,
+        7629
+      ],
+      "storylineEvidence": "https://www.wowhead.com/forever/quest=7625/xorothian-stardust"
+    },
+    {
+      "id": 7667,
+      "name": "Material Assistance",
+      "source": "https://www.wowhead.com/forever/quest=7667/material-assistance",
+      "level": 60,
+      "minLevel": 58,
+      "factions": [
+        "Horde"
+      ],
+      "classes": [
+        "SHAMAN"
+      ],
+      "start": {
+        "npcID": 13417,
+        "name": "Sagorne Creststrider",
+        "zoneName": "Orgrimmar",
+        "mapID": 1454,
+        "x": 38.4,
+        "y": 36,
+        "reportedLocations": [
+          {
+            "mapID": 1454,
+            "zoneName": "Orgrimmar",
+            "x": 38.4,
+            "y": 36
+          },
+          {
+            "mapID": 1454,
+            "zoneName": "Orgrimmar",
+            "x": 38.6,
+            "y": 36.2
+          },
+          {
+            "mapID": 1454,
+            "zoneName": "Orgrimmar",
+            "x": 38.8,
+            "y": 36.6
+          }
+        ]
+      },
+      "finish": {
+        "npcID": 13417,
+        "name": "Sagorne Creststrider",
+        "zoneName": "Orgrimmar",
+        "mapID": 1454,
+        "x": 38.4,
+        "y": 36,
+        "reportedLocations": [
+          {
+            "mapID": 1454,
+            "zoneName": "Orgrimmar",
+            "x": 38.4,
+            "y": 36
+          },
+          {
+            "mapID": 1454,
+            "zoneName": "Orgrimmar",
+            "x": 38.6,
+            "y": 36.2
+          },
+          {
+            "mapID": 1454,
+            "zoneName": "Orgrimmar",
+            "x": 38.8,
+            "y": 36.6
+          }
+        ]
+      },
+      "requirementsKnown": false,
+      "races": [
+        2,
+        6,
+        8
+      ],
+      "storyline": [
+        7667,
+        8258
+      ],
+      "storylineEvidence": "https://www.wowhead.com/forever/quest=7667/material-assistance"
     }
   ],
   "dungeons": [
@@ -19837,7 +21053,12 @@
         8425,
         8257,
         8422,
-        9053
+        9053,
+        8418,
+        8232,
+        8236,
+        8253,
+        8413
       ],
       "source": "https://www.wowhead.com/forever/guide/dungeons-overview-locations-details",
       "instanceID": 109
@@ -19978,7 +21199,8 @@
         8990,
         5519,
         7494,
-        5526
+        5526,
+        7643
       ],
       "source": "https://www.wowhead.com/forever/guide/dungeons-overview-locations-details",
       "instanceID": 429
