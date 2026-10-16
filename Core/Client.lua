@@ -577,19 +577,38 @@ local function lfgDungeonArt(mapID)
 end
 
 function addon.DungeonArt(d)
+    local checker = issecretvalue
     d = addon.Clean(d, "table") or {}
     local art = addon.Clean(d.art, "table")
     local fileID = art and artInteger(art.fileID)
     local artMap = art and artInteger(art.gameMapID)
     local mapID = artInteger(d.instanceID)
+    local generic = "Interface\\Icons\\INV_Misc_Map_01"
+    local function current()
+        return issecretvalue == checker and addon.Clean(d.art, "table") == art and
+            artInteger(d.instanceID) == mapID and (not art or
+                (artInteger(art.fileID) == fileID and artInteger(art.gameMapID) == artMap))
+    end
+    if not current() then return generic end
     if fileID and artMap and (not mapID or mapID == artMap) then return fileID end
-    local journalID = mapID and artInteger(addon.Read(C_EncounterJournal and C_EncounterJournal.GetInstanceForGameMap, "number", mapID))
-    if journalID and type(EJ_GetInstanceInfo) == "function" then
-        local values = { pcall(EJ_GetInstanceInfo, journalID) }
+    local journal = addon.Clean(C_EncounterJournal, "table")
+    local lookup = journal and addon.Clean(journal.GetInstanceForGameMap, "function")
+    local info = addon.Clean(EJ_GetInstanceInfo, "function")
+    local function journalCurrent()
+        return current() and addon.Clean(C_EncounterJournal, "table") == journal and
+            (not journal or addon.Clean(journal.GetInstanceForGameMap, "function") == lookup) and
+            addon.Clean(EJ_GetInstanceInfo, "function") == info
+    end
+    local journalID = mapID and artInteger(addon.Read(lookup, "number", mapID))
+    if not journalCurrent() then return generic end
+    if journalID and info then
+        local values = { pcall(info, journalID) }
         local texture = values[1] and artInteger(values[7])
+        if not journalCurrent() then return generic end
         if texture then return texture end
     end
-    return (mapID and lfgDungeonArt(mapID)) or "Interface\\Icons\\INV_Misc_Map_01"
+    local image = mapID and lfgDungeonArt(mapID)
+    return current() and image or generic
 end
 
 local dungeonArtPaints = setmetatable({}, { __mode = "k" })

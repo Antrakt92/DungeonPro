@@ -35,6 +35,42 @@ check("Encounter Journal remains first and avoids LFG scans", function()
     EJ_GetInstanceInfo = function(id) assert(id == 99); return nil, nil, nil, nil, 111, 222 end
     assert(addon.DungeonArt({ instanceID = 36 }) == 222 and state.calls == 0)
 end)
+check("Journal map lookup cannot return artwork after the dungeon identity changes", function()
+    local dungeon, infoCalls = {instanceID=36}, 0
+    C_EncounterJournal = {GetInstanceForGameMap=function(id)
+        assert(id == 36); dungeon.instanceID = 43; return 99
+    end}
+    EJ_GetInstanceInfo = function() infoCalls = infoCalls + 1; return nil,nil,nil,nil,111,222 end
+    assert(addon.DungeonArt(dungeon) == generic)
+    assert(infoCalls == 0 and state.calls == 0, "a stale map scope cannot continue native reads")
+end)
+check("Journal capabilities changed inside a lookup cannot publish old art and recover fresh", function()
+    local replacement = {GetInstanceForGameMap=function() return 100 end}
+    C_EncounterJournal = {GetInstanceForGameMap=function() C_EncounterJournal = replacement; return 99 end}
+    EJ_GetInstanceInfo = function(id) return nil,nil,nil,nil,111,id == 100 and 333 or 222 end
+    assert(addon.DungeonArt({instanceID=36}) == generic)
+    assert(addon.DungeonArt({instanceID=36}) == 333)
+    local fresh = function() return nil,nil,nil,nil,111,444 end
+    EJ_GetInstanceInfo = function() EJ_GetInstanceInfo = fresh; return nil,nil,nil,nil,111,555 end
+    assert(addon.DungeonArt({instanceID=36}) == generic)
+    assert(addon.DungeonArt({instanceID=36}) == 444)
+end)
+check("Metadata changed during journal info or finder scans cannot publish an old image", function()
+    local dungeon = {instanceID=36}
+    C_EncounterJournal = {GetInstanceForGameMap=function() return 99 end}
+    EJ_GetInstanceInfo = function()
+        dungeon.art = {fileID=777,gameMapID=36}
+        return nil,nil,nil,nil,111,222
+    end
+    assert(addon.DungeonArt(dungeon) == generic)
+    assert(addon.DungeonArt(dungeon) == 777)
+    C_EncounterJournal, EJ_GetInstanceInfo = nil, nil
+    dungeon = {instanceID=36}
+    local native = GetLFGDungeonInfo
+    GetLFGDungeonInfo = function(id) dungeon.instanceID=43; return native(id) end
+    assert(addon.DungeonArt(dungeon) == generic)
+    assert(addon.DungeonArt(dungeon) == 5678, "a subsequent fresh map scope may use the completed finder cache")
+end)
 check("Unknown catalog map IDs never enumerate or guess", function()
     for _, id in ipairs({ false, secret, 0, -1, 1.5, 0/0, math.huge, "36" }) do
         assert(addon.DungeonArt({ instanceID = id }) == generic)
