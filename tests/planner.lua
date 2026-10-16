@@ -104,6 +104,24 @@ check("Forever race IDs are not truncated to a classic eight-bit mask", function
     eq(P.Eligible(addon.quests[96393], c), true)
     c.race = 1; eq(P.Eligible(addon.quests[96393], c), false)
 end)
+check("Shared dungeon class quests preserve current faction race and class gates", function()
+    local c = ctx(); c.faction, c.class, c.race = "Horde", "PALADIN", 6
+    local e = P.New(addon.quests, c)
+    eq(e:State(95036).status, "UNKNOWN")
+    eq(e:State(1654).status, "UNAVAILABLE")
+    c.class = "MAGE"; eq(P.New(addon.quests, c):State(95036).status, "UNAVAILABLE")
+    c.class, c.race = "PALADIN", 2; eq(P.New(addon.quests, c):State(95036).status, "UNAVAILABLE")
+    c.class = "WARLOCK"; eq(P.New(addon.quests, c):State(1740).status, "UNKNOWN")
+    c.faction = "Alliance"; eq(P.New(addon.quests, c):State(1740).status, "UNKNOWN")
+    eq(addon.quests[1654].level, 22)
+    local found = {}
+    for _, d in ipairs(addon.dungeons) do
+        if d.key == "dm" or d.key == "sfk" or d.key == "bfd" then
+            for _, id in ipairs(d.quests) do if id == 1654 then found[d.key] = true end end
+        end
+    end
+    assert(found.dm and found.sfk and found.bfd)
+end)
 check("OR branches choose an actionable alternative", function()
     local quests = { [1] = q(1, nil, { minLevel = 60 }), [2] = q(2), [3] = q(3, { { ids = { 1, 2 } } }) }
     local actions, unknown = P.New(quests, ctx()):Next(3)

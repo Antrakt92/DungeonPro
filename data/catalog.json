@@ -1355,7 +1355,10 @@
       "source": "https://www.wowhead.com/forever/quest=1098/deathstalkers-in-shadowfang",
       "start": {
         "npcID": 1952,
-        "name": "High Executor Hadrec"
+        "name": "High Executor Hadrec",
+        "mapID": 1421,
+        "x": 43.4,
+        "y": 40.8
       },
       "finish": {
         "npcID": 4444,
@@ -1374,11 +1377,17 @@
       "source": "https://www.wowhead.com/forever/quest=1013/the-book-of-ur",
       "start": {
         "npcID": 2934,
-        "name": "Keeper Bel'dugur"
+        "name": "Keeper Bel'dugur",
+        "mapID": 1458,
+        "x": 53.6,
+        "y": 54.0
       },
       "finish": {
         "npcID": 2934,
-        "name": "Keeper Bel'dugur"
+        "name": "Keeper Bel'dugur",
+        "mapID": 1458,
+        "x": 53.6,
+        "y": 54.0
       },
       "requirementsKnown": false
     },
@@ -1393,11 +1402,17 @@
       "source": "https://www.wowhead.com/forever/quest=1014/arugal-must-die",
       "start": {
         "npcID": 1938,
-        "name": "Dalar Dawnweaver"
+        "name": "Dalar Dawnweaver",
+        "mapID": 1421,
+        "x": 44.2,
+        "y": 39.8
       },
       "finish": {
         "npcID": 1938,
-        "name": "Dalar Dawnweaver"
+        "name": "Dalar Dawnweaver",
+        "mapID": 1421,
+        "x": 44.2,
+        "y": 39.8
       },
       "requirementsKnown": false
     },
@@ -1471,6 +1486,241 @@
           ]
         }
       ]
+    },
+    {
+      "id": 6561,
+      "name": "Blackfathom Villainy",
+      "level": 27,
+      "minLevel": 18,
+      "factions": [
+        "Horde"
+      ],
+      "source": "https://www.wowhead.com/forever/quest=6561/blackfathom-villainy",
+      "start": {
+        "npcID": 4787,
+        "name": "Argent Guard Thaelrid"
+      },
+      "finish": {
+        "npcID": 9087,
+        "name": "Bashana Runetotem"
+      },
+      "requirementsKnown": false
+    },
+    {
+      "id": 6565,
+      "name": "Allegiance to the Old Gods",
+      "level": 26,
+      "minLevel": 17,
+      "factions": [
+        "Horde"
+      ],
+      "source": "https://www.wowhead.com/forever/quest=6565/allegiance-to-the-old-gods",
+      "start": {
+        "npcID": 12736,
+        "name": "Je'neu Sancrea"
+      },
+      "finish": {
+        "npcID": 12736,
+        "name": "Je'neu Sancrea"
+      },
+      "requirementsKnown": false
+    },
+    {
+      "id": 1200,
+      "name": "Blackfathom Villainy",
+      "level": 27,
+      "minLevel": 18,
+      "factions": [
+        "Alliance"
+      ],
+      "source": "https://www.wowhead.com/forever/quest=1200/blackfathom-villainy",
+      "start": {
+        "npcID": 4787,
+        "name": "Argent Guard Thaelrid"
+      },
+      "finish": {
+        "npcID": 4783,
+        "name": "Dawnwatcher Selgorm"
+      },
+      "requirementsKnown": false,
+      "storyline": [
+        1198,
+        1200
+      ]
+    },
+    {
+      "id": 1198,
+      "name": "In Search of Thaelrid",
+      "level": 24,
+      "minLevel": 18,
+      "factions": [
+        "Alliance"
+      ],
+      "source": "https://www.wowhead.com/forever/quest=1198/in-search-of-thaelrid",
+      "start": {
+        "npcID": 4786,
+        "name": "Dawnwatcher Shaedlass"
+      },
+      "finish": {
+        "npcID": 4787,
+        "name": "Argent Guard Thaelrid"
+      },
+      "requirementsKnown": false,
+      "storyline": [
+        1198,
+        1200
+      ]
+    },
+    {
+      "id": 6921,
+      "name": "Amongst the Ruins",
+      "level": 27,
+      "minLevel": 21,
+      "factions": [
+        "Horde"
+      ],
+      "source": "https://www.wowhead.com/forever/quest=6921/amongst-the-ruins",
+      "start": {
+        "npcID": 12736,
+        "name": "Je'neu Sancrea"
+      },
+      "finish": {
+        "npcID": 12736,
+        "name": "Je'neu Sancrea"
+      },
+      "requirementsKnown": false
+    },
+    {
+      "id": 971,
+      "name": "Knowledge in the Deeps",
+      "level": 23,
+      "minLevel": 10,
+      "factions": [
+        "Alliance"
+      ],
+      "source": "https://www.wowhead.com/forever/quest=971/knowledge-in-the-deeps",
+      "start": {
+        "npcID": 2786,
+        "name": "Gerrig Bonegrip"
+      },
+      "finish": {
+        "npcID": 2786,
+        "name": "Gerrig Bonegrip"
+      },
+      "requirementsKnown": false
+    },
+    {
+      "id": 1199,
+      "name": "Twilight Falls",
+      "level": 25,
+      "minLevel": 20,
+      "factions": [
+        "Alliance"
+      ],
+      "source": "https://www.wowhead.com/forever/quest=1199/twilight-falls",
+      "start": {
+        "npcID": 4784,
+        "name": "Argent Guard Manados"
+      },
+      "finish": {
+        "npcID": 4784,
+        "name": "Argent Guard Manados"
+      },
+      "requirementsKnown": false
+    },
+    {
+      "id": 1275,
+      "name": "Researching the Corruption",
+      "level": 24,
+      "minLevel": 18,
+      "factions": [
+        "Alliance"
+      ],
+      "source": "https://www.wowhead.com/forever/quest=1275/researching-the-corruption",
+      "start": {
+        "npcID": 8997,
+        "name": "Gershala Nightwhisper"
+      },
+      "finish": {
+        "npcID": 8997,
+        "name": "Gershala Nightwhisper"
+      },
+      "requirementsKnown": false
+    },
+    {
+      "id": 95036,
+      "name": "A Moon-Kissed Blade",
+      "source": "https://www.wowhead.com/forever/quest=95036/a-moon-kissed-blade",
+      "level": 25,
+      "minLevel": 20,
+      "factions": [
+        "Horde"
+      ],
+      "classes": [
+        "PALADIN"
+      ],
+      "races": [
+        5,
+        6
+      ],
+      "start": {
+        "npcID": 259620,
+        "name": "Lumina Windsinger"
+      },
+      "finish": {
+        "npcID": 248840,
+        "name": "Trevan Rol"
+      },
+      "requirementsKnown": false
+    },
+    {
+      "id": 1654,
+      "name": "The Test of Righteousness",
+      "source": "https://www.wowhead.com/forever/quest=1654/the-test-of-righteousness",
+      "level": 22,
+      "minLevel": 20,
+      "factions": [
+        "Alliance"
+      ],
+      "classes": [
+        "PALADIN"
+      ],
+      "races": [
+        1,
+        3
+      ],
+      "start": {
+        "npcID": 6181,
+        "name": "Jordan Stilwell"
+      },
+      "finish": {
+        "npcID": 6181,
+        "name": "Jordan Stilwell"
+      },
+      "requirementsKnown": false
+    },
+    {
+      "id": 1740,
+      "name": "The Orb of Soran'ruk",
+      "source": "https://www.wowhead.com/forever/quest=1740/the-orb-of-soranruk",
+      "level": 25,
+      "minLevel": 20,
+      "factions": [
+        "Alliance",
+        "Horde"
+      ],
+      "classes": [
+        "WARLOCK"
+      ],
+      "start": {
+        "npcID": 6247,
+        "name": "Doan Karhan"
+      },
+      "finish": {
+        "npcID": 6247,
+        "name": "Doan Karhan"
+      },
+      "requirementsKnown": false
     }
   ],
   "dungeons": [
@@ -1521,7 +1771,9 @@
         167,
         2040,
         168,
-        92753
+        92753,
+        95036,
+        1654
       ],
       "source": "https://www.wowhead.com/forever/guide/dungeons-overview-locations-details",
       "instanceID": 36
@@ -1535,7 +1787,10 @@
       "quests": [
         1098,
         1013,
-        1014
+        1014,
+        95036,
+        1654,
+        1740
       ],
       "source": "https://www.wowhead.com/forever/guide/dungeons-overview-locations-details",
       "instanceID": 33
@@ -1545,8 +1800,20 @@
       "name": "Blackfathom Deeps",
       "minLevel": 20,
       "maxLevel": 30,
-      "coverage": "pending",
-      "quests": [],
+      "coverage": "partial",
+      "quests": [
+        6561,
+        6565,
+        1200,
+        1198,
+        6921,
+        971,
+        1199,
+        1275,
+        95036,
+        1654,
+        1740
+      ],
       "source": "https://www.wowhead.com/forever/guide/dungeons-overview-locations-details",
       "instanceID": 48
     },

@@ -17,6 +17,11 @@
   progress and unknown requirements, with translated headings.
 - Added initial Wailing Caverns quests and corrected Rahauro's approach waypoint.
 - Added initial Shadowfang Keep quests and supporting Wailing Caverns chain steps.
+- Added initial Blackfathom Deeps and shared paladin/warlock quests, plus sourced
+  waypoints for three Shadowfang Keep quest-givers.
+- Improved navigation fallback after TomTom failures and protected the guide
+  against unavailable map/vector constructors and invalid positions.
+- Preserved player map pins when the client rejects a new waypoint.
 - Added separate quest-giver location guidance while keeping prerequisite guidance.
 - Added sourced approach waypoints for four Wailing Caverns quest-givers and
   completed the known giver information for Nara Wildmane's story step.
