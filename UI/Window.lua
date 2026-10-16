@@ -6,6 +6,25 @@ local COLOR = { COMPLETED = "66dd99", READY = "ffe066", ACTIVE = "88bfff", AVAIL
     LOCKED = "f0b080", UNKNOWN = "b4aacd", UNAVAILABLE = "999999" }
 local FONT
 
+local function styleRow(row, kind, selected)
+    local theme = addon.Clean(addon.Theme, "table")
+    if theme then addon.Read(theme.StyleRow, "boolean", row, { kind = kind, selected = selected == true }) end
+end
+
+function UI:ApplyTheme()
+    local theme = addon.Clean(addon.Theme, "table")
+    if theme then addon.Read(theme.Apply, "boolean", self) end
+    styleRow(self.rangeButton, "control", self.range)
+    styleRow(self.preparationButton, "control", self.preparation)
+    styleRow(self.characterButton, "control", self.includeUnavailable)
+end
+
+function UI:RefreshQuestStyles()
+    for _, row in ipairs(self.rows or {}) do
+        if row:IsShown() then styleRow(row, row.heading and "section" or "quest", row.questID == self.quest and not row.heading) end
+    end
+end
+
 local function statusLabel(state, value)
     local label = value or addon.L(state.status == "UNKNOWN" and state.reason == "requirements" and
         "UNKNOWN_REQUIREMENTS" or state.status)
@@ -165,6 +184,7 @@ function UI:MakeRow(parent, pool, index, height)
         pool[index] = row
     end
     row:Show()
+    styleRow(row, "quest", false)
     return row
 end
 
@@ -244,6 +264,8 @@ function UI:ChooseBranch(id, index, parent)
 end
 
 function UI:RefreshDungeons()
+    local generation = {}
+    self.catalogGeneration = generation
     local context = addon.Context()
     local query = (addon.Clean(self.search, "string") or ""):gsub("^%s+", ""):gsub("%s+$", "")
     local needle = searchText(query)
@@ -267,11 +289,14 @@ function UI:RefreshDungeons()
                 row.title:ClearAllPoints(); row.title:SetPoint("TOPLEFT", 58, -7); row.title:SetWidth(158)
                 row.note:ClearAllPoints(); row.note:SetPoint("TOPLEFT", 58, -42); row.note:SetWidth(158)
             end
-            row.art:SetTexture(addon.DungeonArt(d))
+            row.art:Hide()
+            addon.Read(addon.PaintDungeonArt, "boolean", row.art, d)
+            if self.catalogGeneration ~= generation then return end
             row.title:SetText(name)
             row.note:SetText(addon.L("CATALOG_LEVELS", d.minLevel, d.maxLevel) .. "\n" ..
                 addon.L("CATALOG_QUESTS", #d.quests))
             row.bg:SetColorTexture(self.dungeon == d and 0.22 or 0.13, 0.19, 0.23, 1)
+            styleRow(row, "dungeon", self.dungeon == d)
             row:SetScript("OnClick", function()
                 self.detailHistory = {}
                 self.dungeon, self.quest = d, nil
@@ -334,7 +359,7 @@ function UI:RefreshQuests()
         for _, entry in ipairs(entries) do
             n = n + 1
             local row, id, state = self:MakeRow(self.questList, self.rows, n, 59), entry.id, entry.state
-            row.heading = entry.heading
+            row.heading, row.questID = entry.heading, id
             row:SetEnabled(not entry.heading)
             if entry.heading then
                 row.title:SetText(addon.L(entry.heading)); row.note:SetText("")
@@ -357,6 +382,7 @@ function UI:RefreshQuests()
                 row.note:SetText("|cff" .. COLOR[state.status] .. statusLabel(state, note) .. "|r")
                 row:SetScript("OnClick", function() self:InspectQuest(id) end)
             end
+            styleRow(row, entry.heading and "section" or "quest", id == self.quest and not entry.heading)
             offset = self:LayoutRow(row, entry.heading and 32 or 59, offset)
         end
         if #plan.rows == 0 then
@@ -484,6 +510,8 @@ function UI:RefreshDetail()
         self.renderedQuest = self.quest
         self.reportedExpanded = {}
     end
+    self:RefreshQuestStyles()
+    if self.rewardGeneration ~= rewardGeneration or self.quest ~= renderQuest then return end
     local pool, n, y = self.details, 0, 0
     self.reportedExpanded = self.reportedExpanded or {}
     self.reportedToggles, self.reportedRows = self.reportedToggles or {}, self.reportedRows or {}
@@ -787,6 +815,7 @@ function UI:RefreshDetail()
                     local height = math.max(30, measuredHeight(b.label, 18) + 6)
                     b:SetHeight(height); b:ClearAllPoints(); b:SetPoint("TOPLEFT", 4, -y)
                     b:SetEnabled(enabled)
+                    styleRow(b, "quest", chosen)
                     b:SetScript("OnClick", enabled and function() self:ChooseBranch(id, index, parent) end or nil)
                     b:Show(); y = y + height + 3
                 end
@@ -836,6 +865,7 @@ function UI:RefreshDetail()
             local height = math.max(34, measuredHeight(b.label, 18) + 6)
             b:SetHeight(height)
             b:SetEnabled(true)
+            styleRow(b, "quest", qid == self.quest)
             b:SetScript("OnClick", function() self:InspectQuest(qid) end)
             b:Show(); y = y + height + 3
         end
@@ -950,6 +980,7 @@ function UI:RefreshDetail()
     end
     hideRest(pool, n)
     self.detail:SetHeight(math.max(1, y + 12))
+    self:ApplyTheme()
 end
 
 function UI:Refresh()
@@ -1057,7 +1088,7 @@ function UI:Create()
     self.heading = label(frame, "", 288, -125, 730, 20)
     self.summary = label(frame, "", 288, -157, 760, 12)
     self.coverage = label(frame, "", 288, -183, 760, 12)
-    self.catalog = scrolling(frame, 22, -125, 235, 518)
+    self.catalog, self.catalogScroll = scrolling(frame, 22, -125, 235, 518)
     self.searchHint = label(self.catalog, "", 4, 0, 220, 11)
     self.catalogNotice = label(self.catalog, "", 4, 0, 220, 13)
     self.questList, self.questScroll = scrolling(frame, 288, -218, 355, 425)
@@ -1090,6 +1121,7 @@ function UI:Create()
     for _, d in ipairs(addon.dungeons) do if d.key == addon.char.selectedDungeon then self.dungeon = d end end
     frame:SetScript("OnShow", function() self:Fit(); self:Refresh() end)
     frame:SetScript("OnHide", function() self:ResetRewardPresentation() end)
+    self:ApplyTheme()
     frame:Hide()
 end
 

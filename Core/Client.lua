@@ -577,7 +577,12 @@ local function lfgDungeonArt(mapID)
 end
 
 function addon.DungeonArt(d)
+    d = addon.Clean(d, "table") or {}
+    local art = addon.Clean(d.art, "table")
+    local fileID = art and artInteger(art.fileID)
+    local artMap = art and artInteger(art.gameMapID)
     local mapID = artInteger(d.instanceID)
+    if fileID and artMap and (not mapID or mapID == artMap) then return fileID end
     local journalID = mapID and artInteger(addon.Read(C_EncounterJournal and C_EncounterJournal.GetInstanceForGameMap, "number", mapID))
     if journalID and type(EJ_GetInstanceInfo) == "function" then
         local values = { pcall(EJ_GetInstanceInfo, journalID) }
@@ -585,6 +590,39 @@ function addon.DungeonArt(d)
         if texture then return texture end
     end
     return (mapID and lfgDungeonArt(mapID)) or "Interface\\Icons\\INV_Misc_Map_01"
+end
+
+local dungeonArtPaints = setmetatable({}, { __mode = "k" })
+function addon.PaintDungeonArt(texture, dungeon)
+    local token = {}
+    dungeonArtPaints[texture] = token
+    local image = addon.DungeonArt(dungeon)
+    local function current() return dungeonArtPaints[texture] == token end
+    if not current() then return false end
+    local function paint(value)
+        local ok, accepted = pcall(texture.SetTexture, texture, value)
+        return ok and addon.Clean(accepted, "boolean") == true
+    end
+    local accepted = paint(image)
+    if not current() then return false end
+    local generic = "Interface\\Icons\\INV_Misc_Map_01"
+    if not accepted and image ~= generic then
+        accepted = paint(generic)
+        image = generic
+        if not current() then return false end
+    end
+    if not accepted then
+        pcall(texture.SetTexture, texture, nil)
+        if current() then texture:Hide() end
+        return false
+    end
+    if type(texture.SetTexCoord) == "function" then
+        local inset = type(image) == "number" and 0.18 or 0
+        pcall(texture.SetTexCoord, texture, inset, 1 - inset, inset, 1 - inset)
+        if not current() then return false end
+    end
+    texture:Show()
+    return current()
 end
 
 local function selectedLogReadScope(id)

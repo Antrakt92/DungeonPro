@@ -159,4 +159,77 @@ check("Replacing the enumerator during its read prevents old publication and rec
     assert(addon.DungeonArt({ instanceID = 36 }) == "native/new" and state.calls == 2)
     assert(addon.DungeonArt({ instanceID = 36 }) == "native/new" and state.calls == 2)
 end)
+check("Reviewed client artwork works without journal or finder services", function()
+    C_EncounterJournal, GetLFDChoiceOrder, GetLFGDungeonInfo = nil, nil, nil
+    assert(addon.DungeonArt({ instanceID = 36, art = { fileID = 131833, gameMapID = 36 } }) == 131833)
+    assert(addon.DungeonArt({ art = { fileID = 7963781, gameMapID = 3065 } }) == 7963781)
+    assert(addon.DungeonArt({ instanceID = 43, art = { fileID = 131833, gameMapID = 36 } }) == generic)
+    for _, value in ipairs({ secret, false, 0, -1, 1.5, math.huge, "131833" }) do
+        assert(addon.DungeonArt({ art = { fileID = value, gameMapID = 36 } }) == generic)
+    end
+end)
+local function canvas()
+    return { calls = {}, SetTexture = function(self, value)
+        self.calls[#self.calls + 1] = value or false
+        self.texture = value; return true
+    end, SetTexCoord = function(self, ...) self.coords = { ... } end,
+    Show = function(self) self.shown = true end, Hide = function(self) self.shown = false end }
+end
+check("Art painting crops loading artwork and resets coordinates on recycled fallback", function()
+    local icon = canvas()
+    assert(addon.PaintDungeonArt(icon, { art = { fileID = 131833, gameMapID = 36 } }))
+    assert(icon.texture == 131833 and icon.shown and icon.coords[1] == 0.18)
+    GetLFDChoiceOrder = nil
+    assert(addon.PaintDungeonArt(icon, {}))
+    assert(icon.texture == generic and icon.coords[1] == 0 and icon.coords[2] == 1)
+end)
+check("Rejected or throwing textures fall back without retaining old dungeon art", function()
+    for _, result in ipairs({ false, secret, "true", "throw" }) do
+        local icon = canvas()
+        local native = icon.SetTexture
+        icon.SetTexture = function(self, value)
+            if value == 131833 then
+                if result == "throw" then error("file unavailable") end
+                return result
+            end
+            return native(self, value)
+        end
+        assert(addon.PaintDungeonArt(icon, { art = { fileID = 131833, gameMapID = 36 } }))
+        assert(icon.texture == generic and icon.shown)
+    end
+    local icon = canvas(); icon.texture = "old/dungeon"
+    icon.SetTexture = function(self, value) self.texture = value; return false end
+    assert(not addon.PaintDungeonArt(icon, {}))
+    assert(icon.texture == nil and not icon.shown)
+end)
+check("A reentrant newer paint retains ownership over the reused icon", function()
+    local icon = canvas(); local native = icon.SetTexture
+    icon.SetTexture = function(self, value)
+        native(self, value)
+        if value == 131833 then
+            assert(addon.PaintDungeonArt(self, { art = { fileID = 7963781, gameMapID = 3065 } }))
+        end
+        return true
+    end
+    assert(not addon.PaintDungeonArt(icon, { art = { fileID = 131833, gameMapID = 36 } }))
+    assert(icon.texture == 7963781 and icon.shown and icon.coords[1] == 0.18)
+end)
+check("Every reviewed catalogue image matches its sourced game-map identity", function()
+    assert(loadfile("Database/Catalog.lua"))("DungeonPro", addon)
+    GetLFDChoiceOrder, GetLFGDungeonInfo, C_EncounterJournal = nil, nil, nil
+    local count, seen, maps = 0, {}, {}
+    for _, dungeon in ipairs(addon.dungeons) do
+        if dungeon.art then
+            count = count + 1
+            assert(dungeon.art.fileID == addon.DungeonArt(dungeon))
+            assert(not dungeon.instanceID or dungeon.art.gameMapID == dungeon.instanceID)
+            seen[dungeon.key] = dungeon.art.fileID
+            maps[dungeon.art.gameMapID] = true
+        else assert(addon.DungeonArt(dungeon) == generic) end
+    end
+    local mapCount = 0; for _ in pairs(maps) do mapCount = mapCount + 1 end
+    assert(count == 24 and mapCount == 23)
+    assert(seen.dm == 131833 and seen.thanes == 7963781 and seen.lordaeron == 7963782)
+    assert(seen.lbrs == seen.ubrs and not seen.drowned and not seen.kroldok)
+end)
 print("Dungeon art checks passed: " .. total)

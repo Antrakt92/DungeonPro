@@ -11,9 +11,12 @@ Level ranges are provisional recommendations.
 
 ## Current features
 
-- Dungeon browser with level filtering and game-provided artwork when available.
-  A built-in finder image can be used when the client identifies the same dungeon
-  map unambiguously; missing artwork keeps the map icon.
+- Dungeon browser with level filtering and native loading artwork for 24 entries,
+  including Hall of Thanes, Ruins of Lordaeron, Excavation Site and City of Dalaran.
+  Blackrock Spire wings share their instance's image. Five newer entries still
+  need verified artwork; missing client images keep a fallback icon.
+- A dark, restrained interface with distinct dungeon and quest selection accents,
+  quieter controls and clearer text hierarchy. Visual refinement is ongoing.
 - Character-specific completed, active, ready-to-turn-in, available, locked and
   unknown quest states, with explanations for level gates, missing prerequisites,
   character restrictions and unverified data.
@@ -27,6 +30,8 @@ Level ranges are provisional recommendations.
 - Switch between quests for your character and all character restrictions.
   Restricted quests stay available for inspection and do not add preparation
   actions. Character, level and preparation filters are remembered per character.
+  Restricted rows identify the recorded faction, class and race instead of only
+  saying that a quest is not for your character.
 - Initial paladin and warlock quests are also listed for their associated
   dungeons, beyond the ordinary dungeon categories. Their preparation chains
   and some dungeon associations still need checking.

@@ -22163,7 +22163,13 @@
         5761
       ],
       "source": "https://www.wowhead.com/forever/guide/dungeons-overview-locations-details",
-      "instanceID": 389
+      "instanceID": 389,
+      "art": {
+        "fileID": 131862,
+        "gameMapID": 389,
+        "loadingScreenID": 195,
+        "source": "https://wago.tools/db2/LoadingScreens?build=1.60.1.70425&filter%5BID%5D=exact%3A195"
+      }
     },
     {
       "key": "wc",
@@ -22181,7 +22187,13 @@
         962
       ],
       "source": "https://www.wowhead.com/forever/guide/dungeons-overview-locations-details",
-      "instanceID": 43
+      "instanceID": 43,
+      "art": {
+        "fileID": 131882,
+        "gameMapID": 43,
+        "loadingScreenID": 143,
+        "source": "https://wago.tools/db2/LoadingScreens?build=1.60.1.70425&filter%5BID%5D=exact%3A143"
+      }
     },
     {
       "key": "dm",
@@ -22201,7 +22213,13 @@
         373
       ],
       "source": "https://www.wowhead.com/forever/guide/dungeons-overview-locations-details",
-      "instanceID": 36
+      "instanceID": 36,
+      "art": {
+        "fileID": 131833,
+        "gameMapID": 36,
+        "loadingScreenID": 142,
+        "source": "https://wago.tools/db2/LoadingScreens?build=1.60.1.70425&filter%5BID%5D=exact%3A142"
+      }
     },
     {
       "key": "sfk",
@@ -22218,7 +22236,13 @@
         1740
       ],
       "source": "https://www.wowhead.com/forever/guide/dungeons-overview-locations-details",
-      "instanceID": 33
+      "instanceID": 33,
+      "art": {
+        "fileID": 131869,
+        "gameMapID": 33,
+        "loadingScreenID": 204,
+        "source": "https://wago.tools/db2/LoadingScreens?build=1.60.1.70425&filter%5BID%5D=exact%3A204"
+      }
     },
     {
       "key": "bfd",
@@ -22246,7 +22270,13 @@
         6922
       ],
       "source": "https://www.wowhead.com/forever/guide/dungeons-overview-locations-details",
-      "instanceID": 48
+      "instanceID": 48,
+      "art": {
+        "fileID": 131823,
+        "gameMapID": 48,
+        "loadingScreenID": 196,
+        "source": "https://wago.tools/db2/LoadingScreens?build=1.60.1.70425&filter%5BID%5D=exact%3A196"
+      }
     },
     {
       "key": "stocks",
@@ -22263,7 +22293,13 @@
         387
       ],
       "source": "https://www.wowhead.com/forever/guide/dungeons-overview-locations-details",
-      "instanceID": 34
+      "instanceID": 34,
+      "art": {
+        "fileID": 131870,
+        "gameMapID": 34,
+        "loadingScreenID": 194,
+        "source": "https://wago.tools/db2/LoadingScreens?build=1.60.1.70425&filter%5BID%5D=exact%3A194"
+      }
     },
     {
       "key": "gnom",
@@ -22296,7 +22332,13 @@
         4602
       ],
       "source": "https://www.wowhead.com/forever/guide/dungeons-overview-locations-details",
-      "instanceID": 90
+      "instanceID": 90,
+      "art": {
+        "fileID": 131841,
+        "gameMapID": 90,
+        "loadingScreenID": 193,
+        "source": "https://wago.tools/db2/LoadingScreens?build=1.60.1.70425&filter%5BID%5D=exact%3A193"
+      }
     },
     {
       "key": "rfk",
@@ -22314,7 +22356,13 @@
         6522
       ],
       "source": "https://www.wowhead.com/forever/guide/dungeons-overview-locations-details",
-      "instanceID": 47
+      "instanceID": 47,
+      "art": {
+        "fileID": 131865,
+        "gameMapID": 47,
+        "loadingScreenID": 188,
+        "source": "https://wago.tools/db2/LoadingScreens?build=1.60.1.70425&filter%5BID%5D=exact%3A188"
+      }
     },
     {
       "key": "sm",
@@ -22334,7 +22382,13 @@
         1951
       ],
       "source": "https://www.wowhead.com/forever/guide/dungeons-overview-locations-details",
-      "instanceID": 189
+      "instanceID": 189,
+      "art": {
+        "fileID": 131852,
+        "gameMapID": 189,
+        "loadingScreenID": 190,
+        "source": "https://wago.tools/db2/LoadingScreens?build=1.60.1.70425&filter%5BID%5D=exact%3A190"
+      }
     },
     {
       "key": "rfd",
@@ -22352,7 +22406,13 @@
         3523
       ],
       "source": "https://www.wowhead.com/forever/guide/dungeons-overview-locations-details",
-      "instanceID": 129
+      "instanceID": 129,
+      "art": {
+        "fileID": 131864,
+        "gameMapID": 129,
+        "loadingScreenID": 145,
+        "source": "https://wago.tools/db2/LoadingScreens?build=1.60.1.70425&filter%5BID%5D=exact%3A145"
+      }
     },
     {
       "key": "ulda",
@@ -22393,7 +22453,13 @@
         1956
       ],
       "source": "https://www.wowhead.com/forever/guide/dungeons-overview-locations-details",
-      "instanceID": 70
+      "instanceID": 70,
+      "art": {
+        "fileID": 131876,
+        "gameMapID": 70,
+        "loadingScreenID": 144,
+        "source": "https://wago.tools/db2/LoadingScreens?build=1.60.1.70425&filter%5BID%5D=exact%3A144"
+      }
     },
     {
       "key": "zf",
@@ -22414,7 +22480,13 @@
         2864
       ],
       "source": "https://www.wowhead.com/forever/guide/dungeons-overview-locations-details",
-      "instanceID": 209
+      "instanceID": 209,
+      "art": {
+        "fileID": 131885,
+        "gameMapID": 209,
+        "loadingScreenID": 146,
+        "source": "https://wago.tools/db2/LoadingScreens?build=1.60.1.70425&filter%5BID%5D=exact%3A146"
+      }
     },
     {
       "key": "mara",
@@ -22436,7 +22508,13 @@
         7029
       ],
       "source": "https://www.wowhead.com/forever/guide/dungeons-overview-locations-details",
-      "instanceID": 349
+      "instanceID": 349,
+      "art": {
+        "fileID": 131850,
+        "gameMapID": 349,
+        "loadingScreenID": 81,
+        "source": "https://wago.tools/db2/LoadingScreens?build=1.60.1.70425&filter%5BID%5D=exact%3A81"
+      }
     },
     {
       "key": "st",
@@ -22467,7 +22545,13 @@
         8413
       ],
       "source": "https://www.wowhead.com/forever/guide/dungeons-overview-locations-details",
-      "instanceID": 109
+      "instanceID": 109,
+      "art": {
+        "fileID": 131872,
+        "gameMapID": 109,
+        "loadingScreenID": 191,
+        "source": "https://wago.tools/db2/LoadingScreens?build=1.60.1.70425&filter%5BID%5D=exact%3A191"
+      }
     },
     {
       "key": "brd",
@@ -22520,7 +22604,13 @@
         7848
       ],
       "source": "https://www.wowhead.com/forever/guide/dungeons-overview-locations-details",
-      "instanceID": 230
+      "instanceID": 230,
+      "art": {
+        "fileID": 131824,
+        "gameMapID": 230,
+        "loadingScreenID": 103,
+        "source": "https://wago.tools/db2/LoadingScreens?build=1.60.1.70425&filter%5BID%5D=exact%3A103"
+      }
     },
     {
       "key": "lbrs",
@@ -22535,7 +22625,13 @@
       ],
       "source": "https://www.wowhead.com/forever/guide/dungeons-overview-locations-details",
       "instanceID": 229,
-      "wing": "lower"
+      "wing": "lower",
+      "art": {
+        "fileID": 131825,
+        "gameMapID": 229,
+        "loadingScreenID": 189,
+        "source": "https://wago.tools/db2/LoadingScreens?build=1.60.1.70425&filter%5BID%5D=exact%3A189"
+      }
     },
     {
       "key": "ubrs",
@@ -22560,7 +22656,13 @@
       ],
       "source": "https://www.wowhead.com/forever/guide/dungeons-overview-locations-details",
       "instanceID": 229,
-      "wing": "upper"
+      "wing": "upper",
+      "art": {
+        "fileID": 131825,
+        "gameMapID": 229,
+        "loadingScreenID": 189,
+        "source": "https://wago.tools/db2/LoadingScreens?build=1.60.1.70425&filter%5BID%5D=exact%3A189"
+      }
     },
     {
       "key": "dire",
@@ -22610,7 +22712,13 @@
         7631
       ],
       "source": "https://www.wowhead.com/forever/guide/dungeons-overview-locations-details",
-      "instanceID": 429
+      "instanceID": 429,
+      "art": {
+        "fileID": 131835,
+        "gameMapID": 429,
+        "loadingScreenID": 82,
+        "source": "https://wago.tools/db2/LoadingScreens?build=1.60.1.70425&filter%5BID%5D=exact%3A82"
+      }
     },
     {
       "key": "scholo",
@@ -22637,7 +22745,13 @@
         8258
       ],
       "source": "https://www.wowhead.com/forever/guide/dungeons-overview-locations-details",
-      "instanceID": 289
+      "instanceID": 289,
+      "art": {
+        "fileID": 131868,
+        "gameMapID": 289,
+        "loadingScreenID": 102,
+        "source": "https://wago.tools/db2/LoadingScreens?build=1.60.1.70425&filter%5BID%5D=exact%3A102"
+      }
     },
     {
       "key": "strat",
@@ -22664,7 +22778,13 @@
         8991
       ],
       "source": "https://www.wowhead.com/forever/guide/dungeons-overview-locations-details",
-      "instanceID": 329
+      "instanceID": 329,
+      "art": {
+        "fileID": 131871,
+        "gameMapID": 329,
+        "loadingScreenID": 101,
+        "source": "https://wago.tools/db2/LoadingScreens?build=1.60.1.70425&filter%5BID%5D=exact%3A101"
+      }
     },
     {
       "key": "thanes",
@@ -22679,7 +22799,13 @@
         96403,
         98423
       ],
-      "source": "https://www.wowhead.com/forever/guide/dungeons-overview-locations-details"
+      "source": "https://www.wowhead.com/forever/guide/dungeons-overview-locations-details",
+      "art": {
+        "fileID": 7963781,
+        "gameMapID": 3065,
+        "loadingScreenID": 693,
+        "source": "https://wago.tools/db2/LoadingScreens?build=1.60.1.70425&filter%5BID%5D=exact%3A693"
+      }
     },
     {
       "key": "lordaeron",
@@ -22702,7 +22828,13 @@
         97289,
         95250
       ],
-      "source": "https://www.wowhead.com/forever/guide/dungeons-overview-locations-details"
+      "source": "https://www.wowhead.com/forever/guide/dungeons-overview-locations-details",
+      "art": {
+        "fileID": 7963782,
+        "gameMapID": 2999,
+        "loadingScreenID": 650,
+        "source": "https://wago.tools/db2/LoadingScreens?build=1.60.1.70425&filter%5BID%5D=exact%3A650"
+      }
     },
     {
       "key": "excavation",
@@ -22726,7 +22858,13 @@
         95737,
         95795
       ],
-      "source": "https://www.wowhead.com/forever/guide/dungeons-overview-locations-details"
+      "source": "https://www.wowhead.com/forever/guide/dungeons-overview-locations-details",
+      "art": {
+        "fileID": 7963777,
+        "gameMapID": 2998,
+        "loadingScreenID": 691,
+        "source": "https://wago.tools/db2/LoadingScreens?build=1.60.1.70425&filter%5BID%5D=exact%3A691"
+      }
     },
     {
       "key": "dalaran",
@@ -22744,7 +22882,13 @@
         96988,
         96986
       ],
-      "source": "https://www.wowhead.com/forever/guide/dungeons-overview-locations-details"
+      "source": "https://www.wowhead.com/forever/guide/dungeons-overview-locations-details",
+      "art": {
+        "fileID": 7963775,
+        "gameMapID": 2959,
+        "loadingScreenID": 647,
+        "source": "https://wago.tools/db2/LoadingScreens?build=1.60.1.70425&filter%5BID%5D=exact%3A647"
+      }
     },
     {
       "key": "drowned",

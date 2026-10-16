@@ -97,6 +97,11 @@ addon.Context = function() return {
 addon.QuestName = function(id) return "Quest " .. id end
 addon.DungeonName = function(d) return d.name end
 addon.DungeonArt = function() return "art" end
+addon.PaintDungeonArt = function(texture, dungeon)
+    local ok = texture:SetTexture(addon.DungeonArt(dungeon))
+    texture:SetShown(ok == true)
+    return ok == true
+end
 addon.Description = function() return "Description" end
 addon.quests = {}
 for _, id in ipairs({ 1, 2, 3, 4, 5, 6, 7, 100, 101 }) do
@@ -2593,5 +2598,88 @@ check("Preparation headings retain valid highlights and real row click arguments
     assert(ui.quest == 15002 and ui.source.enabled)
     addon.quests, addon.dungeons, addon.Context = quests, dungeons, context
     ui.quest, ui.dungeon, ui.preparation, ui.detailHistory = quest, dungeon, preparation, history; ui:Refresh()
+end)
+check("Optional theme styles the shell controls and recycled row selection without changing behavior", function()
+    local previous, quest, preparation, history = addon.Theme, ui.quest, ui.preparation, ui.detailHistory
+    local calls = 0
+    addon.Theme = {
+        Apply = function(target) assert(target == ui); calls = calls + 1; return true end,
+        StyleRow = function(row, options)
+            assert(row and type(options.kind) == "string" and type(options.selected) == "boolean")
+            row.themeKind, row.themeSelected = options.kind, options.selected
+            return true
+        end,
+    }
+    ui.quest, ui.preparation, ui.detailHistory = nil, false, {}; ui:Refresh()
+    assert(calls > 0 and ui.cards[1].themeKind == "dungeon" and ui.cards[1].themeSelected)
+    for _, key in ipairs({ "rangeButton", "preparationButton", "characterButton" }) do assert(ui[key].themeKind == "control") end
+    local row = visibleRows()[1]; local note, callback, height = row.note.text, row.scripts.OnClick, row.height
+    callback(row, "LeftButton", false)
+    assert(row.themeSelected and row.note.text == note and row.scripts.OnClick == callback and row.height == height)
+    assert(ui.quest == 100 and ui.source.enabled)
+    local second = visibleRows()[2]; second.scripts.OnClick(second, "LeftButton", false)
+    assert(second.themeSelected and not row.themeSelected)
+    ui.back.scripts.OnClick(ui.back, "LeftButton", false); assert(row.themeSelected and not second.themeSelected)
+    ui.preparation = true; ui:Refresh()
+    assert(ui.preparationButton.themeSelected)
+    for _, current in ipairs(ui.rows) do if current.shown then assert(current.themeKind == (current.heading and "section" or "quest")) end end
+    addon.Theme = { Apply = function() error("optional theme failed") end, StyleRow = function() error("optional theme failed") end }
+    ui:Refresh(); assert(ui.quest == 100 and ui.source.enabled)
+    addon.Theme, ui.quest, ui.preparation, ui.detailHistory = previous, quest, preparation, history; ui:Refresh()
+end)
+check("Dungeon art painting handles rejected reused icons and aborts a stale catalogue render after reentry", function()
+    local paint, dungeons, search, range = addon.PaintDungeonArt, addon.dungeons, ui.search, ui.range
+    addon.dungeons = {
+        { key = "paint-first", name = "First painted dungeon", minLevel = 1, maxLevel = 60, quests = {} },
+        { key = "paint-second", name = "Second painted dungeon", minLevel = 1, maxLevel = 60, quests = {} },
+    }
+    ui.search, ui.range = "", false
+    addon.PaintDungeonArt = function(texture, dungeon) texture:SetTexture(dungeon.key); texture:Show(); return true end
+    ui:RefreshDungeons(); assert(ui.cards[1].art.shown and ui.cards[1].art.texture == "paint-first")
+    addon.PaintDungeonArt = function() return false end
+    ui:RefreshDungeons(); assert(not ui.cards[1].art.shown and not ui.cards[2].art.shown)
+    addon.PaintDungeonArt = function() error("unavailable") end
+    ui:RefreshDungeons(); assert(not ui.cards[1].art.shown)
+    local armed = true
+    addon.PaintDungeonArt = function(texture, dungeon)
+        if armed then
+            armed = false; ui.search = "Second painted dungeon"; ui:RefreshDungeons()
+            return false
+        end
+        texture:SetTexture(dungeon.key); texture:Show(); return true
+    end
+    ui:RefreshDungeons()
+    assert(not armed and ui.cards[1].title.text == "Second painted dungeon" and not ui.cards[2].shown)
+    assert(ui.cards[1].art.shown and ui.cards[1].art.texture == "paint-second", "stale painter result must not hide the newer icon")
+    addon.PaintDungeonArt, addon.dungeons, ui.search, ui.range = paint, dungeons, search, range; ui:Refresh()
+end)
+check("The real optional theme paints modern surfaces and removes native control artwork without changing actions", function()
+    local previous, saved = addon.Theme, {}
+    for _, key in ipairs({ "SetColorTexture", "SetTextColor", "SetAlpha", "GetNormalTexture", "GetPushedTexture", "GetDisabledTexture", "GetFontString" }) do saved[key] = methods[key] end
+    methods.SetColorTexture = function(region, ...) region.themeColor = { ... } end
+    methods.SetTextColor = function(region, ...) region.themeTextColor = { ... } end
+    methods.SetAlpha = function(region, value) region.alpha = value end
+    for _, key in ipairs({ "GetNormalTexture", "GetPushedTexture", "GetDisabledTexture", "GetFontString" }) do
+        local field = "native" .. key
+        methods[key] = function(region)
+            region[field] = region[field] or object()
+            return region[field]
+        end
+    end
+    local sourceAction, guideAction, quest = ui.source.scripts.OnClick, ui.guide.scripts.OnClick, ui.quest
+    for _, key in ipairs({ "back", "clearSearch", "rangeButton", "preparationButton", "characterButton", "language", "map", "guide", "source", "giver" }) do
+        for _, part in ipairs({ "Left", "Middle", "Right" }) do ui[key][part] = ui[key][part] or object() end
+    end
+    assert(loadfile("UI/Theme.lua"))("DungeonPro", addon)
+    ui:Refresh()
+    assert(ui.title.themeTextColor and ui.frame:GetWidth() == 1100 and ui.frame:GetHeight() == 700)
+    assert(ui.cards[1].bg.themeColor and ui.rows[1].bg.themeColor)
+    for _, key in ipairs({ "back", "clearSearch", "rangeButton", "preparationButton", "characterButton", "language", "map", "guide", "source", "giver" }) do
+        assert(ui[key]:GetNormalTexture().alpha == 0 and ui[key]:GetPushedTexture().alpha == 0 and ui[key]:GetDisabledTexture().alpha == 0)
+        assert(ui[key].Left.alpha == 0 and ui[key].Middle.alpha == 0 and ui[key].Right.alpha == 0)
+    end
+    assert(ui.source.scripts.OnClick == sourceAction and ui.guide.scripts.OnClick == guideAction and ui.quest == quest)
+    for _, key in ipairs({ "SetColorTexture", "SetTextColor", "SetAlpha", "GetNormalTexture", "GetPushedTexture", "GetDisabledTexture", "GetFontString" }) do methods[key] = saved[key] end
+    addon.Theme = previous; ui:Refresh()
 end)
 print("Preparation UI modeled checks passed: " .. total .. " (no native layout validation)")

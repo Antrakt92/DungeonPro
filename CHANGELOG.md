@@ -2,6 +2,10 @@
 
 ## 0.1.0 - 16-Oct-2026 — Development preview
 
+- Restored quest selection when preparation section headings are present.
+- Explained faction, class and race restrictions directly in quest rows.
+- Added native dungeon artwork for 24 catalogue entries and safer image fallback.
+- Refined the window, controls and selected rows with a cohesive dark theme.
 - Added the dungeon browser, character quest states and prerequisite planning.
 - Added map guidance, a direction arrow and optional TomTom support.
 - Added initial quest facts for The Deadmines, Ragefire Chasm and The Hall of Thanes.

@@ -725,6 +725,30 @@ class CatalogTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "Duplicate objective item"):
             catalog.validate(data)
 
+    def test_dungeon_artwork_keeps_exact_source_identity(self):
+        data = self.minimal_catalog()
+        dungeon = data["dungeons"][0]
+        art = {"fileID": 131833, "gameMapID": 36, "loadingScreenID": 142,
+               "source": "https://wago.tools/db2/LoadingScreens?build=1.60.1.70425&filter%5BID%5D=exact%3A142"}
+        dungeon["art"] = art
+        dungeon["instanceID"] = 36
+        before = copy.deepcopy(data)
+        catalog.validate(data)
+        self.assertEqual(data, before)
+        self.assertIn('["fileID"] = 131833', catalog.generate(data))
+        for field in ("fileID", "gameMapID", "loadingScreenID"):
+            for value in (None, False, 0, -1, 1.5, "36", 2 ** 32):
+                invalid = copy.deepcopy(data)
+                invalid["dungeons"][0]["art"][field] = value
+                with self.subTest(field=field, value=value), self.assertRaisesRegex(ValueError, "artwork"):
+                    catalog.validate(invalid)
+        for value in (None, {}, {**art, "source": "https://example.com"},
+                      {**art, "extra": True}, {**art, "gameMapID": 43}):
+            invalid = copy.deepcopy(data)
+            invalid["dungeons"][0]["art"] = value
+            with self.subTest(value=value), self.assertRaisesRegex(ValueError, "artwork"):
+                catalog.validate(invalid)
+
     def test_invalid_objective_items_are_rejected(self):
         invalid = [None, False, {}, [], [None], [False], [1], [[]], [{}],
                    [{"quantity": 1}],

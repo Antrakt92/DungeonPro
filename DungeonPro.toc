@@ -13,6 +13,7 @@ Locales\Translations.lua
 Database\Catalog.lua
 Core\Planner.lua
 Core\Client.lua
+UI\Theme.lua
 UI\Window.lua
 UI\Navigation.lua
 UI\Minimap.lua

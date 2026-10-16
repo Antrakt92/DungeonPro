@@ -261,6 +261,14 @@ def validate(data):
             raise ValueError("Invalid dungeon identity/levels")
         if "wing" in d and (type(d["wing"]) is not str or d["wing"] not in ("lower", "upper") or "instanceID" not in d):
             raise ValueError("Invalid dungeon wing")
+        if "art" in d:
+            art = d["art"]
+            if (type(art) is not dict or set(art) != {"fileID", "gameMapID", "loadingScreenID", "source"} or
+                    any(not integer(art.get(field)) or art[field] > 4294967295
+                        for field in ("fileID", "gameMapID", "loadingScreenID")) or
+                    art.get("source") != "https://wago.tools/db2/LoadingScreens?build=1.60.1.70425&filter%5BID%5D=exact%3A" + str(art.get("loadingScreenID")) or
+                    ("instanceID" in d and d["instanceID"] != art["gameMapID"])):
+                raise ValueError("Invalid dungeon artwork identity/source")
         if "instanceID" in d:
             wings = instance_wings.setdefault(d["instanceID"], set())
             wing = d.get("wing")
