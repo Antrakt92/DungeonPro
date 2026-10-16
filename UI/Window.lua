@@ -1,5 +1,6 @@
 local _, addon = ...
-local UI = { dungeon = nil, quest = nil, search = "", range = false, preparation = false, includeUnavailable = false }
+local UI = { dungeon = nil, quest = nil, search = "", range = false, preparation = false, includeUnavailable = false,
+    detailHistory = {} }
 addon.UI = UI
 local COLOR = { COMPLETED = "66dd99", READY = "ffe066", ACTIVE = "88bfff", AVAILABLE = "ffe9b0",
     LOCKED = "f0b080", UNKNOWN = "b4aacd", UNAVAILABLE = "999999" }
@@ -110,6 +111,29 @@ function UI:SaveFilters()
     end
 end
 
+function UI:InspectQuest(id)
+    id = addon.Clean(id, "number")
+    if not id or id <= 0 or id % 1 ~= 0 then return false end
+    if self.quest ~= id then
+        local previous = addon.Clean(self.quest, "number")
+        if previous and previous > 0 and previous % 1 == 0 then
+            self.detailHistory[#self.detailHistory + 1] = previous
+            if #self.detailHistory > 20 then table.remove(self.detailHistory, 1) end
+        end
+        self.quest = id
+    end
+    self:RefreshDetail()
+    return true
+end
+
+function UI:BackQuest()
+    local previous = table.remove(self.detailHistory)
+    if not previous then return false end
+    self.quest = previous
+    self:RefreshDetail()
+    return true
+end
+
 function UI:ChooseBranch(id, index, parent)
     id, index = addon.Clean(id, "number"), addon.Clean(index, "number")
     if not id or id <= 0 or id ~= math.floor(id) or not index or index <= 0 or index ~= math.floor(index) then return false end
@@ -162,6 +186,7 @@ function UI:RefreshDungeons()
                 addon.L("CATALOG_QUESTS", #d.quests))
             row.bg:SetColorTexture(self.dungeon == d and 0.22 or 0.13, 0.19, 0.23, 1)
             row:SetScript("OnClick", function()
+                self.detailHistory = {}
                 self.dungeon, self.quest = d, nil
                 addon.char.selectedDungeon = d.key
                 self:Refresh()
@@ -181,6 +206,7 @@ end
 function UI:RefreshQuests()
     local d, engine = self.dungeon, addon.Planner.New(addon.quests, addon.Context(), addon.Clean(addon.char.choices, "table"))
     self.engine = engine
+    for _, row in ipairs(self.rows) do row:SetEnabled(false); row:SetScript("OnClick", nil) end
     self.heading:SetText(d and addon.DungeonName(d) or addon.L("QUESTS"))
     local n, offset = 0, 0
     if d then
@@ -235,7 +261,7 @@ function UI:RefreshQuests()
                     note = addon.L("level") .. " " .. addon.quests[id].minLevel
                 end
                 row.note:SetText("|cff" .. COLOR[state.status] .. note .. "|r")
-                row:SetScript("OnClick", function() self.quest = id; self:RefreshDetail() end)
+                row:SetScript("OnClick", function() self:InspectQuest(id) end)
             end
             offset = self:LayoutRow(row, entry.heading and 32 or 59, offset)
         end
@@ -251,6 +277,7 @@ end
 
 function UI:RefreshDetail()
     local pool, n, y = self.details, 0, 0
+    self.back:SetEnabled(#self.detailHistory > 0)
     if self.portrait then self.portrait:Hide(); self.portrait:SetTexture(nil) end
     self.action = nil
     self.giverAction, self.giverHasCoordinates = nil, false
@@ -264,10 +291,10 @@ function UI:RefreshDetail()
         local measured = measuredHeight(fs, height or 18)
         y = y + math.max(height or 18, measured) + 8
     end
-    for _, b in ipairs(self.chainButtons) do b:Hide() end
+    for _, b in ipairs(self.chainButtons) do b:Hide(); b:SetEnabled(false); b:SetScript("OnClick", nil) end
     for _, b in ipairs(self.branchButtons) do b:Hide() end
     for _, b in ipairs(self.requirementButtons) do b:Hide(); b:SetEnabled(false); b:SetScript("OnClick", nil) end
-    for _, b in ipairs(self.materialButtons) do b:Hide() end
+    for _, b in ipairs(self.materialButtons) do b:Hide(); b:SetEnabled(false); b:SetScript("OnClick", nil) end
     for _, buttons in ipairs({ self.startButtons, self.finishButtons }) do
         for _, b in ipairs(buttons) do
             b:Hide(); b:SetEnabled(false); b:SetScript("OnClick", nil)
@@ -456,7 +483,7 @@ function UI:RefreshDetail()
                 local status = engine:State(parent).status
                 row.note:SetText("|cff" .. COLOR[status] .. addon.L(status) .. "|r")
                 row:SetEnabled(true)
-                row:SetScript("OnClick", function() self.quest = parent; self:RefreshDetail() end)
+                row:SetScript("OnClick", function() self:InspectQuest(parent) end)
                 y = self:LayoutRow(row, 59, y)
             end
         end
@@ -485,7 +512,8 @@ function UI:RefreshDetail()
             b.label:SetText("|cff" .. COLOR[qs] .. (grouped and "• " or (chainIndex .. ". ")) .. addon.QuestName(qid) .. "|r")
             local height = math.max(34, measuredHeight(b.label, 18) + 6)
             b:SetHeight(height)
-            b:SetScript("OnClick", function() self.quest = qid; self:RefreshDetail() end)
+            b:SetEnabled(true)
+            b:SetScript("OnClick", function() self:InspectQuest(qid) end)
             b:Show(); y = y + height + 3
         end
         if q.storylineGroups then
@@ -509,7 +537,8 @@ function UI:RefreshDetail()
                 local status = entry.state.status
                 row.note:SetText("|cff" .. COLOR[status] .. addon.L(status) .. "|r\n" ..
                     (addon.Read(addon.ItemName, "string", entry.itemID) or addon.L("MATERIAL_ITEM", entry.itemID)) .. (entry.unknown and status ~= "UNKNOWN" and (" — " .. addon.L("UNKNOWN")) or ""))
-                row:SetScript("OnClick", function() self.quest = other; self:RefreshDetail() end)
+                row:SetEnabled(true)
+                row:SetScript("OnClick", function() self:InspectQuest(other) end)
                 y = self:LayoutRow(row, 59, y)
             end
         end
@@ -563,6 +592,7 @@ end
 function UI:Refresh()
     if not self.frame or not self.frame:IsShown() then return end
     self.subtitle:SetText(addon.L("SUBTITLE"))
+    self.back:SetText(addon.L("DETAIL_BACK"))
     self.language:SetText(addon.db.locale == "auto" and "Auto" or addon.db.locale)
     self.rangeButton:SetText(addon.L(self.range and "RANGE" or "ALL"))
     self.preparationButton:SetText(addon.L(self.preparation and "QUESTS" or "NEXT"))
@@ -623,6 +653,9 @@ function UI:Create()
     frame:SetBackdropBorderColor(0.7, 0.55, 0.27, 1)
     self.title = label(frame, addon.L("TITLE"), 22, -18, 360, 24)
     self.subtitle = label(frame, "", 22, -49, 500, 13)
+    self.back = button(frame, addon.L("DETAIL_BACK"), 120, function() self:BackQuest() end)
+    self.back:SetPoint("TOPLEFT", 560, -45)
+    self.back:SetEnabled(false)
     local close = CreateFrame("Button", nil, frame, "UIPanelCloseButton"); close:SetPoint("TOPRIGHT", -4, -4)
     local search = CreateFrame("EditBox", nil, frame, "InputBoxTemplate")
     search:SetSize(200, 25); search:SetPoint("TOPLEFT", 27, -84); search:SetAutoFocus(false)

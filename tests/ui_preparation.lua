@@ -1048,4 +1048,64 @@ check("Prerequisite groups expose AND and OR structure and distinguish acceptanc
     measurement = nil
     showDetail(2)
 end)
+check("Explicit supporting-card inspection can go back without recording refreshes or branch choices", function()
+    local dungeons, selected, quest, preparation = addon.dungeons, ui.dungeon, ui.quest, ui.preparation
+    local choices, selectedDungeon = addon.char.choices, addon.char.selectedDungeon
+    addon.char.choices = {}
+    for _, id in ipairs({ 980, 981, 982, 983, 984 }) do
+        addon.quests[id] = { id = id, minLevel = 1, requirementsKnown = true }
+    end
+    addon.quests[980].requires = { { ids = { 981 } }, { ids = { 982, 983 } } }
+    addon.quests[980].storyline = { 981, 980 }
+    addon.quests[980].completionQuests = { { id = 984, itemID = 7000 } }
+    local dungeon = { key = "history", name = "History dungeon", minLevel = 1, maxLevel = 30,
+        quests = { 980, 981 }, coverage = "partial" }
+    local other = { key = "other", name = "Other dungeon", minLevel = 1, maxLevel = 30, quests = { 982 } }
+    addon.dungeons, ui.dungeon, ui.quest, ui.preparation, ui.detailHistory = { dungeon, other }, dungeon, 980, false, {}
+    ui:Refresh()
+    assert(not ui.back.enabled and ui.back.text == addon.L("DETAIL_BACK"))
+    local singleton = ui.requirementButtons[1]
+    singleton.scripts.OnClick()
+    assert(ui.quest == 981 and #ui.detailHistory == 1 and ui.detailHistory[1] == 980 and ui.back.enabled)
+    assert(not singleton.shown and not singleton.scripts.OnClick)
+    ui.back.scripts.OnClick()
+    assert(ui.quest == 980 and #ui.detailHistory == 0 and not ui.back.enabled)
+    ui.chainButtons[1].scripts.OnClick()
+    assert(ui.quest == 981 and #ui.detailHistory == 1)
+    ui:BackQuest()
+    local material = ui.materialButtons[1]
+    material.scripts.OnClick()
+    assert(ui.quest == 984 and #ui.detailHistory == 1 and not material.scripts.OnClick)
+    ui:BackQuest()
+    ui.rows[2].scripts.OnClick()
+    assert(ui.quest == 981 and #ui.detailHistory == 1)
+    ui:BackQuest()
+    ui:Refresh(); ui:RefreshDetail(); ui:InspectQuest(980)
+    assert(#ui.detailHistory == 0)
+    assert(ui:ChooseBranch(980, 2, 982) and #ui.detailHistory == 0 and ui.quest == 980)
+    ui:InspectQuest(981)
+    assert(#ui.detailHistory == 1)
+    ui.cards[2].scripts.OnClick()
+    assert(ui.dungeon == other and ui.quest == nil and #ui.detailHistory == 0 and not ui.back.enabled)
+    for _, row in ipairs(ui.rows) do if not row.shown then assert(not row.scripts.OnClick) end end
+    assert(addon.char.detailHistory == nil and addon.db.detailHistory == nil)
+    for _, id in ipairs({ 980, 981, 982, 983, 984 }) do addon.quests[id] = nil end
+    addon.char.choices, addon.char.selectedDungeon = choices, selectedDungeon
+    addon.dungeons, ui.dungeon, ui.quest, ui.preparation, ui.detailHistory = dungeons, selected, quest, preparation, {}
+    ui:Refresh()
+end)
+check("Back history caps clean IDs at twenty and supports unknown cards without repushing", function()
+    local quest, history = ui.quest, ui.detailHistory
+    ui.quest, ui.detailHistory = 2000, {}
+    for id = 2001, 2025 do assert(ui:InspectQuest(id)) end
+    assert(#ui.detailHistory == 20 and ui.detailHistory[1] == 2005 and ui.detailHistory[20] == 2024)
+    ui:InspectQuest(2025); ui:RefreshDetail()
+    assert(#ui.detailHistory == 20 and detailHas(addon.L("REASON_missing")))
+    for _, id in ipairs({ 0, -1, 1.5, math.huge, "2026", false }) do assert(not ui:InspectQuest(id)) end
+    assert(ui.quest == 2025 and #ui.detailHistory == 20)
+    for expected = 2024, 2005, -1 do assert(ui:BackQuest() and ui.quest == expected) end
+    assert(#ui.detailHistory == 0 and not ui.back.enabled and not ui:BackQuest())
+    ui.quest, ui.detailHistory = quest, history
+    ui:RefreshDetail()
+end)
 print("Preparation UI modeled checks passed: " .. total .. " (no native layout validation)")
