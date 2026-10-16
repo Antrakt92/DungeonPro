@@ -18574,14 +18574,55 @@
       "start": {
         "npcID": 7572,
         "name": "Fallen Hero of the Horde",
-        "zoneName": "Swamp of Sorrows"
+        "zoneName": "Swamp of Sorrows",
+        "mapID": 1435,
+        "x": 34.2,
+        "y": 65.4,
+        "reportedLocations": [
+          {
+            "mapID": 1435,
+            "zoneName": "Swamp of Sorrows",
+            "x": 34.2,
+            "y": 65.4
+          },
+          {
+            "mapID": 1435,
+            "zoneName": "Swamp of Sorrows",
+            "x": 34.2,
+            "y": 66
+          }
+        ]
       },
       "finish": {
         "npcID": 7572,
         "name": "Fallen Hero of the Horde",
-        "zoneName": "Swamp of Sorrows"
+        "zoneName": "Swamp of Sorrows",
+        "mapID": 1435,
+        "x": 34.2,
+        "y": 65.4,
+        "reportedLocations": [
+          {
+            "mapID": 1435,
+            "zoneName": "Swamp of Sorrows",
+            "x": 34.2,
+            "y": 65.4
+          },
+          {
+            "mapID": 1435,
+            "zoneName": "Swamp of Sorrows",
+            "x": 34.2,
+            "y": 66
+          }
+        ]
       },
-      "requirementsKnown": false
+      "requirementsKnown": false,
+      "storyline": [
+        8417,
+        8423,
+        8424,
+        8425
+      ],
+      "storylineEvidence": "https://www.wowhead.com/forever/quest=8424/war-on-the-shadowsworn"
     },
     {
       "id": 8257,
@@ -18599,14 +18640,27 @@
       "start": {
         "npcID": 8405,
         "name": "Ogtinc",
-        "zoneName": "Azshara"
+        "zoneName": "Azshara",
+        "mapID": 1447,
+        "x": 42.4,
+        "y": 42.6
       },
       "finish": {
         "npcID": 10922,
         "name": "Greta Mosshoof",
-        "zoneName": "Felwood"
+        "zoneName": "Felwood",
+        "mapID": 1448,
+        "x": 51.2,
+        "y": 82.2
       },
-      "requirementsKnown": false
+      "requirementsKnown": false,
+      "storyline": [
+        8254,
+        8255,
+        8256,
+        8257
+      ],
+      "storylineEvidence": "https://www.wowhead.com/forever/quest=8256/the-ichor-of-undeath"
     },
     {
       "id": 8422,
@@ -18624,14 +18678,61 @@
       "start": {
         "npcID": 14470,
         "name": "Impsy",
-        "zoneName": "Felwood"
+        "zoneName": "Felwood",
+        "mapID": 1448,
+        "x": 41.4,
+        "y": 44.8,
+        "reportedLocations": [
+          {
+            "mapID": 1448,
+            "zoneName": "Felwood",
+            "x": 41.4,
+            "y": 44.8
+          },
+          {
+            "mapID": 1448,
+            "zoneName": "Felwood",
+            "x": 41.6,
+            "y": 44.8
+          }
+        ]
       },
       "finish": {
         "npcID": 14470,
         "name": "Impsy",
-        "zoneName": "Felwood"
+        "zoneName": "Felwood",
+        "mapID": 1448,
+        "x": 41.4,
+        "y": 44.8,
+        "reportedLocations": [
+          {
+            "mapID": 1448,
+            "zoneName": "Felwood",
+            "x": 41.4,
+            "y": 44.8
+          },
+          {
+            "mapID": 1448,
+            "zoneName": "Felwood",
+            "x": 41.6,
+            "y": 44.8
+          }
+        ]
       },
-      "requirementsKnown": false
+      "requirementsKnown": false,
+      "storylineGroups": [
+        [
+          8419,
+          8420
+        ],
+        [
+          8421
+        ],
+        [
+          8422
+        ]
+      ],
+      "storylineEvidence": "https://www.wowhead.com/forever/quest=8421/the-wrong-stuff"
     },
     {
       "id": 9053,
@@ -18649,14 +18750,779 @@
       "start": {
         "npcID": 9619,
         "name": "Torwa Pathfinder",
-        "zoneName": "Un'Goro Crater"
+        "zoneName": "Un'Goro Crater",
+        "mapID": 1449,
+        "x": 71.4,
+        "y": 76,
+        "reportedLocations": [
+          {
+            "mapID": 1449,
+            "zoneName": "Un'Goro Crater",
+            "x": 71.4,
+            "y": 76
+          },
+          {
+            "mapID": 1449,
+            "zoneName": "Un'Goro Crater",
+            "x": 71.6,
+            "y": 76
+          }
+        ]
       },
       "finish": {
         "npcID": 9619,
         "name": "Torwa Pathfinder",
-        "zoneName": "Un'Goro Crater"
+        "zoneName": "Un'Goro Crater",
+        "mapID": 1449,
+        "x": 71.4,
+        "y": 76,
+        "reportedLocations": [
+          {
+            "mapID": 1449,
+            "zoneName": "Un'Goro Crater",
+            "x": 71.4,
+            "y": 76
+          },
+          {
+            "mapID": 1449,
+            "zoneName": "Un'Goro Crater",
+            "x": 71.6,
+            "y": 76
+          }
+        ]
       },
-      "requirementsKnown": false
+      "requirementsKnown": false,
+      "storyline": [
+        9063,
+        9052,
+        9051,
+        9053
+      ],
+      "storylineEvidence": "https://www.wowhead.com/forever/quest=9051/toxic-test"
+    },
+    {
+      "id": 8417,
+      "name": "A Troubled Spirit",
+      "source": "https://www.wowhead.com/forever/quest=8417/a-troubled-spirit",
+      "level": 52,
+      "minLevel": 50,
+      "factions": [
+        "Alliance",
+        "Horde"
+      ],
+      "classes": [
+        "WARRIOR"
+      ],
+      "requirementsKnown": false,
+      "finish": {
+        "npcID": 7572,
+        "name": "Fallen Hero of the Horde",
+        "mapID": 1435,
+        "zoneName": "Swamp of Sorrows",
+        "x": 34.2,
+        "y": 65.4,
+        "reportedLocations": [
+          {
+            "mapID": 1435,
+            "zoneName": "Swamp of Sorrows",
+            "x": 34.2,
+            "y": 65.4
+          },
+          {
+            "mapID": 1435,
+            "zoneName": "Swamp of Sorrows",
+            "x": 34.2,
+            "y": 66
+          }
+        ]
+      },
+      "startAlternatives": [
+        {
+          "npcID": 3354,
+          "name": "Sorek"
+        },
+        {
+          "npcID": 4593,
+          "name": "Christoph Walker"
+        },
+        {
+          "npcID": 5113,
+          "name": "Kelv Sternhammer"
+        },
+        {
+          "npcID": 5479,
+          "name": "Wu Shen"
+        },
+        {
+          "npcID": 7315,
+          "name": "Darnath Bladesinger"
+        }
+      ],
+      "storyline": [
+        8417,
+        8423,
+        8424,
+        8425
+      ],
+      "storylineEvidence": "https://www.wowhead.com/forever/quest=8424/war-on-the-shadowsworn"
+    },
+    {
+      "id": 8423,
+      "name": "Warrior Kinship",
+      "source": "https://www.wowhead.com/forever/quest=8423/warrior-kinship",
+      "level": 52,
+      "minLevel": 50,
+      "factions": [
+        "Alliance",
+        "Horde"
+      ],
+      "classes": [
+        "WARRIOR"
+      ],
+      "requirementsKnown": false,
+      "finish": {
+        "npcID": 7572,
+        "name": "Fallen Hero of the Horde",
+        "mapID": 1435,
+        "zoneName": "Swamp of Sorrows",
+        "x": 34.2,
+        "y": 65.4,
+        "reportedLocations": [
+          {
+            "mapID": 1435,
+            "zoneName": "Swamp of Sorrows",
+            "x": 34.2,
+            "y": 65.4
+          },
+          {
+            "mapID": 1435,
+            "zoneName": "Swamp of Sorrows",
+            "x": 34.2,
+            "y": 66
+          }
+        ]
+      },
+      "start": {
+        "npcID": 7572,
+        "name": "Fallen Hero of the Horde",
+        "mapID": 1435,
+        "zoneName": "Swamp of Sorrows",
+        "x": 34.2,
+        "y": 65.4,
+        "reportedLocations": [
+          {
+            "mapID": 1435,
+            "zoneName": "Swamp of Sorrows",
+            "x": 34.2,
+            "y": 65.4
+          },
+          {
+            "mapID": 1435,
+            "zoneName": "Swamp of Sorrows",
+            "x": 34.2,
+            "y": 66
+          }
+        ]
+      },
+      "storyline": [
+        8417,
+        8423,
+        8424,
+        8425
+      ],
+      "storylineEvidence": "https://www.wowhead.com/forever/quest=8424/war-on-the-shadowsworn"
+    },
+    {
+      "id": 8424,
+      "name": "War on the Shadowsworn",
+      "source": "https://www.wowhead.com/forever/quest=8424/war-on-the-shadowsworn",
+      "level": 52,
+      "minLevel": 50,
+      "factions": [
+        "Alliance",
+        "Horde"
+      ],
+      "classes": [
+        "WARRIOR"
+      ],
+      "requirementsKnown": false,
+      "finish": {
+        "npcID": 7572,
+        "name": "Fallen Hero of the Horde",
+        "mapID": 1435,
+        "zoneName": "Swamp of Sorrows",
+        "x": 34.2,
+        "y": 65.4,
+        "reportedLocations": [
+          {
+            "mapID": 1435,
+            "zoneName": "Swamp of Sorrows",
+            "x": 34.2,
+            "y": 65.4
+          },
+          {
+            "mapID": 1435,
+            "zoneName": "Swamp of Sorrows",
+            "x": 34.2,
+            "y": 66
+          }
+        ]
+      },
+      "start": {
+        "npcID": 7572,
+        "name": "Fallen Hero of the Horde",
+        "mapID": 1435,
+        "zoneName": "Swamp of Sorrows",
+        "x": 34.2,
+        "y": 65.4,
+        "reportedLocations": [
+          {
+            "mapID": 1435,
+            "zoneName": "Swamp of Sorrows",
+            "x": 34.2,
+            "y": 65.4
+          },
+          {
+            "mapID": 1435,
+            "zoneName": "Swamp of Sorrows",
+            "x": 34.2,
+            "y": 66
+          }
+        ]
+      },
+      "storyline": [
+        8417,
+        8423,
+        8424,
+        8425
+      ],
+      "storylineEvidence": "https://www.wowhead.com/forever/quest=8424/war-on-the-shadowsworn"
+    },
+    {
+      "id": 8254,
+      "name": "Cenarion Aid",
+      "source": "https://www.wowhead.com/forever/quest=8254/cenarion-aid",
+      "level": 52,
+      "minLevel": 50,
+      "factions": [
+        "Alliance",
+        "Horde"
+      ],
+      "classes": [
+        "PRIEST"
+      ],
+      "requirementsKnown": false,
+      "finish": {
+        "npcID": 8405,
+        "name": "Ogtinc",
+        "zoneName": "Azshara",
+        "mapID": 1447,
+        "x": 42.4,
+        "y": 42.6
+      },
+      "startAlternatives": [
+        {
+          "npcID": 5489,
+          "name": "Brother Joshua"
+        },
+        {
+          "npcID": 6018,
+          "name": "Ur'kyo"
+        },
+        {
+          "npcID": 11406,
+          "name": "High Priest Rohan"
+        }
+      ],
+      "storyline": [
+        8254,
+        8255,
+        8256,
+        8257
+      ],
+      "storylineEvidence": "https://www.wowhead.com/forever/quest=8256/the-ichor-of-undeath"
+    },
+    {
+      "id": 8255,
+      "name": "Of Coursers We Know",
+      "source": "https://www.wowhead.com/forever/quest=8255/of-coursers-we-know",
+      "level": 52,
+      "minLevel": 50,
+      "factions": [
+        "Alliance",
+        "Horde"
+      ],
+      "classes": [
+        "PRIEST"
+      ],
+      "requirementsKnown": false,
+      "finish": {
+        "npcID": 8405,
+        "name": "Ogtinc",
+        "zoneName": "Azshara",
+        "mapID": 1447,
+        "x": 42.4,
+        "y": 42.6
+      },
+      "start": {
+        "npcID": 8405,
+        "name": "Ogtinc",
+        "zoneName": "Azshara",
+        "mapID": 1447,
+        "x": 42.4,
+        "y": 42.6
+      },
+      "storyline": [
+        8254,
+        8255,
+        8256,
+        8257
+      ],
+      "storylineEvidence": "https://www.wowhead.com/forever/quest=8256/the-ichor-of-undeath"
+    },
+    {
+      "id": 8256,
+      "name": "The Ichor of Undeath",
+      "source": "https://www.wowhead.com/forever/quest=8256/the-ichor-of-undeath",
+      "level": 52,
+      "minLevel": 50,
+      "factions": [
+        "Alliance",
+        "Horde"
+      ],
+      "classes": [
+        "PRIEST"
+      ],
+      "requirementsKnown": false,
+      "finish": {
+        "npcID": 8405,
+        "name": "Ogtinc",
+        "zoneName": "Azshara",
+        "mapID": 1447,
+        "x": 42.4,
+        "y": 42.6
+      },
+      "start": {
+        "npcID": 8405,
+        "name": "Ogtinc",
+        "zoneName": "Azshara",
+        "mapID": 1447,
+        "x": 42.4,
+        "y": 42.6
+      },
+      "storyline": [
+        8254,
+        8255,
+        8256,
+        8257
+      ],
+      "storylineEvidence": "https://www.wowhead.com/forever/quest=8256/the-ichor-of-undeath"
+    },
+    {
+      "id": 8419,
+      "name": "An Imp's Request",
+      "source": "https://www.wowhead.com/forever/quest=8419/an-imps-request",
+      "level": 52,
+      "minLevel": 50,
+      "factions": [
+        "Alliance",
+        "Horde"
+      ],
+      "classes": [
+        "WARLOCK"
+      ],
+      "requirementsKnown": false,
+      "finish": {
+        "npcID": 14470,
+        "name": "Impsy",
+        "zoneName": "Felwood",
+        "mapID": 1448,
+        "x": 41.4,
+        "y": 44.8,
+        "reportedLocations": [
+          {
+            "mapID": 1448,
+            "zoneName": "Felwood",
+            "x": 41.4,
+            "y": 44.8
+          },
+          {
+            "mapID": 1448,
+            "zoneName": "Felwood",
+            "x": 41.6,
+            "y": 44.8
+          }
+        ]
+      },
+      "startAlternatives": [
+        {
+          "npcID": 461,
+          "name": "Demisette Cloyce"
+        },
+        {
+          "npcID": 3326,
+          "name": "Zevrost"
+        },
+        {
+          "npcID": 4563,
+          "name": "Kaal Soulreaper"
+        },
+        {
+          "npcID": 5172,
+          "name": "Briarthorn"
+        }
+      ],
+      "storylineGroups": [
+        [
+          8419,
+          8420
+        ],
+        [
+          8421
+        ],
+        [
+          8422
+        ]
+      ],
+      "storylineEvidence": "https://www.wowhead.com/forever/quest=8421/the-wrong-stuff"
+    },
+    {
+      "id": 8420,
+      "name": "Hot and Itchy",
+      "source": "https://www.wowhead.com/forever/quest=8420/hot-and-itchy",
+      "level": 52,
+      "minLevel": 50,
+      "factions": [
+        "Alliance",
+        "Horde"
+      ],
+      "classes": [
+        "WARLOCK"
+      ],
+      "requirementsKnown": false,
+      "finish": {
+        "npcID": 14470,
+        "name": "Impsy",
+        "zoneName": "Felwood",
+        "mapID": 1448,
+        "x": 41.4,
+        "y": 44.8,
+        "reportedLocations": [
+          {
+            "mapID": 1448,
+            "zoneName": "Felwood",
+            "x": 41.4,
+            "y": 44.8
+          },
+          {
+            "mapID": 1448,
+            "zoneName": "Felwood",
+            "x": 41.6,
+            "y": 44.8
+          }
+        ]
+      },
+      "start": {
+        "npcID": 14470,
+        "name": "Impsy",
+        "zoneName": "Felwood",
+        "mapID": 1448,
+        "x": 41.4,
+        "y": 44.8,
+        "reportedLocations": [
+          {
+            "mapID": 1448,
+            "zoneName": "Felwood",
+            "x": 41.4,
+            "y": 44.8
+          },
+          {
+            "mapID": 1448,
+            "zoneName": "Felwood",
+            "x": 41.6,
+            "y": 44.8
+          }
+        ]
+      },
+      "storylineGroups": [
+        [
+          8419,
+          8420
+        ],
+        [
+          8421
+        ],
+        [
+          8422
+        ]
+      ],
+      "storylineEvidence": "https://www.wowhead.com/forever/quest=8421/the-wrong-stuff"
+    },
+    {
+      "id": 8421,
+      "name": "The Wrong Stuff",
+      "source": "https://www.wowhead.com/forever/quest=8421/the-wrong-stuff",
+      "level": 52,
+      "minLevel": 50,
+      "factions": [
+        "Alliance",
+        "Horde"
+      ],
+      "classes": [
+        "WARLOCK"
+      ],
+      "requirementsKnown": false,
+      "finish": {
+        "npcID": 14470,
+        "name": "Impsy",
+        "zoneName": "Felwood",
+        "mapID": 1448,
+        "x": 41.4,
+        "y": 44.8,
+        "reportedLocations": [
+          {
+            "mapID": 1448,
+            "zoneName": "Felwood",
+            "x": 41.4,
+            "y": 44.8
+          },
+          {
+            "mapID": 1448,
+            "zoneName": "Felwood",
+            "x": 41.6,
+            "y": 44.8
+          }
+        ]
+      },
+      "start": {
+        "npcID": 14470,
+        "name": "Impsy",
+        "zoneName": "Felwood",
+        "mapID": 1448,
+        "x": 41.4,
+        "y": 44.8,
+        "reportedLocations": [
+          {
+            "mapID": 1448,
+            "zoneName": "Felwood",
+            "x": 41.4,
+            "y": 44.8
+          },
+          {
+            "mapID": 1448,
+            "zoneName": "Felwood",
+            "x": 41.6,
+            "y": 44.8
+          }
+        ]
+      },
+      "storylineGroups": [
+        [
+          8419,
+          8420
+        ],
+        [
+          8421
+        ],
+        [
+          8422
+        ]
+      ],
+      "storylineEvidence": "https://www.wowhead.com/forever/quest=8421/the-wrong-stuff"
+    },
+    {
+      "id": 9063,
+      "name": "Torwa Pathfinder",
+      "source": "https://www.wowhead.com/forever/quest=9063/torwa-pathfinder",
+      "level": 52,
+      "minLevel": 50,
+      "factions": [
+        "Alliance",
+        "Horde"
+      ],
+      "classes": [
+        "DRUID"
+      ],
+      "requirementsKnown": false,
+      "finish": {
+        "npcID": 9619,
+        "name": "Torwa Pathfinder",
+        "zoneName": "Un'Goro Crater",
+        "mapID": 1449,
+        "x": 71.4,
+        "y": 76,
+        "reportedLocations": [
+          {
+            "mapID": 1449,
+            "zoneName": "Un'Goro Crater",
+            "x": 71.4,
+            "y": 76
+          },
+          {
+            "mapID": 1449,
+            "zoneName": "Un'Goro Crater",
+            "x": 71.6,
+            "y": 76
+          }
+        ]
+      },
+      "startAlternatives": [
+        {
+          "npcID": 3033,
+          "name": "Turak Runetotem"
+        },
+        {
+          "npcID": 4217,
+          "name": "Mathrengyl Bearwalker"
+        },
+        {
+          "npcID": 5505,
+          "name": "Theridran"
+        },
+        {
+          "npcID": 12042,
+          "name": "Loganaar"
+        }
+      ],
+      "storyline": [
+        9063,
+        9052,
+        9051,
+        9053
+      ],
+      "storylineEvidence": "https://www.wowhead.com/forever/quest=9051/toxic-test"
+    },
+    {
+      "id": 9052,
+      "name": "Bloodpetal Poison",
+      "source": "https://www.wowhead.com/forever/quest=9052/bloodpetal-poison",
+      "level": 52,
+      "minLevel": 50,
+      "factions": [
+        "Alliance",
+        "Horde"
+      ],
+      "classes": [
+        "DRUID"
+      ],
+      "requirementsKnown": false,
+      "finish": {
+        "npcID": 9619,
+        "name": "Torwa Pathfinder",
+        "zoneName": "Un'Goro Crater",
+        "mapID": 1449,
+        "x": 71.4,
+        "y": 76,
+        "reportedLocations": [
+          {
+            "mapID": 1449,
+            "zoneName": "Un'Goro Crater",
+            "x": 71.4,
+            "y": 76
+          },
+          {
+            "mapID": 1449,
+            "zoneName": "Un'Goro Crater",
+            "x": 71.6,
+            "y": 76
+          }
+        ]
+      },
+      "start": {
+        "npcID": 9619,
+        "name": "Torwa Pathfinder",
+        "zoneName": "Un'Goro Crater",
+        "mapID": 1449,
+        "x": 71.4,
+        "y": 76,
+        "reportedLocations": [
+          {
+            "mapID": 1449,
+            "zoneName": "Un'Goro Crater",
+            "x": 71.4,
+            "y": 76
+          },
+          {
+            "mapID": 1449,
+            "zoneName": "Un'Goro Crater",
+            "x": 71.6,
+            "y": 76
+          }
+        ]
+      },
+      "storyline": [
+        9063,
+        9052,
+        9051,
+        9053
+      ],
+      "storylineEvidence": "https://www.wowhead.com/forever/quest=9051/toxic-test"
+    },
+    {
+      "id": 9051,
+      "name": "Toxic Test",
+      "source": "https://www.wowhead.com/forever/quest=9051/toxic-test",
+      "level": 52,
+      "minLevel": 50,
+      "factions": [
+        "Alliance",
+        "Horde"
+      ],
+      "classes": [
+        "DRUID"
+      ],
+      "requirementsKnown": false,
+      "finish": {
+        "npcID": 9619,
+        "name": "Torwa Pathfinder",
+        "zoneName": "Un'Goro Crater",
+        "mapID": 1449,
+        "x": 71.4,
+        "y": 76,
+        "reportedLocations": [
+          {
+            "mapID": 1449,
+            "zoneName": "Un'Goro Crater",
+            "x": 71.4,
+            "y": 76
+          },
+          {
+            "mapID": 1449,
+            "zoneName": "Un'Goro Crater",
+            "x": 71.6,
+            "y": 76
+          }
+        ]
+      },
+      "start": {
+        "npcID": 9619,
+        "name": "Torwa Pathfinder",
+        "zoneName": "Un'Goro Crater",
+        "mapID": 1449,
+        "x": 71.4,
+        "y": 76,
+        "reportedLocations": [
+          {
+            "mapID": 1449,
+            "zoneName": "Un'Goro Crater",
+            "x": 71.4,
+            "y": 76
+          },
+          {
+            "mapID": 1449,
+            "zoneName": "Un'Goro Crater",
+            "x": 71.6,
+            "y": 76
+          }
+        ]
+      },
+      "storyline": [
+        9063,
+        9052,
+        9051,
+        9053
+      ],
+      "storylineEvidence": "https://www.wowhead.com/forever/quest=9051/toxic-test"
     }
   ],
   "dungeons": [
