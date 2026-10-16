@@ -8,6 +8,7 @@ function methods:GetPoint() return unpack(self.point) end
 function methods:ClearAllPoints() self.point = nil end
 function methods:SetScript(event, fn) self.scripts[event] = fn end
 function methods:SetText(value) self.text = value end
+function methods:GetText() return self.text or "" end
 function methods:SetEnabled(value) self.enabled = value end
 function methods:GetStringHeight() if measurement then return measurement(self) end; return 18 end
 function methods:SetScale(value) self.scale = value end
@@ -16,6 +17,7 @@ function methods:SetClampedToScreen(value) self.clamped = value end
 function methods:IsShown() return self.shown end
 function methods:Hide() self.shown = false end
 function methods:Show() self.shown = true end
+function methods:SetShown(value) if value then self:Show() else self:Hide() end end
 for _, name in ipairs({ "SetFont", "SetJustifyH", "SetTextColor", "SetAllPoints", "SetColorTexture",
     "SetHighlightTexture", "SetTexture", "SetFrameStrata", "EnableMouse", "SetMovable", "RegisterForDrag",
     "StartMoving", "StopMovingOrSizing", "SetBackdrop", "SetBackdropColor", "SetBackdropBorderColor",
@@ -453,5 +455,100 @@ check("Detail renders native objective text and removes stale objectives", funct
     assert(hasObjective())
     addon.QuestObjectives = function() return nil end
     ui:RefreshDetail(); assert(not hasObjective())
+end)
+check("Reward details distinguish fixed items from choices and show their counts", function()
+    local moneyCalls = 0
+    addon.QuestRewards = function(id)
+        assert(id == 2)
+        return { items = { { id = 101, name = "Reward token", count = 3 } },
+            choices = { { id = 102, name = "Choice blade", count = 1 }, { id = 103, name = "Choice robe", count = 2 } }, money = 150 }
+    end
+    GetCoinTextureString = function(value) assert(value == 150); moneyCalls = moneyCalls + 1; return "Native coin texture" end
+    showDetail(2)
+    assert(detailHas(addon.L("REWARD_ITEMS")) and detailHas(addon.L("REWARD_CHOICES")))
+    assert(detailHas(addon.L("REWARD_ITEM", "Reward token", 3)))
+    assert(detailHas(addon.L("REWARD_ITEM", "Choice blade", 1)) and detailHas(addon.L("REWARD_ITEM", "Choice robe", 2)))
+    assert(not detailHas(addon.L("REWARD_NO_ITEMS")) and not detailHas(addon.L("REWARD_UNAVAILABLE")))
+    assert(detailHas(addon.L("REWARD_MONEY") .. ": Native coin texture") and moneyCalls == 1)
+end)
+check("Known zero item rewards differ from unavailable reward data", function()
+    local moneyCalls = 0
+    GetCoinTextureString = function() moneyCalls = moneyCalls + 1; error("zero must not be formatted") end
+    addon.QuestRewards = function() return { items = {}, choices = {}, money = 0 } end
+    showDetail(2)
+    assert(detailHas(addon.L("REWARD_NO_ITEMS")) and not detailHas(addon.L("REWARD_UNAVAILABLE")))
+    assert(not detailHas(addon.L("REWARD_ITEMS")) and not detailHas(addon.L("REWARD_CHOICES")))
+    assert(not detailHas(addon.L("REWARD_MONEY_UNKNOWN")) and moneyCalls == 0)
+    addon.QuestRewards = function() return nil end
+    showDetail(2)
+    assert(detailHas(addon.L("REWARD_UNAVAILABLE")) and not detailHas(addon.L("REWARD_NO_ITEMS")))
+    addon.QuestRewards = nil; showDetail(2)
+    assert(detailHas(addon.L("REWARD_UNAVAILABLE")))
+end)
+check("Reward redraw clears another quest's items and money text", function()
+    addon.QuestRewards = function(id)
+        if id == 2 then return { items = {}, choices = { { id = 103, name = "Only selected quest robe", count = 1 } }, money = 99 } end
+        return nil
+    end
+    GetCoinTextureString = function() return "Selected coin texture" end
+    showDetail(2)
+    assert(detailHas(addon.L("REWARD_CHOICES")) and not detailHas(addon.L("REWARD_ITEMS")))
+    assert(not detailHas(addon.L("REWARD_NO_ITEMS")))
+    showDetail(3)
+    assert(detailHas(addon.L("REWARD_UNAVAILABLE")))
+    assert(not detailHas(addon.L("REWARD_ITEM", "Only selected quest robe", 1)))
+    assert(not detailHas(addon.L("REWARD_MONEY") .. ": Selected coin texture"))
+end)
+check("Unavailable money formatter never produces a guessed currency value", function()
+    addon.QuestRewards = function() return { items = {}, choices = {}, money = 100 } end
+    GetCoinTextureString = nil; showDetail(2)
+    assert(detailHas(addon.L("REWARD_MONEY_UNKNOWN")))
+    addon.QuestRewards = function() error("reward API unavailable") end
+    showDetail(2)
+    assert(detailHas(addon.L("REWARD_UNAVAILABLE")) and not detailHas(addon.L("REWARD_MONEY_UNKNOWN")))
+    addon.QuestRewards = nil
+end)
+check("Search matches localized and source names literally while preserving selection", function()
+    local dungeons, dungeonName, selected, quest, savedSelection = addon.dungeons, addon.DungeonName, ui.dungeon, ui.quest, addon.char.selectedDungeon
+    addon.dungeons = {
+        { key = "search-dm", name = "The Deadmines", localized = "Мёртвые Копи", minLevel = 10, maxLevel = 25, quests = { 2 } },
+        { key = "search-sfk", name = "Shadowfang Keep", localized = "Крепость Тёмного Клыка", minLevel = 20, maxLevel = 30, quests = {} },
+        { key = "search-literal", name = "[100%] Dungeon", localized = "测试[100%]", minLevel = 50, maxLevel = 60, quests = {} },
+    }
+    addon.DungeonName = function(d) return d.localized end
+    ui.dungeon, ui.quest, addon.char.selectedDungeon = addon.dungeons[1], 2, "search-dm"
+    local searchSelected = ui.dungeon
+    local function search(value)
+        ui.searchBox:SetText(value); ui.searchBox.scripts.OnTextChanged(ui.searchBox)
+    end
+    local function cards()
+        local result = {}
+        for _, card in ipairs(ui.cards) do if card.shown then result[#result + 1] = card end end
+        return result
+    end
+    search("  deAdMiNeS  ")
+    assert(#cards() == 1 and cards()[1].title.text == "Мёртвые Копи")
+    assert(ui.searchHint.shown and ui.searchHint.text == addon.L("SEARCH_HELP") and not ui.searchPlaceholder.shown)
+    search("Крепость")
+    assert(#cards() == 1 and cards()[1].title.text == "Крепость Тёмного Клыка")
+    assert(ui.dungeon == searchSelected and ui.quest == 2 and addon.char.selectedDungeon == "search-dm")
+    search("крепость")
+    assert(#cards() == 0 and ui.catalogNotice.shown and ui.catalogNotice.text == addon.L("NO_DUNGEONS"))
+    search("[100%]")
+    assert(#cards() == 1 and cards()[1].title.text == "测试[100%]")
+    search(".*")
+    assert(#cards() == 0 and ui.catalogNotice.shown)
+    search("[")
+    assert(#cards() == 1)
+    ui.range = true; search("[100%]")
+    assert(#cards() == 0 and ui.catalogNotice.shown)
+    ui.range = false
+    ui.clearSearch.scripts.OnClick()
+    assert(ui.search == "" and ui.searchBox:GetText() == "" and #cards() == 3)
+    assert(not ui.catalogNotice.shown and not ui.searchHint.shown and ui.searchPlaceholder.shown)
+    assert(not ui.clearSearch.enabled and addon.char.filters.search == nil)
+    assert(ui.dungeon == searchSelected and ui.quest == 2)
+    addon.dungeons, addon.DungeonName, ui.dungeon, ui.quest, addon.char.selectedDungeon = dungeons, dungeonName, selected, quest, savedSelection
+    ui:Refresh()
 end)
 print("Preparation UI modeled checks passed: " .. total .. " (no native layout validation)")

@@ -114,6 +114,57 @@ function addon.QuestObjectives(id)
     return result
 end
 
+function addon.QuestRewards(id)
+    local function integer(value, minimum, maximum)
+        value = addon.Clean(value, "number")
+        if value and value >= minimum and value % 1 == 0 and (not maximum or value <= maximum) then return value end
+    end
+    id = integer(id, 1)
+    if not id then return nil end
+    local quest = C_QuestLog or {}
+    local function selected()
+        return addon.Read(quest.GetSelectedQuest, "number") == id and
+            integer(addon.Read(quest.GetLogIndexForQuestID, "number", id), 1) ~= nil
+    end
+    -- Vanilla reward readers use the current selection and take no quest ID.
+    if not selected() then return nil end
+    local rewards = integer(addon.Read(GetNumQuestLogRewards, "number"), 0, 100)
+    local choices = integer(addon.Read(GetNumQuestLogChoices, "number"), 0, 100)
+    if not rewards or not choices then return nil end
+    local function items(count, getter)
+        if count > 0 and type(getter) ~= "function" then return nil end
+        local result = {}
+        for i = 1, count do
+            local ok, name, texture, amount, quality, usable, itemID = pcall(getter, i)
+            if not ok then return nil end
+            if type(issecretvalue) == "function" then
+                local fields = { name, texture, amount, quality, usable, itemID }
+                for j = 1, 6 do
+                    local readable, secret = pcall(issecretvalue, fields[j])
+                    if not readable or secret ~= false then return nil end
+                end
+            end
+            name = addon.Clean(name, "string")
+            amount, itemID = integer(amount, 1), integer(itemID, 1)
+            if not name or name == "" or #name > 30000 or not amount or not itemID then return nil end
+            local row = { id = itemID, name = name, count = amount }
+            local icon = addon.Clean(texture, "string")
+            if icon and icon ~= "" and #icon <= 1024 then row.texture = icon
+            else row.texture = integer(texture, 1) end
+            row.quality = integer(quality, 0)
+            row.usable = addon.Clean(usable, "boolean")
+            result[i] = row
+        end
+        return result
+    end
+    local fixed, choice = items(rewards, GetQuestLogRewardInfo), items(choices, GetQuestLogChoiceInfo)
+    if not fixed or not choice then return nil end
+    local money = addon.Read(GetQuestLogRewardMoney, "number")
+    if money and money < 0 then money = nil end
+    if not selected() then return nil end
+    return { items = fixed, choices = choice, money = money }
+end
+
 function addon.CaptureQuestText()
     local id = addon.Read(GetQuestID, "number")
     local text = addon.Read(GetQuestText, "string")

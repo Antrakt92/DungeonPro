@@ -5,6 +5,11 @@ local COLOR = { COMPLETED = "66dd99", READY = "ffe066", ACTIVE = "88bfff", AVAIL
     LOCKED = "f0b080", UNKNOWN = "b4aacd", UNAVAILABLE = "999999" }
 local FONT
 
+local function searchText(value)
+    -- Only ASCII bytes are folded; UTF-8 sequences pass through unchanged.
+    return value:gsub("[A-Z]", function(letter) return string.char(letter:byte() + 32) end)
+end
+
 local function measuredHeight(fs, fallback)
     local value = addon.Read(fs.GetStringHeight, "number", fs)
     if value and value > 0 then fs.measuredHeight = value; return value end
@@ -129,11 +134,19 @@ end
 
 function UI:RefreshDungeons()
     local context = addon.Context()
+    local query = (addon.Clean(self.search, "string") or ""):gsub("^%s+", ""):gsub("%s+$", "")
+    local needle = searchText(query)
     local n, offset = 0, 0
+    self.searchPlaceholder:SetText(addon.L("SEARCH"))
+    self.searchPlaceholder:SetShown(self.search == "")
+    self.clearSearch:SetEnabled(self.search ~= "")
+    self.searchHint:SetText(addon.L("SEARCH_HELP"))
+    self.searchHint:SetShown(query ~= "")
+    if query ~= "" then offset = measuredHeight(self.searchHint, 42) + 10 end
+    self.catalogNotice:Hide()
     for _, d in ipairs(addon.dungeons) do
         local name = addon.DungeonName(d)
-        -- UTF-8 text is matched byte-for-byte; avoid corrupting non-ASCII names.
-        local matches = self.search == "" or name:find(self.search, 1, true) or d.name:find(self.search, 1, true)
+        local matches = query == "" or searchText(name):find(needle, 1, true) or searchText(d.name):find(needle, 1, true)
         if matches and (not self.range or (context.level and context.level >= d.minLevel - 3 and context.level <= d.maxLevel + 3)) then
             n = n + 1
             local row = self:MakeRow(self.catalog, self.cards, n, 64)
@@ -156,6 +169,11 @@ function UI:RefreshDungeons()
         end
     end
     hideRest(self.cards, n)
+    if n == 0 then
+        self.catalogNotice:SetText(addon.L("NO_DUNGEONS"))
+        self.catalogNotice:ClearAllPoints(); self.catalogNotice:SetPoint("TOPLEFT", 4, -offset)
+        self.catalogNotice:Show(); offset = offset + measuredHeight(self.catalogNotice, 42) + 10
+    end
     self.catalog:SetHeight(math.max(1, offset))
 end
 
@@ -365,6 +383,25 @@ function UI:RefreshDetail()
         for _, objective in ipairs(objectives or {}) do
             line("|cff" .. (objective.finished and COLOR.COMPLETED or COLOR.ACTIVE) .. objective.text .. "|r")
         end
+        local rewards = addon.Read(addon.QuestRewards, "table", id)
+        local items = rewards and addon.Clean(rewards.items, "table")
+        local choices = rewards and addon.Clean(rewards.choices, "table")
+        if items and choices then
+            if #items > 0 then
+                line(addon.L("REWARD_ITEMS"))
+                for _, item in ipairs(items) do line(addon.L("REWARD_ITEM", item.name, item.count)) end
+            end
+            if #choices > 0 then
+                line(addon.L("REWARD_CHOICES"))
+                for _, item in ipairs(choices) do line(addon.L("REWARD_ITEM", item.name, item.count)) end
+            end
+            if #items == 0 and #choices == 0 then line(addon.L("REWARD_NO_ITEMS")) end
+            local money = addon.Clean(rewards.money, "number")
+            if money and money > 0 then
+                local formatted = addon.Read(GetCoinTextureString, "string", money)
+                line(formatted and (addon.L("REWARD_MONEY") .. ": " .. formatted) or addon.L("REWARD_MONEY_UNKNOWN"))
+            end
+        else line(addon.L("REWARD_UNAVAILABLE")) end
         self.source:SetEnabled(true)
     else
         line(addon.L("PICK")); self.map:SetEnabled(false); self.guide:SetEnabled(false); self.source:SetEnabled(false)
@@ -438,9 +475,15 @@ function UI:Create()
     self.subtitle = label(frame, "", 22, -49, 500, 13)
     local close = CreateFrame("Button", nil, frame, "UIPanelCloseButton"); close:SetPoint("TOPRIGHT", -4, -4)
     local search = CreateFrame("EditBox", nil, frame, "InputBoxTemplate")
-    search:SetSize(230, 25); search:SetPoint("TOPLEFT", 27, -84); search:SetAutoFocus(false)
-    search:SetScript("OnTextChanged", function(b) self.search = b:GetText(); self:RefreshDungeons() end)
+    search:SetSize(200, 25); search:SetPoint("TOPLEFT", 27, -84); search:SetAutoFocus(false)
+    self.searchBox = search
+    self.searchPlaceholder = label(search, "", 5, -5, 188, 11)
+    search:SetScript("OnTextChanged", function(b) self.search = addon.Read(b.GetText, "string", b) or ""; self:RefreshDungeons() end)
     search:SetScript("OnEscapePressed", function(b) b:ClearFocus() end)
+    self.clearSearch = button(frame, "×", 25, function()
+        self.search = ""; self.searchBox:SetText(""); self:RefreshDungeons()
+    end)
+    self.clearSearch:SetPoint("TOPLEFT", 233, -84)
     self.rangeButton = button(frame, "", 105, function() self.range = not self.range; self:SaveFilters(); self:Refresh() end)
     self.rangeButton:SetPoint("TOPLEFT", 273, -84)
     self.preparationButton = button(frame, "", 170, function()
@@ -463,6 +506,8 @@ function UI:Create()
     self.summary = label(frame, "", 288, -157, 760, 12)
     self.coverage = label(frame, "", 288, -183, 760, 12)
     self.catalog = scrolling(frame, 22, -125, 235, 518)
+    self.searchHint = label(self.catalog, "", 4, 0, 220, 11)
+    self.catalogNotice = label(self.catalog, "", 4, 0, 220, 13)
     self.questList = scrolling(frame, 288, -218, 355, 425)
     self.detail = scrolling(frame, 690, -218, 350, 425)
     self.map = button(frame, "", 160, function()

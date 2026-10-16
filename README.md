@@ -6,7 +6,7 @@ prerequisite quests and find the next available step.
 **Early development build for WoW Forever. Quest coverage is incomplete.**
 The catalogue has 29 dungeon entries; initial quest data covers The Deadmines,
 Ragefire Chasm, The Hall of Thanes, Wailing Caverns, Shadowfang Keep,
-Blackfathom Deeps and The Stockade.
+Blackfathom Deeps, The Stockade and Gnomeregan.
 Other entries explicitly show that their
 quests have not been added. Level ranges are provisional recommendations.
 
@@ -35,7 +35,9 @@ quests have not been added. Level ranges are provisional recommendations.
 - A separate quest-giver button opens a known zone or guides to a known location.
   Visiting a giver does not confirm that the quest is available to pick up.
 - Quest text saved when you open the quest at its giver. Complete unseen quest
-  descriptions, rewards and quest-giver portraits are not yet included.
+  descriptions and quest-giver portraits are not yet included.
+- Item rewards and choices for the currently selected active quest, when the
+  client provides them. Unknown reward data is shown explicitly.
 - Quest objectives from the client appear when available. The window adjusts to
   screen width and height and recovers saved positions outside the visible area.
 - Interface dictionaries for English, Russian, German, French, Spanish, Italian,
@@ -58,8 +60,9 @@ This build has not yet passed native-client or visual acceptance.
 - `/dprep probe`: save a small capability/quest-line report in this addon's own
   character settings. It does not export character identity or quest text.
 
-The language button cycles through the interface languages. Search currently
-matches the exact text entered, including its letter case.
+The language button cycles through the interface languages. Search checks both
+localized and English dungeon names. English A–Z matches ignore letter case;
+other characters currently match exactly. Use the × button to clear the search.
 
 ## Contributing data
 

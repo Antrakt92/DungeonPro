@@ -21,6 +21,11 @@
   waypoints for three Shadowfang Keep quest-givers.
 - Extended Blackfathom's Horde quest list and its known story sequences.
 - Added The Stockade and the paladin's Kor Gem support quest.
+- Added initial Gnomeregan quests, Stockade giver waypoints and the Horde
+  paladin's Kor Gem support quest.
+- Added client-provided item rewards, reward choices and money to quest details.
+- Improved localized dungeon search, added a clear button and explained empty
+  search results.
 - Added saved choices for alternative prerequisite branches, with an automatic
   planning option and safe fallback when a branch is unavailable.
 - Adjusted row and chain-button heights for wrapped text and kept navigation
