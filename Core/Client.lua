@@ -46,9 +46,50 @@ function addon.DungeonArt(d)
 end
 
 function addon.Description(id)
+    id = addon.Clean(id, "number")
+    if not id or id < 1 or id % 1 ~= 0 then return addon.L("NO_TEXT") end
+    local locale = addon.Read(GetLocale, "string")
+    local index = addon.Read(C_QuestLog and C_QuestLog.GetLogIndexForQuestID, "number", id)
+    local selectedID = addon.Read(C_QuestLog and C_QuestLog.GetSelectedQuest, "number")
+    -- Vanilla's reader uses the current selection; never change it to fetch text.
+    if selectedID == id and index and index >= 1 and index % 1 == 0 then
+        local text = addon.Read(GetQuestLogQuestText, "string")
+        if text and text ~= "" and #text <= 30000 then
+            if locale and addon.char and type(addon.char.texts) == "table" then
+                addon.char.texts[id] = { text = text, locale = locale }
+            end
+            return text
+        end
+    end
     local data = addon.char and addon.char.texts and addon.char.texts[id]
-    if type(data) == "table" and data.locale == GetLocale() and type(data.text) == "string" then return data.text end
+    if type(data) == "table" and locale and addon.Clean(data.locale, "string") == locale then
+        local text = addon.Clean(data.text, "string")
+        if text and text ~= "" and #text <= 30000 then return text end
+    end
     return addon.L("NO_TEXT")
+end
+
+function addon.QuestObjectives(id)
+    id = addon.Clean(id, "number")
+    if not id or id < 1 or id % 1 ~= 0 then return nil end
+    local objectives = addon.Read(C_QuestLog and C_QuestLog.GetQuestObjectives, "table", id)
+    if not objectives or #objectives > 100 then return nil end
+    local result = {}
+    for i = 1, #objectives do
+        local row = addon.Clean(objectives[i], "table")
+        if not row then return nil end
+        local text = addon.Clean(row.text, "string")
+        local kind = addon.Clean(row.type, "string")
+        local finished = addon.Clean(row.finished, "boolean")
+        local fulfilled = addon.Clean(row.numFulfilled, "number")
+        local required = addon.Clean(row.numRequired, "number")
+        if not text or #text > 30000 or not kind or #kind > 200 or finished == nil
+            or not fulfilled or fulfilled < 0 or not required or required < 0 then return nil end
+        result[i] = { text = text, type = kind, finished = finished,
+            numFulfilled = fulfilled, numRequired = required,
+            objectiveType = addon.Clean(row.objectiveType, "number") }
+    end
+    return result
 end
 
 function addon.CaptureQuestText()

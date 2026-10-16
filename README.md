@@ -15,11 +15,15 @@ quests have not been added. Level ranges are provisional recommendations.
   unknown quest states. Class, race and faction restrictions are respected.
 - Recursive prerequisite planning: a final quest can lead you to the beginning
   of its unfinished chain, rather than another locked step.
+- A next-step view collects the dungeon's preparation actions, combines shared
+  prerequisites and keeps unresolved quests visible.
 - Separate story order for chains whose hard prerequisites still need checking.
 - World map, optional TomTom and a built-in direction arrow. The arrow points
   toward a coordinate; it does not find paths around terrain or plan transport.
 - Quest text saved when you open the quest at its giver. Complete unseen quest
   descriptions, rewards and quest-giver portraits are not yet included.
+- Quest objectives from the client appear when available. The window adjusts to
+  screen width and height and recovers saved positions outside the visible area.
 - Interface dictionaries for English, Russian, German, French, Spanish, Italian,
   Portuguese, Korean, Simplified Chinese and Traditional Chinese. enGB and esMX
   use English and Spanish. Translations and layout still need in-game review.

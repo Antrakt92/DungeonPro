@@ -1,5 +1,5 @@
 local _, addon = ...
-local UI = { dungeon = nil, quest = nil, search = "", range = false }
+local UI = { dungeon = nil, quest = nil, search = "", range = false, preparation = false }
 addon.UI = UI
 local COLOR = { COMPLETED = "66dd99", READY = "ffe066", ACTIVE = "88bfff", AVAILABLE = "ffe9b0",
     LOCKED = "f0b080", UNKNOWN = "b4aacd", UNAVAILABLE = "999999" }
@@ -116,14 +116,33 @@ function UI:RefreshQuests()
         self.summary:SetText(addon.L("SUMMARY", (plan.counts.ACTIVE or 0) + (plan.counts.READY or 0),
             plan.counts.COMPLETED or 0, (plan.counts.LOCKED or 0) + (plan.counts.AVAILABLE or 0), plan.counts.UNKNOWN or 0))
         self.coverage:SetText(plan.unknown and addon.L("PARTIAL") or addon.L(plan.ready and "PREPARED" or "NOT_PREPARED"))
-        for _, entry in ipairs(plan.rows) do
+        local entries = plan.rows
+        if self.preparation then
+            entries = {}
+            for _, action in ipairs(plan.actions) do
+                entries[#entries + 1] = { id = action.id, state = engine:State(action.id), action = action }
+            end
+            -- Unresolved targets stay visible even when no trustworthy action exists.
+            for _, entry in ipairs(plan.rows) do
+                if entry.state.status == "UNKNOWN" then entries[#entries + 1] = entry end
+            end
+        end
+        for _, entry in ipairs(entries) do
             n = n + 1
             local row, id, state = self:MakeRow(self.questList, self.rows, n, 59), entry.id, entry.state
             row.title:SetText(addon.QuestName(id))
-            row.note:SetText("|cff" .. COLOR[state.status] .. addon.L(state.status) .. "|r")
+            local note = addon.L(state.status)
+            if entry.action then
+                local action = entry.action
+                note = addon.L(action.kind) .. (action.level and (" " .. action.level) or "")
+                if action.place then note = note .. " — " .. (action.place.name or addon.L("UNKNOWN_PLACE")) end
+            elseif state.reason == "level" then
+                note = addon.L("level") .. " " .. addon.quests[id].minLevel
+            end
+            row.note:SetText("|cff" .. COLOR[state.status] .. note .. "|r")
             row:SetScript("OnClick", function() self.quest = id; self:RefreshDetail() end)
         end
-        if n == 0 then self.coverage:SetText(addon.L("EMPTY")) end
+        if #plan.rows == 0 then self.coverage:SetText(addon.L("EMPTY")) end
     else
         self.summary:SetText(""); self.coverage:SetText(addon.L("PICK"))
     end
@@ -133,6 +152,7 @@ end
 
 function UI:RefreshDetail()
     local pool, n, y = self.details, 0, 0
+    self.action = nil
     local function line(value, height)
         n = n + 1
         local fs = pool[n]
@@ -194,6 +214,10 @@ function UI:RefreshDetail()
             for _, stepID in ipairs(q.storyline) do visit(stepID, 0) end
         else visit(id, 0) end
         line(addon.Description(id))
+        local objectives = addon.QuestObjectives and addon.QuestObjectives(id)
+        for _, objective in ipairs(objectives or {}) do
+            line("|cff" .. (objective.finished and COLOR.COMPLETED or COLOR.ACTIVE) .. objective.text .. "|r")
+        end
         self.source:SetEnabled(true)
     else
         line(addon.L("PICK")); self.map:SetEnabled(false); self.guide:SetEnabled(false); self.source:SetEnabled(false)
@@ -207,30 +231,57 @@ function UI:Refresh()
     self.subtitle:SetText(addon.L("SUBTITLE"))
     self.language:SetText(addon.db.locale == "auto" and "Auto" or addon.db.locale)
     self.rangeButton:SetText(addon.L(self.range and "RANGE" or "ALL"))
+    self.preparationButton:SetText(addon.L(self.preparation and "QUESTS" or "NEXT"))
     self.map:SetText(addon.L("MAP")); self.guide:SetText(addon.L("GUIDE")); self.source:SetText(addon.L("SOURCE"))
     self.footer:SetText(addon.L("DEVELOPMENT"))
     self:RefreshDungeons(); self:RefreshQuests(); self:RefreshDetail()
+end
+
+function UI:Fit()
+    local width = addon.Read(GetScreenWidth, "number") or 1400
+    local height = addon.Read(GetScreenHeight, "number") or 900
+    if width <= 0 or height <= 0 then return end
+    local scale = math.min(1, width * 0.92 / 1100, height * 0.92 / 700)
+    self.frame:SetScale(scale)
+    local pos = addon.db.window
+    local x = addon.Clean(pos.x, "number") or 0
+    local y = addon.Clean(pos.y, "number") or 0
+    local maxX, maxY = math.max(0, (width / scale - 1100) / 2), math.max(0, (height / scale - 700) / 2)
+    x, y = math.max(-maxX, math.min(maxX, x)), math.max(-maxY, math.min(maxY, y))
+    self.frame:ClearAllPoints()
+    self.frame:SetPoint("CENTER", UIParent, "CENTER", x, y)
 end
 
 function UI:Create()
     FONT = STANDARD_TEXT_FONT or "Fonts\\ARIALN.TTF"
     local frame = CreateFrame("Frame", "DungeonPrepWindow", UIParent, "BackdropTemplate")
     frame:SetSize(1100, 700); frame:SetPoint("CENTER")
-    local width = addon.Read(GetScreenWidth, "number") or 1400
-    frame:SetScale(math.min(1, width * 0.92 / 1100))
+    self.frame = frame
+    self:Fit()
+    if frame.SetClampedToScreen then frame:SetClampedToScreen(true) end
     frame:SetFrameStrata("DIALOG"); frame:EnableMouse(true); frame:SetMovable(true)
     frame:RegisterForDrag("LeftButton")
     frame:SetScript("OnDragStart", function(f) f:StartMoving() end)
     frame:SetScript("OnDragStop", function(f)
         f:StopMovingOrSizing()
-        local _, _, _, x, y = f:GetPoint()
+        local point, _, relativePoint, x, y = f:GetPoint()
+        if point ~= "CENTER" or relativePoint ~= "CENTER" then
+            if f.GetCenter and UIParent.GetCenter then
+                local ok, cx, cy = pcall(f.GetCenter, f)
+                local parentOK, px, py = pcall(UIParent.GetCenter, UIParent)
+                cx, cy, px, py = addon.Clean(cx, "number"), addon.Clean(cy, "number"),
+                    addon.Clean(px, "number"), addon.Clean(py, "number")
+                local fs = addon.Read(f.GetEffectiveScale, "number", f)
+                local ps = addon.Read(UIParent.GetEffectiveScale, "number", UIParent)
+                if ok and parentOK and cx and cy and px and py and fs and ps and fs > 0 then
+                    x, y = cx - px * ps / fs, cy - py * ps / fs
+                else x, y = nil, nil end
+            else x, y = nil, nil end
+        end
         x, y = addon.Clean(x, "number"), addon.Clean(y, "number")
         if x and y then addon.db.window = { x = x, y = y } end
+        self:Fit()
     end)
-    local pos = addon.db.window
-    if addon.Clean(pos.x, "number") and addon.Clean(pos.y, "number") then
-        frame:ClearAllPoints(); frame:SetPoint("CENTER", UIParent, "CENTER", pos.x, pos.y)
-    end
     frame:SetBackdrop({ bgFile = "Interface\\Buttons\\WHITE8X8", edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border", edgeSize = 16 })
     frame:SetBackdropColor(0.045, 0.065, 0.085, 0.98)
     frame:SetBackdropBorderColor(0.7, 0.55, 0.27, 1)
@@ -243,6 +294,10 @@ function UI:Create()
     search:SetScript("OnEscapePressed", function(b) b:ClearFocus() end)
     self.rangeButton = button(frame, "", 105, function() self.range = not self.range; self:Refresh() end)
     self.rangeButton:SetPoint("TOPLEFT", 273, -84)
+    self.preparationButton = button(frame, "", 170, function()
+        self.preparation = not self.preparation; self:Refresh()
+    end)
+    self.preparationButton:SetPoint("TOPLEFT", 390, -84)
     local language = button(frame, "Auto", 100, function()
         local order = { "auto", "enUS", "ruRU", "deDE", "frFR", "esES", "itIT", "ptBR", "koKR", "zhCN", "zhTW" }
         local current = 1
@@ -271,7 +326,7 @@ function UI:Create()
     self.frame, self.cards, self.rows, self.details, self.chainButtons = frame, {}, {}, {}, {}
     UISpecialFrames[#UISpecialFrames + 1] = "DungeonPrepWindow"
     for _, d in ipairs(addon.dungeons) do if d.key == addon.char.selectedDungeon then self.dungeon = d end end
-    frame:SetScript("OnShow", function() self:Refresh() end)
+    frame:SetScript("OnShow", function() self:Fit(); self:Refresh() end)
     frame:Hide()
 end
 
