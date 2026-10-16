@@ -11,7 +11,14 @@ function methods:SetPoint(...) self.point = { ... } end
 function methods:GetPoint() return unpack(self.point) end
 function methods:ClearAllPoints() self.point = nil end
 function methods:SetScript(event, fn) self.scripts[event] = fn end
-function methods:SetText(value) self.text = value end
+function methods:SetText(value)
+    self.text, self.fontSizeAtText, self.fontResetBeforeText = value, self.fontSize, self.fontPending == true
+    self.fontPending = false
+end
+function methods:SetFont(path, size, flags)
+    self.fontPath, self.fontSize, self.fontFlags, self.fontPending = path, size, flags, true
+end
+function methods:SetTextColor(...) self.textColor = { ... } end
 function methods:SetTexture(value) self.texture = value; return true end
 function methods:GetText() return self.text or "" end
 function methods:SetFocus() self.focused = true end
@@ -32,7 +39,7 @@ function methods:IsShown() return self.shown end
 function methods:Hide() self.shown = false end
 function methods:Show() self.shown = true end
 function methods:SetShown(value) if value then self:Show() else self:Hide() end end
-for _, name in ipairs({ "SetFont", "SetJustifyH", "SetTextColor", "SetAllPoints", "SetColorTexture",
+for _, name in ipairs({ "SetJustifyH", "SetAllPoints", "SetColorTexture",
     "SetFrameStrata", "EnableMouse", "SetMovable", "RegisterForDrag",
     "StartMoving", "StopMovingOrSizing", "SetBackdrop", "SetBackdropColor", "SetBackdropBorderColor",
     "SetAutoFocus" }) do methods[name] = function() end end
@@ -2763,4 +2770,51 @@ do
         restore()
     end)
 end
+check("Detail typography uses explicit title section and body styles and resets pooled fonts before text", function()
+    local quest, dungeon, history = ui.quest, ui.dungeon, ui.detailHistory
+    local description, rewards = addon.Description, addon.QuestRewards
+    addon.quests[17001] = { id = 17001, minLevel = 1, requirementsKnown = true, requires = { { ids = { 17002 } } } }
+    addon.quests[17002] = { id = 17002, minLevel = 1, requirementsKnown = true }
+    addon.Description = function() return addon.L("NEXT") end
+    addon.QuestRewards = function() return { items = { { id = 701, name = "Body reward", count = 1, texture = 123 } }, choices = {}, money = 0 } end
+    showDetail(17001)
+    local title = ui.details[1]
+    assert(title.text == addon.QuestName(17001) and title.fontSize == 20 and title.fontSizeAtText == 20 and title.fontResetBeforeText)
+    local heading, body, reward
+    for _, fs in ipairs(ui.details) do
+        if fs.shown and fs.text == addon.L("NEXT") then
+            if fs.fontSize == 14 then heading = fs elseif fs.fontSize == 13 then body = fs end
+        elseif fs.shown and fs.text == addon.L("REWARD_ITEM", "Body reward", 1) then reward = fs end
+    end
+    assert(heading and body and heading.fontResetBeforeText and body.fontResetBeforeText, "native prose matching a heading stays body text")
+    assert(reward and reward.fontSize == 13 and reward.fontResetBeforeText and reward.width == 304)
+    local expectedFont = STANDARD_TEXT_FONT or "Fonts\\ARIALN.TTF"
+    assert(title.fontPath == expectedFont and heading.fontPath == expectedFont and body.fontPath == expectedFont)
+    local titleColor = title.textColor[1]
+    title.measuredHeight = 90; measurement = function() error("cold measurement after style change") end
+    ui.quest, ui.dungeon = nil, nil; ui:RefreshDetail()
+    assert(ui.details[1] == title and title.text == addon.L("PICK") and title.fontSize == 13 and title.fontSizeAtText == 13 and title.fontResetBeforeText)
+    assert(title.textColor[1] ~= titleColor and ui.detail.height < 90, "body recycling resets color and old title measurement")
+    measurement = nil
+    addon.Description, addon.QuestRewards = description, rewards
+    addon.quests[17001], addon.quests[17002] = nil, nil
+    ui.quest, ui.dungeon, ui.detailHistory = quest, dungeon, history; ui:Refresh()
+end)
+check("Large localized quest and overview titles measure wrapping without resetting same-card scroll", function()
+    local questName, quest, dungeon, locale = addon.QuestName, ui.quest, ui.dungeon, addon.db.locale
+    local long = "Длинное локализованное название задания для проверки переноса"
+    addon.QuestName = function(id) return id == 2 and long or questName(id) end
+    measurement = function(fs) return fs.text == long and fs.fontSize * 3 or 18 end
+    showDetail(2)
+    assert(ui.details[1].fontSize == 20 and ui.details[1].fontResetBeforeText)
+    assert(-ui.details[2].point[3] >= 68)
+    ui.detailScroll:SetVerticalScroll(95); local writes = ui.detailScroll.scrollWrites
+    ui:RefreshDetail(); ui.language.scripts.OnClick()
+    assert(ui.detailScroll.verticalScroll == 95 and ui.detailScroll.scrollWrites == writes and ui.details[1].fontSize == 20)
+    ui.quest = nil; ui.dungeon = { key = "type-overview", name = "Overview title", minLevel = 1, maxLevel = 60, coverage = "partial", quests = {} }
+    ui:RefreshDetail()
+    assert(ui.details[1].text == "Overview title" and ui.details[1].fontSize == 20 and ui.details[1].fontResetBeforeText)
+    measurement = nil; addon.QuestName, addon.db.locale = questName, locale
+    ui.quest, ui.dungeon = quest, dungeon; ui:Refresh()
+end)
 print("Preparation UI modeled checks passed: " .. total .. " (no native layout validation)")

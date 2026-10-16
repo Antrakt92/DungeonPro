@@ -5,6 +5,11 @@ addon.UI = UI
 local COLOR = { COMPLETED = "66dd99", READY = "ffe066", ACTIVE = "88bfff", AVAILABLE = "ffe9b0",
     LOCKED = "f0b080", UNKNOWN = "b4aacd", UNAVAILABLE = "999999" }
 local FONT
+local DETAIL_STYLES = {
+    body = { size = 13, minimum = 18, color = { 0.92, 0.91, 0.87 } },
+    title = { size = 20, minimum = 28, color = { 0.96, 0.83, 0.59 } },
+    section = { size = 14, minimum = 20, before = 8, color = { 0.76, 0.86, 0.85 } },
+}
 
 local function styleRow(row, kind, selected)
     local theme = addon.Clean(addon.Theme, "table")
@@ -529,10 +534,18 @@ function UI:RefreshDetail()
     self.giver:SetEnabled(false)
     self.giver:SetText(addon.L("VISIT_GIVER"))
     local rewardIndex = 0
-    local function line(value, height, reward)
+    local function line(value, style, reward)
+        style = DETAIL_STYLES[style] and style or "body"
+        local format = DETAIL_STYLES[style]
+        local height = format.minimum
+        y = y + (format.before or 0)
         n = n + 1
         local fs = pool[n]
         if not fs then fs = label(self.detail, "", 4, 0, 334, 13); pool[n] = fs end
+        if fs.detailStyle ~= style or fs.detailFont ~= FONT then fs.measuredHeight = nil end
+        fs.detailStyle, fs.detailFont = style, FONT
+        fs:SetFont(FONT, format.size, "")
+        fs:SetTextColor(unpack(format.color))
         fs:SetWidth(334)
         fs:ClearAllPoints(); fs:SetPoint("TOPLEFT", 4, -y); fs:SetText(value); fs:Show()
         local itemID = reward and addon.Clean(reward.item.id, "number")
@@ -583,7 +596,7 @@ function UI:RefreshDetail()
     local id, engine = self.quest, self.engine
     if id then
         local q = addon.quests[id] or {}
-        line(addon.QuestName(id), 24)
+        line(addon.QuestName(id), "title")
         local state = engine:State(id)
         line("|cff" .. COLOR[state.status] .. statusLabel(state) .. "|r")
         local minimum = addon.Clean(q.minLevel, "number")
@@ -695,7 +708,7 @@ function UI:RefreshDetail()
                 (p.x and string.format(" (%.1f, %.1f)", p.x, p.y) or "")
         end
         local function alternativePlaces(places, buttons, heading, slot)
-            line(addon.L(heading))
+            line(addon.L(heading), "section")
             for index, possible in ipairs(places) do
                 local destination = possible
                 local row = self:MakeRow(self.detail, buttons, index, 59)
@@ -775,7 +788,7 @@ function UI:RefreshDetail()
             alternativePlaces(q.finishAlternatives, self.finishButtons, "POSSIBLE_TURNINS", "finishAlternative:")
         else line(addon.L("ENDING") .. ": " .. place(q.finish)); reported(q.finish, "finish") end
         local actions, uncertain = engine:Next(id)
-        line(addon.L("NEXT"))
+        line(addon.L("NEXT"), "section")
         local action = actions[1]
         if action then
             line(addon.L(action.kind) .. ": " .. addon.QuestName(action.id) .. (action.level and (" (" .. action.level .. ")") or ""))
@@ -787,11 +800,11 @@ function UI:RefreshDetail()
         local branchIndex = 0
         local requirementIndex = 0
         if q.requires and #q.requires > 0 then
-            line(addon.L("REQUIREMENT_GROUPS"))
+            line(addon.L("REQUIREMENT_GROUPS"), "section")
             line(addon.L("REQUIREMENT_NOTICE"))
         end
         for groupIndex, group in ipairs(q.requires or {}) do
-            line(addon.L("REQUIREMENT_GROUP", groupIndex))
+            line(addon.L("REQUIREMENT_GROUP", groupIndex), "section")
             line(addon.L(group.mode == "active" and "REQUIREMENT_ACTIVE" or "REQUIREMENT_COMPLETE"))
             if #group.ids > 1 then
                 local index = groupIndex
@@ -840,7 +853,7 @@ function UI:RefreshDetail()
                 y = self:LayoutRow(row, 59, y)
             end
         end
-        line(addon.L((q.storyline or q.storylineGroups) and "STORY" or "CHAIN"))
+        line(addon.L((q.storyline or q.storylineGroups) and "STORY" or "CHAIN"), "section")
         local seen, chainIndex = {}, 0
         local function visit(qid, depth, grouped)
             if seen[qid] or depth > 50 then return end
@@ -874,7 +887,7 @@ function UI:RefreshDetail()
         if q.storylineGroups then
             line(addon.L("STORY_GROUP_NOTICE"))
             for groupIndex, group in ipairs(q.storylineGroups) do
-                line(addon.L("STORY_GROUP", groupIndex))
+                line(addon.L("STORY_GROUP", groupIndex), "section")
                 for _, stepID in ipairs(group) do visit(stepID, 0, true) end
             end
         elseif q.storyline then
@@ -882,7 +895,7 @@ function UI:RefreshDetail()
         else visit(id, 0) end
         local materials = addon.Read(engine.CompletionSteps, "table", engine, id)
         if materials and #materials > 0 then
-            line(addon.L("MATERIAL_QUESTS"))
+            line(addon.L("MATERIAL_QUESTS"), "section")
             line(addon.L("MATERIAL_NOTICE"))
             for index, entry in ipairs(materials) do
                 local other = entry.id
@@ -925,7 +938,7 @@ function UI:RefreshDetail()
                 local count = carried(itemID)
                 if self.quest ~= renderQuest or self.rewardGeneration ~= rewardGeneration then return end
                 if not shownObjectives then
-                    line(addon.L("OBJECTIVE_ITEMS")); line(addon.L("OBJECTIVE_ITEMS_NOTICE")); shownObjectives = true
+                    line(addon.L("OBJECTIVE_ITEMS"), "section"); line(addon.L("OBJECTIVE_ITEMS_NOTICE")); shownObjectives = true
                 end
                 line(quantityUnknown and addon.L("OBJECTIVE_ITEM_UNKNOWN", name) or addon.L("OBJECTIVE_ITEM", name, quantity))
                 if count then line(count) end
@@ -937,31 +950,31 @@ function UI:RefreshDetail()
             dialogueObjective = addon.Read(addon.DialogueObjectiveText, "string", id)
         end
         if dialogueObjective and dialogueObjective ~= "" and #dialogueObjective <= 30000 then
-            line(addon.L("OBJECTIVE_DIALOGUE"))
+            line(addon.L("OBJECTIVE_DIALOGUE"), "section")
             line(dialogueObjective)
         end
         local objectives = addon.QuestObjectives and addon.QuestObjectives(id)
-        if objectives and #objectives > 0 then line(addon.L("OBJECTIVE_PROGRESS")) end
+        if objectives and #objectives > 0 then line(addon.L("OBJECTIVE_PROGRESS"), "section") end
         for _, objective in ipairs(objectives or {}) do
             line("|cff" .. (objective.finished and COLOR.COMPLETED or COLOR.ACTIVE) .. objective.text .. "|r")
         end
         local rewards, rewardOrigin = rewardData(id)
-        if rewards and addon.Clean(rewards.source, "string") == "dialogue" then line(addon.L("REWARD_DIALOGUE"))
-        elseif rewards and addon.Clean(rewards.source, "string") == "cache" then line(addon.L("REWARD_PREVIEW")) end
+        if rewards and addon.Clean(rewards.source, "string") == "dialogue" then line(addon.L("REWARD_DIALOGUE"), "section")
+        elseif rewards and addon.Clean(rewards.source, "string") == "cache" then line(addon.L("REWARD_PREVIEW"), "section") end
         local items = rewards and addon.Clean(rewards.items, "table")
         local choices = rewards and addon.Clean(rewards.choices, "table")
         if rewards and addon.Clean(rewards.hidden, "boolean") == true then
             line(addon.L("REWARD_HIDDEN"))
         elseif items and choices then
             if #items > 0 then
-                line(addon.L("REWARD_ITEMS"))
+                line(addon.L("REWARD_ITEMS"), "section")
                 for index, item in ipairs(items) do
                     if line(addon.L("REWARD_ITEM", item.name, item.count), nil,
                         { item = item, origin = rewardOrigin, source = addon.Clean(rewards.source, "string"), kind = "items", index = index }) == false then return end
                 end
             end
             if #choices > 0 then
-                line(addon.L("REWARD_CHOICES"))
+                line(addon.L("REWARD_CHOICES"), "section")
                 for index, item in ipairs(choices) do
                     if line(addon.L("REWARD_ITEM", item.name, item.count), nil,
                         { item = item, origin = rewardOrigin, source = addon.Clean(rewards.source, "string"), kind = "choices", index = index }) == false then return end
@@ -982,7 +995,7 @@ function UI:RefreshDetail()
         if renderDungeon then
             local name = addon.Read(addon.DungeonName, "string", renderDungeon)
             if self.quest ~= renderQuest or self.dungeon ~= renderDungeon or self.rewardGeneration ~= rewardGeneration then return end
-            line(name or addon.Clean(renderDungeon.name, "string") or addon.L("UNKNOWN_PLACE"), 24)
+            line(name or addon.Clean(renderDungeon.name, "string") or addon.L("UNKNOWN_PLACE"), "title")
             if not self.overviewArt then
                 self.overviewArt = self.detail:CreateTexture(nil, "ARTWORK")
                 self.overviewArt:SetSize(148, 148)
