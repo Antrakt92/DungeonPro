@@ -34,6 +34,7 @@ Level ranges are provisional recommendations.
   quests whose starter drops in a different dungeon. Multiple starting NPCs,
   objects or item-drop sources stay visible separately; a location visit does
   not confirm that your character can accept the quest there.
+  Known item containers have separate location rows, including reported points.
 - Related quests for completion materials appear separately from acceptance
   requirements. Their completion does not confirm you still hold the item.
 - Explicitly sourced repeatable quests have their own label.

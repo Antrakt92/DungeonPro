@@ -2978,7 +2978,34 @@
       "storyline": [
         1100,
         1101
-      ]
+      ],
+      "start": {
+        "itemID": 5791,
+        "name": "Henrig Lonebrow's Journal",
+        "itemMinLevel": 29,
+        "containerSource": {
+          "objectID": 19861,
+          "name": "Henrig Lonebrow's Journal",
+          "zoneName": "Thousand Needles",
+          "mapID": 1441,
+          "x": 30.7,
+          "y": 24.4,
+          "reportedLocations": [
+            {
+              "mapID": 1441,
+              "x": 30.7,
+              "y": 24.4,
+              "zoneName": "Thousand Needles"
+            },
+            {
+              "mapID": 1441,
+              "x": 30.7,
+              "y": 24.5,
+              "zoneName": "Thousand Needles"
+            }
+          ]
+        }
+      }
     },
     {
       "id": 1113,
@@ -7123,6 +7150,11 @@
       "finish": {
         "npcID": 5353,
         "name": "Itharius"
+      },
+      "start": {
+        "itemID": 10589,
+        "name": "Oathstone of Ysera's Dragonflight",
+        "itemMinLevel": 48
       }
     },
     {

@@ -1418,4 +1418,73 @@ check("Reported-position copy is explicitly translated for all ten locales", fun
     end
     assert(count == 10)
 end)
+check("Item containers stay separate from quest starters and navigate only explicit current locations", function()
+    local nav = addon.Navigation
+    local visits, maps = {}, {}
+    addon.Navigation = { Start = function(action) visits[#visits + 1] = action end,
+        Map = function(destination) maps[#maps + 1] = destination end }
+    local container = { objectID = 19861, name = "Journal container", zoneName = "Thousand Needles",
+        mapID = 1441, x = 30.7, y = 24.4,
+        reportedLocations = { { mapID = 1441, x = 30.7, y = 24.4 }, { mapID = 1441, x = 30.7, y = 24.5 } } }
+    addon.quests[9930] = { id = 9930, minLevel = 1, requirementsKnown = false,
+        start = { itemID = 5791, name = "Journal starter", containerSource = container },
+        requires = { { ids = { 9931 } } } }
+    addon.quests[9931] = { id = 9931, minLevel = 1, requirementsKnown = true,
+        start = { npcID = 111, name = "Prerequisite giver", mapID = 1, x = 10, y = 20 } }
+    local context = { level = 40, completed = function() return false end, active = function() return false end }
+    measurement = function(fs) return fs.text == "Journal container" and 72 or 18 end
+    showDetail(9930, context)
+    local row = ui.containerButtons[1]
+    assert(detailHas(addon.L("CONTAINER_SOURCE")) and row.shown and row.enabled and row.height == 108)
+    assert(ui.engine:State(9930).status == "UNKNOWN" and not ui.action and not ui.giverAction)
+    assert(addon.quests[9930].start.itemID == 5791 and not addon.quests[9930].start.objectID)
+    assert(#visits == 0 and #maps == 0)
+    row.scripts.OnClick()
+    assert(#visits == 1 and visits[1].kind == "visit" and visits[1].id == 9930 and visits[1].place == container)
+    local staleContainer = row.scripts.OnClick
+    reportToggle("container:1").scripts.OnClick()
+    staleContainer(); assert(#visits == 1)
+    local reported = reportRows()
+    assert(#reported == 2 and reported[2].destination.objectID == 19861 and not reported[2].destination.itemID)
+    local staleReport = reported[2].scripts.OnClick
+    reported[2].scripts.OnClick()
+    assert(#visits == 2 and visits[2].place.y == 24.5 and visits[2].place.mapID == 1441)
+    addon.quests[9930].requirementsKnown = true
+    showDetail(9930, context)
+    assert(ui.action.id == 9931 and ui.action.place == addon.quests[9931].start and not ui.giverAction)
+    local action = ui.action
+    ui.containerButtons[1].scripts.OnClick()
+    assert(ui.action == action and ui.action.id == 9931)
+    container.x, container.y, container.reportedLocations = nil, nil, nil
+    showDetail(9930, context)
+    staleReport(); assert(#visits == 3)
+    row.scripts.OnClick()
+    assert(#maps == 1 and maps[1] == container and maps[1].mapID == 1441 and not maps[1].place)
+    local staleMap = row.scripts.OnClick
+    container.mapID = nil
+    container.name = "Container with unknown map"
+    measurement = nil; showDetail(9930, context)
+    assert(row.shown and not row.enabled and not row.scripts.OnClick and row.height == 59)
+    assert(detailHas(addon.L("CONTAINER_SOURCE")) and row.note.text == "Thousand Needles")
+    staleMap(); assert(#maps == 1)
+    showDetail(2)
+    staleContainer(); staleReport(); staleMap()
+    assert(#visits == 3 and #maps == 1 and not row.shown and not row.enabled and not row.scripts.OnClick)
+    assert(not detailHas(addon.L("CONTAINER_SOURCE")))
+    addon.quests[9930], addon.quests[9931], addon.Navigation = nil, nil, nav
+end)
+check("Alternative-place callbacks from an older detail generation cannot visit or open maps", function()
+    local nav, calls = addon.Navigation, 0
+    addon.Navigation = { Start = function() calls = calls + 1 end, Map = function() calls = calls + 1 end }
+    addon.quests[9932] = { id = 9932, minLevel = 1, requirementsKnown = false,
+        startAlternatives = { { npcID = 1, name = "Located", mapID = 1, x = 10, y = 20 }, { npcID = 2, name = "Unknown" } },
+        finishAlternatives = { { objectID = 1, name = "Map only", mapID = 1 }, { objectID = 2, name = "Unknown" } } }
+    showDetail(9932)
+    local startClick, finishClick = ui.startButtons[1].scripts.OnClick, ui.finishButtons[1].scripts.OnClick
+    ui:RefreshDetail(); startClick(); finishClick(); assert(calls == 0)
+    ui.startButtons[1].scripts.OnClick(); ui.finishButtons[1].scripts.OnClick(); assert(calls == 2)
+    startClick, finishClick = ui.startButtons[1].scripts.OnClick, ui.finishButtons[1].scripts.OnClick
+    showDetail(2); startClick(); finishClick(); assert(calls == 2)
+    addon.quests[9932], addon.Navigation = nil, nav
+end)
 print("Preparation UI modeled checks passed: " .. total .. " (no native layout validation)")

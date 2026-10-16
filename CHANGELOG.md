@@ -14,6 +14,8 @@
   dungeon images and current-offer portraits.
 - Expanded later dungeon quest lists and sourced quest-giver locations.
 - Added expandable reported giver positions with navigation to a chosen point.
+- Added sourced item containers separately from the items that begin quests.
+- Preserved the current guide when TomTom or map callbacks replace an older request.
 - Kept newly accepted quests visible alongside past completion history, and
   retained that history when checking prerequisite chains.
 - Added localized names for the current quest NPC, with catalogue names as fallback.

@@ -591,4 +591,23 @@ check("Reported giver clicks route the chosen sourced point through native navig
     C_Map.GetUserWaypoint, C_Map.ClearUserWaypoint, C_Map.SetUserWaypoint, TomTom = get, clear, set, oldTomTom
     ui.quest, ui.detailHistory = previous, history; ui:Refresh()
 end)
+check("The sourced journal container guides independently of the item-started quest and its readiness", function()
+    local ui, previous, history = addon.UI, addon.UI.quest, addon.UI.detailHistory
+    local q = addon.quests[1100]
+    assert(q.start.itemID == 5791 and not q.start.objectID and q.requirementsKnown == false)
+    assert(addon.quests[3374].start.itemID == 10589)
+    local container, before = q.start.containerSource, #waypoints
+    ui:InspectQuest(1100)
+    assert(container.objectID == 19861 and container.mapID == 1441)
+    assert(ui.containerButtons[1].shown and ui.containerButtons[1].enabled)
+    assert(ui.giverAction == nil and #waypoints == before)
+    local status = ui.engine:State(1100).status
+    ui.containerButtons[1].scripts.OnClick()
+    assert(#waypoints == before + 1)
+    local actual = waypoints[#waypoints]
+    assert(actual.mapID == 1441 and actual.x == 0.307 and actual.y == 0.244)
+    assert(q.start.itemID == 5791 and q.start.mapID == nil and ui.engine:State(1100).status == status)
+    addon.Navigation.Stop()
+    ui.quest, ui.detailHistory = previous, history; ui:Refresh()
+end)
 print("Client/UI modeled checks passed: " .. total .. " (no pixel or native-client validation)")

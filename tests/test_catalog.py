@@ -148,6 +148,92 @@ class CatalogTests(unittest.TestCase):
         self.data["quests"][0]["start"] = {"objectID": 142487}
         catalog.validate(self.data)
 
+    def test_item_container_sources_preserve_facts_and_generate_without_mutation(self):
+        quest = self.data["quests"][0]
+        quest["start"] = {"itemID": 5791, "name": "Henrig's Journal"}
+        for container in (
+            {"objectID": 19861, "name": "Henrig Lonebrow's Journal"},
+            {"objectID": 19861, "name": "Journal", "zoneName": "Zone", "mapID": 1441},
+            {"objectID": 19861, "name": "Journal", "mapID": 1441, "x": 0, "y": 100,
+             "reportedLocations": [{"mapID": 1441, "x": 0, "y": 100},
+                                   {"mapID": 1441, "x": 1.5, "y": 99}]},
+            {"objectID": 19861, "name": "Journal",
+             "reportedLocations": [{"mapID": 1441, "x": 0, "y": 100},
+                                   {"mapID": 1442, "x": 1, "y": 99, "zoneName": "Other"}]},
+        ):
+            with self.subTest(container=container):
+                quest["start"]["containerSource"] = container
+                before = copy.deepcopy(self.data)
+                self.assertIs(catalog.validate(self.data), self.data)
+                self.assertIn('["containerSource"]', catalog.generate(self.data))
+                self.assertEqual(self.data, before)
+
+    def test_item_container_source_requires_strict_object_identity(self):
+        invalid = [None, False, [], "Journal", {}, {"name": "Journal"},
+                   {"objectID": 19861}, {"objectID": 19861, "name": " "},
+                   {"objectID": 19861, "name": "x" * 501}]
+        invalid.extend({"objectID": value, "name": "Journal"}
+                       for value in (None, True, False, 0, -1, 19861.0, "19861"))
+        invalid.extend({"objectID": 19861, "name": value}
+                       for value in (None, True, 19861, [], {}))
+        invalid.extend({"objectID": 19861, "name": "Journal", field: value}
+                       for field, value in (("npcID", 1), ("itemID", 1), ("containerSource", {}),
+                                            ("dropSources", []), ("dungeonKey", "dm"),
+                                            ("unexpected", True)))
+        for container in invalid:
+            with self.subTest(container=container):
+                self.data["quests"][0]["start"] = {"itemID": 5791, "containerSource": container}
+                before = copy.deepcopy(self.data)
+                with self.assertRaises(ValueError):
+                    catalog.validate(self.data)
+                self.assertEqual(self.data, before)
+
+    def test_item_container_source_is_restricted_to_single_item_start(self):
+        container = {"objectID": 19861, "name": "Journal"}
+        fixtures = [
+            {"start": {"npcID": 234, "containerSource": container}},
+            {"start": {"objectID": 234, "containerSource": container}},
+            {"start": {"containerSource": container}},
+            {"finish": {"itemID": 5791, "containerSource": container}},
+            {"startAlternatives": [{"npcID": 234, "name": "One", "containerSource": container},
+                                   {"npcID": 235, "name": "Two"}]},
+            {"finishAlternatives": [{"objectID": 234, "name": "One", "containerSource": container},
+                                    {"objectID": 235, "name": "Two"}]},
+            {"start": {"itemID": 5791, "dropSources": [
+                {"npcID": 234, "name": "NPC", "locationName": "Zone", "containerSource": container}]}},
+        ]
+        for fixture in fixtures:
+            with self.subTest(fixture=fixture):
+                data = copy.deepcopy(self.data)
+                quest = data["quests"][0]
+                for key in ("start", "finish", "startAlternatives", "finishAlternatives"):
+                    quest.pop(key, None)
+                quest.update(fixture)
+                before = copy.deepcopy(data)
+                with self.assertRaises(ValueError):
+                    catalog.validate(data)
+                self.assertEqual(data, before)
+
+    def test_item_container_source_reuses_location_validation(self):
+        invalid = [
+            {"mapID": True}, {"mapID": 0}, {"zoneName": " "}, {"zoneName": "x" * 501},
+            {"x": 1}, {"x": 1, "y": 2}, {"mapID": 1, "x": True, "y": 2},
+            {"mapID": 1, "x": float("nan"), "y": 2}, {"mapID": 1, "x": 2, "y": 101},
+            {"reportedLocations": None}, {"reportedLocations": []},
+            {"reportedLocations": [{"mapID": 1, "x": 1, "y": 2}]},
+            {"reportedLocations": [{"mapID": 1, "x": 1, "y": 2}] * 2},
+            {"mapID": 1, "x": 3, "y": 4, "reportedLocations": [
+                {"mapID": 1, "x": 1, "y": 2}, {"mapID": 1, "x": 2, "y": 3}]},
+        ]
+        for fields in invalid:
+            with self.subTest(fields=fields):
+                self.data["quests"][0]["start"] = {"itemID": 5791, "containerSource": {
+                    "objectID": 19861, "name": "Journal", **fields}}
+                before = copy.deepcopy(self.data)
+                with self.assertRaises(ValueError):
+                    catalog.validate(self.data)
+                self.assertEqual(self.data, before)
+
     def test_item_starters_keep_drop_source_and_dungeon_identity(self):
         q = self.data["quests"][0]
         q["start"] = {"itemID": 17008, "dropNPCID": 4421, "dungeonKey": "rfk"}

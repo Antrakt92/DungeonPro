@@ -87,6 +87,14 @@ def validate(data):
                 continue
             if type(p) is not dict:
                 raise ValueError(f"Invalid quest {key} place: {q['id']}")
+            if "containerSource" in p:
+                container = p["containerSource"]
+                if (key != "start" or "itemID" not in p or type(container) is not dict or
+                    set(container) - {"objectID", "name", "zoneName", "mapID", "x", "y", "reportedLocations"} or
+                    not integer(container.get("objectID")) or not nonempty_string(container.get("name")) or
+                    len(container["name"]) > 500):
+                    raise ValueError(f"Invalid starter item container source: {q['id']}")
+                places.append(("containerSource", container))
             for field in ("name", "dropName"):
                 if field in p and not nonempty_string(p[field]):
                     raise ValueError(f"Invalid place {field}: {q['id']}")
@@ -120,6 +128,8 @@ def validate(data):
                     raise ValueError(f"Invalid item drop sources: {q['id']}")
                 seen_drops = set()
                 for drop in drops:
+                    if type(drop) is dict and "containerSource" in drop:
+                        raise ValueError(f"Invalid container source on item drop: {q['id']}")
                     if type(drop) is dict and "reportedLocations" in drop:
                         raise ValueError(f"Invalid reported locations on item drop: {q['id']}")
                     if (type(drop) is not dict or not integer(drop.get("npcID")) or

@@ -359,7 +359,7 @@ function UI:RefreshDetail()
     for _, b in ipairs(self.branchButtons) do b:Hide() end
     for _, b in ipairs(self.requirementButtons) do b:Hide(); b:SetEnabled(false); b:SetScript("OnClick", nil) end
     for _, b in ipairs(self.materialButtons) do b:Hide(); b:SetEnabled(false); b:SetScript("OnClick", nil) end
-    for _, buttons in ipairs({ self.startButtons, self.finishButtons }) do
+    for _, buttons in ipairs({ self.startButtons, self.finishButtons, self.containerButtons }) do
         for _, b in ipairs(buttons) do
             b:Hide(); b:SetEnabled(false); b:SetScript("OnClick", nil)
         end
@@ -466,6 +466,7 @@ function UI:RefreshDetail()
                     (coordinates and string.format(" (%.1f, %.1f)", x, py) or ""))
                 row:SetEnabled(validMap)
                 row:SetScript("OnClick", validMap and function()
+                    if self.quest ~= id or self.reportedGeneration ~= reportedGeneration then return end
                     local visit = { id = id, kind = "visit", place = destination }
                     if coordinates then addon.Navigation.Start(visit)
                     else addon.Navigation.Map(destination) end
@@ -500,6 +501,10 @@ function UI:RefreshDetail()
                 line(addon.L("ITEM_MIN_LEVEL", minimum)); shown = true
             end
             if shown then line(addon.L("ITEM_REQUIREMENTS_NOTICE")) end
+            local container = addon.Clean(start.containerSource, "table")
+            if container then
+                alternativePlaces({ container }, self.containerButtons, "CONTAINER_SOURCE", "container:")
+            end
         end
         if start and start.itemID and start.dropNPCID then
             local dungeonName = addon.L("UNKNOWN_PLACE")
@@ -816,7 +821,7 @@ function UI:Create()
     self.frame, self.cards, self.rows, self.details, self.chainButtons, self.branchButtons = frame, {}, {}, {}, {}, {}
     self.materialButtons = {}
     self.requirementButtons = {}
-    self.startButtons, self.finishButtons = {}, {}
+    self.startButtons, self.finishButtons, self.containerButtons = {}, {}, {}
     UISpecialFrames[#UISpecialFrames + 1] = "DungeonProWindow"
     for _, d in ipairs(addon.dungeons) do if d.key == addon.char.selectedDungeon then self.dungeon = d end end
     frame:SetScript("OnShow", function() self:Fit(); self:Refresh() end)
