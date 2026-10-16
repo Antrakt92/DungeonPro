@@ -158,7 +158,8 @@ function UI:RefreshDungeons()
             end
             row.art:SetTexture(addon.DungeonArt(d))
             row.title:SetText(name)
-            row.note:SetText(d.minLevel .. "–" .. d.maxLevel .. "   " .. (#d.quests > 0 and tostring(#d.quests) or "—"))
+            row.note:SetText(addon.L("CATALOG_LEVELS", d.minLevel, d.maxLevel) .. "\n" ..
+                addon.L("CATALOG_QUESTS", #d.quests))
             row.bg:SetColorTexture(self.dungeon == d and 0.22 or 0.13, 0.19, 0.23, 1)
             row:SetScript("OnClick", function()
                 self.dungeon, self.quest = d, nil

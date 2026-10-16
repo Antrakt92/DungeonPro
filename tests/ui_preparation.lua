@@ -981,4 +981,34 @@ check("Missing or unusable dialogue objective summaries leave no recycled headin
     end
     addon.DialogueObjectiveText = previous
 end)
+check("Catalogue labels distinguish listed targets from character eligibility and retain selection", function()
+    local dungeons, context = addon.dungeons, addon.Context
+    local search, range, includeUnavailable = ui.search, ui.range, ui.includeUnavailable
+    local selected, quest = ui.dungeon, ui.quest
+    local factions = addon.quests[2].factions
+    addon.quests[2].factions = { "Horde" }
+    addon.Context = function() return { level = 20, faction = "Alliance" } end
+    local listed = { key = "listed", name = "Listed dungeon", minLevel = 10, maxLevel = 30, quests = { 1, 2 } }
+    local empty = { key = "empty", name = "Empty dungeon", minLevel = 40, maxLevel = 50, quests = {} }
+    addon.dungeons = { listed, empty }
+    ui.search, ui.range, ui.includeUnavailable, ui.dungeon, ui.quest = "", false, false, listed, 2
+    measurement = function(fs) return fs.text and fs.text:find("\n", 1, true) and 36 or 18 end
+    ui:RefreshDungeons()
+    local card = ui.cards[1]
+    assert(card.note.text == addon.L("CATALOG_LEVELS", 10, 30) .. "\n" .. addon.L("CATALOG_QUESTS", 2))
+    assert(card.height == 72 and ui.cards[2].point[3] == -76, "two metadata lines must fit cumulative geometry")
+    assert(addon.Planner.Eligible(addon.quests[2], addon.Context()) == false)
+    ui.includeUnavailable = true; ui:RefreshDungeons()
+    assert(card.note.text:find(addon.L("CATALOG_QUESTS", 2), 1, true), "listed count is independent of character filtering")
+    ui.search = "Empty"; ui:RefreshDungeons()
+    assert(ui.cards[1] == card and card.title.text == "Empty dungeon")
+    assert(card.note.text == addon.L("CATALOG_LEVELS", 40, 50) .. "\n" .. addon.L("CATALOG_QUESTS", 0))
+    assert(not ui.cards[2].shown and ui.dungeon == listed and ui.quest == 2)
+    ui.search = "no such dungeon"; ui:RefreshDungeons()
+    assert(ui.catalogNotice.shown and not card.shown and ui.dungeon == listed and ui.quest == 2)
+    measurement = nil
+    addon.quests[2].factions, addon.dungeons, addon.Context = factions, dungeons, context
+    ui.search, ui.range, ui.includeUnavailable, ui.dungeon, ui.quest = search, range, includeUnavailable, selected, quest
+    ui:Refresh()
+end)
 print("Preparation UI modeled checks passed: " .. total .. " (no native layout validation)")
