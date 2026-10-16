@@ -19,7 +19,7 @@ events:SetScript("OnEvent", function(_, event, arg1, arg2)
         end
         if not addon.RestoreDB() then print("DungeonPrep: unsupported saved data version"); return end
         initialized = true
-        for _, e in ipairs({ "QUEST_LOG_UPDATE", "QUEST_DATA_LOAD_RESULT", "QUEST_ACCEPTED", "QUEST_REMOVED",
+        for _, e in ipairs({ "QUEST_LOG_UPDATE", "QUEST_DATA_LOAD_RESULT", "ITEM_DATA_LOAD_RESULT", "QUEST_ACCEPTED", "QUEST_REMOVED",
             "QUEST_TURNED_IN", "PLAYER_LEVEL_UP", "PLAYER_ENTERING_WORLD", "QUEST_DETAIL", "PLAYER_LOGOUT" }) do
             events:RegisterEvent(e)
         end
@@ -34,6 +34,7 @@ events:SetScript("OnEvent", function(_, event, arg1, arg2)
     end
     if not initialized then return end
     if event == "QUEST_DATA_LOAD_RESULT" then addon.QuestDataResult(arg1, arg2) end
+    if event == "ITEM_DATA_LOAD_RESULT" then addon.ItemDataResult(arg1, arg2) end
     if event == "QUEST_DETAIL" then addon.CaptureQuestText() end
     if event == "QUEST_ACCEPTED" or event == "QUEST_TURNED_IN" or event == "QUEST_REMOVED" then
         addon.Navigation.QuestChanged(arg1)

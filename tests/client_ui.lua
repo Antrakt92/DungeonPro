@@ -185,4 +185,14 @@ check("Unrelated quest events preserve the guide and matching events release it"
     assert(#removed == 3)
     TomTom = saved
 end)
+check("Native item-data results route ID and success to the bounded item producer", function()
+    assert(eventFrame.events.ITEM_DATA_LOAD_RESULT)
+    local original, calls = addon.ItemDataResult, {}
+    addon.ItemDataResult = function(id, success) calls[#calls + 1] = { id, success } end
+    eventFrame.scripts.OnEvent(eventFrame, "ITEM_DATA_LOAD_RESULT", 7083, true)
+    eventFrame.scripts.OnEvent(eventFrame, "ITEM_DATA_LOAD_RESULT", 272448, false)
+    assert(#calls == 2 and calls[1][1] == 7083 and calls[1][2] == true)
+    assert(calls[2][1] == 272448 and calls[2][2] == false)
+    addon.ItemDataResult = original
+end)
 print("Client/UI modeled checks passed: " .. total .. " (no pixel or native-client validation)")

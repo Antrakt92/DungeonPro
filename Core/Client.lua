@@ -1,5 +1,5 @@
 local _, addon = ...
-local requested = {}
+local requested, requestedItems = {}, {}
 
 function addon.QuestDataResult(id, success)
     id = addon.Clean(id, "number")
@@ -58,6 +58,58 @@ function addon.QuestName(id)
         end
     end
     return (addon.quests[id] or {}).name or ("#" .. id)
+end
+
+function addon.ItemDataResult(id, success)
+    id = addon.Clean(id, "number")
+    success = addon.Clean(success, "boolean")
+    if not id or id < 1 or id % 1 ~= 0 then return end
+    local request = requestedItems[id]
+    if not request or not request.pending or success == nil then return end
+    request.pending = false
+    if success or request.attempts >= 3 then request.finished = true; return end
+    request.waiting = true
+    local attempt = request.attempts
+    local function retry()
+        if requestedItems[id] ~= request or not request.waiting or request.attempts ~= attempt then return end
+        request.waiting = false
+        addon.Notify()
+    end
+    if not C_Timer or type(C_Timer.After) ~= "function" or not pcall(C_Timer.After, 2, retry) then
+        request.waiting = false
+    end
+end
+
+function addon.ItemName(id)
+    id = addon.Clean(id, "number")
+    if not id or id < 1 or id % 1 ~= 0 then return nil end
+    local item = C_Item or {}
+    local name = addon.Read(item.GetItemNameByID, "string", id)
+    local request = requestedItems[id]
+    if name and name ~= "" and #name <= 1024 then
+        if request then request.pending, request.waiting, request.finished = false, false, true end
+        return name
+    end
+    if addon.Read(item.IsItemDataCachedByID, "boolean", id) ~= false or
+        type(item.RequestLoadItemDataByID) ~= "function" then return nil end
+    if request and (request.pending or request.waiting or request.finished) then return nil end
+    request = request or { attempts = 0 }
+    requestedItems[id] = request
+    request.attempts, request.pending = request.attempts + 1, true
+    local ok = pcall(item.RequestLoadItemDataByID, id)
+    if not ok then addon.ItemDataResult(id, false)
+    elseif request.pending then
+        local attempt = request.attempts
+        local function timeout()
+            if requestedItems[id] == request and request.pending and request.attempts == attempt then
+                addon.ItemDataResult(id, false)
+            end
+        end
+        if not C_Timer or type(C_Timer.After) ~= "function" or not pcall(C_Timer.After, 10, timeout) then
+            addon.ItemDataResult(id, false)
+        end
+    end
+    return nil
 end
 
 function addon.DungeonName(d)
