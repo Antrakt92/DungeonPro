@@ -31,6 +31,8 @@
   without inventing map coordinates.
 - Preserved the correct quest and language when the selected quest changes during
   a description read.
+- Completed the known shared story variants around Anthion and added sourced
+  locations for early-chain and Blackrock quest-givers.
 - Showed rewards, choices, money and experience from the open quest dialogue.
 - Kept quests already in your log visible when catalogue restrictions are stale.
 - Added a short-lived note for quests observed in the current NPC dialogue,

@@ -752,14 +752,16 @@
         "mapID": 1454,
         "x": 32,
         "y": 37.8,
-        "npcID": 4949
+        "npcID": 4949,
+        "zoneName": "Orgrimmar"
       },
       "finish": {
         "name": "Thrall",
         "mapID": 1454,
         "x": 32,
         "y": 37.8,
-        "npcID": 4949
+        "npcID": 4949,
+        "zoneName": "Orgrimmar"
       }
     },
     {
@@ -777,14 +779,16 @@
         "mapID": 1454,
         "x": 32,
         "y": 37.8,
-        "npcID": 4949
+        "npcID": 4949,
+        "zoneName": "Orgrimmar"
       },
       "finish": {
         "name": "Thrall",
         "mapID": 1454,
         "x": 32,
         "y": 37.8,
-        "npcID": 4949
+        "npcID": 4949,
+        "zoneName": "Orgrimmar"
       },
       "requires": [
         {
@@ -809,14 +813,16 @@
         "mapID": 1454,
         "x": 32,
         "y": 37.8,
-        "npcID": 4949
+        "npcID": 4949,
+        "zoneName": "Orgrimmar"
       },
       "finish": {
         "name": "Thrall",
         "mapID": 1454,
         "x": 32,
         "y": 37.8,
-        "npcID": 4949
+        "npcID": 4949,
+        "zoneName": "Orgrimmar"
       },
       "requires": [
         {
@@ -841,14 +847,16 @@
         "mapID": 1454,
         "x": 32,
         "y": 37.8,
-        "npcID": 4949
+        "npcID": 4949,
+        "zoneName": "Orgrimmar"
       },
       "finish": {
         "name": "Thrall",
         "mapID": 1454,
         "x": 32,
         "y": 37.8,
-        "npcID": 4949
+        "npcID": 4949,
+        "zoneName": "Orgrimmar"
       },
       "requires": [
         {
@@ -873,14 +881,16 @@
         "mapID": 1454,
         "x": 32,
         "y": 37.8,
-        "npcID": 4949
+        "npcID": 4949,
+        "zoneName": "Orgrimmar"
       },
       "finish": {
         "name": "Thrall",
         "mapID": 1454,
         "x": 32,
         "y": 37.8,
-        "npcID": 4949
+        "npcID": 4949,
+        "zoneName": "Orgrimmar"
       },
       "requires": [
         {
@@ -3900,11 +3910,19 @@
       "source": "https://www.wowhead.com/forever/quest=1139/the-lost-tablets-of-will",
       "start": {
         "npcID": 2918,
-        "name": "Advisor Belgrum"
+        "name": "Advisor Belgrum",
+        "mapID": 1455,
+        "x": 76.4,
+        "y": 10.8,
+        "zoneName": "Ironforge"
       },
       "finish": {
         "npcID": 2918,
-        "name": "Advisor Belgrum"
+        "name": "Advisor Belgrum",
+        "mapID": 1455,
+        "x": 76.4,
+        "y": 10.8,
+        "zoneName": "Ironforge"
       },
       "requires": [
         {
@@ -4663,7 +4681,11 @@
       },
       "finish": {
         "npcID": 2916,
-        "name": "Historian Karnik"
+        "name": "Historian Karnik",
+        "mapID": 1455,
+        "x": 76.4,
+        "y": 11.4,
+        "zoneName": "Ironforge"
       },
       "storyline": [
         720,
@@ -5533,11 +5555,19 @@
       "source": "https://www.wowhead.com/forever/quest=2988/witherbark-cages",
       "start": {
         "npcID": 5636,
-        "name": "Gryphon Master Talonaxe"
+        "name": "Gryphon Master Talonaxe",
+        "mapID": 1425,
+        "x": 9.8,
+        "y": 44.4,
+        "zoneName": "The Hinterlands"
       },
       "finish": {
         "npcID": 5636,
-        "name": "Gryphon Master Talonaxe"
+        "name": "Gryphon Master Talonaxe",
+        "mapID": 1425,
+        "x": 9.8,
+        "y": 44.4,
+        "zoneName": "The Hinterlands"
       },
       "storyline": [
         2988,
@@ -5561,11 +5591,19 @@
       "source": "https://www.wowhead.com/forever/quest=2989/the-altar-of-zul",
       "start": {
         "npcID": 5636,
-        "name": "Gryphon Master Talonaxe"
+        "name": "Gryphon Master Talonaxe",
+        "mapID": 1425,
+        "x": 9.8,
+        "y": 44.4,
+        "zoneName": "The Hinterlands"
       },
       "finish": {
         "npcID": 5636,
-        "name": "Gryphon Master Talonaxe"
+        "name": "Gryphon Master Talonaxe",
+        "mapID": 1425,
+        "x": 9.8,
+        "y": 44.4,
+        "zoneName": "The Hinterlands"
       },
       "storyline": [
         2988,
@@ -5596,7 +5634,11 @@
       "source": "https://www.wowhead.com/forever/quest=2990/thadius-grimshade",
       "start": {
         "npcID": 5636,
-        "name": "Gryphon Master Talonaxe"
+        "name": "Gryphon Master Talonaxe",
+        "mapID": 1425,
+        "x": 9.8,
+        "y": 44.4,
+        "zoneName": "The Hinterlands"
       },
       "finish": {
         "npcID": 8022,
@@ -5663,7 +5705,11 @@
       },
       "finish": {
         "npcID": 5636,
-        "name": "Gryphon Master Talonaxe"
+        "name": "Gryphon Master Talonaxe",
+        "mapID": 1425,
+        "x": 9.8,
+        "y": 44.4,
+        "zoneName": "The Hinterlands"
       },
       "storyline": [
         2988,
@@ -5687,11 +5733,19 @@
       "source": "https://www.wowhead.com/forever/quest=2994/saving-sharpbeak",
       "start": {
         "npcID": 5636,
-        "name": "Gryphon Master Talonaxe"
+        "name": "Gryphon Master Talonaxe",
+        "mapID": 1425,
+        "x": 9.8,
+        "y": 44.4,
+        "zoneName": "The Hinterlands"
       },
       "finish": {
         "npcID": 5636,
-        "name": "Gryphon Master Talonaxe"
+        "name": "Gryphon Master Talonaxe",
+        "mapID": 1425,
+        "x": 9.8,
+        "y": 44.4,
+        "zoneName": "The Hinterlands"
       },
       "storyline": [
         2988,
@@ -5827,11 +5881,19 @@
       "source": "https://www.wowhead.com/forever/quest=1475/into-the-temple-of-atalhakkar",
       "start": {
         "npcID": 5384,
-        "name": "Brohann Caskbelly"
+        "name": "Brohann Caskbelly",
+        "mapID": 1453,
+        "x": 64.2,
+        "y": 20.8,
+        "zoneName": "Stormwind City"
       },
       "finish": {
         "npcID": 5384,
-        "name": "Brohann Caskbelly"
+        "name": "Brohann Caskbelly",
+        "mapID": 1453,
+        "x": 64.2,
+        "y": 20.8,
+        "zoneName": "Stormwind City"
       },
       "storyline": [
         1469,
@@ -6438,11 +6500,19 @@
       "source": "https://www.wowhead.com/forever/quest=1469/rhapsodys-tale",
       "start": {
         "npcID": 5634,
-        "name": "Rhapsody Shindigger"
+        "name": "Rhapsody Shindigger",
+        "mapID": 1425,
+        "x": 26.8,
+        "y": 48.4,
+        "zoneName": "The Hinterlands"
       },
       "finish": {
         "npcID": 5384,
-        "name": "Brohann Caskbelly"
+        "name": "Brohann Caskbelly",
+        "mapID": 1453,
+        "x": 64.2,
+        "y": 20.8,
+        "zoneName": "Stormwind City"
       },
       "storyline": [
         1469,
@@ -6800,7 +6870,11 @@
       },
       "finish": {
         "npcID": 4949,
-        "name": "Thrall"
+        "name": "Thrall",
+        "zoneName": "Orgrimmar",
+        "mapID": 1454,
+        "x": 32,
+        "y": 37.8
       },
       "storyline": [
         3981,
@@ -6823,11 +6897,19 @@
       "source": "https://www.wowhead.com/forever/quest=4002/the-eastern-kingdoms",
       "start": {
         "npcID": 4949,
-        "name": "Thrall"
+        "name": "Thrall",
+        "zoneName": "Orgrimmar",
+        "mapID": 1454,
+        "x": 32,
+        "y": 37.8
       },
       "finish": {
         "npcID": 4949,
-        "name": "Thrall"
+        "name": "Thrall",
+        "zoneName": "Orgrimmar",
+        "mapID": 1454,
+        "x": 32,
+        "y": 37.8
       },
       "storyline": [
         3981,
@@ -6851,7 +6933,11 @@
       "source": "https://www.wowhead.com/forever/quest=4003/the-royal-rescue",
       "start": {
         "npcID": 4949,
-        "name": "Thrall"
+        "name": "Thrall",
+        "zoneName": "Orgrimmar",
+        "mapID": 1454,
+        "x": 32,
+        "y": 37.8
       },
       "finish": {
         "npcID": 8929,
@@ -6883,7 +6969,11 @@
       },
       "finish": {
         "npcID": 4949,
-        "name": "Thrall"
+        "name": "Thrall",
+        "zoneName": "Orgrimmar",
+        "mapID": 1454,
+        "x": 32,
+        "y": 37.8
       },
       "storyline": [
         3981,
@@ -6907,11 +6997,19 @@
       "source": "https://www.wowhead.com/forever/quest=4022/a-taste-of-flame",
       "start": {
         "npcID": 9459,
-        "name": "Cyrus Therepentous"
+        "name": "Cyrus Therepentous",
+        "zoneName": "Burning Steppes",
+        "mapID": 1428,
+        "x": 94.8,
+        "y": 31.6
       },
       "finish": {
         "npcID": 9459,
-        "name": "Cyrus Therepentous"
+        "name": "Cyrus Therepentous",
+        "zoneName": "Burning Steppes",
+        "mapID": 1428,
+        "x": 94.8,
+        "y": 31.6
       },
       "storylineGroups": [
         [
@@ -6936,11 +7034,19 @@
       "source": "https://www.wowhead.com/forever/quest=4023/a-taste-of-flame",
       "start": {
         "npcID": 9459,
-        "name": "Cyrus Therepentous"
+        "name": "Cyrus Therepentous",
+        "zoneName": "Burning Steppes",
+        "mapID": 1428,
+        "x": 94.8,
+        "y": 31.6
       },
       "finish": {
         "npcID": 9459,
-        "name": "Cyrus Therepentous"
+        "name": "Cyrus Therepentous",
+        "zoneName": "Burning Steppes",
+        "mapID": 1428,
+        "x": 94.8,
+        "y": 31.6
       },
       "storylineGroups": [
         [
@@ -6965,11 +7071,19 @@
       "source": "https://www.wowhead.com/forever/quest=4024/a-taste-of-flame",
       "start": {
         "npcID": 9459,
-        "name": "Cyrus Therepentous"
+        "name": "Cyrus Therepentous",
+        "zoneName": "Burning Steppes",
+        "mapID": 1428,
+        "x": 94.8,
+        "y": 31.6
       },
       "finish": {
         "npcID": 9459,
-        "name": "Cyrus Therepentous"
+        "name": "Cyrus Therepentous",
+        "zoneName": "Burning Steppes",
+        "mapID": 1428,
+        "x": 94.8,
+        "y": 31.6
       },
       "storylineGroups": [
         [
@@ -7069,7 +7183,8 @@
       },
       "finish": {
         "npcID": 9077,
-        "name": "Warlord Goretooth"
+        "name": "Warlord Goretooth",
+        "zoneName": "Badlands"
       }
     },
     {
@@ -7088,7 +7203,8 @@
       },
       "finish": {
         "npcID": 9077,
-        "name": "Warlord Goretooth"
+        "name": "Warlord Goretooth",
+        "zoneName": "Badlands"
       },
       "requires": [
         {
@@ -7234,11 +7350,13 @@
       "source": "https://www.wowhead.com/forever/quest=4132/operation-death-to-angerforge",
       "start": {
         "npcID": 9077,
-        "name": "Warlord Goretooth"
+        "name": "Warlord Goretooth",
+        "zoneName": "Badlands"
       },
       "finish": {
         "npcID": 9077,
-        "name": "Warlord Goretooth"
+        "name": "Warlord Goretooth",
+        "zoneName": "Badlands"
       }
     },
     {
@@ -7257,7 +7375,8 @@
       },
       "finish": {
         "npcID": 9078,
-        "name": "Shadowmage Vivian Lagrave"
+        "name": "Shadowmage Vivian Lagrave",
+        "zoneName": "Badlands"
       },
       "storyline": [
         4133,
@@ -7276,11 +7395,13 @@
       "source": "https://www.wowhead.com/forever/quest=4134/lost-thunderbrew-recipe",
       "start": {
         "npcID": 9078,
-        "name": "Shadowmage Vivian Lagrave"
+        "name": "Shadowmage Vivian Lagrave",
+        "zoneName": "Badlands"
       },
       "finish": {
         "npcID": 9078,
-        "name": "Shadowmage Vivian Lagrave"
+        "name": "Shadowmage Vivian Lagrave",
+        "zoneName": "Badlands"
       },
       "storyline": [
         4133,
@@ -7323,11 +7444,19 @@
       "source": "https://www.wowhead.com/forever/quest=4182/dragonkin-menace",
       "start": {
         "npcID": 9562,
-        "name": "Helendis Riverhorn"
+        "name": "Helendis Riverhorn",
+        "zoneName": "Burning Steppes",
+        "mapID": 1428,
+        "x": 85.4,
+        "y": 68.8
       },
       "finish": {
         "npcID": 9562,
-        "name": "Helendis Riverhorn"
+        "name": "Helendis Riverhorn",
+        "zoneName": "Burning Steppes",
+        "mapID": 1428,
+        "x": 85.4,
+        "y": 68.8
       },
       "storyline": [
         4182,
@@ -7353,7 +7482,11 @@
       "source": "https://www.wowhead.com/forever/quest=4183/the-true-masters",
       "start": {
         "npcID": 9562,
-        "name": "Helendis Riverhorn"
+        "name": "Helendis Riverhorn",
+        "zoneName": "Burning Steppes",
+        "mapID": 1428,
+        "x": 85.4,
+        "y": 68.8
       },
       "finish": {
         "npcID": 344,
@@ -7387,7 +7520,11 @@
       },
       "finish": {
         "npcID": 1748,
-        "name": "Highlord Bolvar Fordragon"
+        "name": "Highlord Bolvar Fordragon",
+        "zoneName": "Stormwind City",
+        "mapID": 1453,
+        "x": 77.4,
+        "y": 18.4
       },
       "storyline": [
         4182,
@@ -7413,11 +7550,19 @@
       "source": "https://www.wowhead.com/forever/quest=4185/the-true-masters",
       "start": {
         "npcID": 1748,
-        "name": "Highlord Bolvar Fordragon"
+        "name": "Highlord Bolvar Fordragon",
+        "zoneName": "Stormwind City",
+        "mapID": 1453,
+        "x": 77.4,
+        "y": 18.4
       },
       "finish": {
         "npcID": 1748,
-        "name": "Highlord Bolvar Fordragon"
+        "name": "Highlord Bolvar Fordragon",
+        "zoneName": "Stormwind City",
+        "mapID": 1453,
+        "x": 77.4,
+        "y": 18.4
       },
       "storyline": [
         4182,
@@ -7443,7 +7588,11 @@
       "source": "https://www.wowhead.com/forever/quest=4186/the-true-masters",
       "start": {
         "npcID": 1748,
-        "name": "Highlord Bolvar Fordragon"
+        "name": "Highlord Bolvar Fordragon",
+        "zoneName": "Stormwind City",
+        "mapID": 1453,
+        "x": 77.4,
+        "y": 18.4
       },
       "finish": {
         "npcID": 344,
@@ -7497,7 +7646,11 @@
       },
       "finish": {
         "npcID": 9560,
-        "name": "Marshal Maxwell"
+        "name": "Marshal Maxwell",
+        "zoneName": "Burning Steppes",
+        "mapID": 1428,
+        "x": 84.6,
+        "y": 68.8
       },
       "storyline": [
         4182,
@@ -7523,11 +7676,19 @@
       "source": "https://www.wowhead.com/forever/quest=4224/the-true-masters",
       "start": {
         "npcID": 9560,
-        "name": "Marshal Maxwell"
+        "name": "Marshal Maxwell",
+        "zoneName": "Burning Steppes",
+        "mapID": 1428,
+        "x": 84.6,
+        "y": 68.8
       },
       "finish": {
         "npcID": 9560,
-        "name": "Marshal Maxwell"
+        "name": "Marshal Maxwell",
+        "zoneName": "Burning Steppes",
+        "mapID": 1428,
+        "x": 84.6,
+        "y": 68.8
       },
       "storyline": [
         4182,
@@ -7553,7 +7714,11 @@
       "source": "https://www.wowhead.com/forever/quest=4241/marshal-windsor",
       "start": {
         "npcID": 9560,
-        "name": "Marshal Maxwell"
+        "name": "Marshal Maxwell",
+        "zoneName": "Burning Steppes",
+        "mapID": 1428,
+        "x": 84.6,
+        "y": 68.8
       },
       "finish": {
         "npcID": 9023,
@@ -7587,7 +7752,11 @@
       },
       "finish": {
         "npcID": 9560,
-        "name": "Marshal Maxwell"
+        "name": "Marshal Maxwell",
+        "zoneName": "Burning Steppes",
+        "mapID": 1428,
+        "x": 84.6,
+        "y": 68.8
       },
       "storyline": [
         4182,
@@ -7613,11 +7782,19 @@
       "source": "https://www.wowhead.com/forever/quest=4262/overmaster-pyron",
       "start": {
         "npcID": 9561,
-        "name": "Jalinda Sprig"
+        "name": "Jalinda Sprig",
+        "zoneName": "Burning Steppes",
+        "mapID": 1428,
+        "x": 85.4,
+        "y": 70
       },
       "finish": {
         "npcID": 9561,
-        "name": "Jalinda Sprig"
+        "name": "Jalinda Sprig",
+        "zoneName": "Burning Steppes",
+        "mapID": 1428,
+        "x": 85.4,
+        "y": 70
       },
       "storyline": [
         4262,
@@ -7636,11 +7813,19 @@
       "source": "https://www.wowhead.com/forever/quest=4263/incendius",
       "start": {
         "npcID": 9561,
-        "name": "Jalinda Sprig"
+        "name": "Jalinda Sprig",
+        "zoneName": "Burning Steppes",
+        "mapID": 1428,
+        "x": 85.4,
+        "y": 70
       },
       "finish": {
         "npcID": 9561,
-        "name": "Jalinda Sprig"
+        "name": "Jalinda Sprig",
+        "zoneName": "Burning Steppes",
+        "mapID": 1428,
+        "x": 85.4,
+        "y": 70
       },
       "storyline": [
         4262,
@@ -7766,7 +7951,11 @@
       },
       "finish": {
         "npcID": 9560,
-        "name": "Marshal Maxwell"
+        "name": "Marshal Maxwell",
+        "zoneName": "Burning Steppes",
+        "mapID": 1428,
+        "x": 84.6,
+        "y": 68.8
       },
       "storyline": [
         4322,
@@ -7944,7 +8133,11 @@
       "source": "https://www.wowhead.com/forever/quest=6402/stormwind-rendezvous",
       "start": {
         "npcID": 9560,
-        "name": "Marshal Maxwell"
+        "name": "Marshal Maxwell",
+        "zoneName": "Burning Steppes",
+        "mapID": 1428,
+        "x": 84.6,
+        "y": 68.8
       },
       "finish": {
         "npcID": 12580,
@@ -8181,11 +8374,13 @@
       "source": "https://www.wowhead.com/forever/quest=7201/the-last-element",
       "start": {
         "npcID": 9078,
-        "name": "Shadowmage Vivian Lagrave"
+        "name": "Shadowmage Vivian Lagrave",
+        "zoneName": "Badlands"
       },
       "finish": {
         "npcID": 9078,
-        "name": "Shadowmage Vivian Lagrave"
+        "name": "Shadowmage Vivian Lagrave",
+        "zoneName": "Badlands"
       },
       "requires": [
         {
@@ -8706,11 +8901,19 @@
       "minLevel": 55,
       "start": {
         "npcID": 9562,
-        "name": "Helendis Riverhorn"
+        "name": "Helendis Riverhorn",
+        "zoneName": "Burning Steppes",
+        "mapID": 1428,
+        "x": 85.4,
+        "y": 68.8
       },
       "finish": {
         "npcID": 9562,
-        "name": "Helendis Riverhorn"
+        "name": "Helendis Riverhorn",
+        "zoneName": "Burning Steppes",
+        "mapID": 1428,
+        "x": 85.4,
+        "y": 68.8
       },
       "requirementsKnown": false,
       "factions": [
@@ -8725,7 +8928,8 @@
       "minLevel": 55,
       "finish": {
         "npcID": 9077,
-        "name": "Warlord Goretooth"
+        "name": "Warlord Goretooth",
+        "zoneName": "Badlands"
       },
       "requirementsKnown": false,
       "factions": [
@@ -8921,11 +9125,19 @@
       "minLevel": 55,
       "start": {
         "npcID": 9560,
-        "name": "Marshal Maxwell"
+        "name": "Marshal Maxwell",
+        "zoneName": "Burning Steppes",
+        "mapID": 1428,
+        "x": 84.6,
+        "y": 68.8
       },
       "finish": {
         "npcID": 9560,
-        "name": "Marshal Maxwell"
+        "name": "Marshal Maxwell",
+        "zoneName": "Burning Steppes",
+        "mapID": 1428,
+        "x": 84.6,
+        "y": 68.8
       },
       "requirementsKnown": false,
       "factions": [
@@ -8945,11 +9157,13 @@
       "minLevel": 57,
       "start": {
         "npcID": 9078,
-        "name": "Shadowmage Vivian Lagrave"
+        "name": "Shadowmage Vivian Lagrave",
+        "zoneName": "Badlands"
       },
       "finish": {
         "npcID": 9078,
-        "name": "Shadowmage Vivian Lagrave"
+        "name": "Shadowmage Vivian Lagrave",
+        "zoneName": "Badlands"
       },
       "requirementsKnown": false,
       "factions": [
@@ -8968,11 +9182,19 @@
       "minLevel": 55,
       "start": {
         "npcID": 4949,
-        "name": "Thrall"
+        "name": "Thrall",
+        "zoneName": "Orgrimmar",
+        "mapID": 1454,
+        "x": 32,
+        "y": 37.8
       },
       "finish": {
         "npcID": 4949,
-        "name": "Thrall"
+        "name": "Thrall",
+        "zoneName": "Orgrimmar",
+        "mapID": 1454,
+        "x": 32,
+        "y": 37.8
       },
       "requirementsKnown": false,
       "factions": [
@@ -9040,11 +9262,19 @@
       "minLevel": 55,
       "start": {
         "npcID": 9560,
-        "name": "Marshal Maxwell"
+        "name": "Marshal Maxwell",
+        "zoneName": "Burning Steppes",
+        "mapID": 1428,
+        "x": 84.6,
+        "y": 68.8
       },
       "finish": {
         "npcID": 9560,
-        "name": "Marshal Maxwell"
+        "name": "Marshal Maxwell",
+        "zoneName": "Burning Steppes",
+        "mapID": 1428,
+        "x": 84.6,
+        "y": 68.8
       },
       "requirementsKnown": false,
       "factions": [
@@ -9063,11 +9293,13 @@
       "minLevel": 50,
       "start": {
         "npcID": 10929,
-        "name": "Haleh"
+        "name": "Haleh",
+        "zoneName": "Winterspring"
       },
       "finish": {
         "npcID": 10929,
-        "name": "Haleh"
+        "name": "Haleh",
+        "zoneName": "Winterspring"
       },
       "requirementsKnown": false,
       "factions": [
@@ -9107,7 +9339,8 @@
       },
       "finish": {
         "npcID": 10929,
-        "name": "Haleh"
+        "name": "Haleh",
+        "zoneName": "Winterspring"
       },
       "requirementsKnown": false,
       "factions": [
@@ -9169,11 +9402,13 @@
       "minLevel": 55,
       "start": {
         "npcID": 13278,
-        "name": "Duke Hydraxis"
+        "name": "Duke Hydraxis",
+        "zoneName": "Azshara"
       },
       "finish": {
         "npcID": 13278,
-        "name": "Duke Hydraxis"
+        "name": "Duke Hydraxis",
+        "zoneName": "Azshara"
       },
       "requirementsKnown": false,
       "factions": [
@@ -10461,7 +10696,49 @@
       "finish": {
         "npcID": 16031,
         "name": "Ysida Harmon"
-      }
+      },
+      "storylineGroups": [
+        [
+          8926,
+          8927,
+          8931,
+          8932,
+          8933,
+          8934,
+          8935,
+          8936,
+          8937,
+          8938,
+          8939,
+          8940,
+          8941,
+          8942,
+          8943,
+          8944
+        ],
+        [
+          8929,
+          8930
+        ],
+        [
+          8945
+        ],
+        [
+          8946
+        ],
+        [
+          8947
+        ],
+        [
+          8948
+        ],
+        [
+          8949
+        ],
+        [
+          8950
+        ]
+      ]
     },
     {
       "id": 5262,
@@ -11023,11 +11300,19 @@
       ],
       "start": {
         "npcID": 3446,
-        "name": "Mebok Mizzyrix"
+        "name": "Mebok Mizzyrix",
+        "mapID": 1413,
+        "x": 62.4,
+        "y": 37.6,
+        "zoneName": "The Barrens"
       },
       "finish": {
         "npcID": 3446,
-        "name": "Mebok Mizzyrix"
+        "name": "Mebok Mizzyrix",
+        "mapID": 1413,
+        "x": 62.4,
+        "y": 37.6,
+        "zoneName": "The Barrens"
       },
       "requirementsKnown": false,
       "source": "https://www.wowhead.com/forever/quest=865"
@@ -11042,11 +11327,19 @@
       ],
       "start": {
         "npcID": 1074,
-        "name": "Motley Garmason"
+        "name": "Motley Garmason",
+        "mapID": 1437,
+        "x": 49.6,
+        "y": 18.2,
+        "zoneName": "Wetlands"
       },
       "finish": {
         "npcID": 1074,
-        "name": "Motley Garmason"
+        "name": "Motley Garmason",
+        "mapID": 1437,
+        "x": 49.6,
+        "y": 18.2,
+        "zoneName": "Wetlands"
       },
       "requirementsKnown": false,
       "source": "https://www.wowhead.com/forever/quest=303"
@@ -11061,11 +11354,19 @@
       ],
       "start": {
         "npcID": 1646,
-        "name": "Baros Alexston"
+        "name": "Baros Alexston",
+        "mapID": 1453,
+        "x": 49,
+        "y": 30.2,
+        "zoneName": "Stormwind City"
       },
       "finish": {
         "npcID": 1719,
-        "name": "Warden Thelwater"
+        "name": "Warden Thelwater",
+        "mapID": 1453,
+        "x": 51.4,
+        "y": 69.2,
+        "zoneName": "Stormwind City"
       },
       "requirementsKnown": false,
       "source": "https://www.wowhead.com/forever/quest=389"
@@ -11080,11 +11381,19 @@
       ],
       "start": {
         "npcID": 2916,
-        "name": "Historian Karnik"
+        "name": "Historian Karnik",
+        "mapID": 1455,
+        "x": 76.4,
+        "y": 11.4,
+        "zoneName": "Ironforge"
       },
       "finish": {
         "npcID": 2918,
-        "name": "Advisor Belgrum"
+        "name": "Advisor Belgrum",
+        "mapID": 1455,
+        "x": 76.4,
+        "y": 10.8,
+        "zoneName": "Ironforge"
       },
       "requirementsKnown": false,
       "source": "https://www.wowhead.com/forever/quest=762",
@@ -11104,11 +11413,19 @@
       ],
       "start": {
         "npcID": 5634,
-        "name": "Rhapsody Shindigger"
+        "name": "Rhapsody Shindigger",
+        "mapID": 1425,
+        "x": 26.8,
+        "y": 48.4,
+        "zoneName": "The Hinterlands"
       },
       "finish": {
         "npcID": 5634,
-        "name": "Rhapsody Shindigger"
+        "name": "Rhapsody Shindigger",
+        "mapID": 1425,
+        "x": 26.8,
+        "y": 48.4,
+        "zoneName": "The Hinterlands"
       },
       "requirementsKnown": false,
       "source": "https://www.wowhead.com/forever/quest=1452",
@@ -11130,11 +11447,19 @@
       ],
       "start": {
         "npcID": 5384,
-        "name": "Brohann Caskbelly"
+        "name": "Brohann Caskbelly",
+        "mapID": 1453,
+        "x": 64.2,
+        "y": 20.8,
+        "zoneName": "Stormwind City"
       },
       "finish": {
         "npcID": 5384,
-        "name": "Brohann Caskbelly"
+        "name": "Brohann Caskbelly",
+        "mapID": 1453,
+        "x": 64.2,
+        "y": 20.8,
+        "zoneName": "Stormwind City"
       },
       "requirementsKnown": false,
       "source": "https://www.wowhead.com/forever/quest=1448",
@@ -11156,11 +11481,19 @@
       ],
       "start": {
         "npcID": 5384,
-        "name": "Brohann Caskbelly"
+        "name": "Brohann Caskbelly",
+        "mapID": 1453,
+        "x": 64.2,
+        "y": 20.8,
+        "zoneName": "Stormwind City"
       },
       "finish": {
         "npcID": 5635,
-        "name": "Falstad Wildhammer"
+        "name": "Falstad Wildhammer",
+        "mapID": 1425,
+        "x": 11.8,
+        "y": 46.8,
+        "zoneName": "The Hinterlands"
       },
       "requirementsKnown": false,
       "source": "https://www.wowhead.com/forever/quest=1449",
@@ -11182,11 +11515,19 @@
       ],
       "start": {
         "npcID": 5635,
-        "name": "Falstad Wildhammer"
+        "name": "Falstad Wildhammer",
+        "mapID": 1425,
+        "x": 11.8,
+        "y": 46.8,
+        "zoneName": "The Hinterlands"
       },
       "finish": {
         "npcID": 5636,
-        "name": "Gryphon Master Talonaxe"
+        "name": "Gryphon Master Talonaxe",
+        "mapID": 1425,
+        "x": 9.8,
+        "y": 44.4,
+        "zoneName": "The Hinterlands"
       },
       "requirementsKnown": false,
       "source": "https://www.wowhead.com/forever/quest=1450",
@@ -11208,11 +11549,19 @@
       ],
       "start": {
         "npcID": 5636,
-        "name": "Gryphon Master Talonaxe"
+        "name": "Gryphon Master Talonaxe",
+        "mapID": 1425,
+        "x": 9.8,
+        "y": 44.4,
+        "zoneName": "The Hinterlands"
       },
       "finish": {
         "npcID": 5634,
-        "name": "Rhapsody Shindigger"
+        "name": "Rhapsody Shindigger",
+        "mapID": 1425,
+        "x": 26.8,
+        "y": 48.4,
+        "zoneName": "The Hinterlands"
       },
       "requirementsKnown": false,
       "source": "https://www.wowhead.com/forever/quest=1451",
@@ -11234,11 +11583,19 @@
       ],
       "start": {
         "npcID": 2916,
-        "name": "Historian Karnik"
+        "name": "Historian Karnik",
+        "mapID": 1455,
+        "x": 76.4,
+        "y": 11.4,
+        "zoneName": "Ironforge"
       },
       "finish": {
         "npcID": 2918,
-        "name": "Advisor Belgrum"
+        "name": "Advisor Belgrum",
+        "mapID": 1455,
+        "x": 76.4,
+        "y": 10.8,
+        "zoneName": "Ironforge"
       },
       "requirementsKnown": false,
       "source": "https://www.wowhead.com/forever/quest=725",
@@ -11258,11 +11615,19 @@
       ],
       "start": {
         "npcID": 2918,
-        "name": "Advisor Belgrum"
+        "name": "Advisor Belgrum",
+        "mapID": 1455,
+        "x": 76.4,
+        "y": 10.8,
+        "zoneName": "Ironforge"
       },
       "finish": {
         "npcID": 2916,
-        "name": "Historian Karnik"
+        "name": "Historian Karnik",
+        "mapID": 1455,
+        "x": 76.4,
+        "y": 11.4,
+        "zoneName": "Ironforge"
       },
       "requirementsKnown": false,
       "source": "https://www.wowhead.com/forever/quest=726",
@@ -11289,7 +11654,11 @@
       },
       "finish": {
         "npcID": 1646,
-        "name": "Baros Alexston"
+        "name": "Baros Alexston",
+        "mapID": 1453,
+        "x": 49,
+        "y": 30.2,
+        "zoneName": "Stormwind City"
       },
       "requirementsKnown": false,
       "source": "https://www.wowhead.com/forever/quest=373"
@@ -11330,7 +11699,8 @@
       "source": "https://www.wowhead.com/forever/quest=4769/vivian-lagrave-and-the-darkstone-tablet",
       "finish": {
         "npcID": 9078,
-        "name": "Shadowmage Vivian Lagrave"
+        "name": "Shadowmage Vivian Lagrave",
+        "zoneName": "Badlands"
       },
       "start": {
         "npcID": 5204,
@@ -11353,7 +11723,11 @@
       "source": "https://www.wowhead.com/forever/quest=5089/general-drakkisaths-command",
       "finish": {
         "npcID": 9560,
-        "name": "Marshal Maxwell"
+        "name": "Marshal Maxwell",
+        "zoneName": "Burning Steppes",
+        "mapID": 1428,
+        "x": 84.6,
+        "y": 68.8
       },
       "start": {
         "itemID": 12780,
@@ -11557,7 +11931,11 @@
       "source": "https://www.wowhead.com/forever/quest=5002/message-to-maxwell",
       "finish": {
         "npcID": 9560,
-        "name": "Marshal Maxwell"
+        "name": "Marshal Maxwell",
+        "zoneName": "Burning Steppes",
+        "mapID": 1428,
+        "x": 84.6,
+        "y": 68.8
       },
       "start": {
         "npcID": 10257,
@@ -11582,12 +11960,18 @@
       "start": {
         "npcID": 4949,
         "name": "Thrall",
-        "zoneName": "Orgrimmar"
+        "zoneName": "Orgrimmar",
+        "mapID": 1454,
+        "x": 32,
+        "y": 37.8
       },
       "finish": {
         "npcID": 4949,
         "name": "Thrall",
-        "zoneName": "Orgrimmar"
+        "zoneName": "Orgrimmar",
+        "mapID": 1454,
+        "x": 32,
+        "y": 37.8
       },
       "storyline": [
         6566,
@@ -11609,7 +11993,11 @@
       "requirementsKnown": false,
       "start": {
         "npcID": 4949,
-        "name": "Thrall"
+        "name": "Thrall",
+        "zoneName": "Orgrimmar",
+        "mapID": 1454,
+        "x": 32,
+        "y": 37.8
       },
       "finish": {
         "npcID": 10182,
@@ -11693,7 +12081,10 @@
       "finish": {
         "npcID": 4949,
         "name": "Thrall",
-        "zoneName": "Orgrimmar"
+        "zoneName": "Orgrimmar",
+        "mapID": 1454,
+        "x": 32,
+        "y": 37.8
       },
       "storyline": [
         4903,
@@ -11828,7 +12219,10 @@
       "finish": {
         "npcID": 1748,
         "name": "Highlord Bolvar Fordragon",
-        "zoneName": "Stormwind City"
+        "zoneName": "Stormwind City",
+        "mapID": 1453,
+        "x": 77.4,
+        "y": 18.4
       },
       "storyline": [
         6403,
@@ -11849,7 +12243,10 @@
       "start": {
         "npcID": 1748,
         "name": "Highlord Bolvar Fordragon",
-        "zoneName": "Stormwind City"
+        "zoneName": "Stormwind City",
+        "mapID": 1453,
+        "x": 77.4,
+        "y": 18.4
       },
       "finish": {
         "npcID": 10929,
@@ -11926,11 +12323,13 @@
       "requirementsKnown": false,
       "start": {
         "npcID": 13278,
-        "name": "Duke Hydraxis"
+        "name": "Duke Hydraxis",
+        "zoneName": "Azshara"
       },
       "finish": {
         "npcID": 13278,
-        "name": "Duke Hydraxis"
+        "name": "Duke Hydraxis",
+        "zoneName": "Azshara"
       },
       "storyline": [
         6821,
@@ -12088,7 +12487,49 @@
         "zoneName": "Dire Maul",
         "dungeonKey": "dire"
       },
-      "startsInside": true
+      "startsInside": true,
+      "storylineGroups": [
+        [
+          8926,
+          8927,
+          8931,
+          8932,
+          8933,
+          8934,
+          8935,
+          8936,
+          8937,
+          8938,
+          8939,
+          8940,
+          8941,
+          8942,
+          8943,
+          8944
+        ],
+        [
+          8929,
+          8930
+        ],
+        [
+          8945
+        ],
+        [
+          8946
+        ],
+        [
+          8947
+        ],
+        [
+          8948
+        ],
+        [
+          8949
+        ],
+        [
+          8950
+        ]
+      ]
     },
     {
       "id": 7508,
@@ -13000,7 +13441,8 @@
         {
           "npcID": 10879,
           "name": "Harbinger Balthazad",
-          "zoneName": "Undercity"
+          "zoneName": "Undercity",
+          "mapID": 1458
         },
         {
           "npcID": 10880,
@@ -13153,7 +13595,49 @@
       },
       "requirementsKnown": false,
       "source": "https://www.wowhead.com/forever/quest=8950/the-instigators-enchantment",
-      "startsInside": true
+      "startsInside": true,
+      "storylineGroups": [
+        [
+          8926,
+          8927,
+          8931,
+          8932,
+          8933,
+          8934,
+          8935,
+          8936,
+          8937,
+          8938,
+          8939,
+          8940,
+          8941,
+          8942,
+          8943,
+          8944
+        ],
+        [
+          8929,
+          8930
+        ],
+        [
+          8945
+        ],
+        [
+          8946
+        ],
+        [
+          8947
+        ],
+        [
+          8948
+        ],
+        [
+          8949
+        ],
+        [
+          8950
+        ]
+      ]
     },
     {
       "id": 7501,
@@ -13309,7 +13793,49 @@
         "dungeonKey": "dire"
       },
       "requirementsKnown": false,
-      "source": "https://www.wowhead.com/forever/quest=8948/anthions-old-friend"
+      "source": "https://www.wowhead.com/forever/quest=8948/anthions-old-friend",
+      "storylineGroups": [
+        [
+          8926,
+          8927,
+          8931,
+          8932,
+          8933,
+          8934,
+          8935,
+          8936,
+          8937,
+          8938,
+          8939,
+          8940,
+          8941,
+          8942,
+          8943,
+          8944
+        ],
+        [
+          8929,
+          8930
+        ],
+        [
+          8945
+        ],
+        [
+          8946
+        ],
+        [
+          8947
+        ],
+        [
+          8948
+        ],
+        [
+          8949
+        ],
+        [
+          8950
+        ]
+      ]
     },
     {
       "id": 7877,
@@ -13370,7 +13896,8 @@
         {
           "npcID": 2198,
           "name": "Crier Goodman",
-          "zoneName": "Stormwind City"
+          "zoneName": "Stormwind City",
+          "mapID": 1453
         },
         {
           "npcID": 10877,
@@ -13535,6 +14062,409 @@
         5527,
         5526
       ]
+    },
+    {
+      "id": 8926,
+      "name": "Just Compensation",
+      "level": 60,
+      "minLevel": 58,
+      "factions": [
+        "Alliance"
+      ],
+      "start": {
+        "npcID": 16013,
+        "name": "Deliana"
+      },
+      "finish": {
+        "npcID": 16013,
+        "name": "Deliana"
+      },
+      "requirementsKnown": false,
+      "source": "https://www.wowhead.com/forever/quest=8926/just-compensation"
+    },
+    {
+      "id": 8927,
+      "name": "Just Compensation",
+      "level": 60,
+      "minLevel": 58,
+      "factions": [
+        "Horde"
+      ],
+      "start": {
+        "npcID": 16012,
+        "name": "Mokvar"
+      },
+      "finish": {
+        "npcID": 16012,
+        "name": "Mokvar"
+      },
+      "requirementsKnown": false,
+      "source": "https://www.wowhead.com/forever/quest=8927/just-compensation"
+    },
+    {
+      "id": 8931,
+      "name": "Just Compensation",
+      "level": 60,
+      "minLevel": 58,
+      "factions": [
+        "Alliance"
+      ],
+      "start": {
+        "npcID": 16013,
+        "name": "Deliana"
+      },
+      "finish": {
+        "npcID": 16013,
+        "name": "Deliana"
+      },
+      "requirementsKnown": false,
+      "source": "https://www.wowhead.com/forever/quest=8931/just-compensation"
+    },
+    {
+      "id": 8932,
+      "name": "Just Compensation",
+      "level": 60,
+      "minLevel": 58,
+      "factions": [
+        "Alliance"
+      ],
+      "start": {
+        "npcID": 16013,
+        "name": "Deliana"
+      },
+      "finish": {
+        "npcID": 16013,
+        "name": "Deliana"
+      },
+      "requirementsKnown": false,
+      "source": "https://www.wowhead.com/forever/quest=8932/just-compensation"
+    },
+    {
+      "id": 8933,
+      "name": "Just Compensation",
+      "level": 60,
+      "minLevel": 58,
+      "factions": [
+        "Alliance"
+      ],
+      "start": {
+        "npcID": 16013,
+        "name": "Deliana"
+      },
+      "finish": {
+        "npcID": 16013,
+        "name": "Deliana"
+      },
+      "requirementsKnown": false,
+      "source": "https://www.wowhead.com/forever/quest=8933/just-compensation"
+    },
+    {
+      "id": 8934,
+      "name": "Just Compensation",
+      "level": 60,
+      "minLevel": 58,
+      "factions": [
+        "Alliance"
+      ],
+      "start": {
+        "npcID": 16013,
+        "name": "Deliana"
+      },
+      "finish": {
+        "npcID": 16013,
+        "name": "Deliana"
+      },
+      "requirementsKnown": false,
+      "source": "https://www.wowhead.com/forever/quest=8934/just-compensation"
+    },
+    {
+      "id": 8935,
+      "name": "Just Compensation",
+      "level": 60,
+      "minLevel": 58,
+      "factions": [
+        "Alliance"
+      ],
+      "classes": [
+        "ROGUE"
+      ],
+      "start": {
+        "npcID": 16013,
+        "name": "Deliana"
+      },
+      "finish": {
+        "npcID": 16013,
+        "name": "Deliana"
+      },
+      "requirementsKnown": false,
+      "source": "https://www.wowhead.com/forever/quest=8935/just-compensation"
+    },
+    {
+      "id": 8936,
+      "name": "Just Compensation",
+      "level": 60,
+      "minLevel": 58,
+      "factions": [
+        "Alliance"
+      ],
+      "start": {
+        "npcID": 16013,
+        "name": "Deliana"
+      },
+      "finish": {
+        "npcID": 16013,
+        "name": "Deliana"
+      },
+      "requirementsKnown": false,
+      "source": "https://www.wowhead.com/forever/quest=8936/just-compensation"
+    },
+    {
+      "id": 8937,
+      "name": "Just Compensation",
+      "level": 60,
+      "minLevel": 58,
+      "factions": [
+        "Alliance"
+      ],
+      "classes": [
+        "WARRIOR"
+      ],
+      "start": {
+        "npcID": 16013,
+        "name": "Deliana"
+      },
+      "finish": {
+        "npcID": 16013,
+        "name": "Deliana"
+      },
+      "requirementsKnown": false,
+      "source": "https://www.wowhead.com/forever/quest=8937/just-compensation"
+    },
+    {
+      "id": 8938,
+      "name": "Just Compensation",
+      "level": 60,
+      "minLevel": 58,
+      "factions": [
+        "Horde"
+      ],
+      "start": {
+        "npcID": 16012,
+        "name": "Mokvar"
+      },
+      "finish": {
+        "npcID": 16012,
+        "name": "Mokvar"
+      },
+      "requirementsKnown": false,
+      "source": "https://www.wowhead.com/forever/quest=8938/just-compensation"
+    },
+    {
+      "id": 8939,
+      "name": "Just Compensation",
+      "level": 60,
+      "minLevel": 58,
+      "factions": [
+        "Horde"
+      ],
+      "start": {
+        "npcID": 16012,
+        "name": "Mokvar"
+      },
+      "finish": {
+        "npcID": 16012,
+        "name": "Mokvar"
+      },
+      "requirementsKnown": false,
+      "source": "https://www.wowhead.com/forever/quest=8939/just-compensation"
+    },
+    {
+      "id": 8940,
+      "name": "Just Compensation",
+      "level": 60,
+      "minLevel": 58,
+      "factions": [
+        "Horde"
+      ],
+      "start": {
+        "npcID": 16012,
+        "name": "Mokvar"
+      },
+      "finish": {
+        "npcID": 16012,
+        "name": "Mokvar"
+      },
+      "requirementsKnown": false,
+      "source": "https://www.wowhead.com/forever/quest=8940/just-compensation"
+    },
+    {
+      "id": 8941,
+      "name": "Just Compensation",
+      "level": 60,
+      "minLevel": 58,
+      "factions": [
+        "Horde"
+      ],
+      "classes": [
+        "ROGUE"
+      ],
+      "start": {
+        "npcID": 16012,
+        "name": "Mokvar"
+      },
+      "finish": {
+        "npcID": 16012,
+        "name": "Mokvar"
+      },
+      "requirementsKnown": false,
+      "source": "https://www.wowhead.com/forever/quest=8941/just-compensation"
+    },
+    {
+      "id": 8942,
+      "name": "Just Compensation",
+      "level": 60,
+      "minLevel": 58,
+      "factions": [
+        "Horde"
+      ],
+      "start": {
+        "npcID": 16012,
+        "name": "Mokvar"
+      },
+      "finish": {
+        "npcID": 16012,
+        "name": "Mokvar"
+      },
+      "requirementsKnown": false,
+      "source": "https://www.wowhead.com/forever/quest=8942/just-compensation"
+    },
+    {
+      "id": 8943,
+      "name": "Just Compensation",
+      "level": 60,
+      "minLevel": 58,
+      "factions": [
+        "Horde"
+      ],
+      "start": {
+        "npcID": 16012,
+        "name": "Mokvar"
+      },
+      "finish": {
+        "npcID": 16012,
+        "name": "Mokvar"
+      },
+      "requirementsKnown": false,
+      "source": "https://www.wowhead.com/forever/quest=8943/just-compensation"
+    },
+    {
+      "id": 8944,
+      "name": "Just Compensation",
+      "level": 60,
+      "minLevel": 58,
+      "factions": [
+        "Horde"
+      ],
+      "start": {
+        "npcID": 16012,
+        "name": "Mokvar"
+      },
+      "finish": {
+        "npcID": 16012,
+        "name": "Mokvar"
+      },
+      "requirementsKnown": false,
+      "source": "https://www.wowhead.com/forever/quest=8944/just-compensation"
+    },
+    {
+      "id": 8929,
+      "name": "In Search of Anthion",
+      "level": 60,
+      "minLevel": 58,
+      "factions": [
+        "Alliance"
+      ],
+      "startAlternatives": [
+        {
+          "npcID": 16013,
+          "name": "Deliana"
+        },
+        {
+          "npcID": 230319,
+          "name": "Deliana"
+        }
+      ],
+      "finish": {
+        "npcID": 16016,
+        "name": "Anthion Harmon"
+      },
+      "requirementsKnown": false,
+      "source": "https://www.wowhead.com/forever/quest=8929/in-search-of-anthion"
+    },
+    {
+      "id": 8930,
+      "name": "In Search of Anthion",
+      "level": 60,
+      "minLevel": 58,
+      "factions": [
+        "Horde"
+      ],
+      "startAlternatives": [
+        {
+          "npcID": 16012,
+          "name": "Mokvar"
+        },
+        {
+          "npcID": 230317,
+          "name": "Mokvar"
+        }
+      ],
+      "finish": {
+        "npcID": 16016,
+        "name": "Anthion Harmon"
+      },
+      "requirementsKnown": false,
+      "source": "https://www.wowhead.com/forever/quest=8930/in-search-of-anthion"
+    },
+    {
+      "id": 8946,
+      "name": "Proof of Life",
+      "level": 60,
+      "minLevel": 58,
+      "factions": [
+        "Alliance",
+        "Horde"
+      ],
+      "start": {
+        "npcID": 16031,
+        "name": "Ysida Harmon"
+      },
+      "finish": {
+        "npcID": 16016,
+        "name": "Anthion Harmon"
+      },
+      "requirementsKnown": false,
+      "source": "https://www.wowhead.com/forever/quest=8946/proof-of-life"
+    },
+    {
+      "id": 8947,
+      "name": "Anthion's Strange Request",
+      "level": 60,
+      "minLevel": 58,
+      "factions": [
+        "Alliance",
+        "Horde"
+      ],
+      "start": {
+        "npcID": 16016,
+        "name": "Anthion Harmon"
+      },
+      "finish": {
+        "npcID": 16016,
+        "name": "Anthion Harmon"
+      },
+      "requirementsKnown": false,
+      "source": "https://www.wowhead.com/forever/quest=8947/anthions-strange-request"
     }
   ],
   "dungeons": [
