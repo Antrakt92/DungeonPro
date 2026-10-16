@@ -1411,7 +1411,37 @@
       },
       "finish": {
         "npcID": 5769,
-        "name": "Arch Druid Hamuul Runetotem"
+        "name": "Arch Druid Hamuul Runetotem",
+        "zoneName": "Thunder Bluff",
+        "mapID": 1456,
+        "x": 78.2,
+        "y": 28.4,
+        "reportedLocations": [
+          {
+            "mapID": 1456,
+            "x": 78.2,
+            "y": 28.4,
+            "zoneName": "Thunder Bluff"
+          },
+          {
+            "mapID": 1456,
+            "x": 78.2,
+            "y": 28.6,
+            "zoneName": "Thunder Bluff"
+          },
+          {
+            "mapID": 1456,
+            "x": 78.6,
+            "y": 28.4,
+            "zoneName": "Thunder Bluff"
+          },
+          {
+            "mapID": 1456,
+            "x": 78.6,
+            "y": 28.6,
+            "zoneName": "Thunder Bluff"
+          }
+        ]
       },
       "storyline": [
         1489,
@@ -1543,7 +1573,37 @@
       "source": "https://www.wowhead.com/forever/quest=1490/nara-wildmane",
       "start": {
         "npcID": 5769,
-        "name": "Arch Druid Hamuul Runetotem"
+        "name": "Arch Druid Hamuul Runetotem",
+        "zoneName": "Thunder Bluff",
+        "mapID": 1456,
+        "x": 78.2,
+        "y": 28.4,
+        "reportedLocations": [
+          {
+            "mapID": 1456,
+            "x": 78.2,
+            "y": 28.4,
+            "zoneName": "Thunder Bluff"
+          },
+          {
+            "mapID": 1456,
+            "x": 78.2,
+            "y": 28.6,
+            "zoneName": "Thunder Bluff"
+          },
+          {
+            "mapID": 1456,
+            "x": 78.6,
+            "y": 28.4,
+            "zoneName": "Thunder Bluff"
+          },
+          {
+            "mapID": 1456,
+            "x": 78.6,
+            "y": 28.6,
+            "zoneName": "Thunder Bluff"
+          }
+        ]
       },
       "finish": {
         "npcID": 5770,
@@ -2162,11 +2222,19 @@
       ],
       "start": {
         "npcID": 259620,
-        "name": "Lumina Windsinger"
+        "name": "Lumina Windsinger",
+        "zoneName": "Silverpine Forest",
+        "mapID": 1421,
+        "x": 43.2,
+        "y": 41
       },
       "finish": {
         "npcID": 248840,
-        "name": "Trevan Rol"
+        "name": "Trevan Rol",
+        "zoneName": "Silverpine Forest",
+        "mapID": 1421,
+        "x": 43.4,
+        "y": 41
       },
       "requirementsKnown": false,
       "completionQuests": [
@@ -2364,7 +2432,11 @@
       ],
       "start": {
         "npcID": 11862,
-        "name": "Tsunaman"
+        "name": "Tsunaman",
+        "zoneName": "Stonetalon Mountains",
+        "mapID": 1442,
+        "x": 47.2,
+        "y": 64.2
       },
       "finish": {
         "npcID": 12736,
@@ -3074,11 +3146,47 @@
       ],
       "start": {
         "npcID": 259649,
-        "name": "Ulric Frostveil"
+        "name": "Ulric Frostveil",
+        "zoneName": "Ashenvale",
+        "mapID": 1440,
+        "x": 11.8,
+        "y": 34.4,
+        "reportedLocations": [
+          {
+            "mapID": 1440,
+            "x": 11.8,
+            "y": 34.4,
+            "zoneName": "Ashenvale"
+          },
+          {
+            "mapID": 1440,
+            "x": 11.8,
+            "y": 34.6,
+            "zoneName": "Ashenvale"
+          }
+        ]
       },
       "finish": {
         "npcID": 259649,
-        "name": "Ulric Frostveil"
+        "name": "Ulric Frostveil",
+        "zoneName": "Ashenvale",
+        "mapID": 1440,
+        "x": 11.8,
+        "y": 34.4,
+        "reportedLocations": [
+          {
+            "mapID": 1440,
+            "x": 11.8,
+            "y": 34.4,
+            "zoneName": "Ashenvale"
+          },
+          {
+            "mapID": 1440,
+            "x": 11.8,
+            "y": 34.6,
+            "zoneName": "Ashenvale"
+          }
+        ]
       },
       "requirementsKnown": false
     },
