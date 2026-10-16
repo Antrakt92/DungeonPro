@@ -5,7 +5,7 @@ prerequisite quests and find the next available step.
 
 **Early development build for WoW Forever. Quest coverage is incomplete.**
 The catalogue has 29 dungeon entries; initial quest data covers The Deadmines,
-Ragefire Chasm and The Hall of Thanes. Other entries explicitly show that their
+Ragefire Chasm, The Hall of Thanes and Wailing Caverns. Other entries explicitly show that their
 quests have not been added. Level ranges are provisional recommendations.
 
 ## Current features
@@ -16,7 +16,8 @@ quests have not been added. Level ranges are provisional recommendations.
 - Recursive prerequisite planning: a final quest can lead you to the beginning
   of its unfinished chain, rather than another locked step.
 - A next-step view collects the dungeon's preparation actions, combines shared
-  prerequisites and keeps unresolved quests visible.
+  prerequisites and groups pickups before entry, inside pickups, level gates,
+  quests in progress and unresolved requirements.
 - Separate story order for chains whose hard prerequisites still need checking.
 - World map, optional TomTom and a built-in direction arrow. The arrow points
   toward a coordinate; it does not find paths around terrain or plan transport.

@@ -7,6 +7,11 @@
 - Added initial quest facts for The Deadmines, Ragefire Chasm and The Hall of Thanes.
 - Added explicit notices for incomplete data and interface translations.
 - Added a next-step list for dungeon preparation and client-provided objectives.
+- Grouped preparation steps by outside pickups, inside pickups, level gates,
+  progress and unknown requirements, with translated headings.
+- Added initial Wailing Caverns quests and corrected Rahauro's approach waypoint.
+- Kept unresolved locked quests visible and stopped unfinished quests from
+  directing players to their turn-in NPC before objectives are complete.
 - Improved window sizing on shorter screens and recovery of saved positions.
 - Fixed preparation checks for inside quests with outside prerequisites and
   preserved available steps when an alternative branch has incomplete data.

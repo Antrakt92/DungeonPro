@@ -119,28 +119,51 @@ function UI:RefreshQuests()
         local entries = plan.rows
         if self.preparation then
             entries = {}
+            local groups = { outside = {}, inside = {}, level = {}, progress = {}, uncertain = {} }
             for _, action in ipairs(plan.actions) do
-                entries[#entries + 1] = { id = action.id, state = engine:State(action.id), action = action }
+                local q, group = addon.quests[action.id], "progress"
+                if action.kind == "level" then group = "level"
+                elseif action.kind == "inside" or (action.kind == "pickup" and q and q.startsInside) then group = "inside"
+                elseif action.kind == "pickup" then group = "outside" end
+                local rows = groups[group]
+                rows[#rows + 1] = { id = action.id, state = engine:State(action.id), action = action }
             end
             -- Unresolved targets stay visible even when no trustworthy action exists.
             for _, entry in ipairs(plan.rows) do
-                if entry.state.status == "UNKNOWN" then entries[#entries + 1] = entry end
+                local _, uncertain = engine:Next(entry.id)
+                if entry.state.status == "UNKNOWN" or uncertain then groups.uncertain[#groups.uncertain + 1] = entry end
+            end
+            for _, group in ipairs({ "outside", "inside", "level", "progress", "uncertain" }) do
+                if #groups[group] > 0 then
+                    entries[#entries + 1] = { heading = "PREP_" .. group }
+                    for _, entry in ipairs(groups[group]) do entries[#entries + 1] = entry end
+                end
             end
         end
         for _, entry in ipairs(entries) do
             n = n + 1
             local row, id, state = self:MakeRow(self.questList, self.rows, n, 59), entry.id, entry.state
-            row.title:SetText(addon.QuestName(id))
-            local note = addon.L(state.status)
-            if entry.action then
-                local action = entry.action
-                note = addon.L(action.kind) .. (action.level and (" " .. action.level) or "")
-                if action.place then note = note .. " — " .. (action.place.name or addon.L("UNKNOWN_PLACE")) end
-            elseif state.reason == "level" then
-                note = addon.L("level") .. " " .. addon.quests[id].minLevel
+            row.heading = entry.heading
+            row:SetEnabled(not entry.heading)
+            row:SetHighlightTexture(not entry.heading and "Interface\\QuestFrame\\UI-QuestTitleHighlight" or nil)
+            if entry.heading then
+                row.title:SetText(addon.L(entry.heading)); row.note:SetText("")
+                row.bg:SetColorTexture(0.20, 0.22, 0.26, 1)
+                row:SetScript("OnClick", nil)
+            else
+                row.bg:SetColorTexture(0.13, 0.16, 0.20, 1)
+                row.title:SetText(addon.QuestName(id))
+                local note = addon.L(state.status)
+                if entry.action then
+                    local action = entry.action
+                    note = addon.L(action.kind) .. (action.level and (" " .. action.level) or "")
+                    if action.place then note = note .. " — " .. (action.place.name or addon.L("UNKNOWN_PLACE")) end
+                elseif state.reason == "level" then
+                    note = addon.L("level") .. " " .. addon.quests[id].minLevel
+                end
+                row.note:SetText("|cff" .. COLOR[state.status] .. note .. "|r")
+                row:SetScript("OnClick", function() self.quest = id; self:RefreshDetail() end)
             end
-            row.note:SetText("|cff" .. COLOR[state.status] .. note .. "|r")
-            row:SetScript("OnClick", function() self.quest = id; self:RefreshDetail() end)
         end
         if #plan.rows == 0 then self.coverage:SetText(addon.L("EMPTY")) end
     else

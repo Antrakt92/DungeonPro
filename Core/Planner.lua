@@ -76,7 +76,9 @@ function Planner.New(quests, context)
             state.reason == "requirements") then return {}, true end
         if state.status == "COMPLETED" or state.status == "UNAVAILABLE" then return {}, false end
         if state.status == "ACTIVE" or state.status == "READY" then
-            return { { id = id, kind = state.status == "READY" and "turnin" or "complete", place = q.finish } }, false
+            -- The turn-in NPC is not an objective location for an unfinished quest.
+            return { { id = id, kind = state.status == "READY" and "turnin" or "complete",
+                place = state.status == "READY" and q.finish or nil } }, false
         end
         if state.status == "AVAILABLE" then
             return { { id = id, kind = q.startsInside and "inside" or "pickup", place = q.start } }, false

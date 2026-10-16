@@ -903,8 +903,8 @@
       "start": {
         "name": "Rahauro",
         "mapID": 1456,
-        "x": 70.1,
-        "y": 29.5,
+        "x": 70.4,
+        "y": 29.6,
         "npcID": 11833
       },
       "finish": {
@@ -925,15 +925,15 @@
       "start": {
         "name": "Rahauro",
         "mapID": 1456,
-        "x": 70.1,
-        "y": 29.5,
+        "x": 70.4,
+        "y": 29.6,
         "npcID": 11833
       },
       "finish": {
         "name": "Rahauro",
         "mapID": 1456,
-        "x": 70.1,
-        "y": 29.5,
+        "x": 70.4,
+        "y": 29.6,
         "npcID": 11833
       }
     },
@@ -954,8 +954,8 @@
       "finish": {
         "name": "Rahauro",
         "mapID": 1456,
-        "x": 70.1,
-        "y": 29.5,
+        "x": 70.4,
+        "y": 29.6,
         "npcID": 11833
       },
       "requires": [
@@ -1108,6 +1108,180 @@
         "x": 32.6,
         "y": 44.6
       }
+    },
+    {
+      "id": 914,
+      "name": "Leaders of the Fang",
+      "level": 22,
+      "minLevel": 10,
+      "factions": [
+        "Horde"
+      ],
+      "requirementsKnown": false,
+      "source": "https://www.wowhead.com/forever/quest=914/leaders-of-the-fang",
+      "start": {
+        "npcID": 5770,
+        "name": "Nara Wildmane"
+      },
+      "finish": {
+        "npcID": 5770,
+        "name": "Nara Wildmane"
+      },
+      "storyline": [
+        1489,
+        1490,
+        914
+      ]
+    },
+    {
+      "id": 6981,
+      "name": "The Glowing Shard",
+      "level": 26,
+      "minLevel": 15,
+      "factions": [
+        "Alliance",
+        "Horde"
+      ],
+      "requirementsKnown": false,
+      "source": "https://www.wowhead.com/forever/quest=6981/the-glowing-shard",
+      "finish": {
+        "npcID": 8418,
+        "name": "Falla Sagewind"
+      }
+    },
+    {
+      "id": 1491,
+      "name": "Smart Drinks",
+      "level": 18,
+      "minLevel": 13,
+      "factions": [
+        "Alliance",
+        "Horde"
+      ],
+      "requirementsKnown": false,
+      "source": "https://www.wowhead.com/forever/quest=1491/smart-drinks",
+      "start": {
+        "npcID": 3446,
+        "name": "Mebok Mizzyrix"
+      },
+      "finish": {
+        "npcID": 3446,
+        "name": "Mebok Mizzyrix"
+      }
+    },
+    {
+      "id": 1489,
+      "name": "Hamuul Runetotem",
+      "level": 16,
+      "minLevel": 10,
+      "factions": [
+        "Horde"
+      ],
+      "requirementsKnown": false,
+      "source": "https://www.wowhead.com/forever/quest=1489/hamuul-runetotem",
+      "start": {
+        "npcID": 3448,
+        "name": "Tonga Runetotem"
+      },
+      "finish": {
+        "npcID": 5769,
+        "name": "Arch Druid Hamuul Runetotem"
+      },
+      "storyline": [
+        1489,
+        1490,
+        914
+      ]
+    },
+    {
+      "id": 1487,
+      "name": "Deviate Eradication",
+      "level": 21,
+      "minLevel": 15,
+      "factions": [
+        "Alliance",
+        "Horde"
+      ],
+      "requirementsKnown": false,
+      "source": "https://www.wowhead.com/forever/quest=1487/deviate-eradication",
+      "start": {
+        "npcID": 5768,
+        "name": "Ebru"
+      },
+      "finish": {
+        "npcID": 5768,
+        "name": "Ebru"
+      }
+    },
+    {
+      "id": 959,
+      "name": "Trouble at the Docks",
+      "level": 18,
+      "minLevel": 14,
+      "factions": [
+        "Alliance",
+        "Horde"
+      ],
+      "requirementsKnown": false,
+      "source": "https://www.wowhead.com/forever/quest=959/trouble-at-the-docks",
+      "start": {
+        "npcID": 3665,
+        "name": "Crane Operator Bigglefuzz"
+      },
+      "finish": {
+        "npcID": 3665,
+        "name": "Crane Operator Bigglefuzz"
+      }
+    },
+    {
+      "id": 1486,
+      "name": "Deviate Hides",
+      "level": 17,
+      "minLevel": 13,
+      "factions": [
+        "Alliance",
+        "Horde"
+      ],
+      "requirementsKnown": false,
+      "source": "https://www.wowhead.com/forever/quest=1486/deviate-hides",
+      "start": {
+        "npcID": 5767,
+        "name": "Nalpak"
+      },
+      "finish": {
+        "npcID": 5767,
+        "name": "Nalpak"
+      }
+    },
+    {
+      "id": 962,
+      "name": "Serpentbloom",
+      "level": 18,
+      "minLevel": 14,
+      "factions": [
+        "Horde"
+      ],
+      "requirementsKnown": false,
+      "source": "https://www.wowhead.com/forever/quest=962/serpentbloom",
+      "start": {
+        "npcID": 3419,
+        "name": "Apothecary Zamah"
+      },
+      "finish": {
+        "npcID": 3419,
+        "name": "Apothecary Zamah"
+      }
+    },
+    {
+      "id": 1490,
+      "name": "Nara Wildmane",
+      "level": 16,
+      "minLevel": 10,
+      "factions": [
+        "Horde"
+      ],
+      "requirementsKnown": false,
+      "source": "https://www.wowhead.com/forever/quest=1490/nara-wildmane"
     }
   ],
   "dungeons": [
@@ -1133,8 +1307,16 @@
       "name": "Wailing Caverns",
       "minLevel": 15,
       "maxLevel": 25,
-      "coverage": "pending",
-      "quests": [],
+      "coverage": "partial",
+      "quests": [
+        914,
+        6981,
+        1491,
+        1487,
+        959,
+        1486,
+        962
+      ],
       "source": "https://www.wowhead.com/forever/guide/dungeons-overview-locations-details",
       "instanceID": 43
     },

@@ -41,8 +41,33 @@ check("Ready prerequisite directs to turn-in", function()
     local actions = P.New(addon.quests, c):Next(166)
     eq(actions[1].kind, "turnin")
 end)
+check("Unfinished objectives do not guide to the turn-in NPC", function()
+    local place = { mapID = 1436, x = 56.3, y = 47.5 }
+    local quests = { [1] = q(1, nil, { finish = place }) }
+    local c = ctx({}, { [1] = true })
+    local actions = P.New(quests, c):Next(1)
+    eq(actions[1].kind, "complete"); eq(actions[1].place, nil)
+    c.ready = function() return true end
+    actions = P.New(quests, c):Next(1)
+    eq(actions[1].kind, "turnin"); eq(actions[1].place, place)
+end)
 check("Missing requirements evidence is never available", function()
     eq(P.New(addon.quests, ctx()):State(92753).status, "UNKNOWN")
+end)
+check("Wailing Caverns source expansion stays partial and retains narrative steps", function()
+    local dungeon
+    for _, d in ipairs(addon.dungeons) do if d.key == "wc" then dungeon = d end end
+    assert(dungeon and #dungeon.quests == 7)
+    local c = ctx(); c.faction, c.race = "Horde", 2
+    local e = P.New(addon.quests, c)
+    local plan = e:Dungeon(dungeon)
+    eq(plan.ready, false); eq(plan.unknown, true)
+    eq(e:State(914).status, "UNKNOWN")
+    eq(addon.quests[914].storyline[1], 1489)
+    eq(addon.quests[914].storyline[2], 1490)
+    eq(addon.quests[914].requires, nil)
+    c.active = function(id) return id == 914 end
+    eq(P.New(addon.quests, c):State(914).status, "ACTIVE")
 end)
 check("Story order is not silently treated as prerequisite evidence", function()
     local engine = P.New(addon.quests, ctx({ [92752] = true }))

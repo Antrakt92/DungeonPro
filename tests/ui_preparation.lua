@@ -66,7 +66,7 @@ local function check(name, fn)
 end
 local function visibleRows()
     local result = {}
-    for _, row in ipairs(ui.rows) do if row.shown then result[#result + 1] = row end end
+    for _, row in ipairs(ui.rows) do if row.shown and not row.heading then result[#result + 1] = row end end
     return result
 end
 ui:Create(); ui.frame:Show(); ui.dungeon = addon.dungeons[1]; ui:Refresh()
@@ -84,11 +84,35 @@ check("Preparation lists both independent prerequisites and deduplicates a share
     assert(#rows == 6 and rows[1].title.text == "Quest 1" and rows[2].title.text == "Quest 2")
     assert(rows[1].note.text:find("Pick up", 1, true))
 end)
+check("Preparation has translated non-actionable headings for every populated group", function()
+    local groups = {}
+    for _, row in ipairs(ui.rows) do
+        if row.shown and row.heading then
+            assert(not row.enabled and not row.scripts.OnClick and row.note.text == "")
+            assert(row.title.text == addon.L(row.heading))
+            groups[#groups + 1] = row.heading
+        end
+    end
+    assert(table.concat(groups, ",") == "PREP_outside,PREP_inside,PREP_level,PREP_progress,PREP_uncertain")
+end)
 check("Inside pickup, level gates and active completion remain distinct", function()
     local rows = visibleRows()
     assert(rows[3].note.text:find("Pick up inside the dungeon", 1, true))
     assert(rows[4].note.text:find("Reach level 30", 1, true))
     assert(rows[5].note.text:find("Finish this quest", 1, true))
+end)
+check("Active quests stay in progress regardless of their original pickup location", function()
+    addon.quests[6].startsInside = true
+    ui:Refresh()
+    local group, found
+    for _, row in ipairs(ui.rows) do
+        if row.shown then
+            if row.heading then group = row.heading
+            elseif row.title.text == "Quest 6" then found = group end
+        end
+    end
+    assert(found == "PREP_progress")
+    addon.quests[6].startsInside = nil
 end)
 check("Any preparation action opens its own quest and navigation target", function()
     visibleRows()[2].scripts.OnClick()
@@ -115,11 +139,47 @@ check("Returning to target view clears recycled preparation labels", function()
     assert(#visibleRows() == 7)
     assert(visibleRows()[1].title.text == "Quest 100")
     assert(visibleRows()[1].note.text:find("Preparation needed", 1, true))
+    for _, row in ipairs(visibleRows()) do assert(not row.heading and row.enabled and row.scripts.OnClick) end
+end)
+check("Inside classification uses quest metadata instead of quest names", function()
+    local original = addon.QuestName
+    addon.QuestName = function() return "An outside-sounding name" end
+    ui.preparationButton.scripts.OnClick()
+    local group, insideRows = nil, 0
+    for _, row in ipairs(ui.rows) do
+        if row.shown then
+            if row.heading then group = row.heading
+            elseif group == "PREP_inside" then
+                insideRows = insideRows + 1
+                row.scripts.OnClick(); assert(ui.quest == 4 and ui.action.kind == "inside")
+            end
+        end
+    end
+    assert(insideRows == 1)
+    addon.QuestName = original
+    ui.preparationButton.scripts.OnClick()
+end)
+check("Locked target with an unavailable prerequisite stays visible", function()
+    local oldContext = addon.Context
+    addon.Context = function() local c = oldContext(); c.faction = "Alliance"; return c end
+    addon.quests[200] = { id = 200, minLevel = 1, requirementsKnown = true, requires = { { ids = { 201 } } } }
+    addon.quests[201] = { id = 201, minLevel = 1, requirementsKnown = true, factions = { "Horde" } }
+    local ids = ui.dungeon.quests
+    ids[#ids + 1] = 200
+    ui.preparation = true; ui:Refresh()
+    local found = false
+    for _, row in ipairs(visibleRows()) do
+        if row.title.text == "Quest 200" then found = true; row.scripts.OnClick() end
+    end
+    assert(found and ui.quest == 200 and not ui.action and not ui.guide.enabled)
+    ids[#ids] = nil; addon.quests[200], addon.quests[201] = nil, nil
+    addon.Context = oldContext; ui.preparation = false; ui.quest = nil; ui:Refresh()
 end)
 check("Completed preparation keeps the prepared result instead of empty data warning", function()
     for id in pairs(addon.quests) do done[id] = true end
     ui.preparationButton.scripts.OnClick()
     assert(#visibleRows() == 0 and ui.coverage.text == addon.L("PREPARED"))
+    for _, row in ipairs(ui.rows) do assert(not row.shown) end
 end)
 check("Reopening recalculates fit after a screen change", function()
     screenWidth, screenHeight = 800, 900
