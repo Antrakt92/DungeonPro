@@ -5,7 +5,8 @@ prerequisite quests and find the next available step.
 
 **Early development build for WoW Forever. Quest coverage is incomplete.**
 The catalogue has 29 dungeon entries; initial quest data covers The Deadmines,
-Ragefire Chasm, The Hall of Thanes, Wailing Caverns, Shadowfang Keep and Blackfathom Deeps.
+Ragefire Chasm, The Hall of Thanes, Wailing Caverns, Shadowfang Keep,
+Blackfathom Deeps and The Stockade.
 Other entries explicitly show that their
 quests have not been added. Level ranges are provisional recommendations.
 
@@ -27,6 +28,8 @@ quests have not been added. Level ranges are provisional recommendations.
   dungeons, beyond the ordinary dungeon categories. Their preparation chains
   and some dungeon associations still need checking.
 - Separate story order for chains whose hard prerequisites still need checking.
+- Where prerequisites have alternatives, choose a branch or restore automatic
+  planning. Choosing a route does not bypass requirements or confirm availability.
 - World map, optional TomTom and a built-in direction arrow. The arrow points
   toward a coordinate; it does not find paths around terrain or plan transport.
 - A separate quest-giver button opens a known zone or guides to a known location.

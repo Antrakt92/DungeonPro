@@ -1790,6 +1790,146 @@
         6563
       ],
       "requirementsKnown": false
+    },
+    {
+      "id": 378,
+      "name": "The Fury Runs Deep",
+      "level": 27,
+      "minLevel": 22,
+      "factions": [
+        "Alliance"
+      ],
+      "source": "https://www.wowhead.com/forever/quest=378/the-fury-runs-deep",
+      "start": {
+        "npcID": 1074,
+        "name": "Motley Garmason"
+      },
+      "finish": {
+        "npcID": 1074,
+        "name": "Motley Garmason"
+      },
+      "requirementsKnown": false
+    },
+    {
+      "id": 377,
+      "name": "Crime and Punishment",
+      "level": 26,
+      "minLevel": 22,
+      "factions": [
+        "Alliance"
+      ],
+      "source": "https://www.wowhead.com/forever/quest=377/crime-and-punishment",
+      "start": {
+        "npcID": 270,
+        "name": "Councilman Millstipe"
+      },
+      "finish": {
+        "npcID": 270,
+        "name": "Councilman Millstipe"
+      },
+      "requirementsKnown": false
+    },
+    {
+      "id": 391,
+      "name": "The Stockade Riots",
+      "level": 29,
+      "minLevel": 16,
+      "factions": [
+        "Alliance"
+      ],
+      "source": "https://www.wowhead.com/forever/quest=391/the-stockade-riots",
+      "start": {
+        "npcID": 1719,
+        "name": "Warden Thelwater"
+      },
+      "finish": {
+        "npcID": 1719,
+        "name": "Warden Thelwater"
+      },
+      "requirementsKnown": false
+    },
+    {
+      "id": 388,
+      "name": "The Color of Blood",
+      "level": 26,
+      "minLevel": 22,
+      "factions": [
+        "Alliance"
+      ],
+      "source": "https://www.wowhead.com/forever/quest=388/the-color-of-blood",
+      "start": {
+        "npcID": 1721,
+        "name": "Nikova Raskol"
+      },
+      "finish": {
+        "npcID": 1721,
+        "name": "Nikova Raskol"
+      },
+      "requirementsKnown": false
+    },
+    {
+      "id": 386,
+      "name": "What Comes Around...",
+      "level": 25,
+      "minLevel": 22,
+      "factions": [
+        "Alliance"
+      ],
+      "source": "https://www.wowhead.com/forever/quest=386/what-comes-around",
+      "start": {
+        "npcID": 859,
+        "name": "Guard Berton"
+      },
+      "finish": {
+        "npcID": 859,
+        "name": "Guard Berton"
+      },
+      "requirementsKnown": false
+    },
+    {
+      "id": 387,
+      "name": "Quell the Uprising",
+      "level": 26,
+      "minLevel": 22,
+      "factions": [
+        "Alliance"
+      ],
+      "source": "https://www.wowhead.com/forever/quest=387/quell-the-uprising",
+      "start": {
+        "npcID": 1719,
+        "name": "Warden Thelwater"
+      },
+      "finish": {
+        "npcID": 1719,
+        "name": "Warden Thelwater"
+      },
+      "requirementsKnown": false
+    },
+    {
+      "id": 1442,
+      "name": "Seeking the Kor Gem",
+      "level": 22,
+      "minLevel": 20,
+      "factions": [
+        "Alliance"
+      ],
+      "classes": [
+        "PALADIN"
+      ],
+      "races": [
+        1,
+        3
+      ],
+      "source": "https://www.wowhead.com/forever/quest=1442/seeking-the-kor-gem",
+      "start": {
+        "npcID": 3649,
+        "name": "Thundris Windweaver"
+      },
+      "finish": {
+        "npcID": 3649,
+        "name": "Thundris Windweaver"
+      },
+      "requirementsKnown": false
     }
   ],
   "dungeons": [
@@ -1884,7 +2024,8 @@
         1740,
         6564,
         6563,
-        6562
+        6562,
+        1442
       ],
       "source": "https://www.wowhead.com/forever/guide/dungeons-overview-locations-details",
       "instanceID": 48
@@ -1894,8 +2035,15 @@
       "name": "The Stockade",
       "minLevel": 22,
       "maxLevel": 30,
-      "coverage": "pending",
-      "quests": [],
+      "coverage": "partial",
+      "quests": [
+        378,
+        377,
+        391,
+        388,
+        386,
+        387
+      ],
       "source": "https://www.wowhead.com/forever/guide/dungeons-overview-locations-details",
       "instanceID": 34
     },

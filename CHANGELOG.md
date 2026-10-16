@@ -20,6 +20,9 @@
 - Added initial Blackfathom Deeps and shared paladin/warlock quests, plus sourced
   waypoints for three Shadowfang Keep quest-givers.
 - Extended Blackfathom's Horde quest list and its known story sequences.
+- Added The Stockade and the paladin's Kor Gem support quest.
+- Added saved choices for alternative prerequisite branches, with an automatic
+  planning option and safe fallback when a branch is unavailable.
 - Adjusted row and chain-button heights for wrapped text and kept navigation
   active when unrelated quests change.
 - Improved navigation fallback after TomTom failures and protected the guide
