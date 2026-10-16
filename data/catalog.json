@@ -3835,7 +3835,13 @@
           }
         ]
       },
-      "requirementsKnown": false
+      "requirementsKnown": false,
+      "objectiveItems": [
+        {
+          "itemID": 10420,
+          "name": "Skull of the Coldbringer"
+        }
+      ]
     },
     {
       "id": 3525,
@@ -6720,6 +6726,12 @@
       "storyline": [
         2769,
         2770
+      ],
+      "objectiveItems": [
+        {
+          "itemID": 8707,
+          "name": "Gahz'rilla's Electrified Scale"
+        }
       ]
     },
     {
@@ -6792,6 +6804,16 @@
           "ids": [
             3520
           ]
+        }
+      ],
+      "objectiveItems": [
+        {
+          "itemID": 10660,
+          "name": "First Mosh'aru Tablet"
+        },
+        {
+          "itemID": 10661,
+          "name": "Second Mosh'aru Tablet"
         }
       ]
     },
@@ -9951,7 +9973,23 @@
       "finish": {
         "npcID": 9500,
         "name": "Mistress Nagmara"
-      }
+      },
+      "objectiveItems": [
+        {
+          "itemID": 8846,
+          "name": "Gromsblood",
+          "quantity": 4
+        },
+        {
+          "itemID": 11405,
+          "name": "Giant Silver Vein",
+          "quantity": 10
+        },
+        {
+          "itemID": 11413,
+          "name": "Nagmara's Filled Vial"
+        }
+      ]
     },
     {
       "id": 4223,
@@ -10596,7 +10634,17 @@
       "finish": {
         "npcID": 13716,
         "name": "Celebras the Redeemed"
-      }
+      },
+      "objectiveItems": [
+        {
+          "itemID": 17703,
+          "name": "Celebrian Diamond"
+        },
+        {
+          "itemID": 17702,
+          "name": "Celebrian Rod"
+        }
+      ]
     },
     {
       "id": 7046,
@@ -19927,7 +19975,13 @@
         8256,
         8257
       ],
-      "storylineEvidence": "https://www.wowhead.com/forever/quest=8256/the-ichor-of-undeath"
+      "storylineEvidence": "https://www.wowhead.com/forever/quest=8256/the-ichor-of-undeath",
+      "objectiveItems": [
+        {
+          "itemID": 20025,
+          "name": "Blood of Morphaz"
+        }
+      ]
     },
     {
       "id": 8422,
