@@ -277,6 +277,8 @@ function UI:RefreshDetail()
         line(addon.QuestName(id), 24)
         local state = engine:State(id)
         line("|cff" .. COLOR[state.status] .. addon.L(state.status) .. "|r")
+        local offer = addon.Read(addon.CurrentOffer, "table", id)
+        if offer and addon.Clean(offer.offeredNow, "boolean") == true then line(addon.L("OFFERED_NOW")) end
         local portrait = addon.Read(addon.QuestPortrait, "table", id)
         local displayID = portrait and addon.Clean(portrait.displayID, "number")
         if displayID and displayID > 0 and displayID % 1 == 0 and

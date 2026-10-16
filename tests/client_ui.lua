@@ -285,4 +285,52 @@ check("A quest event during an asynchronous refresh queues the next character-st
     assert(calls == 2 and addon.UI.engine:State(166).status == "ACTIVE")
     C_Timer, addon.Notify, C_QuestLog.IsOnQuest = timer, notify, isOnQuest
 end)
+check("Current gossip offers add a translated marker without changing unknown quest state or actions", function()
+    local oldGossip, oldGUID, oldTime = C_GossipInfo, UnitGUID, GetTime
+    UnitGUID = function(unit) return unit == "player" and "Player-offers" or "Creature-offers" end
+    local now = 100
+    GetTime = function() return now end
+    C_GossipInfo = { GetAvailableQuests = function() return { { questID = 92753 } } end,
+        SelectAvailableQuest = function() error("selection forbidden") end }
+    local ui, q = addon.UI, addon.quests[92753]
+    ui.quest = 92753; ui:Refresh()
+    local status, requirements = ui.engine:State(92753).status, q.requirementsKnown
+    local function marker()
+        for _, fs in ipairs(ui.details) do if fs.shown and fs.text == addon.L("OFFERED_NOW") then return true end end
+        return false
+    end
+    assert(status == "UNKNOWN" and not marker() and not ui.action)
+    assert(eventFrame.events.GOSSIP_SHOW and eventFrame.events.GOSSIP_CLOSED)
+    eventFrame.scripts.OnEvent(eventFrame, "GOSSIP_SHOW")
+    assert(marker() and ui.engine:State(92753).status == status and not ui.action)
+    assert(q.requirementsKnown == requirements and addon.db.offers == nil and addon.char.offers == nil)
+    ui.quest = 166; ui:RefreshDetail(); assert(not marker())
+    ui.quest = 92753; ui:RefreshDetail(); assert(marker())
+    local expiry = delayed[#delayed]
+    assert(expiry[1] == 30, "offer expiry must schedule one delayed refresh")
+    now = 130; expiry[2](); assert(not marker(), "expiry must remove the visible marker without another event")
+    eventFrame.scripts.OnEvent(eventFrame, "GOSSIP_SHOW"); assert(marker())
+    eventFrame.scripts.OnEvent(eventFrame, "GOSSIP_CLOSED", true); assert(not marker())
+    C_GossipInfo, UnitGUID, GetTime = oldGossip, oldGUID, oldTime
+end)
+check("Gossip transition and world quest events clear the actual UI marker while data-load events preserve it", function()
+    local oldGossip, oldGUID, oldTime = C_GossipInfo, UnitGUID, GetTime
+    UnitGUID = function(unit) return unit == "player" and "Player-offers" or "Creature-offers" end
+    GetTime = function() return 100 end
+    C_GossipInfo = { GetAvailableQuests = function() return { { questID = 92753 } } end }
+    addon.UI.quest = 92753
+    for _, event in ipairs({ "QUEST_DETAIL", "QUEST_GREETING", "QUEST_FINISHED", "QUEST_PROGRESS", "QUEST_COMPLETE",
+        "QUEST_LOG_UPDATE", "QUEST_ACCEPTED", "QUEST_REMOVED", "QUEST_TURNED_IN", "PLAYER_ENTERING_WORLD",
+        "PLAYER_LEAVING_WORLD", "PLAYER_LOGOUT" }) do
+        assert(eventFrame.events[event], event .. " is not registered")
+        eventFrame.scripts.OnEvent(eventFrame, "GOSSIP_SHOW"); assert(addon.CurrentOffer(92753))
+        eventFrame.scripts.OnEvent(eventFrame, event, 92753); assert(not addon.CurrentOffer(92753), event)
+    end
+    eventFrame.scripts.OnEvent(eventFrame, "GOSSIP_SHOW")
+    eventFrame.scripts.OnEvent(eventFrame, "QUEST_DATA_LOAD_RESULT", 92753, true)
+    eventFrame.scripts.OnEvent(eventFrame, "ITEM_DATA_LOAD_RESULT", 7083, true)
+    assert(addon.CurrentOffer(92753))
+    eventFrame.scripts.OnEvent(eventFrame, "GOSSIP_CLOSED")
+    C_GossipInfo, UnitGUID, GetTime = oldGossip, oldGUID, oldTime
+end)
 print("Client/UI modeled checks passed: " .. total .. " (no pixel or native-client validation)")

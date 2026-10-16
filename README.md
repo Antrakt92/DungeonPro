@@ -47,6 +47,8 @@ Level ranges are provisional recommendations.
   the client. These are journal portraits, not verified photographs of each NPC.
 - Item rewards and choices for the currently selected active quest, when the
   client provides them. Unknown reward data is shown explicitly.
+- A separate note shows a quest observed in the current NPC dialogue. It expires
+  and does not replace prerequisite or availability checks.
 - Quest objectives from the client appear when available. The window adjusts to
   screen width and height and recovers saved positions outside the visible area.
 - Interface dictionaries for English, Russian, German, French, Spanish, Italian,

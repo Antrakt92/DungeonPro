@@ -31,6 +31,8 @@
   without inventing map coordinates.
 - Preserved the correct quest and language when the selected quest changes during
   a description read.
+- Added a short-lived note for quests observed in the current NPC dialogue,
+  with cleanup when the dialogue or character context changes.
 - Added Dire Maul quests, book starters and acquisition sources, plus further
   Blackrock Spire story steps.
 - Added the Treaty of Understanding in Hall of Thanes and corrected sourced

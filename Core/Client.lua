@@ -1,5 +1,81 @@
 local _, addon = ...
 local requested, requestedItems = {}, {}
+local offerGeneration, currentOffers = {}, nil
+
+function addon.ClearOffers()
+    offerGeneration, currentOffers = {}, nil
+end
+
+local function offerScope()
+    local now = addon.Read(GetTime, "number")
+    local player = addon.Read(UnitGUID, "string", "player")
+    local npc = addon.Read(UnitGUID, "string", "npc")
+    if not now or now < 0 or not player or player == "" or #player > 256 or
+        not npc or npc == "" or #npc > 256 then return nil end
+    return now, player, npc
+end
+
+function addon.CaptureOffers()
+    addon.ClearOffers()
+    local generation = offerGeneration
+    local now, player, npc = offerScope()
+    if not now then return end
+    local rows = addon.Read(function() return C_GossipInfo and C_GossipInfo.GetAvailableQuests() end, "table")
+    if not rows then return end
+    local ok, ids = pcall(function()
+        local found, count, maximum = {}, 0, 0
+        for key, row in pairs(rows) do
+            key = addon.Clean(key, "number")
+            row = addon.Clean(row, "table")
+            if not key or key < 1 or key > 100 or key % 1 ~= 0 or not row then return nil end
+            count, maximum = count + 1, math.max(maximum, key)
+            if count > 100 then return nil end
+            local id = addon.Clean(row.questID, "number")
+            if not id or id < 1 or id % 1 ~= 0 then return nil end
+            if addon.quests[id] then found[id] = true end
+        end
+        if count ~= maximum then return nil end
+        return found
+    end)
+    if not ok or not ids then return end
+    local after, afterPlayer, afterNPC = offerScope()
+    if generation ~= offerGeneration or not after or after < now or after - now >= 30 or
+        afterPlayer ~= player or afterNPC ~= npc then return end
+    local snapshot = { ids = ids, time = now, player = player, npc = npc, generation = generation }
+    currentOffers = snapshot
+    local scheduling, scheduled = true, true
+    local function expire()
+        if scheduling or not scheduled or currentOffers ~= snapshot or offerGeneration ~= generation then return end
+        local clock = addon.Read(GetTime, "number")
+        if currentOffers ~= snapshot or offerGeneration ~= generation then return end
+        if not clock or clock < snapshot.time or clock - snapshot.time < 30 then return end
+        addon.ClearOffers()
+        addon.Notify()
+    end
+    scheduled = C_Timer and type(C_Timer.After) == "function" and pcall(C_Timer.After, 30, expire) or false
+    scheduling = false
+end
+
+function addon.CurrentOffer(id)
+    id = addon.Clean(id, "number")
+    if not id or id < 1 or id % 1 ~= 0 or not addon.quests[id] then return nil end
+    local snapshot = currentOffers
+    if not snapshot then return nil end
+    local now, player, npc = offerScope()
+    if snapshot ~= currentOffers or snapshot.generation ~= offerGeneration then return nil end
+    -- Dialogue evidence expires even when no close event reaches the addon.
+    if not now or now < snapshot.time or now - snapshot.time >= 30 or
+        player ~= snapshot.player or npc ~= snapshot.npc then addon.ClearOffers(); return nil end
+    if snapshot.ids[id] then return { offeredNow = true, source = "gossip" } end
+    return nil
+end
+
+function addon.OfferEvent(event)
+    if event == "GOSSIP_SHOW" then addon.CaptureOffers()
+    elseif event == "GOSSIP_OPTIONS_REFRESHED" then
+        if currentOffers then addon.CaptureOffers() end
+    else addon.ClearOffers() end
+end
 
 function addon.QuestDataResult(id, success)
     id = addon.Clean(id, "number")
