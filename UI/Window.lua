@@ -499,15 +499,16 @@ function UI:EnterReward(button, binding)
 end
 
 function UI:RefreshDetail()
-    local renderQuest = self.quest
+    local renderQuest, renderDungeon = self.quest, self.dungeon
     local rewardGeneration = self:ResetRewardPresentation()
     if not rewardGeneration or self.quest ~= renderQuest then return end
-    if self.renderedQuest ~= self.quest then
+    local overviewIdentity = not renderQuest and renderDungeon and (addon.Clean(renderDungeon.key, "string") or renderDungeon) or nil
+    if self.renderedQuest ~= self.quest or self.renderedOverview ~= overviewIdentity then
         if self.copy then
             self.copy:SetText(""); self.copy:Hide(); self.copy:ClearFocus()
         end
         self.detailScroll:SetVerticalScroll(0)
-        self.renderedQuest = self.quest
+        self.renderedQuest, self.renderedOverview = self.quest, overviewIdentity
         self.reportedExpanded = {}
     end
     self:RefreshQuestStyles()
@@ -522,6 +523,7 @@ function UI:RefreshDetail()
     end
     self.back:SetEnabled(#self.detailHistory > 0)
     if self.portrait then self.portrait:Hide(); self.portrait:SetTexture(nil) end
+    if self.overviewArt then self.overviewArt:Hide() end
     self.action = nil
     self.giverAction, self.giverHasCoordinates = nil, false
     self.giver:SetEnabled(false)
@@ -976,7 +978,30 @@ function UI:RefreshDetail()
         else line(addon.L("REWARD_UNAVAILABLE")) end
         self.source:SetEnabled(true)
     else
-        line(addon.L("PICK")); self.map:SetEnabled(false); self.guide:SetEnabled(false); self.source:SetEnabled(false)
+        self.map:SetEnabled(false); self.guide:SetEnabled(false); self.source:SetEnabled(false)
+        if renderDungeon then
+            local name = addon.Read(addon.DungeonName, "string", renderDungeon)
+            if self.quest ~= renderQuest or self.dungeon ~= renderDungeon or self.rewardGeneration ~= rewardGeneration then return end
+            line(name or addon.Clean(renderDungeon.name, "string") or addon.L("UNKNOWN_PLACE"), 24)
+            if not self.overviewArt then
+                self.overviewArt = self.detail:CreateTexture(nil, "ARTWORK")
+                self.overviewArt:SetSize(148, 148)
+            end
+            self.overviewArt:ClearAllPoints(); self.overviewArt:SetPoint("TOPLEFT", 97, -y)
+            local painted = addon.Read(addon.PaintDungeonArt, "boolean", self.overviewArt, renderDungeon)
+            if self.quest ~= renderQuest or self.dungeon ~= renderDungeon or self.rewardGeneration ~= rewardGeneration then return end
+            if painted == true then y = y + 156 end
+            local minimum, maximum = addon.Clean(renderDungeon.minLevel, "number"), addon.Clean(renderDungeon.maxLevel, "number")
+            if minimum and maximum and minimum > 0 and maximum >= minimum and minimum % 1 == 0 and maximum % 1 == 0 then
+                line(addon.L("CATALOG_LEVELS", minimum, maximum))
+            end
+            local quests = addon.Clean(renderDungeon.quests, "table")
+            local count = quests and #quests or 0
+            line(addon.L("CATALOG_QUESTS", count))
+            if count == 0 then line(addon.L("EMPTY")) end
+            line(addon.L(renderDungeon.coverage == "reviewed" and "OVERVIEW_REVIEWED" or "PARTIAL"))
+            line(addon.L("OVERVIEW_PICK"))
+        else line(addon.L("PICK")) end
     end
     hideRest(pool, n)
     self.detail:SetHeight(math.max(1, y + 12))

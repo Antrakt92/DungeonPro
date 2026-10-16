@@ -2570,7 +2570,7 @@ check("Preparation headings retain valid highlights and real row click arguments
     addon.Context = function() return { level = 60, active = function() return false end, completed = function() return false end } end
     ui.dungeon, ui.quest, ui.preparation, ui.detailHistory = addon.dungeons[1], nil, true, {}
     ui:Refresh()
-    assert(detailHas(addon.L("PICK")) and not ui.source.enabled)
+    assert(detailHas(addon.L("OVERVIEW_PICK")) and not ui.source.enabled)
     local first, headings = nil, 0
     for _, row in ipairs(ui.rows) do
         if row.shown then
@@ -2682,4 +2682,85 @@ check("The real optional theme paints modern surfaces and removes native control
     for _, key in ipairs({ "SetColorTexture", "SetTextColor", "SetAlpha", "GetNormalTexture", "GetPushedTexture", "GetDisabledTexture", "GetFontString" }) do methods[key] = saved[key] end
     addon.Theme = previous; ui:Refresh()
 end)
+do
+    local function overviewFixture()
+        local old = { quests = addon.quests, dungeons = addon.dungeons, context = addon.Context, paint = addon.PaintDungeonArt,
+            dungeon = ui.dungeon, quest = ui.quest, history = ui.detailHistory, search = ui.search, range = ui.range,
+            preparation = ui.preparation, unavailable = ui.includeUnavailable, locale = addon.db.locale }
+        addon.quests = { [16001] = { id = 16001, minLevel = 1, requirementsKnown = false },
+            [16002] = { id = 16002, minLevel = 1, requirementsKnown = true, factions = { "Horde" } } }
+        local first = { key = "overview-first", name = "First overview", minLevel = 12, maxLevel = 24, coverage = "partial", quests = { 16001, 16002 } }
+        local second = { key = "overview-empty", name = "Empty overview", minLevel = 30, maxLevel = 40, coverage = "pending", quests = {} }
+        addon.dungeons = { first, second }
+        addon.Context = function() return { level = 20, faction = "Alliance", active = function() return false end, completed = function() return false end } end
+        addon.PaintDungeonArt = function(texture, dungeon) texture:SetTexture(dungeon.key); texture:Show(); return true end
+        ui.dungeon, ui.quest, ui.detailHistory, ui.search, ui.range, ui.preparation, ui.includeUnavailable = first, nil, {}, "", false, false, false
+        ui:Refresh()
+        return first, second, function()
+            addon.quests, addon.dungeons, addon.Context, addon.PaintDungeonArt = old.quests, old.dungeons, old.context, old.paint
+            ui.dungeon, ui.quest, ui.detailHistory, ui.search, ui.range, ui.preparation, ui.includeUnavailable =
+                old.dungeon, old.quest, old.history, old.search, old.range, old.preparation, old.unavailable
+            addon.db.locale = old.locale; ui:Refresh()
+        end
+    end
+    check("Selected dungeon overview shows listed facts without auto-selecting or overriding character filters", function()
+        local first, _, restore = overviewFixture()
+        assert(ui.quest == nil and #ui.detailHistory == 0 and #visibleRows() == 1)
+        assert(detailHas(first.name) and detailHas(addon.L("CATALOG_LEVELS", 12, 24)))
+        assert(detailHas(addon.L("CATALOG_QUESTS", 2)) and detailHas(addon.L("PARTIAL")) and detailHas(addon.L("OVERVIEW_PICK")))
+        assert(not detailHas(addon.L("PREPARED")) and not detailHas(addon.L("PICK")))
+        assert(ui.overviewArt and ui.overviewArt.kind ~= "Button" and ui.overviewArt.width <= 334 and ui.overviewArt.shown)
+        assert(ui.overviewArt.texture == first.key and not ui.source.enabled and not ui.guide.enabled and not ui.map.enabled and not ui.giver.enabled)
+        local filters = addon.char.filters
+        ui.includeUnavailable = true; ui:Refresh()
+        assert(#visibleRows() == 2 and detailHas(addon.L("CATALOG_QUESTS", 2)) and addon.char.filters == filters)
+        restore()
+    end)
+    check("Overview artwork and reading position follow dungeon and quest navigation and clear on no selection", function()
+        local first, second, restore = overviewFixture()
+        local art = ui.overviewArt
+        ui.detailScroll:SetVerticalScroll(80); local writes = ui.detailScroll.scrollWrites
+        ui:RefreshDetail(); assert(ui.detailScroll.verticalScroll == 80 and ui.detailScroll.scrollWrites == writes)
+        local row = visibleRows()[1]; row.scripts.OnClick(row, "LeftButton", false)
+        assert(ui.quest == 16001 and not art.shown and ui.source.enabled)
+        ui:InspectQuest(16002); assert(ui:BackQuest() and ui.quest == 16001 and not art.shown)
+        ui.cards[2].scripts.OnClick(ui.cards[2], "LeftButton", false)
+        assert(ui.dungeon == second and ui.quest == nil and art.shown and art.texture == second.key and ui.detailScroll.verticalScroll == 0)
+        assert(detailHas(addon.L("EMPTY")) and detailHas(addon.L("CATALOG_QUESTS", 0)) and not detailHas(addon.L("PREPARED")))
+        ui.detailScroll:SetVerticalScroll(60); ui.dungeon = first; ui:Refresh()
+        assert(ui.detailScroll.verticalScroll == 0 and art.texture == first.key and art.shown)
+        ui.dungeon = nil; ui:Refresh()
+        assert(detailHas(addon.L("PICK")) and not art.shown and not ui.source.enabled)
+        restore()
+    end)
+    check("Overview coverage translates and rejects stale painter results after quest or dungeon reentry", function()
+        local first, second, restore = overviewFixture()
+        first.coverage = "reviewed"
+        for code, strings in pairs(addon.locales) do
+            assert(type(strings.OVERVIEW_PICK) == "string" and type(strings.OVERVIEW_REVIEWED) == "string")
+            addon.db.locale = code; ui:RefreshDetail()
+            assert(detailHas(addon.L("OVERVIEW_REVIEWED")) and detailHas(addon.L("OVERVIEW_PICK")))
+        end
+        addon.PaintDungeonArt = function() return false end; ui:RefreshDetail(); assert(not ui.overviewArt.shown)
+        for _, targetQuest in ipairs({ false, true }) do
+            ui.dungeon, ui.quest = first, nil
+            local armed, nestedHeight = true, nil
+            addon.PaintDungeonArt = function(texture, dungeon)
+                if armed then
+                    armed = false
+                    if targetQuest then ui:InspectQuest(16001) else ui.dungeon = second; ui:RefreshDetail() end
+                    nestedHeight = ui.detail.height
+                    return false
+                end
+                texture:SetTexture(dungeon.key); texture:Show(); return true
+            end
+            ui:RefreshDetail()
+            assert(not armed and ui.detail.height == nestedHeight)
+            if targetQuest then assert(ui.quest == 16001 and not ui.overviewArt.shown and detailHas(addon.QuestName(16001)))
+            else assert(ui.dungeon == second and ui.quest == nil and detailHas(second.name) and ui.overviewArt.texture == second.key and ui.overviewArt.shown) end
+            assert(not detailHas(first.name), "stale outer overview cannot overwrite the new card")
+        end
+        restore()
+    end)
+end
 print("Preparation UI modeled checks passed: " .. total .. " (no native layout validation)")
