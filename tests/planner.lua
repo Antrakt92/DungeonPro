@@ -87,6 +87,49 @@ check("Faction restrictions remove quests from the dungeon totals", function()
     local d = { quests = { 5728 }, coverage = "reviewed" }
     eq(#P.New(addon.quests, ctx()):Dungeon(d).rows, 0)
 end)
+check("Current active and ready dungeon targets survive stale catalog character exclusions", function()
+    for _, restriction in ipairs({ { factions = { "Horde" } }, { classes = { "WARRIOR" } }, { races = { 1 } } }) do
+        for _, ready in ipairs({ false, true }) do
+            local finish = { npcID = 123, mapID = 1, x = 10, y = 20 }
+            restriction.requirementsKnown, restriction.finish = false, finish
+            local quests = { [1] = q(1, nil, restriction), [2] = q(2, nil, { classes = { "WARRIOR" } }),
+                [3] = q(3, nil, { factions = { "Horde" } }), [4] = q(4) }
+            local c = ctx({ [3] = true }, { [1] = true, [4] = true })
+            c.ready = function(id) return id == 1 and ready end
+            local engine = P.New(quests, c)
+            eq(P.Eligible(quests[1], c), false)
+            eq(engine:State(1).status, ready and "READY" or "ACTIVE")
+            local dungeon = { quests = { 1, 2, 3 }, coverage = "reviewed" }
+            local plan = engine:Dungeon(dungeon)
+            eq(#plan.rows, 1); eq(plan.rows[1].id, 1)
+            eq(plan.counts[ready and "READY" or "ACTIVE"], 1)
+            eq(#plan.actions, 1); eq(plan.actions[1].id, 1)
+            eq(plan.actions[1].kind, ready and "turnin" or "complete")
+            eq(plan.actions[1].place, ready and finish or nil)
+            eq(plan.ready, true); eq(plan.unknown, false)
+            local inspection = engine:Dungeon(dungeon, { includeUnavailable = true })
+            eq(#inspection.rows, 3); eq(#inspection.actions, 1)
+            eq(inspection.actions[1].id, 1); eq(inspection.ready, plan.ready); eq(inspection.unknown, plan.unknown)
+            eq(quests[1].requirementsKnown, false)
+        end
+    end
+end)
+check("Completed history unknown activity and readiness alone never override character exclusions", function()
+    local quests = { [1] = q(1, nil, { factions = { "Horde" } }),
+        [2] = q(2, nil, { classes = { "WARRIOR" } }), [3] = q(3, nil, { races = { 1 } }) }
+    local c = ctx({ [1] = true })
+    c.active = function(id) if id == 3 then return false end end
+    c.ready = function() return true end
+    local engine = P.New(quests, c)
+    eq(engine:State(1).status, "COMPLETED")
+    eq(engine:State(2).status, "UNAVAILABLE"); eq(engine:State(3).status, "UNAVAILABLE")
+    local dungeon = { quests = { 1, 2, 3 }, coverage = "reviewed" }
+    for _, options in ipairs({ {}, { includeUnavailable = true } }) do
+        local plan = engine:Dungeon(dungeon, options)
+        eq(#plan.rows, options.includeUnavailable and 3 or 0)
+        eq(#plan.actions, 0); eq(plan.ready, false); eq(plan.unknown, false)
+    end
+end)
 check("All-character inspection retains unavailable rows without changing readiness", function()
     local quests = { [1] = q(1), [2] = q(2, nil, { factions = { "Horde" }, requirementsKnown = false }) }
     local e = P.New(quests, ctx({}, { [1] = true }))

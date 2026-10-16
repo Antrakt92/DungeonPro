@@ -152,13 +152,15 @@ function Planner.New(quests, context, choices)
         for _, id in ipairs(dungeon.quests) do
             local q = self.quests[id]
             local eligible = q and Planner.Eligible(q, self.context)
-            if eligible ~= false or (options and options.includeUnavailable == true) then
-                local state = self:State(id)
+            local state = self:State(id)
+            -- Current log evidence outweighs stale catalog restrictions; past history does not.
+            local relevantToCharacter = eligible ~= false or state.status == "ACTIVE" or state.status == "READY"
+            if relevantToCharacter or (options and options.includeUnavailable == true) then
                 result.rows[#result.rows + 1] = { id = id, state = state }
                 result.counts[state.status] = (result.counts[state.status] or 0) + 1
                 -- Inspection of another character's quests does not add work
                 -- or uncertainty to this character's preparation result.
-                if eligible ~= false then
+                if relevantToCharacter then
                     relevant = relevant + 1
                     if state.status ~= "COMPLETED" and state.status ~= "ACTIVE" and state.status ~= "READY" and
                         not (q and q.startsInside and state.status == "AVAILABLE") then
