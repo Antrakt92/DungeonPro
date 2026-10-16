@@ -6331,6 +6331,1983 @@
         "npcID": 5353,
         "name": "Itharius"
       }
+    },
+    {
+      "id": 3801,
+      "name": "Dark Iron Legacy",
+      "level": 52,
+      "minLevel": 48,
+      "factions": [
+        "Alliance",
+        "Horde"
+      ],
+      "requirementsKnown": false,
+      "source": "https://www.wowhead.com/forever/quest=3801/dark-iron-legacy",
+      "startAlternatives": [
+        {
+          "npcID": 8888,
+          "name": "Franclorn Forgewright"
+        },
+        {
+          "npcID": 184290,
+          "name": "Franclorn Forgewright"
+        }
+      ],
+      "finishAlternatives": [
+        {
+          "npcID": 8888,
+          "name": "Franclorn Forgewright"
+        },
+        {
+          "npcID": 184290,
+          "name": "Franclorn Forgewright"
+        }
+      ],
+      "storyline": [
+        3801,
+        3802
+      ]
+    },
+    {
+      "id": 3802,
+      "name": "Dark Iron Legacy",
+      "level": 52,
+      "minLevel": 48,
+      "factions": [
+        "Alliance",
+        "Horde"
+      ],
+      "requirementsKnown": false,
+      "source": "https://www.wowhead.com/forever/quest=3802/dark-iron-legacy",
+      "startAlternatives": [
+        {
+          "npcID": 8888,
+          "name": "Franclorn Forgewright"
+        },
+        {
+          "npcID": 184290,
+          "name": "Franclorn Forgewright"
+        }
+      ],
+      "finish": {
+        "objectID": 164689,
+        "name": "Monument of Franclorn Forgewright"
+      },
+      "storyline": [
+        3801,
+        3802
+      ]
+    },
+    {
+      "id": 3906,
+      "name": "Disharmony of Flame",
+      "level": 52,
+      "minLevel": 48,
+      "factions": [
+        "Horde"
+      ],
+      "requirementsKnown": false,
+      "source": "https://www.wowhead.com/forever/quest=3906/disharmony-of-flame",
+      "start": {
+        "npcID": 9084,
+        "name": "Thunderheart"
+      },
+      "finish": {
+        "npcID": 9084,
+        "name": "Thunderheart"
+      },
+      "storyline": [
+        3906,
+        3907
+      ]
+    },
+    {
+      "id": 3907,
+      "name": "Disharmony of Fire",
+      "level": 56,
+      "minLevel": 48,
+      "factions": [
+        "Horde"
+      ],
+      "requirementsKnown": false,
+      "source": "https://www.wowhead.com/forever/quest=3907/disharmony-of-fire",
+      "start": {
+        "npcID": 9084,
+        "name": "Thunderheart"
+      },
+      "finish": {
+        "npcID": 9084,
+        "name": "Thunderheart"
+      },
+      "storyline": [
+        3906,
+        3907
+      ]
+    },
+    {
+      "id": 3981,
+      "name": "Commander Gor'shak",
+      "level": 52,
+      "minLevel": 48,
+      "factions": [
+        "Horde"
+      ],
+      "requirementsKnown": false,
+      "source": "https://www.wowhead.com/forever/quest=3981/commander-gorshak",
+      "start": {
+        "npcID": 9081,
+        "name": "Galamav the Marksman"
+      },
+      "finish": {
+        "npcID": 9020,
+        "name": "Commander Gor'shak"
+      },
+      "storyline": [
+        3981,
+        3982,
+        4001,
+        4002,
+        4003,
+        4004
+      ]
+    },
+    {
+      "id": 3982,
+      "name": "What Is Going On?",
+      "level": 54,
+      "minLevel": 48,
+      "factions": [
+        "Horde"
+      ],
+      "requirementsKnown": false,
+      "source": "https://www.wowhead.com/forever/quest=3982/what-is-going-on",
+      "start": {
+        "npcID": 9020,
+        "name": "Commander Gor'shak"
+      },
+      "finish": {
+        "npcID": 9020,
+        "name": "Commander Gor'shak"
+      },
+      "storyline": [
+        3981,
+        3982,
+        4001,
+        4002,
+        4003,
+        4004
+      ]
+    },
+    {
+      "id": 4001,
+      "name": "What Is Going On?",
+      "level": 54,
+      "minLevel": 48,
+      "factions": [
+        "Horde"
+      ],
+      "requirementsKnown": false,
+      "source": "https://www.wowhead.com/forever/quest=4001/what-is-going-on",
+      "start": {
+        "npcID": 9020,
+        "name": "Commander Gor'shak"
+      },
+      "finish": {
+        "npcID": 4949,
+        "name": "Thrall"
+      },
+      "storyline": [
+        3981,
+        3982,
+        4001,
+        4002,
+        4003,
+        4004
+      ]
+    },
+    {
+      "id": 4002,
+      "name": "The Eastern Kingdoms",
+      "level": 54,
+      "minLevel": 48,
+      "factions": [
+        "Horde"
+      ],
+      "requirementsKnown": false,
+      "source": "https://www.wowhead.com/forever/quest=4002/the-eastern-kingdoms",
+      "start": {
+        "npcID": 4949,
+        "name": "Thrall"
+      },
+      "finish": {
+        "npcID": 4949,
+        "name": "Thrall"
+      },
+      "storyline": [
+        3981,
+        3982,
+        4001,
+        4002,
+        4003,
+        4004
+      ]
+    },
+    {
+      "id": 4003,
+      "name": "The Royal Rescue",
+      "level": 59,
+      "minLevel": 48,
+      "factions": [
+        "Alliance",
+        "Horde"
+      ],
+      "requirementsKnown": false,
+      "source": "https://www.wowhead.com/forever/quest=4003/the-royal-rescue",
+      "start": {
+        "npcID": 4949,
+        "name": "Thrall"
+      },
+      "finish": {
+        "npcID": 8929,
+        "name": "Princess Moira Bronzebeard"
+      },
+      "storyline": [
+        3981,
+        3982,
+        4001,
+        4002,
+        4003,
+        4004
+      ]
+    },
+    {
+      "id": 4004,
+      "name": "The Princess Saved?",
+      "level": 60,
+      "minLevel": 48,
+      "factions": [
+        "Alliance",
+        "Horde"
+      ],
+      "requirementsKnown": false,
+      "source": "https://www.wowhead.com/forever/quest=4004/the-princess-saved",
+      "start": {
+        "npcID": 8929,
+        "name": "Princess Moira Bronzebeard"
+      },
+      "finish": {
+        "npcID": 4949,
+        "name": "Thrall"
+      },
+      "storyline": [
+        3981,
+        3982,
+        4001,
+        4002,
+        4003,
+        4004
+      ]
+    },
+    {
+      "id": 4022,
+      "name": "A Taste of Flame",
+      "level": 54,
+      "minLevel": 52,
+      "factions": [
+        "Alliance",
+        "Horde"
+      ],
+      "requirementsKnown": false,
+      "source": "https://www.wowhead.com/forever/quest=4022/a-taste-of-flame",
+      "start": {
+        "npcID": 9459,
+        "name": "Cyrus Therepentous"
+      },
+      "finish": {
+        "npcID": 9459,
+        "name": "Cyrus Therepentous"
+      },
+      "storylineGroups": [
+        [
+          4022,
+          4023
+        ],
+        [
+          4024
+        ]
+      ]
+    },
+    {
+      "id": 4023,
+      "name": "A Taste of Flame",
+      "level": 54,
+      "minLevel": 52,
+      "factions": [
+        "Alliance",
+        "Horde"
+      ],
+      "requirementsKnown": false,
+      "source": "https://www.wowhead.com/forever/quest=4023/a-taste-of-flame",
+      "start": {
+        "npcID": 9459,
+        "name": "Cyrus Therepentous"
+      },
+      "finish": {
+        "npcID": 9459,
+        "name": "Cyrus Therepentous"
+      },
+      "storylineGroups": [
+        [
+          4022,
+          4023
+        ],
+        [
+          4024
+        ]
+      ]
+    },
+    {
+      "id": 4024,
+      "name": "A Taste of Flame",
+      "level": 58,
+      "minLevel": 52,
+      "factions": [
+        "Alliance",
+        "Horde"
+      ],
+      "requirementsKnown": false,
+      "source": "https://www.wowhead.com/forever/quest=4024/a-taste-of-flame",
+      "start": {
+        "npcID": 9459,
+        "name": "Cyrus Therepentous"
+      },
+      "finish": {
+        "npcID": 9459,
+        "name": "Cyrus Therepentous"
+      },
+      "storylineGroups": [
+        [
+          4022,
+          4023
+        ],
+        [
+          4024
+        ]
+      ]
+    },
+    {
+      "id": 4061,
+      "name": "The Rise of the Machines",
+      "level": 54,
+      "minLevel": 52,
+      "factions": [
+        "Horde"
+      ],
+      "requirementsKnown": false,
+      "source": "https://www.wowhead.com/forever/quest=4061/the-rise-of-the-machines",
+      "start": {
+        "npcID": 9079,
+        "name": "Hierophant Theodora Mulvadania"
+      },
+      "finish": {
+        "npcID": 9079,
+        "name": "Hierophant Theodora Mulvadania"
+      },
+      "storyline": [
+        4061,
+        4062,
+        4063
+      ]
+    },
+    {
+      "id": 4062,
+      "name": "The Rise of the Machines",
+      "level": 54,
+      "minLevel": 52,
+      "factions": [
+        "Horde"
+      ],
+      "requirementsKnown": false,
+      "source": "https://www.wowhead.com/forever/quest=4062/the-rise-of-the-machines",
+      "start": {
+        "npcID": 9079,
+        "name": "Hierophant Theodora Mulvadania"
+      },
+      "finish": {
+        "npcID": 2921,
+        "name": "Lotwil Veriatus"
+      },
+      "storyline": [
+        4061,
+        4062,
+        4063
+      ]
+    },
+    {
+      "id": 4063,
+      "name": "The Rise of the Machines",
+      "level": 58,
+      "minLevel": 52,
+      "factions": [
+        "Horde"
+      ],
+      "requirementsKnown": false,
+      "source": "https://www.wowhead.com/forever/quest=4063/the-rise-of-the-machines",
+      "start": {
+        "npcID": 2921,
+        "name": "Lotwil Veriatus"
+      },
+      "finish": {
+        "npcID": 2921,
+        "name": "Lotwil Veriatus"
+      },
+      "storyline": [
+        4061,
+        4062,
+        4063
+      ]
+    },
+    {
+      "id": 4081,
+      "name": "KILL ON SIGHT: Dark Iron Dwarves",
+      "level": 52,
+      "minLevel": 48,
+      "factions": [
+        "Horde"
+      ],
+      "requirementsKnown": false,
+      "source": "https://www.wowhead.com/forever/quest=4081/kill-on-sight-dark-iron-dwarves",
+      "start": {
+        "objectID": 164867,
+        "name": "WANTED"
+      },
+      "finish": {
+        "npcID": 9077,
+        "name": "Warlord Goretooth"
+      }
+    },
+    {
+      "id": 4082,
+      "name": "KILL ON SIGHT: High Ranking Dark Iron Officials",
+      "level": 54,
+      "minLevel": 50,
+      "factions": [
+        "Horde"
+      ],
+      "requirementsKnown": false,
+      "source": "https://www.wowhead.com/forever/quest=4082/kill-on-sight-high-ranking-dark-iron-officials",
+      "start": {
+        "objectID": 164868,
+        "name": "KILL ON SIGHT"
+      },
+      "finish": {
+        "npcID": 9077,
+        "name": "Warlord Goretooth"
+      }
+    },
+    {
+      "id": 4083,
+      "name": "The Spectral Chalice",
+      "level": 55,
+      "minLevel": 40,
+      "factions": [
+        "Alliance",
+        "Horde"
+      ],
+      "requirementsKnown": false,
+      "source": "https://www.wowhead.com/forever/quest=4083/the-spectral-chalice",
+      "start": {
+        "objectID": 164869,
+        "name": "Spectral Chalice"
+      },
+      "finish": {
+        "objectID": 164869,
+        "name": "Spectral Chalice"
+      }
+    },
+    {
+      "id": 4121,
+      "name": "Precarious Predicament",
+      "level": 58,
+      "minLevel": 52,
+      "factions": [
+        "Horde"
+      ],
+      "requirementsKnown": false,
+      "source": "https://www.wowhead.com/forever/quest=4121/precarious-predicament",
+      "start": {
+        "npcID": 9520,
+        "name": "Grark Lorkrub"
+      },
+      "finish": {
+        "npcID": 9080,
+        "name": "Lexlort"
+      }
+    },
+    {
+      "id": 4122,
+      "name": "Grark Lorkrub",
+      "level": 58,
+      "minLevel": 52,
+      "factions": [
+        "Horde"
+      ],
+      "requirementsKnown": false,
+      "source": "https://www.wowhead.com/forever/quest=4122/grark-lorkrub",
+      "start": {
+        "npcID": 9080,
+        "name": "Lexlort"
+      },
+      "finish": {
+        "npcID": 9520,
+        "name": "Grark Lorkrub"
+      }
+    },
+    {
+      "id": 4123,
+      "name": "The Heart of the Mountain",
+      "level": 55,
+      "minLevel": 50,
+      "factions": [
+        "Alliance",
+        "Horde"
+      ],
+      "requirementsKnown": false,
+      "source": "https://www.wowhead.com/forever/quest=4123/the-heart-of-the-mountain",
+      "start": {
+        "npcID": 9536,
+        "name": "Maxwort Uberglint"
+      },
+      "finish": {
+        "npcID": 9536,
+        "name": "Maxwort Uberglint"
+      }
+    },
+    {
+      "id": 4126,
+      "name": "Hurley Blackbreath",
+      "level": 55,
+      "minLevel": 50,
+      "factions": [
+        "Alliance"
+      ],
+      "requirementsKnown": false,
+      "source": "https://www.wowhead.com/forever/quest=4126/hurley-blackbreath",
+      "start": {
+        "npcID": 1267,
+        "name": "Ragnar Thunderbrew"
+      },
+      "finish": {
+        "npcID": 1267,
+        "name": "Ragnar Thunderbrew"
+      },
+      "storyline": [
+        4128,
+        4126
+      ]
+    },
+    {
+      "id": 4128,
+      "name": "Ragnar Thunderbrew",
+      "level": 55,
+      "minLevel": 50,
+      "factions": [
+        "Alliance"
+      ],
+      "requirementsKnown": false,
+      "source": "https://www.wowhead.com/forever/quest=4128/ragnar-thunderbrew",
+      "start": {
+        "npcID": 9540,
+        "name": "Enohar Thunderbrew"
+      },
+      "finish": {
+        "npcID": 1267,
+        "name": "Ragnar Thunderbrew"
+      },
+      "storyline": [
+        4128,
+        4126
+      ]
+    },
+    {
+      "id": 4132,
+      "name": "Operation: Death to Angerforge",
+      "level": 58,
+      "minLevel": 52,
+      "factions": [
+        "Horde"
+      ],
+      "requirementsKnown": false,
+      "source": "https://www.wowhead.com/forever/quest=4132/operation-death-to-angerforge",
+      "start": {
+        "npcID": 9077,
+        "name": "Warlord Goretooth"
+      },
+      "finish": {
+        "npcID": 9077,
+        "name": "Warlord Goretooth"
+      }
+    },
+    {
+      "id": 4133,
+      "name": "Vivian Lagrave",
+      "level": 55,
+      "minLevel": 50,
+      "factions": [
+        "Horde"
+      ],
+      "requirementsKnown": false,
+      "source": "https://www.wowhead.com/forever/quest=4133/vivian-lagrave",
+      "start": {
+        "npcID": 5204,
+        "name": "Apothecary Zinge"
+      },
+      "finish": {
+        "npcID": 9078,
+        "name": "Shadowmage Vivian Lagrave"
+      },
+      "storyline": [
+        4133,
+        4134
+      ]
+    },
+    {
+      "id": 4134,
+      "name": "Lost Thunderbrew Recipe",
+      "level": 55,
+      "minLevel": 50,
+      "factions": [
+        "Horde"
+      ],
+      "requirementsKnown": false,
+      "source": "https://www.wowhead.com/forever/quest=4134/lost-thunderbrew-recipe",
+      "start": {
+        "npcID": 9078,
+        "name": "Shadowmage Vivian Lagrave"
+      },
+      "finish": {
+        "npcID": 9078,
+        "name": "Shadowmage Vivian Lagrave"
+      },
+      "storyline": [
+        4133,
+        4134
+      ]
+    },
+    {
+      "id": 4136,
+      "name": "Ribbly Screwspigot",
+      "level": 53,
+      "minLevel": 48,
+      "factions": [
+        "Alliance",
+        "Horde"
+      ],
+      "requirementsKnown": false,
+      "source": "https://www.wowhead.com/forever/quest=4136/ribbly-screwspigot",
+      "start": {
+        "npcID": 9544,
+        "name": "Yuka Screwspigot"
+      },
+      "finish": {
+        "npcID": 9544,
+        "name": "Yuka Screwspigot"
+      },
+      "storyline": [
+        4324,
+        4136
+      ]
+    },
+    {
+      "id": 4182,
+      "name": "Dragonkin Menace",
+      "level": 54,
+      "minLevel": 48,
+      "factions": [
+        "Alliance"
+      ],
+      "requirementsKnown": false,
+      "source": "https://www.wowhead.com/forever/quest=4182/dragonkin-menace",
+      "start": {
+        "npcID": 9562,
+        "name": "Helendis Riverhorn"
+      },
+      "finish": {
+        "npcID": 9562,
+        "name": "Helendis Riverhorn"
+      },
+      "storyline": [
+        4182,
+        4183,
+        4184,
+        4185,
+        4186,
+        4223,
+        4224,
+        4241,
+        4242
+      ]
+    },
+    {
+      "id": 4183,
+      "name": "The True Masters",
+      "level": 54,
+      "minLevel": 48,
+      "factions": [
+        "Alliance"
+      ],
+      "requirementsKnown": false,
+      "source": "https://www.wowhead.com/forever/quest=4183/the-true-masters",
+      "start": {
+        "npcID": 9562,
+        "name": "Helendis Riverhorn"
+      },
+      "finish": {
+        "npcID": 344,
+        "name": "Magistrate Solomon"
+      },
+      "storyline": [
+        4182,
+        4183,
+        4184,
+        4185,
+        4186,
+        4223,
+        4224,
+        4241,
+        4242
+      ]
+    },
+    {
+      "id": 4184,
+      "name": "The True Masters",
+      "level": 54,
+      "minLevel": 48,
+      "factions": [
+        "Alliance"
+      ],
+      "requirementsKnown": false,
+      "source": "https://www.wowhead.com/forever/quest=4184/the-true-masters",
+      "start": {
+        "npcID": 344,
+        "name": "Magistrate Solomon"
+      },
+      "finish": {
+        "npcID": 1748,
+        "name": "Highlord Bolvar Fordragon"
+      },
+      "storyline": [
+        4182,
+        4183,
+        4184,
+        4185,
+        4186,
+        4223,
+        4224,
+        4241,
+        4242
+      ]
+    },
+    {
+      "id": 4185,
+      "name": "The True Masters",
+      "level": 54,
+      "minLevel": 48,
+      "factions": [
+        "Alliance"
+      ],
+      "requirementsKnown": false,
+      "source": "https://www.wowhead.com/forever/quest=4185/the-true-masters",
+      "start": {
+        "npcID": 1748,
+        "name": "Highlord Bolvar Fordragon"
+      },
+      "finish": {
+        "npcID": 1748,
+        "name": "Highlord Bolvar Fordragon"
+      },
+      "storyline": [
+        4182,
+        4183,
+        4184,
+        4185,
+        4186,
+        4223,
+        4224,
+        4241,
+        4242
+      ]
+    },
+    {
+      "id": 4186,
+      "name": "The True Masters",
+      "level": 54,
+      "minLevel": 48,
+      "factions": [
+        "Alliance"
+      ],
+      "requirementsKnown": false,
+      "source": "https://www.wowhead.com/forever/quest=4186/the-true-masters",
+      "start": {
+        "npcID": 1748,
+        "name": "Highlord Bolvar Fordragon"
+      },
+      "finish": {
+        "npcID": 344,
+        "name": "Magistrate Solomon"
+      },
+      "storyline": [
+        4182,
+        4183,
+        4184,
+        4185,
+        4186,
+        4223,
+        4224,
+        4241,
+        4242
+      ]
+    },
+    {
+      "id": 4201,
+      "name": "The Love Potion",
+      "level": 54,
+      "minLevel": 50,
+      "factions": [
+        "Alliance",
+        "Horde"
+      ],
+      "requirementsKnown": false,
+      "source": "https://www.wowhead.com/forever/quest=4201/the-love-potion",
+      "start": {
+        "npcID": 9500,
+        "name": "Mistress Nagmara"
+      },
+      "finish": {
+        "npcID": 9500,
+        "name": "Mistress Nagmara"
+      }
+    },
+    {
+      "id": 4223,
+      "name": "The True Masters",
+      "level": 54,
+      "minLevel": 48,
+      "factions": [
+        "Alliance"
+      ],
+      "requirementsKnown": false,
+      "source": "https://www.wowhead.com/forever/quest=4223/the-true-masters",
+      "start": {
+        "npcID": 344,
+        "name": "Magistrate Solomon"
+      },
+      "finish": {
+        "npcID": 9560,
+        "name": "Marshal Maxwell"
+      },
+      "storyline": [
+        4182,
+        4183,
+        4184,
+        4185,
+        4186,
+        4223,
+        4224,
+        4241,
+        4242
+      ]
+    },
+    {
+      "id": 4224,
+      "name": "The True Masters",
+      "level": 54,
+      "minLevel": 48,
+      "factions": [
+        "Alliance"
+      ],
+      "requirementsKnown": false,
+      "source": "https://www.wowhead.com/forever/quest=4224/the-true-masters",
+      "start": {
+        "npcID": 9560,
+        "name": "Marshal Maxwell"
+      },
+      "finish": {
+        "npcID": 9560,
+        "name": "Marshal Maxwell"
+      },
+      "storyline": [
+        4182,
+        4183,
+        4184,
+        4185,
+        4186,
+        4223,
+        4224,
+        4241,
+        4242
+      ]
+    },
+    {
+      "id": 4241,
+      "name": "Marshal Windsor",
+      "level": 54,
+      "minLevel": 48,
+      "factions": [
+        "Alliance"
+      ],
+      "requirementsKnown": false,
+      "source": "https://www.wowhead.com/forever/quest=4241/marshal-windsor",
+      "start": {
+        "npcID": 9560,
+        "name": "Marshal Maxwell"
+      },
+      "finish": {
+        "npcID": 9023,
+        "name": "Marshal Windsor"
+      },
+      "storyline": [
+        4182,
+        4183,
+        4184,
+        4185,
+        4186,
+        4223,
+        4224,
+        4241,
+        4242
+      ]
+    },
+    {
+      "id": 4242,
+      "name": "Abandoned Hope",
+      "level": 54,
+      "minLevel": 48,
+      "factions": [
+        "Alliance"
+      ],
+      "requirementsKnown": false,
+      "source": "https://www.wowhead.com/forever/quest=4242/abandoned-hope",
+      "start": {
+        "npcID": 9023,
+        "name": "Marshal Windsor"
+      },
+      "finish": {
+        "npcID": 9560,
+        "name": "Marshal Maxwell"
+      },
+      "storyline": [
+        4182,
+        4183,
+        4184,
+        4185,
+        4186,
+        4223,
+        4224,
+        4241,
+        4242
+      ]
+    },
+    {
+      "id": 4262,
+      "name": "Overmaster Pyron",
+      "level": 52,
+      "minLevel": 48,
+      "factions": [
+        "Alliance"
+      ],
+      "requirementsKnown": false,
+      "source": "https://www.wowhead.com/forever/quest=4262/overmaster-pyron",
+      "start": {
+        "npcID": 9561,
+        "name": "Jalinda Sprig"
+      },
+      "finish": {
+        "npcID": 9561,
+        "name": "Jalinda Sprig"
+      },
+      "storyline": [
+        4262,
+        4263
+      ]
+    },
+    {
+      "id": 4263,
+      "name": "Incendius!",
+      "level": 56,
+      "minLevel": 48,
+      "factions": [
+        "Alliance"
+      ],
+      "requirementsKnown": false,
+      "source": "https://www.wowhead.com/forever/quest=4263/incendius",
+      "start": {
+        "npcID": 9561,
+        "name": "Jalinda Sprig"
+      },
+      "finish": {
+        "npcID": 9561,
+        "name": "Jalinda Sprig"
+      },
+      "storyline": [
+        4262,
+        4263
+      ]
+    },
+    {
+      "id": 4264,
+      "name": "A Crumpled Up Note",
+      "level": 58,
+      "minLevel": 50,
+      "factions": [
+        "Alliance"
+      ],
+      "requirementsKnown": false,
+      "source": "https://www.wowhead.com/forever/quest=4264/a-crumpled-up-note",
+      "finish": {
+        "npcID": 9023,
+        "name": "Marshal Windsor"
+      },
+      "storyline": [
+        4264,
+        4282
+      ],
+      "start": {
+        "itemID": 11446,
+        "name": "A Crumpled Up Note",
+        "dropSources": [
+          {
+            "npcID": 9437,
+            "name": "Dark Keeper Vorfalk",
+            "locationName": "Blackrock Depths"
+          },
+          {
+            "npcID": 9441,
+            "name": "Dark Keeper Zimrel",
+            "locationName": "Blackrock Depths"
+          },
+          {
+            "npcID": 9026,
+            "name": "Overmaster Pyron",
+            "locationName": "Eastern Kingdoms"
+          }
+        ]
+      }
+    },
+    {
+      "id": 4282,
+      "name": "A Shred of Hope",
+      "level": 58,
+      "minLevel": 50,
+      "factions": [
+        "Alliance"
+      ],
+      "requirementsKnown": false,
+      "source": "https://www.wowhead.com/forever/quest=4282/a-shred-of-hope",
+      "start": {
+        "npcID": 9023,
+        "name": "Marshal Windsor"
+      },
+      "finish": {
+        "npcID": 9023,
+        "name": "Marshal Windsor"
+      },
+      "storyline": [
+        4264,
+        4282
+      ]
+    },
+    {
+      "id": 4286,
+      "name": "The Good Stuff",
+      "level": 56,
+      "minLevel": 50,
+      "factions": [
+        "Alliance"
+      ],
+      "requirementsKnown": false,
+      "source": "https://www.wowhead.com/forever/quest=4286/the-good-stuff",
+      "start": {
+        "npcID": 9177,
+        "name": "Oralius"
+      },
+      "finish": {
+        "npcID": 9177,
+        "name": "Oralius"
+      }
+    },
+    {
+      "id": 4295,
+      "name": "Rocknot's Ale",
+      "level": 1,
+      "minLevel": 1,
+      "factions": [
+        "Alliance",
+        "Horde"
+      ],
+      "requirementsKnown": false,
+      "repeatable": true,
+      "source": "https://www.wowhead.com/forever/quest=4295/rocknots-ale",
+      "start": {
+        "npcID": 9503,
+        "name": "Private Rocknot"
+      },
+      "finish": {
+        "npcID": 9503,
+        "name": "Private Rocknot"
+      }
+    },
+    {
+      "id": 4322,
+      "name": "Jail Break!",
+      "level": 58,
+      "minLevel": 50,
+      "factions": [
+        "Alliance"
+      ],
+      "requirementsKnown": false,
+      "source": "https://www.wowhead.com/forever/quest=4322/jail-break",
+      "start": {
+        "npcID": 9023,
+        "name": "Marshal Windsor"
+      },
+      "finish": {
+        "npcID": 9560,
+        "name": "Marshal Maxwell"
+      },
+      "storyline": [
+        4322,
+        6402
+      ]
+    },
+    {
+      "id": 4324,
+      "name": "Yuka Screwspigot",
+      "level": 53,
+      "minLevel": 48,
+      "factions": [
+        "Alliance",
+        "Horde"
+      ],
+      "requirementsKnown": false,
+      "source": "https://www.wowhead.com/forever/quest=4324/yuka-screwspigot",
+      "start": {
+        "npcID": 9706,
+        "name": "Yorba Screwspigot"
+      },
+      "finish": {
+        "npcID": 9544,
+        "name": "Yuka Screwspigot"
+      },
+      "storyline": [
+        4324,
+        4136
+      ]
+    },
+    {
+      "id": 4341,
+      "name": "Kharan Mighthammer",
+      "level": 59,
+      "minLevel": 50,
+      "factions": [
+        "Alliance"
+      ],
+      "requirementsKnown": false,
+      "source": "https://www.wowhead.com/forever/quest=4341/kharan-mighthammer",
+      "start": {
+        "npcID": 2784,
+        "name": "King Magni Bronzebeard"
+      },
+      "finish": {
+        "npcID": 9021,
+        "name": "Kharan Mighthammer"
+      }
+    },
+    {
+      "id": 4342,
+      "name": "Kharan's Tale",
+      "level": 59,
+      "minLevel": 50,
+      "factions": [
+        "Alliance"
+      ],
+      "requirementsKnown": false,
+      "source": "https://www.wowhead.com/forever/quest=4342/kharans-tale",
+      "start": {
+        "npcID": 9021,
+        "name": "Kharan Mighthammer"
+      },
+      "finish": {
+        "npcID": 9021,
+        "name": "Kharan Mighthammer"
+      },
+      "storyline": [
+        4342,
+        4361,
+        4362,
+        4363
+      ]
+    },
+    {
+      "id": 4361,
+      "name": "The Bearer of Bad News",
+      "level": 59,
+      "minLevel": 50,
+      "factions": [
+        "Alliance"
+      ],
+      "requirementsKnown": false,
+      "source": "https://www.wowhead.com/forever/quest=4361/the-bearer-of-bad-news",
+      "start": {
+        "npcID": 9021,
+        "name": "Kharan Mighthammer"
+      },
+      "finish": {
+        "npcID": 2784,
+        "name": "King Magni Bronzebeard"
+      },
+      "storyline": [
+        4342,
+        4361,
+        4362,
+        4363
+      ]
+    },
+    {
+      "id": 4362,
+      "name": "The Fate of the Kingdom",
+      "level": 59,
+      "minLevel": 50,
+      "factions": [
+        "Alliance"
+      ],
+      "requirementsKnown": false,
+      "source": "https://www.wowhead.com/forever/quest=4362/the-fate-of-the-kingdom",
+      "start": {
+        "npcID": 2784,
+        "name": "King Magni Bronzebeard"
+      },
+      "finish": {
+        "npcID": 8929,
+        "name": "Princess Moira Bronzebeard"
+      },
+      "storyline": [
+        4342,
+        4361,
+        4362,
+        4363
+      ]
+    },
+    {
+      "id": 4363,
+      "name": "The Princess's Surprise",
+      "level": 59,
+      "minLevel": 50,
+      "factions": [
+        "Alliance"
+      ],
+      "requirementsKnown": false,
+      "source": "https://www.wowhead.com/forever/quest=4363/the-princesss-surprise",
+      "start": {
+        "npcID": 8929,
+        "name": "Princess Moira Bronzebeard"
+      },
+      "finish": {
+        "npcID": 2784,
+        "name": "King Magni Bronzebeard"
+      },
+      "storyline": [
+        4342,
+        4361,
+        4362,
+        4363
+      ]
+    },
+    {
+      "id": 6402,
+      "name": "Stormwind Rendezvous",
+      "level": 60,
+      "minLevel": 50,
+      "factions": [
+        "Alliance"
+      ],
+      "requirementsKnown": false,
+      "source": "https://www.wowhead.com/forever/quest=6402/stormwind-rendezvous",
+      "start": {
+        "npcID": 9560,
+        "name": "Marshal Maxwell"
+      },
+      "finish": {
+        "npcID": 12580,
+        "name": "Reginald Windsor"
+      },
+      "storyline": [
+        4322,
+        6402
+      ]
+    },
+    {
+      "id": 7028,
+      "name": "Twisted Evils",
+      "level": 47,
+      "minLevel": 41,
+      "factions": [
+        "Alliance",
+        "Horde"
+      ],
+      "requirementsKnown": false,
+      "source": "https://www.wowhead.com/forever/quest=7028/twisted-evils",
+      "start": {
+        "npcID": 13656,
+        "name": "Willow"
+      },
+      "finish": {
+        "npcID": 13656,
+        "name": "Willow"
+      }
+    },
+    {
+      "id": 7029,
+      "name": "Vyletongue Corruption",
+      "level": 47,
+      "minLevel": 41,
+      "factions": [
+        "Horde"
+      ],
+      "requirementsKnown": false,
+      "source": "https://www.wowhead.com/forever/quest=7029/vyletongue-corruption",
+      "start": {
+        "npcID": 11823,
+        "name": "Vark Battlescar"
+      },
+      "finish": {
+        "npcID": 11823,
+        "name": "Vark Battlescar"
+      }
+    },
+    {
+      "id": 7041,
+      "name": "Vyletongue Corruption",
+      "level": 47,
+      "minLevel": 41,
+      "factions": [
+        "Alliance"
+      ],
+      "requirementsKnown": false,
+      "source": "https://www.wowhead.com/forever/quest=7041/vyletongue-corruption",
+      "start": {
+        "npcID": 11715,
+        "name": "Talendria"
+      },
+      "finish": {
+        "npcID": 11715,
+        "name": "Talendria"
+      }
+    },
+    {
+      "id": 7044,
+      "name": "Legends of Maraudon",
+      "level": 49,
+      "minLevel": 41,
+      "factions": [
+        "Alliance",
+        "Horde"
+      ],
+      "requirementsKnown": false,
+      "source": "https://www.wowhead.com/forever/quest=7044/legends-of-maraudon",
+      "start": {
+        "npcID": 13697,
+        "name": "Cavindra"
+      },
+      "finish": {
+        "npcID": 13716,
+        "name": "Celebras the Redeemed"
+      }
+    },
+    {
+      "id": 7046,
+      "name": "The Scepter of Celebras",
+      "level": 49,
+      "minLevel": 41,
+      "factions": [
+        "Alliance",
+        "Horde"
+      ],
+      "requirementsKnown": false,
+      "source": "https://www.wowhead.com/forever/quest=7046/the-scepter-of-celebras",
+      "start": {
+        "npcID": 13716,
+        "name": "Celebras the Redeemed"
+      },
+      "finish": {
+        "npcID": 13716,
+        "name": "Celebras the Redeemed"
+      }
+    },
+    {
+      "id": 7064,
+      "name": "Corruption of Earth and Seed",
+      "level": 51,
+      "minLevel": 45,
+      "factions": [
+        "Horde"
+      ],
+      "requirementsKnown": false,
+      "source": "https://www.wowhead.com/forever/quest=7064/corruption-of-earth-and-seed",
+      "start": {
+        "npcID": 13699,
+        "name": "Selendra"
+      },
+      "finish": {
+        "npcID": 13699,
+        "name": "Selendra"
+      }
+    },
+    {
+      "id": 7065,
+      "name": "Corruption of Earth and Seed",
+      "level": 51,
+      "minLevel": 45,
+      "factions": [
+        "Alliance"
+      ],
+      "requirementsKnown": false,
+      "source": "https://www.wowhead.com/forever/quest=7065/corruption-of-earth-and-seed",
+      "start": {
+        "npcID": 13698,
+        "name": "Keeper Marandis"
+      },
+      "finish": {
+        "npcID": 13698,
+        "name": "Keeper Marandis"
+      }
+    },
+    {
+      "id": 7066,
+      "name": "Seed of Life",
+      "level": 51,
+      "minLevel": 39,
+      "factions": [
+        "Alliance",
+        "Horde"
+      ],
+      "requirementsKnown": false,
+      "source": "https://www.wowhead.com/forever/quest=7066/seed-of-life",
+      "start": {
+        "npcID": 12238,
+        "name": "Zaetar's Spirit"
+      },
+      "finish": {
+        "npcID": 11832,
+        "name": "Keeper Remulos"
+      }
+    },
+    {
+      "id": 7067,
+      "name": "The Pariah's Instructions",
+      "level": 48,
+      "minLevel": 39,
+      "factions": [
+        "Alliance",
+        "Horde"
+      ],
+      "requirementsKnown": false,
+      "source": "https://www.wowhead.com/forever/quest=7067/the-pariahs-instructions",
+      "start": {
+        "npcID": 13717,
+        "name": "Centaur Pariah"
+      },
+      "finish": {
+        "npcID": 13717,
+        "name": "Centaur Pariah"
+      }
+    },
+    {
+      "id": 7068,
+      "name": "Shadowshard Fragments",
+      "level": 42,
+      "minLevel": 39,
+      "factions": [
+        "Horde"
+      ],
+      "requirementsKnown": false,
+      "source": "https://www.wowhead.com/forever/quest=7068/shadowshard-fragments",
+      "start": {
+        "npcID": 7311,
+        "name": "Uthel'nay"
+      },
+      "finish": {
+        "npcID": 7311,
+        "name": "Uthel'nay"
+      }
+    },
+    {
+      "id": 7070,
+      "name": "Shadowshard Fragments",
+      "level": 42,
+      "minLevel": 39,
+      "factions": [
+        "Alliance"
+      ],
+      "requirementsKnown": false,
+      "source": "https://www.wowhead.com/forever/quest=7070/shadowshard-fragments",
+      "start": {
+        "npcID": 4967,
+        "name": "Archmage Tervosh"
+      },
+      "finish": {
+        "npcID": 4967,
+        "name": "Archmage Tervosh"
+      }
+    },
+    {
+      "id": 7201,
+      "name": "The Last Element",
+      "level": 54,
+      "minLevel": 48,
+      "factions": [
+        "Horde"
+      ],
+      "requirementsKnown": false,
+      "source": "https://www.wowhead.com/forever/quest=7201/the-last-element",
+      "start": {
+        "npcID": 9078,
+        "name": "Shadowmage Vivian Lagrave"
+      },
+      "finish": {
+        "npcID": 9078,
+        "name": "Shadowmage Vivian Lagrave"
+      }
+    },
+    {
+      "id": 7604,
+      "name": "A Binding Contract",
+      "level": 60,
+      "minLevel": 60,
+      "factions": [
+        "Alliance",
+        "Horde"
+      ],
+      "requirementsKnown": false,
+      "source": "https://www.wowhead.com/forever/quest=7604/a-binding-contract",
+      "finish": {
+        "npcID": 12944,
+        "name": "Lokhtos Darkbargainer"
+      },
+      "start": {
+        "itemID": 18628,
+        "name": "Thorium Brotherhood Contract"
+      }
+    },
+    {
+      "id": 9015,
+      "name": "The Challenge",
+      "level": 60,
+      "minLevel": 58,
+      "factions": [
+        "Alliance",
+        "Horde"
+      ],
+      "requirementsKnown": false,
+      "source": "https://www.wowhead.com/forever/quest=9015/the-challenge",
+      "start": {
+        "npcID": 16032,
+        "name": "Falrin Treeshaper"
+      },
+      "finish": {
+        "npcID": 16016,
+        "name": "Anthion Harmon"
+      }
+    },
+    {
+      "id": 92401,
+      "name": "A Frightened Request",
+      "source": "https://www.wowhead.com/forever/quest=92401/a-frightened-request",
+      "level": 22,
+      "minLevel": 15,
+      "start": {
+        "npcID": 250686,
+        "name": "Tabitha Heartweaver",
+        "zoneName": "Silverpine Forest"
+      },
+      "finish": {
+        "npcID": 250686,
+        "name": "Tabitha Heartweaver",
+        "zoneName": "Silverpine Forest"
+      },
+      "requirementsKnown": false,
+      "factions": [
+        "Horde"
+      ]
+    },
+    {
+      "id": 92415,
+      "name": "Remember That I Love You",
+      "source": "https://www.wowhead.com/forever/quest=92415/remember-that-i-love-you",
+      "level": 22,
+      "minLevel": 15,
+      "finish": {
+        "npcID": 14450,
+        "name": "Orphan Matron Nightingale"
+      },
+      "requirementsKnown": false,
+      "factions": [
+        "Alliance"
+      ],
+      "storyline": [
+        92415,
+        95161
+      ]
+    },
+    {
+      "id": 92421,
+      "name": "Light's Justice",
+      "source": "https://www.wowhead.com/forever/quest=92421/lights-justice",
+      "level": 22,
+      "minLevel": 15,
+      "start": {
+        "npcID": 266484,
+        "name": "Morbin Lightbane",
+        "zoneName": "Undercity"
+      },
+      "finish": {
+        "npcID": 266484,
+        "name": "Morbin Lightbane",
+        "zoneName": "Undercity"
+      },
+      "requirementsKnown": false,
+      "factions": [
+        "Horde"
+      ]
+    },
+    {
+      "id": 92422,
+      "name": "The Wrath of Rath'mael",
+      "source": "https://www.wowhead.com/forever/quest=92422/the-wrath-of-rathmael",
+      "level": 22,
+      "minLevel": 15,
+      "start": {
+        "npcID": 251001,
+        "name": "Deathguard Kristof",
+        "zoneName": "Tirisfal Glades"
+      },
+      "finish": {
+        "npcID": 251001,
+        "name": "Deathguard Kristof",
+        "zoneName": "Tirisfal Glades"
+      },
+      "requirementsKnown": false,
+      "factions": [
+        "Horde"
+      ]
+    },
+    {
+      "id": 95161,
+      "name": "Remember That I Love You",
+      "source": "https://www.wowhead.com/forever/quest=95161/remember-that-i-love-you",
+      "level": 22,
+      "minLevel": 15,
+      "races": [
+        3,
+        4,
+        7,
+        95
+      ],
+      "start": {
+        "npcID": 14450,
+        "name": "Orphan Matron Nightingale"
+      },
+      "finish": {
+        "npcID": 228,
+        "name": "Avette Fellwood"
+      },
+      "requirementsKnown": false,
+      "factions": [
+        "Alliance"
+      ],
+      "storyline": [
+        92415,
+        95161
+      ]
+    },
+    {
+      "id": 95189,
+      "name": "Crest of Lordaeron",
+      "source": "https://www.wowhead.com/forever/quest=95189/crest-of-lordaeron",
+      "level": 22,
+      "minLevel": 16,
+      "finish": {
+        "npcID": 15991,
+        "name": "Lady Dena Kennedy",
+        "zoneName": "Stormwind City"
+      },
+      "requirementsKnown": false,
+      "factions": [
+        "Alliance"
+      ],
+      "start": {
+        "itemID": 268579,
+        "name": "Crest of Lordaeron"
+      }
+    },
+    {
+      "id": 95195,
+      "name": "Bloodied Insignia",
+      "source": "https://www.wowhead.com/forever/quest=95195/bloodied-insignia",
+      "level": 22,
+      "minLevel": 16,
+      "finish": {
+        "npcID": 466,
+        "name": "General Marcus Jonathan"
+      },
+      "requirementsKnown": false,
+      "factions": [
+        "Alliance"
+      ]
+    },
+    {
+      "id": 95204,
+      "name": "Crest of Lordaeron",
+      "source": "https://www.wowhead.com/forever/quest=95204/crest-of-lordaeron",
+      "level": 22,
+      "minLevel": 16,
+      "finish": {
+        "npcID": 7825,
+        "name": "Oran Snakewrithe",
+        "zoneName": "Undercity"
+      },
+      "requirementsKnown": false,
+      "factions": [
+        "Horde"
+      ],
+      "start": {
+        "itemID": 275521,
+        "name": "Crest of Lordaeron"
+      }
+    },
+    {
+      "id": 95216,
+      "name": "The New Plague",
+      "source": "https://www.wowhead.com/forever/quest=95216/the-new-plague",
+      "level": 22,
+      "minLevel": 16,
+      "start": {
+        "npcID": 11835,
+        "name": "Theodore Griffs",
+        "zoneName": "Undercity"
+      },
+      "finish": {
+        "npcID": 11835,
+        "name": "Theodore Griffs",
+        "zoneName": "Undercity"
+      },
+      "requirementsKnown": false,
+      "factions": [
+        "Horde"
+      ]
+    },
+    {
+      "id": 95250,
+      "name": "Abominable Creatures",
+      "source": "https://www.wowhead.com/forever/quest=95250/abominable-creatures",
+      "level": 21,
+      "minLevel": 16,
+      "requirementsKnown": false,
+      "factions": [
+        "Alliance"
+      ]
+    },
+    {
+      "id": 95775,
+      "name": "The Drowned City",
+      "source": "https://www.wowhead.com/forever/quest=95775/the-drowned-city",
+      "level": 40,
+      "minLevel": 30,
+      "requirementsKnown": false,
+      "factions": [
+        "Horde"
+      ]
+    },
+    {
+      "id": 95776,
+      "name": "The Only Good Brinescale...",
+      "source": "https://www.wowhead.com/forever/quest=95776/the-only-good-brinescale",
+      "level": 38,
+      "minLevel": 30,
+      "requirementsKnown": false,
+      "factions": [
+        "Horde"
+      ]
+    },
+    {
+      "id": 95787,
+      "name": "Take Two With Water",
+      "source": "https://www.wowhead.com/forever/quest=95787/take-two-with-water",
+      "level": 40,
+      "minLevel": 30,
+      "requirementsKnown": false,
+      "factions": [
+        "Alliance"
+      ]
+    },
+    {
+      "id": 95788,
+      "name": "Magics of the Drowned City",
+      "source": "https://www.wowhead.com/forever/quest=95788/magics-of-the-drowned-city",
+      "level": 40,
+      "minLevel": 30,
+      "requirementsKnown": false,
+      "factions": [
+        "Alliance"
+      ]
+    },
+    {
+      "id": 96774,
+      "name": "Ancient Gurubashi Idol",
+      "source": "https://www.wowhead.com/forever/quest=96774/ancient-gurubashi-idol",
+      "level": 40,
+      "minLevel": 30,
+      "start": {
+        "npcID": 264074,
+        "name": "Mazu'kon"
+      },
+      "requirementsKnown": false,
+      "factions": [
+        "Horde"
+      ]
+    },
+    {
+      "id": 97288,
+      "name": "Unending Torment",
+      "source": "https://www.wowhead.com/forever/quest=97288/unending-torment",
+      "level": 21,
+      "minLevel": 16,
+      "finish": {
+        "npcID": 2055,
+        "name": "Master Apothecary Faranell",
+        "zoneName": "Undercity"
+      },
+      "requirementsKnown": false,
+      "factions": [
+        "Horde"
+      ],
+      "storyline": [
+        97288,
+        97289,
+        97290,
+        97291,
+        97292
+      ]
+    },
+    {
+      "id": 97289,
+      "name": "Unending Torment",
+      "source": "https://www.wowhead.com/forever/quest=97289/unending-torment",
+      "level": 21,
+      "minLevel": 16,
+      "start": {
+        "npcID": 2055,
+        "name": "Master Apothecary Faranell",
+        "zoneName": "Undercity"
+      },
+      "finish": {
+        "npcID": 271613,
+        "name": "Unfinished Abomination"
+      },
+      "requirementsKnown": false,
+      "factions": [
+        "Horde"
+      ],
+      "storyline": [
+        97288,
+        97289,
+        97290,
+        97291,
+        97292
+      ]
+    },
+    {
+      "id": 97290,
+      "name": "Unending Torment",
+      "source": "https://www.wowhead.com/forever/quest=97290/unending-torment",
+      "level": 21,
+      "minLevel": 16,
+      "start": {
+        "npcID": 271613,
+        "name": "Unfinished Abomination"
+      },
+      "finish": {
+        "npcID": 2055,
+        "name": "Master Apothecary Faranell",
+        "zoneName": "Undercity"
+      },
+      "requirementsKnown": false,
+      "factions": [
+        "Horde"
+      ],
+      "storyline": [
+        97288,
+        97289,
+        97290,
+        97291,
+        97292
+      ]
+    },
+    {
+      "id": 97291,
+      "name": "Unending Torment",
+      "source": "https://www.wowhead.com/forever/quest=97291/unending-torment",
+      "level": 21,
+      "minLevel": 16,
+      "start": {
+        "npcID": 2055,
+        "name": "Master Apothecary Faranell",
+        "zoneName": "Undercity"
+      },
+      "finish": {
+        "npcID": 2055,
+        "name": "Master Apothecary Faranell",
+        "zoneName": "Undercity"
+      },
+      "requirementsKnown": false,
+      "factions": [
+        "Horde"
+      ],
+      "storyline": [
+        97288,
+        97289,
+        97290,
+        97291,
+        97292
+      ]
+    },
+    {
+      "id": 97292,
+      "name": "Unending Torment",
+      "source": "https://www.wowhead.com/forever/quest=97292/unending-torment",
+      "level": 21,
+      "minLevel": 16,
+      "start": {
+        "npcID": 2055,
+        "name": "Master Apothecary Faranell",
+        "zoneName": "Undercity"
+      },
+      "finish": {
+        "npcID": 2055,
+        "name": "Master Apothecary Faranell",
+        "zoneName": "Undercity"
+      },
+      "requirementsKnown": false,
+      "factions": [
+        "Horde"
+      ],
+      "storyline": [
+        97288,
+        97289,
+        97290,
+        97291,
+        97292
+      ]
     }
   ],
   "dungeons": [
@@ -6603,8 +8580,20 @@
       "name": "Maraudon",
       "minLevel": 40,
       "maxLevel": 52,
-      "coverage": "pending",
-      "quests": [],
+      "coverage": "partial",
+      "quests": [
+        7064,
+        7028,
+        7065,
+        7067,
+        7046,
+        7044,
+        7066,
+        7041,
+        7070,
+        7068,
+        7029
+      ],
       "source": "https://www.wowhead.com/forever/guide/dungeons-overview-locations-details",
       "instanceID": 349
     },
@@ -6633,8 +8622,50 @@
       "name": "Blackrock Depths",
       "minLevel": 52,
       "maxLevel": 60,
-      "coverage": "pending",
-      "quests": [],
+      "coverage": "partial",
+      "quests": [
+        4024,
+        4126,
+        3802,
+        4123,
+        4136,
+        4201,
+        4322,
+        3801,
+        4241,
+        4362,
+        7604,
+        4003,
+        4363,
+        4263,
+        4242,
+        4004,
+        4002,
+        4134,
+        4083,
+        4286,
+        4133,
+        4063,
+        4001,
+        3981,
+        3907,
+        4341,
+        4324,
+        4132,
+        7201,
+        4361,
+        4128,
+        4282,
+        4295,
+        3982,
+        9015,
+        4264,
+        4081,
+        4342,
+        4082,
+        4121,
+        4122
+      ],
       "source": "https://www.wowhead.com/forever/guide/dungeons-overview-locations-details",
       "instanceID": 230
     },
@@ -6707,8 +8738,22 @@
       "name": "Ruins of Lordaeron",
       "minLevel": 15,
       "maxLevel": 20,
-      "coverage": "pending",
-      "quests": [],
+      "coverage": "partial",
+      "quests": [
+        92401,
+        92422,
+        95204,
+        97292,
+        97288,
+        95216,
+        95189,
+        97291,
+        92421,
+        92415,
+        95195,
+        97289,
+        95250
+      ],
       "source": "https://www.wowhead.com/forever/guide/dungeons-overview-locations-details"
     },
     {
@@ -6758,8 +8803,14 @@
       "name": "The Drowned City",
       "minLevel": 35,
       "maxLevel": 40,
-      "coverage": "pending",
-      "quests": [],
+      "coverage": "partial",
+      "quests": [
+        95788,
+        95787,
+        96774,
+        95775,
+        95776
+      ],
       "source": "https://www.wowhead.com/forever/guide/dungeons-overview-locations-details"
     },
     {

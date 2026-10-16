@@ -29,6 +29,8 @@
   prerequisite steps.
 - Preserved multiple possible NPC/object starting points and known source zones
   without inventing map coordinates.
+- Added Ruins of Lordaeron, Maraudon, Drowned City and Blackrock Depths quest
+  lists, reviewed story steps and confirmed quest-starting items.
 - Added initial Razorfen Kraul and Razorfen Downs quests, item starters and
   four sourced Razorfen quest-giver locations.
 - Added optional native quest-log portraits when the client provides one.
