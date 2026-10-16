@@ -253,4 +253,32 @@ check("Current and absent schemas retain valid roots nested identities and unrel
     end
     DungeonPrepDB, DungeonPrepCharDB, addon.db, addon.char = savedDB, savedChar, activeDB, activeChar
 end)
+check("Broken or missing title schedulers release pending requests within three attempts", function()
+    local savedTimer = C_Timer
+    for _, timer in ipairs({ {}, { After = true }, { After = function() error("scheduler failed") end } }) do
+        local isolated, calls, notifications = {}, 0, 0
+        assert(loadfile("Core/Namespace.lua"))("DungeonPrep", isolated)
+        assert(loadfile("Core/Client.lua"))("DungeonPrep", isolated)
+        isolated.quests[777] = { name = "Fallback" }
+        isolated.Notify = function() notifications = notifications + 1; isolated.QuestName(777) end
+        C_Timer = timer
+        C_QuestLog = { RequestLoadQuestByID = function() calls = calls + 1 end }
+        for _ = 1, 20 do assert(isolated.QuestName(777) == "Fallback") end
+        assert(calls == 3 and notifications == 0, "scheduler failure must neither stick pending nor notify recursively")
+    end
+    C_Timer = savedTimer
+end)
+check("A throwing retry scheduler permits bounded later title requests", function()
+    local isolated, calls = {}, 0
+    assert(loadfile("Core/Namespace.lua"))("DungeonPrep", isolated)
+    assert(loadfile("Core/Client.lua"))("DungeonPrep", isolated)
+    isolated.quests[778] = { name = "Fallback" }
+    isolated.Notify = function() error("must not notify immediately") end
+    C_QuestLog = { RequestLoadQuestByID = function(id) calls = calls + 1; isolated.QuestDataResult(id, false) end }
+    local saved = C_Timer
+    C_Timer = { After = function() error("retry timer failed") end }
+    for _ = 1, 10 do isolated.QuestName(778) end
+    assert(calls == 3)
+    C_Timer = saved
+end)
 print("Quest detail modeled checks passed: " .. total .. " (native client unverified)")

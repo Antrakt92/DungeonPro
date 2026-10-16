@@ -1,12 +1,23 @@
 local name, addon = ...
 local events = CreateFrame("Frame")
-local initialized, pending = false, false
+local initialized, pending, refreshing = false, false, false
 
 local function refresh()
-    if pending or not initialized then return end
-    pending = true
-    local function run() pending = false; addon.Notify() end
-    if C_Timer and C_Timer.After then C_Timer.After(0.1, run) else run() end
+    if pending or refreshing or not initialized then return end
+    local token = {}
+    pending = token
+    -- Only inline callbacks need recursion suppression; delayed renders may queue new state.
+    local immediate = true
+    local function run()
+        if pending ~= token then return end
+        pending, refreshing = false, immediate
+        local ok, message = pcall(addon.Notify)
+        refreshing = false
+        if not ok then error(message) end
+    end
+    if C_Timer and type(C_Timer.After) == "function" and pcall(C_Timer.After, 0.1, run) then
+        immediate = false
+    else run() end
 end
 
 events:RegisterEvent("ADDON_LOADED")

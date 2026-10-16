@@ -9,13 +9,15 @@ function addon.QuestDataResult(id, success)
     request.pending = false
     if success or request.attempts >= 3 then request.finished = true; return end
     request.waiting = true
+    local attempt = request.attempts
     local function retry()
-        if requested[id] ~= request then return end
+        if requested[id] ~= request or not request.waiting or request.attempts ~= attempt then return end
         request.waiting = false
         addon.Notify()
     end
-    if C_Timer and type(C_Timer.After) == "function" then C_Timer.After(2, retry)
-    else request.waiting = false end
+    if not C_Timer or type(C_Timer.After) ~= "function" or not pcall(C_Timer.After, 2, retry) then
+        request.waiting = false
+    end
 end
 
 function addon.Context()
@@ -47,14 +49,17 @@ function addon.QuestName(id)
         request.attempts, request.pending = request.attempts + 1, true
         local ok = pcall(C_QuestLog.RequestLoadQuestByID, id)
         if not ok then addon.QuestDataResult(id, false)
-        elseif request.pending and C_Timer and type(C_Timer.After) == "function" then
+        elseif request.pending then
             local attempt = request.attempts
             -- A missing result event must not leave this ID pending forever.
-            C_Timer.After(10, function()
+            local function timeout()
                 if requested[id] == request and request.pending and request.attempts == attempt then
                     addon.QuestDataResult(id, false)
                 end
-            end)
+            end
+            if not C_Timer or type(C_Timer.After) ~= "function" or not pcall(C_Timer.After, 10, timeout) then
+                addon.QuestDataResult(id, false)
+            end
         end
     end
     return (addon.quests[id] or {}).name or ("#" .. id)

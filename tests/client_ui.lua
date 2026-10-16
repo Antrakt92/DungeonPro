@@ -208,4 +208,78 @@ check("Alternative map-only starters pass a direct place to the actual navigatio
     assert(mapCalls == before + 1)
     q.start, q.startAlternatives = start, alternatives; ui:Refresh()
 end)
+check("Alternative turn-in rows reach actual map and waypoint adapters without changing preparation", function()
+    local q, ui = addon.quests[166], addon.UI
+    local finish, alternatives = q.finish, q.finishAlternatives
+    q.finish = nil
+    q.finishAlternatives = { { npcID = 234, name = "Map-only turn-in", mapID = 1 },
+        { npcID = 235, name = "Located turn-in", mapID = 1, x = 10, y = 20 } }
+    ui.quest = 166; ui:Refresh()
+    local beforeMaps, beforePins = mapCalls, #waypoints
+    local action, status = ui.action, ui.engine:State(166).status
+    ui.finishButtons[1].scripts.OnClick()
+    assert(mapCalls == beforeMaps + 1 and ui.action == action and ui.engine:State(166).status == status)
+    ui.finishButtons[2].scripts.OnClick()
+    assert(#waypoints == beforePins + 1 and waypoints[#waypoints].mapID == 1)
+    assert(waypoints[#waypoints].x == 0.1 and waypoints[#waypoints].y == 0.2)
+    assert(ui.action == action and ui.engine:State(166).status == status)
+    addon.Navigation.Stop()
+    q.finish, q.finishAlternatives = finish, alternatives; ui:Refresh()
+end)
+check("Broken refresh scheduler falls back once and never sticks or recursively notifies", function()
+    local timer, notify = C_Timer, addon.Notify
+    for _, broken in ipairs({ {}, { After = true }, { After = function() error("scheduler failed") end },
+        { After = function(_, fn) fn() end } }) do
+        local calls = 0
+        C_Timer = broken
+        addon.Notify = function()
+            calls = calls + 1
+            if calls < 5 then eventFrame.scripts.OnEvent(eventFrame, "QUEST_LOG_UPDATE") end
+        end
+        eventFrame.scripts.OnEvent(eventFrame, "QUEST_LOG_UPDATE")
+        assert(calls == 1, "immediate fallback must not recursively notify")
+        eventFrame.scripts.OnEvent(eventFrame, "QUEST_LOG_UPDATE")
+        assert(calls == 2, "a failed timer must not leave refresh pending")
+    end
+    local callbacks, calls = {}, 0
+    C_Timer = { After = function(_, fn) callbacks[#callbacks + 1] = fn end }
+    addon.Notify = function() calls = calls + 1 end
+    eventFrame.scripts.OnEvent(eventFrame, "QUEST_LOG_UPDATE")
+    eventFrame.scripts.OnEvent(eventFrame, "PLAYER_LEVEL_UP")
+    assert(#callbacks == 1 and calls == 0)
+    callbacks[1](); assert(calls == 1)
+    local stale
+    C_Timer = { After = function(_, fn) stale = fn; error("queued then failed") end }
+    eventFrame.scripts.OnEvent(eventFrame, "QUEST_LOG_UPDATE")
+    assert(calls == 2)
+    callbacks = {}
+    C_Timer = { After = function(_, fn) callbacks[#callbacks + 1] = fn end }
+    eventFrame.scripts.OnEvent(eventFrame, "QUEST_LOG_UPDATE")
+    stale(); assert(calls == 2)
+    callbacks[1](); assert(calls == 3)
+    C_Timer, addon.Notify = timer, notify
+end)
+check("A quest event during an asynchronous refresh queues the next character-state render", function()
+    local timer, notify, isOnQuest = C_Timer, addon.Notify, C_QuestLog.IsOnQuest
+    local callbacks, calls, active = {}, 0, false
+    C_Timer = { After = function(_, fn) callbacks[#callbacks + 1] = fn end }
+    C_QuestLog.IsOnQuest = function(id) return id == 166 and active end
+    addon.UI.quest = 166
+    addon.Notify = function()
+        calls = calls + 1
+        notify()
+        if calls == 1 then
+            active = true
+            eventFrame.scripts.OnEvent(eventFrame, "QUEST_LOG_UPDATE")
+        end
+    end
+    for _ = 1, 1000 do eventFrame.scripts.OnEvent(eventFrame, "QUEST_LOG_UPDATE") end
+    assert(#callbacks == 1 and calls == 0)
+    callbacks[1]()
+    assert(addon.UI.engine:State(166).status ~= "ACTIVE")
+    assert(#callbacks == 2, "a state-changing event inside async Notify must schedule a later render")
+    callbacks[2]()
+    assert(calls == 2 and addon.UI.engine:State(166).status == "ACTIVE")
+    C_Timer, addon.Notify, C_QuestLog.IsOnQuest = timer, notify, isOnQuest
+end)
 print("Client/UI modeled checks passed: " .. total .. " (no pixel or native-client validation)")
