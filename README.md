@@ -12,6 +12,8 @@ Level ranges are provisional recommendations.
 ## Current features
 
 - Dungeon browser with level filtering and game-provided artwork when available.
+  A built-in finder image can be used when the client identifies the same dungeon
+  map unambiguously; missing artwork keeps the map icon.
 - Character-specific completed, active, ready-to-turn-in, available, locked and
   unknown quest states, with explanations for level gates, missing prerequisites,
   character restrictions and unverified data.
@@ -43,8 +45,9 @@ Level ranges are provisional recommendations.
   Visiting a giver does not confirm that the quest is available to pick up.
 - Quest text saved when you open the quest at its giver. Complete unseen quest
   descriptions and verified quest-giver portraits are not yet included.
-- Optional quest portraits from the selected quest log entry, when supplied by
-  the client. These are journal portraits, not verified photographs of each NPC.
+- Optional quest portraits from the current offer or selected quest log entry,
+  when supplied by the client. These are journal portraits, not verified
+  photographs of each NPC.
 - Item rewards and choices for the currently selected active quest, when the
   client provides them. Unknown reward data is shown explicitly.
 - A separate note shows a quest observed in the current NPC dialogue. It expires

@@ -6,6 +6,7 @@ GetBuildInfo = function() return "1.60.1", "70425", "", 16001 end
 issecretvalue = function(value) return value == secret end
 local offerCapabilities = {
     { "GetObjectiveText", "offerObjectiveText" }, { "GetQuestID", "offerQuestID" },
+    { "GetQuestPortraitGiver", "offerPortrait" },
     { "GetNumQuestRewards", "offerRewardItems" }, { "GetNumQuestChoices", "offerRewardChoices" },
     { "GetQuestItemInfo", "offerRewardInfo" }, { "GetRewardMoney", "offerRewardMoney" },
     { "GetRewardXP", "offerRewardXP" },

@@ -10,6 +10,8 @@
 - Added current quest-offer rewards, experience and objective summaries, kept
   separate from quest-log progress and preparation requirements.
 - Clarified prerequisite groups and whether a step needs acceptance or completion.
+- Added Back navigation for supporting quest cards and optional client-provided
+  dungeon images and current-offer portraits.
 - Expanded later dungeon quest lists and sourced quest-giver locations.
 - Added translated explanations for locked quests and missing information.
 - Added character filtering with an option to inspect restricted quests, and

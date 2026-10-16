@@ -456,4 +456,45 @@ check("Real dialogue events keep objective prose separate and clear it on every 
     C_QuestLog.ShouldShowQuestRewards, C_QuestLog.GetQuestObjectives, C_QuestLog.GetSelectedQuest = predicate, progress, selected
     addon.UI.quest = priorQuest; addon.UI:Refresh()
 end)
+check("Offered portraits render only current display IDs and native hide values suppress log fallback", function()
+    local keys = { "GetQuestID", "UnitGUID", "QuestFrame", "QuestFrameDetailPanel", "GetQuestPortraitGiver",
+        "SetPortraitTextureFromCreatureDisplayID" }
+    local saved = {}; for _, key in ipairs(keys) do saved[key] = _G[key] end
+    local previousQuest, logPortrait = addon.UI.quest, addon.QuestPortrait
+    local display, panel, fallbackCalls, rendered, reads = 42, true, 0, nil, 0
+    GetQuestID = function() return 65 end
+    UnitGUID = function(unit) return unit == "player" and "Player-portrait-integration" or nil end
+    QuestFrame = { IsShown = function() return true end }
+    QuestFrameDetailPanel = { IsShown = function() return panel end }
+    GetQuestPortraitGiver = function(...)
+        assert(select("#", ...) == 0); reads = reads + 1
+        return display, "Ignored portrait text", "Ignored portrait name", 555, 777
+    end
+    SetPortraitTextureFromCreatureDisplayID = function(texture, id)
+        assert(id == 42 or id == 99); rendered = id; texture:SetTexture("display:" .. id)
+    end
+    addon.QuestPortrait = function() fallbackCalls = fallbackCalls + 1; return { displayID = 99 } end
+    local function event(name) eventFrame.scripts.OnEvent(eventFrame, name) end
+    event("QUEST_FINISHED"); addon.UI.quest = 65; addon.UI:Refresh()
+    assert(rendered == 99 and addon.UI.portrait:IsShown())
+    fallbackCalls = 0; event("QUEST_DETAIL")
+    assert(rendered == 42 and reads > 0 and addon.UI.portrait:IsShown() and fallbackCalls == 0)
+    for _, hidden in ipairs({ 0, -1 }) do
+        display = hidden; event("QUEST_ITEM_UPDATE")
+        assert(not addon.UI.portrait:IsShown() and addon.UI.portrait.texture == nil)
+        assert(fallbackCalls == 0, "explicit current-dialogue omission must not revive selected-log portrait")
+    end
+    display = 42; event("QUEST_ITEM_UPDATE"); assert(addon.UI.portrait:IsShown())
+    panel = false; rendered = nil; addon.UI:Refresh()
+    assert(rendered == 99 and fallbackCalls > 0, "closed current dialogue may use valid independent log data")
+    panel = true; rendered = nil; addon.UI:Refresh()
+    assert(rendered == 99, "raw matching ID must not revive the closed dialogue portrait")
+    event("QUEST_DETAIL"); assert(rendered == 42)
+    local before = reads; addon.UI:InspectQuest(166)
+    assert(reads == before and rendered == 99, "another inspected card must not read current dialogue portrait")
+    event("QUEST_FINISHED")
+    for _, key in ipairs(keys) do _G[key] = saved[key] end
+    addon.QuestPortrait, addon.UI.quest, addon.UI.detailHistory = logPortrait, previousQuest, {}
+    addon.UI:Refresh()
+end)
 print("Client/UI modeled checks passed: " .. total .. " (no pixel or native-client validation)")

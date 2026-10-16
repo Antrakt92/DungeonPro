@@ -308,8 +308,10 @@ function UI:RefreshDetail()
         line("|cff" .. COLOR[state.status] .. addon.L(state.status) .. "|r")
         local offer = addon.Read(addon.CurrentOffer, "table", id)
         if offer and addon.Clean(offer.offeredNow, "boolean") == true then line(addon.L("OFFERED_NOW")) end
-        local portrait = addon.Read(addon.QuestPortrait, "table", id)
-        local displayID = portrait and addon.Clean(portrait.displayID, "number")
+        local portrait = addon.Read(addon.DialoguePortrait, "table", id) or
+            addon.Read(addon.QuestPortrait, "table", id)
+        local displayID = portrait and addon.Clean(portrait.hidden, "boolean") ~= true and
+            addon.Clean(portrait.displayID, "number")
         if displayID and displayID > 0 and displayID % 1 == 0 and
             type(SetPortraitTextureFromCreatureDisplayID) == "function" then
             if not self.portrait then

@@ -121,6 +121,18 @@ function addon.DialogueObjectiveText(id)
     if text and text ~= "" and #text <= 30000 then return text end
 end
 
+function addon.DialoguePortrait(id)
+    id = dialogueInteger(id, 1)
+    local snapshot = dialogueReward
+    if not id or not snapshot or snapshot.id ~= id or not currentDialogueReward(snapshot) or
+        not liveDialogueReward(snapshot) then return nil end
+    local display = addon.Read(GetQuestPortraitGiver, "number")
+    if not liveDialogueReward(snapshot) then return nil end
+    if display == 0 or display == -1 then return { hidden = true, source = "dialogue" } end
+    display = dialogueInteger(display, 1)
+    if display then return { displayID = display, source = "dialogue" } end
+end
+
 function addon.ClearOffers()
     offerGeneration, currentOffers = {}, nil
 end
@@ -319,14 +331,67 @@ function addon.DungeonName(d)
     return name and name ~= "" and name or d.name
 end
 
+local dungeonArtCache, dungeonArtReading
+local function artInteger(value)
+    value = addon.Clean(value, "number")
+    return value and value > 0 and value % 1 == 0 and value or nil
+end
+local function lfgDungeonArt(mapID)
+    local enumerate, info = GetLFDChoiceOrder, GetLFGDungeonInfo
+    if type(enumerate) ~= "function" or type(info) ~= "function" or dungeonArtReading then return nil end
+    if dungeonArtCache and dungeonArtCache.enumerate == enumerate and dungeonArtCache.info == info then
+        return dungeonArtCache.images[mapID] or nil
+    end
+    dungeonArtReading = true
+    local ok, images = pcall(function()
+        local list = addon.Read(enumerate, "table")
+        if not list then return {} end
+        -- Validate the whole dense sequence before reading any native dungeon IDs.
+        local count, last = 0, 0
+        for key in next, list do
+            count = count + 1
+            key = artInteger(key)
+            if count > 500 or not key or key > 500 then return {} end
+            if key > last then last = key end
+        end
+        if last ~= count then return {} end
+        local ids, seen = {}, {}
+        for i = 1, count do
+            local id = addon.Clean(rawget(list, i), "number")
+            if not id or id % 1 ~= 0 then return {} end
+            -- Nonpositive entries represent headings, not image sources.
+            if id > 0 and not seen[id] then ids[#ids + 1], seen[id] = id, true end
+        end
+        local found = {}
+        for _, id in ipairs(ids) do
+            local values = { pcall(info, id) }
+            if not values[1] then return {} end
+            local instanceID = artInteger(values[23])
+            local texture = artInteger(values[12]) or addon.Clean(values[12], "string")
+            if type(texture) == "string" and (texture == "" or #texture > 1024) then texture = nil end
+            if instanceID and texture then
+                if found[instanceID] == nil then found[instanceID] = texture
+                elseif found[instanceID] ~= texture then found[instanceID] = false end
+            end
+        end
+        return found
+    end)
+    dungeonArtReading = nil
+    -- Native callbacks may replace capabilities while a scan is in progress.
+    if GetLFDChoiceOrder ~= enumerate or GetLFGDungeonInfo ~= info then return nil end
+    dungeonArtCache = { enumerate = enumerate, info = info, images = ok and images or {} }
+    return dungeonArtCache.images[mapID] or nil
+end
+
 function addon.DungeonArt(d)
-    local journalID = d.instanceID and addon.Read(C_EncounterJournal and C_EncounterJournal.GetInstanceForGameMap, "number", d.instanceID)
+    local mapID = artInteger(d.instanceID)
+    local journalID = mapID and artInteger(addon.Read(C_EncounterJournal and C_EncounterJournal.GetInstanceForGameMap, "number", mapID))
     if journalID and type(EJ_GetInstanceInfo) == "function" then
         local values = { pcall(EJ_GetInstanceInfo, journalID) }
-        local texture = values[1] and addon.Clean(values[7], "number")
+        local texture = values[1] and artInteger(values[7])
         if texture then return texture end
     end
-    return "Interface\\Icons\\INV_Misc_Map_01"
+    return (mapID and lfgDungeonArt(mapID)) or "Interface\\Icons\\INV_Misc_Map_01"
 end
 
 function addon.Description(id)
@@ -500,6 +565,7 @@ function addon.ProbeClient()
         { "objectives", C_QuestLog and C_QuestLog.GetQuestObjectives }, { "lines", line.GetQuestLineInfo },
         { "lineQuests", line.GetQuestLineQuests }, { "offerText", GetQuestText }, { "logText", GetQuestLogQuestText },
         { "offerObjectiveText", GetObjectiveText }, { "offerQuestID", GetQuestID },
+        { "offerPortrait", GetQuestPortraitGiver },
         { "offerRewardItems", GetNumQuestRewards }, { "offerRewardChoices", GetNumQuestChoices },
         { "offerRewardInfo", GetQuestItemInfo }, { "offerRewardMoney", GetRewardMoney },
         { "offerRewardXP", GetRewardXP }, { "offerRewardVisibility", C_QuestLog and C_QuestLog.ShouldShowQuestRewards },
