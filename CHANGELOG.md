@@ -24,6 +24,8 @@
 - Added initial Razorfen Kraul and Razorfen Downs quests, item starters and
   four sourced Razorfen quest-giver locations.
 - Added optional native quest-log portraits when the client provides one.
+- Expanded the client capability report and kept missing storyline data distinct
+  from confirmed empty results.
 - Added initial Gnomeregan quests, Stockade giver waypoints and the Horde
   paladin's Kor Gem support quest.
 - Added client-provided item rewards, reward choices and money to quest details.

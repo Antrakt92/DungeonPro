@@ -282,20 +282,27 @@ function addon.ProbeClient()
     local result = { build = build, interface = interface, api = {}, questLines = {} }
     for _, entry in ipairs({ { "titles", C_QuestLog and C_QuestLog.GetTitleForQuestID },
         { "objectives", C_QuestLog and C_QuestLog.GetQuestObjectives }, { "lines", line.GetQuestLineInfo },
-        { "lineQuests", line.GetQuestLineQuests }, { "offerText", GetQuestText }, { "logText", GetQuestLogQuestText } }) do
+        { "lineQuests", line.GetQuestLineQuests }, { "offerText", GetQuestText }, { "logText", GetQuestLogQuestText },
+        { "rewardItems", GetNumQuestLogRewards }, { "rewardChoices", GetNumQuestLogChoices },
+        { "rewardMoney", GetQuestLogRewardMoney }, { "portraits", C_QuestLog and C_QuestLog.GetQuestLogPortraitGiver },
+        { "itemNames", C_Item and C_Item.GetItemNameByID }, { "itemRequests", C_Item and C_Item.RequestLoadItemDataByID },
+        { "nativeWaypoints", C_Map and C_Map.SetUserWaypoint }, { "tomtom", TomTom and TomTom.AddWaypoint } }) do
         result.api[entry[1]] = type(entry[2]) == "function"
     end
     for _, id in ipairs({ 166, 5728, 96393, 92753 }) do
         local info = addon.Read(line.GetQuestLineInfo, "table", id, nil, false)
         local lineID = info and addon.Clean(info.questLineID, "number")
-        if lineID then
+        if lineID and lineID > 0 and lineID % 1 == 0 then
             local ids = addon.Read(line.GetQuestLineQuests, "table", lineID)
-            local clean = {}
+            local clean, seen, invalid = {}, {}, false
             for i = 1, math.min(100, ids and #ids or 0) do
                 local qid = addon.Clean(ids[i], "number")
-                if qid then clean[#clean + 1] = qid end
+                if qid and qid > 0 and qid % 1 == 0 then
+                    if not seen[qid] then clean[#clean + 1] = qid; seen[qid] = true end
+                else invalid = true end
             end
-            result.questLines[id] = { lineID = lineID, quests = clean }
+            result.questLines[id] = { lineID = lineID, quests = clean, questsAvailable = ids ~= nil,
+                truncated = ids ~= nil and #ids > 100, invalidMembers = invalid }
         end
     end
     addon.char.probe = result
