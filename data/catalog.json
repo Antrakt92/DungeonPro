@@ -17701,7 +17701,24 @@
       "finish": {
         "npcID": 9119,
         "name": "Muigin",
-        "zoneName": "Un'Goro Crater"
+        "zoneName": "Un'Goro Crater",
+        "mapID": 1449,
+        "x": 43,
+        "y": 9.4,
+        "reportedLocations": [
+          {
+            "mapID": 1449,
+            "zoneName": "Un'Goro Crater",
+            "x": 43,
+            "y": 9.4
+          },
+          {
+            "mapID": 1449,
+            "zoneName": "Un'Goro Crater",
+            "x": 43,
+            "y": 9.6
+          }
+        ]
       },
       "storyline": [
         4141,
@@ -17731,7 +17748,36 @@
       "finish": {
         "npcID": 9118,
         "name": "Larion",
-        "zoneName": "Un'Goro Crater"
+        "zoneName": "Un'Goro Crater",
+        "mapID": 1449,
+        "x": 45.4,
+        "y": 8.4,
+        "reportedLocations": [
+          {
+            "mapID": 1449,
+            "zoneName": "Un'Goro Crater",
+            "x": 45.4,
+            "y": 8.4
+          },
+          {
+            "mapID": 1449,
+            "zoneName": "Un'Goro Crater",
+            "x": 45.4,
+            "y": 8.6
+          },
+          {
+            "mapID": 1449,
+            "zoneName": "Un'Goro Crater",
+            "x": 45.6,
+            "y": 8.4
+          },
+          {
+            "mapID": 1449,
+            "zoneName": "Un'Goro Crater",
+            "x": 45.6,
+            "y": 8.6
+          }
+        ]
       },
       "storyline": [
         4145,
@@ -18064,12 +18110,46 @@
       "start": {
         "npcID": 9119,
         "name": "Muigin",
-        "zoneName": "Un'Goro Crater"
+        "zoneName": "Un'Goro Crater",
+        "mapID": 1449,
+        "x": 43,
+        "y": 9.4,
+        "reportedLocations": [
+          {
+            "mapID": 1449,
+            "zoneName": "Un'Goro Crater",
+            "x": 43,
+            "y": 9.4
+          },
+          {
+            "mapID": 1449,
+            "zoneName": "Un'Goro Crater",
+            "x": 43,
+            "y": 9.6
+          }
+        ]
       },
       "finish": {
         "npcID": 9119,
         "name": "Muigin",
-        "zoneName": "Un'Goro Crater"
+        "zoneName": "Un'Goro Crater",
+        "mapID": 1449,
+        "x": 43,
+        "y": 9.4,
+        "reportedLocations": [
+          {
+            "mapID": 1449,
+            "zoneName": "Un'Goro Crater",
+            "x": 43,
+            "y": 9.4
+          },
+          {
+            "mapID": 1449,
+            "zoneName": "Un'Goro Crater",
+            "x": 43,
+            "y": 9.6
+          }
+        ]
       },
       "level": 52,
       "minLevel": 47,
@@ -18091,7 +18171,24 @@
       "start": {
         "npcID": 9119,
         "name": "Muigin",
-        "zoneName": "Un'Goro Crater"
+        "zoneName": "Un'Goro Crater",
+        "mapID": 1449,
+        "x": 43,
+        "y": 9.4,
+        "reportedLocations": [
+          {
+            "mapID": 1449,
+            "zoneName": "Un'Goro Crater",
+            "x": 43,
+            "y": 9.4
+          },
+          {
+            "mapID": 1449,
+            "zoneName": "Un'Goro Crater",
+            "x": 43,
+            "y": 9.6
+          }
+        ]
       },
       "finish": {
         "npcID": 7775,
@@ -18118,12 +18215,70 @@
       "start": {
         "npcID": 9118,
         "name": "Larion",
-        "zoneName": "Un'Goro Crater"
+        "zoneName": "Un'Goro Crater",
+        "mapID": 1449,
+        "x": 45.4,
+        "y": 8.4,
+        "reportedLocations": [
+          {
+            "mapID": 1449,
+            "zoneName": "Un'Goro Crater",
+            "x": 45.4,
+            "y": 8.4
+          },
+          {
+            "mapID": 1449,
+            "zoneName": "Un'Goro Crater",
+            "x": 45.4,
+            "y": 8.6
+          },
+          {
+            "mapID": 1449,
+            "zoneName": "Un'Goro Crater",
+            "x": 45.6,
+            "y": 8.4
+          },
+          {
+            "mapID": 1449,
+            "zoneName": "Un'Goro Crater",
+            "x": 45.6,
+            "y": 8.6
+          }
+        ]
       },
       "finish": {
         "npcID": 9118,
         "name": "Larion",
-        "zoneName": "Un'Goro Crater"
+        "zoneName": "Un'Goro Crater",
+        "mapID": 1449,
+        "x": 45.4,
+        "y": 8.4,
+        "reportedLocations": [
+          {
+            "mapID": 1449,
+            "zoneName": "Un'Goro Crater",
+            "x": 45.4,
+            "y": 8.4
+          },
+          {
+            "mapID": 1449,
+            "zoneName": "Un'Goro Crater",
+            "x": 45.4,
+            "y": 8.6
+          },
+          {
+            "mapID": 1449,
+            "zoneName": "Un'Goro Crater",
+            "x": 45.6,
+            "y": 8.4
+          },
+          {
+            "mapID": 1449,
+            "zoneName": "Un'Goro Crater",
+            "x": 45.6,
+            "y": 8.6
+          }
+        ]
       },
       "level": 52,
       "minLevel": 47,
@@ -18145,7 +18300,36 @@
       "start": {
         "npcID": 9118,
         "name": "Larion",
-        "zoneName": "Un'Goro Crater"
+        "zoneName": "Un'Goro Crater",
+        "mapID": 1449,
+        "x": 45.4,
+        "y": 8.4,
+        "reportedLocations": [
+          {
+            "mapID": 1449,
+            "zoneName": "Un'Goro Crater",
+            "x": 45.4,
+            "y": 8.4
+          },
+          {
+            "mapID": 1449,
+            "zoneName": "Un'Goro Crater",
+            "x": 45.4,
+            "y": 8.6
+          },
+          {
+            "mapID": 1449,
+            "zoneName": "Un'Goro Crater",
+            "x": 45.6,
+            "y": 8.4
+          },
+          {
+            "mapID": 1449,
+            "zoneName": "Un'Goro Crater",
+            "x": 45.6,
+            "y": 8.6
+          }
+        ]
       },
       "finish": {
         "npcID": 8496,
@@ -18182,7 +18366,37 @@
       ],
       "start": {
         "npcID": 928,
-        "name": "Lord Grayson Shadowbreaker"
+        "name": "Lord Grayson Shadowbreaker",
+        "mapID": 1453,
+        "zoneName": "Stormwind City",
+        "x": 37.2,
+        "y": 33,
+        "reportedLocations": [
+          {
+            "mapID": 1453,
+            "zoneName": "Stormwind City",
+            "x": 37.2,
+            "y": 33
+          },
+          {
+            "mapID": 1453,
+            "zoneName": "Stormwind City",
+            "x": 37.6,
+            "y": 32.6
+          },
+          {
+            "mapID": 1453,
+            "zoneName": "Stormwind City",
+            "x": 48.4,
+            "y": 50
+          },
+          {
+            "mapID": 1453,
+            "zoneName": "Stormwind City",
+            "x": 48.6,
+            "y": 50
+          }
+        ]
       },
       "finish": {
         "npcID": 14568,
@@ -18205,11 +18419,71 @@
       ],
       "start": {
         "npcID": 14437,
-        "name": "Gorzeeki Wildeyes"
+        "name": "Gorzeeki Wildeyes",
+        "mapID": 1428,
+        "zoneName": "Burning Steppes",
+        "x": 12.4,
+        "y": 31.4,
+        "reportedLocations": [
+          {
+            "mapID": 1428,
+            "zoneName": "Burning Steppes",
+            "x": 12.4,
+            "y": 31.4
+          },
+          {
+            "mapID": 1428,
+            "zoneName": "Burning Steppes",
+            "x": 12.4,
+            "y": 31.6
+          },
+          {
+            "mapID": 1428,
+            "zoneName": "Burning Steppes",
+            "x": 12.6,
+            "y": 31.4
+          },
+          {
+            "mapID": 1428,
+            "zoneName": "Burning Steppes",
+            "x": 12.6,
+            "y": 31.6
+          }
+        ]
       },
       "finish": {
         "npcID": 14437,
-        "name": "Gorzeeki Wildeyes"
+        "name": "Gorzeeki Wildeyes",
+        "mapID": 1428,
+        "zoneName": "Burning Steppes",
+        "x": 12.4,
+        "y": 31.4,
+        "reportedLocations": [
+          {
+            "mapID": 1428,
+            "zoneName": "Burning Steppes",
+            "x": 12.4,
+            "y": 31.4
+          },
+          {
+            "mapID": 1428,
+            "zoneName": "Burning Steppes",
+            "x": 12.4,
+            "y": 31.6
+          },
+          {
+            "mapID": 1428,
+            "zoneName": "Burning Steppes",
+            "x": 12.6,
+            "y": 31.4
+          },
+          {
+            "mapID": 1428,
+            "zoneName": "Burning Steppes",
+            "x": 12.6,
+            "y": 31.6
+          }
+        ]
       },
       "source": "https://www.wowhead.com/forever/quest=7629/imp-delivery",
       "requirementsKnown": false
@@ -18282,6 +18556,106 @@
         ]
       },
       "source": "https://www.wowhead.com/forever/quest=8258/the-darkreaver-menace",
+      "requirementsKnown": false
+    },
+    {
+      "id": 8425,
+      "name": "Voodoo Feathers",
+      "source": "https://www.wowhead.com/forever/quest=8425/voodoo-feathers",
+      "level": 52,
+      "minLevel": 50,
+      "factions": [
+        "Alliance",
+        "Horde"
+      ],
+      "classes": [
+        "WARRIOR"
+      ],
+      "start": {
+        "npcID": 7572,
+        "name": "Fallen Hero of the Horde",
+        "zoneName": "Swamp of Sorrows"
+      },
+      "finish": {
+        "npcID": 7572,
+        "name": "Fallen Hero of the Horde",
+        "zoneName": "Swamp of Sorrows"
+      },
+      "requirementsKnown": false
+    },
+    {
+      "id": 8257,
+      "name": "Blood of Morphaz",
+      "source": "https://www.wowhead.com/forever/quest=8257/blood-of-morphaz",
+      "level": 52,
+      "minLevel": 50,
+      "factions": [
+        "Alliance",
+        "Horde"
+      ],
+      "classes": [
+        "PRIEST"
+      ],
+      "start": {
+        "npcID": 8405,
+        "name": "Ogtinc",
+        "zoneName": "Azshara"
+      },
+      "finish": {
+        "npcID": 10922,
+        "name": "Greta Mosshoof",
+        "zoneName": "Felwood"
+      },
+      "requirementsKnown": false
+    },
+    {
+      "id": 8422,
+      "name": "Trolls of a Feather",
+      "source": "https://www.wowhead.com/forever/quest=8422/trolls-of-a-feather",
+      "level": 52,
+      "minLevel": 50,
+      "factions": [
+        "Alliance",
+        "Horde"
+      ],
+      "classes": [
+        "WARLOCK"
+      ],
+      "start": {
+        "npcID": 14470,
+        "name": "Impsy",
+        "zoneName": "Felwood"
+      },
+      "finish": {
+        "npcID": 14470,
+        "name": "Impsy",
+        "zoneName": "Felwood"
+      },
+      "requirementsKnown": false
+    },
+    {
+      "id": 9053,
+      "name": "A Better Ingredient",
+      "source": "https://www.wowhead.com/forever/quest=9053/a-better-ingredient",
+      "level": 52,
+      "minLevel": 50,
+      "factions": [
+        "Alliance",
+        "Horde"
+      ],
+      "classes": [
+        "DRUID"
+      ],
+      "start": {
+        "npcID": 9619,
+        "name": "Torwa Pathfinder",
+        "zoneName": "Un'Goro Crater"
+      },
+      "finish": {
+        "npcID": 9619,
+        "name": "Torwa Pathfinder",
+        "zoneName": "Un'Goro Crater"
+      },
       "requirementsKnown": false
     }
   ],
@@ -18593,7 +18967,11 @@
         3380,
         8733,
         4143,
-        4146
+        4146,
+        8425,
+        8257,
+        8422,
+        9053
       ],
       "source": "https://www.wowhead.com/forever/guide/dungeons-overview-locations-details",
       "instanceID": 109
