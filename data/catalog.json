@@ -20801,6 +20801,30 @@
         8258
       ],
       "storylineEvidence": "https://www.wowhead.com/forever/quest=7667/material-assistance"
+    },
+    {
+      "id": 7631,
+      "name": "Dreadsteed of Xoroth",
+      "source": "https://www.wowhead.com/forever/quest=7631/dreadsteed-of-xoroth",
+      "level": 60,
+      "minLevel": 60,
+      "factions": [
+        "Alliance",
+        "Horde"
+      ],
+      "classes": [
+        "WARLOCK"
+      ],
+      "start": {
+        "npcID": 14436,
+        "name": "Mor'zul Bloodbringer",
+        "zoneName": "Burning Steppes"
+      },
+      "finish": {
+        "npcID": 14504,
+        "name": "Dreadsteed Spirit"
+      },
+      "requirementsKnown": false
     }
   ],
   "dungeons": [
@@ -21262,7 +21286,8 @@
         5519,
         7494,
         5526,
-        7643
+        7643,
+        7631
       ],
       "source": "https://www.wowhead.com/forever/guide/dungeons-overview-locations-details",
       "instanceID": 429
