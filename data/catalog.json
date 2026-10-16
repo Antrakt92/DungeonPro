@@ -1523,7 +1523,11 @@
         "npcID": 12736,
         "name": "Je'neu Sancrea"
       },
-      "requirementsKnown": false
+      "requirementsKnown": false,
+      "storyline": [
+        6564,
+        6565
+      ]
     },
     {
       "id": 1200,
@@ -1721,6 +1725,71 @@
         "name": "Doan Karhan"
       },
       "requirementsKnown": false
+    },
+    {
+      "id": 6564,
+      "name": "Allegiance to the Old Gods",
+      "level": 22,
+      "minLevel": 17,
+      "source": "https://www.wowhead.com/forever/quest=6564/allegiance-to-the-old-gods",
+      "factions": [
+        "Horde"
+      ],
+      "finish": {
+        "npcID": 12736,
+        "name": "Je'neu Sancrea"
+      },
+      "storyline": [
+        6564,
+        6565
+      ],
+      "requirementsKnown": false
+    },
+    {
+      "id": 6563,
+      "name": "The Essence of Aku'Mai",
+      "level": 22,
+      "minLevel": 17,
+      "source": "https://www.wowhead.com/forever/quest=6563/the-essence-of-akumai",
+      "factions": [
+        "Horde"
+      ],
+      "start": {
+        "npcID": 12736,
+        "name": "Je'neu Sancrea"
+      },
+      "finish": {
+        "npcID": 12736,
+        "name": "Je'neu Sancrea"
+      },
+      "storyline": [
+        6562,
+        6563
+      ],
+      "requirementsKnown": false
+    },
+    {
+      "id": 6562,
+      "name": "Trouble in the Deeps",
+      "level": 22,
+      "minLevel": 17,
+      "source": "https://www.wowhead.com/forever/quest=6562/trouble-in-the-deeps",
+      "factions": [
+        "Horde"
+      ],
+      "start": {
+        "npcID": 11862,
+        "name": "Tsunaman"
+      },
+      "finish": {
+        "npcID": 12736,
+        "name": "Je'neu Sancrea"
+      },
+      "storyline": [
+        6562,
+        6563
+      ],
+      "requirementsKnown": false
     }
   ],
   "dungeons": [
@@ -1812,7 +1881,10 @@
         1275,
         95036,
         1654,
-        1740
+        1740,
+        6564,
+        6563,
+        6562
       ],
       "source": "https://www.wowhead.com/forever/guide/dungeons-overview-locations-details",
       "instanceID": 48

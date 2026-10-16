@@ -19,6 +19,9 @@
 - Added initial Shadowfang Keep quests and supporting Wailing Caverns chain steps.
 - Added initial Blackfathom Deeps and shared paladin/warlock quests, plus sourced
   waypoints for three Shadowfang Keep quest-givers.
+- Extended Blackfathom's Horde quest list and its known story sequences.
+- Adjusted row and chain-button heights for wrapped text and kept navigation
+  active when unrelated quests change.
 - Improved navigation fallback after TomTom failures and protected the guide
   against unavailable map/vector constructors and invalid positions.
 - Preserved player map pins when the client rejects a new waypoint.
