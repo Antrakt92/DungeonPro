@@ -1,6 +1,7 @@
 local _, addon = ...
 local strings = {
     enUS = {
+        ITEM_STARTER = "Quest-starting item: %s", ITEM_DROP_SOURCE = "Drops from %s in %s.",
         QUEST_PORTRAIT = "Quest portrait",
         TITLE = "DungeonPrep", SUBTITLE = "Prepare before you enter", SEARCH = "Search dungeons",
         RANGE = "My level", ALL = "All levels", QUESTS = "Dungeon quests", CHAIN = "Quest chain",
@@ -46,6 +47,7 @@ local strings = {
         ONLY_EN_RU = "Language", COPY = "Select the link and press Ctrl+C.",
     },
     ruRU = {
+        ITEM_STARTER = "Предмет для начала задания: %s", ITEM_DROP_SOURCE = "Выпадает с %s в %s.",
         QUEST_PORTRAIT = "Портрет из журнала",
         TITLE = "DungeonPrep", SUBTITLE = "Подготовься перед походом", SEARCH = "Поиск подземелий",
         RANGE = "Мой уровень", ALL = "Все уровни", QUESTS = "Задания подземелья", CHAIN = "Цепочка заданий",

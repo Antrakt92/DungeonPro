@@ -658,4 +658,33 @@ check("Portrait UI rejects invalid and restricted display IDs without fallback",
     assert(calls == 0)
     addon.QuestPortrait, SetPortraitTextureFromCreatureDisplayID, issecretvalue = nil, nil, nil
 end)
+check("Item starters show their actual source dungeon without invented giver coordinates", function()
+    local start, dungeons, itemName = addon.quests[2].start, addon.dungeons, addon.ItemName
+    addon.quests[2].start = { itemID = 17008, name = "Small Scroll", dungeonKey = "rfk", dropNPCID = 4421, dropName = "Charlga" }
+    addon.dungeons = { { key = "rfk", name = "Razorfen Kraul" } }
+    addon.ItemName = function(id) assert(id == 17008); return "Localized scroll" end
+    showDetail(2, { level = 20, completed = function() return false end, active = function() return false end })
+    assert(detailHas(addon.L("START") .. ": " .. addon.L("ITEM_STARTER", "Localized scroll")))
+    assert(detailHas(addon.L("ITEM_DROP_SOURCE", "Charlga", "Razorfen Kraul")))
+    assert(not ui.giver.enabled and not ui.giverAction and not ui.guide.enabled)
+    assert(ui.engine:State(2).status == "AVAILABLE" and ui.action.kind == "pickup")
+    addon.ItemName = nil; showDetail(2, { level = 20, completed = function() return false end, active = function() return false end })
+    assert(detailHas(addon.L("START") .. ": " .. addon.L("ITEM_STARTER", "Small Scroll")))
+    showDetail(3)
+    assert(not detailHas(addon.L("ITEM_DROP_SOURCE", "Charlga", "Razorfen Kraul")))
+    addon.quests[2].start, addon.dungeons, addon.ItemName = start, dungeons, itemName
+    ui:Refresh()
+end)
+check("Material rows use fresh client item names and retain explicit ID fallback", function()
+    addon.quests[900] = { id = 900, minLevel = 1, requirementsKnown = true,
+        completionQuests = { { id = 901, itemID = 7083 } } }
+    addon.quests[901] = { id = 901, minLevel = 1, requirementsKnown = false }
+    addon.ItemName = function(id) assert(id == 7083); return "Localized material" end
+    showDetail(900)
+    assert(ui.materialButtons[1].note.text:find("Localized material", 1, true))
+    assert(not ui.materialButtons[1].note.text:find(addon.L("MATERIAL_ITEM", 7083), 1, true))
+    addon.ItemName = function() return nil end; showDetail(900)
+    assert(ui.materialButtons[1].note.text:find(addon.L("MATERIAL_ITEM", 7083), 1, true))
+    addon.ItemName = nil; addon.quests[900], addon.quests[901] = nil, nil
+end)
 print("Preparation UI modeled checks passed: " .. total .. " (no native layout validation)")

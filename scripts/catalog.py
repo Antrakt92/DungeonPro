@@ -56,11 +56,15 @@ def validate(data):
                 continue
             if type(p) is not dict:
                 raise ValueError(f"Invalid quest {key} place: {q['id']}")
-            for identity in ("npcID", "objectID"):
+            for identity in ("npcID", "objectID", "itemID", "dropNPCID"):
                 if identity in p and not integer(p[identity]):
                     raise ValueError(f"Invalid {identity} entity ID: {q['id']}")
-            if "npcID" in p and "objectID" in p:
+            if sum(identity in p for identity in ("npcID", "objectID", "itemID")) > 1:
                 raise ValueError(f"Ambiguous quest place identity: {q['id']}")
+            if "dropNPCID" in p and "itemID" not in p:
+                raise ValueError(f"Item drop source without starter item: {q['id']}")
+            if "dungeonKey" in p and (type(p["dungeonKey"]) is not str or not p["dungeonKey"]):
+                raise ValueError(f"Invalid pickup dungeon: {q['id']}")
             if "mapID" in p and not integer(p["mapID"]):
                 raise ValueError("Invalid map ID")
             if ("x" in p) != ("y" in p):
@@ -125,6 +129,11 @@ def validate(data):
             raise ValueError("Duplicate dungeon quest")
         if d["coverage"] == "reviewed" and not d["quests"]:
             raise ValueError("Empty dungeon cannot claim reviewed coverage")
+    for q in quests.values():
+        for field in ("start", "finish"):
+            place = q.get(field)
+            if place and "dungeonKey" in place and place["dungeonKey"] not in keys:
+                raise ValueError(f"Missing pickup dungeon: {q['id']}")
     return data
 
 

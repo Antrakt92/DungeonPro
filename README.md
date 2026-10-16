@@ -6,7 +6,7 @@ prerequisite quests and find the next available step.
 **Early development build for WoW Forever. Quest coverage is incomplete.**
 The catalogue has 29 dungeon entries; initial quest data covers The Deadmines,
 Ragefire Chasm, The Hall of Thanes, Wailing Caverns, Shadowfang Keep,
-Blackfathom Deeps, The Stockade and Gnomeregan.
+Blackfathom Deeps, The Stockade, Gnomeregan, Razorfen Kraul and Razorfen Downs.
 Other entries explicitly show that their
 quests have not been added. Level ranges are provisional recommendations.
 
@@ -28,6 +28,8 @@ quests have not been added. Level ranges are provisional recommendations.
   dungeons, beyond the ordinary dungeon categories. Their preparation chains
   and some dungeon associations still need checking.
 - Separate story order for chains whose hard prerequisites still need checking.
+- Item-started quests show the known item and drop dungeon separately, including
+  quests whose starter drops in a different dungeon.
 - Related quests for completion materials appear separately from acceptance
   requirements. Their completion does not confirm you still hold the item.
 - Explicitly sourced repeatable quests have their own label.
@@ -38,7 +40,9 @@ quests have not been added. Level ranges are provisional recommendations.
 - A separate quest-giver button opens a known zone or guides to a known location.
   Visiting a giver does not confirm that the quest is available to pick up.
 - Quest text saved when you open the quest at its giver. Complete unseen quest
-  descriptions and quest-giver portraits are not yet included.
+  descriptions and verified quest-giver portraits are not yet included.
+- Optional quest portraits from the selected quest log entry, when supplied by
+  the client. These are journal portraits, not verified photographs of each NPC.
 - Item rewards and choices for the currently selected active quest, when the
   client provides them. Unknown reward data is shown explicitly.
 - Quest objectives from the client appear when available. The window adjusts to

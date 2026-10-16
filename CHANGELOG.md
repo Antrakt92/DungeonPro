@@ -21,6 +21,9 @@
   waypoints for three Shadowfang Keep quest-givers.
 - Extended Blackfathom's Horde quest list and its known story sequences.
 - Added The Stockade and the paladin's Kor Gem support quest.
+- Added initial Razorfen Kraul and Razorfen Downs quests, item starters and
+  four sourced Razorfen quest-giver locations.
+- Added optional native quest-log portraits when the client provides one.
 - Added initial Gnomeregan quests, Stockade giver waypoints and the Horde
   paladin's Kor Gem support quest.
 - Added client-provided item rewards, reward choices and money to quest details.

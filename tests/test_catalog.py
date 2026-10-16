@@ -125,6 +125,24 @@ class CatalogTests(unittest.TestCase):
         self.data["quests"][0]["start"] = {"objectID": 142487}
         catalog.validate(self.data)
 
+    def test_item_starters_keep_drop_source_and_dungeon_identity(self):
+        q = self.data["quests"][0]
+        q["start"] = {"itemID": 17008, "dropNPCID": 4421, "dungeonKey": "rfk"}
+        catalog.validate(self.data)
+        for field, value in (("itemID", True), ("dropNPCID", "4421"), ("dungeonKey", "missing"), ("dungeonKey", 47)):
+            with self.subTest(field=field, value=value):
+                data = copy.deepcopy(self.data)
+                data["quests"][0]["start"][field] = value
+                with self.assertRaises(ValueError):
+                    catalog.validate(data)
+        q["start"]["npcID"] = 4421
+        with self.assertRaisesRegex(ValueError, "Ambiguous"):
+            catalog.validate(self.data)
+        del q["start"]["npcID"]
+        del q["start"]["itemID"]
+        with self.assertRaisesRegex(ValueError, "without starter"):
+            catalog.validate(self.data)
+
     def test_coordinates_require_both_axes_and_a_map(self):
         for field in ("start", "finish"):
             for missing in ("x", "y", "mapID"):

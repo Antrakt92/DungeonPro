@@ -2668,6 +2668,367 @@
         2949,
         2950
       ]
+    },
+    {
+      "id": 1101,
+      "name": "The Crone of the Kraul",
+      "level": 34,
+      "minLevel": 29,
+      "factions": [
+        "Alliance"
+      ],
+      "requirementsKnown": false,
+      "source": "https://www.wowhead.com/forever/quest=1101/the-crone-of-the-kraul",
+      "start": {
+        "npcID": 4048,
+        "name": "Falfindel Waywarder"
+      },
+      "finish": {
+        "npcID": 4048,
+        "name": "Falfindel Waywarder"
+      },
+      "storyline": [
+        1100,
+        1101
+      ]
+    },
+    {
+      "id": 1102,
+      "name": "A Vengeful Fate",
+      "level": 34,
+      "minLevel": 29,
+      "factions": [
+        "Horde"
+      ],
+      "requirementsKnown": false,
+      "source": "https://www.wowhead.com/forever/quest=1102/a-vengeful-fate",
+      "start": {
+        "npcID": 4451,
+        "name": "Auld Stonespire",
+        "mapID": 1456,
+        "x": 36.2,
+        "y": 59.8
+      },
+      "finish": {
+        "npcID": 4451,
+        "name": "Auld Stonespire",
+        "mapID": 1456,
+        "x": 36.2,
+        "y": 59.8
+      }
+    },
+    {
+      "id": 1109,
+      "name": "Going, Going, Guano!",
+      "level": 33,
+      "minLevel": 30,
+      "factions": [
+        "Horde"
+      ],
+      "requirementsKnown": false,
+      "source": "https://www.wowhead.com/forever/quest=1109/going-going-guano",
+      "start": {
+        "npcID": 2055,
+        "name": "Master Apothecary Faranell",
+        "mapID": 1458,
+        "x": 48.6,
+        "y": 69.4
+      },
+      "finish": {
+        "npcID": 2055,
+        "name": "Master Apothecary Faranell",
+        "mapID": 1458,
+        "x": 48.6,
+        "y": 69.4
+      },
+      "storyline": [
+        1109,
+        1113
+      ]
+    },
+    {
+      "id": 1144,
+      "name": "Willix the Importer",
+      "level": 30,
+      "minLevel": 22,
+      "factions": [
+        "Alliance",
+        "Horde"
+      ],
+      "requirementsKnown": false,
+      "source": "https://www.wowhead.com/forever/quest=1144/willix-the-importer",
+      "start": {
+        "npcID": 4508,
+        "name": "Willix the Importer"
+      },
+      "finish": {
+        "npcID": 4508,
+        "name": "Willix the Importer"
+      }
+    },
+    {
+      "id": 1221,
+      "name": "Blueleaf Tubers",
+      "level": 26,
+      "minLevel": 20,
+      "factions": [
+        "Alliance",
+        "Horde"
+      ],
+      "requirementsKnown": false,
+      "source": "https://www.wowhead.com/forever/quest=1221/blueleaf-tubers",
+      "start": {
+        "npcID": 3446,
+        "name": "Mebok Mizzyrix",
+        "mapID": 1413,
+        "x": 62.4,
+        "y": 37.6
+      },
+      "finish": {
+        "npcID": 3446,
+        "name": "Mebok Mizzyrix",
+        "mapID": 1413,
+        "x": 62.4,
+        "y": 37.6
+      }
+    },
+    {
+      "id": 1142,
+      "name": "Mortality Wanes",
+      "level": 30,
+      "minLevel": 25,
+      "factions": [
+        "Alliance"
+      ],
+      "requirementsKnown": false,
+      "source": "https://www.wowhead.com/forever/quest=1142/mortality-wanes",
+      "start": {
+        "npcID": 4510,
+        "name": "Heralath Fallowbrook"
+      },
+      "finish": {
+        "npcID": 4521,
+        "name": "Treshala Fallowbrook",
+        "mapID": 1457,
+        "x": 69.4,
+        "y": 67.4
+      }
+    },
+    {
+      "id": 1100,
+      "name": "Lonebrow's Journal",
+      "level": 34,
+      "minLevel": 29,
+      "factions": [
+        "Alliance"
+      ],
+      "requirementsKnown": false,
+      "source": "https://www.wowhead.com/forever/quest=1100/lonebrows-journal",
+      "finish": {
+        "npcID": 4048,
+        "name": "Falfindel Waywarder"
+      },
+      "storyline": [
+        1100,
+        1101
+      ]
+    },
+    {
+      "id": 1113,
+      "name": "Hearts of Zeal",
+      "level": 33,
+      "minLevel": 30,
+      "factions": [
+        "Horde"
+      ],
+      "requirementsKnown": false,
+      "source": "https://www.wowhead.com/forever/quest=1113/hearts-of-zeal",
+      "start": {
+        "npcID": 2055,
+        "name": "Master Apothecary Faranell",
+        "mapID": 1458,
+        "x": 48.6,
+        "y": 69.4
+      },
+      "finish": {
+        "npcID": 2055,
+        "name": "Master Apothecary Faranell",
+        "mapID": 1458,
+        "x": 48.6,
+        "y": 69.4
+      },
+      "storyline": [
+        1109,
+        1113
+      ]
+    },
+    {
+      "id": 6521,
+      "name": "An Unholy Alliance",
+      "level": 36,
+      "minLevel": 28,
+      "factions": [
+        "Horde"
+      ],
+      "source": "https://www.wowhead.com/forever/quest=6521/an-unholy-alliance",
+      "start": {
+        "npcID": 2425,
+        "name": "Varimathras",
+        "zoneName": "Undercity"
+      },
+      "finish": {
+        "npcID": 2425,
+        "name": "Varimathras",
+        "zoneName": "Undercity"
+      },
+      "requirementsKnown": false,
+      "storyline": [
+        6521,
+        6522
+      ]
+    },
+    {
+      "id": 6522,
+      "name": "An Unholy Alliance",
+      "level": 36,
+      "minLevel": 28,
+      "factions": [
+        "Horde"
+      ],
+      "source": "https://www.wowhead.com/forever/quest=6522/an-unholy-alliance",
+      "start": {
+        "itemID": 17008,
+        "name": "Small Scroll",
+        "dungeonKey": "rfk",
+        "dropNPCID": 4421,
+        "dropName": "Charlga Razorflank"
+      },
+      "finish": {
+        "npcID": 2425,
+        "name": "Varimathras",
+        "zoneName": "Undercity"
+      },
+      "requirementsKnown": false,
+      "storyline": [
+        6521,
+        6522
+      ]
+    },
+    {
+      "id": 3341,
+      "name": "Bring the End",
+      "level": 42,
+      "minLevel": 37,
+      "factions": [
+        "Horde"
+      ],
+      "source": "https://www.wowhead.com/forever/quest=3341/bring-the-end",
+      "start": {
+        "npcID": 2308,
+        "name": "Andrew Brownell",
+        "zoneName": "Undercity"
+      },
+      "finish": {
+        "npcID": 2308,
+        "name": "Andrew Brownell",
+        "zoneName": "Undercity"
+      },
+      "requirementsKnown": false
+    },
+    {
+      "id": 3525,
+      "name": "Extinguishing the Idol",
+      "level": 37,
+      "minLevel": 32,
+      "factions": [
+        "Alliance",
+        "Horde"
+      ],
+      "source": "https://www.wowhead.com/forever/quest=3525/extinguishing-the-idol",
+      "start": {
+        "npcID": 8516,
+        "name": "Belnistrasz",
+        "zoneName": "Razorfen Downs"
+      },
+      "finish": {
+        "objectID": 152097,
+        "name": "Belnistrasz's Brazier",
+        "zoneName": "Razorfen Downs"
+      },
+      "startsInside": true,
+      "requirementsKnown": false,
+      "storyline": [
+        3523,
+        3525
+      ]
+    },
+    {
+      "id": 3636,
+      "name": "Bring the Light",
+      "level": 42,
+      "minLevel": 39,
+      "factions": [
+        "Alliance"
+      ],
+      "source": "https://www.wowhead.com/forever/quest=3636/bring-the-light",
+      "start": {
+        "npcID": 1284,
+        "name": "Archbishop Benedictus",
+        "zoneName": "Stormwind City"
+      },
+      "finish": {
+        "npcID": 1284,
+        "name": "Archbishop Benedictus",
+        "zoneName": "Stormwind City"
+      },
+      "requirementsKnown": false
+    },
+    {
+      "id": 6626,
+      "name": "A Host of Evil",
+      "level": 35,
+      "minLevel": 28,
+      "factions": [
+        "Alliance",
+        "Horde"
+      ],
+      "source": "https://www.wowhead.com/forever/quest=6626/a-host-of-evil",
+      "start": {
+        "npcID": 12866,
+        "name": "Myriam Moonsinger"
+      },
+      "finish": {
+        "npcID": 12866,
+        "name": "Myriam Moonsinger"
+      },
+      "requirementsKnown": false
+    },
+    {
+      "id": 3523,
+      "name": "Scourge of the Downs",
+      "level": 37,
+      "minLevel": 32,
+      "factions": [
+        "Alliance",
+        "Horde"
+      ],
+      "source": "https://www.wowhead.com/forever/quest=3523/scourge-of-the-downs",
+      "start": {
+        "npcID": 8516,
+        "name": "Belnistrasz",
+        "zoneName": "Razorfen Downs"
+      },
+      "finish": {
+        "npcID": 8516,
+        "name": "Belnistrasz",
+        "zoneName": "Razorfen Downs"
+      },
+      "startsInside": true,
+      "requirementsKnown": false,
+      "storyline": [
+        3523,
+        3525
+      ]
     }
   ],
   "dungeons": [
@@ -2824,8 +3185,16 @@
       "name": "Razorfen Kraul",
       "minLevel": 25,
       "maxLevel": 35,
-      "coverage": "pending",
-      "quests": [],
+      "coverage": "partial",
+      "quests": [
+        1101,
+        1102,
+        1109,
+        1144,
+        1221,
+        1142,
+        6522
+      ],
       "source": "https://www.wowhead.com/forever/guide/dungeons-overview-locations-details",
       "instanceID": 47
     },
@@ -2844,8 +3213,16 @@
       "name": "Razorfen Downs",
       "minLevel": 35,
       "maxLevel": 45,
-      "coverage": "pending",
-      "quests": [],
+      "coverage": "partial",
+      "quests": [
+        6521,
+        6522,
+        3341,
+        3525,
+        3636,
+        6626,
+        3523
+      ],
       "source": "https://www.wowhead.com/forever/guide/dungeons-overview-locations-details",
       "instanceID": 129
     },

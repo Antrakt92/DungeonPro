@@ -306,11 +306,22 @@ function UI:RefreshDetail()
         local function place(p)
             if not p then return addon.L("UNKNOWN_PLACE") end
             local zone = p.mapID and addon.Read(C_Map and C_Map.GetMapInfo, "table", p.mapID)
-            return (p.name or "?") .. (zone and zone.name and (" — " .. zone.name) or "") ..
+            local name = p.name or "?"
+            if p.itemID then
+                name = addon.L("ITEM_STARTER", addon.Read(addon.ItemName, "string", p.itemID) or name)
+            end
+            return name .. (zone and zone.name and (" — " .. zone.name) or "") ..
                 (p.x and string.format(" (%.1f, %.1f)", p.x, p.y) or "")
         end
         line(addon.L("START") .. ": " .. place(q.start))
         local start = q.start
+        if start and start.itemID and start.dropNPCID then
+            local dungeonName = addon.L("UNKNOWN_PLACE")
+            for _, dungeon in ipairs(addon.dungeons) do
+                if dungeon.key == start.dungeonKey then dungeonName = addon.DungeonName(dungeon); break end
+            end
+            line(addon.L("ITEM_DROP_SOURCE", start.dropName or ("#" .. start.dropNPCID), dungeonName))
+        end
         local map = start and addon.Clean(start.mapID, "number")
         if map and map > 0 then
             local x, gy = addon.Clean(start.x, "number"), addon.Clean(start.y, "number")
@@ -409,7 +420,7 @@ function UI:RefreshDetail()
                 row.title:SetText(addon.QuestName(other))
                 local status = entry.state.status
                 row.note:SetText("|cff" .. COLOR[status] .. addon.L(status) .. "|r\n" ..
-                    addon.L("MATERIAL_ITEM", entry.itemID) .. (entry.unknown and status ~= "UNKNOWN" and (" — " .. addon.L("UNKNOWN")) or ""))
+                    (addon.Read(addon.ItemName, "string", entry.itemID) or addon.L("MATERIAL_ITEM", entry.itemID)) .. (entry.unknown and status ~= "UNKNOWN" and (" — " .. addon.L("UNKNOWN")) or ""))
                 row:SetScript("OnClick", function() self.quest = other; self:RefreshDetail() end)
                 y = self:LayoutRow(row, 59, y)
             end
