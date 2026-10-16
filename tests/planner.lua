@@ -104,6 +104,31 @@ check("Forever race IDs are not truncated to a classic eight-bit mask", function
     eq(P.Eligible(addon.quests[96393], c), true)
     c.race = 1; eq(P.Eligible(addon.quests[96393], c), false)
 end)
+check("A known class exclusion wins even when faction information is missing", function()
+    local c = ctx(); c.faction = nil
+    local quest = q(1, nil, { factions = { "Horde" }, classes = { "WARLOCK" } })
+    local eligible, reason = P.Eligible(quest, c)
+    eq(eligible, false); eq(reason, "class")
+    local e = P.New({ [1] = quest }, c)
+    eq(e:State(1).status, "UNAVAILABLE")
+    local d = { coverage = "reviewed", quests = { 1 } }
+    eq(#e:Dungeon(d).rows, 0)
+    eq(e:Dungeon(d, { includeUnavailable = true }).rows[1].state.reason, "class")
+end)
+check("A known race exclusion wins over unknown class and faction", function()
+    local c = ctx(); c.faction, c.class = nil, nil
+    local eligible, reason = P.Eligible(q(1, nil, {
+        factions = { "Alliance" }, classes = { "MAGE" }, races = { 1 },
+    }), c)
+    eq(eligible, false); eq(reason, "race")
+end)
+check("Unknown restrictions remain unknown when all known restrictions match", function()
+    local c = ctx(); c.faction = nil
+    local eligible, reason = P.Eligible(q(1, nil, {
+        factions = { "Alliance" }, classes = { "MAGE" }, races = { 3 },
+    }), c)
+    eq(eligible, nil); eq(reason, "faction")
+end)
 check("Shared dungeon class quests preserve current faction race and class gates", function()
     local c = ctx(); c.faction, c.class, c.race = "Horde", "PALADIN", 6
     local e = P.New(addon.quests, c)

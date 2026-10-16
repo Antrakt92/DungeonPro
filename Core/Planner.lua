@@ -8,13 +8,15 @@ local function contains(list, value)
 end
 
 function Planner.Eligible(q, context)
+    local unknown
     for _, rule in ipairs({ { "factions", "faction" }, { "classes", "class" }, { "races", "race" } }) do
         if q[rule[1]] then
             local value = context[rule[2]]
-            if value == nil then return nil, rule[2] end
-            if not contains(q[rule[1]], value) then return false, rule[2] end
+            if value == nil then unknown = unknown or rule[2]
+            elseif not contains(q[rule[1]], value) then return false, rule[2] end
         end
     end
+    if unknown then return nil, unknown end
     return true
 end
 
