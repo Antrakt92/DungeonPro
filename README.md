@@ -19,6 +19,9 @@ quests have not been added. Level ranges are provisional recommendations.
 - A next-step view collects the dungeon's preparation actions, combines shared
   prerequisites and groups pickups before entry, inside pickups, level gates,
   quests in progress and unresolved requirements.
+- Switch between quests for your character and all character restrictions.
+  Restricted quests stay available for inspection and do not add preparation
+  actions. Character, level and preparation filters are remembered per character.
 - Separate story order for chains whose hard prerequisites still need checking.
 - World map, optional TomTom and a built-in direction arrow. The arrow points
   toward a coordinate; it does not find paths around terrain or plan transport.

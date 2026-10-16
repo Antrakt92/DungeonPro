@@ -7,6 +7,9 @@
 - Added initial quest facts for The Deadmines, Ragefire Chasm and The Hall of Thanes.
 - Added explicit notices for incomplete data and interface translations.
 - Added translated explanations for locked quests and missing information.
+- Added character filtering with an option to inspect restricted quests, and
+  remembered browsing filters per character.
+- Preserved saved settings when their schema is invalid or newer than supported.
 - Preserved saved descriptions after empty client responses and added bounded
   retries when localized quest-title loading fails.
 - Added a next-step list for dungeon preparation and client-provided objectives.

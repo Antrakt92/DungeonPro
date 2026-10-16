@@ -114,29 +114,34 @@ function Planner.New(quests, context)
         return actions, uncertain
     end
 
-    function engine:Dungeon(dungeon)
+    function engine:Dungeon(dungeon, options)
         local result = { rows = {}, actions = {}, counts = {}, unknown = dungeon.coverage ~= "reviewed", ready = true }
-        local seen = {}
+        local seen, relevant = {}, 0
         for _, id in ipairs(dungeon.quests) do
             local q = self.quests[id]
             local eligible = q and Planner.Eligible(q, self.context)
-            if eligible ~= false then
+            if eligible ~= false or (options and options.includeUnavailable == true) then
                 local state = self:State(id)
                 result.rows[#result.rows + 1] = { id = id, state = state }
                 result.counts[state.status] = (result.counts[state.status] or 0) + 1
-                if state.status ~= "COMPLETED" and state.status ~= "ACTIVE" and state.status ~= "READY" and
-                    not (q and q.startsInside and state.status == "AVAILABLE") then
-                    result.ready = false
-                end
-                local actions, uncertain = self:Next(id)
-                if uncertain or state.status == "UNKNOWN" then result.unknown = true end
-                for _, action in ipairs(actions) do
-                    local key = action.id .. ":" .. action.kind
-                    if not seen[key] then result.actions[#result.actions + 1], seen[key] = action, true end
+                -- Inspection of another character's quests does not add work
+                -- or uncertainty to this character's preparation result.
+                if eligible ~= false then
+                    relevant = relevant + 1
+                    if state.status ~= "COMPLETED" and state.status ~= "ACTIVE" and state.status ~= "READY" and
+                        not (q and q.startsInside and state.status == "AVAILABLE") then
+                        result.ready = false
+                    end
+                    local actions, uncertain = self:Next(id)
+                    if uncertain or state.status == "UNKNOWN" then result.unknown = true end
+                    for _, action in ipairs(actions) do
+                        local key = action.id .. ":" .. action.kind
+                        if not seen[key] then result.actions[#result.actions + 1], seen[key] = action, true end
+                    end
                 end
             end
         end
-        if result.unknown or #result.rows == 0 then result.ready = false end
+        if result.unknown or relevant == 0 then result.ready = false end
         return result
     end
     return engine

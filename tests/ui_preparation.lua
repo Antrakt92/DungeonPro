@@ -36,7 +36,7 @@ assert(loadfile("Core/Namespace.lua"))("DungeonPrep", addon)
 assert(loadfile("Locales/Strings.lua"))("DungeonPrep", addon)
 assert(loadfile("Core/Planner.lua"))("DungeonPrep", addon)
 addon.db = { locale = "enUS", window = { x = 999999, y = -999999 } }
-addon.char = {}
+addon.char = { filters = { range = "true", preparation = 1, includeUnavailable = "true", other = "preserve" } }
 addon.Context = function() return {
     level = 20, completed = function(id) return done[id] or false end,
     active = function(id) return id == 6 end,
@@ -70,6 +70,11 @@ local function visibleRows()
     return result
 end
 ui:Create(); ui.frame:Show(); ui.dungeon = addon.dungeons[1]; ui:Refresh()
+check("Character filters default safely and reject non-boolean saved values", function()
+    assert(not ui.range and not ui.preparation and not ui.includeUnavailable)
+    assert(ui.characterButton.text == addon.L("MY_CHARACTER"))
+    assert(addon.char.filters.includeUnavailable == "true" and addon.char.filters.other == "preserve")
+end)
 check("Window fits a short screen and clamps a stale saved position", function()
     assert(ui.frame.scale * 700 <= screenHeight * 0.92 + 0.001)
     assert(ui.frame.scale * 1100 <= screenWidth * 0.92 + 0.001)
@@ -228,6 +233,66 @@ check("Cycle reasons render without making the quest available and clear on redr
     for key, value in pairs(addon.locales.enUS) do
         if key:find("REASON_", 1, true) and not value:find("%%d") then assert(not detailHas(value)) end
     end
+end)
+check("All-character browsing preserves restricted quests for inspection without actions", function()
+    local originalContext, filters = addon.Context, addon.char.filters
+    addon.Context = function() local c = originalContext(); c.faction = "Alliance"; return c end
+    addon.quests[300] = { id = 300, minLevel = 1, requirementsKnown = true, factions = { "Horde" } }
+    local ids = ui.dungeon.quests; ids[#ids + 1] = 300
+    ui.preparation = false; ui:Refresh()
+    assert(#visibleRows() == 7)
+    ui.characterButton.scripts.OnClick()
+    assert(ui.includeUnavailable and addon.char.filters.includeUnavailable == true)
+    assert(ui.characterButton.text == addon.L("ALL_CHARACTERS") and #visibleRows() == 8)
+    local function selectRestricted()
+        for _, row in ipairs(visibleRows()) do
+            if row.title.text == "Quest 300" then
+                row.scripts.OnClick()
+                assert(detailHas(addon.L("REASON_faction")) and not ui.action and not ui.guide.enabled)
+                return true
+            end
+        end
+        return false
+    end
+    assert(selectRestricted())
+    ui.preparationButton.scripts.OnClick()
+    local heading
+    for _, row in ipairs(ui.rows) do
+        if row.shown and row.heading == "PREP_unavailable" then heading = row end
+    end
+    assert(heading and not heading.enabled and not heading.scripts.OnClick and selectRestricted())
+    ui:LoadFilters()
+    assert(ui.includeUnavailable and ui.preparation and addon.char.filters == filters and filters.other == "preserve")
+    ui.characterButton.scripts.OnClick()
+    for _, row in ipairs(visibleRows()) do assert(row.title.text ~= "Quest 300") end
+    ui.preparationButton.scripts.OnClick()
+    for _, row in ipairs(visibleRows()) do assert(row.enabled and not row.heading and row.scripts.OnClick) end
+    ids[#ids] = nil; addon.quests[300] = nil
+    addon.Context = originalContext; ui.quest = nil; ui:Refresh()
+end)
+check("Level and preparation toggles persist without replacing unrelated filters", function()
+    local filters = addon.char.filters
+    ui.rangeButton.scripts.OnClick()
+    assert(filters.range == true)
+    ui.range = false; ui:LoadFilters(); assert(ui.range)
+    ui.rangeButton.scripts.OnClick()
+    assert(filters.range == false and filters.preparation == false and filters.includeUnavailable == false)
+    assert(addon.char.filters == filters and filters.other == "preserve")
+end)
+check("Filtered-out quests are distinguished from missing dungeon data", function()
+    local originalContext, originalDungeon = addon.Context, ui.dungeon
+    addon.Context = function() local c = originalContext(); c.faction = "Alliance"; return c end
+    addon.quests[301] = { id = 301, minLevel = 1, requirementsKnown = true, factions = { "Horde" } }
+    ui.dungeon = { name = "Faction fixture", coverage = "reviewed", quests = { 301 } }
+    ui:Refresh()
+    assert(#visibleRows() == 0 and ui.coverage.text == addon.L("NO_CHARACTER_QUESTS"))
+    ui.characterButton.scripts.OnClick()
+    assert(#visibleRows() == 1 and visibleRows()[1].title.text == "Quest 301")
+    assert(ui.coverage.text ~= addon.L("NO_CHARACTER_QUESTS") and ui.coverage.text ~= addon.L("EMPTY"))
+    ui.characterButton.scripts.OnClick()
+    ui.dungeon.quests = {}; ui:Refresh()
+    assert(#visibleRows() == 0 and ui.coverage.text == addon.L("EMPTY"))
+    ui.dungeon = originalDungeon; addon.Context = originalContext; addon.quests[301] = nil; ui:Refresh()
 end)
 check("Completed preparation keeps the prepared result instead of empty data warning", function()
     for id in pairs(addon.quests) do done[id] = true end

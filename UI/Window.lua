@@ -1,5 +1,5 @@
 local _, addon = ...
-local UI = { dungeon = nil, quest = nil, search = "", range = false, preparation = false }
+local UI = { dungeon = nil, quest = nil, search = "", range = false, preparation = false, includeUnavailable = false }
 addon.UI = UI
 local COLOR = { COMPLETED = "66dd99", READY = "ffe066", ACTIVE = "88bfff", AVAILABLE = "ffe9b0",
     LOCKED = "f0b080", UNKNOWN = "b4aacd", UNAVAILABLE = "999999" }
@@ -75,6 +75,20 @@ local function hideRest(pool, n)
     for i = n + 1, #pool do pool[i]:Hide() end
 end
 
+function UI:LoadFilters()
+    local filters = addon.Clean(addon.char.filters, "table") or {}
+    for _, key in ipairs({ "range", "preparation", "includeUnavailable" }) do
+        self[key] = addon.Clean(filters[key], "boolean") == true
+    end
+end
+
+function UI:SaveFilters()
+    if not addon.Clean(addon.char.filters, "table") then addon.char.filters = {} end
+    for _, key in ipairs({ "range", "preparation", "includeUnavailable" }) do
+        addon.char.filters[key] = addon.Clean(self[key], "boolean") == true
+    end
+end
+
 function UI:RefreshDungeons()
     local context = addon.Context()
     local n = 0
@@ -112,14 +126,14 @@ function UI:RefreshQuests()
     self.heading:SetText(d and addon.DungeonName(d) or addon.L("QUESTS"))
     local n = 0
     if d then
-        local plan = engine:Dungeon(d)
+        local plan = engine:Dungeon(d, { includeUnavailable = self.includeUnavailable })
         self.summary:SetText(addon.L("SUMMARY", (plan.counts.ACTIVE or 0) + (plan.counts.READY or 0),
             plan.counts.COMPLETED or 0, (plan.counts.LOCKED or 0) + (plan.counts.AVAILABLE or 0), plan.counts.UNKNOWN or 0))
         self.coverage:SetText(plan.unknown and addon.L("PARTIAL") or addon.L(plan.ready and "PREPARED" or "NOT_PREPARED"))
         local entries = plan.rows
         if self.preparation then
             entries = {}
-            local groups = { outside = {}, inside = {}, level = {}, progress = {}, uncertain = {} }
+            local groups = { outside = {}, inside = {}, level = {}, progress = {}, uncertain = {}, unavailable = {} }
             for _, action in ipairs(plan.actions) do
                 local q, group = addon.quests[action.id], "progress"
                 if action.kind == "level" then group = "level"
@@ -131,9 +145,10 @@ function UI:RefreshQuests()
             -- Unresolved targets stay visible even when no trustworthy action exists.
             for _, entry in ipairs(plan.rows) do
                 local _, uncertain = engine:Next(entry.id)
-                if entry.state.status == "UNKNOWN" or uncertain then groups.uncertain[#groups.uncertain + 1] = entry end
+                if entry.state.status == "UNAVAILABLE" then groups.unavailable[#groups.unavailable + 1] = entry
+                elseif entry.state.status == "UNKNOWN" or uncertain then groups.uncertain[#groups.uncertain + 1] = entry end
             end
-            for _, group in ipairs({ "outside", "inside", "level", "progress", "uncertain" }) do
+            for _, group in ipairs({ "outside", "inside", "level", "progress", "uncertain", "unavailable" }) do
                 if #groups[group] > 0 then
                     entries[#entries + 1] = { heading = "PREP_" .. group }
                     for _, entry in ipairs(groups[group]) do entries[#entries + 1] = entry end
@@ -165,7 +180,9 @@ function UI:RefreshQuests()
                 row:SetScript("OnClick", function() self.quest = id; self:RefreshDetail() end)
             end
         end
-        if #plan.rows == 0 then self.coverage:SetText(addon.L("EMPTY")) end
+        if #plan.rows == 0 then
+            self.coverage:SetText(addon.L(#d.quests > 0 and "NO_CHARACTER_QUESTS" or "EMPTY"))
+        end
     else
         self.summary:SetText(""); self.coverage:SetText(addon.L("PICK"))
     end
@@ -268,6 +285,7 @@ function UI:Refresh()
     self.language:SetText(addon.db.locale == "auto" and "Auto" or addon.db.locale)
     self.rangeButton:SetText(addon.L(self.range and "RANGE" or "ALL"))
     self.preparationButton:SetText(addon.L(self.preparation and "QUESTS" or "NEXT"))
+    self.characterButton:SetText(addon.L(self.includeUnavailable and "ALL_CHARACTERS" or "MY_CHARACTER"))
     self.map:SetText(addon.L("MAP")); self.guide:SetText(addon.L("GUIDE")); self.source:SetText(addon.L("SOURCE"))
     self.footer:SetText(addon.L("DEVELOPMENT"))
     self:RefreshDungeons(); self:RefreshQuests(); self:RefreshDetail()
@@ -289,6 +307,7 @@ function UI:Fit()
 end
 
 function UI:Create()
+    self:LoadFilters()
     FONT = STANDARD_TEXT_FONT or "Fonts\\ARIALN.TTF"
     local frame = CreateFrame("Frame", "DungeonPrepWindow", UIParent, "BackdropTemplate")
     frame:SetSize(1100, 700); frame:SetPoint("CENTER")
@@ -328,12 +347,16 @@ function UI:Create()
     search:SetSize(230, 25); search:SetPoint("TOPLEFT", 27, -84); search:SetAutoFocus(false)
     search:SetScript("OnTextChanged", function(b) self.search = b:GetText(); self:RefreshDungeons() end)
     search:SetScript("OnEscapePressed", function(b) b:ClearFocus() end)
-    self.rangeButton = button(frame, "", 105, function() self.range = not self.range; self:Refresh() end)
+    self.rangeButton = button(frame, "", 105, function() self.range = not self.range; self:SaveFilters(); self:Refresh() end)
     self.rangeButton:SetPoint("TOPLEFT", 273, -84)
     self.preparationButton = button(frame, "", 170, function()
-        self.preparation = not self.preparation; self:Refresh()
+        self.preparation = not self.preparation; self:SaveFilters(); self:Refresh()
     end)
     self.preparationButton:SetPoint("TOPLEFT", 390, -84)
+    self.characterButton = button(frame, "", 120, function()
+        self.includeUnavailable = not self.includeUnavailable; self:SaveFilters(); self:Refresh()
+    end)
+    self.characterButton:SetPoint("TOPLEFT", 564, -84)
     local language = button(frame, "Auto", 100, function()
         local order = { "auto", "enUS", "ruRU", "deDE", "frFR", "esES", "itIT", "ptBR", "koKR", "zhCN", "zhTW" }
         local current = 1

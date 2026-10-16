@@ -81,6 +81,18 @@ check("Faction restrictions remove quests from the dungeon totals", function()
     local d = { quests = { 5728 }, coverage = "reviewed" }
     eq(#P.New(addon.quests, ctx()):Dungeon(d).rows, 0)
 end)
+check("All-character inspection retains unavailable rows without changing readiness", function()
+    local quests = { [1] = q(1), [2] = q(2, nil, { factions = { "Horde" }, requirementsKnown = false }) }
+    local e = P.New(quests, ctx({}, { [1] = true }))
+    local d = { quests = { 1, 2 }, coverage = "reviewed" }
+    local filtered = e:Dungeon(d)
+    local all = e:Dungeon(d, { includeUnavailable = true })
+    eq(#filtered.rows, 1); eq(#all.rows, 2)
+    eq(all.rows[2].state.status, "UNAVAILABLE")
+    eq(all.ready, true); eq(all.unknown, false)
+    eq(#all.actions, #filtered.actions)
+    eq(e:Dungeon({ quests = { 2 }, coverage = "reviewed" }, { includeUnavailable = true }).ready, false)
+end)
 check("Forever race IDs are not truncated to a classic eight-bit mask", function()
     local c = ctx(); c.race = 95
     eq(P.Eligible(addon.quests[96393], c), true)
