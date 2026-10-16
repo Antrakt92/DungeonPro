@@ -108,7 +108,7 @@ check("Window opens and filters without requiring cached quest titles", function
     SlashCmdList.DUNGEONPRO("")
     assert(addon.UI.frame:IsShown()); assert(#addon.UI.cards == 29)
     for _, d in ipairs(addon.dungeons) do if d.key == "dm" then addon.UI.dungeon = d end end
-    addon.UI:Refresh(); assert(#addon.UI.rows == 6)
+    addon.UI:Refresh(); assert(#addon.UI.rows == 7)
 end)
 check("Actual Defias data stays uncertain even after every known parent is completed", function()
     local completed = C_QuestLog.IsQuestFlaggedCompleted
@@ -690,6 +690,50 @@ check("Actual partial Defias chain keeps held prerequisite work without claiming
     assert(actual.x == place.x / 100 and actual.y == place.y / 100)
     addon.Navigation.Stop()
     C_QuestLog.IsOnQuest, C_QuestLog.ReadyForTurnIn = active, ready
+    ui.quest, ui.detailHistory = previous, history; ui:Refresh()
+end)
+check("Deadmines includes the VanCleef letter even though its quest leads outside the dungeon", function()
+    local ui, previous, dungeon, preparation = addon.UI, addon.UI.quest, addon.UI.dungeon, addon.UI.preparation
+    for _, entry in ipairs(addon.dungeons) do if entry.key == "dm" then ui.dungeon = entry end end
+    ui.preparation = false; ui:Refresh()
+    local letter
+    for _, row in ipairs(ui.rows) do
+        if row.shown and row.title.text == addon.QuestName(373) then letter = row end
+    end
+    assert(letter and letter.enabled)
+    local before = #waypoints
+    letter.scripts.OnClick()
+    assert(ui.quest == 373 and addon.quests[373].start.itemID == 2874)
+    assert(addon.quests[373].start.dungeonKey == "dm" and addon.quests[373].start.dropNPCID == 639)
+    assert(ui.engine:State(373).status == "UNKNOWN" and not ui.action and #waypoints == before)
+    assert(addon.quests[373].startsInside == nil, "item drop does not prove where the item must be used")
+    ui.quest, ui.dungeon, ui.preparation = previous, dungeon, preparation; ui:Refresh()
+end)
+check("An unaccepted quest can preview only its explicitly loaded client rewards without gaining availability", function()
+    local keys = { "HaveQuestRewardData", "GetNumQuestLogRewards", "GetNumQuestLogChoices", "GetQuestLogRewardInfo",
+        "GetQuestLogChoiceInfo", "GetQuestLogRewardMoney", "GetQuestLogRewardXP" }
+    local saved = {}; for _, key in ipairs(keys) do saved[key] = _G[key] end
+    local ui, previous, history = addon.UI, addon.UI.quest, addon.UI.detailHistory
+    local loaded = true
+    HaveQuestRewardData = function(id) return id == 373 and loaded end
+    GetNumQuestLogRewards = function(id) assert(id == 373); return 1 end
+    GetNumQuestLogChoices = function(id) assert(id == 373); return 0 end
+    GetQuestLogRewardInfo = function(index, id) assert(index == 1 and id == 373); return "Loaded letter reward", 123, 2, 1, true, 7001 end
+    GetQuestLogRewardMoney = function(id) assert(id == 373); return 0 end
+    GetQuestLogRewardXP = function(id) assert(id == 373); return 90 end
+    local function shown(text)
+        for _, fs in ipairs(ui.details) do if fs.shown and fs.text == text then return true end end
+        return false
+    end
+    local before = #waypoints
+    ui:InspectQuest(373); ui:Refresh()
+    assert(shown(addon.L("REWARD_PREVIEW")) and shown(addon.L("REWARD_ITEM", "Loaded letter reward", 2)))
+    assert(shown(addon.L("REWARD_XP", 90)) and ui.engine:State(373).status == "UNKNOWN")
+    assert(not ui.action and #waypoints == before and addon.quests[373].requirementsKnown == false)
+    loaded = false; eventFrame.scripts.OnEvent(eventFrame, "QUEST_LOG_UPDATE")
+    assert(not shown(addon.L("REWARD_PREVIEW")) and shown(addon.L("REWARD_UNAVAILABLE")))
+    assert(not shown(addon.L("REWARD_ITEM", "Loaded letter reward", 2)))
+    for _, key in ipairs(keys) do _G[key] = saved[key] end
     ui.quest, ui.detailHistory = previous, history; ui:Refresh()
 end)
 print("Client/UI modeled checks passed: " .. total .. " (no pixel or native-client validation)")

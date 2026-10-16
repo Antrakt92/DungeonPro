@@ -20,6 +20,8 @@
   with a clearer label for quests absent from the current quest log.
 - Corrected a Hidden Enemies starting NPC and updated Neeru's reported positions.
 - Kept known prerequisite work visible while other acceptance conditions are unknown.
+- Listed VanCleef's quest-starting letter under Deadmines as well as its later story.
+- Added reward previews by quest ID when the client confirms loaded reward data.
 - Kept newly accepted quests visible alongside past completion history, and
   retained that history when checking prerequisite chains.
 - Added localized names for the current quest NPC, with catalogue names as fallback.
