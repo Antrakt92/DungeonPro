@@ -17,6 +17,7 @@ def main():
     if not lua or not luac:
         raise SystemExit("Lua 5.1 and luac5.1 are required; no automatic install is performed")
     run(sys.executable, "scripts/catalog.py", "--check")
+    run(sys.executable, "scripts/casefold.py", "--check")
     for path in sorted(ROOT.rglob("*.lua")):
         if "dist" not in path.parts:
             run(luac, "-p", str(path))
@@ -24,6 +25,7 @@ def main():
     run(lua, "tests/catalog_contexts.lua")
     run(lua, "tests/client_ui.lua")
     run(lua, "tests/locales.lua")
+    run(lua, "tests/search.lua")
     run(lua, "tests/ui_preparation.lua")
     run(lua, "tests/theme.lua")
     run(lua, "tests/quest_details.lua")

@@ -2,3 +2,7 @@ Copyright (c) 2026 Antrakt92. All rights reserved.
 
 No license to redistribute this development project is granted at this stage.
 World of Warcraft names and game-provided assets belong to Blizzard Entertainment.
+
+Unicode case-fold mapping data retains its separate Unicode License V3.
+The copyright and permission notice is included in Database/SearchCaseFold.lua
+and the normalized source data/search_casefold.json.

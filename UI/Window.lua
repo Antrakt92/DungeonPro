@@ -116,7 +116,7 @@ local function reportedPlaces(parent)
 end
 
 local function searchText(value)
-    -- Only ASCII bytes are folded; UTF-8 sequences pass through unchanged.
+    if type(addon.SearchFold) == "function" then return addon.SearchFold(value) or value end
     return value:gsub("[A-Z]", function(letter) return string.char(letter:byte() + 32) end)
 end
 

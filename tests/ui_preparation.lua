@@ -92,6 +92,8 @@ GetScreenHeight = function() return screenHeight end
 GetLocale = function() return "enUS" end
 local addon, done = {}, { [7] = true }
 assert(loadfile("Core/Namespace.lua"))("DungeonPro", addon)
+assert(loadfile("Database/SearchCaseFold.lua"))("DungeonPro", addon)
+assert(loadfile("Core/Search.lua"))("DungeonPro", addon)
 assert(loadfile("Locales/Strings.lua"))("DungeonPro", addon)
 assert(loadfile("Locales/Translations.lua"))("DungeonPro", addon)
 assert(loadfile("Core/Planner.lua"))("DungeonPro", addon)
@@ -623,7 +625,7 @@ check("Search matches localized and source names literally while preserving sele
     assert(#cards() == 1 and cards()[1].title.text == "Крепость Тёмного Клыка")
     assert(ui.dungeon == searchSelected and ui.quest == 2 and addon.char.selectedDungeon == "search-dm")
     search("крепость")
-    assert(#cards() == 0 and ui.catalogNotice.shown and ui.catalogNotice.text == addon.L("NO_DUNGEONS"))
+    assert(#cards() == 1 and cards()[1].title.text == "Крепость Тёмного Клыка")
     search("[100%]")
     assert(#cards() == 1 and cards()[1].title.text == "测试[100%]")
     search(".*")
@@ -2816,5 +2818,34 @@ check("Large localized quest and overview titles measure wrapping without resett
     assert(ui.details[1].text == "Overview title" and ui.details[1].fontSize == 20 and ui.details[1].fontResetBeforeText)
     measurement = nil; addon.QuestName, addon.db.locale = questName, locale
     ui.quest, ui.dungeon = quest, dungeon; ui:Refresh()
+end)
+check("Actual catalogue browsing folds localized Unicode case while preserving accents and literal CJK", function()
+    local dungeons, dungeonName, search, range = addon.dungeons, addon.DungeonName, ui.search, ui.range
+    local selected, quest, savedSelection, locale = ui.dungeon, ui.quest, addon.char.selectedDungeon, addon.db.locale
+    local actual = {}; assert(loadfile("Database/Catalog.lua"))("DungeonPro", actual)
+    addon.dungeons = actual.dungeons
+    local native = { dm = "МЁРТВЫЕ КОПИ", sfk = "École des ombres", lbrs = "Straße", rfc = "怒焰裂谷[100%]" }
+    addon.DungeonName = function(dungeon) return native[dungeon.key] or dungeon.name end
+    ui.range = false
+    local function searchFor(value, expected)
+        ui.searchBox:SetText(value); ui.searchBox.scripts.OnTextChanged(ui.searchBox)
+        local cards = {}; for _, card in ipairs(ui.cards) do if card.shown then cards[#cards + 1] = card end end
+        if expected then assert(#cards == 1 and cards[1].title.text == expected)
+        else assert(#cards == 0 and ui.catalogNotice.shown) end
+        assert(ui.dungeon == selected and ui.quest == quest and addon.char.selectedDungeon == savedSelection)
+    end
+    searchFor("мёртвые копи", native.dm); searchFor("МёРтВыЕ КоПи", native.dm)
+    searchFor("éCOLE", native.sfk); searchFor("ecole", nil); searchFor("école", nil)
+    searchFor("STRASSE", native.lbrs); searchFor("straße", native.lbrs)
+    searchFor("怒焰裂谷", native.rfc); searchFor("[100%]", native.rfc); searchFor(".*", nil)
+    searchFor("rAgEfIrE cHaSm", native.rfc)
+    for code, strings in pairs(addon.locales) do
+        addon.db.locale = code; ui:RefreshDungeons()
+        assert(ui.searchHint.text == strings.SEARCH_HELP and strings.SEARCH_HELP:find("A–Z", 1, true) == nil)
+    end
+    local bad = string.char(255) .. "A"; native.sfk = bad
+    searchFor(bad, bad); searchFor(string.char(255) .. "a", nil)
+    addon.dungeons, addon.DungeonName, ui.search, ui.range, addon.db.locale = dungeons, dungeonName, search, range, locale
+    ui.searchBox:SetText(search); ui:Refresh()
 end)
 print("Preparation UI modeled checks passed: " .. total .. " (no native layout validation)")

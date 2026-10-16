@@ -2,6 +2,9 @@
 
 ## 0.1.0 - 16-Oct-2026 — Development preview
 
+- Added case-insensitive Unicode search for localized dungeon names.
+- Made quest titles and section headings easier to distinguish from body text.
+- Added missing reported locations for several early dungeon quest givers.
 - Restored quest selection when preparation section headings are present.
 - Explained faction, class and race restrictions directly in quest rows.
 - Added native dungeon artwork for 24 catalogue entries and safer image fallback.
