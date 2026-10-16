@@ -187,4 +187,37 @@ check("Synchronous title failure events keep pending state and delayed recovery"
     for i = 1, 5 do addon.QuestName(168) end
     assert(calls == 3 and #callbacks == 2)
 end)
+check("Invalid and future schemas preserve saved roots and active state exactly", function()
+    local savedDB, savedChar, activeDB, activeChar = DungeonPrepDB, DungeonPrepCharDB, addon.db, addon.char
+    for _, schema in ipairs({ 0 / 0, math.huge, -math.huge, -1, 0, 0.5, 1.5, false, "1", {}, 2, 99, secret }) do
+        local marker, charMarker = {}, {}
+        local db = { schema = schema, locale = false, window = false, marker = marker }
+        local char = { texts = false, filters = false, marker = charMarker }
+        DungeonPrepDB, DungeonPrepCharDB = db, char
+        assert(addon.RestoreDB() == false)
+        assert(DungeonPrepDB == db and DungeonPrepCharDB == char)
+        assert(addon.db == activeDB and addon.char == activeChar)
+        assert(db.marker == marker and db.locale == false and db.window == false)
+        assert(char.marker == charMarker and char.texts == false and char.filters == false)
+        if type(schema) == "number" and schema ~= schema then assert(db.schema ~= db.schema)
+        else assert(db.schema == schema) end
+    end
+    DungeonPrepDB, DungeonPrepCharDB = savedDB, savedChar
+end)
+check("Current and absent schemas retain valid roots nested identities and unrelated fields", function()
+    local savedDB, savedChar, activeDB, activeChar = DungeonPrepDB, DungeonPrepCharDB, addon.db, addon.char
+    for _, withSchema in ipairs({ false, true }) do
+        local window, texts, filters, marker = {}, {}, {}, {}
+        local db = { locale = "ruRU", window = window, marker = marker }
+        if withSchema then db.schema = 1 end
+        local char = { texts = texts, filters = filters, marker = marker }
+        DungeonPrepDB, DungeonPrepCharDB = db, char
+        assert(addon.RestoreDB() == true)
+        assert(db.schema == 1 and db.locale == "ruRU" and db.marker == marker)
+        assert(DungeonPrepDB == db and addon.db == db and db.window == window)
+        assert(DungeonPrepCharDB == char and addon.char == char and char.texts == texts and char.filters == filters)
+        assert(char.marker == marker)
+    end
+    DungeonPrepDB, DungeonPrepCharDB, addon.db, addon.char = savedDB, savedChar, activeDB, activeChar
+end)
 print("Quest detail modeled checks passed: " .. total .. " (native client unverified)")

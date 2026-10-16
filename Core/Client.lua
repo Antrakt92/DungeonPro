@@ -127,7 +127,10 @@ end
 function addon.RestoreDB()
     local db = type(DungeonPrepDB) == "table" and DungeonPrepDB or {}
     local char = type(DungeonPrepCharDB) == "table" and DungeonPrepCharDB or {}
-    if db.schema and (type(db.schema) ~= "number" or db.schema > 1) then return false end
+    if type(db.schema) ~= "nil" then
+        local schema = addon.Clean(db.schema, "number")
+        if not schema or schema < 1 or schema % 1 ~= 0 or schema > 1 then return false end
+    end
     db.schema = 1
     db.locale = type(db.locale) == "string" and db.locale or "auto"
     if type(db.window) ~= "table" then db.window = {} end
