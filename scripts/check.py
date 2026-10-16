@@ -27,6 +27,7 @@ def main():
     run(lua, "tests/ui_preparation.lua")
     run(lua, "tests/quest_details.lua")
     run(lua, "tests/rewards.lua")
+    run(lua, "tests/cached_rewards.lua")
     run(lua, "tests/portraits.lua")
     run(lua, "tests/offered_portraits.lua")
     run(lua, "tests/dungeon_art.lua")

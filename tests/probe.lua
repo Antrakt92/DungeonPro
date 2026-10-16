@@ -15,6 +15,7 @@ local forbiddenCalls = 0
 local function check(name, fn)
     C_QuestLog, C_Item, C_Map, C_QuestLine, TomTom, C_CreatureInfo, UnitName = nil, nil, nil, nil, nil, nil, nil
     QuestFrame, QuestFrameDetailPanel, GetQuestText, UnitGUID, GetLocale = nil, nil, nil, nil, nil
+    HaveQuestRewardData, GetQuestLogRewardXP = nil, nil
     for _, capability in ipairs(offerCapabilities) do _G[capability[1]] = nil end
     forbiddenCalls = 0
     local ok, err = pcall(fn)
@@ -127,4 +128,12 @@ check("Membership deduplicates valid IDs and marks invalid or truncated source d
     assert(#r.quests == 100 and r.quests[100] == 100 and r.truncated and not r.invalidMembers)
 end)
 issecretvalue = nil
+check("Cached reward capability flags do not read cache state or XP", function()
+    HaveQuestRewardData, GetQuestLogRewardXP = forbidden, forbidden
+    local r = addon.ProbeClient()
+    assert(r.api.rewardCache == true and r.api.rewardXP == true)
+    HaveQuestRewardData, GetQuestLogRewardXP = {}, secret
+    r = addon.ProbeClient()
+    assert(r.api.rewardCache == false and r.api.rewardXP == false)
+end)
 print("Client probe modeled checks passed: " .. count .. " (API presence is not native acceptance)")

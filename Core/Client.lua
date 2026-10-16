@@ -535,6 +535,72 @@ function addon.QuestRewards(id)
     return { items = fixed, choices = choice, money = money }
 end
 
+function addon.CachedQuestRewards(id)
+    id = dialogueInteger(id, 1)
+    local catalog = id and addon.quests[id]
+    if not catalog then return nil end
+    local api = { loaded = HaveQuestRewardData, locale = GetLocale, rewards = GetNumQuestLogRewards,
+        choices = GetNumQuestLogChoices, fixed = GetQuestLogRewardInfo, choice = GetQuestLogChoiceInfo,
+        money = GetQuestLogRewardMoney, xp = GetQuestLogRewardXP, secret = issecretvalue }
+    local function unchanged()
+        return addon.quests[id] == catalog and api.loaded == HaveQuestRewardData and api.locale == GetLocale and
+            api.rewards == GetNumQuestLogRewards and api.choices == GetNumQuestLogChoices and
+            api.fixed == GetQuestLogRewardInfo and api.choice == GetQuestLogChoiceInfo and
+            api.money == GetQuestLogRewardMoney and api.xp == GetQuestLogRewardXP and api.secret == issecretvalue
+    end
+    local locale = addon.Read(api.locale, "string")
+    if not locale or #locale > 32 or not locale:find("%S") or not unchanged() then return nil end
+    local function loaded()
+        if not unchanged() or addon.Read(api.loaded, "boolean", id) ~= true then return false end
+        return addon.Read(api.locale, "string") == locale and unchanged()
+    end
+    if not loaded() then return nil end
+    local rewards = dialogueInteger(addon.Read(api.rewards, "number", id), 0, 100)
+    local choices = dialogueInteger(addon.Read(api.choices, "number", id), 0, 100)
+    if not rewards or not choices or not unchanged() then return nil end
+    local function items(count, getter)
+        if count > 0 and type(getter) ~= "function" then return nil end
+        local result = {}
+        for index = 1, count do
+            local ok, name, texture, amount, quality, usable, itemID = pcall(getter, index, id)
+            if not ok then return nil end
+            if type(api.secret) == "function" then
+                local fields = { name, texture, amount, quality, usable, itemID }
+                for field = 1, 6 do
+                    local readable, secret = pcall(api.secret, fields[field])
+                    if not readable or secret ~= false then return nil end
+                end
+            end
+            name = addon.Clean(name, "string")
+            amount, itemID = dialogueInteger(amount, 1), dialogueInteger(itemID, 1)
+            if not name or name == "" or #name > 30000 or not amount or not itemID then return nil end
+            local row = { id = itemID, name = name, count = amount }
+            local icon = addon.Clean(texture, "string")
+            if icon and icon ~= "" and #icon <= 1024 then row.texture = icon
+            else row.texture = dialogueInteger(texture, 1) end
+            row.quality, row.usable = dialogueInteger(quality, 0), addon.Clean(usable, "boolean")
+            result[index] = row
+            if not unchanged() then return nil end
+        end
+        return result
+    end
+    local fixed, choice = items(rewards, api.fixed), items(choices, api.choice)
+    if not fixed or not choice then return nil end
+    local function scalar(getter)
+        if getter == nil then return nil, true end
+        if type(getter) ~= "function" then return nil, false end
+        local ok, value = pcall(getter, id)
+        if not ok then return nil, false end
+        value = addon.Clean(value, "number")
+        if value and value < 0 then value = nil end
+        return value, true
+    end
+    local money, moneyOK = scalar(api.money)
+    local xp, xpOK = scalar(api.xp)
+    if not moneyOK or not xpOK or not loaded() then return nil end
+    return { source = "cache", items = fixed, choices = choice, money = money, xp = xp }
+end
+
 function addon.QuestPortrait(id)
     local function positiveInteger(value)
         value = addon.Clean(value, "number")
@@ -610,6 +676,7 @@ function addon.ProbeClient()
         { "offerRewardXP", GetRewardXP }, { "offerRewardVisibility", C_QuestLog and C_QuestLog.ShouldShowQuestRewards },
         { "rewardItems", GetNumQuestLogRewards }, { "rewardChoices", GetNumQuestLogChoices },
         { "rewardMoney", GetQuestLogRewardMoney }, { "portraits", C_QuestLog and C_QuestLog.GetQuestLogPortraitGiver },
+        { "rewardCache", HaveQuestRewardData }, { "rewardXP", GetQuestLogRewardXP },
         { "npcNames", UnitName }, { "creatureIDs", C_CreatureInfo and C_CreatureInfo.GetCreatureID },
         { "itemNames", C_Item and C_Item.GetItemNameByID }, { "itemRequests", C_Item and C_Item.RequestLoadItemDataByID },
         { "nativeWaypoints", C_Map and C_Map.SetUserWaypoint }, { "tomtom", TomTom and TomTom.AddWaypoint } }) do

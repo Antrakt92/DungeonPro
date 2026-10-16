@@ -665,8 +665,9 @@ function UI:RefreshDetail()
             line("|cff" .. (objective.finished and COLOR.COMPLETED or COLOR.ACTIVE) .. objective.text .. "|r")
         end
         local rewards = addon.Read(addon.DialogueRewards, "table", id) or
-            addon.Read(addon.QuestRewards, "table", id)
-        if rewards and addon.Clean(rewards.source, "string") == "dialogue" then line(addon.L("REWARD_DIALOGUE")) end
+            addon.Read(addon.QuestRewards, "table", id) or addon.Read(addon.CachedQuestRewards, "table", id)
+        if rewards and addon.Clean(rewards.source, "string") == "dialogue" then line(addon.L("REWARD_DIALOGUE"))
+        elseif rewards and addon.Clean(rewards.source, "string") == "cache" then line(addon.L("REWARD_PREVIEW")) end
         local items = rewards and addon.Clean(rewards.items, "table")
         local choices = rewards and addon.Clean(rewards.choices, "table")
         if rewards and addon.Clean(rewards.hidden, "boolean") == true then

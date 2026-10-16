@@ -1599,4 +1599,98 @@ check("Partial requirement chains show held-parent work while keeping the target
     for _, id in ipairs({ 9950, 9951, 9952 }) do addon.quests[id] = nil end
     addon.Context, ui.dungeon, ui.quest, ui.preparation = context, dungeon, selected, preparation; ui:Refresh()
 end)
+local function cachedRewardFixture()
+    addon.quests[9950] = { id = 9950, minLevel = 1, requirementsKnown = false }
+    addon.quests[9951] = { id = 9951, minLevel = 1, requirementsKnown = false }
+    return { level = 20, completed = function() return false end, active = function() return false end }
+end
+local function endCachedRewards()
+    addon.quests[9950], addon.quests[9951] = nil, nil
+    addon.DialogueRewards, addon.QuestRewards, addon.CachedQuestRewards = nil, nil, nil
+    showDetail(2)
+end
+check("Cached rewards preview an unaccepted unknown quest without changing its actions", function()
+    local context = cachedRewardFixture()
+    local dialogue, log, cached = 0, 0, 0
+    addon.DialogueRewards = function(id) assert(id == 9950); dialogue = dialogue + 1 end
+    addon.QuestRewards = function(id) assert(id == 9950); log = log + 1 end
+    addon.CachedQuestRewards = function(id)
+        assert(id == 9950); cached = cached + 1
+        return { source = "cache", items = { { name = "Cached fixed item", count = 2 } },
+            choices = { { name = "Cached choice item", count = 1 } }, xp = 123, money = 500 }
+    end
+    local formatter = GetCoinTextureString; GetCoinTextureString = function(value) return "coin:" .. value end
+    showDetail(9950, context)
+    assert(detailHas(addon.L("REWARD_PREVIEW")) and not detailHas(addon.L("REWARD_UNAVAILABLE")))
+    assert(detailHas(addon.L("REWARD_ITEM", "Cached fixed item", 2)))
+    assert(detailHas(addon.L("REWARD_ITEM", "Cached choice item", 1)))
+    assert(detailHas(addon.L("REWARD_XP", 123)) and detailHas(addon.L("REWARD_MONEY") .. ": coin:500"))
+    assert(dialogue == 1 and log == 1 and cached == 1)
+    assert(ui.engine:State(9950).status == "UNKNOWN" and not ui.action and not ui.guide.enabled and not ui.giverAction)
+    assert(addon.quests[9950].requirementsKnown == false)
+    GetCoinTextureString = formatter; endCachedRewards()
+end)
+check("Dialogue including explicit hide wins before selected log and cached reward sources", function()
+    local context = cachedRewardFixture(); local logReads, cacheReads = 0, 0
+    addon.CachedQuestRewards = function() cacheReads = cacheReads + 1; return { source = "cache", items = {}, choices = {}, xp = 111 } end
+    addon.QuestRewards = function() logReads = logReads + 1; return { items = {}, choices = {}, xp = 222 } end
+    addon.DialogueRewards = function() return { source = "dialogue", hidden = true } end
+    showDetail(9950, context)
+    assert(detailHas(addon.L("REWARD_HIDDEN")) and not detailHas(addon.L("REWARD_PREVIEW")))
+    assert(logReads == 0 and cacheReads == 0 and not detailHas(addon.L("REWARD_NO_ITEMS")))
+    addon.DialogueRewards = function() return { source = "dialogue", items = {}, choices = {}, xp = 333 } end
+    ui:RefreshDetail(); assert(detailHas(addon.L("REWARD_XP", 333)) and cacheReads == 0 and logReads == 0)
+    addon.DialogueRewards = function() return nil end
+    ui:RefreshDetail(); assert(detailHas(addon.L("REWARD_XP", 222)) and logReads == 1 and cacheReads == 0)
+    assert(not detailHas(addon.L("REWARD_PREVIEW")))
+    addon.DialogueRewards = function() error("offer unavailable") end
+    addon.QuestRewards = function() logReads = logReads + 1; error("log unavailable") end
+    ui:RefreshDetail(); assert(detailHas(addon.L("REWARD_XP", 111)) and cacheReads == 1)
+    assert(detailHas(addon.L("REWARD_PREVIEW")))
+    endCachedRewards()
+end)
+check("Missing throwing invalid and restricted cache producers stay unknown instead of empty rewards", function()
+    local context = cachedRewardFixture(); local restricted = {}
+    addon.DialogueRewards, addon.QuestRewards = nil, nil
+    issecretvalue = function(value) return value == restricted end
+    for _, value in ipairs({ false, true, 0, "bad", restricted, {}, { source = "cache", items = false, choices = {} } }) do
+        addon.CachedQuestRewards = function() return value end; showDetail(9950, context)
+        assert(detailHas(addon.L("REWARD_UNAVAILABLE")) and not detailHas(addon.L("REWARD_NO_ITEMS")))
+    end
+    addon.CachedQuestRewards = function() error("cache unavailable") end; ui:RefreshDetail()
+    assert(detailHas(addon.L("REWARD_UNAVAILABLE")))
+    addon.CachedQuestRewards = nil; ui:RefreshDetail(); assert(detailHas(addon.L("REWARD_UNAVAILABLE")))
+    issecretvalue = nil; endCachedRewards()
+end)
+check("Cached preview refreshes the same card and clears recycled reward fields on another card", function()
+    local context = cachedRewardFixture(); local name, xp, reads = "First cached item", 10, 0
+    addon.CachedQuestRewards = function(id)
+        reads = reads + 1
+        if id == 9950 then return { source = "cache", items = { { name = name, count = 1 } }, choices = {}, xp = xp } end
+    end
+    showDetail(9950, context); ui.detailScroll:SetVerticalScroll(83)
+    assert(detailHas(addon.L("REWARD_ITEM", name, 1)))
+    name, xp = "Updated cached item", 20; ui:RefreshDetail()
+    assert(reads == 2 and ui.detailScroll.verticalScroll == 83)
+    assert(detailHas(addon.L("REWARD_ITEM", name, 1)) and detailHas(addon.L("REWARD_XP", 20)))
+    assert(not detailHas(addon.L("REWARD_ITEM", "First cached item", 1)) and not detailHas(addon.L("REWARD_XP", 10)))
+    showDetail(9951, context)
+    assert(not detailHas(addon.L("REWARD_PREVIEW")) and detailHas(addon.L("REWARD_UNAVAILABLE")))
+    assert(not detailHas(addon.L("REWARD_ITEM", name, 1)) and not detailHas(addon.L("REWARD_XP", 20)))
+    assert(not ui.action and ui.engine:State(9951).status == "UNKNOWN")
+    endCachedRewards()
+end)
+check("Confirmed empty cached rewards preserve real zero experience and all preview translations", function()
+    local context = cachedRewardFixture()
+    addon.CachedQuestRewards = function() return { source = "cache", items = {}, choices = {}, xp = 0, money = 0 } end
+    showDetail(9950, context)
+    assert(detailHas(addon.L("REWARD_PREVIEW")) and detailHas(addon.L("REWARD_NO_ITEMS")))
+    assert(detailHas(addon.L("REWARD_XP", 0)) and not detailHas(addon.L("REWARD_UNAVAILABLE")))
+    local count = 0
+    for locale, strings in pairs(addon.locales) do
+        assert(type(strings.REWARD_PREVIEW) == "string" and strings.REWARD_PREVIEW ~= "", locale)
+        count = count + 1
+    end
+    assert(count == 10); endCachedRewards()
+end)
 print("Preparation UI modeled checks passed: " .. total .. " (no native layout validation)")
