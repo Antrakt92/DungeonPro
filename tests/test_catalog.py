@@ -92,8 +92,23 @@ class CatalogTests(unittest.TestCase):
                 with self.subTest(field=field, npcID=value):
                     data = copy.deepcopy(self.data)
                     data["quests"][0][field]["npcID"] = value
-                    with self.assertRaisesRegex(ValueError, "NPC ID"):
+                    with self.assertRaisesRegex(ValueError, "npcID entity ID"):
                         catalog.validate(data)
+
+    def test_object_starters_remain_distinct_from_npcs(self):
+        for field in ("start", "finish"):
+            for value in (None, True, "142487", 0, -1, 142487.0):
+                with self.subTest(field=field, objectID=value):
+                    data = copy.deepcopy(self.data)
+                    data["quests"][0][field] = {"objectID": value}
+                    with self.assertRaisesRegex(ValueError, "objectID entity ID"):
+                        catalog.validate(data)
+            data = copy.deepcopy(self.data)
+            data["quests"][0][field] = {"objectID": 142487, "npcID": 234}
+            with self.assertRaisesRegex(ValueError, "Ambiguous"):
+                catalog.validate(data)
+        self.data["quests"][0]["start"] = {"objectID": 142487}
+        catalog.validate(self.data)
 
     def test_coordinates_require_both_axes_and_a_map(self):
         for field in ("start", "finish"):

@@ -1802,11 +1802,17 @@
       "source": "https://www.wowhead.com/forever/quest=378/the-fury-runs-deep",
       "start": {
         "npcID": 1074,
-        "name": "Motley Garmason"
+        "name": "Motley Garmason",
+        "mapID": 1437,
+        "x": 49.6,
+        "y": 18.2
       },
       "finish": {
         "npcID": 1074,
-        "name": "Motley Garmason"
+        "name": "Motley Garmason",
+        "mapID": 1437,
+        "x": 49.6,
+        "y": 18.2
       },
       "requirementsKnown": false
     },
@@ -1821,11 +1827,17 @@
       "source": "https://www.wowhead.com/forever/quest=377/crime-and-punishment",
       "start": {
         "npcID": 270,
-        "name": "Councilman Millstipe"
+        "name": "Councilman Millstipe",
+        "mapID": 1431,
+        "x": 72,
+        "y": 47.8
       },
       "finish": {
         "npcID": 270,
-        "name": "Councilman Millstipe"
+        "name": "Councilman Millstipe",
+        "mapID": 1431,
+        "x": 72,
+        "y": 47.8
       },
       "requirementsKnown": false
     },
@@ -1840,11 +1852,17 @@
       "source": "https://www.wowhead.com/forever/quest=391/the-stockade-riots",
       "start": {
         "npcID": 1719,
-        "name": "Warden Thelwater"
+        "name": "Warden Thelwater",
+        "mapID": 1453,
+        "x": 51.4,
+        "y": 69.2
       },
       "finish": {
         "npcID": 1719,
-        "name": "Warden Thelwater"
+        "name": "Warden Thelwater",
+        "mapID": 1453,
+        "x": 51.4,
+        "y": 69.2
       },
       "requirementsKnown": false
     },
@@ -1859,11 +1877,17 @@
       "source": "https://www.wowhead.com/forever/quest=388/the-color-of-blood",
       "start": {
         "npcID": 1721,
-        "name": "Nikova Raskol"
+        "name": "Nikova Raskol",
+        "mapID": 1453,
+        "x": 73.2,
+        "y": 50.4
       },
       "finish": {
         "npcID": 1721,
-        "name": "Nikova Raskol"
+        "name": "Nikova Raskol",
+        "mapID": 1453,
+        "x": 73.2,
+        "y": 50.4
       },
       "requirementsKnown": false
     },
@@ -1878,11 +1902,17 @@
       "source": "https://www.wowhead.com/forever/quest=386/what-comes-around",
       "start": {
         "npcID": 859,
-        "name": "Guard Berton"
+        "name": "Guard Berton",
+        "mapID": 1433,
+        "x": 26.4,
+        "y": 46.4
       },
       "finish": {
         "npcID": 859,
-        "name": "Guard Berton"
+        "name": "Guard Berton",
+        "mapID": 1433,
+        "x": 26.4,
+        "y": 46.4
       },
       "requirementsKnown": false
     },
@@ -1897,11 +1927,17 @@
       "source": "https://www.wowhead.com/forever/quest=387/quell-the-uprising",
       "start": {
         "npcID": 1719,
-        "name": "Warden Thelwater"
+        "name": "Warden Thelwater",
+        "mapID": 1453,
+        "x": 51.4,
+        "y": 69.2
       },
       "finish": {
         "npcID": 1719,
-        "name": "Warden Thelwater"
+        "name": "Warden Thelwater",
+        "mapID": 1453,
+        "x": 51.4,
+        "y": 69.2
       },
       "requirementsKnown": false
     },
@@ -1928,6 +1964,366 @@
       "finish": {
         "npcID": 3649,
         "name": "Thundris Windweaver"
+      },
+      "requirementsKnown": false
+    },
+    {
+      "id": 2930,
+      "name": "Data Rescue",
+      "level": 30,
+      "minLevel": 25,
+      "factions": [
+        "Alliance"
+      ],
+      "requirementsKnown": false,
+      "source": "https://www.wowhead.com/forever/quest=2930/data-rescue",
+      "start": {
+        "npcID": 7950,
+        "name": "Master Mechanic Castpipe"
+      },
+      "finish": {
+        "npcID": 7950,
+        "name": "Master Mechanic Castpipe"
+      },
+      "storyline": [
+        2931,
+        2930
+      ]
+    },
+    {
+      "id": 2841,
+      "name": "Rig Wars",
+      "level": 35,
+      "minLevel": 25,
+      "factions": [
+        "Horde"
+      ],
+      "requirementsKnown": false,
+      "source": "https://www.wowhead.com/forever/quest=2841/rig-wars",
+      "start": {
+        "npcID": 3412,
+        "name": "Nogg"
+      },
+      "finish": {
+        "npcID": 3412,
+        "name": "Nogg"
+      }
+    },
+    {
+      "id": 2929,
+      "name": "The Grand Betrayal",
+      "level": 35,
+      "minLevel": 25,
+      "factions": [
+        "Alliance"
+      ],
+      "requirementsKnown": false,
+      "source": "https://www.wowhead.com/forever/quest=2929/the-grand-betrayal",
+      "start": {
+        "npcID": 7937,
+        "name": "High Tinker Mekkatorque"
+      },
+      "finish": {
+        "npcID": 7937,
+        "name": "High Tinker Mekkatorque"
+      }
+    },
+    {
+      "id": 2904,
+      "name": "A Fine Mess",
+      "level": 30,
+      "minLevel": 20,
+      "factions": [
+        "Alliance",
+        "Horde"
+      ],
+      "requirementsKnown": false,
+      "source": "https://www.wowhead.com/forever/quest=2904/a-fine-mess",
+      "start": {
+        "npcID": 7850,
+        "name": "Kernobee"
+      },
+      "finish": {
+        "npcID": 7853,
+        "name": "Scooty"
+      }
+    },
+    {
+      "id": 2926,
+      "name": "Gnogaine",
+      "level": 27,
+      "minLevel": 20,
+      "factions": [
+        "Alliance"
+      ],
+      "requirementsKnown": false,
+      "source": "https://www.wowhead.com/forever/quest=2926/gnogaine",
+      "start": {
+        "npcID": 1268,
+        "name": "Ozzie Togglevolt"
+      },
+      "finish": {
+        "npcID": 1268,
+        "name": "Ozzie Togglevolt"
+      }
+    },
+    {
+      "id": 2962,
+      "name": "The Only Cure is More Green Glow",
+      "level": 30,
+      "minLevel": 20,
+      "factions": [
+        "Alliance"
+      ],
+      "requirementsKnown": false,
+      "source": "https://www.wowhead.com/forever/quest=2962/the-only-cure-is-more-green-glow",
+      "start": {
+        "npcID": 1268,
+        "name": "Ozzie Togglevolt"
+      },
+      "finish": {
+        "npcID": 1268,
+        "name": "Ozzie Togglevolt"
+      }
+    },
+    {
+      "id": 2928,
+      "name": "Gyrodrillmatic Excavationators",
+      "level": 30,
+      "minLevel": 20,
+      "factions": [
+        "Alliance"
+      ],
+      "requirementsKnown": false,
+      "source": "https://www.wowhead.com/forever/quest=2928/gyrodrillmatic-excavationators",
+      "start": {
+        "npcID": 6579,
+        "name": "Shoni the Shilent"
+      },
+      "finish": {
+        "npcID": 6579,
+        "name": "Shoni the Shilent"
+      }
+    },
+    {
+      "id": 2922,
+      "name": "Save Techbot's Brain!",
+      "level": 26,
+      "minLevel": 20,
+      "factions": [
+        "Alliance"
+      ],
+      "requirementsKnown": false,
+      "source": "https://www.wowhead.com/forever/quest=2922/save-techbots-brain",
+      "start": {
+        "npcID": 7944,
+        "name": "Tinkmaster Overspark"
+      },
+      "finish": {
+        "npcID": 7944,
+        "name": "Tinkmaster Overspark"
+      },
+      "storyline": [
+        2923,
+        2922
+      ]
+    },
+    {
+      "id": 2945,
+      "name": "Grime-Encrusted Ring",
+      "level": 34,
+      "minLevel": 28,
+      "factions": [
+        "Alliance",
+        "Horde"
+      ],
+      "requirementsKnown": false,
+      "source": "https://www.wowhead.com/forever/quest=2945/grime-encrusted-ring",
+      "finish": {
+        "objectID": 142487,
+        "name": "The Sparklematic 5200"
+      }
+    },
+    {
+      "id": 2951,
+      "name": "The Sparklematic 5200!",
+      "level": 30,
+      "minLevel": 25,
+      "factions": [
+        "Alliance",
+        "Horde"
+      ],
+      "requirementsKnown": false,
+      "source": "https://www.wowhead.com/forever/quest=2951/the-sparklematic-5200",
+      "start": {
+        "objectID": 142487,
+        "name": "The Sparklematic 5200"
+      },
+      "finish": {
+        "objectID": 142487,
+        "name": "The Sparklematic 5200"
+      }
+    },
+    {
+      "id": 2924,
+      "name": "Essential Artificials",
+      "level": 30,
+      "minLevel": 24,
+      "factions": [
+        "Alliance"
+      ],
+      "requirementsKnown": false,
+      "source": "https://www.wowhead.com/forever/quest=2924/essential-artificials",
+      "start": {
+        "npcID": 6169,
+        "name": "Klockmort Spannerspan"
+      },
+      "finish": {
+        "npcID": 6169,
+        "name": "Klockmort Spannerspan"
+      },
+      "storyline": [
+        2925,
+        2924
+      ]
+    },
+    {
+      "id": 2931,
+      "name": "Castpipe's Task",
+      "level": 28,
+      "minLevel": 25,
+      "factions": [
+        "Alliance"
+      ],
+      "requirementsKnown": false,
+      "source": "https://www.wowhead.com/forever/quest=2931/castpipes-task",
+      "start": {
+        "npcID": 4077,
+        "name": "Gaxim Rustfizzle"
+      },
+      "finish": {
+        "npcID": 7950,
+        "name": "Master Mechanic Castpipe"
+      },
+      "storyline": [
+        2931,
+        2930
+      ]
+    },
+    {
+      "id": 2923,
+      "name": "Tinkmaster Overspark",
+      "level": 26,
+      "minLevel": 20,
+      "factions": [
+        "Alliance"
+      ],
+      "requirementsKnown": false,
+      "source": "https://www.wowhead.com/forever/quest=2923/tinkmaster-overspark",
+      "start": {
+        "npcID": 7917,
+        "name": "Brother Sarno"
+      },
+      "finish": {
+        "npcID": 7944,
+        "name": "Tinkmaster Overspark"
+      },
+      "storyline": [
+        2923,
+        2922
+      ]
+    },
+    {
+      "id": 2925,
+      "name": "Klockmort's Essentials",
+      "level": 30,
+      "minLevel": 24,
+      "factions": [
+        "Alliance"
+      ],
+      "requirementsKnown": false,
+      "source": "https://www.wowhead.com/forever/quest=2925/klockmorts-essentials",
+      "start": {
+        "npcID": 6142,
+        "name": "Mathiel"
+      },
+      "finish": {
+        "npcID": 6169,
+        "name": "Klockmort Spannerspan"
+      },
+      "storyline": [
+        2925,
+        2924
+      ]
+    },
+    {
+      "id": 2842,
+      "name": "Chief Engineer Scooty",
+      "level": 35,
+      "minLevel": 20,
+      "factions": [
+        "Horde"
+      ],
+      "requirementsKnown": false,
+      "source": "https://www.wowhead.com/forever/quest=2842/chief-engineer-scooty",
+      "start": {
+        "npcID": 3413,
+        "name": "Sovik"
+      },
+      "finish": {
+        "npcID": 7853,
+        "name": "Scooty"
+      },
+      "storyline": [
+        2842,
+        2843
+      ]
+    },
+    {
+      "id": 2843,
+      "name": "Gnomer-gooooone!",
+      "level": 35,
+      "minLevel": 20,
+      "factions": [
+        "Horde"
+      ],
+      "requirementsKnown": false,
+      "source": "https://www.wowhead.com/forever/quest=2843/gnomer-gooooone",
+      "start": {
+        "npcID": 7853,
+        "name": "Scooty"
+      },
+      "finish": {
+        "npcID": 7853,
+        "name": "Scooty"
+      },
+      "storyline": [
+        2842,
+        2843
+      ]
+    },
+    {
+      "id": 95042,
+      "name": "Seeking the Kor Gem",
+      "source": "https://www.wowhead.com/forever/quest=95042/seeking-the-kor-gem",
+      "level": 25,
+      "minLevel": 20,
+      "factions": [
+        "Horde"
+      ],
+      "classes": [
+        "PALADIN"
+      ],
+      "races": [
+        5
+      ],
+      "start": {
+        "npcID": 259649,
+        "name": "Ulric Frostveil"
+      },
+      "finish": {
+        "npcID": 259649,
+        "name": "Ulric Frostveil"
       },
       "requirementsKnown": false
     }
@@ -2025,7 +2421,8 @@
         6564,
         6563,
         6562,
-        1442
+        1442,
+        95042
       ],
       "source": "https://www.wowhead.com/forever/guide/dungeons-overview-locations-details",
       "instanceID": 48
@@ -2052,8 +2449,21 @@
       "name": "Gnomeregan",
       "minLevel": 24,
       "maxLevel": 33,
-      "coverage": "pending",
-      "quests": [],
+      "coverage": "partial",
+      "quests": [
+        2930,
+        2841,
+        2929,
+        2904,
+        2926,
+        2962,
+        2928,
+        2922,
+        2945,
+        2951,
+        2924,
+        2843
+      ],
       "source": "https://www.wowhead.com/forever/guide/dungeons-overview-locations-details",
       "instanceID": 90
     },
