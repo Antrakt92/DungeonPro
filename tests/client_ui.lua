@@ -61,7 +61,7 @@ C_Map = { GetMapInfo = function() return { name = "Westfall" } end,
     GetWorldPosFromMapPos = function(_, p) return 0, { x = p.y * 1000, y = p.x * 1000 } end,
     OpenWorldMap = function(id) assert(id > 0); mapCalls = mapCalls + 1 end,
     CanSetUserWaypointOnMap = function() return true end,
-    SetUserWaypoint = function(p) waypoints[#waypoints + 1] = p end }
+    SetUserWaypoint = function(p) waypoints[#waypoints + 1] = p; return true end }
 UiMapPoint = { CreateFromCoordinates = function(mapID, x, y) return { mapID = mapID, x = x, y = y } end }
 local addon = {}
 for line in io.lines("DungeonPrep.toc") do

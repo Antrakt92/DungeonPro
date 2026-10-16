@@ -25,6 +25,7 @@ def main():
     run(lua, "tests/locales.lua")
     run(lua, "tests/ui_preparation.lua")
     run(lua, "tests/quest_details.lua")
+    run(lua, "tests/navigation.lua")
     run(sys.executable, "-m", "unittest", "discover", "-s", "tests", "-p", "test_*.py", "-v")
     run(sys.executable, "scripts/package.py")
     run("git", "diff", "--check")

@@ -11,7 +11,7 @@ function N.Valid(point)
 end
 
 function N.Map(point)
-    if not point or not addon.Clean(point.mapID, "number") then return false end
+    if type(point) ~= "table" or not addon.Clean(point.mapID, "number") or point.mapID <= 0 then return false end
     if C_Map and type(C_Map.OpenWorldMap) == "function" then
         return pcall(C_Map.OpenWorldMap, point.mapID)
     end
@@ -43,21 +43,23 @@ function N.Vector(point)
     if not N.Valid(point) or not C_Map or not CreateVector2D then return nil end
     local mapID = addon.Read(C_Map.GetBestMapForUnit, "number", "player")
     local position = mapID and addon.Read(C_Map.GetPlayerMapPosition, "table", mapID, "player")
-    if not position or type(position.GetXY) ~= "function" then return nil end
-    local ok, x, y = pcall(position.GetXY, position)
+    if not position then return nil end
+    local ok, x, y = pcall(function() return position:GetXY() end)
     x, y = addon.Clean(x, "number"), addon.Clean(y, "number")
     if not ok or not x or not y or (x == 0 and y == 0) then return nil end
     local convert = C_Map.GetWorldPosFromMapPos
     if type(convert) ~= "function" then return nil end
-    local aOK, aMap, a = pcall(convert, mapID, CreateVector2D(x, y))
-    local bOK, bMap, b = pcall(convert, point.mapID, CreateVector2D(point.x / 100, point.y / 100))
+    local aOK, aMap, a = pcall(function() return convert(mapID, CreateVector2D(x, y)) end)
+    local bOK, bMap, b = pcall(function() return convert(point.mapID, CreateVector2D(point.x / 100, point.y / 100)) end)
     aMap, bMap = addon.Clean(aMap, "number"), addon.Clean(bMap, "number")
+    a, b = addon.Clean(a, "table") or addon.Clean(a, "userdata"), addon.Clean(b, "table") or addon.Clean(b, "userdata")
     if not aOK or not bOK or not aMap or aMap ~= bMap or not a or not b then return nil end
-    local ax, ay = addon.Clean(a.x, "number"), addon.Clean(a.y, "number")
-    local bx, by = addon.Clean(b.x, "number"), addon.Clean(b.y, "number")
-    if not ax or not ay or not bx or not by then return nil end
+    local aFields, ax, ay = pcall(function() return a.x, a.y end)
+    local bFields, bx, by = pcall(function() return b.x, b.y end)
+    ax, ay, bx, by = addon.Clean(ax, "number"), addon.Clean(ay, "number"), addon.Clean(bx, "number"), addon.Clean(by, "number")
+    if not aFields or not bFields or not ax or not ay or not bx or not by then return nil end
     -- WoW world X points north and world Y points west.
-    return bx - ax, by - ay
+    return addon.Clean(bx - ax, "number"), addon.Clean(by - ay, "number")
 end
 
 local function update(_, delta)
@@ -67,10 +69,11 @@ local function update(_, delta)
     local north, west
     if target then north, west = N.Vector(target.place) end
     local facing = addon.Read(GetPlayerFacing, "number")
-    if not north or not facing then
+    if not north or not west or not facing then
         frame.label:SetText(addon.L("NO_POSITION")); frame.arrow:Hide(); return
     end
-    local distance = math.sqrt(north * north + west * west)
+    local distance = addon.Clean(math.sqrt(north * north + west * west), "number")
+    if not distance then frame.label:SetText(addon.L("NO_POSITION")); frame.arrow:Hide(); return end
     local bearing = math.atan2(west, north)
     frame.arrow:SetRotation(bearing - facing)
     frame.arrow:Show()
@@ -85,13 +88,23 @@ function N.Start(action)
     if TomTom and type(TomTom.AddWaypoint) == "function" then
         local ok, uid = pcall(TomTom.AddWaypoint, TomTom, p.mapID, p.x / 100, p.y / 100,
             { title = addon.QuestName(action.id), persistent = false, minimap = true, world = true })
-        if ok then tomtomOwner, tomtomUID = TomTom, uid end
-    elseif C_Map and C_Map.SetUserWaypoint and UiMapPoint and UiMapPoint.CreateFromCoordinates then
+        local valid = addon.Clean(uid, "table") or addon.Clean(uid, "string") or addon.Clean(uid, "number")
+        if type(valid) == "string" and valid == "" then valid = nil end
+        if type(valid) == "number" and valid <= 0 then valid = nil end
+        if ok and valid then tomtomOwner, tomtomUID = TomTom, valid end
+    end
+    if not tomtomUID and C_Map and type(C_Map.SetUserWaypoint) == "function" and UiMapPoint and
+        type(UiMapPoint.CreateFromCoordinates) == "function" then
         local allowed = not C_Map.CanSetUserWaypointOnMap or addon.Read(C_Map.CanSetUserWaypointOnMap, "boolean", p.mapID) == true
         if allowed then
-            local ok = pcall(C_Map.SetUserWaypoint, UiMapPoint.CreateFromCoordinates(p.mapID, p.x / 100, p.y / 100))
-            if ok then nativePoint = { mapID = p.mapID, x = p.x / 100, y = p.y / 100 } end
-            if ok and C_SuperTrack and C_SuperTrack.SetSuperTrackedUserWaypoint then
+            local ok, wasSet = pcall(function()
+                local value = UiMapPoint.CreateFromCoordinates(p.mapID, p.x / 100, p.y / 100)
+                if not (addon.Clean(value, "table") or addon.Clean(value, "userdata")) then error("Invalid map point") end
+                return C_Map.SetUserWaypoint(value)
+            end)
+            local owned = ok and addon.Clean(wasSet, "boolean") == true
+            if owned then nativePoint = { mapID = p.mapID, x = p.x / 100, y = p.y / 100 } end
+            if owned and C_SuperTrack and C_SuperTrack.SetSuperTrackedUserWaypoint then
                 pcall(C_SuperTrack.SetSuperTrackedUserWaypoint, true)
             end
         end
