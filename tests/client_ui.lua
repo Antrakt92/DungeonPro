@@ -64,6 +64,7 @@ C_Map = { GetMapInfo = function() return { name = "Westfall" } end,
     GetWorldPosFromMapPos = function(_, p) return 0, { x = p.y * 1000, y = p.x * 1000 } end,
     OpenWorldMap = function(id) assert(id > 0); mapCalls = mapCalls + 1 end,
     CanSetUserWaypointOnMap = function() return true end,
+    GetUserWaypoint = function() return nil end,
     SetUserWaypoint = function(p) waypoints[#waypoints + 1] = p; return true end }
 UiMapPoint = { CreateFromCoordinates = function(mapID, x, y) return { mapID = mapID, x = x, y = y } end }
 local addon = {}
@@ -130,10 +131,12 @@ end)
 check("Clearing guidance preserves a native waypoint moved by the player", function()
     TomTom = nil
     local cleared = 0
+    local previousGet, previousClear = C_Map.GetUserWaypoint, C_Map.ClearUserWaypoint
     C_Map.GetUserWaypoint = function() return { uiMapID = 1436, position = { x = 0.2, y = 0.3 } } end
     C_Map.ClearUserWaypoint = function() cleared = cleared + 1 end
     addon.Navigation.Start({ id = 65, place = addon.quests[65].start })
     addon.Navigation.Stop(); assert(cleared == 0)
+    C_Map.GetUserWaypoint, C_Map.ClearUserWaypoint = previousGet, previousClear
 end)
 check("Offered text is captured without altering another quest's text", function()
     eventFrame.scripts.OnEvent(eventFrame, "QUEST_DETAIL")

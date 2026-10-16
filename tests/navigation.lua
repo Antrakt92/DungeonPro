@@ -99,6 +99,30 @@ check("Cleanup preserves a native waypoint moved by the player", function()
     current = { uiMapID = 1, position = { x = 0.2, y = 0.3 } }
     nav.Stop(); assert(clears == 0)
 end)
+check("Starting a guide preserves an existing manual native waypoint", function()
+    current = { uiMapID = 2, position = { x = 0.25, y = 0.35 } }
+    local manual = current
+    assert(nav.Start(action))
+    assert(current == manual and nativeCalls == 0)
+    nav.Stop(); assert(current == manual and clears == 0)
+end)
+check("Replacing a guide preserves a native waypoint moved by the player", function()
+    assert(nav.Start(action) and nativeCalls == 1)
+    current = { uiMapID = 2, position = { x = 0.25, y = 0.35 } }
+    local manual = current
+    assert(nav.Start({ id = 2, kind = "visit", place = point }))
+    assert(current == manual and nativeCalls == 1 and clears == 0)
+    nav.Stop(); assert(current == manual and clears == 0)
+end)
+check("Unknown native waypoint ownership keeps the internal guide without setting a pin", function()
+    local secret = {}
+    for _, getter in ipairs({ false, function() error("unavailable") end, function() return secret end }) do
+        C_Map.GetUserWaypoint = getter
+        issecretvalue = function(value) return value == secret end
+        assert(nav.Start(action) and nativeCalls == 0)
+        nav.Stop(); assert(clears == 0)
+    end
+end)
 check("Quest cancellation preserves a nearby but different player waypoint", function()
     assert(nav.Start(action))
     current = { uiMapID = 1, position = { x = point.x / 100 + 0.000005, y = point.y / 100 } }
@@ -143,15 +167,35 @@ check("An older Start cannot overwrite a replacement requested during cleanup", 
     nav.QuestChanged(2); assert(#removed == 1)
     nav.QuestChanged(3); assert(#removed == 2 and removed[2] == 2)
 end)
-check("Rejected native waypoint never claims an existing matching player pin", function()
+check("Existing matching player waypoint is never claimed or supertracked", function()
     local tracked = 0
     current = { uiMapID = 1, position = { x = point.x / 100, y = point.y / 100 } }
     local playerPin = current
     C_Map.SetUserWaypoint = function() nativeCalls = nativeCalls + 1; return false end
     C_SuperTrack = { SetSuperTrackedUserWaypoint = function() tracked = tracked + 1 end }
-    assert(nav.Start(action) and nativeCalls == 1)
+    assert(nav.Start(action) and nativeCalls == 0)
     nav.Stop()
     assert(clears == 0 and current == playerPin and tracked == 0)
+end)
+check("Rejected native waypoint setter never claims ownership", function()
+    local tracked = 0
+    C_Map.SetUserWaypoint = function() nativeCalls = nativeCalls + 1; return false end
+    C_SuperTrack = { SetSuperTrackedUserWaypoint = function() tracked = tracked + 1 end }
+    assert(nav.Start(action) and nativeCalls == 1)
+    nav.Stop(); assert(clears == 0 and tracked == 0)
+end)
+check("A replacement guide started by waypoint inspection keeps its ownership", function()
+    local inspecting = false
+    C_Map.GetUserWaypoint = function()
+        if not inspecting then
+            inspecting = true
+            assert(nav.Start({ id = 2, kind = "visit", place = point }))
+        end
+        return current
+    end
+    assert(not nav.Start(action) and nativeCalls == 1)
+    nav.QuestChanged(1); assert(clears == 0)
+    nav.QuestChanged(2); assert(clears == 1)
 end)
 check("Malformed world vectors and field access failures become position unknown", function()
     for _, value in ipairs({ false, true, 1, "bad", {}, setmetatable({}, { __index = function() error("unreadable") end }) }) do

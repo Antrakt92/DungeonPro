@@ -4,6 +4,17 @@ addon.Navigation = N
 local target, frame, elapsed = nil, nil, 0
 local tomtomOwner, tomtomUID, nativePoint
 
+local function nativeWaypointEmpty()
+    if type(C_Map.GetUserWaypoint) ~= "function" then return false end
+    local ok, point = pcall(C_Map.GetUserWaypoint)
+    if not ok then return false end
+    if type(issecretvalue) == "function" then
+        local checked, secret = pcall(issecretvalue, point)
+        if not checked or secret ~= false then return false end
+    end
+    return point == nil
+end
+
 function N.Valid(point)
     return type(point) == "table" and addon.Clean(point.mapID, "number") and
         addon.Clean(point.x, "number") and addon.Clean(point.y, "number") and
@@ -101,7 +112,11 @@ function N.Start(action)
     end
     if not tomtomUID and C_Map and type(C_Map.SetUserWaypoint) == "function" and UiMapPoint and
         type(UiMapPoint.CreateFromCoordinates) == "function" then
-        local allowed = not C_Map.CanSetUserWaypointOnMap or addon.Read(C_Map.CanSetUserWaypointOnMap, "boolean", p.mapID) == true
+        -- A guide can use its own arrow without replacing the player's map pin.
+        local empty = nativeWaypointEmpty()
+        if target ~= action then return false end
+        local allowed = empty and (not C_Map.CanSetUserWaypointOnMap or
+            addon.Read(C_Map.CanSetUserWaypointOnMap, "boolean", p.mapID) == true)
         if allowed then
             local ok, wasSet = pcall(function()
                 local value = UiMapPoint.CreateFromCoordinates(p.mapID, p.x / 100, p.y / 100)
