@@ -5,6 +5,12 @@ local COLOR = { COMPLETED = "66dd99", READY = "ffe066", ACTIVE = "88bfff", AVAIL
     LOCKED = "f0b080", UNKNOWN = "b4aacd", UNAVAILABLE = "999999" }
 local FONT
 
+local function measuredHeight(fs, fallback)
+    local value = addon.Read(fs.GetStringHeight, "number", fs)
+    if value and value > 0 then fs.measuredHeight = value; return value end
+    return fs.measuredHeight or fallback
+end
+
 local function text(parent, size, color)
     local fs = parent:CreateFontString(nil, "OVERLAY")
     fs:SetFont(FONT, size or 13, "")
@@ -65,10 +71,20 @@ function UI:MakeRow(parent, pool, index, height)
         row.note = label(row, "", 8, -29, parent:GetWidth() - 22, 11)
         pool[index] = row
     end
-    row:ClearAllPoints()
-    row:SetPoint("TOPLEFT", 0, -(index - 1) * (height + 4))
     row:Show()
     return row
+end
+
+function UI:LayoutRow(row, minimum, offset)
+    local left = row.art and 58 or 8
+    local titleHeight = measuredHeight(row.title, 18)
+    local noteHeight = row.heading and 0 or measuredHeight(row.note, 18)
+    local height = math.max(minimum, 7 + titleHeight + (row.heading and 0 or 4) + noteHeight + 7)
+    row.title:ClearAllPoints(); row.title:SetPoint("TOPLEFT", left, -7)
+    row.note:ClearAllPoints(); row.note:SetPoint("TOPLEFT", left, -(7 + titleHeight + 4))
+    row:SetHeight(height)
+    row:ClearAllPoints(); row:SetPoint("TOPLEFT", 0, -offset)
+    return offset + height + 4
 end
 
 local function hideRest(pool, n)
@@ -91,7 +107,7 @@ end
 
 function UI:RefreshDungeons()
     local context = addon.Context()
-    local n = 0
+    local n, offset = 0, 0
     for _, d in ipairs(addon.dungeons) do
         local name = addon.DungeonName(d)
         -- UTF-8 text is matched byte-for-byte; avoid corrupting non-ASCII names.
@@ -114,17 +130,18 @@ function UI:RefreshDungeons()
                 addon.char.selectedDungeon = d.key
                 self:Refresh()
             end)
+            offset = self:LayoutRow(row, 64, offset)
         end
     end
     hideRest(self.cards, n)
-    self.catalog:SetHeight(math.max(1, n * 68))
+    self.catalog:SetHeight(math.max(1, offset))
 end
 
 function UI:RefreshQuests()
     local d, engine = self.dungeon, addon.Planner.New(addon.quests, addon.Context())
     self.engine = engine
     self.heading:SetText(d and addon.DungeonName(d) or addon.L("QUESTS"))
-    local n = 0
+    local n, offset = 0, 0
     if d then
         local plan = engine:Dungeon(d, { includeUnavailable = self.includeUnavailable })
         self.summary:SetText(addon.L("SUMMARY", (plan.counts.ACTIVE or 0) + (plan.counts.READY or 0),
@@ -179,6 +196,7 @@ function UI:RefreshQuests()
                 row.note:SetText("|cff" .. COLOR[state.status] .. note .. "|r")
                 row:SetScript("OnClick", function() self.quest = id; self:RefreshDetail() end)
             end
+            offset = self:LayoutRow(row, entry.heading and 32 or 59, offset)
         end
         if #plan.rows == 0 then
             self.coverage:SetText(addon.L(#d.quests > 0 and "NO_CHARACTER_QUESTS" or "EMPTY"))
@@ -187,7 +205,7 @@ function UI:RefreshQuests()
         self.summary:SetText(""); self.coverage:SetText(addon.L("PICK"))
     end
     hideRest(self.rows, n)
-    self.questList:SetHeight(math.max(1, n * 63))
+    self.questList:SetHeight(math.max(1, offset))
 end
 
 function UI:RefreshDetail()
@@ -201,7 +219,7 @@ function UI:RefreshDetail()
         local fs = pool[n]
         if not fs then fs = label(self.detail, "", 4, 0, 334, 13); pool[n] = fs end
         fs:ClearAllPoints(); fs:SetPoint("TOPLEFT", 4, -y); fs:SetText(value); fs:Show()
-        local measured = addon.Clean(fs:GetStringHeight(), "number") or height or 18
+        local measured = measuredHeight(fs, height or 18)
         y = y + math.max(height or 18, measured) + 8
     end
     for _, b in ipairs(self.chainButtons) do b:Hide() end
@@ -273,8 +291,10 @@ function UI:RefreshDetail()
             b:ClearAllPoints(); b:SetPoint("TOPLEFT", 4, -y)
             local qs = engine:State(qid).status
             b.label:SetText("|cff" .. COLOR[qs] .. chainIndex .. ". " .. addon.QuestName(qid) .. "|r")
+            local height = math.max(34, measuredHeight(b.label, 18) + 6)
+            b:SetHeight(height)
             b:SetScript("OnClick", function() self.quest = qid; self:RefreshDetail() end)
-            b:Show(); y = y + 37
+            b:Show(); y = y + height + 3
         end
         if q.storyline then
             for _, stepID in ipairs(q.storyline) do visit(stepID, 0) end

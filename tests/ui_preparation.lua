@@ -1,4 +1,4 @@
-local methods = {}
+local methods, measurement = {}, nil
 function methods:SetSize(w, h) self.width, self.height = w, h end
 function methods:GetWidth() return self.width or 340 end
 function methods:SetWidth(w) self.width = w end
@@ -9,7 +9,7 @@ function methods:ClearAllPoints() self.point = nil end
 function methods:SetScript(event, fn) self.scripts[event] = fn end
 function methods:SetText(value) self.text = value end
 function methods:SetEnabled(value) self.enabled = value end
-function methods:GetStringHeight() return 18 end
+function methods:GetStringHeight() if measurement then return measurement(self) end; return 18 end
 function methods:SetScale(value) self.scale = value end
 function methods:GetEffectiveScale() return self.scale or 1 end
 function methods:SetClampedToScreen(value) self.clamped = value end
@@ -334,6 +334,56 @@ check("Filtered-out quests are distinguished from missing dungeon data", functio
     ui.dungeon.quests = {}; ui:Refresh()
     assert(#visibleRows() == 0 and ui.coverage.text == addon.L("EMPTY"))
     ui.dungeon = originalDungeon; addon.Context = originalContext; addon.quests[301] = nil; ui:Refresh()
+end)
+check("Wrapped catalogue, quest and giver text expands cumulative rows without overlap", function()
+    local questName, dungeonName, giver = addon.QuestName, addon.DungeonName, addon.quests[2].start.name
+    addon.QuestName = function(id) return "LONG_TITLE " .. id end
+    addon.DungeonName = function() return "LONG_TITLE dungeon" end
+    addon.quests[2].start.name = "LONG_NOTE giver"
+    measurement = function(fs)
+        if fs.text and fs.text:find("LONG_TITLE", 1, true) then return 72 end
+        if fs.text and fs.text:find("LONG_NOTE", 1, true) then return 54 end
+        return 18
+    end
+    ui.preparation = false; ui:Refresh()
+    local first = visibleRows()[1]
+    assert(first.height >= 108 and -first.note.point[3] >= 7 + 72)
+    assert(-visibleRows()[2].point[3] >= first.height + 4)
+    assert(ui.cards[1].height >= 108 and ui.catalog.height >= ui.cards[1].height)
+    ui.preparation = true; ui:Refresh()
+    local totalHeight, sawLongNote = 0, false
+    for _, row in ipairs(ui.rows) do
+        if row.shown then
+            assert(row.point[3] == -totalHeight)
+            totalHeight = totalHeight + row.height + 4
+            if row.note.text:find("LONG_NOTE", 1, true) then
+                sawLongNote = true; assert(row.height >= 7 + 72 + 4 + 54 + 7)
+            end
+        end
+    end
+    assert(sawLongNote and ui.questList.height == totalHeight)
+    showDetail(100)
+    assert(ui.chainButtons[1].height == 78)
+    assert(ui.chainButtons[1].point[3] - ui.chainButtons[2].point[3] >= 81)
+    addon.QuestName, addon.DungeonName, addon.quests[2].start.name = questName, dungeonName, giver
+    measurement = nil; ui.preparation = false; ui:Refresh(); showDetail(100)
+    assert(visibleRows()[1] == first and first.height == 59 and ui.cards[1].height == 64)
+    assert(first.note.point[3] == -29 and ui.chainButtons[1].height == 34)
+end)
+check("Invalid and restricted text measurements reuse clean geometry safely", function()
+    ui.preparation = false; ui:Refresh(); showDetail(100)
+    local height, chainHeight = visibleRows()[1].height, ui.chainButtons[1].height
+    for _, value in ipairs({ math.huge, -1, 0 / 0, 777 }) do
+        measurement = function() return value end
+        issecretvalue = function(v) return type(v) == "number" and v == 777 end
+        ui:Refresh(); showDetail(100)
+        assert(visibleRows()[1].height == height and ui.chainButtons[1].height == chainHeight)
+        assert(ui.questList.height < math.huge and ui.detail.height < math.huge)
+    end
+    measurement = function() error("height unavailable") end
+    ui:Refresh(); showDetail(100)
+    assert(visibleRows()[1].height == height and ui.chainButtons[1].height == chainHeight)
+    measurement, issecretvalue = nil, nil
 end)
 check("Completed preparation keeps the prepared result instead of empty data warning", function()
     for id in pairs(addon.quests) do done[id] = true end
