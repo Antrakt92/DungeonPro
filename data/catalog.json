@@ -18164,6 +18164,125 @@
         4146
       ],
       "storylineEvidence": "https://www.wowhead.com/forever/quest=4146/zapper-fuel"
+    },
+    {
+      "id": 7647,
+      "name": "Judgment and Redemption",
+      "level": 60,
+      "minLevel": 60,
+      "factions": [
+        "Alliance"
+      ],
+      "classes": [
+        "PALADIN"
+      ],
+      "races": [
+        1,
+        3
+      ],
+      "start": {
+        "npcID": 928,
+        "name": "Lord Grayson Shadowbreaker"
+      },
+      "finish": {
+        "npcID": 14568,
+        "name": "Darkreaver's Fallen Charger"
+      },
+      "source": "https://www.wowhead.com/forever/quest=7647/judgment-and-redemption",
+      "requirementsKnown": false
+    },
+    {
+      "id": 7629,
+      "name": "Imp Delivery",
+      "level": 60,
+      "minLevel": 60,
+      "factions": [
+        "Alliance",
+        "Horde"
+      ],
+      "classes": [
+        "WARLOCK"
+      ],
+      "start": {
+        "npcID": 14437,
+        "name": "Gorzeeki Wildeyes"
+      },
+      "finish": {
+        "npcID": 14437,
+        "name": "Gorzeeki Wildeyes"
+      },
+      "source": "https://www.wowhead.com/forever/quest=7629/imp-delivery",
+      "requirementsKnown": false
+    },
+    {
+      "id": 8258,
+      "name": "The Darkreaver Menace",
+      "level": 60,
+      "minLevel": 58,
+      "factions": [
+        "Horde"
+      ],
+      "classes": [
+        "SHAMAN"
+      ],
+      "start": {
+        "npcID": 13417,
+        "name": "Sagorne Creststrider",
+        "mapID": 1454,
+        "zoneName": "Orgrimmar",
+        "x": 38.4,
+        "y": 36,
+        "reportedLocations": [
+          {
+            "mapID": 1454,
+            "zoneName": "Orgrimmar",
+            "x": 38.4,
+            "y": 36
+          },
+          {
+            "mapID": 1454,
+            "zoneName": "Orgrimmar",
+            "x": 38.6,
+            "y": 36.2
+          },
+          {
+            "mapID": 1454,
+            "zoneName": "Orgrimmar",
+            "x": 38.8,
+            "y": 36.6
+          }
+        ]
+      },
+      "finish": {
+        "npcID": 13417,
+        "name": "Sagorne Creststrider",
+        "mapID": 1454,
+        "zoneName": "Orgrimmar",
+        "x": 38.4,
+        "y": 36,
+        "reportedLocations": [
+          {
+            "mapID": 1454,
+            "zoneName": "Orgrimmar",
+            "x": 38.4,
+            "y": 36
+          },
+          {
+            "mapID": 1454,
+            "zoneName": "Orgrimmar",
+            "x": 38.6,
+            "y": 36.2
+          },
+          {
+            "mapID": 1454,
+            "zoneName": "Orgrimmar",
+            "x": 38.8,
+            "y": 36.6
+          }
+        ]
+      },
+      "source": "https://www.wowhead.com/forever/quest=8258/the-darkreaver-menace",
+      "requirementsKnown": false
     }
   ],
   "dungeons": [
@@ -18639,7 +18758,10 @@
         8992,
         8969,
         5531,
-        7668
+        7668,
+        7647,
+        7629,
+        8258
       ],
       "source": "https://www.wowhead.com/forever/guide/dungeons-overview-locations-details",
       "instanceID": 289
