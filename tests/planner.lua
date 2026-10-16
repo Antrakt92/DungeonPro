@@ -475,6 +475,126 @@ check("Runtime completion links bound malformed or excessive input without mutat
     steps = e:CompletionSteps(1)
     eq(#steps, 1); eq(steps[1].id, 3)
 end)
+check("Partial hard groups expose held and ready parent actions without certifying the child", function()
+    local finish = { npcID = 7, mapID = 1, x = 10, y = 20 }
+    local quests = { [1] = q(1, nil, { requirementsKnown = false, finish = finish }),
+        [2] = q(2, { { ids = { 1 } } }, { requirementsKnown = false }) }
+    for _, ready in ipairs({ false, true }) do
+        local c = ctx({}, { [1] = true }); c.ready = function() return ready end
+        local e = P.New(quests, c); eq(e:State(2).status, "UNKNOWN")
+        local actions, unknown = e:Next(2)
+        eq(#actions, 1); eq(actions[1].id, 1); eq(actions[1].kind, ready and "turnin" or "complete")
+        eq(actions[1].place, ready and finish or nil); eq(unknown, true)
+        local plan = e:Dungeon({ quests = { 2 }, coverage = "reviewed" })
+        eq(plan.ready, false); eq(plan.unknown, true); eq(#plan.actions, 1)
+        eq(quests[1].requirementsKnown, false); eq(quests[2].requirementsKnown, false)
+    end
+end)
+check("Partial leaves satisfied groups and active-mode parents never become pickup availability", function()
+    local quests = { [1] = q(1, nil, { requirementsKnown = false }),
+        [2] = q(2, { { ids = { 1 } } }, { requirementsKnown = false }),
+        [3] = q(3, { { ids = { 1 }, mode = "active" } }, { requirementsKnown = false }) }
+    local actions, unknown = P.New(quests, ctx()):Next(1)
+    eq(#actions, 0); eq(unknown, true)
+    local e = P.New(quests, ctx({ [1] = true }))
+    actions, unknown = e:Next(2); eq(#actions, 0); eq(unknown, true); eq(e:State(2).status, "UNKNOWN")
+    e = P.New(quests, ctx({}, { [1] = true }))
+    actions, unknown = e:Next(3); eq(#actions, 0); eq(unknown, true); eq(e:State(3).status, "UNKNOWN")
+end)
+check("Partial AND groups retain held work beside a missing unresolved parent", function()
+    local quests = { [1] = q(1, nil, { requirementsKnown = false }),
+        [2] = q(2, { { ids = { 1 } }, { ids = { 999 } } }, { requirementsKnown = false }) }
+    local e = P.New(quests, ctx({}, { [1] = true }))
+    local actions, unknown = e:Next(2)
+    eq(#actions, 1); eq(actions[1].id, 1); eq(actions[1].kind, "complete"); eq(unknown, true)
+    eq(e:State(2).status, "UNKNOWN"); eq(e:State(999).reason, "missing")
+end)
+check("Partial OR preferences retain uncertainty and cannot manufacture pickup from an unknown branch", function()
+    local quests = { [1] = q(1, nil, { requirementsKnown = false }),
+        [2] = q(2, nil, { requirementsKnown = false }),
+        [3] = q(3, { { ids = { 1, 2 } } }, { requirementsKnown = false }) }
+    local c = ctx({}, { [1] = true })
+    local e = P.New(quests, c); local actions, unknown = e:Next(3)
+    eq(#actions, 1); eq(actions[1].id, 1); eq(actions[1].kind, "complete"); eq(unknown, true)
+    e = P.New(quests, c, { [3] = { [1] = 2 } }); actions, unknown = e:Next(3)
+    eq(#actions, 0); eq(unknown, true); eq(e:State(3).status, "UNKNOWN")
+    quests[2].classes = { "WARRIOR" }
+    e = P.New(quests, c, { [3] = { [1] = 2 } }); actions, unknown = e:Next(3)
+    eq(#actions, 1); eq(actions[1].id, 1); eq(unknown, true)
+end)
+check("Partial groups deduplicate the same held ancestor across independent branches", function()
+    local quests = { [1] = q(1, nil, { requirementsKnown = false }),
+        [2] = q(2, { { ids = { 1 } } }, { requirementsKnown = false }),
+        [3] = q(3, { { ids = { 1 } } }, { requirementsKnown = false }),
+        [4] = q(4, { { ids = { 2 } }, { ids = { 3 } } }, { requirementsKnown = false }) }
+    local e = P.New(quests, ctx({}, { [1] = true }))
+    local actions, unknown = e:Next(4)
+    eq(#actions, 1); eq(actions[1].id, 1); eq(actions[1].kind, "complete"); eq(unknown, true)
+    eq(e:State(4).status, "UNKNOWN")
+end)
+check("Partial cycles terminate while a separate safe held branch remains actionable", function()
+    local quests = { [1] = q(1, { { ids = { 2 } } }, { requirementsKnown = false }),
+        [2] = q(2, { { ids = { 1 } } }, { requirementsKnown = false }),
+        [3] = q(3, nil, { requirementsKnown = false }),
+        [4] = q(4, { { ids = { 1, 3 } } }, { requirementsKnown = false }),
+        [5] = q(5, { { ids = { 1 } }, { ids = { 3 } } }, { requirementsKnown = false }) }
+    local e = P.New(quests, ctx({}, { [3] = true }))
+    local actions, unknown = e:Next(1); eq(#actions, 0); eq(unknown, true)
+    for _, id in ipairs({ 4, 5 }) do
+        actions, unknown = e:Next(id)
+        eq(#actions, 1); eq(actions[1].id, 3); eq(unknown, true); eq(e:State(id).status, "UNKNOWN")
+    end
+end)
+check("Partial traversal never bypasses character exclusions unknown context or level gates", function()
+    local parent = q(1, nil, { requirementsKnown = false })
+    for _, restriction in ipairs({ { factions = { "Horde" } }, { classes = { "WARRIOR" } }, { races = { 1 } } }) do
+        restriction.requirementsKnown = false
+        local e = P.New({ [1] = parent, [2] = q(2, { { ids = { 1 } } }, restriction) }, ctx({}, { [1] = true }))
+        local actions, unknown = e:Next(2)
+        eq(e:State(2).status, "UNAVAILABLE"); eq(#actions, 0); eq(unknown, false); eq(e.states[1], nil)
+    end
+    for _, missing in ipairs({ "faction", "level", "activity" }) do
+        local c = ctx({}, { [1] = true })
+        if missing == "activity" then c.active = function(id) if id == 1 then return true end end else c[missing] = nil end
+        local e = P.New({ [1] = parent, [2] = q(2, { { ids = { 1 } } },
+            { requirementsKnown = false, factions = { "Alliance" } }) }, c)
+        local actions, unknown = e:Next(2)
+        eq(e:State(2).status, "UNKNOWN"); eq(#actions, 0); eq(unknown, true); eq(e.states[1], nil)
+    end
+    local c = ctx({}, { [1] = true }); c.level = 1
+    local e = P.New({ [1] = parent, [2] = q(2, { { ids = { 1 } } },
+        { requirementsKnown = false, minLevel = 10 }) }, c)
+    local actions, unknown = e:Next(2)
+    eq(e:State(2).reason, "level"); eq(#actions, 1); eq(actions[1].id, 2); eq(actions[1].kind, "level"); eq(unknown, false)
+    eq(e.states[1], nil); actions, unknown = e:Next(999); eq(#actions, 0); eq(unknown, true)
+end)
+check("Actual partial Defias groups expose held work but completed early steps do not authorize another pickup", function()
+    local ids = { 65, 132, 135, 141, 142, 155, 166 }
+    for _, id in ipairs(ids) do eq(addon.quests[id].requirementsKnown, false) end
+    for _, ready in ipairs({ false, true }) do
+        local c = ctx({}, { [65] = true }); c.ready = function() return ready end
+        local e = P.New(addon.quests, c); local actions, unknown = e:Next(166)
+        eq(#actions, 1); eq(actions[1].id, 65); eq(actions[1].kind, ready and "turnin" or "complete")
+        eq(actions[1].place, ready and addon.quests[65].finish or nil); eq(unknown, true)
+        eq(e:State(166).status, "UNKNOWN")
+        local plan = e:Dungeon({ quests = { 166 }, coverage = "reviewed" })
+        eq(plan.ready, false); eq(plan.unknown, true)
+    end
+    local e = P.New(addon.quests, ctx({ [65] = true, [132] = true }))
+    local actions, unknown = e:Next(166); eq(#actions, 0); eq(unknown, true)
+    eq(e:State(135).status, "UNKNOWN")
+    for _, id in ipairs(ids) do eq(addon.quests[id].requirementsKnown, false) end
+end)
+check("Actual partial Ragefire groups guide held outside work without granting inside pickup", function()
+    eq(addon.quests[5724].requirementsKnown, false); eq(addon.quests[5722].requirementsKnown, false)
+    eq(addon.quests[5724].startsInside, true); eq(addon.quests[5724].requires[1].ids[1], 5722)
+    local c = ctx({}, { [5722] = true }); c.faction, c.race = "Horde", 2
+    local e = P.New(addon.quests, c); local actions, unknown = e:Next(5724)
+    eq(#actions, 1); eq(actions[1].id, 5722); eq(actions[1].kind, "complete"); eq(unknown, true)
+    eq(e:State(5724).status, "UNKNOWN")
+    local plan = e:Dungeon({ quests = { 5724 }, coverage = "reviewed" })
+    eq(plan.ready, false); eq(plan.unknown, true); eq(plan.actions[1].id, 5722)
+end)
 check("Future schema is preserved", function()
     GetLocale = function() return "enUS" end
     assert(loadfile("Core/Client.lua"))("DungeonPro", addon)

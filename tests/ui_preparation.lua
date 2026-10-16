@@ -1436,7 +1436,9 @@ check("Item containers stay separate from quest starters and navigate only expli
     showDetail(9930, context)
     local row = ui.containerButtons[1]
     assert(detailHas(addon.L("CONTAINER_SOURCE")) and row.shown and row.enabled and row.height == 108)
-    assert(ui.engine:State(9930).status == "UNKNOWN" and not ui.action and not ui.giverAction)
+    assert(ui.engine:State(9930).status == "UNKNOWN" and not ui.giverAction)
+    assert(ui.action.id == 9931 and ui.action.kind == "pickup" and ui.action.place == addon.quests[9931].start)
+    local _, uncertain = ui.engine:Next(9930); assert(uncertain)
     assert(addon.quests[9930].start.itemID == 5791 and not addon.quests[9930].start.objectID)
     assert(#visits == 0 and #maps == 0)
     row.scripts.OnClick()
@@ -1546,5 +1548,55 @@ check("Requirement label is translated in every locale and held or completed evi
     context.active = function() return false end; showDetail(3, context)
     assert(detailHas("|cff66dd99" .. addon.L("COMPLETED") .. "|r") and not ui.action)
     showDetail(2)
+end)
+check("Partial requirement chains show held-parent work while keeping the target unknown and unprepared", function()
+    local context, dungeon, selected, preparation = addon.Context, ui.dungeon, ui.quest, ui.preparation
+    local ready = false
+    addon.quests[9950] = { id = 9950, minLevel = 1, requirementsKnown = false,
+        requires = { { ids = { 9951 } }, { ids = { 9952 } } } }
+    addon.quests[9951] = { id = 9951, minLevel = 1, requirementsKnown = false,
+        finish = { npcID = 55, name = "Known turn-in", mapID = 1, x = 40, y = 50 } }
+    addon.quests[9952] = { id = 9952, minLevel = 1, requirementsKnown = false,
+        start = { npcID = 56, name = "Unverified pickup", mapID = 1, x = 60, y = 70 } }
+    addon.Context = function() return { level = 20, faction = "Alliance",
+        completed = function() return false end, active = function(id) return id == 9951 end,
+        ready = function(id) return ready and id == 9951 end } end
+    ui.dungeon = { key = "partial-held", name = "Partial requirements", coverage = "reviewed", quests = { 9950 } }
+    for _, turnin in ipairs({ false, true }) do
+        ready, ui.quest, ui.preparation = turnin, 9950, true; ui:Refresh()
+        local state = ui.engine:State(9950)
+        local plan = ui.engine:Dungeon(ui.dungeon)
+        assert(state.status == "UNKNOWN" and state.reason == "requirements")
+        assert(plan.unknown and not plan.ready and ui.coverage.text == addon.L("PARTIAL"))
+        assert(#plan.actions == 1 and plan.actions[1].id == 9951)
+        assert(plan.actions[1].kind == (turnin and "turnin" or "complete"))
+        assert(ui.action and ui.action.id == 9951 and ui.action.kind == plan.actions[1].kind)
+        assert(ui.guide.enabled == turnin and ui.map.enabled == turnin)
+        assert(detailHas("|cffb4aacd" .. addon.L("UNKNOWN_REQUIREMENTS") .. "|r"))
+        local heldRow, targetRow
+        for _, row in ipairs(visibleRows()) do
+            if row.title.text == "Quest 9951" then heldRow = row end
+            if row.title.text == "Quest 9950" then targetRow = row end
+            assert(row.title.text ~= "Quest 9952", "unknown leaf must not become a pickup action")
+        end
+        assert(heldRow and heldRow.note.text:find(addon.L(plan.actions[1].kind), 1, true))
+        assert(targetRow and targetRow.note.text:find(addon.L("UNKNOWN_REQUIREMENTS"), 1, true))
+        assert(ui.engine:State(9952).status == "UNKNOWN")
+        local actions, uncertain = ui.engine:Next(9950)
+        assert(#actions == 1 and uncertain, "safe progress cannot certify complete requirements")
+    end
+    addon.quests[9950].factions = { "Horde" }; ui:Refresh()
+    assert(ui.engine:State(9950).status == "UNAVAILABLE" and not ui.action)
+    assert(#ui.engine:Dungeon(ui.dungeon).actions == 0 and #visibleRows() == 0)
+    addon.quests[9950].factions = nil
+    addon.Context = function() return { level = 20, faction = "Alliance",
+        completed = function(id) if id == 9950 then return nil end; return false end,
+        active = function(id) return id == 9951 end } end
+    ui:Refresh()
+    assert(ui.engine:State(9950).reason == "character" and not ui.action)
+    assert(#ui.engine:Dungeon(ui.dungeon).actions == 0)
+    assert(#visibleRows() == 1 and visibleRows()[1].title.text == "Quest 9950")
+    for _, id in ipairs({ 9950, 9951, 9952 }) do addon.quests[id] = nil end
+    addon.Context, ui.dungeon, ui.quest, ui.preparation = context, dungeon, selected, preparation; ui:Refresh()
 end)
 print("Preparation UI modeled checks passed: " .. total .. " (no native layout validation)")

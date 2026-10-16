@@ -79,10 +79,10 @@ function Planner.New(quests, context, choices)
         path = path or {}
         if path[id] then return {}, true end
         local state, q = self:State(id), self.quests[id]
-        -- A known AND/OR graph may still contain a safe branch even when a
-        -- different prerequisite has unknown requirements.
-        if state.status == "UNKNOWN" and not (q and q.requirementsKnown == true and
-            state.reason == "requirements") then return {}, true end
+        -- Known groups can expose safe work while the quest's full conditions
+        -- remain unknown. An unknown leaf never authorizes pickup.
+        if state.status == "UNKNOWN" and not (q and state.reason == "requirements" and
+            type(q.requires) == "table" and #q.requires > 0) then return {}, true end
         if state.status == "COMPLETED" or state.status == "UNAVAILABLE" then return {}, false end
         if state.status == "ACTIVE" or state.status == "READY" then
             -- The turn-in NPC is not an objective location for an unfinished quest.
@@ -94,7 +94,7 @@ function Planner.New(quests, context, choices)
         end
         if state.reason == "level" then return { { id = id, kind = "level", level = q.minLevel } }, false end
         path[id] = true
-        local actions, uncertain, seen = {}, false, {}
+        local actions, uncertain, seen = {}, state.status == "UNKNOWN" and q.requirementsKnown ~= true, {}
         for groupIndex, group in ipairs(q.requires or {}) do
             local satisfied = false
             for _, parent in ipairs(group.ids) do
