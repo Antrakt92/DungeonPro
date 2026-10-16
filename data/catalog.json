@@ -5591,11 +5591,19 @@
       "source": "https://www.wowhead.com/forever/quest=2846/tiara-of-the-deep",
       "start": {
         "npcID": 6546,
-        "name": "Tabetha"
+        "name": "Tabetha",
+        "mapID": 1445,
+        "zoneName": "Dustwallow Marsh",
+        "x": 46,
+        "y": 57
       },
       "finish": {
         "npcID": 6546,
-        "name": "Tabetha"
+        "name": "Tabetha",
+        "mapID": 1445,
+        "zoneName": "Dustwallow Marsh",
+        "x": 46,
+        "y": 57
       },
       "storyline": [
         2861,
@@ -5843,7 +5851,11 @@
       ],
       "finish": {
         "npcID": 6546,
-        "name": "Tabetha"
+        "name": "Tabetha",
+        "mapID": 1445,
+        "zoneName": "Dustwallow Marsh",
+        "x": 46,
+        "y": 57
       },
       "storyline": [
         2861,
@@ -17503,7 +17515,11 @@
       },
       "finish": {
         "npcID": 12736,
-        "name": "Je'neu Sancrea"
+        "name": "Je'neu Sancrea",
+        "mapID": 1440,
+        "zoneName": "Ashenvale",
+        "x": 11.6,
+        "y": 34.2
       },
       "requirementsKnown": false
     },
@@ -17522,13 +17538,41 @@
       ],
       "start": {
         "npcID": 6548,
-        "name": "Magus Tirth"
+        "name": "Magus Tirth",
+        "mapID": 1441,
+        "zoneName": "Thousand Needles",
+        "x": 78.2,
+        "y": 75.8,
+        "reportedLocations": [
+          {
+            "mapID": 1441,
+            "zoneName": "Thousand Needles",
+            "x": 78.2,
+            "y": 75.8
+          },
+          {
+            "mapID": 1441,
+            "zoneName": "Thousand Needles",
+            "x": 78.4,
+            "y": 75.4
+          }
+        ]
       },
       "finish": {
         "npcID": 6546,
-        "name": "Tabetha"
+        "name": "Tabetha",
+        "mapID": 1445,
+        "zoneName": "Dustwallow Marsh",
+        "x": 46,
+        "y": 57
       },
-      "requirementsKnown": false
+      "requirementsKnown": false,
+      "storyline": [
+        1949,
+        1950,
+        1951
+      ],
+      "storylineEvidence": "https://www.wowhead.com/forever/quest=1951/rituals-of-power"
     },
     {
       "id": 1956,
@@ -17545,13 +17589,29 @@
       ],
       "start": {
         "npcID": 6546,
-        "name": "Tabetha"
+        "name": "Tabetha",
+        "mapID": 1445,
+        "zoneName": "Dustwallow Marsh",
+        "x": 46,
+        "y": 57
       },
       "finish": {
         "npcID": 6546,
-        "name": "Tabetha"
+        "name": "Tabetha",
+        "mapID": 1445,
+        "zoneName": "Dustwallow Marsh",
+        "x": 46,
+        "y": 57
       },
-      "requirementsKnown": false
+      "requirementsKnown": false,
+      "storyline": [
+        1953,
+        1954,
+        1955,
+        1956,
+        1957
+      ],
+      "storylineEvidence": "https://www.wowhead.com/forever/quest=1957/mana-surges"
     },
     {
       "id": 7668,
@@ -17567,11 +17627,59 @@
       ],
       "start": {
         "npcID": 13417,
-        "name": "Sagorne Creststrider"
+        "name": "Sagorne Creststrider",
+        "mapID": 1454,
+        "zoneName": "Orgrimmar",
+        "x": 38.4,
+        "y": 36,
+        "reportedLocations": [
+          {
+            "mapID": 1454,
+            "zoneName": "Orgrimmar",
+            "x": 38.4,
+            "y": 36
+          },
+          {
+            "mapID": 1454,
+            "zoneName": "Orgrimmar",
+            "x": 38.6,
+            "y": 36.2
+          },
+          {
+            "mapID": 1454,
+            "zoneName": "Orgrimmar",
+            "x": 38.8,
+            "y": 36.6
+          }
+        ]
       },
       "finish": {
         "npcID": 13417,
-        "name": "Sagorne Creststrider"
+        "name": "Sagorne Creststrider",
+        "mapID": 1454,
+        "zoneName": "Orgrimmar",
+        "x": 38.4,
+        "y": 36,
+        "reportedLocations": [
+          {
+            "mapID": 1454,
+            "zoneName": "Orgrimmar",
+            "x": 38.4,
+            "y": 36
+          },
+          {
+            "mapID": 1454,
+            "zoneName": "Orgrimmar",
+            "x": 38.6,
+            "y": 36.2
+          },
+          {
+            "mapID": 1454,
+            "zoneName": "Orgrimmar",
+            "x": 38.8,
+            "y": 36.6
+          }
+        ]
       },
       "requirementsKnown": false
     },
@@ -17594,7 +17702,13 @@
         "npcID": 9119,
         "name": "Muigin",
         "zoneName": "Un'Goro Crater"
-      }
+      },
+      "storyline": [
+        4141,
+        4142,
+        4143
+      ],
+      "storylineEvidence": "https://www.wowhead.com/forever/quest=4143/haze-of-evil"
     },
     {
       "id": 4146,
@@ -17618,7 +17732,13 @@
         "npcID": 9118,
         "name": "Larion",
         "zoneName": "Un'Goro Crater"
-      }
+      },
+      "storyline": [
+        4145,
+        4147,
+        4146
+      ],
+      "storylineEvidence": "https://www.wowhead.com/forever/quest=4146/zapper-fuel"
     },
     {
       "id": 7848,
@@ -17647,6 +17767,403 @@
         "x": 26.4,
         "y": 24.6
       }
+    },
+    {
+      "id": 1949,
+      "name": "Hidden Secrets",
+      "source": "https://www.wowhead.com/forever/quest=1949/hidden-secrets",
+      "level": 38,
+      "minLevel": 30,
+      "factions": [
+        "Alliance",
+        "Horde"
+      ],
+      "classes": [
+        "MAGE"
+      ],
+      "requirementsKnown": false,
+      "finish": {
+        "npcID": 6548,
+        "name": "Magus Tirth",
+        "mapID": 1441,
+        "zoneName": "Thousand Needles",
+        "x": 78.2,
+        "y": 75.8,
+        "reportedLocations": [
+          {
+            "mapID": 1441,
+            "zoneName": "Thousand Needles",
+            "x": 78.2,
+            "y": 75.8
+          },
+          {
+            "mapID": 1441,
+            "zoneName": "Thousand Needles",
+            "x": 78.4,
+            "y": 75.4
+          }
+        ]
+      },
+      "start": {
+        "npcID": 6546,
+        "name": "Tabetha",
+        "mapID": 1445,
+        "zoneName": "Dustwallow Marsh",
+        "x": 46,
+        "y": 57
+      },
+      "storyline": [
+        1949,
+        1950,
+        1951
+      ],
+      "storylineEvidence": "https://www.wowhead.com/forever/quest=1951/rituals-of-power"
+    },
+    {
+      "id": 1950,
+      "name": "Get the Scoop",
+      "source": "https://www.wowhead.com/forever/quest=1950/get-the-scoop",
+      "level": 30,
+      "minLevel": 30,
+      "factions": [
+        "Alliance",
+        "Horde"
+      ],
+      "classes": [
+        "MAGE"
+      ],
+      "requirementsKnown": false,
+      "finish": {
+        "npcID": 6548,
+        "name": "Magus Tirth",
+        "mapID": 1441,
+        "zoneName": "Thousand Needles",
+        "x": 78.2,
+        "y": 75.8,
+        "reportedLocations": [
+          {
+            "mapID": 1441,
+            "zoneName": "Thousand Needles",
+            "x": 78.2,
+            "y": 75.8
+          },
+          {
+            "mapID": 1441,
+            "zoneName": "Thousand Needles",
+            "x": 78.4,
+            "y": 75.4
+          }
+        ]
+      },
+      "start": {
+        "npcID": 6548,
+        "name": "Magus Tirth",
+        "mapID": 1441,
+        "zoneName": "Thousand Needles",
+        "x": 78.2,
+        "y": 75.8,
+        "reportedLocations": [
+          {
+            "mapID": 1441,
+            "zoneName": "Thousand Needles",
+            "x": 78.2,
+            "y": 75.8
+          },
+          {
+            "mapID": 1441,
+            "zoneName": "Thousand Needles",
+            "x": 78.4,
+            "y": 75.4
+          }
+        ]
+      },
+      "storyline": [
+        1949,
+        1950,
+        1951
+      ],
+      "storylineEvidence": "https://www.wowhead.com/forever/quest=1951/rituals-of-power"
+    },
+    {
+      "id": 1953,
+      "name": "Return to the Marsh",
+      "source": "https://www.wowhead.com/forever/quest=1953/return-to-the-marsh",
+      "level": 40,
+      "minLevel": 35,
+      "factions": [
+        "Alliance",
+        "Horde"
+      ],
+      "classes": [
+        "MAGE"
+      ],
+      "requirementsKnown": false,
+      "finish": {
+        "npcID": 6546,
+        "name": "Tabetha",
+        "mapID": 1445,
+        "zoneName": "Dustwallow Marsh",
+        "x": 46,
+        "y": 57
+      },
+      "startAlternatives": [
+        {
+          "npcID": 3048,
+          "name": "Ursyn Ghull"
+        },
+        {
+          "npcID": 4568,
+          "name": "Anastasia Hartwell"
+        },
+        {
+          "npcID": 5144,
+          "name": "Bink"
+        },
+        {
+          "npcID": 5497,
+          "name": "Jennea Cannon"
+        },
+        {
+          "npcID": 5885,
+          "name": "Deino"
+        }
+      ],
+      "storyline": [
+        1953,
+        1954,
+        1955,
+        1956,
+        1957
+      ],
+      "storylineEvidence": "https://www.wowhead.com/forever/quest=1957/mana-surges"
+    },
+    {
+      "id": 1954,
+      "name": "The Infernal Orb",
+      "source": "https://www.wowhead.com/forever/quest=1954/the-infernal-orb",
+      "level": 40,
+      "minLevel": 35,
+      "factions": [
+        "Alliance",
+        "Horde"
+      ],
+      "classes": [
+        "MAGE"
+      ],
+      "requirementsKnown": false,
+      "finish": {
+        "npcID": 6546,
+        "name": "Tabetha",
+        "mapID": 1445,
+        "zoneName": "Dustwallow Marsh",
+        "x": 46,
+        "y": 57
+      },
+      "start": {
+        "npcID": 6546,
+        "name": "Tabetha",
+        "mapID": 1445,
+        "zoneName": "Dustwallow Marsh",
+        "x": 46,
+        "y": 57
+      },
+      "storyline": [
+        1953,
+        1954,
+        1955,
+        1956,
+        1957
+      ],
+      "storylineEvidence": "https://www.wowhead.com/forever/quest=1957/mana-surges"
+    },
+    {
+      "id": 1955,
+      "name": "The Exorcism",
+      "source": "https://www.wowhead.com/forever/quest=1955/the-exorcism",
+      "level": 40,
+      "minLevel": 35,
+      "factions": [
+        "Alliance",
+        "Horde"
+      ],
+      "classes": [
+        "MAGE"
+      ],
+      "requirementsKnown": false,
+      "finish": {
+        "npcID": 6546,
+        "name": "Tabetha",
+        "mapID": 1445,
+        "zoneName": "Dustwallow Marsh",
+        "x": 46,
+        "y": 57
+      },
+      "start": {
+        "npcID": 6546,
+        "name": "Tabetha",
+        "mapID": 1445,
+        "zoneName": "Dustwallow Marsh",
+        "x": 46,
+        "y": 57
+      },
+      "storyline": [
+        1953,
+        1954,
+        1955,
+        1956,
+        1957
+      ],
+      "storylineEvidence": "https://www.wowhead.com/forever/quest=1957/mana-surges"
+    },
+    {
+      "id": 1957,
+      "name": "Mana Surges",
+      "source": "https://www.wowhead.com/forever/quest=1957/mana-surges",
+      "level": 40,
+      "minLevel": 35,
+      "factions": [
+        "Alliance",
+        "Horde"
+      ],
+      "classes": [
+        "MAGE"
+      ],
+      "requirementsKnown": false,
+      "finish": {
+        "npcID": 6546,
+        "name": "Tabetha",
+        "mapID": 1445,
+        "zoneName": "Dustwallow Marsh",
+        "x": 46,
+        "y": 57
+      },
+      "start": {
+        "npcID": 6546,
+        "name": "Tabetha",
+        "mapID": 1445,
+        "zoneName": "Dustwallow Marsh",
+        "x": 46,
+        "y": 57
+      },
+      "storyline": [
+        1953,
+        1954,
+        1955,
+        1956,
+        1957
+      ],
+      "storylineEvidence": "https://www.wowhead.com/forever/quest=1957/mana-surges"
+    },
+    {
+      "id": 4141,
+      "name": "Muigin and Larion",
+      "factions": [
+        "Alliance"
+      ],
+      "source": "https://www.wowhead.com/forever/quest=4141/muigin-and-larion",
+      "start": {
+        "npcID": 9119,
+        "name": "Muigin",
+        "zoneName": "Un'Goro Crater"
+      },
+      "finish": {
+        "npcID": 9119,
+        "name": "Muigin",
+        "zoneName": "Un'Goro Crater"
+      },
+      "level": 52,
+      "minLevel": 47,
+      "requirementsKnown": false,
+      "storyline": [
+        4141,
+        4142,
+        4143
+      ],
+      "storylineEvidence": "https://www.wowhead.com/forever/quest=4143/haze-of-evil"
+    },
+    {
+      "id": 4142,
+      "name": "A Visit to Gregan",
+      "factions": [
+        "Alliance"
+      ],
+      "source": "https://www.wowhead.com/forever/quest=4142/a-visit-to-gregan",
+      "start": {
+        "npcID": 9119,
+        "name": "Muigin",
+        "zoneName": "Un'Goro Crater"
+      },
+      "finish": {
+        "npcID": 7775,
+        "name": "Gregan Brewspewer",
+        "zoneName": "Feralas"
+      },
+      "level": 52,
+      "minLevel": 47,
+      "requirementsKnown": false,
+      "storyline": [
+        4141,
+        4142,
+        4143
+      ],
+      "storylineEvidence": "https://www.wowhead.com/forever/quest=4143/haze-of-evil"
+    },
+    {
+      "id": 4145,
+      "name": "Larion and Muigin",
+      "factions": [
+        "Horde"
+      ],
+      "source": "https://www.wowhead.com/forever/quest=4145/larion-and-muigin",
+      "start": {
+        "npcID": 9118,
+        "name": "Larion",
+        "zoneName": "Un'Goro Crater"
+      },
+      "finish": {
+        "npcID": 9118,
+        "name": "Larion",
+        "zoneName": "Un'Goro Crater"
+      },
+      "level": 52,
+      "minLevel": 47,
+      "requirementsKnown": false,
+      "storyline": [
+        4145,
+        4147,
+        4146
+      ],
+      "storylineEvidence": "https://www.wowhead.com/forever/quest=4146/zapper-fuel"
+    },
+    {
+      "id": 4147,
+      "name": "Marvon's Workshop",
+      "factions": [
+        "Horde"
+      ],
+      "source": "https://www.wowhead.com/forever/quest=4147/marvons-workshop",
+      "start": {
+        "npcID": 9118,
+        "name": "Larion",
+        "zoneName": "Un'Goro Crater"
+      },
+      "finish": {
+        "npcID": 8496,
+        "name": "Liv Rizzlefix",
+        "zoneName": "The Barrens",
+        "mapID": 1413,
+        "x": 62.4,
+        "y": 38.6
+      },
+      "level": 52,
+      "minLevel": 47,
+      "requirementsKnown": false,
+      "storyline": [
+        4145,
+        4147,
+        4146
+      ],
+      "storylineEvidence": "https://www.wowhead.com/forever/quest=4146/zapper-fuel"
     }
   ],
   "dungeons": [
