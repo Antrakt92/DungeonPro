@@ -48,7 +48,8 @@ function addon.CaptureOffers()
         if scheduling or not scheduled or currentOffers ~= snapshot or offerGeneration ~= generation then return end
         local clock = addon.Read(GetTime, "number")
         if currentOffers ~= snapshot or offerGeneration ~= generation then return end
-        if not clock or clock < snapshot.time or clock - snapshot.time < 30 then return end
+        -- Unverifiable time invalidates evidence; it does not prove the dialogue stayed current.
+        if clock and clock >= snapshot.time and clock - snapshot.time < 30 then return end
         addon.ClearOffers()
         addon.Notify()
     end
