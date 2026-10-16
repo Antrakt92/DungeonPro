@@ -581,30 +581,64 @@ function addon.DungeonArt(d)
     return (mapID and lfgDungeonArt(mapID)) or "Interface\\Icons\\INV_Misc_Map_01"
 end
 
+local function selectedLogReadScope(id)
+    local quest = addon.Clean(C_QuestLog, "table")
+    if not quest then return nil end
+    local selected = addon.Clean(quest.GetSelectedQuest, "function")
+    local logIndex = addon.Clean(quest.GetLogIndexForQuestID, "function")
+    local localeGetter, checker = addon.Clean(GetLocale, "function"), issecretvalue
+    local character = addon.Clean(addon.char, "table")
+    local locale = addon.Read(localeGetter, "string")
+    local index = dialogueInteger(addon.Read(logIndex, "number", id), 1)
+    local function unchanged()
+        return addon.Clean(C_QuestLog, "table") == quest and
+            addon.Clean(quest.GetSelectedQuest, "function") == selected and
+            addon.Clean(quest.GetLogIndexForQuestID, "function") == logIndex and
+            addon.Clean(GetLocale, "function") == localeGetter and issecretvalue == checker and
+            addon.Clean(addon.char, "table") == character
+    end
+    local function current()
+        if not index or not unchanged() then return false end
+        local selectedID = addon.Read(selected, "number")
+        local currentIndex = dialogueInteger(addon.Read(logIndex, "number", id), 1)
+        local currentLocale = addon.Read(localeGetter, "string")
+        return selectedID == id and currentIndex == index and currentLocale == locale and unchanged()
+    end
+    if not current() then return nil end
+    return current, locale
+end
+
 function addon.Description(id)
-    id = addon.Clean(id, "number")
-    if not id or id < 1 or id % 1 ~= 0 then return addon.L("NO_TEXT") end
-    local locale = addon.Read(GetLocale, "string")
-    local index = addon.Read(C_QuestLog and C_QuestLog.GetLogIndexForQuestID, "number", id)
-    local selectedID = addon.Read(C_QuestLog and C_QuestLog.GetSelectedQuest, "number")
+    id = dialogueInteger(id, 1)
+    if not id then return addon.L("NO_TEXT") end
+    local character = addon.Clean(addon.char, "table")
+    local texts = character and addon.Clean(character.texts, "table")
+    local getter = addon.Clean(GetQuestLogQuestText, "function")
+    local scope, locale = selectedLogReadScope(id)
+    local function owned()
+        return addon.Clean(addon.char, "table") == character and
+            (not character or addon.Clean(character.texts, "table") == texts) and
+            addon.Clean(GetQuestLogQuestText, "function") == getter
+    end
     -- The text reader uses the current selection; never change it to fetch text.
-    if selectedID == id and index and index >= 1 and index % 1 == 0 then
-        local text = addon.Read(GetQuestLogQuestText, "string")
-        if text and text ~= "" and #text <= 30000 and
-            addon.Read(C_QuestLog and C_QuestLog.GetSelectedQuest, "number") == id and
-            addon.Read(C_QuestLog and C_QuestLog.GetLogIndexForQuestID, "number", id) == index and
-            addon.Read(GetLocale, "string") == locale then
-            if locale and addon.char and type(addon.char.texts) == "table" then
-                addon.char.texts[id] = { text = text, locale = locale }
-            end
+    if scope and owned() and scope() then
+        local text = addon.Read(getter, "string")
+        if text and text ~= "" and #text <= 30000 and scope() and owned() then
+            if locale and texts then texts[id] = { text = text, locale = locale } end
             return text
         end
     end
-    locale = addon.Read(GetLocale, "string")
-    local data = addon.char and addon.char.texts and addon.char.texts[id]
-    if type(data) == "table" and locale and addon.Clean(data.locale, "string") == locale then
+    local localeGetter, checker = addon.Clean(GetLocale, "function"), issecretvalue
+    locale = addon.Read(localeGetter, "string")
+    character = addon.Clean(addon.char, "table")
+    texts = character and addon.Clean(character.texts, "table")
+    local data = texts and addon.Clean(texts[id], "table")
+    if data and locale and addon.Clean(data.locale, "string") == locale then
         local text = addon.Clean(data.text, "string")
-        if text and text ~= "" and #text <= 30000 then return text end
+        if text and text ~= "" and #text <= 30000 and
+            addon.Read(localeGetter, "string") == locale and addon.Clean(GetLocale, "function") == localeGetter and
+            issecretvalue == checker and addon.Clean(addon.char, "table") == character and
+            addon.Clean(character.texts, "table") == texts and addon.Clean(texts[id], "table") == data then return text end
     end
     return addon.L("NO_TEXT")
 end
@@ -639,22 +673,31 @@ function addon.QuestRewards(id)
     end
     id = integer(id, 1)
     if not id then return nil end
-    local quest = C_QuestLog or {}
+    local scope = selectedLogReadScope(id)
+    if not scope then return nil end
+    local api = { rewards = addon.Clean(GetNumQuestLogRewards, "function"),
+        choices = addon.Clean(GetNumQuestLogChoices, "function"),
+        fixed = addon.Clean(GetQuestLogRewardInfo, "function"), choice = addon.Clean(GetQuestLogChoiceInfo, "function"),
+        money = addon.Clean(GetQuestLogRewardMoney, "function") }
     local function selected()
-        return addon.Read(quest.GetSelectedQuest, "number") == id and
-            integer(addon.Read(quest.GetLogIndexForQuestID, "number", id), 1) ~= nil
+        return scope() and addon.Clean(GetNumQuestLogRewards, "function") == api.rewards and
+            addon.Clean(GetNumQuestLogChoices, "function") == api.choices and
+            addon.Clean(GetQuestLogRewardInfo, "function") == api.fixed and
+            addon.Clean(GetQuestLogChoiceInfo, "function") == api.choice and
+            addon.Clean(GetQuestLogRewardMoney, "function") == api.money
     end
     -- Selected-log reward readers use the current selection and take no quest ID.
     if not selected() then return nil end
-    local rewards = integer(addon.Read(GetNumQuestLogRewards, "number"), 0, 100)
-    local choices = integer(addon.Read(GetNumQuestLogChoices, "number"), 0, 100)
-    if not rewards or not choices then return nil end
+    local rewards = integer(addon.Read(api.rewards, "number"), 0, 100)
+    if not selected() then return nil end
+    local choices = integer(addon.Read(api.choices, "number"), 0, 100)
+    if not rewards or not choices or not selected() then return nil end
     local function items(count, getter)
         if count > 0 and type(getter) ~= "function" then return nil end
         local result = {}
         for i = 1, count do
             local ok, name, texture, amount, quality, usable, itemID = pcall(getter, i)
-            if not ok then return nil end
+            if not ok or not selected() then return nil end
             if type(issecretvalue) == "function" then
                 local fields = { name, texture, amount, quality, usable, itemID }
                 for j = 1, 6 do
@@ -675,9 +718,11 @@ function addon.QuestRewards(id)
         end
         return result
     end
-    local fixed, choice = items(rewards, GetQuestLogRewardInfo), items(choices, GetQuestLogChoiceInfo)
+    local fixed = items(rewards, api.fixed)
+    if not fixed or not selected() then return nil end
+    local choice = items(choices, api.choice)
     if not fixed or not choice then return nil end
-    local money = addon.Read(GetQuestLogRewardMoney, "number")
+    local money = addon.Read(api.money, "number")
     if money and money < 0 then money = nil end
     if not selected() then return nil end
     return { items = fixed, choices = choice, money = money }

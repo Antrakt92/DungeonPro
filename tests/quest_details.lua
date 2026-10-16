@@ -387,4 +387,40 @@ check("A throwing retry scheduler permits bounded later title requests", functio
     assert(calls == 3)
     C_Timer = saved
 end)
+check("Selected descriptions cannot write into a replaced character or texts destination", function()
+    local saved = addon.char
+    for mode = 1, 2 do
+        local originalTexts = { [166] = { text = "Previous verified text", locale = "ruRU" } }
+        local character = { texts = originalTexts }
+        addon.char = character
+        C_QuestLog.GetLogIndexForQuestID = function() return 7 end
+        GetQuestLogQuestText = function()
+            if mode == 1 then addon.char = { texts = {} } else character.texts = {} end
+            return "Old source text"
+        end
+        assert(addon.Description(166) == "NO_TEXT")
+        assert(addon.char.texts[166] == nil and originalTexts[166].text == "Previous verified text")
+    end
+    addon.char = saved
+end)
+check("Description capability replacement preserves the prior verified same-locale cache", function()
+    local saved, oldLocale, oldChecker = addon.char, GetLocale, issecretvalue
+    for mode = 1, 5 do
+        local prior = { text = "Previous verified text", locale = "ruRU" }
+        addon.char = { texts = { [166] = prior } }
+        GetLocale = function() return "ruRU" end
+        issecretvalue = oldChecker
+        C_QuestLog = { GetSelectedQuest = function() return 166 end, GetLogIndexForQuestID = function() return 7 end }
+        GetQuestLogQuestText = function()
+            if mode == 1 then C_QuestLog = { GetSelectedQuest = function() return 166 end, GetLogIndexForQuestID = function() return 7 end }
+            elseif mode == 2 then GetQuestLogQuestText = function() return "Replacement" end
+            elseif mode == 3 then C_QuestLog.GetSelectedQuest = function() return 166 end
+            elseif mode == 4 then GetLocale = function() return "ruRU" end
+            else issecretvalue = function() return false end end
+            return "Mixed native text"
+        end
+        assert(addon.Description(166) == "Previous verified text" and addon.char.texts[166] == prior)
+    end
+    addon.char, GetLocale, issecretvalue = saved, oldLocale, oldChecker
+end)
 print("Quest detail modeled checks passed: " .. total .. " (native client unverified)")

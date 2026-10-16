@@ -131,5 +131,31 @@ check("Selection changes during reads invalidate the snapshot without rewrites",
     reset(); GetQuestLogRewardMoney = function() selected = 66; return 25 end
     assert(addon.QuestRewards(65) == nil)
 end)
+check("Selected reward namespace and log-index changes cannot retain old ownership", function()
+    GetNumQuestLogRewards = function()
+        C_QuestLog = { GetSelectedQuest = function() return 66 end, GetLogIndexForQuestID = function() return nil end }
+        return 1
+    end
+    assert(addon.QuestRewards(65) == nil)
+    reset(); GetQuestLogRewardInfo = function() logIndex = 2; return unpack(fixed, 1, 6) end
+    assert(addon.QuestRewards(65) == nil)
+end)
+check("Changed selected reward getters locale and checker discard mixed snapshots", function()
+    local oldLocale = GetLocale
+    for mode = 1, 6 do
+        reset(); GetLocale = function() return "enUS" end
+        GetQuestLogRewardInfo = function()
+            if mode == 1 then GetQuestLogChoiceInfo = function() return unpack(choice, 1, 6) end
+            elseif mode == 2 then GetQuestLogRewardInfo = function() return unpack(fixed, 1, 6) end
+            elseif mode == 3 then C_QuestLog.GetSelectedQuest = function() return 65 end
+            elseif mode == 4 then GetLocale = function() return "ruRU" end
+            elseif mode == 5 then GetLocale = function() return "enUS" end
+            else issecretvalue = function() return false end end
+            return unpack(fixed, 1, 6)
+        end
+        assert(addon.QuestRewards(65) == nil)
+    end
+    GetLocale = oldLocale
+end)
 issecretvalue = nil
 print("Quest reward adapter modeled checks passed: " .. total .. " (native client unverified)")
