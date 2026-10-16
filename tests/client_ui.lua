@@ -517,4 +517,39 @@ check("Client hydration and quest events preserve scroll until the inspected que
     ui.quest, ui.detailHistory = previous, history
     ui:Refresh()
 end)
+check("Gossip refresh localizes only the actual matching NPC and closing restores catalogue fallback", function()
+    local saved, keys = {}, { "UnitGUID", "UnitName", "C_CreatureInfo" }
+    for _, key in ipairs(keys) do saved[key] = _G[key] end
+    local ui, previousQuest, previousDungeon, preparation = addon.UI, addon.UI.quest, addon.UI.dungeon, addon.UI.preparation
+    local q, originalName = addon.quests[65], addon.quests[65].start.name
+    local guid, id, name = nil, 234, "Nom localisé du PNJ (fixture)"
+    UnitGUID = function(unit) if unit == "npc" then return guid end; return "Player-npc-name-integration" end
+    C_CreatureInfo = { GetCreatureID = function(value) assert(value == guid and value ~= nil); return id end }
+    UnitName = function(unit) assert(unit == "npc"); return name end
+    local function shown(value)
+        for _, fs in ipairs(ui.details) do
+            if fs.shown and type(fs.text) == "string" and fs.text:find(value, 1, true) then return true end
+        end
+        return false
+    end
+    local function event(value) eventFrame.scripts.OnEvent(eventFrame, value) end
+    for _, dungeon in ipairs(addon.dungeons) do if dungeon.key == "dm" then ui.dungeon = dungeon end end
+    ui.quest, ui.preparation = 65, true; ui:Refresh()
+    assert(shown(addon.L("START") .. ": " .. originalName) and not shown(name))
+    local state, nativeNameInAction = ui.engine:State(65).status, false
+    guid = "Creature-npc-name-integration"; event("GOSSIP_SHOW")
+    assert(shown(name) and not shown(addon.L("START") .. ": " .. originalName))
+    for _, row in ipairs(ui.rows) do
+        if row.shown and row.note.text:find(name, 1, true) then nativeNameInAction = true end
+    end
+    assert(nativeNameInAction and ui.engine:State(65).status == state)
+    id = 266; name = "Other matching finish NPC (fixture)"; event("QUEST_GREETING")
+    assert(shown(addon.L("START") .. ": " .. originalName) and shown(name))
+    guid = nil; event("GOSSIP_CLOSED")
+    assert(shown(addon.L("START") .. ": " .. originalName) and not shown(name))
+    assert(q.start.name == originalName and addon.db.npcNames == nil and addon.char.npcNames == nil)
+    for _, key in ipairs(keys) do _G[key] = saved[key] end
+    ui.quest, ui.dungeon, ui.preparation = previousQuest, previousDungeon, preparation
+    ui:Refresh()
+end)
 print("Client/UI modeled checks passed: " .. total .. " (no pixel or native-client validation)")

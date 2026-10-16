@@ -8,6 +8,45 @@ local function dialogueInteger(value, minimum, maximum)
     if value and value >= minimum and value % 1 == 0 and (not maximum or value <= maximum) then return value end
 end
 
+function addon.GiverName(place)
+    place = addon.Clean(place, "table")
+    if not place then return nil end
+    local function sourceIdentity()
+        local id = dialogueInteger(rawget(place, "npcID"), 1)
+        local name = rawget(place, "name")
+        if type(issecretvalue) == "function" then
+            local ok, secret = pcall(issecretvalue, name)
+            if not ok or secret ~= false then return nil end
+        end
+        if name ~= nil then
+            name = addon.Clean(name, "string")
+            if not name or #name > 1024 or not name:find("%S") then return nil end
+        end
+        return id, name
+    end
+    local wanted, sourceName = sourceIdentity()
+    if not wanted then return nil end
+    local function scope()
+        local guid = addon.Read(UnitGUID, "string", "npc")
+        local locale = addon.Read(GetLocale, "string")
+        if not guid or #guid > 256 or not guid:find("%S") or
+            not locale or #locale > 32 or not locale:find("%S") then return nil end
+        local id = dialogueInteger(addon.Read(function()
+            return C_CreatureInfo.GetCreatureID(guid)
+        end, "number"), 1)
+        return guid, id, locale
+    end
+    local guid, id, locale = scope()
+    if not guid or id ~= wanted then return nil end
+    local name = addon.Read(UnitName, "string", "npc")
+    if not name or #name > 1024 or not name:find("%S") then return nil end
+    local afterGUID, afterID, afterLocale = scope()
+    local afterWanted, afterName = sourceIdentity()
+    if afterGUID ~= guid or afterID ~= wanted or afterLocale ~= locale or
+        afterWanted ~= wanted or afterName ~= sourceName then return nil end
+    return name
+end
+
 local function dialogueScope()
     local id = dialogueInteger(addon.Read(GetQuestID, "number"), 1)
     local player = addon.Read(UnitGUID, "string", "player")
@@ -571,6 +610,7 @@ function addon.ProbeClient()
         { "offerRewardXP", GetRewardXP }, { "offerRewardVisibility", C_QuestLog and C_QuestLog.ShouldShowQuestRewards },
         { "rewardItems", GetNumQuestLogRewards }, { "rewardChoices", GetNumQuestLogChoices },
         { "rewardMoney", GetQuestLogRewardMoney }, { "portraits", C_QuestLog and C_QuestLog.GetQuestLogPortraitGiver },
+        { "npcNames", UnitName }, { "creatureIDs", C_CreatureInfo and C_CreatureInfo.GetCreatureID },
         { "itemNames", C_Item and C_Item.GetItemNameByID }, { "itemRequests", C_Item and C_Item.RequestLoadItemDataByID },
         { "nativeWaypoints", C_Map and C_Map.SetUserWaypoint }, { "tomtom", TomTom and TomTom.AddWaypoint } }) do
         result.api[entry[1]] = type(entry[2]) == "function"

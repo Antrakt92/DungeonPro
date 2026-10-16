@@ -13,7 +13,7 @@ local offerCapabilities = {
 }
 local forbiddenCalls = 0
 local function check(name, fn)
-    C_QuestLog, C_Item, C_Map, C_QuestLine, TomTom = nil, nil, nil, nil, nil
+    C_QuestLog, C_Item, C_Map, C_QuestLine, TomTom, C_CreatureInfo, UnitName = nil, nil, nil, nil, nil, nil, nil
     QuestFrame, QuestFrameDetailPanel, GetQuestText, UnitGUID, GetLocale = nil, nil, nil, nil, nil
     for _, capability in ipairs(offerCapabilities) do _G[capability[1]] = nil end
     forbiddenCalls = 0
@@ -89,6 +89,19 @@ check("Panel object presence does not inspect members or infer that a dialogue i
     local later = addon.ProbeClient()
     assert(later.frames.questFrame == false and later.frames.questDetailPanel == true)
     assert(r.frames.questFrame == true)
+end)
+check("NPC name capabilities are checked without reading unit names or identities", function()
+    UnitName, UnitGUID, GetLocale = forbidden, forbidden, forbidden
+    C_CreatureInfo = { GetCreatureID = forbidden }
+    local r = addon.ProbeClient()
+    assert(r.api.npcNames == true and r.api.creatureIDs == true)
+    assert(r.npcName == nil and r.npcGUID == nil and r.creatureID == nil)
+    UnitName = {}
+    r = addon.ProbeClient()
+    assert(r.api.npcNames == false and r.api.creatureIDs == true)
+    C_CreatureInfo = {}
+    r = addon.ProbeClient()
+    assert(r.api.npcNames == false and r.api.creatureIDs == false)
 end)
 check("Invalid or restricted line identities never reach membership readers", function()
     for _, id in ipairs({ 0, -1, 1.5, math.huge, 0 / 0, secret, "12" }) do

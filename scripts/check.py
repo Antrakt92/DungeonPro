@@ -30,6 +30,7 @@ def main():
     run(lua, "tests/portraits.lua")
     run(lua, "tests/offered_portraits.lua")
     run(lua, "tests/dungeon_art.lua")
+    run(lua, "tests/npc_names.lua")
     run(lua, "tests/items.lua")
     run(lua, "tests/offers.lua")
     run(lua, "tests/offered_rewards.lua")

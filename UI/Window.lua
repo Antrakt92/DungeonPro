@@ -15,6 +15,18 @@ local function statusLabel(state, value)
     return label
 end
 
+local function giverName(place)
+    place = addon.Clean(place, "table")
+    if not place then return addon.L("UNKNOWN_PLACE") end
+    local npcID = addon.Clean(place.npcID, "number")
+    if npcID and npcID > 0 and npcID % 1 == 0 and not place.itemID and not place.objectID then
+        local current = addon.Read(addon.GiverName, "string", place)
+        if current and current ~= "" and #current <= 1024 then return current end
+    end
+    local name = addon.Clean(place.name, "string")
+    return name and name ~= "" and name or addon.L("UNKNOWN_PLACE")
+end
+
 local function searchText(value)
     -- Only ASCII bytes are folded; UTF-8 sequences pass through unchanged.
     return value:gsub("[A-Z]", function(letter) return string.char(letter:byte() + 32) end)
@@ -265,7 +277,7 @@ function UI:RefreshQuests()
                 if entry.action then
                     local action = entry.action
                     note = addon.L(action.kind) .. (action.level and (" " .. action.level) or "")
-                    if action.place then note = note .. " — " .. (action.place.name or addon.L("UNKNOWN_PLACE")) end
+                    if action.place then note = note .. " — " .. giverName(action.place) end
                 elseif state.reason == "level" then
                     note = addon.L("level") .. " " .. addon.quests[id].minLevel
                 end
@@ -358,7 +370,7 @@ function UI:RefreshDetail()
             if not p then return addon.L("UNKNOWN_PLACE") end
             local zone = p.mapID and addon.Read(C_Map and C_Map.GetMapInfo, "table", p.mapID)
             local zoneName = (zone and addon.Clean(zone.name, "string")) or addon.Clean(p.zoneName, "string")
-            local name = p.name or "?"
+            local name = giverName(p)
             if p.itemID then
                 name = addon.L("ITEM_STARTER", addon.Read(addon.ItemName, "string", p.itemID) or name)
             end
@@ -370,7 +382,7 @@ function UI:RefreshDetail()
             for index, possible in ipairs(places) do
                 local destination = possible
                 local row = self:MakeRow(self.detail, buttons, index, 59)
-                row.title:SetText(destination.name)
+                row.title:SetText(giverName(destination))
                 local mapID = addon.Clean(destination.mapID, "number")
                 local validMap = mapID ~= nil and mapID > 0 and mapID % 1 == 0
                 local zone = validMap and addon.Read(C_Map and C_Map.GetMapInfo, "table", mapID)
@@ -420,10 +432,10 @@ function UI:RefreshDetail()
             for _, dungeon in ipairs(addon.dungeons) do
                 if dungeon.key == start.dungeonKey then dungeonName = addon.DungeonName(dungeon); break end
             end
-            line(addon.L("ITEM_DROP_SOURCE", start.dropName or ("#" .. start.dropNPCID), dungeonName))
+            line(addon.L("ITEM_DROP_SOURCE", giverName({ npcID = start.dropNPCID, name = start.dropName or ("#" .. start.dropNPCID) }), dungeonName))
         end
         for _, drop in ipairs(start and start.dropSources or {}) do
-            line(addon.L("ITEM_DROP_SOURCE", drop.name, drop.locationName))
+            line(addon.L("ITEM_DROP_SOURCE", giverName(drop), drop.locationName))
         end
         local map = start and addon.Clean(start.mapID, "number")
         if map and map > 0 then

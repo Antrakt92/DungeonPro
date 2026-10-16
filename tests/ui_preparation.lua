@@ -1192,4 +1192,87 @@ check("Held quests with past completion show history consistently without implyi
     for _, id in ipairs({ 990, 991, 992, 993 }) do addon.quests[id] = nil end
     showDetail(2)
 end)
+local function detailIncludes(value)
+    for _, fs in ipairs(ui.details) do if fs.shown and fs.text:find(value, 1, true) then return true end end
+    return false
+end
+check("Current NPC names refresh start finish and preparation without changing places or catalogue", function()
+    local oldContext, preparation = addon.Context, ui.preparation
+    addon.Context = function() return { level = 20, completed = function() return false end, active = function() return false end } end
+    local oldStart, oldFinish, producer = addon.quests[2].start, addon.quests[2].finish, addon.GiverName
+    local start = { npcID = 101, name = "Catalog start", mapID = 1, x = 12, y = 20 }
+    local finish = { npcID = 102, name = "Catalog finish" }
+    addon.quests[2].start, addon.quests[2].finish = start, finish
+    local current = 101
+    addon.GiverName = function(place) return place.npcID == current and ("Native " .. current) or nil end
+    showDetail(2)
+    assert(detailIncludes(addon.L("START") .. ": Native 101") and detailIncludes("Catalog finish"))
+    assert(ui.action.place == start and start.name == "Catalog start" and finish.name == "Catalog finish")
+    ui.preparation = true; ui:Refresh()
+    local marked = false
+    for _, row in ipairs(visibleRows()) do if row.questID == 2 or row.title.text == "Quest 2" then
+        marked = row.note.text:find("Native 101", 1, true) ~= nil
+    end end
+    assert(marked, "preparation uses same fresh giver name")
+    current = 102; ui:RefreshDetail()
+    assert(detailIncludes("Catalog start") and detailIncludes(addon.L("ENDING") .. ": Native 102"))
+    current = nil; ui:RefreshDetail()
+    assert(not detailIncludes("Native 101") and not detailIncludes("Native 102") and detailIncludes("Catalog finish"))
+    addon.quests[2].start, addon.quests[2].finish, addon.GiverName = oldStart, oldFinish, producer
+    addon.Context, ui.preparation = oldContext, preparation; ui:Refresh()
+end)
+check("Missing throwing invalid and restricted NPC names retain safe catalogue labels", function()
+    local old, producer = addon.quests[2].start, addon.GiverName
+    local restricted = {}
+    addon.quests[2].start = { npcID = 101, name = "Catalog fallback" }
+    issecretvalue = function(value) return value == restricted end
+    for _, value in ipairs({ "", false, 123, {}, restricted, string.rep("x", 1025) }) do
+        addon.GiverName = function() return value end; showDetail(2)
+        assert(detailIncludes(addon.L("START") .. ": Catalog fallback"))
+    end
+    addon.GiverName = function() error("unavailable") end; showDetail(2)
+    assert(detailIncludes(addon.L("START") .. ": Catalog fallback"))
+    addon.GiverName = nil; showDetail(2); assert(detailIncludes("Catalog fallback"))
+    addon.quests[2].start.name = nil; showDetail(2)
+    assert(detailIncludes(addon.L("START") .. ": " .. addon.L("UNKNOWN_PLACE")))
+    issecretvalue = nil
+    addon.quests[2].start, addon.GiverName = old, producer; ui:Refresh()
+end)
+check("Alternative NPC rows refresh while object labels and item names keep separate ownership", function()
+    local start, finish, alternatives, finishes = addon.quests[2].start, addon.quests[2].finish,
+        addon.quests[2].startAlternatives, addon.quests[2].finishAlternatives
+    local producer, itemName = addon.GiverName, addon.ItemName
+    local current, native, invalidCalls = 101, "Native alternative", 0
+    addon.GiverName = function(place)
+        if not place.npcID or place.itemID or place.objectID then invalidCalls = invalidCalls + 1 end
+        assert(invalidCalls == 0, "only actual NPC descriptors go to producer")
+        return place.npcID == current and native or nil
+    end
+    local npc = { npcID = 101, name = "Catalog alternative", mapID = 1, x = 10, y = 20 }
+    local object = { objectID = 202, name = "Catalog object", mapID = 1 }
+    addon.quests[2].startAlternatives = { npc, object }
+    addon.quests[2].finishAlternatives = { npc, object }
+    showDetail(2)
+    assert(ui.startButtons[1].title.text == native and ui.finishButtons[1].title.text == native)
+    assert(ui.startButtons[2].title.text == "Catalog object" and ui.finishButtons[2].title.text == "Catalog object")
+    assert(npc.name == "Catalog alternative" and ui.startButtons[1].enabled)
+    current = nil; ui:RefreshDetail()
+    assert(ui.startButtons[1].title.text == "Catalog alternative")
+    assert(ui.finishButtons[1].title.text == "Catalog alternative")
+    addon.quests[2].startAlternatives, addon.quests[2].finishAlternatives = nil, nil
+    addon.quests[2].start = { itemID = 999, name = "Catalog item", dropNPCID = 101, dropName = "Catalog drop",
+        dropSources = { { npcID = 101, name = "Catalog multi drop", locationName = "Source zone" } } }
+    addon.ItemName = function(id) assert(id == 999); return "Native item" end
+    current = 101; native = "Native drop"; showDetail(2)
+    assert(detailIncludes(addon.L("ITEM_STARTER", "Native item")))
+    assert(detailIncludes(addon.L("ITEM_DROP_SOURCE", native, "Source zone")))
+    assert(not ui.startButtons[1].shown and not ui.finishButtons[1].shown)
+    assert(addon.quests[2].start.dropName == "Catalog drop")
+    current = nil; ui:RefreshDetail()
+    assert(not detailIncludes("Native drop") and detailIncludes("Catalog multi drop"))
+    addon.quests[2].start, addon.quests[2].finish = start, finish
+    addon.quests[2].startAlternatives, addon.quests[2].finishAlternatives = alternatives, finishes
+    assert(invalidCalls == 0, "object and item labels never query current NPC names")
+    addon.GiverName, addon.ItemName = producer, itemName; ui:Refresh()
+end)
 print("Preparation UI modeled checks passed: " .. total .. " (no native layout validation)")

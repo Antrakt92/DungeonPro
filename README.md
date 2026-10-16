@@ -61,8 +61,8 @@ Level ranges are provisional recommendations.
 - Interface dictionaries for English, Russian, German, French, Spanish, Italian,
   Portuguese, Korean, Simplified Chinese and Traditional Chinese. enGB and esMX
   use English and Spanish. Translations and layout still need in-game review.
-  Quest and item names use client data when available. Quest-giver names
-  currently use the source catalogue.
+  Quest and item names use client data when available. The current NPC can also
+  use its localized name; other quest-giver names use the source catalogue.
 
 Unknown prerequisites or incomplete dungeon coverage never produce a green
 preparation result. A quest listed in a storyline is not automatically treated
