@@ -2199,7 +2199,8 @@
       },
       "finish": {
         "npcID": 7853,
-        "name": "Scooty"
+        "name": "Scooty",
+        "zoneName": "Stranglethorn Vale"
       }
     },
     {
@@ -2480,7 +2481,8 @@
       },
       "finish": {
         "npcID": 7853,
-        "name": "Scooty"
+        "name": "Scooty",
+        "zoneName": "Stranglethorn Vale"
       },
       "storyline": [
         2842,
@@ -2499,11 +2501,13 @@
       "source": "https://www.wowhead.com/forever/quest=2843/gnomer-gooooone",
       "start": {
         "npcID": 7853,
-        "name": "Scooty"
+        "name": "Scooty",
+        "zoneName": "Stranglethorn Vale"
       },
       "finish": {
         "npcID": 7853,
-        "name": "Scooty"
+        "name": "Scooty",
+        "zoneName": "Stranglethorn Vale"
       },
       "storyline": [
         2842,
@@ -4033,11 +4037,19 @@
       "source": "https://www.wowhead.com/forever/quest=2283/necklace-recovery",
       "start": {
         "npcID": 6986,
-        "name": "Dran Droffers"
+        "name": "Dran Droffers",
+        "zoneName": "Orgrimmar",
+        "mapID": 1454,
+        "x": 59.4,
+        "y": 36.8
       },
       "finish": {
         "npcID": 6986,
-        "name": "Dran Droffers"
+        "name": "Dran Droffers",
+        "zoneName": "Orgrimmar",
+        "mapID": 1454,
+        "x": 59.4,
+        "y": 36.8
       },
       "storyline": [
         2283,
@@ -4213,7 +4225,11 @@
       "source": "https://www.wowhead.com/forever/quest=2284/necklace-recovery-take-2",
       "start": {
         "npcID": 6986,
-        "name": "Dran Droffers"
+        "name": "Dran Droffers",
+        "zoneName": "Orgrimmar",
+        "mapID": 1454,
+        "x": 59.4,
+        "y": 36.8
       },
       "finish": {
         "npcID": 6912,
@@ -4419,7 +4435,11 @@
       "source": "https://www.wowhead.com/forever/quest=2341/necklace-recovery-take-3",
       "start": {
         "npcID": 6986,
-        "name": "Dran Droffers"
+        "name": "Dran Droffers",
+        "zoneName": "Orgrimmar",
+        "mapID": 1454,
+        "x": 59.4,
+        "y": 36.8
       },
       "finish": {
         "npcID": 6868,
@@ -4446,7 +4466,11 @@
       },
       "finish": {
         "npcID": 6986,
-        "name": "Dran Droffers"
+        "name": "Dran Droffers",
+        "zoneName": "Orgrimmar",
+        "mapID": 1454,
+        "x": 59.4,
+        "y": 36.8
       },
       "storyline": [
         2340,
@@ -5253,11 +5277,13 @@
       "source": "https://www.wowhead.com/forever/quest=3527/the-prophecy-of-mosharu",
       "start": {
         "npcID": 8579,
-        "name": "Yeh'kinya"
+        "name": "Yeh'kinya",
+        "zoneName": "Tanaris"
       },
       "finish": {
         "npcID": 8579,
-        "name": "Yeh'kinya"
+        "name": "Yeh'kinya",
+        "zoneName": "Tanaris"
       },
       "storyline": [
         3520,
@@ -5349,11 +5375,19 @@
       "source": "https://www.wowhead.com/forever/quest=2936/the-spider-god",
       "start": {
         "npcID": 3188,
-        "name": "Master Gadrin"
+        "name": "Master Gadrin",
+        "zoneName": "Durotar",
+        "mapID": 1411,
+        "x": 55.8,
+        "y": 74.4
       },
       "finish": {
         "npcID": 3188,
-        "name": "Master Gadrin"
+        "name": "Master Gadrin",
+        "zoneName": "Durotar",
+        "mapID": 1411,
+        "x": 55.8,
+        "y": 74.4
       },
       "storyline": [
         2933,
@@ -5488,11 +5522,13 @@
       "source": "https://www.wowhead.com/forever/quest=3520/screecher-spirits",
       "start": {
         "npcID": 8579,
-        "name": "Yeh'kinya"
+        "name": "Yeh'kinya",
+        "zoneName": "Tanaris"
       },
       "finish": {
         "npcID": 8579,
-        "name": "Yeh'kinya"
+        "name": "Yeh'kinya",
+        "zoneName": "Tanaris"
       },
       "storyline": [
         3520,
@@ -5586,7 +5622,11 @@
       ],
       "finish": {
         "npcID": 2216,
-        "name": "Apothecary Lydon"
+        "name": "Apothecary Lydon",
+        "zoneName": "Hillsbrad Foothills",
+        "mapID": 1424,
+        "x": 61.4,
+        "y": 19.2
       },
       "storyline": [
         2933,
@@ -5608,11 +5648,19 @@
       "source": "https://www.wowhead.com/forever/quest=2934/undamaged-venom-sac",
       "start": {
         "npcID": 2216,
-        "name": "Apothecary Lydon"
+        "name": "Apothecary Lydon",
+        "zoneName": "Hillsbrad Foothills",
+        "mapID": 1424,
+        "x": 61.4,
+        "y": 19.2
       },
       "finish": {
         "npcID": 2216,
-        "name": "Apothecary Lydon"
+        "name": "Apothecary Lydon",
+        "zoneName": "Hillsbrad Foothills",
+        "mapID": 1424,
+        "x": 61.4,
+        "y": 19.2
       },
       "storyline": [
         2933,
@@ -5641,11 +5689,19 @@
       "source": "https://www.wowhead.com/forever/quest=2935/consult-master-gadrin",
       "start": {
         "npcID": 2216,
-        "name": "Apothecary Lydon"
+        "name": "Apothecary Lydon",
+        "zoneName": "Hillsbrad Foothills",
+        "mapID": 1424,
+        "x": 61.4,
+        "y": 19.2
       },
       "finish": {
         "npcID": 3188,
-        "name": "Master Gadrin"
+        "name": "Master Gadrin",
+        "zoneName": "Durotar",
+        "mapID": 1411,
+        "x": 55.8,
+        "y": 74.4
       },
       "storyline": [
         2933,
@@ -5674,11 +5730,19 @@
       "source": "https://www.wowhead.com/forever/quest=2937/summoning-shadra",
       "start": {
         "npcID": 3188,
-        "name": "Master Gadrin"
+        "name": "Master Gadrin",
+        "zoneName": "Durotar",
+        "mapID": 1411,
+        "x": 55.8,
+        "y": 74.4
       },
       "finish": {
         "npcID": 2216,
-        "name": "Apothecary Lydon"
+        "name": "Apothecary Lydon",
+        "zoneName": "Hillsbrad Foothills",
+        "mapID": 1424,
+        "x": 61.4,
+        "y": 19.2
       },
       "storyline": [
         2933,
@@ -5931,11 +5995,13 @@
       "source": "https://www.wowhead.com/forever/quest=4787/the-ancient-egg",
       "start": {
         "npcID": 8579,
-        "name": "Yeh'kinya"
+        "name": "Yeh'kinya",
+        "zoneName": "Tanaris"
       },
       "finish": {
         "npcID": 8579,
-        "name": "Yeh'kinya"
+        "name": "Yeh'kinya",
+        "zoneName": "Tanaris"
       },
       "storyline": [
         3520,
@@ -5957,11 +6023,13 @@
       "source": "https://www.wowhead.com/forever/quest=3528/the-god-hakkar",
       "start": {
         "npcID": 8579,
-        "name": "Yeh'kinya"
+        "name": "Yeh'kinya",
+        "zoneName": "Tanaris"
       },
       "finish": {
         "npcID": 8579,
-        "name": "Yeh'kinya"
+        "name": "Yeh'kinya",
+        "zoneName": "Tanaris"
       },
       "storyline": [
         3520,
@@ -5983,11 +6051,19 @@
       "source": "https://www.wowhead.com/forever/quest=1446/jammalan-the-prophet",
       "start": {
         "npcID": 5598,
-        "name": "Atal'ai Exile"
+        "name": "Atal'ai Exile",
+        "zoneName": "The Hinterlands",
+        "mapID": 1425,
+        "x": 33.6,
+        "y": 75.2
       },
       "finish": {
         "npcID": 5598,
-        "name": "Atal'ai Exile"
+        "name": "Atal'ai Exile",
+        "zoneName": "The Hinterlands",
+        "mapID": 1425,
+        "x": 33.6,
+        "y": 75.2
       }
     },
     {
@@ -6797,7 +6873,11 @@
       },
       "finish": {
         "npcID": 5598,
-        "name": "Atal'ai Exile"
+        "name": "Atal'ai Exile",
+        "zoneName": "The Hinterlands",
+        "mapID": 1425,
+        "x": 33.6,
+        "y": 75.2
       },
       "storyline": [
         1424,
@@ -6825,7 +6905,11 @@
       "source": "https://www.wowhead.com/forever/quest=1444/return-to-felzerul",
       "start": {
         "npcID": 5598,
-        "name": "Atal'ai Exile"
+        "name": "Atal'ai Exile",
+        "zoneName": "The Hinterlands",
+        "mapID": 1425,
+        "x": 33.6,
+        "y": 75.2
       },
       "finish": {
         "npcID": 1443,
@@ -7000,11 +7084,13 @@
       "source": "https://www.wowhead.com/forever/quest=3906/disharmony-of-flame",
       "start": {
         "npcID": 9084,
-        "name": "Thunderheart"
+        "name": "Thunderheart",
+        "zoneName": "Badlands"
       },
       "finish": {
         "npcID": 9084,
-        "name": "Thunderheart"
+        "name": "Thunderheart",
+        "zoneName": "Badlands"
       },
       "storyline": [
         3906,
@@ -7023,11 +7109,13 @@
       "source": "https://www.wowhead.com/forever/quest=3907/disharmony-of-fire",
       "start": {
         "npcID": 9084,
-        "name": "Thunderheart"
+        "name": "Thunderheart",
+        "zoneName": "Badlands"
       },
       "finish": {
         "npcID": 9084,
-        "name": "Thunderheart"
+        "name": "Thunderheart",
+        "zoneName": "Badlands"
       },
       "storyline": [
         3906,
@@ -7050,7 +7138,8 @@
       },
       "finish": {
         "npcID": 9020,
-        "name": "Commander Gor'shak"
+        "name": "Commander Gor'shak",
+        "zoneName": "Blackrock Depths"
       },
       "storyline": [
         3981,
@@ -7073,11 +7162,13 @@
       "source": "https://www.wowhead.com/forever/quest=3982/what-is-going-on",
       "start": {
         "npcID": 9020,
-        "name": "Commander Gor'shak"
+        "name": "Commander Gor'shak",
+        "zoneName": "Blackrock Depths"
       },
       "finish": {
         "npcID": 9020,
-        "name": "Commander Gor'shak"
+        "name": "Commander Gor'shak",
+        "zoneName": "Blackrock Depths"
       },
       "storyline": [
         3981,
@@ -7100,7 +7191,8 @@
       "source": "https://www.wowhead.com/forever/quest=4001/what-is-going-on",
       "start": {
         "npcID": 9020,
-        "name": "Commander Gor'shak"
+        "name": "Commander Gor'shak",
+        "zoneName": "Blackrock Depths"
       },
       "finish": {
         "npcID": 4949,
@@ -7484,7 +7576,8 @@
       },
       "finish": {
         "npcID": 9080,
-        "name": "Lexlort"
+        "name": "Lexlort",
+        "zoneName": "Badlands"
       }
     },
     {
@@ -7499,7 +7592,8 @@
       "source": "https://www.wowhead.com/forever/quest=4122/grark-lorkrub",
       "start": {
         "npcID": 9080,
-        "name": "Lexlort"
+        "name": "Lexlort",
+        "zoneName": "Badlands"
       },
       "finish": {
         "npcID": 9520,
@@ -7724,7 +7818,11 @@
       },
       "finish": {
         "npcID": 344,
-        "name": "Magistrate Solomon"
+        "name": "Magistrate Solomon",
+        "zoneName": "Redridge Mountains",
+        "mapID": 1433,
+        "x": 24.8,
+        "y": 44.2
       },
       "storyline": [
         4182,
@@ -7750,7 +7848,11 @@
       "source": "https://www.wowhead.com/forever/quest=4184/the-true-masters",
       "start": {
         "npcID": 344,
-        "name": "Magistrate Solomon"
+        "name": "Magistrate Solomon",
+        "zoneName": "Redridge Mountains",
+        "mapID": 1433,
+        "x": 24.8,
+        "y": 44.2
       },
       "finish": {
         "npcID": 1748,
@@ -7830,7 +7932,11 @@
       },
       "finish": {
         "npcID": 344,
-        "name": "Magistrate Solomon"
+        "name": "Magistrate Solomon",
+        "zoneName": "Redridge Mountains",
+        "mapID": 1433,
+        "x": 24.8,
+        "y": 44.2
       },
       "storyline": [
         4182,
@@ -7876,7 +7982,11 @@
       "source": "https://www.wowhead.com/forever/quest=4223/the-true-masters",
       "start": {
         "npcID": 344,
-        "name": "Magistrate Solomon"
+        "name": "Magistrate Solomon",
+        "zoneName": "Redridge Mountains",
+        "mapID": 1433,
+        "x": 24.8,
+        "y": 44.2
       },
       "finish": {
         "npcID": 9560,
@@ -7956,7 +8066,8 @@
       },
       "finish": {
         "npcID": 9023,
-        "name": "Marshal Windsor"
+        "name": "Marshal Windsor",
+        "zoneName": "Blackrock Depths"
       },
       "storyline": [
         4182,
@@ -7982,7 +8093,8 @@
       "source": "https://www.wowhead.com/forever/quest=4242/abandoned-hope",
       "start": {
         "npcID": 9023,
-        "name": "Marshal Windsor"
+        "name": "Marshal Windsor",
+        "zoneName": "Blackrock Depths"
       },
       "finish": {
         "npcID": 9560,
@@ -8078,7 +8190,8 @@
       "source": "https://www.wowhead.com/forever/quest=4264/a-crumpled-up-note",
       "finish": {
         "npcID": 9023,
-        "name": "Marshal Windsor"
+        "name": "Marshal Windsor",
+        "zoneName": "Blackrock Depths"
       },
       "storyline": [
         4264,
@@ -8119,11 +8232,13 @@
       "source": "https://www.wowhead.com/forever/quest=4282/a-shred-of-hope",
       "start": {
         "npcID": 9023,
-        "name": "Marshal Windsor"
+        "name": "Marshal Windsor",
+        "zoneName": "Blackrock Depths"
       },
       "finish": {
         "npcID": 9023,
-        "name": "Marshal Windsor"
+        "name": "Marshal Windsor",
+        "zoneName": "Blackrock Depths"
       },
       "storyline": [
         4264,
@@ -8182,7 +8297,8 @@
       "source": "https://www.wowhead.com/forever/quest=4322/jail-break",
       "start": {
         "npcID": 9023,
-        "name": "Marshal Windsor"
+        "name": "Marshal Windsor",
+        "zoneName": "Blackrock Depths"
       },
       "finish": {
         "npcID": 9560,
@@ -8241,7 +8357,8 @@
       },
       "finish": {
         "npcID": 9021,
-        "name": "Kharan Mighthammer"
+        "name": "Kharan Mighthammer",
+        "zoneName": "Blackrock Depths"
       }
     },
     {
@@ -8256,11 +8373,13 @@
       "source": "https://www.wowhead.com/forever/quest=4342/kharans-tale",
       "start": {
         "npcID": 9021,
-        "name": "Kharan Mighthammer"
+        "name": "Kharan Mighthammer",
+        "zoneName": "Blackrock Depths"
       },
       "finish": {
         "npcID": 9021,
-        "name": "Kharan Mighthammer"
+        "name": "Kharan Mighthammer",
+        "zoneName": "Blackrock Depths"
       },
       "storyline": [
         4342,
@@ -8281,7 +8400,8 @@
       "source": "https://www.wowhead.com/forever/quest=4361/the-bearer-of-bad-news",
       "start": {
         "npcID": 9021,
-        "name": "Kharan Mighthammer"
+        "name": "Kharan Mighthammer",
+        "zoneName": "Blackrock Depths"
       },
       "finish": {
         "npcID": 2784,
@@ -9265,11 +9385,19 @@
       "minLevel": 55,
       "start": {
         "npcID": 10260,
-        "name": "Kibler"
+        "name": "Kibler",
+        "zoneName": "Burning Steppes",
+        "mapID": 1428,
+        "x": 65.8,
+        "y": 22
       },
       "finish": {
         "npcID": 10260,
-        "name": "Kibler"
+        "name": "Kibler",
+        "zoneName": "Burning Steppes",
+        "mapID": 1428,
+        "x": 65.8,
+        "y": 22
       },
       "requirementsKnown": false,
       "factions": [
@@ -9373,11 +9501,19 @@
       "minLevel": 55,
       "start": {
         "npcID": 10260,
-        "name": "Kibler"
+        "name": "Kibler",
+        "zoneName": "Burning Steppes",
+        "mapID": 1428,
+        "x": 65.8,
+        "y": 22
       },
       "finish": {
         "npcID": 10260,
-        "name": "Kibler"
+        "name": "Kibler",
+        "zoneName": "Burning Steppes",
+        "mapID": 1428,
+        "x": 65.8,
+        "y": 22
       },
       "requirementsKnown": false,
       "factions": [
@@ -9393,11 +9529,13 @@
       "minLevel": 55,
       "start": {
         "npcID": 10257,
-        "name": "Bijou"
+        "name": "Bijou",
+        "zoneName": "Blackrock Spire"
       },
       "finish": {
         "npcID": 10257,
-        "name": "Bijou"
+        "name": "Bijou",
+        "zoneName": "Blackrock Spire"
       },
       "requirementsKnown": false,
       "factions": [
@@ -9417,11 +9555,13 @@
       "minLevel": 55,
       "start": {
         "npcID": 10257,
-        "name": "Bijou"
+        "name": "Bijou",
+        "zoneName": "Blackrock Spire"
       },
       "finish": {
         "npcID": 10257,
-        "name": "Bijou"
+        "name": "Bijou",
+        "zoneName": "Blackrock Spire"
       },
       "requirementsKnown": false,
       "factions": [
@@ -9530,11 +9670,13 @@
       "minLevel": 55,
       "start": {
         "npcID": 10182,
-        "name": "Rexxar"
+        "name": "Rexxar",
+        "zoneName": "Desolace, Feralas, Stonetalon Mountains"
       },
       "finish": {
         "npcID": 10182,
-        "name": "Rexxar"
+        "name": "Rexxar",
+        "zoneName": "Desolace, Feralas, Stonetalon Mountains"
       },
       "requirementsKnown": false,
       "factions": [
@@ -9554,11 +9696,19 @@
       "minLevel": 57,
       "start": {
         "npcID": 9565,
-        "name": "Mayara Brightwing"
+        "name": "Mayara Brightwing",
+        "zoneName": "Burning Steppes",
+        "mapID": 1428,
+        "x": 84.8,
+        "y": 69
       },
       "finish": {
         "npcID": 9565,
-        "name": "Mayara Brightwing"
+        "name": "Mayara Brightwing",
+        "zoneName": "Burning Steppes",
+        "mapID": 1428,
+        "x": 84.8,
+        "y": 69
       },
       "requirementsKnown": false,
       "factions": [
@@ -12306,7 +12456,11 @@
       "source": "https://www.wowhead.com/forever/quest=4766/mayara-brightwing",
       "finish": {
         "npcID": 9565,
-        "name": "Mayara Brightwing"
+        "name": "Mayara Brightwing",
+        "zoneName": "Burning Steppes",
+        "mapID": 1428,
+        "x": 84.8,
+        "y": 69
       },
       "start": {
         "npcID": 2285,
@@ -12334,7 +12488,11 @@
       },
       "start": {
         "npcID": 9565,
-        "name": "Mayara Brightwing"
+        "name": "Mayara Brightwing",
+        "zoneName": "Burning Steppes",
+        "mapID": 1428,
+        "x": 84.8,
+        "y": 69
       },
       "storyline": [
         4766,
@@ -12354,11 +12512,13 @@
       "source": "https://www.wowhead.com/forever/quest=4981/operative-bijou",
       "finish": {
         "npcID": 10257,
-        "name": "Bijou"
+        "name": "Bijou",
+        "zoneName": "Blackrock Spire"
       },
       "start": {
         "npcID": 9080,
-        "name": "Lexlort"
+        "name": "Lexlort",
+        "zoneName": "Badlands"
       },
       "storyline": [
         4981,
@@ -12472,11 +12632,13 @@
       "source": "https://www.wowhead.com/forever/quest=4983/bijous-reconnaissance-report",
       "finish": {
         "npcID": 9080,
-        "name": "Lexlort"
+        "name": "Lexlort",
+        "zoneName": "Badlands"
       },
       "start": {
         "npcID": 10257,
-        "name": "Bijou"
+        "name": "Bijou",
+        "zoneName": "Blackrock Spire"
       },
       "storyline": [
         4981,
@@ -12504,7 +12666,8 @@
       },
       "start": {
         "npcID": 10257,
-        "name": "Bijou"
+        "name": "Bijou",
+        "zoneName": "Blackrock Spire"
       },
       "storyline": [
         5001,
@@ -12566,7 +12729,8 @@
       },
       "finish": {
         "npcID": 10182,
-        "name": "Rexxar"
+        "name": "Rexxar",
+        "zoneName": "Desolace, Feralas, Stonetalon Mountains"
       },
       "storyline": [
         6566,
@@ -12588,7 +12752,8 @@
       "requirementsKnown": false,
       "start": {
         "npcID": 10182,
-        "name": "Rexxar"
+        "name": "Rexxar",
+        "zoneName": "Desolace, Feralas, Stonetalon Mountains"
       },
       "finish": {
         "npcID": 11872,
@@ -12875,7 +13040,8 @@
       },
       "finish": {
         "npcID": 10182,
-        "name": "Rexxar"
+        "name": "Rexxar",
+        "zoneName": "Desolace, Feralas, Stonetalon Mountains"
       },
       "storyline": [
         6585,
@@ -13166,11 +13332,13 @@
       "source": "https://www.wowhead.com/forever/quest=5518/the-gordok-ogre-suit",
       "start": {
         "npcID": 14338,
-        "name": "Knot Thimblejack"
+        "name": "Knot Thimblejack",
+        "zoneName": "Dire Maul"
       },
       "finish": {
         "npcID": 14338,
-        "name": "Knot Thimblejack"
+        "name": "Knot Thimblejack",
+        "zoneName": "Dire Maul"
       }
     },
     {
@@ -13600,11 +13768,13 @@
       ],
       "start": {
         "npcID": 14338,
-        "name": "Knot Thimblejack"
+        "name": "Knot Thimblejack",
+        "zoneName": "Dire Maul"
       },
       "finish": {
         "npcID": 14338,
-        "name": "Knot Thimblejack"
+        "name": "Knot Thimblejack",
+        "zoneName": "Dire Maul"
       },
       "requirementsKnown": false,
       "source": "https://www.wowhead.com/forever/quest=5525/free-knot"
@@ -14310,11 +14480,13 @@
       ],
       "start": {
         "npcID": 14338,
-        "name": "Knot Thimblejack"
+        "name": "Knot Thimblejack",
+        "zoneName": "Dire Maul"
       },
       "finish": {
         "npcID": 14338,
-        "name": "Knot Thimblejack"
+        "name": "Knot Thimblejack",
+        "zoneName": "Dire Maul"
       },
       "repeatable": true,
       "requirementsKnown": false,
@@ -14448,11 +14620,13 @@
       ],
       "start": {
         "npcID": 14338,
-        "name": "Knot Thimblejack"
+        "name": "Knot Thimblejack",
+        "zoneName": "Dire Maul"
       },
       "finish": {
         "npcID": 14338,
-        "name": "Knot Thimblejack"
+        "name": "Knot Thimblejack",
+        "zoneName": "Dire Maul"
       },
       "requirementsKnown": false,
       "source": "https://www.wowhead.com/forever/quest=5519/the-gordok-ogre-suit"
@@ -14646,11 +14820,19 @@
       ],
       "start": {
         "npcID": 16013,
-        "name": "Deliana"
+        "name": "Deliana",
+        "zoneName": "Ironforge",
+        "mapID": 1455,
+        "x": 42.4,
+        "y": 53.2
       },
       "finish": {
         "npcID": 16013,
-        "name": "Deliana"
+        "name": "Deliana",
+        "zoneName": "Ironforge",
+        "mapID": 1455,
+        "x": 42.4,
+        "y": 53.2
       },
       "requirementsKnown": false,
       "source": "https://www.wowhead.com/forever/quest=8926/just-compensation"
@@ -14665,11 +14847,19 @@
       ],
       "start": {
         "npcID": 16012,
-        "name": "Mokvar"
+        "name": "Mokvar",
+        "zoneName": "Orgrimmar",
+        "mapID": 1454,
+        "x": 34.4,
+        "y": 37.4
       },
       "finish": {
         "npcID": 16012,
-        "name": "Mokvar"
+        "name": "Mokvar",
+        "zoneName": "Orgrimmar",
+        "mapID": 1454,
+        "x": 34.4,
+        "y": 37.4
       },
       "requirementsKnown": false,
       "source": "https://www.wowhead.com/forever/quest=8927/just-compensation"
@@ -14684,11 +14874,19 @@
       ],
       "start": {
         "npcID": 16013,
-        "name": "Deliana"
+        "name": "Deliana",
+        "zoneName": "Ironforge",
+        "mapID": 1455,
+        "x": 42.4,
+        "y": 53.2
       },
       "finish": {
         "npcID": 16013,
-        "name": "Deliana"
+        "name": "Deliana",
+        "zoneName": "Ironforge",
+        "mapID": 1455,
+        "x": 42.4,
+        "y": 53.2
       },
       "requirementsKnown": false,
       "source": "https://www.wowhead.com/forever/quest=8931/just-compensation"
@@ -14703,11 +14901,19 @@
       ],
       "start": {
         "npcID": 16013,
-        "name": "Deliana"
+        "name": "Deliana",
+        "zoneName": "Ironforge",
+        "mapID": 1455,
+        "x": 42.4,
+        "y": 53.2
       },
       "finish": {
         "npcID": 16013,
-        "name": "Deliana"
+        "name": "Deliana",
+        "zoneName": "Ironforge",
+        "mapID": 1455,
+        "x": 42.4,
+        "y": 53.2
       },
       "requirementsKnown": false,
       "source": "https://www.wowhead.com/forever/quest=8932/just-compensation"
@@ -14722,11 +14928,19 @@
       ],
       "start": {
         "npcID": 16013,
-        "name": "Deliana"
+        "name": "Deliana",
+        "zoneName": "Ironforge",
+        "mapID": 1455,
+        "x": 42.4,
+        "y": 53.2
       },
       "finish": {
         "npcID": 16013,
-        "name": "Deliana"
+        "name": "Deliana",
+        "zoneName": "Ironforge",
+        "mapID": 1455,
+        "x": 42.4,
+        "y": 53.2
       },
       "requirementsKnown": false,
       "source": "https://www.wowhead.com/forever/quest=8933/just-compensation"
@@ -14741,11 +14955,19 @@
       ],
       "start": {
         "npcID": 16013,
-        "name": "Deliana"
+        "name": "Deliana",
+        "zoneName": "Ironforge",
+        "mapID": 1455,
+        "x": 42.4,
+        "y": 53.2
       },
       "finish": {
         "npcID": 16013,
-        "name": "Deliana"
+        "name": "Deliana",
+        "zoneName": "Ironforge",
+        "mapID": 1455,
+        "x": 42.4,
+        "y": 53.2
       },
       "requirementsKnown": false,
       "source": "https://www.wowhead.com/forever/quest=8934/just-compensation"
@@ -14763,11 +14985,19 @@
       ],
       "start": {
         "npcID": 16013,
-        "name": "Deliana"
+        "name": "Deliana",
+        "zoneName": "Ironforge",
+        "mapID": 1455,
+        "x": 42.4,
+        "y": 53.2
       },
       "finish": {
         "npcID": 16013,
-        "name": "Deliana"
+        "name": "Deliana",
+        "zoneName": "Ironforge",
+        "mapID": 1455,
+        "x": 42.4,
+        "y": 53.2
       },
       "requirementsKnown": false,
       "source": "https://www.wowhead.com/forever/quest=8935/just-compensation"
@@ -14782,11 +15012,19 @@
       ],
       "start": {
         "npcID": 16013,
-        "name": "Deliana"
+        "name": "Deliana",
+        "zoneName": "Ironforge",
+        "mapID": 1455,
+        "x": 42.4,
+        "y": 53.2
       },
       "finish": {
         "npcID": 16013,
-        "name": "Deliana"
+        "name": "Deliana",
+        "zoneName": "Ironforge",
+        "mapID": 1455,
+        "x": 42.4,
+        "y": 53.2
       },
       "requirementsKnown": false,
       "source": "https://www.wowhead.com/forever/quest=8936/just-compensation"
@@ -14804,11 +15042,19 @@
       ],
       "start": {
         "npcID": 16013,
-        "name": "Deliana"
+        "name": "Deliana",
+        "zoneName": "Ironforge",
+        "mapID": 1455,
+        "x": 42.4,
+        "y": 53.2
       },
       "finish": {
         "npcID": 16013,
-        "name": "Deliana"
+        "name": "Deliana",
+        "zoneName": "Ironforge",
+        "mapID": 1455,
+        "x": 42.4,
+        "y": 53.2
       },
       "requirementsKnown": false,
       "source": "https://www.wowhead.com/forever/quest=8937/just-compensation"
@@ -14823,11 +15069,19 @@
       ],
       "start": {
         "npcID": 16012,
-        "name": "Mokvar"
+        "name": "Mokvar",
+        "zoneName": "Orgrimmar",
+        "mapID": 1454,
+        "x": 34.4,
+        "y": 37.4
       },
       "finish": {
         "npcID": 16012,
-        "name": "Mokvar"
+        "name": "Mokvar",
+        "zoneName": "Orgrimmar",
+        "mapID": 1454,
+        "x": 34.4,
+        "y": 37.4
       },
       "requirementsKnown": false,
       "source": "https://www.wowhead.com/forever/quest=8938/just-compensation"
@@ -14842,11 +15096,19 @@
       ],
       "start": {
         "npcID": 16012,
-        "name": "Mokvar"
+        "name": "Mokvar",
+        "zoneName": "Orgrimmar",
+        "mapID": 1454,
+        "x": 34.4,
+        "y": 37.4
       },
       "finish": {
         "npcID": 16012,
-        "name": "Mokvar"
+        "name": "Mokvar",
+        "zoneName": "Orgrimmar",
+        "mapID": 1454,
+        "x": 34.4,
+        "y": 37.4
       },
       "requirementsKnown": false,
       "source": "https://www.wowhead.com/forever/quest=8939/just-compensation"
@@ -14861,11 +15123,19 @@
       ],
       "start": {
         "npcID": 16012,
-        "name": "Mokvar"
+        "name": "Mokvar",
+        "zoneName": "Orgrimmar",
+        "mapID": 1454,
+        "x": 34.4,
+        "y": 37.4
       },
       "finish": {
         "npcID": 16012,
-        "name": "Mokvar"
+        "name": "Mokvar",
+        "zoneName": "Orgrimmar",
+        "mapID": 1454,
+        "x": 34.4,
+        "y": 37.4
       },
       "requirementsKnown": false,
       "source": "https://www.wowhead.com/forever/quest=8940/just-compensation"
@@ -14883,11 +15153,19 @@
       ],
       "start": {
         "npcID": 16012,
-        "name": "Mokvar"
+        "name": "Mokvar",
+        "zoneName": "Orgrimmar",
+        "mapID": 1454,
+        "x": 34.4,
+        "y": 37.4
       },
       "finish": {
         "npcID": 16012,
-        "name": "Mokvar"
+        "name": "Mokvar",
+        "zoneName": "Orgrimmar",
+        "mapID": 1454,
+        "x": 34.4,
+        "y": 37.4
       },
       "requirementsKnown": false,
       "source": "https://www.wowhead.com/forever/quest=8941/just-compensation"
@@ -14902,11 +15180,19 @@
       ],
       "start": {
         "npcID": 16012,
-        "name": "Mokvar"
+        "name": "Mokvar",
+        "zoneName": "Orgrimmar",
+        "mapID": 1454,
+        "x": 34.4,
+        "y": 37.4
       },
       "finish": {
         "npcID": 16012,
-        "name": "Mokvar"
+        "name": "Mokvar",
+        "zoneName": "Orgrimmar",
+        "mapID": 1454,
+        "x": 34.4,
+        "y": 37.4
       },
       "requirementsKnown": false,
       "source": "https://www.wowhead.com/forever/quest=8942/just-compensation"
@@ -14921,11 +15207,19 @@
       ],
       "start": {
         "npcID": 16012,
-        "name": "Mokvar"
+        "name": "Mokvar",
+        "zoneName": "Orgrimmar",
+        "mapID": 1454,
+        "x": 34.4,
+        "y": 37.4
       },
       "finish": {
         "npcID": 16012,
-        "name": "Mokvar"
+        "name": "Mokvar",
+        "zoneName": "Orgrimmar",
+        "mapID": 1454,
+        "x": 34.4,
+        "y": 37.4
       },
       "requirementsKnown": false,
       "source": "https://www.wowhead.com/forever/quest=8943/just-compensation"
@@ -14940,11 +15234,19 @@
       ],
       "start": {
         "npcID": 16012,
-        "name": "Mokvar"
+        "name": "Mokvar",
+        "zoneName": "Orgrimmar",
+        "mapID": 1454,
+        "x": 34.4,
+        "y": 37.4
       },
       "finish": {
         "npcID": 16012,
-        "name": "Mokvar"
+        "name": "Mokvar",
+        "zoneName": "Orgrimmar",
+        "mapID": 1454,
+        "x": 34.4,
+        "y": 37.4
       },
       "requirementsKnown": false,
       "source": "https://www.wowhead.com/forever/quest=8944/just-compensation"
@@ -14960,11 +15262,19 @@
       "startAlternatives": [
         {
           "npcID": 16013,
-          "name": "Deliana"
+          "name": "Deliana",
+          "zoneName": "Ironforge",
+          "mapID": 1455,
+          "x": 42.4,
+          "y": 53.2
         },
         {
           "npcID": 230319,
-          "name": "Deliana"
+          "name": "Deliana",
+          "zoneName": "Ironforge",
+          "mapID": 1455,
+          "x": 42.2,
+          "y": 52.6
         }
       ],
       "finish": {
@@ -14985,11 +15295,19 @@
       "startAlternatives": [
         {
           "npcID": 16012,
-          "name": "Mokvar"
+          "name": "Mokvar",
+          "zoneName": "Orgrimmar",
+          "mapID": 1454,
+          "x": 34.4,
+          "y": 37.4
         },
         {
           "npcID": 230317,
-          "name": "Mokvar"
+          "name": "Mokvar",
+          "zoneName": "Orgrimmar",
+          "mapID": 1454,
+          "x": 34.4,
+          "y": 37.4
         }
       ],
       "finish": {
