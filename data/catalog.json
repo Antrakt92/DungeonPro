@@ -7700,6 +7700,16 @@
         3527,
         4787,
         3528
+      ],
+      "objectiveItems": [
+        {
+          "itemID": 10662,
+          "name": "Filled Egg of Hakkar"
+        },
+        {
+          "itemID": 10663,
+          "name": "Essence of Hakkar"
+        }
       ]
     },
     {
