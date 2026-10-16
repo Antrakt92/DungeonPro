@@ -507,6 +507,28 @@ function UI:RefreshDetail()
         line(addon.QuestName(id), 24)
         local state = engine:State(id)
         line("|cff" .. COLOR[state.status] .. statusLabel(state) .. "|r")
+        local minimum = addon.Clean(q.minLevel, "number")
+        if minimum and minimum > 0 and minimum % 1 == 0 then line(addon.L("QUEST_MIN_LEVEL", minimum)) end
+        for _, rule in ipairs({ { "classes", "string", "QUEST_CLASSES", addon.ClassName },
+            { "races", "number", "QUEST_RACES", addon.RaceName } }) do
+            local entries = addon.Clean(q[rule[1]], "table")
+            local names, seen = {}, {}
+            for index = 1, math.min(entries and #entries or 0, 100) do
+                local value = addon.Clean(entries[index], rule[2])
+                local valid = rule[2] == "number" and value and value > 0 and value % 1 == 0 or
+                    rule[2] == "string" and value and #value <= 100 and value:find("%S")
+                if valid and not seen[value] then
+                    seen[value] = true
+                    local name = addon.Read(rule[4], "string", value)
+                    if self.quest ~= renderQuest or self.rewardGeneration ~= rewardGeneration then return end
+                    if not name or #name > 500 or not name:find("%S") then
+                        name = rule[2] == "number" and addon.L("RACE_ID", value) or value
+                    end
+                    names[#names + 1] = name
+                end
+            end
+            if #names > 0 then line(addon.L(rule[3], table.concat(names, ", "))) end
+        end
         local offer = addon.Read(addon.CurrentOffer, "table", id)
         if offer and addon.Clean(offer.offeredNow, "boolean") == true then line(addon.L("OFFERED_NOW")) end
         local portrait = addon.Read(addon.DialoguePortrait, "table", id) or

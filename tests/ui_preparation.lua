@@ -2024,4 +2024,110 @@ check("A throwing icon setter releases its busy guard before the next ordinary r
     assert(not ui.rewardTextureBusy and first.shown and first.rewardBinding.id == 701)
     f:finish()
 end)
+check("All-character inspection explains recorded quest classes races and minimum level", function()
+    local oldContext, className, raceName = addon.Context, addon.ClassName, addon.RaceName
+    local dungeon, include, quest = ui.dungeon, ui.includeUnavailable, ui.quest
+    addon.Context = function() return { level = 60, class = "WARRIOR", race = 1,
+        completed = function() return false end, active = function() return false end } end
+    addon.quests[9980] = { id = 9980, minLevel = 40, requirementsKnown = true, classes = { "MAGE" }, races = { 95 } }
+    ui.dungeon = { key = "restrictions", name = "Restrictions", minLevel = 1, maxLevel = 60, coverage = "partial", quests = { 9980 } }
+    addon.ClassName = function(token) assert(token == "MAGE"); return "Native mage" end
+    addon.RaceName = function(id) assert(id == 95); return "Native new race" end
+    ui.includeUnavailable, ui.quest = true, 9980; ui:Refresh()
+    assert(ui.engine:State(9980).status == "UNAVAILABLE" and not ui.action and not ui.guide.enabled)
+    assert(detailHas(addon.L("QUEST_MIN_LEVEL", 40)))
+    assert(detailHas(addon.L("QUEST_CLASSES", "Native mage")) and detailHas(addon.L("QUEST_RACES", "Native new race")))
+    local found = false
+    for _, row in ipairs(visibleRows()) do if row.title.text == "Quest 9980" then found = true end end
+    assert(found)
+    addon.ClassName, addon.RaceName = nil, nil; ui:RefreshDetail()
+    assert(detailHas(addon.L("QUEST_CLASSES", "MAGE")) and detailHas(addon.L("QUEST_RACES", addon.L("RACE_ID", 95))))
+    assert(not detailHas(addon.L("QUEST_RACES", "Native new race")) and ui.engine:State(9980).status == "UNAVAILABLE" and not ui.action)
+    addon.Context, addon.ClassName, addon.RaceName = oldContext, className, raceName
+    addon.quests[9980] = nil; ui.dungeon, ui.includeUnavailable, ui.quest = dungeon, include, quest; ui:Refresh()
+end)
+check("Restriction display cleans deduplicates and bounds entries without guessing unknown names", function()
+    local className, raceName, checker = addon.ClassName, addon.RaceName, issecretvalue
+    local restricted = {}
+    issecretvalue = function(value) return value == restricted end
+    local classReads, raceReads = 0, 0
+    addon.quests[9981] = { id = 9981, minLevel = 35, requirementsKnown = false,
+        classes = { "MAGE", "MAGE", "", "   ", false, restricted }, races = { 95, 95, 1, 0, -1, 1.5, "95", restricted } }
+    addon.ClassName = function() classReads = classReads + 1; return restricted end
+    addon.RaceName = function(id) raceReads = raceReads + 1; if id == 1 then error("Cold") end; return "   " end
+    local context = { level = 60, active = function() return true end, completed = function() return false end }
+    showDetail(9981, context)
+    assert(classReads == 1 and raceReads == 2)
+    assert(detailHas(addon.L("QUEST_CLASSES", "MAGE")))
+    assert(detailHas(addon.L("QUEST_RACES", addon.L("RACE_ID", 95) .. ", " .. addon.L("RACE_ID", 1))))
+    assert(ui.engine:State(9981).status == "ACTIVE")
+    local many = {}; for i = 1, 101 do many[i] = i end
+    addon.quests[9981].races = many; raceReads = 0; addon.RaceName = function() raceReads = raceReads + 1; return nil end
+    ui:RefreshDetail(); assert(raceReads == 100)
+    for _, minimum in ipairs({ 0, -1, 1.5, "35", math.huge, restricted }) do
+        addon.quests[9981].minLevel = minimum; ui:RefreshDetail()
+        assert(not detailHas(addon.L("QUEST_MIN_LEVEL", 35)))
+    end
+    addon.quests[9981].classes, addon.quests[9981].races = nil, nil; ui:RefreshDetail()
+    for _, fs in ipairs(ui.details) do
+        if fs.shown then assert(not fs.text:find(addon.L("RACE_ID", 95), 1, true)) end
+    end
+    addon.quests[9981] = nil
+    addon.ClassName, addon.RaceName, issecretvalue = className, raceName, checker; showDetail(2)
+end)
+check("Restriction labels refresh all locales and recycled cards omit absent limits", function()
+    local className, raceName, locale = addon.ClassName, addon.RaceName, addon.db.locale
+    addon.quests[9982] = { id = 9982, minLevel = 50, requirementsKnown = false, classes = { "MAGE" }, races = { 95 } }
+    addon.ClassName = function() return "Client class" end
+    addon.RaceName = function() return nil end
+    local dictionaries = 0
+    for code in pairs(addon.locales) do
+        addon.db.locale = code; showDetail(9982)
+        assert(detailHas(addon.L("QUEST_MIN_LEVEL", 50)))
+        assert(detailHas(addon.L("QUEST_CLASSES", "Client class")))
+        assert(detailHas(addon.L("QUEST_RACES", addon.L("RACE_ID", 95))))
+        assert(ui.engine:State(9982).status == "UNKNOWN" and not ui.action)
+        dictionaries = dictionaries + 1
+    end
+    assert(dictionaries == 10)
+    addon.db.locale = locale; showDetail(2)
+    assert(not detailHas(addon.L("QUEST_MIN_LEVEL", 50)) and not detailHas(addon.L("QUEST_CLASSES", "Client class")))
+    assert(not detailHas(addon.L("QUEST_RACES", addon.L("RACE_ID", 95))))
+    addon.ClassName, addon.RaceName = className, raceName; addon.quests[9982] = nil
+end)
+check("Restriction name reentry cannot append old labels after quest or generation changes", function()
+    local className, raceName = addon.ClassName, addon.RaceName
+    for _, helper in ipairs({ "ClassName", "RaceName" }) do
+        for _, sameQuest in ipairs({ false, true }) do
+            local classes, races = { "MAGE" }, { 95 }
+            addon.quests[9984] = { id = 9984, minLevel = 1, requirementsKnown = false, classes = classes, races = races }
+            addon.ClassName = function() return "Current class" end
+            addon.RaceName = function() return "Current race" end
+            local armed, nestedHeight = true, nil
+            local getter = function()
+                if armed then
+                    armed = false
+                    if sameQuest then ui:RefreshDetail() else showDetail(2) end
+                    nestedHeight = ui.detail.height
+                    return "Stale outer restriction"
+                end
+                return helper == "ClassName" and "Current class" or "Current race"
+            end
+            addon[helper] = getter
+            showDetail(9984)
+            assert(not armed and ui.quest == (sameQuest and 9984 or 2))
+            assert(ui.detail.height == nestedHeight, "stale restriction loop changed the newer card geometry")
+            assert(not detailHas(addon.L("QUEST_CLASSES", "Stale outer restriction")))
+            assert(not detailHas(addon.L("QUEST_RACES", "Stale outer restriction")))
+            if sameQuest then
+                assert(detailHas(addon.L("QUEST_CLASSES", "Current class")) and detailHas(addon.L("QUEST_RACES", "Current race")))
+            else
+                assert(not detailHas(addon.L("QUEST_CLASSES", "Current class")) and not detailHas(addon.L("QUEST_RACES", "Current race")))
+            end
+            assert(addon[helper] == getter and addon.quests[9984].classes == classes and addon.quests[9984].races == races)
+            assert(addon.quests[9984].requirementsKnown == false)
+        end
+    end
+    addon.ClassName, addon.RaceName = className, raceName; addon.quests[9984] = nil; showDetail(2)
+end)
 print("Preparation UI modeled checks passed: " .. total .. " (no native layout validation)")

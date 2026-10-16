@@ -17,6 +17,7 @@ Level ranges are provisional recommendations.
 - Character-specific completed, active, ready-to-turn-in, available, locked and
   unknown quest states, with explanations for level gates, missing prerequisites,
   character restrictions and unverified data.
+  Detail cards show the recorded minimum level and any listed class/race limits.
 - Recursive prerequisite planning where acceptance conditions are verified;
   unverified chains remain available for inspection.
   Known prerequisite work can still be shown while other conditions are unknown.

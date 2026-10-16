@@ -840,4 +840,26 @@ check("Actual cached rewards expose native item icons and current-source-only ho
     for _, key in ipairs(keys) do _G[key] = saved[key] end
     ui.quest, ui.detailHistory = previous, history; ui:Refresh()
 end)
+check("All-character inspection explains actual paladin race and level limits without authorizing pickup", function()
+    local ui = addon.UI
+    local previous, history, all = ui.quest, ui.detailHistory, ui.includeUnavailable
+    local classes, creatures = LOCALIZED_CLASS_NAMES_MALE, C_CreatureInfo
+    LOCALIZED_CLASS_NAMES_MALE = { PALADIN = "Native Paladin" }
+    C_CreatureInfo = { GetRaceInfo = function(id)
+        return { raceID = id, raceName = id == 1 and "Native Human" or "Native Dwarf" }
+    end }
+    local function shown(value)
+        for _, line in ipairs(ui.details) do if line.shown and line.text == value then return true end end
+        return false
+    end
+    local pins = #waypoints
+    ui.includeUnavailable = true; ui:InspectQuest(7647); ui:Refresh()
+    assert(shown(addon.L("QUEST_MIN_LEVEL", 60)))
+    assert(shown(addon.L("QUEST_CLASSES", "Native Paladin")))
+    assert(shown(addon.L("QUEST_RACES", "Native Human, Native Dwarf")))
+    assert(ui.engine:State(7647).status == "UNAVAILABLE" and not ui.action and #waypoints == pins)
+    LOCALIZED_CLASS_NAMES_MALE, C_CreatureInfo = classes, creatures
+    ui.quest, ui.detailHistory, ui.includeUnavailable = previous, history, all; ui:Refresh()
+    assert(not shown(addon.L("QUEST_CLASSES", "Native Paladin")))
+end)
 print("Client/UI modeled checks passed: " .. total .. " (no pixel or native-client validation)")
