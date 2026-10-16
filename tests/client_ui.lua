@@ -736,4 +736,27 @@ check("An unaccepted quest can preview only its explicitly loaded client rewards
     for _, key in ipairs(keys) do _G[key] = saved[key] end
     ui.quest, ui.detailHistory = previous, history; ui:Refresh()
 end)
+check("Shared Blackrock map names retain separate wing cards search and selection", function()
+    local ui = addon.UI
+    local native, locale, search, range = GetRealZoneText, addon.db.locale, ui.search, ui.range
+    local dungeon, quest, history, selected = ui.dungeon, ui.quest, ui.detailHistory, addon.char.selectedDungeon
+    GetRealZoneText = function(id) if id == 229 then return "Native Spire" end end
+    addon.db.locale, ui.search, ui.range = "enUS", "", false
+    ui:RefreshDungeons()
+    local lower, upper
+    for _, card in ipairs(ui.cards) do
+        if card.shown and card.title.text == addon.L("DUNGEON_WING_lower", "Native Spire") then lower = card end
+        if card.shown and card.title.text == addon.L("DUNGEON_WING_upper", "Native Spire") then upper = card end
+    end
+    assert(lower and upper and lower ~= upper and lower.title.text ~= upper.title.text)
+    lower.scripts.OnClick(); assert(ui.dungeon.key == "lbrs" and ui.dungeon.wing == "lower")
+    upper.scripts.OnClick(); assert(ui.dungeon.key == "ubrs" and ui.dungeon.wing == "upper")
+    ui.search = "upper wing"; ui:RefreshDungeons()
+    local count = 0
+    for _, card in ipairs(ui.cards) do if card.shown then count = count + 1; assert(card.title.text == addon.L("DUNGEON_WING_upper", "Native Spire")) end end
+    assert(count == 1)
+    GetRealZoneText, addon.db.locale, ui.search, ui.range = native, locale, search, range
+    ui.dungeon, ui.quest, ui.detailHistory, addon.char.selectedDungeon = dungeon, quest, history, selected
+    ui:Refresh()
+end)
 print("Client/UI modeled checks passed: " .. total .. " (no pixel or native-client validation)")

@@ -647,5 +647,38 @@ class CatalogTests(unittest.TestCase):
         catalog.validate(data)
 
 
+    def test_wing_metadata_requires_a_known_wing_and_instance(self):
+        for wing in (None, False, 1, {}, [], "", "north", "LOWER"):
+            data = self.minimal_catalog()
+            data["dungeons"][0].update(instanceID=229, wing=wing)
+            with self.subTest(wing=wing), self.assertRaisesRegex(ValueError, "dungeon wing"):
+                catalog.validate(data)
+        data = self.minimal_catalog()
+        data["dungeons"][0]["wing"] = "lower"
+        with self.assertRaisesRegex(ValueError, "dungeon wing"):
+            catalog.validate(data)
+
+    def test_shared_instance_names_need_distinct_explicit_wings(self):
+        for lower, upper in ((None, None), (None, "upper"), ("lower", "lower")):
+            data = self.minimal_catalog()
+            first = data["dungeons"][0]
+            first["instanceID"] = 229
+            second = copy.deepcopy(first)
+            second.update(key="second", name="Second wing")
+            if lower is not None:
+                first["wing"] = lower
+            if upper is not None:
+                second["wing"] = upper
+            data["dungeons"].append(second)
+            with self.subTest(wings=(lower, upper)), self.assertRaisesRegex(ValueError, "shared dungeon map"):
+                catalog.validate(data)
+        first["wing"], second["wing"] = "lower", "upper"
+        before = copy.deepcopy(data)
+        catalog.validate(data)
+        self.assertEqual(data, before)
+        self.assertIn('["wing"] = "lower"', catalog.generate(data))
+        self.assertIn('["wing"] = "upper"', catalog.generate(data))
+
+
 if __name__ == "__main__":
     unittest.main()

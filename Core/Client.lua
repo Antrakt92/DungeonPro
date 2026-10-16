@@ -367,7 +367,12 @@ end
 function addon.DungeonName(d)
     if not d.instanceID then return d.name end
     local name = addon.Read(GetRealZoneText, "string", d.instanceID)
-    return name and name ~= "" and name or d.name
+    if not name or name == "" then return d.name end
+    local wing = addon.Clean(d.wing, "string")
+    if wing == "lower" or wing == "upper" then
+        return addon.L("DUNGEON_WING_" .. wing, name)
+    end
+    return name
 end
 
 local dungeonArtCache, dungeonArtReading

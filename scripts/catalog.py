@@ -234,7 +234,7 @@ def validate(data):
 
     for qid in quests:
         visit(qid)
-    keys = set()
+    keys, instance_wings = set(), {}
     for d in data["dungeons"]:
         if not nonempty_string(d.get("key")) or not nonempty_string(d.get("name")):
             raise ValueError("Invalid dungeon key/name")
@@ -243,6 +243,14 @@ def validate(data):
         keys.add(d["key"])
         if ("instanceID" in d and not integer(d["instanceID"])) or not integer(d["minLevel"]) or not integer(d["maxLevel"]) or d["maxLevel"] < d["minLevel"]:
             raise ValueError("Invalid dungeon identity/levels")
+        if "wing" in d and (type(d["wing"]) is not str or d["wing"] not in ("lower", "upper") or "instanceID" not in d):
+            raise ValueError("Invalid dungeon wing")
+        if "instanceID" in d:
+            wings = instance_wings.setdefault(d["instanceID"], set())
+            wing = d.get("wing")
+            if wings and (wing is None or None in wings or wing in wings):
+                raise ValueError("Ambiguous shared dungeon map")
+            wings.add(wing)
         if d.get("coverage") not in ("pending", "partial", "reviewed"):
             raise ValueError("Explicit dungeon coverage needed")
         if type(d.get("quests")) is not list:

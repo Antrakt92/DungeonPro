@@ -17857,7 +17857,8 @@
         5081
       ],
       "source": "https://www.wowhead.com/forever/guide/dungeons-overview-locations-details",
-      "instanceID": 229
+      "instanceID": 229,
+      "wing": "lower"
     },
     {
       "key": "ubrs",
@@ -17881,7 +17882,8 @@
         6569
       ],
       "source": "https://www.wowhead.com/forever/guide/dungeons-overview-locations-details",
-      "instanceID": 229
+      "instanceID": 229,
+      "wing": "upper"
     },
     {
       "key": "dire",
