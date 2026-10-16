@@ -1,0 +1,6 @@
+dist/
+__pycache__/
+*.pyc
+.agent-context/
+AGENTS.md
+AGENTS.override.md

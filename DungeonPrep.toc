@@ -1,0 +1,18 @@
+## Interface: 16001
+## Title: DungeonPrep
+## Notes: Prepare your dungeon quests and find the next step in their chains.
+## Author: Antrakt92
+## Version: 0.1.0
+## SavedVariables: DungeonPrepDB
+## SavedVariablesPerCharacter: DungeonPrepCharDB
+## IconTexture: Interface\Icons\INV_Misc_Map_01
+
+Core\Namespace.lua
+Locales\Strings.lua
+Locales\Translations.lua
+Database\Catalog.lua
+Core\Planner.lua
+Core\Client.lua
+UI\Window.lua
+UI\Navigation.lua
+Core\Events.lua

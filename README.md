@@ -1,0 +1,56 @@
+# DungeonPrep
+
+Prepare your dungeon quests before entering: see what you already carry, follow
+prerequisite quests and find the next available step.
+
+**Early development build for WoW Forever. Quest coverage is incomplete.**
+The catalogue has 29 dungeon entries; initial quest data covers The Deadmines,
+Ragefire Chasm and The Hall of Thanes. Other entries explicitly show that their
+quests have not been added. Level ranges are provisional recommendations.
+
+## Current features
+
+- Dungeon browser with level filtering and game-provided artwork when available.
+- Character-specific completed, active, ready-to-turn-in, available, locked and
+  unknown quest states. Class, race and faction restrictions are respected.
+- Recursive prerequisite planning: a final quest can lead you to the beginning
+  of its unfinished chain, rather than another locked step.
+- Separate story order for chains whose hard prerequisites still need checking.
+- World map, optional TomTom and a built-in direction arrow. The arrow points
+  toward a coordinate; it does not find paths around terrain or plan transport.
+- Quest text saved when you open the quest at its giver. Complete unseen quest
+  descriptions, rewards and quest-giver portraits are not yet included.
+- Interface dictionaries for English, Russian, German, French, Spanish, Italian,
+  Portuguese, Korean, Simplified Chinese and Traditional Chinese. enGB and esMX
+  use English and Spanish. Translations and layout still need in-game review.
+  Quest and NPC names follow the game client when available.
+
+Unknown prerequisites or incomplete dungeon coverage never produce a green
+preparation result. A quest listed in a storyline is not automatically treated
+as a mandatory prerequisite.
+
+## Try the development build
+
+Build with `python scripts/package.py`. Extract the ZIP's `DungeonPrep` folder
+into your **Forever client's** `Interface/AddOns` folder, then reload the UI.
+This build has not yet passed native-client or visual acceptance.
+
+- `/dprep` or `/dungeonprep`: open or close the browser.
+- `/dprep clear`: clear the built-in guide.
+- `/dprep probe`: save a small capability/quest-line report in this addon's own
+  character settings. It does not export character identity or quest text.
+
+The language button cycles through the interface languages. Search currently
+matches the exact text entered, including its letter case.
+
+## Contributing data
+
+`data/catalog.json` is the source of quest facts. Every quest has a Forever source
+link and an explicit `requirementsKnown` flag. Requirement groups are OR within a
+group and AND between groups; `mode: active` means accepting a prerequisite is
+enough, while the default requires completion. Storyline order is stored separately.
+Never mark a requirement known solely because two quests appear next to each other.
+
+Generate the runtime data with `python scripts/catalog.py`.
+Run all local checks with `python scripts/check.py` (Python and Lua 5.1 required).
+No package installation or network access is needed for those checks.
