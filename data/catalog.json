@@ -1042,9 +1042,60 @@
       "start": {
         "name": "Varimathras",
         "mapID": 1458,
-        "x": 56.3,
-        "y": 92.2,
-        "npcID": 2425
+        "x": 56.2,
+        "y": 92.4,
+        "npcID": 2425,
+        "zoneName": "Undercity",
+        "reportedLocations": [
+          {
+            "mapID": 1458,
+            "zoneName": "Undercity",
+            "x": 56.2,
+            "y": 92.4
+          },
+          {
+            "mapID": 1458,
+            "zoneName": "Undercity",
+            "x": 56.2,
+            "y": 92.6
+          },
+          {
+            "mapID": 1458,
+            "zoneName": "Undercity",
+            "x": 56.4,
+            "y": 91.4
+          },
+          {
+            "mapID": 1458,
+            "zoneName": "Undercity",
+            "x": 56.4,
+            "y": 93.6
+          },
+          {
+            "mapID": 1458,
+            "zoneName": "Undercity",
+            "x": 56.6,
+            "y": 90.8
+          },
+          {
+            "mapID": 1458,
+            "zoneName": "Undercity",
+            "x": 56.6,
+            "y": 92
+          },
+          {
+            "mapID": 1458,
+            "zoneName": "Undercity",
+            "x": 56.6,
+            "y": 92.6
+          },
+          {
+            "mapID": 1458,
+            "zoneName": "Undercity",
+            "x": 56.6,
+            "y": 93.6
+          }
+        ]
       }
     },
     {
@@ -2313,7 +2364,14 @@
         "x": 73.2,
         "y": 50.4
       },
-      "requirementsKnown": false
+      "requirementsKnown": false,
+      "objectiveItems": [
+        {
+          "itemID": 2909,
+          "name": "Red Wool Bandana",
+          "quantity": 10
+        }
+      ]
     },
     {
       "id": 386,
@@ -3227,6 +3285,13 @@
       "storyline": [
         1109,
         1113
+      ],
+      "objectiveItems": [
+        {
+          "itemID": 5801,
+          "name": "Kraul Guano",
+          "quantity": 1
+        }
       ]
     },
     {
@@ -3401,6 +3466,13 @@
             1109
           ]
         }
+      ],
+      "objectiveItems": [
+        {
+          "itemID": 5805,
+          "quantity": 20,
+          "name": "Heart of Zeal"
+        }
       ]
     },
     {
@@ -3415,12 +3487,118 @@
       "start": {
         "npcID": 2425,
         "name": "Varimathras",
-        "zoneName": "Undercity"
+        "zoneName": "Undercity",
+        "mapID": 1458,
+        "x": 56.2,
+        "y": 92.4,
+        "reportedLocations": [
+          {
+            "mapID": 1458,
+            "zoneName": "Undercity",
+            "x": 56.2,
+            "y": 92.4
+          },
+          {
+            "mapID": 1458,
+            "zoneName": "Undercity",
+            "x": 56.2,
+            "y": 92.6
+          },
+          {
+            "mapID": 1458,
+            "zoneName": "Undercity",
+            "x": 56.4,
+            "y": 91.4
+          },
+          {
+            "mapID": 1458,
+            "zoneName": "Undercity",
+            "x": 56.4,
+            "y": 93.6
+          },
+          {
+            "mapID": 1458,
+            "zoneName": "Undercity",
+            "x": 56.6,
+            "y": 90.8
+          },
+          {
+            "mapID": 1458,
+            "zoneName": "Undercity",
+            "x": 56.6,
+            "y": 92
+          },
+          {
+            "mapID": 1458,
+            "zoneName": "Undercity",
+            "x": 56.6,
+            "y": 92.6
+          },
+          {
+            "mapID": 1458,
+            "zoneName": "Undercity",
+            "x": 56.6,
+            "y": 93.6
+          }
+        ]
       },
       "finish": {
         "npcID": 2425,
         "name": "Varimathras",
-        "zoneName": "Undercity"
+        "zoneName": "Undercity",
+        "mapID": 1458,
+        "x": 56.2,
+        "y": 92.4,
+        "reportedLocations": [
+          {
+            "mapID": 1458,
+            "zoneName": "Undercity",
+            "x": 56.2,
+            "y": 92.4
+          },
+          {
+            "mapID": 1458,
+            "zoneName": "Undercity",
+            "x": 56.2,
+            "y": 92.6
+          },
+          {
+            "mapID": 1458,
+            "zoneName": "Undercity",
+            "x": 56.4,
+            "y": 91.4
+          },
+          {
+            "mapID": 1458,
+            "zoneName": "Undercity",
+            "x": 56.4,
+            "y": 93.6
+          },
+          {
+            "mapID": 1458,
+            "zoneName": "Undercity",
+            "x": 56.6,
+            "y": 90.8
+          },
+          {
+            "mapID": 1458,
+            "zoneName": "Undercity",
+            "x": 56.6,
+            "y": 92
+          },
+          {
+            "mapID": 1458,
+            "zoneName": "Undercity",
+            "x": 56.6,
+            "y": 92.6
+          },
+          {
+            "mapID": 1458,
+            "zoneName": "Undercity",
+            "x": 56.6,
+            "y": 93.6
+          }
+        ]
       },
       "requirementsKnown": false,
       "storyline": [
@@ -3455,7 +3633,60 @@
       "finish": {
         "npcID": 2425,
         "name": "Varimathras",
-        "zoneName": "Undercity"
+        "zoneName": "Undercity",
+        "mapID": 1458,
+        "x": 56.2,
+        "y": 92.4,
+        "reportedLocations": [
+          {
+            "mapID": 1458,
+            "zoneName": "Undercity",
+            "x": 56.2,
+            "y": 92.4
+          },
+          {
+            "mapID": 1458,
+            "zoneName": "Undercity",
+            "x": 56.2,
+            "y": 92.6
+          },
+          {
+            "mapID": 1458,
+            "zoneName": "Undercity",
+            "x": 56.4,
+            "y": 91.4
+          },
+          {
+            "mapID": 1458,
+            "zoneName": "Undercity",
+            "x": 56.4,
+            "y": 93.6
+          },
+          {
+            "mapID": 1458,
+            "zoneName": "Undercity",
+            "x": 56.6,
+            "y": 90.8
+          },
+          {
+            "mapID": 1458,
+            "zoneName": "Undercity",
+            "x": 56.6,
+            "y": 92
+          },
+          {
+            "mapID": 1458,
+            "zoneName": "Undercity",
+            "x": 56.6,
+            "y": 92.6
+          },
+          {
+            "mapID": 1458,
+            "zoneName": "Undercity",
+            "x": 56.6,
+            "y": 93.6
+          }
+        ]
       },
       "requirementsKnown": false,
       "storyline": [
@@ -3673,12 +3904,118 @@
       "start": {
         "npcID": 2425,
         "name": "Varimathras",
-        "zoneName": "Undercity"
+        "zoneName": "Undercity",
+        "mapID": 1458,
+        "x": 56.2,
+        "y": 92.4,
+        "reportedLocations": [
+          {
+            "mapID": 1458,
+            "zoneName": "Undercity",
+            "x": 56.2,
+            "y": 92.4
+          },
+          {
+            "mapID": 1458,
+            "zoneName": "Undercity",
+            "x": 56.2,
+            "y": 92.6
+          },
+          {
+            "mapID": 1458,
+            "zoneName": "Undercity",
+            "x": 56.4,
+            "y": 91.4
+          },
+          {
+            "mapID": 1458,
+            "zoneName": "Undercity",
+            "x": 56.4,
+            "y": 93.6
+          },
+          {
+            "mapID": 1458,
+            "zoneName": "Undercity",
+            "x": 56.6,
+            "y": 90.8
+          },
+          {
+            "mapID": 1458,
+            "zoneName": "Undercity",
+            "x": 56.6,
+            "y": 92
+          },
+          {
+            "mapID": 1458,
+            "zoneName": "Undercity",
+            "x": 56.6,
+            "y": 92.6
+          },
+          {
+            "mapID": 1458,
+            "zoneName": "Undercity",
+            "x": 56.6,
+            "y": 93.6
+          }
+        ]
       },
       "finish": {
         "npcID": 2425,
         "name": "Varimathras",
-        "zoneName": "Undercity"
+        "zoneName": "Undercity",
+        "mapID": 1458,
+        "x": 56.2,
+        "y": 92.4,
+        "reportedLocations": [
+          {
+            "mapID": 1458,
+            "zoneName": "Undercity",
+            "x": 56.2,
+            "y": 92.4
+          },
+          {
+            "mapID": 1458,
+            "zoneName": "Undercity",
+            "x": 56.2,
+            "y": 92.6
+          },
+          {
+            "mapID": 1458,
+            "zoneName": "Undercity",
+            "x": 56.4,
+            "y": 91.4
+          },
+          {
+            "mapID": 1458,
+            "zoneName": "Undercity",
+            "x": 56.4,
+            "y": 93.6
+          },
+          {
+            "mapID": 1458,
+            "zoneName": "Undercity",
+            "x": 56.6,
+            "y": 90.8
+          },
+          {
+            "mapID": 1458,
+            "zoneName": "Undercity",
+            "x": 56.6,
+            "y": 92
+          },
+          {
+            "mapID": 1458,
+            "zoneName": "Undercity",
+            "x": 56.6,
+            "y": 92.6
+          },
+          {
+            "mapID": 1458,
+            "zoneName": "Undercity",
+            "x": 56.6,
+            "y": 93.6
+          }
+        ]
       },
       "requirementsKnown": false
     },
