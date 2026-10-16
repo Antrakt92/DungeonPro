@@ -7,7 +7,8 @@ local COLOR = { COMPLETED = "66dd99", READY = "ffe066", ACTIVE = "88bfff", AVAIL
 local FONT
 
 local function statusLabel(state, value)
-    local label = value or addon.L(state.status)
+    local label = value or addon.L(state.status == "UNKNOWN" and state.reason == "requirements" and
+        "UNKNOWN_REQUIREMENTS" or state.status)
     if (state.status == "ACTIVE" or state.status == "READY") and
         addon.Clean(state.completedHistory, "boolean") == true then
         label = label .. " — " .. addon.L("COMPLETED_BEFORE")
@@ -304,7 +305,7 @@ function UI:RefreshQuests()
             else
                 row.bg:SetColorTexture(0.13, 0.16, 0.20, 1)
                 row.title:SetText(addon.QuestName(id))
-                local note = addon.L(state.status)
+                local note
                 if entry.action then
                     local action = entry.action
                     note = addon.L(action.kind) .. (action.level and (" " .. action.level) or "")

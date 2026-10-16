@@ -21,24 +21,45 @@ local function q(id, parents, extra)
     for k, v in pairs(extra or {}) do result[k] = v end
     return result
 end
-check("VanCleef resolves to the actual beginning, not the locked penultimate quest", function()
-    local engine = P.New(addon.quests, ctx())
+local function copy(value)
+    if type(value) ~= "table" then return value end
+    local result = {}; for k, v in pairs(value) do result[k] = copy(v) end; return result
+end
+-- A complete graph is a model assumption here, not a claim about server acceptance.
+local function knownLinearFixture(ids)
+    local result = {}
+    for index, id in ipairs(ids) do
+        local actual = assert(addon.quests[id]); eq(actual.requirementsKnown, false)
+        local groups = actual.requires or {}
+        eq(#groups, index == 1 and 0 or 1)
+        if index > 1 then
+            eq(#groups[1].ids, 1); eq(groups[1].ids[1], ids[index - 1]); eq(groups[1].mode, nil)
+        end
+        assert(type(actual.minLevel) == "number" and actual.minLevel > 0)
+        result[id] = copy(actual); result[id].requirementsKnown = true
+        assert(result[id] ~= actual and (not actual.start or result[id].start ~= actual.start))
+    end
+    return result
+end
+local function defiasFixture() return knownLinearFixture({ 65, 132, 135, 141, 142, 155, 166 }) end
+check("Known graph model: VanCleef resolves to the actual beginning, not the locked penultimate quest", function()
+    local engine = P.New(defiasFixture(), ctx())
     eq(engine:State(166).status, "LOCKED")
     local actions, unknown = engine:Next(166)
     eq(#actions, 1); eq(actions[1].id, 65); eq(actions[1].kind, "pickup"); eq(unknown, false)
 end)
-check("Chain resumes after completed steps", function()
-    local actions = P.New(addon.quests, ctx({ [65] = true, [132] = true })):Next(166)
+check("Known graph model: chain resumes after completed steps", function()
+    local actions = P.New(defiasFixture(), ctx({ [65] = true, [132] = true })):Next(166)
     eq(actions[1].id, 135)
 end)
-check("Active prerequisite must be finished before the child can be picked up", function()
-    local engine = P.New(addon.quests, ctx({}, { [65] = true }))
+check("Known graph model: active prerequisite must be finished before the child can be picked up", function()
+    local engine = P.New(defiasFixture(), ctx({}, { [65] = true }))
     local actions = engine:Next(166)
     eq(actions[1].id, 65); eq(actions[1].kind, "complete")
 end)
-check("Ready prerequisite directs to turn-in", function()
+check("Known graph model: ready prerequisite directs to turn-in", function()
     local c = ctx({}, { [65] = true }); c.ready = function() return true end
-    local actions = P.New(addon.quests, c):Next(166)
+    local actions = P.New(defiasFixture(), c):Next(166)
     eq(actions[1].kind, "turnin")
 end)
 check("Unfinished objectives do not guide to the turn-in NPC", function()
@@ -50,6 +71,29 @@ check("Unfinished objectives do not guide to the turn-in NPC", function()
     c.ready = function() return true end
     actions = P.New(quests, c):Next(1)
     eq(actions[1].kind, "turnin"); eq(actions[1].place, place)
+end)
+check("Real catalogue partial requirements never authorize pickup despite completed known parents", function()
+    local audited = { 65, 132, 135, 141, 142, 155, 166, 167, 168,
+        5726, 5727, 5728, 5729, 5730, 5722, 5723, 5724, 96393 }
+    eq(#audited, 18)
+    for _, id in ipairs(audited) do
+        local actual = assert(addon.quests[id]); eq(actual.requirementsKnown, false)
+        local c = ctx(); c.level = 60; c.faction = actual.factions and actual.factions[1] or "Alliance"
+        c.class = actual.classes and actual.classes[1] or "MAGE"
+        c.race = actual.races and actual.races[1] or 3
+        c.completed = function(other) return other ~= id end
+        local engine = P.New(addon.quests, c)
+        eq(engine:State(id).status, "UNKNOWN"); eq(engine:State(id).reason, "requirements")
+        local actions, unknown = engine:Next(id); eq(#actions, 0); eq(unknown, true)
+        for _, ready in ipairs({ false, true }) do
+            c.active = function(other) return other == id end; c.ready = function() return ready end
+            engine = P.New(addon.quests, c)
+            eq(engine:State(id).status, ready and "READY" or "ACTIVE")
+            actions, unknown = engine:Next(id)
+            eq(#actions, 1); eq(actions[1].id, id); eq(actions[1].kind, ready and "turnin" or "complete")
+            eq(unknown, false); eq(actual.requirementsKnown, false)
+        end
+    end
 end)
 check("Missing requirements evidence is never available", function()
     eq(P.New(addon.quests, ctx()):State(92753).status, "UNKNOWN")
@@ -334,9 +378,9 @@ check("Inside quest still needs its outside prerequisite before preparation", fu
     local d = e:Dungeon({ quests = { 2 }, coverage = "reviewed" })
     eq(d.ready, false); eq(d.actions[1].id, 1); eq(d.actions[1].kind, "pickup")
 end)
-check("Returning the Lost Satchel requires the outside Ragefire chain", function()
+check("Known graph model: Returning the Lost Satchel resolves its outside prerequisite", function()
     local c = ctx(); c.faction, c.race = "Horde", 2
-    local d = P.New(addon.quests, c):Dungeon({ quests = { 5724 }, coverage = "reviewed" })
+    local d = P.New(knownLinearFixture({ 5722, 5724 }), c):Dungeon({ quests = { 5724 }, coverage = "reviewed" })
     eq(d.ready, false); eq(d.actions[1].id, 5722)
 end)
 check("Unknown OR alternative does not hide a safe known next step", function()

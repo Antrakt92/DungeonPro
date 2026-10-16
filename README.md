@@ -17,8 +17,8 @@ Level ranges are provisional recommendations.
 - Character-specific completed, active, ready-to-turn-in, available, locked and
   unknown quest states, with explanations for level gates, missing prerequisites,
   character restrictions and unverified data.
-- Recursive prerequisite planning: a final quest can lead you to the beginning
-  of its unfinished chain, rather than another locked step.
+- Recursive prerequisite planning where acceptance conditions are verified;
+  unverified chains remain available for inspection.
 - A next-step view collects the dungeon's preparation actions, combines shared
   prerequisites and groups pickups before entry, inside pickups, level gates,
   quests in progress and unresolved requirements.

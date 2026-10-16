@@ -143,7 +143,7 @@ check("Any preparation action opens its own quest and navigation target", functi
 end)
 check("Unknown quests remain visible without an invented action", function()
     local row = visibleRows()[6]
-    assert(row.title.text == "Quest 3" and row.note.text:find("Not enough information", 1, true))
+    assert(row.title.text == "Quest 3" and row.note.text:find(addon.L("UNKNOWN_REQUIREMENTS"), 1, true))
     row.scripts.OnClick()
     assert(ui.quest == 3 and not ui.action and not ui.map.enabled and not ui.guide.enabled)
 end)
@@ -596,7 +596,7 @@ check("Completion material quests stay separate from acceptance and inventory cl
     local first, second = ui.materialButtons[1], ui.materialButtons[2]
     assert(first.shown and first.questID == 801 and first.itemID == 701)
     assert(first.note.text:find(addon.L("MATERIAL_ITEM", 701), 1, true))
-    assert(first.note.text:find(addon.L("UNKNOWN"), 1, true))
+    assert(first.note.text:find(addon.L("UNKNOWN_REQUIREMENTS"), 1, true))
     assert(second.shown and second.note.text:find(addon.L("COMPLETED"), 1, true))
     first.scripts.OnClick()
     assert(ui.quest == 801 and not ui.action and not ui.guide.enabled)
@@ -1486,5 +1486,65 @@ check("Alternative-place callbacks from an older detail generation cannot visit 
     startClick, finishClick = ui.startButtons[1].scripts.OnClick, ui.finishButtons[1].scripts.OnClick
     showDetail(2); startClick(); finishClick(); assert(calls == 2)
     addon.quests[9932], addon.Navigation = nil, nav
+end)
+check("Unverified inactive quests identify missing requirements in rows and details without an action", function()
+    local selected, context, preparation = ui.quest, addon.Context, ui.preparation
+    addon.Context = function() return { level = 20, completed = function() return false end,
+        active = function() return false end } end
+    ui.quest, ui.preparation = 3, false; ui:Refresh()
+    local expected = "|cffb4aacd" .. addon.L("UNKNOWN_REQUIREMENTS") .. "|r"
+    assert(detailHas(expected) and ui.engine:State(3).status == "UNKNOWN")
+    assert(ui.engine:State(3).reason == "requirements" and not ui.action and not ui.guide.enabled and not ui.map.enabled)
+    local found
+    for _, row in ipairs(visibleRows()) do if row.title.text == "Quest 3" then found = row.note.text end end
+    assert(found == expected)
+    ui.preparation = true; ui:Refresh()
+    for _, row in ipairs(visibleRows()) do
+        if row.title.text == "Quest 3" then assert(row.note.text == expected) end
+        if row.title.text == "Quest 1" then assert(row.note.text:find(addon.L("pickup"), 1, true)) end
+    end
+    addon.Context, ui.quest, ui.preparation = context, selected, preparation; ui:Refresh()
+end)
+check("Requirement wording does not replace other unknown reasons or explicit storyline titles", function()
+    showDetail(3, { level = 20, active = function() return false end, completed = function() return nil end })
+    assert(ui.engine:State(3).reason == "character")
+    assert(detailHas("|cffb4aacd" .. addon.L("UNKNOWN") .. "|r") and not ui.action)
+    for _, reason in ipairs({ "character", "missing", "cycle", "level" }) do
+        ui.quest = 3
+        ui.engine = { context = {}, State = function() return { status = "UNKNOWN", reason = reason } end,
+            Next = function() return {}, true end }
+        ui:RefreshDetail()
+        assert(detailHas("|cffb4aacd" .. addon.L("UNKNOWN") .. "|r"))
+        assert(not detailHas("|cffb4aacd" .. addon.L("UNKNOWN_REQUIREMENTS") .. "|r") and not ui.action)
+    end
+    local story = addon.quests[3].storyline
+    addon.quests[3].storyline = { 3 }
+    showDetail(3, { level = 20, active = function() return false end, completed = function() return false end })
+    assert(ui.chainButtons[1].shown and ui.chainButtons[1].label.text == "|cffb4aacd1. Quest 3|r")
+    addon.quests[3].storyline = story; showDetail(2)
+end)
+check("Requirement label is translated in every locale and held or completed evidence keeps its status", function()
+    local locale, count = addon.db.locale, 0
+    for key, strings in pairs(addon.locales) do
+        assert(type(strings.UNKNOWN_REQUIREMENTS) == "string" and strings.UNKNOWN_REQUIREMENTS ~= "")
+        assert(strings.UNKNOWN_REQUIREMENTS ~= strings.UNKNOWN)
+        addon.db.locale = key
+        showDetail(3, { level = 20, active = function() return false end, completed = function() return false end })
+        assert(detailHas("|cffb4aacd" .. strings.UNKNOWN_REQUIREMENTS .. "|r")); count = count + 1
+    end
+    assert(count == 10); addon.db.locale = locale
+    local context = addon.Context()
+    context.completed = function() return true end
+    context.active = function() return true end
+    for _, ready in ipairs({ false, true }) do
+        context.ready = function() return ready end
+        showDetail(3, context)
+        local status, color = ready and "READY" or "ACTIVE", ready and "ffe066" or "88bfff"
+        assert(detailHas("|cff" .. color .. addon.L(status) .. " — " .. addon.L("COMPLETED_BEFORE") .. "|r"))
+        assert(ui.engine:State(3).status == status and ui.action.kind == (ready and "turnin" or "complete"))
+    end
+    context.active = function() return false end; showDetail(3, context)
+    assert(detailHas("|cff66dd99" .. addon.L("COMPLETED") .. "|r") and not ui.action)
+    showDetail(2)
 end)
 print("Preparation UI modeled checks passed: " .. total .. " (no native layout validation)")

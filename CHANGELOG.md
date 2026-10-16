@@ -16,6 +16,8 @@
 - Added expandable reported giver positions with navigation to a chosen point.
 - Added sourced item containers separately from the items that begin quests.
 - Preserved the current guide when TomTom or map callbacks replace an older request.
+- Kept early quests unverified where the full acceptance conditions lack evidence,
+  with a clearer label for quests absent from the current quest log.
 - Kept newly accepted quests visible alongside past completion history, and
   retained that history when checking prerequisite chains.
 - Added localized names for the current quest NPC, with catalogue names as fallback.

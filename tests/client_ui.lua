@@ -75,6 +75,29 @@ end
 local function check(name, fn)
     local ok, err = pcall(fn); assert(ok, name .. ": " .. tostring(err)); total = total + 1; print("PASS " .. name)
 end
+local function copy(value)
+    if type(value) ~= "table" then return value end
+    local result = {}; for k, v in pairs(value) do result[k] = copy(v) end; return result
+end
+-- Scope complete acceptance to a detached graph model; production data stays partial.
+local function withKnownDefias(fn)
+    local actual, fixture = addon.quests, {}
+    for id, record in pairs(actual) do fixture[id] = record end
+    local ids = { 65, 132, 135, 141, 142, 155, 166 }
+    for index, id in ipairs(ids) do
+        local record = assert(actual[id]); assert(record.requirementsKnown == false)
+        local groups = record.requires or {}; assert(#groups == (index == 1 and 0 or 1))
+        if index > 1 then assert(#groups[1].ids == 1 and groups[1].ids[1] == ids[index - 1] and groups[1].mode == nil) end
+        fixture[id] = copy(record); fixture[id].requirementsKnown = true
+        assert(fixture[id] ~= record and (not record.start or fixture[id].start ~= record.start))
+    end
+    addon.quests = fixture
+    local ok, err = pcall(fn)
+    addon.quests = actual
+    addon.UI:Refresh()
+    for _, id in ipairs(ids) do assert(actual[id].requirementsKnown == false) end
+    assert(ok, err)
+end
 local eventFrame = objects[#objects]
 check("Addon initializes on the matching Forever client", function()
     eventFrame.scripts.OnEvent(eventFrame, "ADDON_LOADED", "DungeonPro")
@@ -87,10 +110,22 @@ check("Window opens and filters without requiring cached quest titles", function
     for _, d in ipairs(addon.dungeons) do if d.key == "dm" then addon.UI.dungeon = d end end
     addon.UI:Refresh(); assert(#addon.UI.rows == 6)
 end)
-check("Quest detail guides to the initial Defias step", function()
-    addon.UI.quest = 166; addon.UI:RefreshDetail()
-    assert(addon.UI.action.id == 65 and addon.UI.guide.enabled)
-    assert(#addon.UI.chainButtons == 7)
+check("Actual Defias data stays uncertain even after every known parent is completed", function()
+    local completed = C_QuestLog.IsQuestFlaggedCompleted
+    C_QuestLog.IsQuestFlaggedCompleted = function(id) return id ~= 166 end
+    addon.UI.quest = 166; addon.UI:Refresh()
+    assert(addon.quests[166].requirementsKnown == false)
+    assert(addon.UI.engine:State(166).status == "UNKNOWN" and not addon.UI.action and not addon.UI.guide.enabled)
+    assert(#addon.UI.chainButtons == 7, "uncertain acceptance still retains source narrative")
+    C_QuestLog.IsQuestFlaggedCompleted = completed; addon.UI:Refresh()
+end)
+check("Known graph fixture guides to the initial Defias step", function()
+    withKnownDefias(function()
+        addon.UI.quest = 166; addon.UI:Refresh()
+        assert(addon.UI.action.id == 65 and addon.UI.guide.enabled)
+        assert(#addon.UI.chainButtons == 7)
+    end)
+    assert(addon.UI.engine:State(166).status == "UNKNOWN" and not addon.UI.action)
 end)
 check("Storyline renders separately without inventing dependency readiness", function()
     addon.UI.quest = 92753; addon.UI:RefreshDetail()
@@ -102,11 +137,13 @@ check("Quest title hydration is requested only once per ID", function()
     for i = 1, 5 do addon.UI:Refresh() end
     assert(requests == before)
 end)
-check("Native map and waypoint use the resolved ancestor coordinates", function()
-    addon.UI.quest = 166; addon.UI:RefreshDetail()
-    addon.UI.guide.scripts.OnClick()
-    assert(#waypoints == 1 and waypoints[1].mapID == 1436)
-    assert(math.abs(waypoints[1].x - 0.563) < 0.0001 and mapCalls == 1)
+check("Native map and waypoint use the resolved ancestor from the known graph fixture", function()
+    withKnownDefias(function()
+        addon.UI.quest = 166; addon.UI:Refresh()
+        addon.UI.guide.scripts.OnClick()
+        assert(#waypoints == 1 and waypoints[1].mapID == 1436)
+        assert(math.abs(waypoints[1].x - 0.563) < 0.0001 and mapCalls == 1)
+    end)
 end)
 check("Guidance updates both coordinate components", function()
     for _, f in ipairs(objects) do if f.scripts.OnUpdate and f.shown then f.scripts.OnUpdate(f, 0.2) end end
@@ -539,10 +576,17 @@ check("Gossip refresh localizes only the actual matching NPC and closing restore
     local state, nativeNameInAction = ui.engine:State(65).status, false
     guid = "Creature-npc-name-integration"; event("GOSSIP_SHOW")
     assert(shown(name) and not shown(addon.L("START") .. ": " .. originalName))
-    for _, row in ipairs(ui.rows) do
-        if row.shown and row.note.text:find(name, 1, true) then nativeNameInAction = true end
-    end
-    assert(nativeNameInAction and ui.engine:State(65).status == state)
+    assert(state == "UNKNOWN" and not ui.action)
+    -- A separate pickup-model scope verifies localized preparation rows without
+    -- converting the real NPC's partial acceptance record into an available quest.
+    withKnownDefias(function()
+        ui:Refresh()
+        for _, row in ipairs(ui.rows) do
+            if row.shown and row.note.text:find(name, 1, true) then nativeNameInAction = true end
+        end
+        assert(nativeNameInAction and ui.engine:State(65).status == "AVAILABLE")
+    end)
+    assert(ui.engine:State(65).status == state and not ui.action)
     id = 266; name = "Other matching finish NPC (fixture)"; event("QUEST_GREETING")
     assert(shown(addon.L("START") .. ": " .. originalName) and shown(name))
     guid = nil; event("GOSSIP_CLOSED")

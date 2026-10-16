@@ -7,7 +7,7 @@
       "name": "The Defias Brotherhood",
       "level": 18,
       "minLevel": 14,
-      "requirementsKnown": true,
+      "requirementsKnown": false,
       "source": "https://www.wowhead.com/forever/quest=65",
       "factions": [
         "Alliance"
@@ -32,7 +32,7 @@
       "name": "The Defias Brotherhood",
       "level": 18,
       "minLevel": 14,
-      "requirementsKnown": true,
+      "requirementsKnown": false,
       "source": "https://www.wowhead.com/forever/quest=132",
       "factions": [
         "Alliance"
@@ -64,7 +64,7 @@
       "name": "The Defias Brotherhood",
       "level": 18,
       "minLevel": 14,
-      "requirementsKnown": true,
+      "requirementsKnown": false,
       "source": "https://www.wowhead.com/forever/quest=135",
       "factions": [
         "Alliance"
@@ -96,7 +96,7 @@
       "name": "The Defias Brotherhood",
       "level": 18,
       "minLevel": 14,
-      "requirementsKnown": true,
+      "requirementsKnown": false,
       "source": "https://www.wowhead.com/forever/quest=141",
       "factions": [
         "Alliance"
@@ -128,7 +128,7 @@
       "name": "The Defias Brotherhood",
       "level": 18,
       "minLevel": 14,
-      "requirementsKnown": true,
+      "requirementsKnown": false,
       "source": "https://www.wowhead.com/forever/quest=142",
       "factions": [
         "Alliance"
@@ -160,7 +160,7 @@
       "name": "The Defias Brotherhood",
       "level": 18,
       "minLevel": 14,
-      "requirementsKnown": true,
+      "requirementsKnown": false,
       "source": "https://www.wowhead.com/forever/quest=155",
       "factions": [
         "Alliance"
@@ -192,7 +192,7 @@
       "name": "The Defias Brotherhood",
       "level": 22,
       "minLevel": 14,
-      "requirementsKnown": true,
+      "requirementsKnown": false,
       "source": "https://www.wowhead.com/forever/quest=166",
       "factions": [
         "Alliance"
@@ -224,7 +224,7 @@
       "name": "Oh Brother...",
       "level": 20,
       "minLevel": 15,
-      "requirementsKnown": true,
+      "requirementsKnown": false,
       "source": "https://www.wowhead.com/forever/quest=167",
       "factions": [
         "Alliance"
@@ -249,7 +249,7 @@
       "name": "Collecting Memories",
       "level": 18,
       "minLevel": 14,
-      "requirementsKnown": true,
+      "requirementsKnown": false,
       "source": "https://www.wowhead.com/forever/quest=168",
       "factions": [
         "Alliance"
@@ -742,7 +742,7 @@
       "name": "Hidden Enemies",
       "level": 12,
       "minLevel": 9,
-      "requirementsKnown": true,
+      "requirementsKnown": false,
       "source": "https://www.wowhead.com/forever/quest=5726",
       "factions": [
         "Horde"
@@ -769,7 +769,7 @@
       "name": "Hidden Enemies",
       "level": 12,
       "minLevel": 9,
-      "requirementsKnown": true,
+      "requirementsKnown": false,
       "source": "https://www.wowhead.com/forever/quest=5727",
       "factions": [
         "Horde"
@@ -803,7 +803,7 @@
       "name": "Hidden Enemies",
       "level": 16,
       "minLevel": 9,
-      "requirementsKnown": true,
+      "requirementsKnown": false,
       "source": "https://www.wowhead.com/forever/quest=5728",
       "factions": [
         "Horde"
@@ -837,7 +837,7 @@
       "name": "Hidden Enemies",
       "level": 15,
       "minLevel": 9,
-      "requirementsKnown": true,
+      "requirementsKnown": false,
       "source": "https://www.wowhead.com/forever/quest=5729",
       "factions": [
         "Horde"
@@ -871,7 +871,7 @@
       "name": "Hidden Enemies",
       "level": 16,
       "minLevel": 9,
-      "requirementsKnown": true,
+      "requirementsKnown": false,
       "source": "https://www.wowhead.com/forever/quest=5730",
       "factions": [
         "Horde"
@@ -905,7 +905,7 @@
       "name": "Searching for the Lost Satchel",
       "level": 16,
       "minLevel": 9,
-      "requirementsKnown": true,
+      "requirementsKnown": false,
       "source": "https://www.wowhead.com/forever/quest=5722",
       "factions": [
         "Horde"
@@ -927,7 +927,7 @@
       "name": "Testing an Enemy's Strength",
       "level": 15,
       "minLevel": 9,
-      "requirementsKnown": true,
+      "requirementsKnown": false,
       "source": "https://www.wowhead.com/forever/quest=5723",
       "factions": [
         "Horde"
@@ -952,7 +952,7 @@
       "name": "Returning the Lost Satchel",
       "level": 16,
       "minLevel": 9,
-      "requirementsKnown": true,
+      "requirementsKnown": false,
       "source": "https://www.wowhead.com/forever/quest=5724",
       "factions": [
         "Horde"
@@ -1052,7 +1052,7 @@
       "name": "Old Ironforge Incursion",
       "level": 16,
       "minLevel": 9,
-      "requirementsKnown": true,
+      "requirementsKnown": false,
       "source": "https://www.wowhead.com/forever/quest=96393",
       "factions": [
         "Alliance"
