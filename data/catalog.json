@@ -2770,7 +2770,24 @@
       "finish": {
         "npcID": 7853,
         "name": "Scooty",
-        "zoneName": "Stranglethorn Vale"
+        "zoneName": "Stranglethorn Vale",
+        "mapID": 1434,
+        "x": 27.4,
+        "y": 77.4,
+        "reportedLocations": [
+          {
+            "mapID": 1434,
+            "x": 27.4,
+            "y": 77.4,
+            "zoneName": "Stranglethorn Vale"
+          },
+          {
+            "mapID": 1434,
+            "x": 27.6,
+            "y": 77.4,
+            "zoneName": "Stranglethorn Vale"
+          }
+        ]
       }
     },
     {
@@ -3090,7 +3107,24 @@
       "finish": {
         "npcID": 7853,
         "name": "Scooty",
-        "zoneName": "Stranglethorn Vale"
+        "zoneName": "Stranglethorn Vale",
+        "mapID": 1434,
+        "x": 27.4,
+        "y": 77.4,
+        "reportedLocations": [
+          {
+            "mapID": 1434,
+            "x": 27.4,
+            "y": 77.4,
+            "zoneName": "Stranglethorn Vale"
+          },
+          {
+            "mapID": 1434,
+            "x": 27.6,
+            "y": 77.4,
+            "zoneName": "Stranglethorn Vale"
+          }
+        ]
       },
       "storyline": [
         2842,
@@ -3110,12 +3144,46 @@
       "start": {
         "npcID": 7853,
         "name": "Scooty",
-        "zoneName": "Stranglethorn Vale"
+        "zoneName": "Stranglethorn Vale",
+        "mapID": 1434,
+        "x": 27.4,
+        "y": 77.4,
+        "reportedLocations": [
+          {
+            "mapID": 1434,
+            "x": 27.4,
+            "y": 77.4,
+            "zoneName": "Stranglethorn Vale"
+          },
+          {
+            "mapID": 1434,
+            "x": 27.6,
+            "y": 77.4,
+            "zoneName": "Stranglethorn Vale"
+          }
+        ]
       },
       "finish": {
         "npcID": 7853,
         "name": "Scooty",
-        "zoneName": "Stranglethorn Vale"
+        "zoneName": "Stranglethorn Vale",
+        "mapID": 1434,
+        "x": 27.4,
+        "y": 77.4,
+        "reportedLocations": [
+          {
+            "mapID": 1434,
+            "x": 27.4,
+            "y": 77.4,
+            "zoneName": "Stranglethorn Vale"
+          },
+          {
+            "mapID": 1434,
+            "x": 27.6,
+            "y": 77.4,
+            "zoneName": "Stranglethorn Vale"
+          }
+        ]
       },
       "storyline": [
         2842,
@@ -4117,12 +4185,70 @@
       "start": {
         "npcID": 1284,
         "name": "Archbishop Benedictus",
-        "zoneName": "Stormwind City"
+        "zoneName": "Stormwind City",
+        "mapID": 1453,
+        "x": 39.4,
+        "y": 27.4,
+        "reportedLocations": [
+          {
+            "mapID": 1453,
+            "x": 39.4,
+            "y": 27.4,
+            "zoneName": "Stormwind City"
+          },
+          {
+            "mapID": 1453,
+            "x": 39.4,
+            "y": 27.6,
+            "zoneName": "Stormwind City"
+          },
+          {
+            "mapID": 1453,
+            "x": 39.6,
+            "y": 27.4,
+            "zoneName": "Stormwind City"
+          },
+          {
+            "mapID": 1453,
+            "x": 39.6,
+            "y": 27.6,
+            "zoneName": "Stormwind City"
+          }
+        ]
       },
       "finish": {
         "npcID": 1284,
         "name": "Archbishop Benedictus",
-        "zoneName": "Stormwind City"
+        "zoneName": "Stormwind City",
+        "mapID": 1453,
+        "x": 39.4,
+        "y": 27.4,
+        "reportedLocations": [
+          {
+            "mapID": 1453,
+            "x": 39.4,
+            "y": 27.4,
+            "zoneName": "Stormwind City"
+          },
+          {
+            "mapID": 1453,
+            "x": 39.4,
+            "y": 27.6,
+            "zoneName": "Stormwind City"
+          },
+          {
+            "mapID": 1453,
+            "x": 39.6,
+            "y": 27.4,
+            "zoneName": "Stormwind City"
+          },
+          {
+            "mapID": 1453,
+            "x": 39.6,
+            "y": 27.6,
+            "zoneName": "Stormwind City"
+          }
+        ]
       },
       "requirementsKnown": false
     },
@@ -4138,11 +4264,19 @@
       "source": "https://www.wowhead.com/forever/quest=6626/a-host-of-evil",
       "start": {
         "npcID": 12866,
-        "name": "Myriam Moonsinger"
+        "name": "Myriam Moonsinger",
+        "zoneName": "The Barrens",
+        "mapID": 1413,
+        "x": 49,
+        "y": 94.8
       },
       "finish": {
         "npcID": 12866,
-        "name": "Myriam Moonsinger"
+        "name": "Myriam Moonsinger",
+        "zoneName": "The Barrens",
+        "mapID": 1413,
+        "x": 49,
+        "y": 94.8
       },
       "requirementsKnown": false
     },
@@ -4185,12 +4319,70 @@
       "start": {
         "npcID": 264265,
         "name": "Magus Olvek",
-        "zoneName": "Alterac Mountains"
+        "zoneName": "Alterac Mountains",
+        "mapID": 1416,
+        "x": 9.4,
+        "y": 62.6,
+        "reportedLocations": [
+          {
+            "mapID": 1416,
+            "x": 9.4,
+            "y": 62.6,
+            "zoneName": "Alterac Mountains"
+          },
+          {
+            "mapID": 1416,
+            "x": 9.6,
+            "y": 62,
+            "zoneName": "Alterac Mountains"
+          },
+          {
+            "mapID": 1416,
+            "x": 9.6,
+            "y": 62.6,
+            "zoneName": "Alterac Mountains"
+          },
+          {
+            "mapID": 1416,
+            "x": 10,
+            "y": 63.8,
+            "zoneName": "Alterac Mountains"
+          }
+        ]
       },
       "finish": {
         "npcID": 264265,
         "name": "Magus Olvek",
-        "zoneName": "Alterac Mountains"
+        "zoneName": "Alterac Mountains",
+        "mapID": 1416,
+        "x": 9.4,
+        "y": 62.6,
+        "reportedLocations": [
+          {
+            "mapID": 1416,
+            "x": 9.4,
+            "y": 62.6,
+            "zoneName": "Alterac Mountains"
+          },
+          {
+            "mapID": 1416,
+            "x": 9.6,
+            "y": 62,
+            "zoneName": "Alterac Mountains"
+          },
+          {
+            "mapID": 1416,
+            "x": 9.6,
+            "y": 62.6,
+            "zoneName": "Alterac Mountains"
+          },
+          {
+            "mapID": 1416,
+            "x": 10,
+            "y": 63.8,
+            "zoneName": "Alterac Mountains"
+          }
+        ]
       },
       "requirementsKnown": false
     },
@@ -4243,7 +4435,10 @@
       "finish": {
         "npcID": 3982,
         "name": "Monika Sengutz",
-        "zoneName": "Hillsbrad Foothills"
+        "zoneName": "Hillsbrad Foothills",
+        "mapID": 1424,
+        "x": 62.6,
+        "y": 19
       },
       "startsInside": true,
       "requirementsKnown": false
@@ -4985,11 +5180,71 @@
       "source": "https://www.wowhead.com/forever/quest=709/solution-to-doom",
       "start": {
         "npcID": 2785,
-        "name": "Theldurin the Lost"
+        "name": "Theldurin the Lost",
+        "zoneName": "Badlands",
+        "mapID": 1418,
+        "x": 51.4,
+        "y": 76.4,
+        "reportedLocations": [
+          {
+            "mapID": 1418,
+            "x": 51.4,
+            "y": 76.4,
+            "zoneName": "Badlands"
+          },
+          {
+            "mapID": 1418,
+            "x": 51.4,
+            "y": 76.8,
+            "zoneName": "Badlands"
+          },
+          {
+            "mapID": 1418,
+            "x": 51.6,
+            "y": 76.4,
+            "zoneName": "Badlands"
+          },
+          {
+            "mapID": 1418,
+            "x": 51.6,
+            "y": 76.6,
+            "zoneName": "Badlands"
+          }
+        ]
       },
       "finish": {
         "npcID": 2785,
-        "name": "Theldurin the Lost"
+        "name": "Theldurin the Lost",
+        "zoneName": "Badlands",
+        "mapID": 1418,
+        "x": 51.4,
+        "y": 76.4,
+        "reportedLocations": [
+          {
+            "mapID": 1418,
+            "x": 51.4,
+            "y": 76.4,
+            "zoneName": "Badlands"
+          },
+          {
+            "mapID": 1418,
+            "x": 51.4,
+            "y": 76.8,
+            "zoneName": "Badlands"
+          },
+          {
+            "mapID": 1418,
+            "x": 51.6,
+            "y": 76.4,
+            "zoneName": "Badlands"
+          },
+          {
+            "mapID": 1418,
+            "x": 51.6,
+            "y": 76.6,
+            "zoneName": "Badlands"
+          }
+        ]
       },
       "objectiveItems": [
         {
@@ -5011,11 +5266,59 @@
       "source": "https://www.wowhead.com/forever/quest=2418/power-stones",
       "start": {
         "npcID": 2817,
-        "name": "Rigglefuzz"
+        "name": "Rigglefuzz",
+        "zoneName": "Badlands",
+        "mapID": 1418,
+        "x": 42.4,
+        "y": 52.4,
+        "reportedLocations": [
+          {
+            "mapID": 1418,
+            "x": 42.4,
+            "y": 52.4,
+            "zoneName": "Badlands"
+          },
+          {
+            "mapID": 1418,
+            "x": 42.4,
+            "y": 52.8,
+            "zoneName": "Badlands"
+          },
+          {
+            "mapID": 1418,
+            "x": 42.6,
+            "y": 53,
+            "zoneName": "Badlands"
+          }
+        ]
       },
       "finish": {
         "npcID": 2817,
-        "name": "Rigglefuzz"
+        "name": "Rigglefuzz",
+        "zoneName": "Badlands",
+        "mapID": 1418,
+        "x": 42.4,
+        "y": 52.4,
+        "reportedLocations": [
+          {
+            "mapID": 1418,
+            "x": 42.4,
+            "y": 52.4,
+            "zoneName": "Badlands"
+          },
+          {
+            "mapID": 1418,
+            "x": 42.4,
+            "y": 52.8,
+            "zoneName": "Badlands"
+          },
+          {
+            "mapID": 1418,
+            "x": 42.6,
+            "y": 53,
+            "zoneName": "Badlands"
+          }
+        ]
       },
       "objectiveItems": [
         {
@@ -5255,11 +5558,71 @@
       "source": "https://www.wowhead.com/forever/quest=2342/reclaimed-treasures",
       "start": {
         "npcID": 5651,
-        "name": "Patrick Garrett"
+        "name": "Patrick Garrett",
+        "zoneName": "Undercity",
+        "mapID": 1458,
+        "x": 62.4,
+        "y": 48.4,
+        "reportedLocations": [
+          {
+            "mapID": 1458,
+            "x": 62.4,
+            "y": 48.4,
+            "zoneName": "Undercity"
+          },
+          {
+            "mapID": 1458,
+            "x": 62.4,
+            "y": 48.6,
+            "zoneName": "Undercity"
+          },
+          {
+            "mapID": 1458,
+            "x": 62.6,
+            "y": 48.4,
+            "zoneName": "Undercity"
+          },
+          {
+            "mapID": 1458,
+            "x": 62.6,
+            "y": 48.6,
+            "zoneName": "Undercity"
+          }
+        ]
       },
       "finish": {
         "npcID": 5651,
-        "name": "Patrick Garrett"
+        "name": "Patrick Garrett",
+        "zoneName": "Undercity",
+        "mapID": 1458,
+        "x": 62.4,
+        "y": 48.4,
+        "reportedLocations": [
+          {
+            "mapID": 1458,
+            "x": 62.4,
+            "y": 48.4,
+            "zoneName": "Undercity"
+          },
+          {
+            "mapID": 1458,
+            "x": 62.4,
+            "y": 48.6,
+            "zoneName": "Undercity"
+          },
+          {
+            "mapID": 1458,
+            "x": 62.6,
+            "y": 48.4,
+            "zoneName": "Undercity"
+          },
+          {
+            "mapID": 1458,
+            "x": 62.6,
+            "y": 48.6,
+            "zoneName": "Undercity"
+          }
+        ]
       }
     },
     {
@@ -5476,11 +5839,95 @@
       "source": "https://www.wowhead.com/forever/quest=1360/reclaimed-treasures",
       "start": {
         "npcID": 6294,
-        "name": "Krom Stoutarm"
+        "name": "Krom Stoutarm",
+        "zoneName": "Ironforge",
+        "mapID": 1455,
+        "x": 74.2,
+        "y": 9.8,
+        "reportedLocations": [
+          {
+            "mapID": 1455,
+            "x": 74.2,
+            "y": 9.8,
+            "zoneName": "Ironforge"
+          },
+          {
+            "mapID": 1455,
+            "x": 74.4,
+            "y": 9.4,
+            "zoneName": "Ironforge"
+          },
+          {
+            "mapID": 1455,
+            "x": 74.4,
+            "y": 11,
+            "zoneName": "Ironforge"
+          },
+          {
+            "mapID": 1455,
+            "x": 74.6,
+            "y": 9.4,
+            "zoneName": "Ironforge"
+          },
+          {
+            "mapID": 1455,
+            "x": 74.6,
+            "y": 9.6,
+            "zoneName": "Ironforge"
+          },
+          {
+            "mapID": 1455,
+            "x": 74.6,
+            "y": 11,
+            "zoneName": "Ironforge"
+          }
+        ]
       },
       "finish": {
         "npcID": 6294,
-        "name": "Krom Stoutarm"
+        "name": "Krom Stoutarm",
+        "zoneName": "Ironforge",
+        "mapID": 1455,
+        "x": 74.2,
+        "y": 9.8,
+        "reportedLocations": [
+          {
+            "mapID": 1455,
+            "x": 74.2,
+            "y": 9.8,
+            "zoneName": "Ironforge"
+          },
+          {
+            "mapID": 1455,
+            "x": 74.4,
+            "y": 9.4,
+            "zoneName": "Ironforge"
+          },
+          {
+            "mapID": 1455,
+            "x": 74.4,
+            "y": 11,
+            "zoneName": "Ironforge"
+          },
+          {
+            "mapID": 1455,
+            "x": 74.6,
+            "y": 9.4,
+            "zoneName": "Ironforge"
+          },
+          {
+            "mapID": 1455,
+            "x": 74.6,
+            "y": 9.6,
+            "zoneName": "Ironforge"
+          },
+          {
+            "mapID": 1455,
+            "x": 74.6,
+            "y": 11,
+            "zoneName": "Ironforge"
+          }
+        ]
       }
     },
     {
@@ -6945,11 +7392,19 @@
       "source": "https://www.wowhead.com/forever/quest=2770/gahzrilla",
       "start": {
         "npcID": 4453,
-        "name": "Wizzle Brassbolts"
+        "name": "Wizzle Brassbolts",
+        "zoneName": "Thousand Needles",
+        "mapID": 1441,
+        "x": 78,
+        "y": 77
       },
       "finish": {
         "npcID": 4453,
-        "name": "Wizzle Brassbolts"
+        "name": "Wizzle Brassbolts",
+        "zoneName": "Thousand Needles",
+        "mapID": 1441,
+        "x": 78,
+        "y": 77
       },
       "storyline": [
         2769,
@@ -7125,11 +7580,19 @@
       "source": "https://www.wowhead.com/forever/quest=2768/divino-matic-rod",
       "start": {
         "npcID": 7407,
-        "name": "Chief Engineer Bilgewhizzle"
+        "name": "Chief Engineer Bilgewhizzle",
+        "zoneName": "Tanaris",
+        "mapID": 1446,
+        "x": 52.4,
+        "y": 28.4
       },
       "finish": {
         "npcID": 7407,
-        "name": "Chief Engineer Bilgewhizzle"
+        "name": "Chief Engineer Bilgewhizzle",
+        "zoneName": "Tanaris",
+        "mapID": 1446,
+        "x": 52.4,
+        "y": 28.4
       }
     },
     {
@@ -7145,11 +7608,19 @@
       "source": "https://www.wowhead.com/forever/quest=3042/troll-temper",
       "start": {
         "npcID": 7804,
-        "name": "Trenton Lighthammer"
+        "name": "Trenton Lighthammer",
+        "zoneName": "Tanaris",
+        "mapID": 1446,
+        "x": 51.4,
+        "y": 28.6
       },
       "finish": {
         "npcID": 7804,
-        "name": "Trenton Lighthammer"
+        "name": "Trenton Lighthammer",
+        "zoneName": "Tanaris",
+        "mapID": 1446,
+        "x": 51.4,
+        "y": 28.6
       },
       "objectiveItems": [
         {
@@ -7405,7 +7876,11 @@
       },
       "finish": {
         "npcID": 4453,
-        "name": "Wizzle Brassbolts"
+        "name": "Wizzle Brassbolts",
+        "zoneName": "Thousand Needles",
+        "mapID": 1441,
+        "x": 78,
+        "y": 77
       },
       "storyline": [
         2769,
