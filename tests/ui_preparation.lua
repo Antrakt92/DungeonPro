@@ -2469,6 +2469,91 @@ check("Unknown objective quantity retains stale-render protection for both optio
     end
     addon.ItemName, addon.CarriedItemCount = itemName, count; addon.quests[9993] = nil; showDetail(2)
 end)
+do
+    local function audienceFixture()
+        local old = { quests = addon.quests, dungeons = addon.dungeons, context = addon.Context,
+            dungeon = ui.dungeon, quest = ui.quest, unavailable = ui.includeUnavailable, preparation = ui.preparation,
+            className = addon.ClassName, raceName = addon.RaceName, locale = addon.db.locale }
+        addon.quests = {}
+        for id = 13001, 13008 do addon.quests[id] = { id = id, minLevel = 1, requirementsKnown = true } end
+        addon.quests[13001].factions = { "Alliance" }
+        addon.quests[13002].classes = { "PALADIN" }
+        addon.quests[13003].factions, addon.quests[13003].classes, addon.quests[13003].races = { "Alliance" }, { "PALADIN" }, { 1, 95 }
+        addon.quests[13004].requirementsKnown = false
+        addon.quests[13005].factions, addon.quests[13006].classes = { "Alliance" }, { "PALADIN" }
+        addon.quests[13008].classes = {}
+        addon.Context = function() return { level = 60, faction = "Horde", class = "MAGE", race = 2,
+            active = function(id) return id == 13005 end, completed = function(id) return id == 13006 end } end
+        addon.ClassName = function(token) assert(token == "PALADIN"); return "Paladin" end
+        addon.RaceName = function(id) return id == 1 and "Human" or "New race" end
+        addon.dungeons = { { key = "audience", name = "Audience", minLevel = 1, maxLevel = 60, quests =
+            { 13001, 13002, 13003, 13004, 13005, 13006, 13007, 13008 } } }
+        ui.dungeon, ui.quest, ui.includeUnavailable, ui.preparation = addon.dungeons[1], nil, true, false
+        ui:RefreshQuests()
+        return function()
+            addon.quests, addon.dungeons, addon.Context = old.quests, old.dungeons, old.context
+            addon.ClassName, addon.RaceName, addon.db.locale = old.className, old.raceName, old.locale
+            ui.dungeon, ui.quest, ui.includeUnavailable, ui.preparation = old.dungeon, old.quest, old.unavailable, old.preparation
+            ui:Refresh()
+        end
+    end
+    check("Unavailable quest rows show recorded faction class and race audiences without changing other statuses", function()
+        local restore = audienceFixture()
+        assert(ui.rows[1].note.text:find(addon.L("FACTION_Alliance"), 1, true))
+        assert(ui.rows[2].note.text:find("Paladin", 1, true) and not ui.rows[2].note.text:find(addon.L("UNAVAILABLE"), 1, true))
+        assert(ui.rows[3].note.text:find(addon.L("FACTION_Alliance") .. " · Paladin · Human, New race", 1, true))
+        assert(ui.rows[4].note.text:find(addon.L("UNKNOWN_REQUIREMENTS"), 1, true))
+        assert(ui.rows[5].note.text:find(addon.L("ACTIVE"), 1, true) and not ui.rows[5].note.text:find(addon.L("FACTION_Alliance"), 1, true))
+        assert(ui.rows[6].note.text:find(addon.L("COMPLETED"), 1, true) and not ui.rows[6].note.text:find("Paladin", 1, true))
+        assert(ui.rows[7].note.text:find(addon.L("AVAILABLE"), 1, true))
+        assert(ui.rows[8].note.text:find(addon.L("UNAVAILABLE"), 1, true), "no recorded labels keeps the honest generic fallback")
+        for _, preparation in ipairs({ true, false }) do
+            ui.preparation = preparation; ui:RefreshQuests()
+            local found
+            for _, row in ipairs(visibleRows()) do if row.title.text == "Quest 13003" then found = row end end
+            assert(found and found.note.text:find("Paladin", 1, true) and ui.engine:State(13003).status == "UNAVAILABLE")
+        end
+        restore()
+    end)
+    check("Audience rows translate factions use safe native-name fallbacks and wrap in the existing row layout", function()
+        local restore = audienceFixture()
+        local restricted = {}; local checker = issecretvalue
+        issecretvalue = function(value) return value == restricted end
+        addon.ClassName = function() return restricted end; addon.RaceName = nil
+        for code, strings in pairs(addon.locales) do
+            addon.db.locale = code; ui:RefreshQuests()
+            assert(type(strings.FACTION_Alliance) == "string" and type(strings.FACTION_Horde) == "string" and type(strings.FACTION_Neutral) == "string")
+            assert(ui.rows[3].note.text:find(addon.L("FACTION_Alliance") .. " · PALADIN · " .. addon.L("RACE_ID", 1) .. ", " .. addon.L("RACE_ID", 95), 1, true))
+        end
+        issecretvalue = checker
+        local long = string.rep("Long localized paladin ", 12)
+        addon.ClassName = function() return long end
+        measurement = function(fs) return fs.text and fs.text:find(long, 1, true) and 78 or 18 end
+        ui:RefreshQuests()
+        assert(ui.rows[2].height >= 114 and -ui.rows[3].point[3] >= -ui.rows[2].point[3] + ui.rows[2].height + 4)
+        addon.ClassName = function() return "Paladin" end; measurement = nil; ui:RefreshQuests()
+        assert(ui.rows[2].height == 59 and ui.rows[2].note.text:find("Paladin", 1, true))
+        restore()
+    end)
+    check("Reentrant audience-name reads cannot overwrite the newly rendered dungeon list", function()
+        local restore = audienceFixture()
+        local other = { key = "audience-other", name = "Other", minLevel = 1, maxLevel = 60, quests = { 13007 } }
+        for _, helper in ipairs({ "ClassName", "RaceName" }) do
+            ui.dungeon = addon.dungeons[1]
+            addon.ClassName = function() return "Paladin" end; addon.RaceName = function() return "Human" end
+            local armed = true
+            addon[helper] = function()
+                if armed then armed = false; ui.dungeon = other; ui:RefreshQuests() end
+                return "Stale audience"
+            end
+            ui:RefreshQuests()
+            assert(not armed and ui.dungeon == other and ui.rows[1].shown and not ui.rows[2].shown)
+            assert(ui.rows[1].title.text == "Quest 13007" and ui.rows[1].note.text:find(addon.L("AVAILABLE"), 1, true))
+            assert(not ui.rows[1].note.text:find("Stale audience", 1, true))
+        end
+        restore()
+    end)
+end
 check("Preparation headings retain valid highlights and real row click arguments open the quest card", function()
     local quest, dungeon, preparation, history = ui.quest, ui.dungeon, ui.preparation, ui.detailHistory
     local quests, dungeons, context = addon.quests, addon.dungeons, addon.Context

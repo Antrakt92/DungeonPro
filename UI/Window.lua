@@ -16,6 +16,38 @@ local function statusLabel(state, value)
     return label
 end
 
+local function audienceLabel(q, current)
+    q = addon.Clean(q, "table")
+    if not q then return nil end
+    local groups = {}
+    for _, rule in ipairs({ { "factions", "string" }, { "classes", "string", addon.ClassName },
+        { "races", "number", addon.RaceName } }) do
+        local entries = addon.Clean(q[rule[1]], "table")
+        local names, seen = {}, {}
+        for index = 1, math.min(entries and #entries or 0, 100) do
+            local value = addon.Clean(entries[index], rule[2])
+            local valid = rule[1] == "factions" and (value == "Alliance" or value == "Horde" or value == "Neutral") or
+                rule[1] == "classes" and value and #value <= 100 and value:match("^[A-Z]+$") or
+                rule[1] == "races" and value and value > 0 and value <= 9007199254740991 and value % 1 == 0
+            if valid and not seen[value] then
+                seen[value] = true
+                local name
+                if rule[1] == "factions" then name = addon.L("FACTION_" .. value)
+                else
+                    name = addon.Read(rule[3], "string", value)
+                    if not current() then return false end
+                    if not name or #name > 500 or not name:find("%S") then
+                        name = rule[1] == "races" and addon.L("RACE_ID", value) or value
+                    end
+                end
+                names[#names + 1] = name
+            end
+        end
+        if #names > 0 then groups[#groups + 1] = table.concat(names, ", ") end
+    end
+    if #groups > 0 then return table.concat(groups, " · ") end
+end
+
 local function giverName(place)
     place = addon.Clean(place, "table")
     if not place then return addon.L("UNKNOWN_PLACE") end
@@ -261,6 +293,11 @@ end
 function UI:RefreshQuests()
     local d, engine = self.dungeon, addon.Planner.New(addon.quests, addon.Context(), addon.Clean(addon.char.choices, "table"))
     self.engine = engine
+    local generation = {}
+    self.questListGeneration = generation
+    local function current()
+        return self.questListGeneration == generation and self.engine == engine and self.dungeon == d
+    end
     for _, row in ipairs(self.rows) do row:SetEnabled(false); row:SetScript("OnClick", nil) end
     self.heading:SetText(d and addon.DungeonName(d) or addon.L("QUESTS"))
     local n, offset = 0, 0
@@ -307,7 +344,10 @@ function UI:RefreshQuests()
                 row.bg:SetColorTexture(0.13, 0.16, 0.20, 1)
                 row.title:SetText(addon.QuestName(id))
                 local note
-                if entry.action then
+                if state.status == "UNAVAILABLE" then
+                    note = audienceLabel(addon.quests[id], current)
+                    if note == false then return end
+                elseif entry.action then
                     local action = entry.action
                     note = addon.L(action.kind) .. (action.level and (" " .. action.level) or "")
                     if action.place then note = note .. " — " .. giverName(action.place) end
