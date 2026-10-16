@@ -9487,11 +9487,19 @@
       "source": "https://www.wowhead.com/forever/quest=5384/kirtonos-the-herald",
       "start": {
         "npcID": 11216,
-        "name": "Eva Sarkhoff"
+        "name": "Eva Sarkhoff",
+        "zoneName": "Western Plaguelands",
+        "mapID": 1422,
+        "x": 70.2,
+        "y": 73.8
       },
       "finish": {
         "npcID": 11216,
-        "name": "Eva Sarkhoff"
+        "name": "Eva Sarkhoff",
+        "zoneName": "Western Plaguelands",
+        "mapID": 1422,
+        "x": 70.2,
+        "y": 73.8
       },
       "storyline": [
         5382,
@@ -9537,11 +9545,19 @@
       "source": "https://www.wowhead.com/forever/quest=4771/dawns-gambit",
       "start": {
         "npcID": 11035,
-        "name": "Betina Bigglezink"
+        "name": "Betina Bigglezink",
+        "zoneName": "Eastern Plaguelands",
+        "mapID": 1423,
+        "x": 81.4,
+        "y": 59.4
       },
       "finish": {
         "npcID": 11035,
-        "name": "Betina Bigglezink"
+        "name": "Betina Bigglezink",
+        "zoneName": "Eastern Plaguelands",
+        "mapID": 1423,
+        "x": 81.4,
+        "y": 59.4
       },
       "storyline": [
         5522,
@@ -10670,12 +10686,18 @@
       "start": {
         "npcID": 11033,
         "name": "Smokey LaRue",
-        "zoneName": "Eastern Plaguelands"
+        "zoneName": "Eastern Plaguelands",
+        "mapID": 1423,
+        "x": 80.4,
+        "y": 58
       },
       "finish": {
         "npcID": 11033,
         "name": "Smokey LaRue",
-        "zoneName": "Eastern Plaguelands"
+        "zoneName": "Eastern Plaguelands",
+        "mapID": 1423,
+        "x": 80.4,
+        "y": 58
       }
     },
     {
@@ -10753,7 +10775,11 @@
       "source": "https://www.wowhead.com/forever/quest=5262/the-truth-comes-crashing-down",
       "finish": {
         "npcID": 11039,
-        "name": "Duke Nicholas Zverenhoff"
+        "name": "Duke Nicholas Zverenhoff",
+        "zoneName": "Eastern Plaguelands",
+        "mapID": 1423,
+        "x": 81.4,
+        "y": 59.8
       },
       "storyline": [
         5262,
@@ -10774,12 +10800,18 @@
       "start": {
         "npcID": 11035,
         "name": "Betina Bigglezink",
-        "zoneName": "Eastern Plaguelands"
+        "zoneName": "Eastern Plaguelands",
+        "mapID": 1423,
+        "x": 81.4,
+        "y": 59.4
       },
       "finish": {
         "npcID": 11035,
         "name": "Betina Bigglezink",
-        "zoneName": "Eastern Plaguelands"
+        "zoneName": "Eastern Plaguelands",
+        "mapID": 1423,
+        "x": 81.4,
+        "y": 59.4
       },
       "storyline": [
         5212,
@@ -10800,12 +10832,18 @@
       "start": {
         "npcID": 11039,
         "name": "Duke Nicholas Zverenhoff",
-        "zoneName": "Eastern Plaguelands"
+        "zoneName": "Eastern Plaguelands",
+        "mapID": 1423,
+        "x": 81.4,
+        "y": 59.8
       },
       "finish": {
         "npcID": 11039,
         "name": "Duke Nicholas Zverenhoff",
-        "zoneName": "Eastern Plaguelands"
+        "zoneName": "Eastern Plaguelands",
+        "mapID": 1423,
+        "x": 81.4,
+        "y": 59.8
       }
     },
     {
@@ -10822,12 +10860,18 @@
       "start": {
         "npcID": 11036,
         "name": "Leonid Barthalomew the Revered",
-        "zoneName": "Eastern Plaguelands"
+        "zoneName": "Eastern Plaguelands",
+        "mapID": 1423,
+        "x": 81.6,
+        "y": 57.8
       },
       "finish": {
         "npcID": 11036,
         "name": "Leonid Barthalomew the Revered",
-        "zoneName": "Eastern Plaguelands"
+        "zoneName": "Eastern Plaguelands",
+        "mapID": 1423,
+        "x": 81.6,
+        "y": 57.8
       }
     },
     {
@@ -10921,11 +10965,19 @@
       "source": "https://www.wowhead.com/forever/quest=5282/the-restless-souls",
       "start": {
         "npcID": 11140,
-        "name": "Egan"
+        "name": "Egan",
+        "zoneName": "Eastern Plaguelands",
+        "mapID": 1423,
+        "x": 14.4,
+        "y": 33.6
       },
       "finish": {
         "npcID": 11140,
-        "name": "Egan"
+        "name": "Egan",
+        "zoneName": "Eastern Plaguelands",
+        "mapID": 1423,
+        "x": 14.4,
+        "y": 33.6
       },
       "storyline": [
         5281,
