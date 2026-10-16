@@ -187,6 +187,47 @@ end
 local function showDetail(id, context)
     ui.quest = id; ui.engine = addon.Planner.New(addon.quests, context or addon.Context()); ui:RefreshDetail()
 end
+check("Unknown quests allow an explicit location visit without claiming availability", function()
+    local started, mapped = {}, {}
+    addon.Navigation = { Start = function(action) started[#started + 1] = action end,
+        Map = function(place) mapped[#mapped + 1] = place end }
+    showDetail(3)
+    assert(ui.engine:State(3).status == "UNKNOWN" and not ui.action and not ui.guide.enabled)
+    assert(ui.giver.enabled and detailHas(addon.L("LOCATION_ONLY")) and #started == 0 and #mapped == 0)
+    ui.giver.scripts.OnClick()
+    assert(#started == 1 and started[1].kind == "visit" and started[1].id == 3)
+    assert(started[1].place == addon.quests[3].start and not ui.action)
+    showDetail(2)
+    assert(not detailHas(addon.L("LOCATION_ONLY")))
+end)
+check("Quest-giver visits keep prerequisite guidance on its original action", function()
+    local originalStart, started = addon.quests[100].start, {}
+    addon.quests[100].start = { mapID = 1, x = 30, y = 40 }
+    addon.Navigation.Start = function(action) started[#started + 1] = action end
+    showDetail(100)
+    local prerequisite = ui.action
+    assert(prerequisite.id == 2 and ui.giverAction.id == 100 and detailHas(addon.L("LOCATION_ONLY")))
+    ui.giver.scripts.OnClick()
+    assert(started[1].id == 100 and started[1].kind == "visit" and ui.action == prerequisite)
+    ui.guide.scripts.OnClick()
+    assert(started[2] == prerequisite and started[2].id == 2)
+    addon.quests[100].start = originalStart
+end)
+check("Map-only quest givers open their known zone and missing givers disable visits", function()
+    local originalStart, mapped, started = addon.quests[2].start, {}, 0
+    addon.Navigation = { Map = function(place) mapped[#mapped + 1] = place end,
+        Start = function() started = started + 1 end }
+    addon.quests[2].start = { mapID = 1436, name = "Known zone only" }
+    showDetail(2)
+    assert(ui.giver.enabled and ui.giver.text == addon.L("GIVER_MAP"))
+    ui.giver.scripts.OnClick()
+    assert(#mapped == 1 and mapped[1].mapID == 1436 and started == 0)
+    addon.quests[2].start = nil; showDetail(2)
+    assert(not ui.giver.enabled and not ui.giverAction)
+    ui.giver.scripts.OnClick(); assert(#mapped == 1 and started == 0)
+    ui.quest = nil; ui:RefreshDetail(); assert(not ui.giver.enabled and not ui.giverAction)
+    addon.quests[2].start = originalStart
+end)
 check("Detail distinguishes unfinished prerequisites from unverified requirements", function()
     showDetail(100)
     assert(ui.engine:State(100).status == "LOCKED" and detailHas(addon.L("REASON_requirements")))

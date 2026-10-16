@@ -193,6 +193,9 @@ end
 function UI:RefreshDetail()
     local pool, n, y = self.details, 0, 0
     self.action = nil
+    self.giverAction, self.giverHasCoordinates = nil, false
+    self.giver:SetEnabled(false)
+    self.giver:SetText(addon.L("VISIT_GIVER"))
     local function line(value, height)
         n = n + 1
         local fs = pool[n]
@@ -228,6 +231,16 @@ function UI:RefreshDetail()
                 (p.x and string.format(" (%.1f, %.1f)", p.x, p.y) or "")
         end
         line(addon.L("START") .. ": " .. place(q.start))
+        local start = q.start
+        local map = start and addon.Clean(start.mapID, "number")
+        if map and map > 0 then
+            local x, gy = addon.Clean(start.x, "number"), addon.Clean(start.y, "number")
+            self.giverHasCoordinates = x ~= nil and gy ~= nil and x >= 0 and x <= 100 and gy >= 0 and gy <= 100
+            self.giverAction = { id = id, kind = "visit", place = start }
+            self.giver:SetEnabled(true)
+            self.giver:SetText(addon.L(self.giverHasCoordinates and "VISIT_GIVER" or "GIVER_MAP"))
+            if state.status ~= "AVAILABLE" then line(addon.L("LOCATION_ONLY")) end
+        end
         line(addon.L("ENDING") .. ": " .. place(q.finish))
         local actions, uncertain = engine:Next(id)
         line(addon.L("NEXT"))
@@ -381,7 +394,14 @@ function UI:Create()
     self.guide:SetPoint("TOPLEFT", 856, -84)
     self.source = button(frame, "", 160, function() if self.quest then self:CopyLink(self.quest) end end)
     self.source:SetPoint("BOTTOMRIGHT", -43, 19)
-    self.footer = label(frame, "", 22, -668, 800, 11)
+    self.giver = button(frame, "", 195, function()
+        if self.giverAction then
+            if self.giverHasCoordinates then addon.Navigation.Start(self.giverAction)
+            else addon.Navigation.Map(self.giverAction.place) end
+        end
+    end)
+    self.giver:SetPoint("BOTTOMLEFT", 690, 19)
+    self.footer = label(frame, "", 22, -668, 640, 11)
     self.frame, self.cards, self.rows, self.details, self.chainButtons = frame, {}, {}, {}, {}
     UISpecialFrames[#UISpecialFrames + 1] = "DungeonPrepWindow"
     for _, d in ipairs(addon.dungeons) do if d.key == addon.char.selectedDungeon then self.dungeon = d end end

@@ -16,6 +16,8 @@
 - Grouped preparation steps by outside pickups, inside pickups, level gates,
   progress and unknown requirements, with translated headings.
 - Added initial Wailing Caverns quests and corrected Rahauro's approach waypoint.
+- Added initial Shadowfang Keep quests and supporting Wailing Caverns chain steps.
+- Added separate quest-giver location guidance while keeping prerequisite guidance.
 - Added sourced approach waypoints for four Wailing Caverns quest-givers and
   completed the known giver information for Nara Wildmane's story step.
 - Kept unresolved locked quests visible and stopped unfinished quests from
