@@ -1693,4 +1693,61 @@ check("Confirmed empty cached rewards preserve real zero experience and all prev
     end
     assert(count == 10); endCachedRewards()
 end)
+check("Carried item counts show real zero and refresh without authorizing quest actions", function()
+    local oldCount, oldNavigation = addon.CarriedItemCount, addon.Navigation
+    local counts, calls, visits = { [80001] = 0, [80002] = 3 }, {}, 0
+    addon.CarriedItemCount = function(id) calls[#calls + 1] = id; return counts[id] end
+    addon.Navigation = { Start = function() visits = visits + 1 end, Map = function() visits = visits + 1 end }
+    addon.quests[9960] = { id = 9960, minLevel = 1, requirementsKnown = false,
+        start = { itemID = 80001, name = "Starter" }, completionQuests = { { id = 9961, itemID = 80002 } } }
+    addon.quests[9961] = { id = 9961, minLevel = 1, requirementsKnown = false }
+    showDetail(9960)
+    assert(detailHas(addon.L("ITEM_CARRIED", 0)))
+    local row = ui.materialButtons[1]
+    assert(row.shown and row.note.text:find(addon.L("ITEM_CARRIED", 3), 1, true))
+    assert(ui.engine:State(9960).status == "UNKNOWN" and not ui.action and not ui.guide.enabled and visits == 0)
+    counts[80001], counts[80002] = 2, 0; ui:RefreshDetail()
+    assert(detailHas(addon.L("ITEM_CARRIED", 2)) and not detailHas(addon.L("ITEM_CARRIED", 0)))
+    assert(row.note.text:find(addon.L("ITEM_CARRIED", 0), 1, true) and not row.note.text:find(addon.L("ITEM_CARRIED", 3), 1, true))
+    counts[80001], counts[80002] = nil, nil; ui:RefreshDetail()
+    assert(not detailHas(addon.L("ITEM_CARRIED", 2)) and not row.note.text:find(addon.L("ITEM_CARRIED", 0), 1, true))
+    assert(ui.engine:State(9960).status == "UNKNOWN" and not ui.action and visits == 0)
+    assert(#calls == 6)
+    counts[80001], counts[80002] = 1e20, 1e20; ui:RefreshDetail()
+    assert(detailHas(addon.L("ITEM_CARRIED", 1e20)))
+    assert(addon.L("ITEM_CARRIED", 1e20):find("100000000000000000000", 1, true))
+    assert(row.note.text:find("100000000000000000000", 1, true))
+    showDetail(9961)
+    assert(not row.shown and not row.scripts.OnClick and not detailHas(addon.L("ITEM_CARRIED", 2)))
+    addon.quests[9960], addon.quests[9961] = nil, nil
+    addon.CarriedItemCount, addon.Navigation = oldCount, oldNavigation
+end)
+check("Missing or invalid carried-count data is omitted and recycled material rows lose it", function()
+    local oldCount, oldSecret = addon.CarriedItemCount, issecretvalue
+    addon.quests[9962] = { id = 9962, minLevel = 1, requirementsKnown = true,
+        start = { itemID = 80003, name = "Starter" }, completionQuests = { { id = 9963, itemID = 80004 } } }
+    addon.quests[9963] = { id = 9963, minLevel = 1, requirementsKnown = true }
+    addon.CarriedItemCount = function() return 7 end; showDetail(9962)
+    local row = ui.materialButtons[1]
+    assert(detailHas(addon.L("ITEM_CARRIED", 7)) and row.note.text:find(addon.L("ITEM_CARRIED", 7), 1, true))
+    local function absent()
+        ui:RefreshDetail()
+        assert(not detailHas(addon.L("ITEM_CARRIED", 7)) and not row.note.text:find(addon.L("ITEM_CARRIED", 7), 1, true))
+        assert(ui.engine:State(9962).status == "AVAILABLE" and ui.action.id == 9962)
+    end
+    addon.CarriedItemCount = nil; absent()
+    for _, bad in ipairs({ -1, 1.5, math.huge, "7", true }) do
+        addon.CarriedItemCount = function() return bad end; absent()
+    end
+    addon.CarriedItemCount = function() error("Unavailable") end; absent()
+    issecretvalue = function(value) return value == 7 end
+    addon.CarriedItemCount = function() return 7 end; absent()
+    issecretvalue = oldSecret
+    addon.CarriedItemCount = function() return 7 end; ui:RefreshDetail()
+    row.scripts.OnClick()
+    assert(ui.quest == 9963 and not row.shown and not row.scripts.OnClick and not detailHas(addon.L("ITEM_CARRIED", 7)))
+    addon.quests[9962], addon.quests[9963] = nil, nil
+    addon.CarriedItemCount, issecretvalue = oldCount, oldSecret
+    showDetail(2)
+end)
 print("Preparation UI modeled checks passed: " .. total .. " (no native layout validation)")

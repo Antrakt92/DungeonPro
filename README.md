@@ -38,6 +38,8 @@ Level ranges are provisional recommendations.
   Known item containers have separate location rows, including reported points.
 - Related quests for completion materials appear separately from acceptance
   requirements. Their completion does not confirm you still hold the item.
+- Starter and material items show a current carried count when the client
+  provides it, excluding bank storage. Possession does not confirm quest eligibility.
 - Explicitly sourced repeatable quests have their own label.
 - Where prerequisites have alternatives, choose a branch or restore automatic
   planning. Choosing a route does not bypass requirements or confirm availability.

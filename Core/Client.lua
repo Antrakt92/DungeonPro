@@ -332,6 +332,38 @@ function addon.ItemDataResult(id, success)
     end
 end
 
+function addon.CarriedItemCount(id)
+    id = dialogueInteger(id, 1)
+    local item = addon.Clean(C_Item, "table")
+    local getter = item and addon.Clean(item.GetItemCount, "function")
+    local quests = addon.Clean(addon.quests, "table")
+    local checker = issecretvalue
+    if not id or not getter or not quests then return nil end
+    local function linked()
+        for _, value in next, quests do
+            local quest = addon.Clean(value, "table")
+            local start = quest and addon.Clean(quest.start, "table")
+            if start and addon.Clean(start.itemID, "number") == id then return true end
+            local related = quest and addon.Clean(quest.completionQuests, "table")
+            if related then
+                for index = 1, math.min(#related, 100) do
+                    local entry = addon.Clean(related[index], "table")
+                    if entry and addon.Clean(entry.itemID, "number") == id then return true end
+                end
+            end
+        end
+        return false
+    end
+    local function current()
+        return addon.Clean(C_Item, "table") == item and addon.Clean(item.GetItemCount, "function") == getter and
+            addon.Clean(addon.quests, "table") == quests and issecretvalue == checker
+    end
+    if not linked() or not current() then return nil end
+    local count = addon.Read(getter, "number", id, false, false, false, false)
+    if not count or count < 0 or count % 1 ~= 0 or not current() or not linked() or not current() then return nil end
+    return count
+end
+
 function addon.ItemName(id)
     id = addon.Clean(id, "number")
     if not id or id < 1 or id % 1 ~= 0 then return nil end

@@ -23,6 +23,8 @@
 - Listed VanCleef's quest-starting letter under Deadmines as well as its later story.
 - Added reward previews by quest ID when the client confirms loaded reward data.
 - Kept lower and upper Blackrock Spire distinct when using localized map names.
+- Added current carried counts for quest-starting items and completion materials.
+- Added missing dungeon quests and their supporting mage and faction story chains.
 - Kept newly accepted quests visible alongside past completion history, and
   retained that history when checking prerequisite chains.
 - Added localized names for the current quest NPC, with catalogue names as fallback.

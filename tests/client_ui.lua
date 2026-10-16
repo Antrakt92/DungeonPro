@@ -368,6 +368,7 @@ check("Gossip transition and world quest events clear the actual UI marker while
     eventFrame.scripts.OnEvent(eventFrame, "GOSSIP_SHOW")
     eventFrame.scripts.OnEvent(eventFrame, "QUEST_DATA_LOAD_RESULT", 92753, true)
     eventFrame.scripts.OnEvent(eventFrame, "ITEM_DATA_LOAD_RESULT", 7083, true)
+    eventFrame.scripts.OnEvent(eventFrame, "BAG_UPDATE_DELAYED")
     assert(addon.CurrentOffer(92753))
     eventFrame.scripts.OnEvent(eventFrame, "GOSSIP_CLOSED")
     C_GossipInfo, UnitGUID, GetTime = oldGossip, oldGUID, oldTime
@@ -758,5 +759,32 @@ check("Shared Blackrock map names retain separate wing cards search and selectio
     GetRealZoneText, addon.db.locale, ui.search, ui.range = native, locale, search, range
     ui.dungeon, ui.quest, ui.detailHistory, addon.char.selectedDungeon = dungeon, quest, history, selected
     ui:Refresh()
+end)
+check("Inventory updates refresh actual starter counts and hidden reopen reads current possession", function()
+    local ui, previous, history = addon.UI, addon.UI.quest, addon.UI.detailHistory
+    local item = C_Item
+    local count, reads = 0, 0
+    C_Item = { GetItemCount = function(id, bank, uses, reagent, account)
+        assert(id == 2874 and bank == false and uses == false and reagent == false and account == false)
+        reads = reads + 1; return count
+    end }
+    local function shown(value)
+        for _, line in ipairs(ui.details) do if line.shown and line.text == addon.L("ITEM_CARRIED", value) then return true end end
+        return false
+    end
+    assert(eventFrame.events.BAG_UPDATE_DELAYED)
+    ui:InspectQuest(373); ui:Refresh()
+    assert(shown(0) and ui.engine:State(373).status == "UNKNOWN" and not ui.action)
+    local before, pins = reads, #waypoints
+    count = 2; eventFrame.scripts.OnEvent(eventFrame, "BAG_UPDATE_DELAYED")
+    assert(reads > before and shown(2) and not shown(0) and #waypoints == pins)
+    assert(ui.engine:State(373).status == "UNKNOWN" and not ui.action)
+    ui.frame:Hide(); count = 4
+    eventFrame.scripts.OnEvent(eventFrame, "BAG_UPDATE_DELAYED")
+    ui:Toggle()
+    assert(ui.frame:IsShown() and shown(4) and not shown(2))
+    count = nil; eventFrame.scripts.OnEvent(eventFrame, "BAG_UPDATE_DELAYED")
+    assert(not shown(4) and not ui.action and #waypoints == pins)
+    C_Item = item; ui.quest, ui.detailHistory = previous, history; ui:Refresh()
 end)
 print("Client/UI modeled checks passed: " .. total .. " (no pixel or native-client validation)")

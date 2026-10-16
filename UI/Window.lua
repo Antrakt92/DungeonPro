@@ -440,6 +440,12 @@ function UI:RefreshDetail()
                 y = self:LayoutRow(row, 59, y)
             end
         end
+        local function carried(itemID)
+            itemID = addon.Clean(itemID, "number")
+            if not itemID or itemID <= 0 or itemID % 1 ~= 0 then return nil end
+            local count = addon.Read(addon.CarriedItemCount, "number", itemID)
+            if count and count >= 0 and count % 1 == 0 then return addon.L("ITEM_CARRIED", count) end
+        end
         local function place(p)
             if not p then return addon.L("UNKNOWN_PLACE") end
             local zone = p.mapID and addon.Read(C_Map and C_Map.GetMapInfo, "table", p.mapID)
@@ -481,6 +487,8 @@ function UI:RefreshDetail()
         else line(addon.L("START") .. ": " .. place(q.start)); reported(q.start, "start") end
         local start = q.start
         if start and start.itemID then
+            local count = carried(start.itemID)
+            if count then line(count) end
             local shown = false
             local classes = addon.Clean(start.itemClasses, "table")
             if classes then
@@ -643,8 +651,11 @@ function UI:RefreshDetail()
                 row.questID, row.itemID = other, entry.itemID
                 row.title:SetText(addon.QuestName(other))
                 local status = entry.state.status
+                local count = carried(entry.itemID)
                 row.note:SetText("|cff" .. COLOR[status] .. statusLabel(entry.state) .. "|r\n" ..
-                    (addon.Read(addon.ItemName, "string", entry.itemID) or addon.L("MATERIAL_ITEM", entry.itemID)) .. (entry.unknown and status ~= "UNKNOWN" and (" — " .. addon.L("UNKNOWN")) or ""))
+                    (addon.Read(addon.ItemName, "string", entry.itemID) or addon.L("MATERIAL_ITEM", entry.itemID)) ..
+                    (entry.unknown and status ~= "UNKNOWN" and (" — " .. addon.L("UNKNOWN")) or "") ..
+                    (count and ("\n" .. count) or ""))
                 row:SetEnabled(true)
                 row:SetScript("OnClick", function() self:InspectQuest(other) end)
                 y = self:LayoutRow(row, 59, y)
