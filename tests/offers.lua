@@ -126,12 +126,40 @@ check("Owned expiry notifies once without reading native offers and early callba
     addon.CaptureOffers(); assert(notifications == 0 and calls == 1)
     assert(not addon.CurrentOffer(1), "inline scheduler leaves the getter expiry fallback")
 end)
-check("Stale expiry cannot clear a later snapshot and unknown clocks cannot authorize expiry", function()
+check("An owned expiry with unavailable or regressed clock conservatively clears the visible observation once", function()
+    for _, broken in ipairs({ function() return nil end, function() error("clock unavailable") end,
+        function() return secret end, function() return 99 end }) do
+        reset()
+        local callback, visible
+        C_Timer = { After = function(_, fn) callback = fn end }
+        addon.CaptureOffers(); visible = addon.CurrentOffer(1) ~= nil
+        assert(visible and callback)
+        addon.Notify = function()
+            notifications = notifications + 1
+            visible = addon.CurrentOffer(1) ~= nil
+        end
+        GetTime = broken
+        callback()
+        assert(notifications == 1 and not visible, "failed expiry clock must invalidate and refresh a stationary marker")
+        GetTime = function() return 100 end
+        assert(not addon.CurrentOffer(1), "invalidated evidence must not revive after clock recovery")
+        callback(); assert(notifications == 1 and calls == 1, "no duplicate refresh or native offer fetch")
+    end
+end)
+check("A stale expiry with unavailable clock cannot invalidate a newer observation", function()
+    local callbacks = {}
+    C_Timer = { After = function(_, fn) callbacks[#callbacks + 1] = fn end }
+    addon.CaptureOffers(); now = 120; rows = { { questID = 2 } }; addon.CaptureOffers()
+    GetTime = function() error("clock unavailable") end
+    callbacks[1](); assert(notifications == 0)
+    GetTime = function() return now end
+    assert(addon.CurrentOffer(2) and not addon.CurrentOffer(1), "stale callback must preserve newer ownership")
+end)
+check("Stale expiry preserves later snapshots and a clean clock preserves pre-expiry evidence", function()
     local callbacks = {}
     C_Timer = { After = function(_, fn) callbacks[#callbacks + 1] = fn end }
     addon.CaptureOffers(); now = 120; rows = { { questID = 2 } }; addon.CaptureOffers()
     now = 130; callbacks[1](); assert(notifications == 0 and addon.CurrentOffer(2))
-    now = secret; callbacks[2](); assert(notifications == 0)
     now = 149; callbacks[2](); assert(notifications == 0 and addon.CurrentOffer(2))
     now = 150; callbacks[2](); assert(notifications == 1 and not addon.CurrentOffer(2))
 end)
