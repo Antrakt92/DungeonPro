@@ -7,6 +7,11 @@ import math
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
+FACTIONS = frozenset({"Alliance", "Horde", "Neutral"})
+CLASSES = frozenset({
+    "WARRIOR", "PALADIN", "HUNTER", "ROGUE", "PRIEST", "DEATHKNIGHT", "SHAMAN",
+    "MAGE", "WARLOCK", "MONK", "DRUID", "DEMONHUNTER", "EVOKER",
+})
 
 
 def integer(value):
@@ -25,12 +30,32 @@ def validate(data):
             raise ValueError(f"Missing quest name/level: {q['id']}")
         if type(q.get("requirementsKnown")) is not bool:
             raise ValueError(f"Explicit requirements evidence needed: {q['id']}")
+        for field, tokens in (("factions", FACTIONS), ("classes", CLASSES), ("races", None)):
+            if field not in q:
+                continue
+            values = q[field]
+            # Omit unrestricted fields; an empty Lua restriction blocks everyone.
+            if type(values) is not list or not values:
+                raise ValueError(f"Invalid {field} restriction: {q['id']}")
+            for value in values:
+                if (tokens is None and not integer(value)) or (
+                    tokens is not None and (type(value) is not str or value not in tokens)
+                ):
+                    raise ValueError(f"Invalid {field} restriction: {q['id']}")
+            if len(values) != len(set(values)):
+                raise ValueError(f"Duplicate {field} restriction: {q['id']}")
+        if "startsInside" in q and type(q["startsInside"]) is not bool:
+            raise ValueError(f"Invalid startsInside flag: {q['id']}")
         if not q.get("source", "").startswith("https://www.wowhead.com/forever/"):
             raise ValueError(f"Missing Forever source: {q['id']}")
         for key in ("start", "finish"):
             p = q.get(key)
-            if not p:
+            if p is None:
                 continue
+            if type(p) is not dict:
+                raise ValueError(f"Invalid quest {key} place: {q['id']}")
+            if "npcID" in p and not integer(p["npcID"]):
+                raise ValueError(f"Invalid NPC ID: {q['id']}")
             if "mapID" in p and not integer(p["mapID"]):
                 raise ValueError("Invalid map ID")
             if ("x" in p) != ("y" in p):
