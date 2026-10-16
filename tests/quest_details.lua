@@ -35,6 +35,28 @@ check("Selected active quest description is read without changing selection", fu
     assert(textCalls == 1 and selected == 166)
     assert(addon.char.texts[166].locale == "ruRU")
 end)
+check("Selection changes during description reads preserve the original quest cache", function()
+    local previous = addon.char.texts[166]
+    C_QuestLog.GetLogIndexForQuestID = function() return 7 end
+    GetQuestLogQuestText = function() selected = 200; return "Another quest's description" end
+    assert(addon.Description(166) == "Current localized description")
+    assert(addon.char.texts[166] == previous and addon.char.texts[200] == nil)
+end)
+check("Changed log index invalidates a selected-description snapshot", function()
+    local previous, index = addon.char.texts[166], 7
+    C_QuestLog.GetLogIndexForQuestID = function() return index end
+    GetQuestLogQuestText = function() index = 8; return "Changed log snapshot" end
+    assert(addon.Description(166) == "Current localized description")
+    assert(addon.char.texts[166] == previous)
+end)
+check("Locale changes during description reads never mislabel cached text", function()
+    local previous = addon.char.texts[166]
+    C_QuestLog.GetLogIndexForQuestID = function() return 7 end
+    GetQuestLogQuestText = function() locale = "enUS"; return "New English description" end
+    assert(addon.Description(166) == "NO_TEXT")
+    assert(addon.char.texts[166] == previous)
+    locale = "ruRU"
+end)
 check("Cached native description remains available after leaving the quest log", function()
     C_QuestLog.GetLogIndexForQuestID = function() return nil end
     assert(addon.Description(166) == "Current localized description")
@@ -149,6 +171,28 @@ check("Empty offered text preserves the last valid cached description", function
     GetQuestText = function() return "" end
     addon.CaptureQuestText()
     assert(addon.Description(166) == "Valid offered text")
+end)
+check("Offered quest changes during reads never cache text for the old quest", function()
+    local previous, offered = addon.char.texts[166], 166
+    addon.quests[200] = { name = "Other quest" }
+    GetQuestID = function() return offered end
+    GetQuestText = function() offered = 200; return "Other offered description" end
+    addon.CaptureQuestText()
+    assert(addon.char.texts[166] == previous and addon.char.texts[200] == nil)
+    addon.quests[200] = nil
+end)
+check("Offered text is not persisted under a locale that changes during the read", function()
+    local previous = addon.char.texts[166]
+    GetQuestID = function() return 166 end
+    local localeCalls = 0
+    GetLocale = function()
+        localeCalls = localeCalls + 1
+        return localeCalls == 1 and "ruRU" or "enUS"
+    end
+    GetQuestText = function() return "Unstable locale description" end
+    addon.CaptureQuestText()
+    assert(addon.char.texts[166] == previous)
+    GetLocale = function() return locale end
 end)
 check("Failed title loads retry with a bound and coalesce repeated reads", function()
     local callbacks, calls = {}, 0

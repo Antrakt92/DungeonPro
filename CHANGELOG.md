@@ -29,6 +29,8 @@
   prerequisite steps.
 - Preserved multiple possible NPC/object starting points and known source zones
   without inventing map coordinates.
+- Preserved the correct quest and language when the selected quest changes during
+  a description read.
 - Added corroborated prerequisite links where compatible sources agree; unknown
   full requirements continue to show as unverified.
 - Added initial Scholomance, Stratholme and Blackrock Spire quest lists with

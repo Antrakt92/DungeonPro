@@ -142,13 +142,17 @@ function addon.Description(id)
     -- Vanilla's reader uses the current selection; never change it to fetch text.
     if selectedID == id and index and index >= 1 and index % 1 == 0 then
         local text = addon.Read(GetQuestLogQuestText, "string")
-        if text and text ~= "" and #text <= 30000 then
+        if text and text ~= "" and #text <= 30000 and
+            addon.Read(C_QuestLog and C_QuestLog.GetSelectedQuest, "number") == id and
+            addon.Read(C_QuestLog and C_QuestLog.GetLogIndexForQuestID, "number", id) == index and
+            addon.Read(GetLocale, "string") == locale then
             if locale and addon.char and type(addon.char.texts) == "table" then
                 addon.char.texts[id] = { text = text, locale = locale }
             end
             return text
         end
     end
+    locale = addon.Read(GetLocale, "string")
     local data = addon.char and addon.char.texts and addon.char.texts[id]
     if type(data) == "table" and locale and addon.Clean(data.locale, "string") == locale then
         local text = addon.Clean(data.text, "string")
@@ -256,9 +260,11 @@ end
 
 function addon.CaptureQuestText()
     local id = addon.Read(GetQuestID, "number")
-    local text = addon.Read(GetQuestText, "string")
+    if not id or id < 1 or id % 1 ~= 0 or not addon.quests[id] then return end
     local locale = addon.Read(GetLocale, "string")
-    if id and addon.quests[id] and text and text ~= "" and #text <= 30000 and locale and
+    local text = addon.Read(GetQuestText, "string")
+    if text and text ~= "" and #text <= 30000 and locale and
+        addon.Read(GetQuestID, "number") == id and addon.Read(GetLocale, "string") == locale and
         addon.char and type(addon.char.texts) == "table" then
         addon.char.texts[id] = { text = text, locale = locale }
     end
