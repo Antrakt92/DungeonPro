@@ -2898,11 +2898,59 @@
       "source": "https://www.wowhead.com/forever/quest=1101/the-crone-of-the-kraul",
       "start": {
         "npcID": 4048,
-        "name": "Falfindel Waywarder"
+        "name": "Falfindel Waywarder",
+        "zoneName": "Feralas",
+        "mapID": 1444,
+        "x": 89.6,
+        "y": 46.4,
+        "reportedLocations": [
+          {
+            "mapID": 1444,
+            "zoneName": "Feralas",
+            "x": 89.4,
+            "y": 45.8
+          },
+          {
+            "mapID": 1444,
+            "zoneName": "Feralas",
+            "x": 89.6,
+            "y": 46.4
+          },
+          {
+            "mapID": 1444,
+            "zoneName": "Feralas",
+            "x": 89.6,
+            "y": 46.6
+          }
+        ]
       },
       "finish": {
         "npcID": 4048,
-        "name": "Falfindel Waywarder"
+        "name": "Falfindel Waywarder",
+        "zoneName": "Feralas",
+        "mapID": 1444,
+        "x": 89.6,
+        "y": 46.4,
+        "reportedLocations": [
+          {
+            "mapID": 1444,
+            "zoneName": "Feralas",
+            "x": 89.4,
+            "y": 45.8
+          },
+          {
+            "mapID": 1444,
+            "zoneName": "Feralas",
+            "x": 89.6,
+            "y": 46.4
+          },
+          {
+            "mapID": 1444,
+            "zoneName": "Feralas",
+            "x": 89.6,
+            "y": 46.6
+          }
+        ]
       },
       "storyline": [
         1100,
@@ -3050,7 +3098,31 @@
       "source": "https://www.wowhead.com/forever/quest=1100/lonebrows-journal",
       "finish": {
         "npcID": 4048,
-        "name": "Falfindel Waywarder"
+        "name": "Falfindel Waywarder",
+        "zoneName": "Feralas",
+        "mapID": 1444,
+        "x": 89.6,
+        "y": 46.4,
+        "reportedLocations": [
+          {
+            "mapID": 1444,
+            "zoneName": "Feralas",
+            "x": 89.4,
+            "y": 45.8
+          },
+          {
+            "mapID": 1444,
+            "zoneName": "Feralas",
+            "x": 89.6,
+            "y": 46.4
+          },
+          {
+            "mapID": 1444,
+            "zoneName": "Feralas",
+            "x": 89.6,
+            "y": 46.6
+          }
+        ]
       },
       "storyline": [
         1100,
@@ -4286,7 +4358,30 @@
       "start": {
         "npcID": 2910,
         "name": "Prospector Ryedol",
-        "zoneName": "Badlands"
+        "zoneName": "Badlands",
+        "mapID": 1418,
+        "x": 53.4,
+        "y": 43.2,
+        "reportedLocations": [
+          {
+            "mapID": 1418,
+            "zoneName": "Badlands",
+            "x": 53.4,
+            "y": 43.2
+          },
+          {
+            "mapID": 1418,
+            "zoneName": "Badlands",
+            "x": 53.4,
+            "y": 43.6
+          },
+          {
+            "mapID": 1418,
+            "zoneName": "Badlands",
+            "x": 53.6,
+            "y": 43.2
+          }
+        ]
       },
       "finish": {
         "npcID": 2909,
@@ -4939,7 +5034,30 @@
       "finish": {
         "npcID": 2910,
         "name": "Prospector Ryedol",
-        "zoneName": "Badlands"
+        "zoneName": "Badlands",
+        "mapID": 1418,
+        "x": 53.4,
+        "y": 43.2,
+        "reportedLocations": [
+          {
+            "mapID": 1418,
+            "zoneName": "Badlands",
+            "x": 53.4,
+            "y": 43.2
+          },
+          {
+            "mapID": 1418,
+            "zoneName": "Badlands",
+            "x": 53.4,
+            "y": 43.6
+          },
+          {
+            "mapID": 1418,
+            "zoneName": "Badlands",
+            "x": 53.6,
+            "y": 43.2
+          }
+        ]
       },
       "storyline": [
         720,
@@ -4966,7 +5084,30 @@
       "finish": {
         "npcID": 2910,
         "name": "Prospector Ryedol",
-        "zoneName": "Badlands"
+        "zoneName": "Badlands",
+        "mapID": 1418,
+        "x": 53.4,
+        "y": 43.2,
+        "reportedLocations": [
+          {
+            "mapID": 1418,
+            "zoneName": "Badlands",
+            "x": 53.4,
+            "y": 43.2
+          },
+          {
+            "mapID": 1418,
+            "zoneName": "Badlands",
+            "x": 53.4,
+            "y": 43.6
+          },
+          {
+            "mapID": 1418,
+            "zoneName": "Badlands",
+            "x": 53.6,
+            "y": 43.2
+          }
+        ]
       },
       "storyline": [
         720,
@@ -4996,7 +5137,30 @@
       "start": {
         "npcID": 2910,
         "name": "Prospector Ryedol",
-        "zoneName": "Badlands"
+        "zoneName": "Badlands",
+        "mapID": 1418,
+        "x": 53.4,
+        "y": 43.2,
+        "reportedLocations": [
+          {
+            "mapID": 1418,
+            "zoneName": "Badlands",
+            "x": 53.4,
+            "y": 43.2
+          },
+          {
+            "mapID": 1418,
+            "zoneName": "Badlands",
+            "x": 53.4,
+            "y": 43.6
+          },
+          {
+            "mapID": 1418,
+            "zoneName": "Badlands",
+            "x": 53.6,
+            "y": 43.2
+          }
+        ]
       },
       "finish": {
         "npcID": 2916,
@@ -5452,12 +5616,18 @@
       "start": {
         "npcID": 8579,
         "name": "Yeh'kinya",
-        "zoneName": "Tanaris"
+        "zoneName": "Tanaris",
+        "mapID": 1446,
+        "x": 67,
+        "y": 22.4
       },
       "finish": {
         "npcID": 8579,
         "name": "Yeh'kinya",
-        "zoneName": "Tanaris"
+        "zoneName": "Tanaris",
+        "mapID": 1446,
+        "x": 67,
+        "y": 22.4
       },
       "storyline": [
         3520,
@@ -5486,11 +5656,47 @@
       "source": "https://www.wowhead.com/forever/quest=2865/scarab-shells",
       "start": {
         "npcID": 7876,
-        "name": "Tran'rek"
+        "name": "Tran'rek",
+        "zoneName": "Tanaris",
+        "mapID": 1446,
+        "x": 51.4,
+        "y": 26.8,
+        "reportedLocations": [
+          {
+            "mapID": 1446,
+            "zoneName": "Tanaris",
+            "x": 51.4,
+            "y": 26.8
+          },
+          {
+            "mapID": 1446,
+            "zoneName": "Tanaris",
+            "x": 51.6,
+            "y": 26.8
+          }
+        ]
       },
       "finish": {
         "npcID": 7876,
-        "name": "Tran'rek"
+        "name": "Tran'rek",
+        "zoneName": "Tanaris",
+        "mapID": 1446,
+        "x": 51.4,
+        "y": 26.8,
+        "reportedLocations": [
+          {
+            "mapID": 1446,
+            "zoneName": "Tanaris",
+            "x": 51.4,
+            "y": 26.8
+          },
+          {
+            "mapID": 1446,
+            "zoneName": "Tanaris",
+            "x": 51.6,
+            "y": 26.8
+          }
+        ]
       },
       "storyline": [
         2864,
@@ -5704,7 +5910,25 @@
       },
       "finish": {
         "npcID": 7876,
-        "name": "Tran'rek"
+        "name": "Tran'rek",
+        "zoneName": "Tanaris",
+        "mapID": 1446,
+        "x": 51.4,
+        "y": 26.8,
+        "reportedLocations": [
+          {
+            "mapID": 1446,
+            "zoneName": "Tanaris",
+            "x": 51.4,
+            "y": 26.8
+          },
+          {
+            "mapID": 1446,
+            "zoneName": "Tanaris",
+            "x": 51.6,
+            "y": 26.8
+          }
+        ]
       },
       "storyline": [
         2864,
@@ -5725,12 +5949,18 @@
       "start": {
         "npcID": 8579,
         "name": "Yeh'kinya",
-        "zoneName": "Tanaris"
+        "zoneName": "Tanaris",
+        "mapID": 1446,
+        "x": 67,
+        "y": 22.4
       },
       "finish": {
         "npcID": 8579,
         "name": "Yeh'kinya",
-        "zoneName": "Tanaris"
+        "zoneName": "Tanaris",
+        "mapID": 1446,
+        "x": 67,
+        "y": 22.4
       },
       "storyline": [
         3520,
@@ -6226,12 +6456,18 @@
       "start": {
         "npcID": 8579,
         "name": "Yeh'kinya",
-        "zoneName": "Tanaris"
+        "zoneName": "Tanaris",
+        "mapID": 1446,
+        "x": 67,
+        "y": 22.4
       },
       "finish": {
         "npcID": 8579,
         "name": "Yeh'kinya",
-        "zoneName": "Tanaris"
+        "zoneName": "Tanaris",
+        "mapID": 1446,
+        "x": 67,
+        "y": 22.4
       },
       "storyline": [
         3520,
@@ -6254,12 +6490,18 @@
       "start": {
         "npcID": 8579,
         "name": "Yeh'kinya",
-        "zoneName": "Tanaris"
+        "zoneName": "Tanaris",
+        "mapID": 1446,
+        "x": 67,
+        "y": 22.4
       },
       "finish": {
         "npcID": 8579,
         "name": "Yeh'kinya",
-        "zoneName": "Tanaris"
+        "zoneName": "Tanaris",
+        "mapID": 1446,
+        "x": 67,
+        "y": 22.4
       },
       "storyline": [
         3520,
@@ -6310,7 +6552,10 @@
       "start": {
         "npcID": 7771,
         "name": "Marvon Rivetseeker",
-        "zoneName": "Tanaris"
+        "zoneName": "Tanaris",
+        "mapID": 1446,
+        "x": 52.6,
+        "y": 45.8
       },
       "finish": {
         "objectID": 148838,
@@ -6393,7 +6638,10 @@
       "start": {
         "npcID": 7771,
         "name": "Marvon Rivetseeker",
-        "zoneName": "Tanaris"
+        "zoneName": "Tanaris",
+        "mapID": 1446,
+        "x": 52.6,
+        "y": 45.8
       },
       "finish": {
         "objectID": 148836,
@@ -6464,7 +6712,10 @@
       "finish": {
         "npcID": 7771,
         "name": "Marvon Rivetseeker",
-        "zoneName": "Tanaris"
+        "zoneName": "Tanaris",
+        "mapID": 1446,
+        "x": 52.6,
+        "y": 45.8
       },
       "storylineGroups": [
         [
@@ -6518,7 +6769,10 @@
       "finish": {
         "npcID": 7771,
         "name": "Marvon Rivetseeker",
-        "zoneName": "Tanaris"
+        "zoneName": "Tanaris",
+        "mapID": 1446,
+        "x": 52.6,
+        "y": 45.8
       },
       "storylineGroups": [
         [
@@ -6544,12 +6798,18 @@
       "start": {
         "npcID": 7771,
         "name": "Marvon Rivetseeker",
-        "zoneName": "Tanaris"
+        "zoneName": "Tanaris",
+        "mapID": 1446,
+        "x": 52.6,
+        "y": 45.8
       },
       "finish": {
         "npcID": 7771,
         "name": "Marvon Rivetseeker",
-        "zoneName": "Tanaris"
+        "zoneName": "Tanaris",
+        "mapID": 1446,
+        "x": 52.6,
+        "y": 45.8
       },
       "storylineGroups": [
         [
@@ -7320,12 +7580,58 @@
       "start": {
         "npcID": 9084,
         "name": "Thunderheart",
-        "zoneName": "Badlands"
+        "zoneName": "Badlands",
+        "mapID": 1418,
+        "x": 3.4,
+        "y": 48.2,
+        "reportedLocations": [
+          {
+            "mapID": 1418,
+            "zoneName": "Badlands",
+            "x": 3.4,
+            "y": 48.2
+          },
+          {
+            "mapID": 1418,
+            "zoneName": "Badlands",
+            "x": 3.4,
+            "y": 48.6
+          },
+          {
+            "mapID": 1418,
+            "zoneName": "Badlands",
+            "x": 3.6,
+            "y": 48
+          }
+        ]
       },
       "finish": {
         "npcID": 9084,
         "name": "Thunderheart",
-        "zoneName": "Badlands"
+        "zoneName": "Badlands",
+        "mapID": 1418,
+        "x": 3.4,
+        "y": 48.2,
+        "reportedLocations": [
+          {
+            "mapID": 1418,
+            "zoneName": "Badlands",
+            "x": 3.4,
+            "y": 48.2
+          },
+          {
+            "mapID": 1418,
+            "zoneName": "Badlands",
+            "x": 3.4,
+            "y": 48.6
+          },
+          {
+            "mapID": 1418,
+            "zoneName": "Badlands",
+            "x": 3.6,
+            "y": 48
+          }
+        ]
       },
       "storyline": [
         3906,
@@ -7345,12 +7651,58 @@
       "start": {
         "npcID": 9084,
         "name": "Thunderheart",
-        "zoneName": "Badlands"
+        "zoneName": "Badlands",
+        "mapID": 1418,
+        "x": 3.4,
+        "y": 48.2,
+        "reportedLocations": [
+          {
+            "mapID": 1418,
+            "zoneName": "Badlands",
+            "x": 3.4,
+            "y": 48.2
+          },
+          {
+            "mapID": 1418,
+            "zoneName": "Badlands",
+            "x": 3.4,
+            "y": 48.6
+          },
+          {
+            "mapID": 1418,
+            "zoneName": "Badlands",
+            "x": 3.6,
+            "y": 48
+          }
+        ]
       },
       "finish": {
         "npcID": 9084,
         "name": "Thunderheart",
-        "zoneName": "Badlands"
+        "zoneName": "Badlands",
+        "mapID": 1418,
+        "x": 3.4,
+        "y": 48.2,
+        "reportedLocations": [
+          {
+            "mapID": 1418,
+            "zoneName": "Badlands",
+            "x": 3.4,
+            "y": 48.2
+          },
+          {
+            "mapID": 1418,
+            "zoneName": "Badlands",
+            "x": 3.4,
+            "y": 48.6
+          },
+          {
+            "mapID": 1418,
+            "zoneName": "Badlands",
+            "x": 3.6,
+            "y": 48
+          }
+        ]
       },
       "storyline": [
         3906,
@@ -7745,7 +8097,30 @@
       "finish": {
         "npcID": 9077,
         "name": "Warlord Goretooth",
-        "zoneName": "Badlands"
+        "zoneName": "Badlands",
+        "mapID": 1418,
+        "x": 3,
+        "y": 47.6,
+        "reportedLocations": [
+          {
+            "mapID": 1418,
+            "zoneName": "Badlands",
+            "x": 3,
+            "y": 47.6
+          },
+          {
+            "mapID": 1418,
+            "zoneName": "Badlands",
+            "x": 5.8,
+            "y": 47.4
+          },
+          {
+            "mapID": 1418,
+            "zoneName": "Badlands",
+            "x": 5.8,
+            "y": 47.6
+          }
+        ]
       }
     },
     {
@@ -7765,7 +8140,30 @@
       "finish": {
         "npcID": 9077,
         "name": "Warlord Goretooth",
-        "zoneName": "Badlands"
+        "zoneName": "Badlands",
+        "mapID": 1418,
+        "x": 3,
+        "y": 47.6,
+        "reportedLocations": [
+          {
+            "mapID": 1418,
+            "zoneName": "Badlands",
+            "x": 3,
+            "y": 47.6
+          },
+          {
+            "mapID": 1418,
+            "zoneName": "Badlands",
+            "x": 5.8,
+            "y": 47.4
+          },
+          {
+            "mapID": 1418,
+            "zoneName": "Badlands",
+            "x": 5.8,
+            "y": 47.6
+          }
+        ]
       },
       "requires": [
         {
@@ -7812,7 +8210,24 @@
       "finish": {
         "npcID": 9080,
         "name": "Lexlort",
-        "zoneName": "Badlands"
+        "zoneName": "Badlands",
+        "mapID": 1418,
+        "x": 5.8,
+        "y": 47.4,
+        "reportedLocations": [
+          {
+            "mapID": 1418,
+            "zoneName": "Badlands",
+            "x": 5.8,
+            "y": 47.4
+          },
+          {
+            "mapID": 1418,
+            "zoneName": "Badlands",
+            "x": 5.8,
+            "y": 47.6
+          }
+        ]
       }
     },
     {
@@ -7828,7 +8243,24 @@
       "start": {
         "npcID": 9080,
         "name": "Lexlort",
-        "zoneName": "Badlands"
+        "zoneName": "Badlands",
+        "mapID": 1418,
+        "x": 5.8,
+        "y": 47.4,
+        "reportedLocations": [
+          {
+            "mapID": 1418,
+            "zoneName": "Badlands",
+            "x": 5.8,
+            "y": 47.4
+          },
+          {
+            "mapID": 1418,
+            "zoneName": "Badlands",
+            "x": 5.8,
+            "y": 47.6
+          }
+        ]
       },
       "finish": {
         "npcID": 9520,
@@ -7914,12 +8346,58 @@
       "start": {
         "npcID": 9077,
         "name": "Warlord Goretooth",
-        "zoneName": "Badlands"
+        "zoneName": "Badlands",
+        "mapID": 1418,
+        "x": 3,
+        "y": 47.6,
+        "reportedLocations": [
+          {
+            "mapID": 1418,
+            "zoneName": "Badlands",
+            "x": 3,
+            "y": 47.6
+          },
+          {
+            "mapID": 1418,
+            "zoneName": "Badlands",
+            "x": 5.8,
+            "y": 47.4
+          },
+          {
+            "mapID": 1418,
+            "zoneName": "Badlands",
+            "x": 5.8,
+            "y": 47.6
+          }
+        ]
       },
       "finish": {
         "npcID": 9077,
         "name": "Warlord Goretooth",
-        "zoneName": "Badlands"
+        "zoneName": "Badlands",
+        "mapID": 1418,
+        "x": 3,
+        "y": 47.6,
+        "reportedLocations": [
+          {
+            "mapID": 1418,
+            "zoneName": "Badlands",
+            "x": 3,
+            "y": 47.6
+          },
+          {
+            "mapID": 1418,
+            "zoneName": "Badlands",
+            "x": 5.8,
+            "y": 47.4
+          },
+          {
+            "mapID": 1418,
+            "zoneName": "Badlands",
+            "x": 5.8,
+            "y": 47.6
+          }
+        ]
       }
     },
     {
@@ -7939,7 +8417,10 @@
       "finish": {
         "npcID": 9078,
         "name": "Shadowmage Vivian Lagrave",
-        "zoneName": "Badlands"
+        "zoneName": "Badlands",
+        "mapID": 1418,
+        "x": 3,
+        "y": 47.6
       },
       "storyline": [
         4133,
@@ -7959,12 +8440,18 @@
       "start": {
         "npcID": 9078,
         "name": "Shadowmage Vivian Lagrave",
-        "zoneName": "Badlands"
+        "zoneName": "Badlands",
+        "mapID": 1418,
+        "x": 3,
+        "y": 47.6
       },
       "finish": {
         "npcID": 9078,
         "name": "Shadowmage Vivian Lagrave",
-        "zoneName": "Badlands"
+        "zoneName": "Badlands",
+        "mapID": 1418,
+        "x": 3,
+        "y": 47.6
       },
       "storyline": [
         4133,
@@ -9045,12 +9532,18 @@
       "start": {
         "npcID": 9078,
         "name": "Shadowmage Vivian Lagrave",
-        "zoneName": "Badlands"
+        "zoneName": "Badlands",
+        "mapID": 1418,
+        "x": 3,
+        "y": 47.6
       },
       "finish": {
         "npcID": 9078,
         "name": "Shadowmage Vivian Lagrave",
-        "zoneName": "Badlands"
+        "zoneName": "Badlands",
+        "mapID": 1418,
+        "x": 3,
+        "y": 47.6
       },
       "requires": [
         {
@@ -9675,7 +10168,30 @@
       "finish": {
         "npcID": 9077,
         "name": "Warlord Goretooth",
-        "zoneName": "Badlands"
+        "zoneName": "Badlands",
+        "mapID": 1418,
+        "x": 3,
+        "y": 47.6,
+        "reportedLocations": [
+          {
+            "mapID": 1418,
+            "zoneName": "Badlands",
+            "x": 3,
+            "y": 47.6
+          },
+          {
+            "mapID": 1418,
+            "zoneName": "Badlands",
+            "x": 5.8,
+            "y": 47.4
+          },
+          {
+            "mapID": 1418,
+            "zoneName": "Badlands",
+            "x": 5.8,
+            "y": 47.6
+          }
+        ]
       },
       "requirementsKnown": false,
       "factions": [
@@ -9929,12 +10445,18 @@
       "start": {
         "npcID": 9078,
         "name": "Shadowmage Vivian Lagrave",
-        "zoneName": "Badlands"
+        "zoneName": "Badlands",
+        "mapID": 1418,
+        "x": 3,
+        "y": 47.6
       },
       "finish": {
         "npcID": 9078,
         "name": "Shadowmage Vivian Lagrave",
-        "zoneName": "Badlands"
+        "zoneName": "Badlands",
+        "mapID": 1418,
+        "x": 3,
+        "y": 47.6
       },
       "requirementsKnown": false,
       "factions": [
@@ -12714,7 +13236,10 @@
       "finish": {
         "npcID": 9078,
         "name": "Shadowmage Vivian Lagrave",
-        "zoneName": "Badlands"
+        "zoneName": "Badlands",
+        "mapID": 1418,
+        "x": 3,
+        "y": 47.6
       },
       "start": {
         "npcID": 5204,
@@ -12833,7 +13358,24 @@
       "start": {
         "npcID": 9080,
         "name": "Lexlort",
-        "zoneName": "Badlands"
+        "zoneName": "Badlands",
+        "mapID": 1418,
+        "x": 5.8,
+        "y": 47.4,
+        "reportedLocations": [
+          {
+            "mapID": 1418,
+            "zoneName": "Badlands",
+            "x": 5.8,
+            "y": 47.4
+          },
+          {
+            "mapID": 1418,
+            "zoneName": "Badlands",
+            "x": 5.8,
+            "y": 47.6
+          }
+        ]
       },
       "storyline": [
         4981,
@@ -12948,7 +13490,24 @@
       "finish": {
         "npcID": 9080,
         "name": "Lexlort",
-        "zoneName": "Badlands"
+        "zoneName": "Badlands",
+        "mapID": 1418,
+        "x": 5.8,
+        "y": 47.4,
+        "reportedLocations": [
+          {
+            "mapID": 1418,
+            "zoneName": "Badlands",
+            "x": 5.8,
+            "y": 47.4
+          },
+          {
+            "mapID": 1418,
+            "zoneName": "Badlands",
+            "x": 5.8,
+            "y": 47.6
+          }
+        ]
       },
       "start": {
         "npcID": 10257,
@@ -13129,7 +13688,30 @@
       "start": {
         "npcID": 9077,
         "name": "Warlord Goretooth",
-        "zoneName": "Badlands"
+        "zoneName": "Badlands",
+        "mapID": 1418,
+        "x": 3,
+        "y": 47.6,
+        "reportedLocations": [
+          {
+            "mapID": 1418,
+            "zoneName": "Badlands",
+            "x": 3,
+            "y": 47.6
+          },
+          {
+            "mapID": 1418,
+            "zoneName": "Badlands",
+            "x": 5.8,
+            "y": 47.4
+          },
+          {
+            "mapID": 1418,
+            "zoneName": "Badlands",
+            "x": 5.8,
+            "y": 47.6
+          }
+        ]
       },
       "finish": {
         "npcID": 4949,
@@ -13626,12 +14208,46 @@
       "start": {
         "npcID": 14355,
         "name": "Azj'Tordin",
-        "zoneName": "Feralas"
+        "zoneName": "Feralas",
+        "mapID": 1444,
+        "x": 76.8,
+        "y": 37.4,
+        "reportedLocations": [
+          {
+            "mapID": 1444,
+            "zoneName": "Feralas",
+            "x": 76.8,
+            "y": 37.4
+          },
+          {
+            "mapID": 1444,
+            "zoneName": "Feralas",
+            "x": 76.8,
+            "y": 37.6
+          }
+        ]
       },
       "finish": {
         "npcID": 14355,
         "name": "Azj'Tordin",
-        "zoneName": "Feralas"
+        "zoneName": "Feralas",
+        "mapID": 1444,
+        "x": 76.8,
+        "y": 37.4,
+        "reportedLocations": [
+          {
+            "mapID": 1444,
+            "zoneName": "Feralas",
+            "x": 76.8,
+            "y": 37.4
+          },
+          {
+            "mapID": 1444,
+            "zoneName": "Feralas",
+            "x": 76.8,
+            "y": 37.6
+          }
+        ]
       }
     },
     {
@@ -14192,12 +14808,94 @@
       "start": {
         "npcID": 14374,
         "name": "Scholar Runethorn",
-        "zoneName": "Feralas"
+        "zoneName": "Feralas",
+        "mapID": 1444,
+        "x": 31,
+        "y": 44.2,
+        "reportedLocations": [
+          {
+            "mapID": 1444,
+            "zoneName": "Feralas",
+            "x": 31,
+            "y": 44.2
+          },
+          {
+            "mapID": 1444,
+            "zoneName": "Feralas",
+            "x": 31.2,
+            "y": 43.4
+          },
+          {
+            "mapID": 1444,
+            "zoneName": "Feralas",
+            "x": 31.4,
+            "y": 44.6
+          },
+          {
+            "mapID": 1444,
+            "zoneName": "Feralas",
+            "x": 31.6,
+            "y": 43.4
+          },
+          {
+            "mapID": 1444,
+            "zoneName": "Feralas",
+            "x": 31.6,
+            "y": 44.6
+          },
+          {
+            "mapID": 1444,
+            "zoneName": "Feralas",
+            "x": 31.8,
+            "y": 44.4
+          }
+        ]
       },
       "finish": {
         "npcID": 14374,
         "name": "Scholar Runethorn",
-        "zoneName": "Feralas"
+        "zoneName": "Feralas",
+        "mapID": 1444,
+        "x": 31,
+        "y": 44.2,
+        "reportedLocations": [
+          {
+            "mapID": 1444,
+            "zoneName": "Feralas",
+            "x": 31,
+            "y": 44.2
+          },
+          {
+            "mapID": 1444,
+            "zoneName": "Feralas",
+            "x": 31.2,
+            "y": 43.4
+          },
+          {
+            "mapID": 1444,
+            "zoneName": "Feralas",
+            "x": 31.4,
+            "y": 44.6
+          },
+          {
+            "mapID": 1444,
+            "zoneName": "Feralas",
+            "x": 31.6,
+            "y": 43.4
+          },
+          {
+            "mapID": 1444,
+            "zoneName": "Feralas",
+            "x": 31.6,
+            "y": 44.6
+          },
+          {
+            "mapID": 1444,
+            "zoneName": "Feralas",
+            "x": 31.8,
+            "y": 44.4
+          }
+        ]
       },
       "requirementsKnown": false,
       "source": "https://www.wowhead.com/forever/quest=7482/elven-legends"
@@ -14320,12 +15018,18 @@
       "start": {
         "npcID": 7877,
         "name": "Latronicus Moonspear",
-        "zoneName": "Feralas"
+        "zoneName": "Feralas",
+        "mapID": 1444,
+        "x": 30.4,
+        "y": 46
       },
       "finish": {
         "npcID": 7877,
         "name": "Latronicus Moonspear",
-        "zoneName": "Feralas"
+        "zoneName": "Feralas",
+        "mapID": 1444,
+        "x": 30.4,
+        "y": 46
       },
       "requirementsKnown": false,
       "source": "https://www.wowhead.com/forever/quest=7488/lethtendriss-web",
@@ -14431,12 +15135,18 @@
       "start": {
         "npcID": 7776,
         "name": "Talo Thornhoof",
-        "zoneName": "Feralas"
+        "zoneName": "Feralas",
+        "mapID": 1444,
+        "x": 76,
+        "y": 43.8
       },
       "finish": {
         "npcID": 7776,
         "name": "Talo Thornhoof",
-        "zoneName": "Feralas"
+        "zoneName": "Feralas",
+        "mapID": 1444,
+        "x": 76,
+        "y": 43.8
       },
       "requirementsKnown": false,
       "source": "https://www.wowhead.com/forever/quest=7489/lethtendriss-web",
@@ -14477,12 +15187,46 @@
       "start": {
         "npcID": 14373,
         "name": "Sage Korolusk",
-        "zoneName": "Feralas"
+        "zoneName": "Feralas",
+        "mapID": 1444,
+        "x": 74.4,
+        "y": 44,
+        "reportedLocations": [
+          {
+            "mapID": 1444,
+            "zoneName": "Feralas",
+            "x": 74.4,
+            "y": 44
+          },
+          {
+            "mapID": 1444,
+            "zoneName": "Feralas",
+            "x": 75,
+            "y": 43.8
+          }
+        ]
       },
       "finish": {
         "npcID": 14373,
         "name": "Sage Korolusk",
-        "zoneName": "Feralas"
+        "zoneName": "Feralas",
+        "mapID": 1444,
+        "x": 74.4,
+        "y": 44,
+        "reportedLocations": [
+          {
+            "mapID": 1444,
+            "zoneName": "Feralas",
+            "x": 74.4,
+            "y": 44
+          },
+          {
+            "mapID": 1444,
+            "zoneName": "Feralas",
+            "x": 75,
+            "y": 43.8
+          }
+        ]
       },
       "requirementsKnown": false,
       "source": "https://www.wowhead.com/forever/quest=7481/elven-legends"
@@ -14514,7 +15258,10 @@
       "finish": {
         "npcID": 7776,
         "name": "Talo Thornhoof",
-        "zoneName": "Feralas"
+        "zoneName": "Feralas",
+        "mapID": 1444,
+        "x": 76,
+        "y": 43.8
       },
       "requirementsKnown": false,
       "source": "https://www.wowhead.com/forever/quest=7492/camp-mojache",
@@ -14973,7 +15720,10 @@
       "finish": {
         "npcID": 7877,
         "name": "Latronicus Moonspear",
-        "zoneName": "Feralas"
+        "zoneName": "Feralas",
+        "mapID": 1444,
+        "x": 30.4,
+        "y": 46
       },
       "requirementsKnown": false,
       "source": "https://www.wowhead.com/forever/quest=7494/feathermoon-stronghold",
