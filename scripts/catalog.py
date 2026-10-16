@@ -4,6 +4,7 @@ from __future__ import annotations
 import argparse
 import json
 import math
+import re
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -48,8 +49,11 @@ def validate(data):
             raise ValueError(f"Invalid startsInside flag: {q['id']}")
         if "repeatable" in q and type(q["repeatable"]) is not bool:
             raise ValueError(f"Invalid repeatable flag: {q['id']}")
-        if not q.get("source", "").startswith("https://www.wowhead.com/forever/"):
-            raise ValueError(f"Missing Forever source: {q['id']}")
+        source = q.get("source")
+        if type(source) is not str or not re.fullmatch(
+            rf"https://www\.wowhead\.com/forever/quest={q['id']}(?:/[^\s/?#]+)?", source
+        ):
+            raise ValueError(f"Missing or mismatched Forever source: {q['id']}")
         places = [(key, q.get(key)) for key in ("start", "finish")]
         for single, key, kind in (("start", "startAlternatives", "starting"),
                                   ("finish", "finishAlternatives", "turn-in")):

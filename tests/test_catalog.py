@@ -32,6 +32,29 @@ class CatalogTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "duplicate"):
             catalog.validate(self.data)
 
+    def test_quest_source_must_identify_the_same_forever_quest(self):
+        for source in (
+            "https://www.wowhead.com/forever/quest=132",
+            "https://www.wowhead.com/forever/npc=65",
+            "https://www.wowhead.com/forever/quest=650",
+            "https://www.wowhead.com/forever/quest=65/another/path",
+            "https://www.wowhead.com/classic/quest=65",
+            "http://www.wowhead.com/forever/quest=65",
+            None, 65, {},
+        ):
+            with self.subTest(source=source):
+                self.data["quests"][0]["source"] = source
+                with self.assertRaisesRegex(ValueError, "Forever source"):
+                    catalog.validate(self.data)
+
+    def test_matching_quest_source_allows_the_original_title_slug(self):
+        for source in (
+            "https://www.wowhead.com/forever/quest=65",
+            "https://www.wowhead.com/forever/quest=65/the-defias-brotherhood",
+        ):
+            self.data["quests"][0]["source"] = source
+            catalog.validate(self.data)
+
     def test_invalid_coordinates_are_rejected(self):
         for coordinate in [float("nan"), float("inf"), -1, 101, True]:
             with self.subTest(coordinate=coordinate):
