@@ -65,7 +65,13 @@ check("Wailing Caverns source expansion stays partial and retains narrative step
     eq(e:State(914).status, "UNKNOWN")
     eq(addon.quests[914].storyline[1], 1489)
     eq(addon.quests[914].storyline[2], 1490)
-    eq(addon.quests[914].requires, nil)
+    eq(addon.quests[914].requires[1].ids[1], 1490)
+    eq(addon.quests[1489].requires[1].ids[1], 880)
+    local partial = ctx({ [870] = true, [877] = true, [880] = true, [1489] = true, [1490] = true })
+    partial.faction, partial.race = "Horde", 2
+    eq(P.New(addon.quests, partial):State(914).status, "UNKNOWN")
+    local actions, unknown = P.New(addon.quests, partial):Next(914)
+    eq(#actions, 0); eq(unknown, true)
     c.active = function(id) return id == 914 end
     eq(P.New(addon.quests, c):State(914).status, "ACTIVE")
 end)

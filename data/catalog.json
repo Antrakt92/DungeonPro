@@ -1137,6 +1137,13 @@
         1489,
         1490,
         914
+      ],
+      "requires": [
+        {
+          "ids": [
+            1490
+          ]
+        }
       ]
     },
     {
@@ -1203,6 +1210,13 @@
         1489,
         1490,
         914
+      ],
+      "requires": [
+        {
+          "ids": [
+            880
+          ]
+        }
       ]
     },
     {
@@ -1321,6 +1335,141 @@
         1489,
         1490,
         914
+      ],
+      "requires": [
+        {
+          "ids": [
+            1489
+          ]
+        }
+      ]
+    },
+    {
+      "id": 1098,
+      "name": "Deathstalkers in Shadowfang",
+      "level": 25,
+      "minLevel": 18,
+      "factions": [
+        "Horde"
+      ],
+      "source": "https://www.wowhead.com/forever/quest=1098/deathstalkers-in-shadowfang",
+      "start": {
+        "npcID": 1952,
+        "name": "High Executor Hadrec"
+      },
+      "finish": {
+        "npcID": 4444,
+        "name": "Deathstalker Vincent"
+      },
+      "requirementsKnown": false
+    },
+    {
+      "id": 1013,
+      "name": "The Book of Ur",
+      "level": 26,
+      "minLevel": 16,
+      "factions": [
+        "Horde"
+      ],
+      "source": "https://www.wowhead.com/forever/quest=1013/the-book-of-ur",
+      "start": {
+        "npcID": 2934,
+        "name": "Keeper Bel'dugur"
+      },
+      "finish": {
+        "npcID": 2934,
+        "name": "Keeper Bel'dugur"
+      },
+      "requirementsKnown": false
+    },
+    {
+      "id": 1014,
+      "name": "Arugal Must Die",
+      "level": 27,
+      "minLevel": 18,
+      "factions": [
+        "Horde"
+      ],
+      "source": "https://www.wowhead.com/forever/quest=1014/arugal-must-die",
+      "start": {
+        "npcID": 1938,
+        "name": "Dalar Dawnweaver"
+      },
+      "finish": {
+        "npcID": 1938,
+        "name": "Dalar Dawnweaver"
+      },
+      "requirementsKnown": false
+    },
+    {
+      "id": 870,
+      "name": "The Forgotten Pools",
+      "level": 13,
+      "minLevel": 10,
+      "factions": [
+        "Horde"
+      ],
+      "source": "https://www.wowhead.com/forever/quest=870/the-forgotten-pools",
+      "start": {
+        "npcID": 3448,
+        "name": "Tonga Runetotem"
+      },
+      "finish": {
+        "npcID": 3448,
+        "name": "Tonga Runetotem"
+      },
+      "requirementsKnown": false
+    },
+    {
+      "id": 877,
+      "name": "The Stagnant Oasis",
+      "level": 16,
+      "minLevel": 10,
+      "factions": [
+        "Horde"
+      ],
+      "source": "https://www.wowhead.com/forever/quest=877/the-stagnant-oasis",
+      "start": {
+        "npcID": 3448,
+        "name": "Tonga Runetotem"
+      },
+      "finish": {
+        "npcID": 3448,
+        "name": "Tonga Runetotem"
+      },
+      "requirementsKnown": false,
+      "requires": [
+        {
+          "ids": [
+            870
+          ]
+        }
+      ]
+    },
+    {
+      "id": 880,
+      "name": "Altered Beings",
+      "level": 16,
+      "minLevel": 10,
+      "factions": [
+        "Horde"
+      ],
+      "source": "https://www.wowhead.com/forever/quest=880/altered-beings",
+      "start": {
+        "npcID": 3448,
+        "name": "Tonga Runetotem"
+      },
+      "finish": {
+        "npcID": 3448,
+        "name": "Tonga Runetotem"
+      },
+      "requirementsKnown": false,
+      "requires": [
+        {
+          "ids": [
+            877
+          ]
+        }
       ]
     }
   ],
@@ -1382,8 +1531,12 @@
       "name": "Shadowfang Keep",
       "minLevel": 18,
       "maxLevel": 25,
-      "coverage": "pending",
-      "quests": [],
+      "coverage": "partial",
+      "quests": [
+        1098,
+        1013,
+        1014
+      ],
       "source": "https://www.wowhead.com/forever/guide/dungeons-overview-locations-details",
       "instanceID": 33
     },
