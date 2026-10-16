@@ -217,6 +217,12 @@
             155
           ]
         }
+      ],
+      "objectiveItems": [
+        {
+          "itemID": 3637,
+          "name": "Head of VanCleef"
+        }
       ]
     },
     {
@@ -242,7 +248,13 @@
         "x": 65.3,
         "y": 21.2,
         "npcID": 656
-      }
+      },
+      "objectiveItems": [
+        {
+          "itemID": 1875,
+          "name": "Thistlenettle's Badge"
+        }
+      ]
     },
     {
       "id": 168,
@@ -331,7 +343,13 @@
         "x": 55.4,
         "y": 12.4,
         "npcID": 6579
-      }
+      },
+      "objectiveItems": [
+        {
+          "itemID": 7365,
+          "name": "Gnoam Sprecklesprocket"
+        }
+      ]
     },
     {
       "id": 92742,
@@ -1165,7 +1183,13 @@
             "zoneName": "Orgrimmar"
           }
         ]
-      }
+      },
+      "objectiveItems": [
+        {
+          "itemID": 14540,
+          "name": "Taragaman the Hungerer's Heart"
+        }
+      ]
     },
     {
       "id": 96391,
@@ -1291,7 +1315,14 @@
         "y": 44.6,
         "npcID": 265003,
         "zoneName": "Ironforge"
-      }
+      },
+      "objectiveItems": [
+        {
+          "itemID": 274289,
+          "name": "Dwarven Heirloom",
+          "quantity": 8
+        }
+      ]
     },
     {
       "id": 914,
