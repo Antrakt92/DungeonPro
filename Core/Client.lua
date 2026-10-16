@@ -490,10 +490,19 @@ end
 function addon.ProbeClient()
     local build, _, _, interface = GetBuildInfo()
     local line = C_QuestLine or {}
-    local result = { build = build, interface = interface, api = {}, questLines = {} }
+    -- Object presence does not establish that a dialogue is open or readable.
+    local function panelPresent(frame)
+        return addon.Clean(frame, "table") ~= nil or addon.Clean(frame, "userdata") ~= nil
+    end
+    local result = { build = build, interface = interface, api = {}, questLines = {},
+        frames = { questFrame = panelPresent(QuestFrame), questDetailPanel = panelPresent(QuestFrameDetailPanel) } }
     for _, entry in ipairs({ { "titles", C_QuestLog and C_QuestLog.GetTitleForQuestID },
         { "objectives", C_QuestLog and C_QuestLog.GetQuestObjectives }, { "lines", line.GetQuestLineInfo },
         { "lineQuests", line.GetQuestLineQuests }, { "offerText", GetQuestText }, { "logText", GetQuestLogQuestText },
+        { "offerObjectiveText", GetObjectiveText }, { "offerQuestID", GetQuestID },
+        { "offerRewardItems", GetNumQuestRewards }, { "offerRewardChoices", GetNumQuestChoices },
+        { "offerRewardInfo", GetQuestItemInfo }, { "offerRewardMoney", GetRewardMoney },
+        { "offerRewardXP", GetRewardXP }, { "offerRewardVisibility", C_QuestLog and C_QuestLog.ShouldShowQuestRewards },
         { "rewardItems", GetNumQuestLogRewards }, { "rewardChoices", GetNumQuestLogChoices },
         { "rewardMoney", GetQuestLogRewardMoney }, { "portraits", C_QuestLog and C_QuestLog.GetQuestLogPortraitGiver },
         { "itemNames", C_Item and C_Item.GetItemNameByID }, { "itemRequests", C_Item and C_Item.RequestLoadItemDataByID },
