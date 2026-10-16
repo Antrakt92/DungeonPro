@@ -60,6 +60,8 @@ Level ranges are provisional recommendations.
   client provides them. Unknown reward data is shown explicitly.
 - Reward previews for other quests when the client confirms their reward data
   is already loaded. Missing data stays unknown.
+- Reward items use native icons and item-ID hover tooltips when available.
+  Missing icon or tooltip data leaves the reward text visible.
 - A separate note shows a quest observed in the current NPC dialogue. It expires
   and does not replace prerequisite or availability checks.
 - Rewards, choices, money and experience from the quest dialogue while you

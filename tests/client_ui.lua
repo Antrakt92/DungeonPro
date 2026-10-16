@@ -22,7 +22,7 @@ function methods:Show()
 end
 function methods:Hide() self.shown = false end
 function methods:SetShown(shown) if shown then self:Show() else self:Hide() end end
-function methods:SetTexture(value) self.texture = value end
+function methods:SetTexture(value) self.texture = value; return true end
 function methods:SetRotation(value) assert(type(value) == "number"); self.rotation = value end
 local function create(kind, name)
     local frame = { kind = kind, name = name, scripts = {}, events = {}, shown = false }
@@ -806,5 +806,38 @@ check("Quest-log capacity refreshes from real client adapters without counting h
     assert(not ui.capacityStatus.shown and ui.capacityStatus.text == "")
     C_QuestLog.GetNumQuestLogEntries, C_QuestLog.GetMaxNumQuestsCanAccept = entries, maximum
     ui:Refresh()
+end)
+check("Actual cached rewards expose native item icons and current-source-only hover tooltips", function()
+    local keys = { "HaveQuestRewardData", "GetNumQuestLogRewards", "GetNumQuestLogChoices", "GetQuestLogRewardInfo",
+        "GetQuestLogChoiceInfo", "GetQuestLogRewardMoney", "GetQuestLogRewardXP", "GameTooltip" }
+    local saved = {}; for _, key in ipairs(keys) do saved[key] = _G[key] end
+    local ui, previous, history = addon.UI, addon.UI.quest, addon.UI.detailHistory
+    local loaded, reads, hides = true, 0, 0
+    HaveQuestRewardData = function(id) return id == 373 and loaded end
+    GetNumQuestLogRewards = function(id) assert(id == 373); return 1 end
+    GetNumQuestLogChoices = function(id) assert(id == 373); return 0 end
+    GetQuestLogRewardInfo = function(index, id)
+        assert(index == 1 and id == 373); return "Cached native item", 123, 2, 1, true, 7001
+    end
+    GameTooltip = {
+        SetOwner = function(self, owner, anchor) assert(anchor == "ANCHOR_RIGHT"); self.owner = owner end,
+        IsOwned = function(self, owner) return self.owner == owner end,
+        SetItemByID = function(self, id) assert(id == 7001); reads = reads + 1; self.item = id; return true end,
+        Hide = function(self) hides = hides + 1; self.owner = nil end,
+        Show = function() error("Native item accessor owns tooltip visibility") end,
+    }
+    ui:InspectQuest(373); ui:Refresh()
+    local button = assert(ui.rewardButtons[1])
+    assert(button.shown and button.icon.texture == 123 and button.rewardBinding.id == 7001)
+    assert(ui.engine:State(373).status == "UNKNOWN" and not ui.action)
+    button.scripts.OnEnter(); assert(reads == 1 and GameTooltip.owner == button)
+    button.scripts.OnLeave(); assert(hides == 1)
+    loaded = false; button.scripts.OnEnter()
+    assert(reads == 1, "A stale row must not open a tooltip after its native source becomes cold")
+    eventFrame.scripts.OnEvent(eventFrame, "QUEST_LOG_UPDATE")
+    assert(not button.shown and not button.scripts.OnEnter and button.icon.texture == nil)
+    assert(ui.engine:State(373).status == "UNKNOWN" and not ui.action)
+    for _, key in ipairs(keys) do _G[key] = saved[key] end
+    ui.quest, ui.detailHistory = previous, history; ui:Refresh()
 end)
 print("Client/UI modeled checks passed: " .. total .. " (no pixel or native-client validation)")

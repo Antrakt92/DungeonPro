@@ -8,7 +8,7 @@ function methods:GetPoint() return unpack(self.point) end
 function methods:ClearAllPoints() self.point = nil end
 function methods:SetScript(event, fn) self.scripts[event] = fn end
 function methods:SetText(value) self.text = value end
-function methods:SetTexture(value) self.texture = value end
+function methods:SetTexture(value) self.texture = value; return true end
 function methods:GetText() return self.text or "" end
 function methods:SetEnabled(value) self.enabled = value end
 function methods:GetStringHeight() if measurement then return measurement(self) end; return 18 end
@@ -1805,5 +1805,223 @@ check("Capacity formats safely in all locales without changing the base footer",
     end
     assert(dictionaries == 10)
     addon.QuestLogCapacity, addon.db.locale = producer, locale; ui:Refresh()
+end)
+local function rewardPresentationFixture()
+    local f = { oldDialogue = addon.DialogueRewards, oldLog = addon.QuestRewards,
+        oldCache = addon.CachedQuestRewards, oldTooltip = GameTooltip, oldSecret = issecretvalue }
+    addon.quests[9970] = { id = 9970, minLevel = 1, requirementsKnown = false }
+    addon.quests[9971] = { id = 9971, minLevel = 1, requirementsKnown = false }
+    f.data = { source = "dialogue", items = { { id = 701, name = "Fixed reward", count = 2, texture = 123 } },
+        choices = { { id = 702, name = "Choice reward", count = 1, texture = "Interface\\Icons\\Reward" } } }
+    addon.DialogueRewards = function(id) assert(id == 9970 or id == 9971); return f.data end
+    addon.QuestRewards, addon.CachedQuestRewards = nil, nil
+    f.tip = { hides = 0, items = {}, cold = false }
+    function f.tip:IsOwned(owner) return self.owner == owner end
+    function f.tip:SetOwner(owner, anchor)
+        assert(anchor == "ANCHOR_RIGHT"); self.owner = owner
+        if f.ownerHook then f.ownerHook() end
+    end
+    function f.tip:SetItemByID(id, ...)
+        assert(select("#", ...) == 0); self.items[#self.items + 1] = id
+        if f.itemHook then f.itemHook() end
+        self.shown = not self.cold
+        return not self.cold
+    end
+    function f.tip:Hide()
+        self.hides = self.hides + 1; self.shown = false
+        if f.hideHook then f.hideHook() end
+    end
+    function f.tip:Show() error("Native item setter owns cold-data visibility") end
+    GameTooltip = f.tip; showDetail(9970)
+    function f:finish()
+        measurement = nil
+        ui:ResetRewardPresentation()
+        addon.DialogueRewards, addon.QuestRewards, addon.CachedQuestRewards = self.oldDialogue, self.oldLog, self.oldCache
+        GameTooltip, issecretvalue = self.oldTooltip, self.oldSecret
+        addon.quests[9970], addon.quests[9971] = nil, nil
+        showDetail(2)
+    end
+    return f
+end
+check("Reward icons preserve exact text, measured wrapping and fixed versus choice item IDs", function()
+    local f = rewardPresentationFixture()
+    measurement = function(fs) return fs.width == 304 and fs.text == addon.L("REWARD_ITEM", "Fixed reward", 2) and 72 or 18 end
+    ui:RefreshDetail()
+    assert(detailHas(addon.L("REWARD_ITEM", "Fixed reward", 2)) and detailHas(addon.L("REWARD_ITEM", "Choice reward", 1)))
+    local first, second = ui.rewardButtons[1], ui.rewardButtons[2]
+    assert(first.shown and first.icon.texture == 123 and first.width == 24 and first.height == 24)
+    assert(second.shown and second.icon.texture == "Interface\\Icons\\Reward")
+    assert(first.rewardBinding.kind == "items" and second.rewardBinding.kind == "choices")
+    assert(first.point[3] - second.point[3] >= 72 + 8)
+    first.scripts.OnEnter(); assert(f.tip.owner == first and f.tip.items[1] == 701 and f.tip.shown)
+    first.scripts.OnLeave(); assert(f.tip.hides == 1 and not f.tip.shown)
+    second.scripts.OnEnter(); assert(f.tip.owner == second and f.tip.items[2] == 702)
+    assert(ui.engine:State(9970).status == "UNKNOWN" and not ui.action)
+    f:finish()
+end)
+check("Reward cold data and absent tooltip capabilities preserve readable reward text", function()
+    local f = rewardPresentationFixture(); local first = ui.rewardButtons[1]
+    f.tip.cold = true; first.scripts.OnEnter()
+    assert(not f.tip.shown and not ui.rewardTooltip and detailHas(addon.L("REWARD_ITEM", "Fixed reward", 2)))
+    GameTooltip = nil; first.scripts.OnEnter(); assert(not ui.rewardTooltip)
+    GameTooltip = f.tip; local setter = f.tip.SetItemByID
+    f.tip.SetItemByID = nil; first.scripts.OnEnter(); assert(not ui.rewardTooltip)
+    f.tip.SetItemByID = function() error("Unavailable") end
+    first.scripts.OnEnter(); assert(not ui.rewardTooltip)
+    f.tip.SetItemByID = setter
+    local owned = f.tip.IsOwned
+    f.tip.IsOwned = function() error("Restricted owner") end
+    first.scripts.OnEnter(); assert(not ui.rewardTooltip)
+    f.tip.IsOwned = owned
+    f:finish()
+end)
+check("Missing zero failing or restricted icons revert recycled text to ordinary width", function()
+    local f = rewardPresentationFixture(); local first = ui.rewardButtons[1]
+    local decorated
+    for _, fs in ipairs(ui.details) do if fs.shown and fs.text == addon.L("REWARD_ITEM", "Fixed reward", 2) then decorated = fs end end
+    assert(decorated.width == 304 and decorated.point[2] == 34)
+    for _, texture in ipairs({ 0, -1, "", false, {} }) do
+        f.data.items[1].texture, f.data.choices[1].texture = texture, nil
+        ui:RefreshDetail()
+        assert(not first.shown and decorated.width == 334 and decorated.point[2] == 4)
+        assert(detailHas(addon.L("REWARD_ITEM", "Fixed reward", 2)))
+    end
+    f.data.items[1].texture = nil; ui:RefreshDetail(); assert(not first.shown)
+    f.data.items[1].texture = 123
+    first.icon.SetTexture = function() return false end; ui:RefreshDetail(); assert(not first.shown and decorated.width == 334)
+    first.icon.SetTexture = function() error("Texture unavailable") end; ui:RefreshDetail(); assert(not first.shown and decorated.width == 334)
+    first.icon.SetTexture = false; ui:RefreshDetail(); assert(not first.shown and decorated.width == 334)
+    first.icon.SetTexture = methods.SetTexture
+    issecretvalue = function(value) return value == 123 end; ui:RefreshDetail(); assert(not first.shown)
+    issecretvalue = f.oldSecret
+    f.data = nil; ui:RefreshDetail()
+    assert(not first.shown and not first.scripts.OnEnter and first.icon.texture == nil)
+    for _, fs in ipairs(ui.details) do if fs.shown then assert(fs.width == 334 and fs.point[2] == 4) end end
+    f:finish()
+end)
+check("Hover freshly rejects changed source hidden dialogue kind slot and item before redraw", function()
+    local f = rewardPresentationFixture(); local first = ui.rewardButtons[1]; local enter = first.scripts.OnEnter
+    local data = f.data
+    f.data = { source = "dialogue", hidden = true }
+    addon.QuestRewards = function() return data end
+    enter(); assert(#f.tip.items == 0 and f.tip.owner == nil)
+    addon.QuestRewards = nil; f.data = data
+    data.items[1].id = 703; enter(); assert(#f.tip.items == 0)
+    data.items[1].id = 701; data.items, data.choices = data.choices, data.items
+    enter(); assert(#f.tip.items == 0)
+    data.items, data.choices = data.choices, data.items
+    data.source = "cache"; enter(); assert(#f.tip.items == 0)
+    data.source = "dialogue"
+    addon.DialogueRewards = function() return data end
+    enter(); assert(#f.tip.items == 0, "replacement producer invalidates captured binding")
+    ui:RefreshDetail(); ui.rewardButtons[1].scripts.OnEnter(); assert(#f.tip.items == 1)
+    data.hidden = true
+    local hides = f.tip.hides; ui.rewardButtons[1].scripts.OnEnter()
+    assert(not ui.rewardTooltip and not f.tip.shown and f.tip.hides == hides + 1)
+    f:finish()
+end)
+check("Recycled enter leave and window hide cannot revive or dismiss newer reward tooltips", function()
+    local f = rewardPresentationFixture(); local first = ui.rewardButtons[1]
+    local oldEnter = first.scripts.OnEnter; oldEnter(); local oldLeave = first.scripts.OnLeave
+    ui:RefreshDetail(); local current = ui.rewardButtons[1]
+    current.scripts.OnEnter(); local hides, count = f.tip.hides, #f.tip.items
+    oldEnter(); oldLeave()
+    assert(f.tip.hides == hides and #f.tip.items == count and f.tip.shown)
+    local leave = current.scripts.OnLeave
+    current.scripts.OnEnter(); hides = f.tip.hides
+    leave(); assert(f.tip.hides == hides and ui.rewardTooltip and f.tip.shown, "hover token differs even on same binding")
+    local foreign = {}; f.tip.owner = foreign
+    current.scripts.OnLeave(); assert(f.tip.hides == hides and f.tip.owner == foreign)
+    current.scripts.OnEnter(); local stale = current.scripts.OnEnter
+    ui.frame:Hide(); ui.frame.scripts.OnHide(ui.frame)
+    hides, count = f.tip.hides, #f.tip.items
+    stale(); assert(f.tip.hides == hides and #f.tip.items == count and not current.shown and not current.scripts.OnEnter)
+    ui:Toggle(); ui.frame.scripts.OnShow(ui.frame)
+    showDetail(9971); stale(); assert(#f.tip.items == count and ui.quest == 9971)
+    f:finish()
+end)
+check("Reentrant tooltip owner item and cleanup operations preserve newer binding ownership", function()
+    local f = rewardPresentationFixture(); local first = ui.rewardButtons[1]
+    f.ownerHook = function() f.ownerHook = nil; ui:RefreshDetail() end
+    first.scripts.OnEnter(); assert(#f.tip.items == 0 and not ui.rewardTooltip)
+    f.itemHook = function()
+        f.itemHook = nil; ui:RefreshDetail(); ui.rewardButtons[2].scripts.OnEnter()
+    end
+    ui.rewardButtons[1].scripts.OnEnter()
+    assert(ui.rewardTooltip and ui.rewardTooltip.button == ui.rewardButtons[2] and f.tip.owner == ui.rewardButtons[2])
+    f.hideHook = function()
+        f.hideHook = nil; ui.rewardButtons[1].scripts.OnEnter()
+    end
+    ui.rewardButtons[2].scripts.OnLeave()
+    assert(ui.rewardTooltip and ui.rewardTooltip.button == ui.rewardButtons[1] and f.tip.owner == ui.rewardButtons[1])
+    local foreign = {}; f.itemHook = function() f.tip.owner = foreign end
+    local hides = f.tip.hides
+    ui.rewardButtons[2].scripts.OnEnter()
+    assert(f.tip.owner == foreign and not ui.rewardTooltip and f.tip.hides == hides + 1)
+    f:finish()
+end)
+check("Replacing tooltip object or capability during ownership setup never loads a stale item", function()
+    local f = rewardPresentationFixture(); local first = ui.rewardButtons[1]
+    local foreign = { Hide = function() error("foreign tooltip must remain untouched") end }
+    f.ownerHook = function() f.ownerHook = nil; GameTooltip = foreign end
+    first.scripts.OnEnter()
+    assert(#f.tip.items == 0 and not ui.rewardTooltip and GameTooltip == foreign)
+    GameTooltip = f.tip
+    local setter = f.tip.SetItemByID
+    f.ownerHook = function() f.ownerHook = nil; f.tip.SetItemByID = function() error("replacement must not be called") end end
+    first.scripts.OnEnter()
+    assert(#f.tip.items == 0 and not ui.rewardTooltip)
+    f.tip.SetItemByID = setter
+    local owned = f.tip.IsOwned
+    f.tip.IsOwned = function() return {} end
+    first.scripts.OnEnter(); assert(#f.tip.items == 0 and not ui.rewardTooltip)
+    f.tip.IsOwned = owned
+    f:finish()
+end)
+check("Texture reentry aborts the old card while nested cards keep text and rebuild icons later", function()
+    for mode = 1, 3 do
+        local f = rewardPresentationFixture()
+        local nextData = { source = "dialogue", items = { { id = 799, name = "New reward", count = 1, texture = 456 } }, choices = {} }
+        addon.DialogueRewards = function(id)
+            if id == 9970 then return f.data end
+            if id == 9971 then return nextData end
+        end
+        ui:RefreshDetail()
+        local first, armed, nestedHeight = ui.rewardButtons[1], true, nil
+        local original = first.icon.SetTexture
+        first.icon.SetTexture = function(icon, value)
+            if value and armed then
+                armed = false
+                if mode == 1 then showDetail(2)
+                elseif mode == 2 then showDetail(9971)
+                else f.data = nextData; ui:RefreshDetail() end
+                nestedHeight = ui.detail.height
+            end
+            return original(icon, value)
+        end
+        ui:RefreshDetail()
+        assert(not armed and ui.quest == (mode == 1 and 2 or mode == 2 and 9971 or 9970))
+        assert(not ui.rewardTextureBusy and ui.detail.height == nestedHeight)
+        assert(not detailHas(addon.L("REWARD_ITEM", "Fixed reward", 2)))
+        for _, row in ipairs(ui.rewardButtons) do
+            assert(not row.shown and not row.rewardBinding and not row.scripts.OnEnter, "outer renderer revived an old reward")
+        end
+        if mode > 1 then assert(detailHas(addon.L("REWARD_ITEM", "New reward", 1))) end
+        first.icon.SetTexture = original; ui:RefreshDetail()
+        if mode > 1 then
+            assert(ui.rewardButtons[1].shown and ui.rewardButtons[1].rewardBinding.id == 799)
+        else assert(not ui.rewardButtons[1].shown) end
+        f:finish()
+    end
+end)
+check("A throwing icon setter releases its busy guard before the next ordinary redraw", function()
+    local f = rewardPresentationFixture(); local first = ui.rewardButtons[1]
+    local original = first.icon.SetTexture
+    first.icon.SetTexture = function(_, value) if value then error("Native texture rejected") end; return true end
+    ui:RefreshDetail()
+    assert(not ui.rewardTextureBusy and not first.shown and detailHas(addon.L("REWARD_ITEM", "Fixed reward", 2)))
+    first.icon.SetTexture = original; ui:RefreshDetail()
+    assert(not ui.rewardTextureBusy and first.shown and first.rewardBinding.id == 701)
+    f:finish()
 end)
 print("Preparation UI modeled checks passed: " .. total .. " (no native layout validation)")

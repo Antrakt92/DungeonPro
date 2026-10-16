@@ -328,7 +328,108 @@ function UI:RefreshQuests()
     self.questList:SetHeight(math.max(1, offset))
 end
 
+local function rewardData(id)
+    local value = addon.Read(addon.DialogueRewards, "table", id)
+    if value then return value, "dialogue" end
+    value = addon.Read(addon.QuestRewards, "table", id)
+    if value then return value, "log" end
+    return addon.Read(addon.CachedQuestRewards, "table", id), "cache"
+end
+
+local function tooltipMethod(tooltip, key)
+    return addon.Read(function() return tooltip[key] end, "function")
+end
+
+function UI:ReleaseRewardTooltip(expected)
+    local held = self.rewardTooltip
+    if not held or (expected and held ~= expected) then return end
+    local owned = addon.Read(held.isOwned, "boolean", held.tooltip, held.button)
+    if self.rewardTooltip ~= held then return end
+    self.rewardTooltip = nil
+    if owned == true and tooltipMethod(held.tooltip, "Hide") == held.hide then
+        pcall(held.hide, held.tooltip)
+    end
+end
+
+function UI:SetRewardTexture(icon, texture)
+    if self.rewardTextureBusy then return false end
+    self.rewardTextureBusy = true
+    local ok, rendered = pcall(icon.SetTexture, icon, texture)
+    self.rewardTextureBusy = false
+    return ok and addon.Clean(rendered, "boolean") == true
+end
+
+function UI:ResetRewardPresentation()
+    local generation = {}
+    self.rewardGeneration = generation
+    self:ReleaseRewardTooltip()
+    if self.rewardGeneration ~= generation then return nil end
+    self.rewardButtons = self.rewardButtons or {}
+    for _, button in ipairs(self.rewardButtons) do
+        button.rewardBinding = nil
+        button:SetScript("OnEnter", nil); button:SetScript("OnLeave", nil); button:SetScript("OnHide", nil)
+        button:Hide(); button.icon:Hide(); self:SetRewardTexture(button.icon, nil)
+        if self.rewardGeneration ~= generation then return nil end
+    end
+    return generation
+end
+
+function UI:RewardBindingCurrent(button, binding)
+    local function same()
+        return self.rewardGeneration == binding.generation and self.quest == binding.quest and
+            button.rewardBinding == binding and addon.DialogueRewards == binding.dialogue and
+            addon.QuestRewards == binding.log and addon.CachedQuestRewards == binding.cache
+    end
+    if not same() or addon.Read(self.frame.IsShown, "boolean", self.frame) ~= true or
+        addon.Read(button.IsShown, "boolean", button) ~= true then return false end
+    local fresh, origin = rewardData(binding.quest)
+    if not same() or not fresh or origin ~= binding.origin or
+        addon.Clean(fresh.source, "string") ~= binding.source or addon.Clean(fresh.hidden, "boolean") == true then return false end
+    local entries = addon.Clean(fresh[binding.kind], "table")
+    local item = entries and addon.Clean(entries[binding.index], "table")
+    return item ~= nil and addon.Clean(item.id, "number") == binding.id and same()
+end
+
+function UI:EnterReward(button, binding)
+    if not self:RewardBindingCurrent(button, binding) then
+        local held = self.rewardTooltip
+        if held and held.binding == binding then self:ReleaseRewardTooltip(held) end
+        return
+    end
+    local tooltip = addon.Clean(GameTooltip, "table") or addon.Clean(GameTooltip, "userdata")
+    if not tooltip then return end
+    local held = { tooltip = tooltip, button = button, binding = binding,
+        setOwner = tooltipMethod(tooltip, "SetOwner"), setItem = tooltipMethod(tooltip, "SetItemByID"),
+        isOwned = tooltipMethod(tooltip, "IsOwned"), hide = tooltipMethod(tooltip, "Hide") }
+    if not held.setOwner or not held.setItem or not held.isOwned or not held.hide then return end
+    self:ReleaseRewardTooltip()
+    if self.rewardTooltip or not self:RewardBindingCurrent(button, binding) then return end
+    self.rewardTooltip = held
+    local function current()
+        return self.rewardTooltip == held and GameTooltip == tooltip and
+            tooltipMethod(tooltip, "SetOwner") == held.setOwner and tooltipMethod(tooltip, "SetItemByID") == held.setItem and
+            tooltipMethod(tooltip, "IsOwned") == held.isOwned and tooltipMethod(tooltip, "Hide") == held.hide and
+            self:RewardBindingCurrent(button, binding) and self.rewardTooltip == held
+    end
+    button:SetScript("OnLeave", function()
+        if self.rewardGeneration == binding.generation and button.rewardBinding == binding then self:ReleaseRewardTooltip(held) end
+    end)
+    local ok = pcall(held.setOwner, tooltip, button, "ANCHOR_RIGHT")
+    if not ok or not current() then self:ReleaseRewardTooltip(held); return end
+    local owned = addon.Read(held.isOwned, "boolean", tooltip, button)
+    if owned ~= true or not current() then self:ReleaseRewardTooltip(held); return end
+    local shown
+    ok, shown = pcall(held.setItem, tooltip, binding.id)
+    shown = addon.Clean(shown, "boolean")
+    if not ok or shown ~= true or not current() then self:ReleaseRewardTooltip(held); return end
+    owned = addon.Read(held.isOwned, "boolean", tooltip, button)
+    if owned ~= true or not current() then self:ReleaseRewardTooltip(held) end
+end
+
 function UI:RefreshDetail()
+    local renderQuest = self.quest
+    local rewardGeneration = self:ResetRewardPresentation()
+    if not rewardGeneration or self.quest ~= renderQuest then return end
     if self.renderedQuest ~= self.quest then
         self.detailScroll:SetVerticalScroll(0)
         self.renderedQuest = self.quest
@@ -348,13 +449,48 @@ function UI:RefreshDetail()
     self.giverAction, self.giverHasCoordinates = nil, false
     self.giver:SetEnabled(false)
     self.giver:SetText(addon.L("VISIT_GIVER"))
-    local function line(value, height)
+    local rewardIndex = 0
+    local function line(value, height, reward)
         n = n + 1
         local fs = pool[n]
         if not fs then fs = label(self.detail, "", 4, 0, 334, 13); pool[n] = fs end
+        fs:SetWidth(334)
         fs:ClearAllPoints(); fs:SetPoint("TOPLEFT", 4, -y); fs:SetText(value); fs:Show()
+        local itemID = reward and addon.Clean(reward.item.id, "number")
+        local texture = reward and (addon.Clean(reward.item.texture, "string") or addon.Clean(reward.item.texture, "number"))
+        local validTexture = type(texture) == "string" and texture ~= "" and #texture <= 1024 or
+            type(texture) == "number" and texture > 0 and texture % 1 == 0
+        if itemID and itemID > 0 and itemID % 1 == 0 and validTexture and rewardIndex < 200 and not self.rewardTextureBusy then
+            rewardIndex = rewardIndex + 1
+            local b = self.rewardButtons[rewardIndex]
+            if not b then
+                b = CreateFrame("Button", nil, self.detail); b:SetSize(24, 24)
+                b.icon = b:CreateTexture(nil, "ARTWORK"); b.icon:SetAllPoints()
+                self.rewardButtons[rewardIndex] = b
+            end
+            local rendered = self:SetRewardTexture(b.icon, texture)
+            if self.rewardGeneration ~= rewardGeneration or self.quest ~= renderQuest then return false end
+            if rendered then
+                local binding = { quest = renderQuest, generation = rewardGeneration, id = itemID,
+                    origin = reward.origin, source = reward.source, kind = reward.kind, index = reward.index,
+                    dialogue = addon.DialogueRewards, log = addon.QuestRewards, cache = addon.CachedQuestRewards }
+                b.rewardBinding = binding
+                b:ClearAllPoints(); b:SetPoint("TOPLEFT", 4, -y); b.icon:Show(); b:Show()
+                b:SetScript("OnEnter", function() self:EnterReward(b, binding) end)
+                b:SetScript("OnHide", function()
+                    local held = self.rewardTooltip
+                    if held and held.binding == binding and b.rewardBinding == binding then self:ReleaseRewardTooltip(held) end
+                end)
+                fs:SetWidth(304); fs:ClearAllPoints(); fs:SetPoint("TOPLEFT", 34, -y)
+                height = math.max(height or 18, 24)
+            else
+                b.icon:Hide(); self:SetRewardTexture(b.icon, nil)
+                if self.rewardGeneration ~= rewardGeneration or self.quest ~= renderQuest then return false end
+            end
+        end
         local measured = measuredHeight(fs, height or 18)
         y = y + math.max(height or 18, measured) + 8
+        return true
     end
     for _, b in ipairs(self.chainButtons) do b:Hide(); b:SetEnabled(false); b:SetScript("OnClick", nil) end
     for _, b in ipairs(self.branchButtons) do b:Hide() end
@@ -675,8 +811,7 @@ function UI:RefreshDetail()
         for _, objective in ipairs(objectives or {}) do
             line("|cff" .. (objective.finished and COLOR.COMPLETED or COLOR.ACTIVE) .. objective.text .. "|r")
         end
-        local rewards = addon.Read(addon.DialogueRewards, "table", id) or
-            addon.Read(addon.QuestRewards, "table", id) or addon.Read(addon.CachedQuestRewards, "table", id)
+        local rewards, rewardOrigin = rewardData(id)
         if rewards and addon.Clean(rewards.source, "string") == "dialogue" then line(addon.L("REWARD_DIALOGUE"))
         elseif rewards and addon.Clean(rewards.source, "string") == "cache" then line(addon.L("REWARD_PREVIEW")) end
         local items = rewards and addon.Clean(rewards.items, "table")
@@ -686,11 +821,17 @@ function UI:RefreshDetail()
         elseif items and choices then
             if #items > 0 then
                 line(addon.L("REWARD_ITEMS"))
-                for _, item in ipairs(items) do line(addon.L("REWARD_ITEM", item.name, item.count)) end
+                for index, item in ipairs(items) do
+                    if line(addon.L("REWARD_ITEM", item.name, item.count), nil,
+                        { item = item, origin = rewardOrigin, source = addon.Clean(rewards.source, "string"), kind = "items", index = index }) == false then return end
+                end
             end
             if #choices > 0 then
                 line(addon.L("REWARD_CHOICES"))
-                for _, item in ipairs(choices) do line(addon.L("REWARD_ITEM", item.name, item.count)) end
+                for index, item in ipairs(choices) do
+                    if line(addon.L("REWARD_ITEM", item.name, item.count), nil,
+                        { item = item, origin = rewardOrigin, source = addon.Clean(rewards.source, "string"), kind = "choices", index = index }) == false then return end
+                end
             end
             if #items == 0 and #choices == 0 then line(addon.L("REWARD_NO_ITEMS")) end
             local xp = addon.Clean(rewards.xp, "number")
@@ -846,6 +987,7 @@ function UI:Create()
     UISpecialFrames[#UISpecialFrames + 1] = "DungeonProWindow"
     for _, d in ipairs(addon.dungeons) do if d.key == addon.char.selectedDungeon then self.dungeon = d end end
     frame:SetScript("OnShow", function() self:Fit(); self:Refresh() end)
+    frame:SetScript("OnHide", function() self:ResetRewardPresentation() end)
     frame:Hide()
 end
 
