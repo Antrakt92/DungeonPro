@@ -1140,13 +1140,13 @@ check("Explicit supporting-card inspection can go back without recording refresh
     local other = { key = "other", name = "Other dungeon", minLevel = 1, maxLevel = 30, quests = { 982 } }
     addon.dungeons, ui.dungeon, ui.quest, ui.preparation, ui.detailHistory = { dungeon, other }, dungeon, 980, false, {}
     ui:Refresh()
-    assert(not ui.back.enabled and ui.back.text == addon.L("DETAIL_BACK"))
+    assert(ui.back.enabled and ui.back.text == addon.L("DETAIL_BACK"), "a root quest can now return to its selected dungeon overview")
     local singleton = ui.requirementButtons[1]
     singleton.scripts.OnClick()
     assert(ui.quest == 981 and #ui.detailHistory == 1 and ui.detailHistory[1] == 980 and ui.back.enabled)
     assert(not singleton.shown and not singleton.scripts.OnClick)
     ui.back.scripts.OnClick()
-    assert(ui.quest == 980 and #ui.detailHistory == 0 and not ui.back.enabled)
+    assert(ui.quest == 980 and #ui.detailHistory == 0 and ui.back.enabled, "history is exhausted; overview remains reachable")
     ui.chainButtons[1].scripts.OnClick()
     assert(ui.quest == 981 and #ui.detailHistory == 1)
     ui:BackQuest()
@@ -1181,7 +1181,8 @@ check("Back history caps clean IDs at twenty and supports unknown cards without 
     for _, id in ipairs({ 0, -1, 1.5, math.huge, "2026", false }) do assert(not ui:InspectQuest(id)) end
     assert(ui.quest == 2025 and #ui.detailHistory == 20)
     for expected = 2024, 2005, -1 do assert(ui:BackQuest() and ui.quest == expected) end
-    assert(#ui.detailHistory == 0 and not ui.back.enabled and not ui:BackQuest())
+    assert(#ui.detailHistory == 0 and ui.back.enabled)
+    assert(ui:BackQuest() and ui.quest == nil and not ui.back.enabled and not ui:BackQuest(), "one further Back reaches the overview without a history sentinel")
     ui.quest, ui.detailHistory = quest, history
     ui:RefreshDetail()
 end)
@@ -2847,5 +2848,33 @@ check("Actual catalogue browsing folds localized Unicode case while preserving a
     searchFor(bad, bad); searchFor(string.char(255) .. "a", nil)
     addon.dungeons, addon.DungeonName, ui.search, ui.range, addon.db.locale = dungeons, dungeonName, search, range, locale
     ui.searchBox:SetText(search); ui:Refresh()
+end)
+check("Back from the first quest returns to its dungeon overview and clears quest-only presentation", function()
+    local quest, dungeon, history = ui.quest, ui.dungeon, ui.detailHistory
+    ui.dungeon, ui.quest, ui.detailHistory = addon.dungeons[1], nil, {}; ui:Refresh()
+    assert(not ui.back.enabled and ui.overviewArt.shown)
+    local listScroll = ui.questScroll.verticalScroll
+    ui:InspectQuest(1); ui.source.scripts.OnClick(ui.source, "LeftButton", false)
+    assert(ui.back.enabled and #ui.detailHistory == 0 and not ui.overviewArt.shown and ui.copy.shown)
+    ui.detailScroll:SetVerticalScroll(150)
+    ui.back.scripts.OnClick(ui.back, "LeftButton", false)
+    assert(ui.quest == nil and ui.dungeon == addon.dungeons[1] and #ui.detailHistory == 0 and not ui.back.enabled)
+    assert(ui.overviewArt.shown and detailHas(addon.L("OVERVIEW_PICK")) and not ui.source.enabled and not ui.guide.enabled and not ui.map.enabled)
+    assert(not ui.copy.shown and not ui.copy.focused and ui.copy.text == "" and ui.detailScroll.verticalScroll == 0)
+    assert(ui.questScroll.verticalScroll == listScroll and not ui:BackQuest())
+    ui.quest, ui.dungeon, ui.detailHistory = quest, dungeon, history; ui:Refresh()
+end)
+check("Back exhausts positive quest history before overview and never fabricates a standalone dungeon", function()
+    local quest, dungeon, history = ui.quest, ui.dungeon, ui.detailHistory
+    ui.dungeon, ui.quest, ui.detailHistory = addon.dungeons[1], nil, {}; ui:Refresh()
+    ui:InspectQuest(1); ui:InspectQuest(2); ui:InspectQuest(3)
+    assert(#ui.detailHistory == 2 and ui:BackQuest() and ui.quest == 2 and #ui.detailHistory == 1)
+    assert(ui:BackQuest() and ui.quest == 1 and #ui.detailHistory == 0 and ui.back.enabled)
+    assert(ui:BackQuest() and ui.quest == nil and #ui.detailHistory == 0 and not ui.back.enabled)
+    ui.dungeon, ui.quest, ui.detailHistory = nil, nil, {}; ui:InspectQuest(2000)
+    assert(ui.quest == 2000 and not ui.back.enabled and not ui:BackQuest() and ui.quest == 2000)
+    ui:InspectQuest(2001); assert(ui:BackQuest() and ui.quest == 2000 and not ui.back.enabled)
+    assert(not ui:BackQuest() and addon.char.detailHistory == nil and addon.db.detailHistory == nil)
+    ui.quest, ui.dungeon, ui.detailHistory = quest, dungeon, history; ui:Refresh()
 end)
 print("Preparation UI modeled checks passed: " .. total .. " (no native layout validation)")

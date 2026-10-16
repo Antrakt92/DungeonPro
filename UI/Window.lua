@@ -238,9 +238,14 @@ function UI:InspectQuest(id)
     return true
 end
 
+function UI:CanReturnToOverview()
+    local id = addon.Clean(self.quest, "number")
+    return id ~= nil and id > 0 and id % 1 == 0 and addon.Clean(self.dungeon, "table") ~= nil
+end
+
 function UI:BackQuest()
     local previous = table.remove(self.detailHistory)
-    if not previous then return false end
+    if not previous and not self:CanReturnToOverview() then return false end
     self.quest = previous
     self:RefreshDetail()
     return true
@@ -526,7 +531,7 @@ function UI:RefreshDetail()
     for _, buttons in ipairs({ self.reportedToggles, self.reportedRows }) do
         for _, row in ipairs(buttons) do row:Hide(); row:SetEnabled(false); row:SetScript("OnClick", nil) end
     end
-    self.back:SetEnabled(#self.detailHistory > 0)
+    self.back:SetEnabled(#self.detailHistory > 0 or self:CanReturnToOverview())
     if self.portrait then self.portrait:Hide(); self.portrait:SetTexture(nil) end
     if self.overviewArt then self.overviewArt:Hide() end
     self.action = nil

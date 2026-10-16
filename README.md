@@ -22,6 +22,7 @@ Level ranges are provisional recommendations.
   quieter controls and clearer text hierarchy. Visual refinement is ongoing.
 - Selecting a dungeon opens an illustrated overview with its level range, listed
   quest count and coverage notice before you choose an individual quest.
+  Back retraces supporting quests, then returns to the selected dungeon's overview.
 - Character-specific completed, active, ready-to-turn-in, available, locked and
   unknown quest states, with explanations for level gates, missing prerequisites,
   character restrictions and unverified data.

@@ -10,6 +10,7 @@
 - Added native dungeon artwork for 24 catalogue entries and safer image fallback.
 - Refined the window, controls and selected rows with a cohesive dark theme.
 - Added a dungeon overview before selecting a quest, with artwork and coverage notes.
+- Let Back return from the first quest to its dungeon overview.
 - Added the dungeon browser, character quest states and prerequisite planning.
 - Added map guidance, a direction arrow and optional TomTom support.
 - Added initial quest facts for The Deadmines, Ragefire Chasm and The Hall of Thanes.
