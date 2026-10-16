@@ -1750,4 +1750,60 @@ check("Missing or invalid carried-count data is omitted and recycled material ro
     addon.CarriedItemCount, issecretvalue = oldCount, oldSecret
     showDetail(2)
 end)
+check("Quest log capacity is informational and preserves the development notice", function()
+    local producer, navigation = addon.QuestLogCapacity, addon.Navigation
+    local count, capacity, reads, visits = 0, 20, 0, 0
+    addon.QuestLogCapacity = function() reads = reads + 1; return { count = count, capacity = capacity } end
+    addon.Navigation = { Start = function() visits = visits + 1 end, Map = function() visits = visits + 1 end }
+    showDetail(2); ui:Refresh()
+    assert(ui.capacityStatus.shown and ui.capacityStatus.text == addon.L("QUEST_LOG_CAPACITY", 0, 20))
+    assert(ui.footer.text == addon.L("DEVELOPMENT"))
+    local status, action, quest = ui.engine:State(2).status, ui.action and ui.action.kind, ui.quest
+    count = 23; ui:Refresh()
+    assert(ui.capacityStatus.text == addon.L("QUEST_LOG_CAPACITY", 23, 20))
+    assert(ui.engine:State(2).status == status and (ui.action and ui.action.kind) == action and ui.quest == quest and visits == 0)
+    count = 5; ui:Refresh()
+    assert(ui.capacityStatus.text == addon.L("QUEST_LOG_CAPACITY", 5, 20) and reads >= 3)
+    ui.frame:Hide(); count = 8
+    ui:Toggle()
+    ui.frame.scripts.OnShow(ui.frame)
+    assert(ui.capacityStatus.text == addon.L("QUEST_LOG_CAPACITY", 8, 20) and ui.footer.text == addon.L("DEVELOPMENT"))
+    addon.QuestLogCapacity, addon.Navigation = producer, navigation
+    ui:Refresh()
+end)
+check("Missing invalid or restricted capacity clears the reused status instead of claiming zero", function()
+    local producer, checker = addon.QuestLogCapacity, issecretvalue
+    addon.QuestLogCapacity = function() return { count = 2, capacity = 20 } end; ui:Refresh()
+    assert(ui.capacityStatus.shown)
+    local function omitted()
+        ui:Refresh()
+        assert(not ui.capacityStatus.shown and ui.capacityStatus.text == "" and ui.footer.text == addon.L("DEVELOPMENT"))
+    end
+    addon.QuestLogCapacity = nil; omitted()
+    addon.QuestLogCapacity = function() return nil end; omitted()
+    addon.QuestLogCapacity = function() error("Cold") end; omitted()
+    for _, value in ipairs({ {}, { count = 0 }, { count = -1, capacity = 20 }, { count = 1.5, capacity = 20 },
+        { count = 2, capacity = 0 }, { count = 2, capacity = 20.5 }, { count = math.huge, capacity = 20 },
+        { count = 2, capacity = math.huge }, { count = "2", capacity = 20 }, false }) do
+        addon.QuestLogCapacity = function() return value end; omitted()
+    end
+    issecretvalue = function(value) return value == 20 end
+    addon.QuestLogCapacity = function() return { count = 2, capacity = 20 } end; omitted()
+    issecretvalue = checker
+    addon.QuestLogCapacity = producer; ui:Refresh()
+end)
+check("Capacity formats safely in all locales without changing the base footer", function()
+    local producer, locale = addon.QuestLogCapacity, addon.db.locale
+    addon.QuestLogCapacity = function() return { count = 1e20, capacity = 20 } end
+    local dictionaries = 0
+    for code, strings in pairs(addon.locales) do
+        addon.db.locale = code; ui:Refresh()
+        assert(ui.capacityStatus.shown and ui.capacityStatus.text == string.format(strings.QUEST_LOG_CAPACITY, 1e20, 20))
+        assert(ui.capacityStatus.text:find("100000000000000000000", 1, true))
+        assert(ui.footer.text == strings.DEVELOPMENT)
+        dictionaries = dictionaries + 1
+    end
+    assert(dictionaries == 10)
+    addon.QuestLogCapacity, addon.db.locale = producer, locale; ui:Refresh()
+end)
 print("Preparation UI modeled checks passed: " .. total .. " (no native layout validation)")

@@ -24,6 +24,7 @@
 - Added reward previews by quest ID when the client confirms loaded reward data.
 - Kept lower and upper Blackrock Spire distinct when using localized map names.
 - Added current carried counts for quest-starting items and completion materials.
+- Added the current quest-log count and its client-provided capacity.
 - Added missing dungeon quests and their supporting mage and faction story chains.
 - Kept newly accepted quests visible alongside past completion history, and
   retained that history when checking prerequisite chains.

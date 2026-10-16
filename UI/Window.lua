@@ -719,6 +719,12 @@ function UI:Refresh()
     self.characterButton:SetText(addon.L(self.includeUnavailable and "ALL_CHARACTERS" or "MY_CHARACTER"))
     self.map:SetText(addon.L("MAP")); self.guide:SetText(addon.L("GUIDE")); self.source:SetText(addon.L("SOURCE"))
     self.footer:SetText(addon.L("DEVELOPMENT"))
+    local log = addon.Read(addon.QuestLogCapacity, "table")
+    local count = log and addon.Clean(log.count, "number")
+    local capacity = log and addon.Clean(log.capacity, "number")
+    local known = count ~= nil and capacity ~= nil and count >= 0 and count % 1 == 0 and capacity > 0 and capacity % 1 == 0
+    self.capacityStatus:SetText(known and addon.L("QUEST_LOG_CAPACITY", count, capacity) or "")
+    self.capacityStatus:SetShown(known)
     self:RefreshDungeons(); self:RefreshQuests(); self:RefreshDetail()
 end
 
@@ -830,6 +836,8 @@ function UI:Create()
         end
     end)
     self.giver:SetPoint("BOTTOMLEFT", 690, 19)
+    self.capacityStatus = label(frame, "", 22, -646, 640, 11)
+    self.capacityStatus:Hide()
     self.footer = label(frame, "", 22, -668, 640, 11)
     self.frame, self.cards, self.rows, self.details, self.chainButtons, self.branchButtons = frame, {}, {}, {}, {}, {}
     self.materialButtons = {}

@@ -787,4 +787,24 @@ check("Inventory updates refresh actual starter counts and hidden reopen reads c
     assert(not shown(4) and not ui.action and #waypoints == pins)
     C_Item = item; ui.quest, ui.detailHistory = previous, history; ui:Refresh()
 end)
+check("Quest-log capacity refreshes from real client adapters without counting headers or granting readiness", function()
+    local ui = addon.UI
+    local entries, maximum = C_QuestLog.GetNumQuestLogEntries, C_QuestLog.GetMaxNumQuestsCanAccept
+    local count, capacity = 0, 40
+    C_QuestLog.GetNumQuestLogEntries = function() return 100, count end
+    C_QuestLog.GetMaxNumQuestsCanAccept = function() return capacity end
+    ui:Refresh()
+    assert(ui.capacityStatus.shown and ui.capacityStatus.text == addon.L("QUEST_LOG_CAPACITY", 0, 40))
+    local pins, actions = #waypoints, ui.action
+    count = 7; eventFrame.scripts.OnEvent(eventFrame, "QUEST_ACCEPTED", 999999)
+    assert(ui.capacityStatus.text == addon.L("QUEST_LOG_CAPACITY", 7, 40) and #waypoints == pins)
+    assert(ui.action == actions or not ui.action)
+    ui.frame:Hide(); count, capacity = 9, 50; ui:Toggle()
+    assert(ui.capacityStatus.text == addon.L("QUEST_LOG_CAPACITY", 9, 50))
+    C_QuestLog.GetMaxNumQuestsCanAccept = function() error("temporarily unavailable") end
+    eventFrame.scripts.OnEvent(eventFrame, "QUEST_LOG_UPDATE")
+    assert(not ui.capacityStatus.shown and ui.capacityStatus.text == "")
+    C_QuestLog.GetNumQuestLogEntries, C_QuestLog.GetMaxNumQuestsCanAccept = entries, maximum
+    ui:Refresh()
+end)
 print("Client/UI modeled checks passed: " .. total .. " (no pixel or native-client validation)")

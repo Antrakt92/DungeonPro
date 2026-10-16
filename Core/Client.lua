@@ -332,6 +332,43 @@ function addon.ItemDataResult(id, success)
     end
 end
 
+function addon.QuestLogCapacity()
+    local quest = addon.Clean(C_QuestLog, "table")
+    local entries = quest and addon.Clean(quest.GetNumQuestLogEntries, "function")
+    if not entries then return nil end
+    local maximum = quest.GetMaxNumQuestsCanAccept
+    local getter = addon.Clean(maximum, "function")
+    local constants, limits, fallback
+    if type(maximum) ~= "nil" and not getter then return nil end
+    if not getter then
+        constants = addon.Clean(Constants, "table")
+        limits = constants and addon.Clean(constants.QuestLogConsts, "table")
+        fallback = limits and dialogueInteger(limits.MAXIMUM_NUM_QUESTS_LOG_CAN_ACCEPT, 1)
+        if not fallback then return nil end
+    end
+    local checker = issecretvalue
+    local function current()
+        if addon.Clean(C_QuestLog, "table") ~= quest or
+            addon.Clean(quest.GetNumQuestLogEntries, "function") ~= entries or
+            addon.Clean(quest.GetMaxNumQuestsCanAccept, "function") ~= getter or
+            (not getter and type(quest.GetMaxNumQuestsCanAccept) ~= "nil") or issecretvalue ~= checker then return false end
+        if not getter then
+            return addon.Clean(Constants, "table") == constants and
+                addon.Clean(constants.QuestLogConsts, "table") == limits and
+                addon.Clean(limits.MAXIMUM_NUM_QUESTS_LOG_CAN_ACCEPT, "number") == fallback
+        end
+        return true
+    end
+    if not current() then return nil end
+    local ok, _, count = pcall(entries)
+    if not ok then return nil end
+    count = dialogueInteger(count, 0)
+    if not count or not current() then return nil end
+    local capacity = getter and dialogueInteger(addon.Read(getter, "number"), 1) or fallback
+    if not capacity or not current() then return nil end
+    return { count = count, capacity = capacity }
+end
+
 function addon.CarriedItemCount(id)
     id = dialogueInteger(id, 1)
     local item = addon.Clean(C_Item, "table")
