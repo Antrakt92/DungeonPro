@@ -126,4 +126,37 @@ check("Restricted checker failure never reaches native enumeration", function()
     issecretvalue = function() error("restricted") end
     assert(addon.DungeonArt({ instanceID = 36 }) == generic and state.calls == 0)
 end)
+check("A later agreeing image cannot resolve an earlier same-map ambiguity", function()
+    GetLFDChoiceOrder = function() return { 101, 102, 103 } end
+    GetLFGDungeonInfo = function(id)
+        return tuple(36, id == 102 and "native/conflicting" or "native/deadmines")
+    end
+    assert(addon.DungeonArt({ instanceID = 36 }) == generic)
+    assert(addon.DungeonArt({ instanceID = 36 }) == generic, "cached ambiguity must remain unknown")
+end)
+check("A later native failure discards every partial mapping and stays bounded for the same capabilities", function()
+    GetLFDChoiceOrder = function() state.calls = state.calls + 1; return { 101, 102, 103 } end
+    GetLFGDungeonInfo = function(id)
+        state.infoCalls = state.infoCalls + 1
+        if id == 103 then error("later native row unavailable") end
+        return tuple(id == 101 and 36 or 43, id == 101 and "native/deadmines" or "native/caverns")
+    end
+    for _ = 1, 5 do
+        assert(addon.DungeonArt({ instanceID = 36 }) == generic)
+        assert(addon.DungeonArt({ instanceID = 43 }) == generic)
+    end
+    assert(state.calls == 1 and state.infoCalls == 3, "failed scan must neither expose partial maps nor retry per card")
+end)
+check("Replacing the enumerator during its read prevents old publication and recovers on the new identity", function()
+    local replacement = function() state.calls = state.calls + 1; return { 102 } end
+    GetLFDChoiceOrder = function()
+        state.calls = state.calls + 1
+        GetLFDChoiceOrder = replacement
+        return { 101 }
+    end
+    GetLFGDungeonInfo = function(id) return tuple(36, id == 101 and "native/old" or "native/new") end
+    assert(addon.DungeonArt({ instanceID = 36 }) == generic, "detached old enumeration must not publish")
+    assert(addon.DungeonArt({ instanceID = 36 }) == "native/new" and state.calls == 2)
+    assert(addon.DungeonArt({ instanceID = 36 }) == "native/new" and state.calls == 2)
+end)
 print("Dungeon art checks passed: " .. total)
