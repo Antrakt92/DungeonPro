@@ -12,7 +12,8 @@ quests have not been added. Level ranges are provisional recommendations.
 
 - Dungeon browser with level filtering and game-provided artwork when available.
 - Character-specific completed, active, ready-to-turn-in, available, locked and
-  unknown quest states. Class, race and faction restrictions are respected.
+  unknown quest states, with explanations for level gates, missing prerequisites,
+  character restrictions and unverified data.
 - Recursive prerequisite planning: a final quest can lead you to the beginning
   of its unfinished chain, rather than another locked step.
 - A next-step view collects the dungeon's preparation actions, combines shared

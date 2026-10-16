@@ -186,11 +186,24 @@ function UI:RefreshDetail()
     end
     for _, b in ipairs(self.chainButtons) do b:Hide() end
     local id, engine = self.quest, self.engine
-    if id and addon.quests[id] then
-        local q = addon.quests[id]
+    if id then
+        local q = addon.quests[id] or {}
         line(addon.QuestName(id), 24)
         local state = engine:State(id)
         line("|cff" .. COLOR[state.status] .. addon.L(state.status) .. "|r")
+        if state.reason then
+            local reason = "REASON_" .. state.reason
+            if state.reason == "requirements" and state.status == "UNKNOWN" then
+                reason = "REASON_requirementsUnknown"
+            end
+            if state.reason == "level" then
+                local required = addon.Clean(q.minLevel, "number")
+                local current = addon.Clean(engine.context.level, "number")
+                if required and current then line(addon.L("REASON_level_current", required, current))
+                elseif required then line(addon.L("REASON_level", required)); line(addon.L("REASON_levelUnknown"))
+                else line(addon.L("REASON_levelUnknown")) end
+            else line(addon.L(reason)) end
+        end
         local function place(p)
             if not p then return addon.L("UNKNOWN_PLACE") end
             local zone = p.mapID and addon.Read(C_Map and C_Map.GetMapInfo, "table", p.mapID)

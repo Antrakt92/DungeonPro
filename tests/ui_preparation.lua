@@ -175,6 +175,60 @@ check("Locked target with an unavailable prerequisite stays visible", function()
     ids[#ids] = nil; addon.quests[200], addon.quests[201] = nil, nil
     addon.Context = oldContext; ui.preparation = false; ui.quest = nil; ui:Refresh()
 end)
+local function detailHas(value)
+    for _, fs in ipairs(ui.details) do if fs.shown and fs.text == value then return true end end
+    return false
+end
+local function showDetail(id, context)
+    ui.quest = id; ui.engine = addon.Planner.New(addon.quests, context or addon.Context()); ui:RefreshDetail()
+end
+check("Detail distinguishes unfinished prerequisites from unverified requirements", function()
+    showDetail(100)
+    assert(ui.engine:State(100).status == "LOCKED" and detailHas(addon.L("REASON_requirements")))
+    showDetail(3)
+    assert(ui.engine:State(3).status == "UNKNOWN" and detailHas(addon.L("REASON_requirementsUnknown")))
+    assert(not detailHas(addon.L("REASON_requirements")) and not ui.action and not ui.guide.enabled)
+end)
+check("Level reason shows required and current levels without inventing a missing level", function()
+    showDetail(5)
+    assert(detailHas(addon.L("REASON_level_current", 30, 20)))
+    local context = addon.Context(); context.level = nil
+    showDetail(5, context)
+    assert(ui.engine:State(5).status == "UNKNOWN")
+    assert(detailHas(addon.L("REASON_level", 30)) and detailHas(addon.L("REASON_levelUnknown")))
+    assert(not detailHas(addon.L("REASON_level_current", 30, 20)) and not ui.action)
+end)
+check("Missing catalogue records display an honest reason instead of a selection prompt", function()
+    showDetail(999)
+    assert(detailHas(addon.L("REASON_missing")) and not ui.action and not ui.guide.enabled)
+end)
+check("Character history and each restriction have specific detail reasons", function()
+    local context = addon.Context()
+    context.completed = function() return nil end
+    showDetail(2, context)
+    assert(detailHas(addon.L("REASON_character")) and not ui.action)
+    for _, rule in ipairs({ { "factions", "faction", "Horde", "Alliance" },
+        { "classes", "class", "WARRIOR", "MAGE" }, { "races", "race", 1, 3 } }) do
+        context = addon.Context(); context[rule[2]] = rule[4]
+        addon.quests[2][rule[1]] = { rule[3] }
+        showDetail(2, context)
+        assert(ui.engine:State(2).status == "UNAVAILABLE" and detailHas(addon.L("REASON_" .. rule[2])))
+        assert(not ui.action)
+        addon.quests[2][rule[1]] = nil
+    end
+end)
+check("Cycle reasons render without making the quest available and clear on redraw", function()
+    ui.quest = 2
+    ui.engine = { context = {}, State = function() return { status = "UNKNOWN", reason = "cycle" } end,
+        Next = function() return {}, true end }
+    ui:RefreshDetail()
+    assert(detailHas(addon.L("REASON_cycle")) and not ui.action)
+    showDetail(2)
+    assert(ui.engine:State(2).status == "AVAILABLE")
+    for key, value in pairs(addon.locales.enUS) do
+        if key:find("REASON_", 1, true) and not value:find("%%d") then assert(not detailHas(value)) end
+    end
+end)
 check("Completed preparation keeps the prepared result instead of empty data warning", function()
     for id in pairs(addon.quests) do done[id] = true end
     ui.preparationButton.scripts.OnClick()
