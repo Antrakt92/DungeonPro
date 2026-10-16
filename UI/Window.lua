@@ -299,7 +299,6 @@ function UI:RefreshQuests()
             local row, id, state = self:MakeRow(self.questList, self.rows, n, 59), entry.id, entry.state
             row.heading = entry.heading
             row:SetEnabled(not entry.heading)
-            row:SetHighlightTexture(not entry.heading and "Interface\\QuestFrame\\UI-QuestTitleHighlight" or nil)
             if entry.heading then
                 row.title:SetText(addon.L(entry.heading)); row.note:SetText("")
                 row.bg:SetColorTexture(0.20, 0.22, 0.26, 1)

@@ -18,6 +18,11 @@ function methods:SetFocus() self.focused = true end
 function methods:ClearFocus() self.focused = false end
 function methods:HighlightText() self.highlighted = true end
 function methods:SetEnabled(value) self.enabled = value end
+function methods:SetHighlightTexture(asset)
+    assert((type(asset) == "string" and asset ~= "") or (type(asset) == "number" and asset > 0),
+        "SetHighlightTexture requires an asset; nil is not supported")
+    self.highlightTexture = asset
+end
 function methods:GetStringHeight() if measurement then return measurement(self) end; return 18 end
 function methods:SetScale(value) self.scale = value end
 function methods:SetVerticalScroll(value) self.verticalScroll = value; self.scrollWrites = (self.scrollWrites or 0) + 1 end
@@ -28,7 +33,7 @@ function methods:Hide() self.shown = false end
 function methods:Show() self.shown = true end
 function methods:SetShown(value) if value then self:Show() else self:Hide() end end
 for _, name in ipairs({ "SetFont", "SetJustifyH", "SetTextColor", "SetAllPoints", "SetColorTexture",
-    "SetHighlightTexture", "SetFrameStrata", "EnableMouse", "SetMovable", "RegisterForDrag",
+    "SetFrameStrata", "EnableMouse", "SetMovable", "RegisterForDrag",
     "StartMoving", "StopMovingOrSizing", "SetBackdrop", "SetBackdropColor", "SetBackdropBorderColor",
     "SetAutoFocus" }) do methods[name] = function() end end
 function methods:SetScrollChild(child)
@@ -2463,5 +2468,45 @@ check("Unknown objective quantity retains stale-render protection for both optio
         end
     end
     addon.ItemName, addon.CarriedItemCount = itemName, count; addon.quests[9993] = nil; showDetail(2)
+end)
+check("Preparation headings retain valid highlights and real row click arguments open the quest card", function()
+    local quest, dungeon, preparation, history = ui.quest, ui.dungeon, ui.preparation, ui.detailHistory
+    local quests, dungeons, context = addon.quests, addon.dungeons, addon.Context
+    addon.quests = {
+        [15001] = { id = 15001, minLevel = 1, requirementsKnown = true, requires = { { ids = { 15002 } } } },
+        [15002] = { id = 15002, minLevel = 1, requirementsKnown = true },
+    }
+    addon.dungeons = { { key = "click-fixture", name = "Click fixture", minLevel = 1, maxLevel = 60, quests = { 15001 } } }
+    addon.Context = function() return { level = 60, active = function() return false end, completed = function() return false end } end
+    ui.dungeon, ui.quest, ui.preparation, ui.detailHistory = addon.dungeons[1], nil, true, {}
+    ui:Refresh()
+    assert(detailHas(addon.L("PICK")) and not ui.source.enabled)
+    local first, headings = nil, 0
+    for _, row in ipairs(ui.rows) do
+        if row.shown then
+            assert(type(row.highlightTexture) == "string" and row.highlightTexture ~= "")
+            if row.heading then
+                headings = headings + 1
+                assert(not row.enabled and not row.scripts.OnClick)
+            else
+                assert(row.enabled and type(row.scripts.OnClick) == "function")
+                first = first or row
+            end
+        end
+    end
+    assert(headings > 0 and first and first.title.text == "Quest 15002")
+    first.scripts.OnClick(first, "LeftButton", false)
+    assert(ui.quest == 15002 and detailHas(addon.QuestName(15002)) and not detailHas(addon.L("PICK")) and ui.source.enabled)
+    first.scripts.OnClick(first, "LeftButton", false)
+    assert(ui.quest == 15002 and #ui.detailHistory == 0 and ui.source.enabled)
+    ui.preparation = false; ui:RefreshQuests()
+    local row = visibleRows()[1]
+    assert(row.enabled and row.title.text == "Quest 15001")
+    row.scripts.OnClick(row, "LeftButton", false)
+    assert(ui.quest == 15001 and detailHas(addon.QuestName(15001)) and ui.source.enabled)
+    ui.back.scripts.OnClick(ui.back, "LeftButton", false)
+    assert(ui.quest == 15002 and ui.source.enabled)
+    addon.quests, addon.dungeons, addon.Context = quests, dungeons, context
+    ui.quest, ui.dungeon, ui.preparation, ui.detailHistory = quest, dungeon, preparation, history; ui:Refresh()
 end)
 print("Preparation UI modeled checks passed: " .. total .. " (no native layout validation)")
