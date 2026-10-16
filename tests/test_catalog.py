@@ -322,6 +322,35 @@ class CatalogTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "Ambiguous"):
             catalog.validate(self.data)
 
+    def test_alternative_turnins_use_shared_place_rules_without_single_destination(self):
+        q = self.data["quests"][0]
+        q.pop("finish", None)
+        q["finishAlternatives"] = [{"npcID": 8888, "name": "Franclorn", "zoneName": "Blackrock Mountain"},
+                                   {"objectID": 8888, "name": "Monument", "mapID": 1, "x": 0, "y": 100}]
+        catalog.validate(self.data)
+        self.assertIn('["finishAlternatives"]', catalog.generate(self.data))
+        self.assertNotIn("finish", q)
+        for invalid in (None, True, {}, [], q["finishAlternatives"][:1], q["finishAlternatives"] * 51,
+                        [{"npcID": 1, "name": "A"}] * 2,
+                        [{"npcID": True, "name": "A"}, {"objectID": 2, "name": "B"}],
+                        [{"itemID": 1, "name": "A"}, {"npcID": 2, "name": "B"}],
+                        [{"npcID": 1, "objectID": 2, "name": "A"}, {"npcID": 2, "name": "B"}]):
+            with self.subTest(invalid=invalid):
+                data = copy.deepcopy(self.data)
+                data["quests"][0]["finishAlternatives"] = invalid
+                with self.assertRaises(ValueError): catalog.validate(data)
+        for fields in ({"mapID": True}, {"x": 10}, {"x": 10, "y": 20},
+                       {"mapID": 1, "x": float("inf"), "y": 10},
+                       {"zoneName": " "}, {"dungeonKey": "missing"}):
+            data = copy.deepcopy(self.data)
+            data["quests"][0]["finishAlternatives"][0].update(fields)
+            with self.subTest(fields=fields), self.assertRaises(ValueError): catalog.validate(data)
+        for finish in (None, {"npcID": 8888}):
+            data = copy.deepcopy(self.data)
+            data["quests"][0]["finish"] = finish
+            with self.assertRaisesRegex(ValueError, "single and alternative"):
+                catalog.validate(data)
+
 
 if __name__ == "__main__":
     unittest.main()

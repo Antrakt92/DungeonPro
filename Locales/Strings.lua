@@ -1,6 +1,7 @@
 local _, addon = ...
 local strings = {
     enUS = {
+        POSSIBLE_TURNINS = "Possible turn-in points — availability unconfirmed",
         STORY_GROUP = "Story group %d",
         STORY_GROUP_NOTICE = "The source shows these quests together. This does not confirm prerequisites or which quests your character can accept.",
         START_ALTERNATIVES = "Possible starting points — availability unconfirmed",
@@ -50,6 +51,7 @@ local strings = {
         ONLY_EN_RU = "Language", COPY = "Select the link and press Ctrl+C.",
     },
     ruRU = {
+        POSSIBLE_TURNINS = "Возможные места сдачи — доступность не подтверждена",
         STORY_GROUP = "Группа сюжета %d",
         STORY_GROUP_NOTICE = "Источник объединяет эти задания. Это не подтверждает требования или доступность заданий вашему персонажу.",
         START_ALTERNATIVES = "Возможные места начала — доступность не подтверждена",

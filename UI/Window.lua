@@ -266,8 +266,10 @@ function UI:RefreshDetail()
     for _, b in ipairs(self.chainButtons) do b:Hide() end
     for _, b in ipairs(self.branchButtons) do b:Hide() end
     for _, b in ipairs(self.materialButtons) do b:Hide() end
-    for _, b in ipairs(self.startButtons) do
-        b:Hide(); b:SetEnabled(false); b:SetScript("OnClick", nil)
+    for _, buttons in ipairs({ self.startButtons, self.finishButtons }) do
+        for _, b in ipairs(buttons) do
+            b:Hide(); b:SetEnabled(false); b:SetScript("OnClick", nil)
+        end
     end
     local id, engine = self.quest, self.engine
     if id then
@@ -317,11 +319,11 @@ function UI:RefreshDetail()
             return name .. (zoneName and (" — " .. zoneName) or "") ..
                 (p.x and string.format(" (%.1f, %.1f)", p.x, p.y) or "")
         end
-        if q.startAlternatives then
-            line(addon.L("START_ALTERNATIVES"))
-            for index, possible in ipairs(q.startAlternatives) do
+        local function alternativePlaces(places, buttons, heading)
+            line(addon.L(heading))
+            for index, possible in ipairs(places) do
                 local destination = possible
-                local row = self:MakeRow(self.detail, self.startButtons, index, 59)
+                local row = self:MakeRow(self.detail, buttons, index, 59)
                 row.title:SetText(destination.name)
                 local mapID = addon.Clean(destination.mapID, "number")
                 local validMap = mapID ~= nil and mapID > 0 and mapID % 1 == 0
@@ -339,6 +341,9 @@ function UI:RefreshDetail()
                 end or nil)
                 y = self:LayoutRow(row, 59, y)
             end
+        end
+        if q.startAlternatives then
+            alternativePlaces(q.startAlternatives, self.startButtons, "START_ALTERNATIVES")
         else line(addon.L("START") .. ": " .. place(q.start)) end
         local start = q.start
         if start and start.itemID and start.dropNPCID then
@@ -360,7 +365,9 @@ function UI:RefreshDetail()
             self.giver:SetText(addon.L(self.giverHasCoordinates and "VISIT_GIVER" or "GIVER_MAP"))
             if state.status ~= "AVAILABLE" then line(addon.L("LOCATION_ONLY")) end
         end
-        line(addon.L("ENDING") .. ": " .. place(q.finish))
+        if q.finishAlternatives then
+            alternativePlaces(q.finishAlternatives, self.finishButtons, "POSSIBLE_TURNINS")
+        else line(addon.L("ENDING") .. ": " .. place(q.finish)) end
         local actions, uncertain = engine:Next(id)
         line(addon.L("NEXT"))
         local action = actions[1]
@@ -614,7 +621,7 @@ function UI:Create()
     self.footer = label(frame, "", 22, -668, 640, 11)
     self.frame, self.cards, self.rows, self.details, self.chainButtons, self.branchButtons = frame, {}, {}, {}, {}, {}
     self.materialButtons = {}
-    self.startButtons = {}
+    self.startButtons, self.finishButtons = {}, {}
     UISpecialFrames[#UISpecialFrames + 1] = "DungeonPrepWindow"
     for _, d in ipairs(addon.dungeons) do if d.key == addon.char.selectedDungeon then self.dungeon = d end end
     frame:SetScript("OnShow", function() self:Fit(); self:Refresh() end)

@@ -50,27 +50,30 @@ def validate(data):
             raise ValueError(f"Invalid repeatable flag: {q['id']}")
         if not q.get("source", "").startswith("https://www.wowhead.com/forever/"):
             raise ValueError(f"Missing Forever source: {q['id']}")
-        alternatives = q.get("startAlternatives", [])
-        if "startAlternatives" in q:
+        places = [(key, q.get(key)) for key in ("start", "finish")]
+        for single, key, kind in (("start", "startAlternatives", "starting"),
+                                  ("finish", "finishAlternatives", "turn-in")):
+            if key not in q:
+                continue
+            alternatives = q[key]
             if type(alternatives) is not list or not 2 <= len(alternatives) <= 100:
-                raise ValueError(f"Invalid alternative starting points: {q['id']}")
-            if "start" in q:
-                raise ValueError(f"Ambiguous single and alternative starts: {q['id']}")
+                raise ValueError(f"Invalid alternative {kind} points: {q['id']}")
+            if single in q:
+                raise ValueError(f"Ambiguous single and alternative {single}s: {q['id']}")
             identities = set()
             for p in alternatives:
                 if (type(p) is not dict or
                     sum(field in p for field in ("npcID", "objectID", "itemID")) != 1 or
                     "itemID" in p or type(p.get("name")) is not str or not p["name"].strip()):
-                    raise ValueError(f"Invalid alternative starting identity: {q['id']}")
+                    raise ValueError(f"Invalid alternative {kind} identity: {q['id']}")
                 field = "npcID" if "npcID" in p else "objectID"
                 if not integer(p[field]):
-                    raise ValueError(f"Invalid alternative starting identity: {q['id']}")
+                    raise ValueError(f"Invalid alternative {kind} identity: {q['id']}")
                 identity = (field, p[field])
                 if identity in identities:
-                    raise ValueError(f"Duplicate alternative starting identity: {q['id']}")
+                    raise ValueError(f"Duplicate alternative {kind} identity: {q['id']}")
                 identities.add(identity)
-        places = [(key, q.get(key)) for key in ("start", "finish")]
-        places.extend(("startAlternatives", p) for p in alternatives)
+            places.extend((key, p) for p in alternatives)
         for key, p in places:
             if p is None:
                 continue
@@ -184,6 +187,7 @@ def validate(data):
     for q in quests.values():
         places = [q.get(field) for field in ("start", "finish")]
         places.extend(q.get("startAlternatives", []))
+        places.extend(q.get("finishAlternatives", []))
         for place in places:
             if place and "dungeonKey" in place and place["dungeonKey"] not in keys:
                 raise ValueError(f"Missing pickup dungeon: {q['id']}")

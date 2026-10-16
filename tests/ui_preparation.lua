@@ -799,4 +799,41 @@ check("Narrative group rows wrap, recycle, and preserve ordinary ordered story l
     assert(not ui.chainButtons[2].shown and not detailHas(addon.L("STORY_GROUP", 1)))
     addon.quests[910], addon.quests[911] = nil, nil
 end)
+check("Alternative turn-ins are explicit location visits without readiness or action changes", function()
+    local started, mapped
+    addon.Navigation = { Start = function(a) started = a end, Map = function(p) mapped = p end }
+    addon.quests[3801] = { id = 3801, minLevel = 1, requirementsKnown = false,
+        finishAlternatives = {
+            { npcID = 8888, name = "Franclorn", mapID = 1, x = 10, y = 20 },
+            { npcID = 184290, name = "Other Franclorn", mapID = 2 },
+            { objectID = 10, name = "Unknown monument", zoneName = "Known zone" },
+        } }
+    measurement = function(fs) if fs.text == "Franclorn" then return 72 end; return 18 end
+    showDetail(3801)
+    assert(detailHas(addon.L("POSSIBLE_TURNINS")))
+    assert(ui.engine:State(3801).status == "UNKNOWN" and ui.action == nil and not started and not mapped)
+    assert(ui.finishButtons[1].height > 59 and ui.finishButtons[2].title.text == "Other Franclorn")
+    assert(ui.finishButtons[3].note.text == "Known zone" and not ui.finishButtons[3].enabled)
+    ui.finishButtons[1].scripts.OnClick()
+    assert(started.id == 3801 and started.kind == "visit" and started.place.npcID == 8888)
+    ui.finishButtons[2].scripts.OnClick()
+    assert(mapped == addon.quests[3801].finishAlternatives[2] and not mapped.place)
+    assert(ui.engine:State(3801).status == "UNKNOWN" and ui.action == nil)
+    addon.quests[3801].requirementsKnown = true
+    addon.quests[3801].requires = { { ids = { 1 } } }
+    local context = { level = 20, completed = function() return false end, active = function() return false end }
+    showDetail(3801, context)
+    local nextAction = ui.action
+    assert(nextAction.id == 1 and ui.engine:State(3801).status == "LOCKED")
+    ui.finishButtons[1].scripts.OnClick()
+    assert(ui.action == nextAction and ui.engine:State(3801).status == "LOCKED")
+    measurement = nil
+    showDetail(2)
+    for _, b in ipairs(ui.finishButtons) do assert(not b.shown and not b.enabled and not b.scripts.OnClick) end
+    assert(not detailHas(addon.L("POSSIBLE_TURNINS")))
+    addon.quests[3801].finishAlternatives = { { npcID = 1, name = "Short" }, { objectID = 2, name = "Other" } }
+    showDetail(3801, context)
+    assert(ui.finishButtons[1].height == 59 and not ui.finishButtons[1].enabled and not ui.finishButtons[3].shown)
+    addon.quests[3801] = nil
+end)
 print("Preparation UI modeled checks passed: " .. total .. " (no native layout validation)")
