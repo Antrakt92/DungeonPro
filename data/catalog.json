@@ -17483,6 +17483,170 @@
       },
       "requirementsKnown": false,
       "source": "https://www.wowhead.com/forever/quest=8947/anthions-strange-request"
+    },
+    {
+      "id": 6922,
+      "name": "Baron Aquanis",
+      "source": "https://www.wowhead.com/forever/quest=6922/baron-aquanis",
+      "level": 30,
+      "minLevel": 21,
+      "factions": [
+        "Horde"
+      ],
+      "start": {
+        "itemID": 16782,
+        "name": "Strange Water Globe",
+        "itemMinLevel": 21,
+        "dungeonKey": "bfd",
+        "dropNPCID": 12876,
+        "dropName": "Baron Aquanis"
+      },
+      "finish": {
+        "npcID": 12736,
+        "name": "Je'neu Sancrea"
+      },
+      "requirementsKnown": false
+    },
+    {
+      "id": 1951,
+      "name": "Rituals of Power",
+      "source": "https://www.wowhead.com/forever/quest=1951/rituals-of-power",
+      "level": 40,
+      "minLevel": 30,
+      "factions": [
+        "Alliance",
+        "Horde"
+      ],
+      "classes": [
+        "MAGE"
+      ],
+      "start": {
+        "npcID": 6548,
+        "name": "Magus Tirth"
+      },
+      "finish": {
+        "npcID": 6546,
+        "name": "Tabetha"
+      },
+      "requirementsKnown": false
+    },
+    {
+      "id": 1956,
+      "name": "Power in Uldaman",
+      "source": "https://www.wowhead.com/forever/quest=1956/power-in-uldaman",
+      "level": 40,
+      "minLevel": 35,
+      "factions": [
+        "Alliance",
+        "Horde"
+      ],
+      "classes": [
+        "MAGE"
+      ],
+      "start": {
+        "npcID": 6546,
+        "name": "Tabetha"
+      },
+      "finish": {
+        "npcID": 6546,
+        "name": "Tabetha"
+      },
+      "requirementsKnown": false
+    },
+    {
+      "id": 7668,
+      "name": "The Darkreaver Menace",
+      "source": "https://www.wowhead.com/forever/quest=7668/the-darkreaver-menace",
+      "level": 60,
+      "minLevel": 58,
+      "factions": [
+        "Horde"
+      ],
+      "classes": [
+        "SHAMAN"
+      ],
+      "start": {
+        "npcID": 13417,
+        "name": "Sagorne Creststrider"
+      },
+      "finish": {
+        "npcID": 13417,
+        "name": "Sagorne Creststrider"
+      },
+      "requirementsKnown": false
+    },
+    {
+      "id": 4143,
+      "name": "Haze of Evil",
+      "level": 52,
+      "minLevel": 47,
+      "factions": [
+        "Alliance"
+      ],
+      "requirementsKnown": false,
+      "source": "https://www.wowhead.com/forever/quest=4143/haze-of-evil",
+      "start": {
+        "npcID": 7775,
+        "name": "Gregan Brewspewer",
+        "zoneName": "Feralas"
+      },
+      "finish": {
+        "npcID": 9119,
+        "name": "Muigin",
+        "zoneName": "Un'Goro Crater"
+      }
+    },
+    {
+      "id": 4146,
+      "name": "Zapper Fuel",
+      "level": 52,
+      "minLevel": 47,
+      "factions": [
+        "Horde"
+      ],
+      "requirementsKnown": false,
+      "source": "https://www.wowhead.com/forever/quest=4146/zapper-fuel",
+      "start": {
+        "npcID": 8496,
+        "name": "Liv Rizzlefix",
+        "zoneName": "The Barrens",
+        "mapID": 1413,
+        "x": 62.4,
+        "y": 38.6
+      },
+      "finish": {
+        "npcID": 9118,
+        "name": "Larion",
+        "zoneName": "Un'Goro Crater"
+      }
+    },
+    {
+      "id": 7848,
+      "name": "Attunement to the Core",
+      "level": 60,
+      "minLevel": 55,
+      "factions": [
+        "Alliance",
+        "Horde"
+      ],
+      "requirementsKnown": false,
+      "source": "https://www.wowhead.com/forever/quest=7848/attunement-to-the-core",
+      "start": {
+        "npcID": 14387,
+        "name": "Lothos Riftwaker",
+        "zoneName": "Burning Steppes",
+        "mapID": 1428,
+        "x": 26.4,
+        "y": 24.6
+      },
+      "finish": {
+        "npcID": 14387,
+        "name": "Lothos Riftwaker",
+        "zoneName": "Burning Steppes",
+        "mapID": 1428,
+        "x": 26.4,
+        "y": 24.6
+      }
     }
   ],
   "dungeons": [
@@ -17580,7 +17744,8 @@
         6563,
         6562,
         1442,
-        95042
+        95042,
+        6922
       ],
       "source": "https://www.wowhead.com/forever/guide/dungeons-overview-locations-details",
       "instanceID": 48
@@ -17667,7 +17832,8 @@
         1048,
         1053,
         1160,
-        1050
+        1050,
+        1951
       ],
       "source": "https://www.wowhead.com/forever/guide/dungeons-overview-locations-details",
       "instanceID": 189
@@ -17725,7 +17891,8 @@
         2201,
         2338,
         2204,
-        3375
+        3375,
+        1956
       ],
       "source": "https://www.wowhead.com/forever/guide/dungeons-overview-locations-details",
       "instanceID": 70
@@ -17788,7 +17955,9 @@
         3446,
         1445,
         3380,
-        8733
+        8733,
+        4143,
+        4146
       ],
       "source": "https://www.wowhead.com/forever/guide/dungeons-overview-locations-details",
       "instanceID": 109
@@ -17840,7 +18009,8 @@
         4342,
         4082,
         4121,
-        4122
+        4122,
+        7848
       ],
       "source": "https://www.wowhead.com/forever/guide/dungeons-overview-locations-details",
       "instanceID": 230
@@ -17951,7 +18121,8 @@
         5341,
         8992,
         8969,
-        5531
+        5531,
+        7668
       ],
       "source": "https://www.wowhead.com/forever/guide/dungeons-overview-locations-details",
       "instanceID": 289
