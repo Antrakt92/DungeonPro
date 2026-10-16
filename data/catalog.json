@@ -2837,7 +2837,31 @@
       "source": "https://www.wowhead.com/forever/quest=2842/chief-engineer-scooty",
       "start": {
         "npcID": 3413,
-        "name": "Sovik"
+        "name": "Sovik",
+        "mapID": 1454,
+        "zoneName": "Orgrimmar",
+        "x": 75,
+        "y": 24.4,
+        "reportedLocations": [
+          {
+            "mapID": 1454,
+            "zoneName": "Orgrimmar",
+            "x": 75,
+            "y": 24.4
+          },
+          {
+            "mapID": 1454,
+            "zoneName": "Orgrimmar",
+            "x": 75.4,
+            "y": 25
+          },
+          {
+            "mapID": 1454,
+            "zoneName": "Orgrimmar",
+            "x": 75.6,
+            "y": 25.2
+          }
+        ]
       },
       "finish": {
         "npcID": 7853,
@@ -4744,7 +4768,49 @@
       },
       "finish": {
         "npcID": 1356,
-        "name": "Prospector Stormpike"
+        "name": "Prospector Stormpike",
+        "mapID": 1455,
+        "zoneName": "Ironforge",
+        "x": 73.8,
+        "y": 13,
+        "reportedLocations": [
+          {
+            "mapID": 1455,
+            "zoneName": "Ironforge",
+            "x": 73.8,
+            "y": 13
+          },
+          {
+            "mapID": 1455,
+            "zoneName": "Ironforge",
+            "x": 74.4,
+            "y": 11.4
+          },
+          {
+            "mapID": 1455,
+            "zoneName": "Ironforge",
+            "x": 74.4,
+            "y": 12
+          },
+          {
+            "mapID": 1455,
+            "zoneName": "Ironforge",
+            "x": 74.6,
+            "y": 11.4
+          },
+          {
+            "mapID": 1455,
+            "zoneName": "Ironforge",
+            "x": 74.6,
+            "y": 12
+          },
+          {
+            "mapID": 1455,
+            "zoneName": "Ironforge",
+            "x": 74.6,
+            "y": 12.6
+          }
+        ]
       },
       "storyline": [
         2398,
@@ -4763,7 +4829,49 @@
       "source": "https://www.wowhead.com/forever/quest=2398/the-lost-dwarves",
       "start": {
         "npcID": 1356,
-        "name": "Prospector Stormpike"
+        "name": "Prospector Stormpike",
+        "mapID": 1455,
+        "zoneName": "Ironforge",
+        "x": 73.8,
+        "y": 13,
+        "reportedLocations": [
+          {
+            "mapID": 1455,
+            "zoneName": "Ironforge",
+            "x": 73.8,
+            "y": 13
+          },
+          {
+            "mapID": 1455,
+            "zoneName": "Ironforge",
+            "x": 74.4,
+            "y": 11.4
+          },
+          {
+            "mapID": 1455,
+            "zoneName": "Ironforge",
+            "x": 74.4,
+            "y": 12
+          },
+          {
+            "mapID": 1455,
+            "zoneName": "Ironforge",
+            "x": 74.6,
+            "y": 11.4
+          },
+          {
+            "mapID": 1455,
+            "zoneName": "Ironforge",
+            "x": 74.6,
+            "y": 12
+          },
+          {
+            "mapID": 1455,
+            "zoneName": "Ironforge",
+            "x": 74.6,
+            "y": 12.6
+          }
+        ]
       },
       "finish": {
         "npcID": 6906,
@@ -5024,11 +5132,47 @@
       "source": "https://www.wowhead.com/forever/quest=2202/uldaman-reagent-run",
       "start": {
         "npcID": 6868,
-        "name": "Jarkal Mossmeld"
+        "name": "Jarkal Mossmeld",
+        "mapID": 1418,
+        "zoneName": "Badlands",
+        "x": 2.4,
+        "y": 46,
+        "reportedLocations": [
+          {
+            "mapID": 1418,
+            "zoneName": "Badlands",
+            "x": 2.4,
+            "y": 46
+          },
+          {
+            "mapID": 1418,
+            "zoneName": "Badlands",
+            "x": 2.6,
+            "y": 46
+          }
+        ]
       },
       "finish": {
         "npcID": 6868,
-        "name": "Jarkal Mossmeld"
+        "name": "Jarkal Mossmeld",
+        "mapID": 1418,
+        "zoneName": "Badlands",
+        "x": 2.4,
+        "y": 46,
+        "reportedLocations": [
+          {
+            "mapID": 1418,
+            "zoneName": "Badlands",
+            "x": 2.4,
+            "y": 46
+          },
+          {
+            "mapID": 1418,
+            "zoneName": "Badlands",
+            "x": 2.6,
+            "y": 46
+          }
+        ]
       },
       "storyline": [
         2258,
@@ -5320,11 +5464,47 @@
       "source": "https://www.wowhead.com/forever/quest=2339/find-the-gems-and-power-source",
       "start": {
         "npcID": 6868,
-        "name": "Jarkal Mossmeld"
+        "name": "Jarkal Mossmeld",
+        "mapID": 1418,
+        "zoneName": "Badlands",
+        "x": 2.4,
+        "y": 46,
+        "reportedLocations": [
+          {
+            "mapID": 1418,
+            "zoneName": "Badlands",
+            "x": 2.4,
+            "y": 46
+          },
+          {
+            "mapID": 1418,
+            "zoneName": "Badlands",
+            "x": 2.6,
+            "y": 46
+          }
+        ]
       },
       "finish": {
         "npcID": 6868,
-        "name": "Jarkal Mossmeld"
+        "name": "Jarkal Mossmeld",
+        "mapID": 1418,
+        "zoneName": "Badlands",
+        "x": 2.4,
+        "y": 46,
+        "reportedLocations": [
+          {
+            "mapID": 1418,
+            "zoneName": "Badlands",
+            "x": 2.4,
+            "y": 46
+          },
+          {
+            "mapID": 1418,
+            "zoneName": "Badlands",
+            "x": 2.6,
+            "y": 46
+          }
+        ]
       },
       "requires": [
         {
@@ -5414,7 +5594,25 @@
       },
       "finish": {
         "npcID": 6868,
-        "name": "Jarkal Mossmeld"
+        "name": "Jarkal Mossmeld",
+        "mapID": 1418,
+        "zoneName": "Badlands",
+        "x": 2.4,
+        "y": 46,
+        "reportedLocations": [
+          {
+            "mapID": 1418,
+            "zoneName": "Badlands",
+            "x": 2.4,
+            "y": 46
+          },
+          {
+            "mapID": 1418,
+            "zoneName": "Badlands",
+            "x": 2.6,
+            "y": 46
+          }
+        ]
       },
       "storyline": [
         2340,
@@ -5433,7 +5631,25 @@
       "source": "https://www.wowhead.com/forever/quest=2340/deliver-the-gems",
       "start": {
         "npcID": 6868,
-        "name": "Jarkal Mossmeld"
+        "name": "Jarkal Mossmeld",
+        "mapID": 1418,
+        "zoneName": "Badlands",
+        "x": 2.4,
+        "y": 46,
+        "reportedLocations": [
+          {
+            "mapID": 1418,
+            "zoneName": "Badlands",
+            "x": 2.4,
+            "y": 46
+          },
+          {
+            "mapID": 1418,
+            "zoneName": "Badlands",
+            "x": 2.6,
+            "y": 46
+          }
+        ]
       },
       "finish": {
         "npcID": 6986,
@@ -5479,7 +5695,25 @@
       },
       "finish": {
         "npcID": 6868,
-        "name": "Jarkal Mossmeld"
+        "name": "Jarkal Mossmeld",
+        "mapID": 1418,
+        "zoneName": "Badlands",
+        "x": 2.4,
+        "y": 46,
+        "reportedLocations": [
+          {
+            "mapID": 1418,
+            "zoneName": "Badlands",
+            "x": 2.4,
+            "y": 46
+          },
+          {
+            "mapID": 1418,
+            "zoneName": "Badlands",
+            "x": 2.6,
+            "y": 46
+          }
+        ]
       },
       "storyline": [
         2283,
@@ -5541,11 +5775,47 @@
       "source": "https://www.wowhead.com/forever/quest=2338/translating-the-journal",
       "start": {
         "npcID": 6868,
-        "name": "Jarkal Mossmeld"
+        "name": "Jarkal Mossmeld",
+        "mapID": 1418,
+        "zoneName": "Badlands",
+        "x": 2.4,
+        "y": 46,
+        "reportedLocations": [
+          {
+            "mapID": 1418,
+            "zoneName": "Badlands",
+            "x": 2.4,
+            "y": 46
+          },
+          {
+            "mapID": 1418,
+            "zoneName": "Badlands",
+            "x": 2.6,
+            "y": 46
+          }
+        ]
       },
       "finish": {
         "npcID": 6868,
-        "name": "Jarkal Mossmeld"
+        "name": "Jarkal Mossmeld",
+        "mapID": 1418,
+        "zoneName": "Badlands",
+        "x": 2.4,
+        "y": 46,
+        "reportedLocations": [
+          {
+            "mapID": 1418,
+            "zoneName": "Badlands",
+            "x": 2.4,
+            "y": 46
+          },
+          {
+            "mapID": 1418,
+            "zoneName": "Badlands",
+            "x": 2.6,
+            "y": 46
+          }
+        ]
       },
       "storyline": [
         2283,
@@ -5637,7 +5907,49 @@
       "source": "https://www.wowhead.com/forever/quest=707/ironband-wants-you",
       "start": {
         "npcID": 1356,
-        "name": "Prospector Stormpike"
+        "name": "Prospector Stormpike",
+        "mapID": 1455,
+        "zoneName": "Ironforge",
+        "x": 73.8,
+        "y": 13,
+        "reportedLocations": [
+          {
+            "mapID": 1455,
+            "zoneName": "Ironforge",
+            "x": 73.8,
+            "y": 13
+          },
+          {
+            "mapID": 1455,
+            "zoneName": "Ironforge",
+            "x": 74.4,
+            "y": 11.4
+          },
+          {
+            "mapID": 1455,
+            "zoneName": "Ironforge",
+            "x": 74.4,
+            "y": 12
+          },
+          {
+            "mapID": 1455,
+            "zoneName": "Ironforge",
+            "x": 74.6,
+            "y": 11.4
+          },
+          {
+            "mapID": 1455,
+            "zoneName": "Ironforge",
+            "x": 74.6,
+            "y": 12
+          },
+          {
+            "mapID": 1455,
+            "zoneName": "Ironforge",
+            "x": 74.6,
+            "y": 12.6
+          }
+        ]
       },
       "finish": {
         "npcID": 1344,
@@ -5722,11 +6034,47 @@
       "source": "https://www.wowhead.com/forever/quest=2258/badlands-reagent-run",
       "start": {
         "npcID": 6868,
-        "name": "Jarkal Mossmeld"
+        "name": "Jarkal Mossmeld",
+        "mapID": 1418,
+        "zoneName": "Badlands",
+        "x": 2.4,
+        "y": 46,
+        "reportedLocations": [
+          {
+            "mapID": 1418,
+            "zoneName": "Badlands",
+            "x": 2.4,
+            "y": 46
+          },
+          {
+            "mapID": 1418,
+            "zoneName": "Badlands",
+            "x": 2.6,
+            "y": 46
+          }
+        ]
       },
       "finish": {
         "npcID": 6868,
-        "name": "Jarkal Mossmeld"
+        "name": "Jarkal Mossmeld",
+        "mapID": 1418,
+        "zoneName": "Badlands",
+        "x": 2.4,
+        "y": 46,
+        "reportedLocations": [
+          {
+            "mapID": 1418,
+            "zoneName": "Badlands",
+            "x": 2.4,
+            "y": 46
+          },
+          {
+            "mapID": 1418,
+            "zoneName": "Badlands",
+            "x": 2.6,
+            "y": 46
+          }
+        ]
       },
       "storyline": [
         2258,
@@ -5986,11 +6334,47 @@
       "source": "https://www.wowhead.com/forever/quest=2203/badlands-reagent-run-ii",
       "start": {
         "npcID": 6868,
-        "name": "Jarkal Mossmeld"
+        "name": "Jarkal Mossmeld",
+        "mapID": 1418,
+        "zoneName": "Badlands",
+        "x": 2.4,
+        "y": 46,
+        "reportedLocations": [
+          {
+            "mapID": 1418,
+            "zoneName": "Badlands",
+            "x": 2.4,
+            "y": 46
+          },
+          {
+            "mapID": 1418,
+            "zoneName": "Badlands",
+            "x": 2.6,
+            "y": 46
+          }
+        ]
       },
       "finish": {
         "npcID": 6868,
-        "name": "Jarkal Mossmeld"
+        "name": "Jarkal Mossmeld",
+        "mapID": 1418,
+        "zoneName": "Badlands",
+        "x": 2.4,
+        "y": 46,
+        "reportedLocations": [
+          {
+            "mapID": 1418,
+            "zoneName": "Badlands",
+            "x": 2.4,
+            "y": 46
+          },
+          {
+            "mapID": 1418,
+            "zoneName": "Badlands",
+            "x": 2.6,
+            "y": 46
+          }
+        ]
       }
     },
     {
@@ -6425,6 +6809,13 @@
       "storyline": [
         2864,
         2865
+      ],
+      "objectiveItems": [
+        {
+          "itemID": 9238,
+          "quantity": 5,
+          "name": "Uncracked Scarab Shell"
+        }
       ]
     },
     {
@@ -6465,7 +6856,14 @@
       "finish": {
         "npcID": 7804,
         "name": "Trenton Lighthammer"
-      }
+      },
+      "objectiveItems": [
+        {
+          "itemID": 9523,
+          "quantity": 20,
+          "name": "Troll Temper"
+        }
+      ]
     },
     {
       "id": 2936,
@@ -8919,7 +9317,24 @@
       "finish": {
         "objectID": 164869,
         "name": "Spectral Chalice"
-      }
+      },
+      "objectiveItems": [
+        {
+          "itemID": 7910,
+          "quantity": 2,
+          "name": "Star Ruby"
+        },
+        {
+          "itemID": 3577,
+          "quantity": 20,
+          "name": "Gold Bar"
+        },
+        {
+          "itemID": 6037,
+          "quantity": 10,
+          "name": "Truesilver Bar"
+        }
+      ]
     },
     {
       "id": 4121,
@@ -9792,7 +10207,14 @@
       "finish": {
         "npcID": 9177,
         "name": "Oralius"
-      }
+      },
+      "objectiveItems": [
+        {
+          "itemID": 11468,
+          "quantity": 20,
+          "name": "Dark Iron Fanny Pack"
+        }
+      ]
     },
     {
       "id": 4295,
@@ -10278,6 +10700,13 @@
           "ids": [
             3906
           ]
+        }
+      ],
+      "objectiveItems": [
+        {
+          "itemID": 11129,
+          "quantity": 10,
+          "name": "Essence of the Elements"
         }
       ]
     },
