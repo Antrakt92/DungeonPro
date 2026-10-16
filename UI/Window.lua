@@ -328,6 +328,11 @@ function UI:RefreshQuests()
     end
     hideRest(self.rows, n)
     self.questList:SetHeight(math.max(1, offset))
+    local identity = d and (addon.Clean(d.key, "string") or d)
+    if self.questListDungeon ~= identity then
+        self.questListDungeon = identity
+        self.questScroll:SetVerticalScroll(0)
+    end
 end
 
 local function rewardData(id)
@@ -1006,7 +1011,7 @@ function UI:Create()
     self.catalog = scrolling(frame, 22, -125, 235, 518)
     self.searchHint = label(self.catalog, "", 4, 0, 220, 11)
     self.catalogNotice = label(self.catalog, "", 4, 0, 220, 13)
-    self.questList = scrolling(frame, 288, -218, 355, 425)
+    self.questList, self.questScroll = scrolling(frame, 288, -218, 355, 425)
     self.detail, self.detailScroll = scrolling(frame, 690, -218, 350, 425)
     self.map = button(frame, "", 160, function()
         if self.action then addon.Navigation.Map(self.action.place) end

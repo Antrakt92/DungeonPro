@@ -2317,4 +2317,59 @@ check("Dungeon search and a shortened quest detail refresh inherited scrollbar s
     addon.dungeons, ui.search, ui.range, addon.Description, ui.quest = dungeons, search, range, description, quest
     measurement = nil; ui.searchBox:SetText(search); ui:Refresh()
 end)
+do
+    local function longDungeonLists()
+        local old = { dungeons = addon.dungeons, quests = addon.quests, dungeon = ui.dungeon, quest = ui.quest,
+            search = ui.search, range = ui.range, preparation = ui.preparation, locale = addon.db.locale,
+            history = ui.detailHistory, selected = addon.char.selectedDungeon }
+        local first = { key = "list-first", name = "First long dungeon", minLevel = 1, maxLevel = 60, quests = {} }
+        local second = { key = "list-second", name = "Second long dungeon", minLevel = 1, maxLevel = 60, quests = {} }
+        addon.quests, addon.dungeons = {}, { first, second }
+        for index = 1, 40 do
+            for wing, dungeon in ipairs(addon.dungeons) do
+                local id = 12000 + wing * 100 + index
+                dungeon.quests[index] = id
+                addon.quests[id] = { id = id, minLevel = 1, requirementsKnown = true }
+            end
+        end
+        ui.dungeon, ui.quest, ui.search, ui.range, ui.preparation, ui.detailHistory = first, nil, "", false, false, {}
+        ui:Refresh()
+        local function restore()
+            addon.dungeons, addon.quests, addon.db.locale = old.dungeons, old.quests, old.locale
+            ui.dungeon, ui.quest, ui.search, ui.range, ui.preparation, ui.detailHistory =
+                old.dungeon, old.quest, old.search, old.range, old.preparation, old.history
+            addon.char.selectedDungeon = old.selected
+            ui:Refresh()
+        end
+        return first, second, ui.questList.parent, restore
+    end
+    check("Changing between long dungeon lists starts the new list at the top", function()
+        local first, second, scroll, restore = longDungeonLists()
+        assert(ui.questList:GetHeight() > scroll:GetHeight() + 500)
+        scroll:SetVerticalScroll(500)
+        ui:InspectQuest(first.quests[1]); ui:InspectQuest(first.quests[2])
+        assert(#ui.detailHistory == 1)
+        ui.cards[2].scripts.OnClick()
+        assert(ui.dungeon == second and ui.quest == nil and #ui.detailHistory == 0)
+        assert(ui.rows[1].title.text == addon.QuestName(second.quests[1]))
+        assert(scroll.verticalScroll == 0, "new dungeon must not inherit the previous list offset")
+        scroll:SetVerticalScroll(300); ui.dungeon = nil; ui:RefreshQuests()
+        assert(scroll.verticalScroll == 0)
+        ui.dungeon = first; ui:RefreshQuests(); assert(scroll.verticalScroll == 0)
+        restore()
+    end)
+    check("Same dungeon refresh search locale inspection and reselect preserve quest-list reading position", function()
+        local first, _, scroll, restore = longDungeonLists()
+        scroll:SetVerticalScroll(350)
+        local writes = scroll.scrollWrites
+        ui:Refresh(); ui.search = "No matching dungeon"; ui:RefreshDungeons()
+        assert(ui.dungeon == first and not ui.cards[1].shown)
+        addon.db.locale = "ruRU"; ui:Refresh()
+        ui:InspectQuest(first.quests[1]); ui:InspectQuest(first.quests[2]); assert(ui:BackQuest())
+        assert(scroll.verticalScroll == 350 and scroll.scrollWrites == writes)
+        ui.search = ""; ui:RefreshDungeons(); ui.cards[1].scripts.OnClick()
+        assert(ui.dungeon == first and ui.quest == nil and scroll.verticalScroll == 350 and scroll.scrollWrites == writes)
+        restore()
+    end)
+end
 print("Preparation UI modeled checks passed: " .. total .. " (no native layout validation)")
