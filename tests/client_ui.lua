@@ -161,4 +161,22 @@ check("Quest-data events pass success to bounded delayed title recovery", functi
     assert(#callbacks == 1 and calls == 1)
     C_Timer, C_QuestLog.RequestLoadQuestByID = savedTimer, savedRequest
 end)
+check("Unrelated quest events preserve the guide and matching events release it", function()
+    local saved, removed, serial = TomTom, {}, 0
+    TomTom = { AddWaypoint = function() serial = serial + 1; return serial end,
+        RemoveWaypoint = function(_, uid) removed[#removed + 1] = uid end }
+    addon.Navigation.Start({ id = 65, place = addon.quests[65].start })
+    for _, event in ipairs({ "QUEST_ACCEPTED", "QUEST_TURNED_IN", "QUEST_REMOVED" }) do
+        eventFrame.scripts.OnEvent(eventFrame, event, 132)
+        assert(#removed == 0)
+    end
+    eventFrame.scripts.OnEvent(eventFrame, "QUEST_ACCEPTED", nil); assert(#removed == 0)
+    eventFrame.scripts.OnEvent(eventFrame, "QUEST_ACCEPTED", 65); assert(removed[1] == 1)
+    addon.Navigation.Start({ id = 65, place = addon.quests[65].start })
+    eventFrame.scripts.OnEvent(eventFrame, "QUEST_REMOVED", 65); assert(removed[2] == 2)
+    addon.Navigation.Start({ id = 65, place = addon.quests[65].start })
+    eventFrame.scripts.OnEvent(eventFrame, "QUEST_TURNED_IN", 65); assert(removed[3] == 3)
+    assert(#removed == 3)
+    TomTom = saved
+end)
 print("Client/UI modeled checks passed: " .. total .. " (no pixel or native-client validation)")

@@ -38,6 +38,11 @@ function N.Stop()
     if frame then frame:Hide() end
 end
 
+function N.QuestChanged(id)
+    id = addon.Clean(id, "number")
+    if id and target and id == target.id then N.Stop() end
+end
+
 -- This is a bearing to a coordinate, not a terrain or transport route.
 function N.Vector(point)
     if not N.Valid(point) or not C_Map or not CreateVector2D then return nil end

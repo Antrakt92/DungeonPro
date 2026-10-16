@@ -35,6 +35,8 @@ events:SetScript("OnEvent", function(_, event, arg1, arg2)
     if not initialized then return end
     if event == "QUEST_DATA_LOAD_RESULT" then addon.QuestDataResult(arg1, arg2) end
     if event == "QUEST_DETAIL" then addon.CaptureQuestText() end
-    if event == "QUEST_ACCEPTED" or event == "QUEST_TURNED_IN" then addon.Navigation.Stop() end
+    if event == "QUEST_ACCEPTED" or event == "QUEST_TURNED_IN" or event == "QUEST_REMOVED" then
+        addon.Navigation.QuestChanged(arg1)
+    end
     refresh()
 end)
