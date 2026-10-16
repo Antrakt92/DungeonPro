@@ -9382,11 +9382,19 @@
       "minLevel": 57,
       "start": {
         "npcID": 10267,
-        "name": "Tinkee Steamboil"
+        "name": "Tinkee Steamboil",
+        "zoneName": "Burning Steppes",
+        "mapID": 1428,
+        "x": 65.2,
+        "y": 23.8
       },
       "finish": {
         "npcID": 10267,
-        "name": "Tinkee Steamboil"
+        "name": "Tinkee Steamboil",
+        "zoneName": "Burning Steppes",
+        "mapID": 1428,
+        "x": 65.2,
+        "y": 23.8
       },
       "requirementsKnown": false,
       "factions": [
@@ -9459,11 +9467,19 @@
       "source": "https://www.wowhead.com/forever/quest=5466/the-lich-ras-frostwhisper",
       "start": {
         "npcID": 11286,
-        "name": "Magistrate Marduke"
+        "name": "Magistrate Marduke",
+        "zoneName": "Western Plaguelands",
+        "mapID": 1422,
+        "x": 70.4,
+        "y": 74
       },
       "finish": {
         "npcID": 11286,
-        "name": "Magistrate Marduke"
+        "name": "Magistrate Marduke",
+        "zoneName": "Western Plaguelands",
+        "mapID": 1422,
+        "x": 70.4,
+        "y": 74
       },
       "storyline": [
         5461,
@@ -9520,11 +9536,19 @@
       "source": "https://www.wowhead.com/forever/quest=5382/doctor-theolen-krastinov-the-butcher",
       "start": {
         "npcID": 11216,
-        "name": "Eva Sarkhoff"
+        "name": "Eva Sarkhoff",
+        "zoneName": "Western Plaguelands",
+        "mapID": 1422,
+        "x": 70.2,
+        "y": 73.8
       },
       "finish": {
         "npcID": 11216,
-        "name": "Eva Sarkhoff"
+        "name": "Eva Sarkhoff",
+        "zoneName": "Western Plaguelands",
+        "mapID": 1422,
+        "x": 70.2,
+        "y": 73.8
       },
       "storyline": [
         5382,
@@ -9601,11 +9625,19 @@
       "source": "https://www.wowhead.com/forever/quest=5515/krastinovs-bag-of-horrors",
       "start": {
         "npcID": 11216,
-        "name": "Eva Sarkhoff"
+        "name": "Eva Sarkhoff",
+        "zoneName": "Western Plaguelands",
+        "mapID": 1422,
+        "x": 70.2,
+        "y": 73.8
       },
       "finish": {
         "npcID": 11216,
-        "name": "Eva Sarkhoff"
+        "name": "Eva Sarkhoff",
+        "zoneName": "Western Plaguelands",
+        "mapID": 1422,
+        "x": 70.2,
+        "y": 73.8
       },
       "storyline": [
         5382,
@@ -9638,7 +9670,11 @@
       },
       "finish": {
         "npcID": 11035,
-        "name": "Betina Bigglezink"
+        "name": "Betina Bigglezink",
+        "zoneName": "Eastern Plaguelands",
+        "mapID": 1423,
+        "x": 81.4,
+        "y": 59.4
       }
     },
     {
@@ -9654,11 +9690,19 @@
       "source": "https://www.wowhead.com/forever/quest=5529/plagued-hatchlings",
       "start": {
         "npcID": 11035,
-        "name": "Betina Bigglezink"
+        "name": "Betina Bigglezink",
+        "zoneName": "Eastern Plaguelands",
+        "mapID": 1423,
+        "x": 81.4,
+        "y": 59.4
       },
       "finish": {
         "npcID": 11035,
-        "name": "Betina Bigglezink"
+        "name": "Betina Bigglezink",
+        "zoneName": "Eastern Plaguelands",
+        "mapID": 1423,
+        "x": 81.4,
+        "y": 59.4
       }
     },
     {
@@ -9777,11 +9821,19 @@
       "source": "https://www.wowhead.com/forever/quest=5531/betina-bigglezink",
       "start": {
         "npcID": 11036,
-        "name": "Leonid Barthalomew the Revered"
+        "name": "Leonid Barthalomew the Revered",
+        "zoneName": "Eastern Plaguelands",
+        "mapID": 1423,
+        "x": 81.6,
+        "y": 57.8
       },
       "finish": {
         "npcID": 11035,
-        "name": "Betina Bigglezink"
+        "name": "Betina Bigglezink",
+        "zoneName": "Eastern Plaguelands",
+        "mapID": 1423,
+        "x": 81.4,
+        "y": 59.4
       },
       "storyline": [
         5522,
@@ -9802,11 +9854,19 @@
       "source": "https://www.wowhead.com/forever/quest=5461/the-human-ras-frostwhisper",
       "start": {
         "npcID": 11286,
-        "name": "Magistrate Marduke"
+        "name": "Magistrate Marduke",
+        "zoneName": "Western Plaguelands",
+        "mapID": 1422,
+        "x": 70.4,
+        "y": 74
       },
       "finish": {
         "npcID": 11286,
-        "name": "Magistrate Marduke"
+        "name": "Magistrate Marduke",
+        "zoneName": "Western Plaguelands",
+        "mapID": 1422,
+        "x": 70.4,
+        "y": 74
       },
       "storyline": [
         5461,
@@ -9830,11 +9890,19 @@
       "source": "https://www.wowhead.com/forever/quest=5462/the-dying-ras-frostwhisper",
       "start": {
         "npcID": 11286,
-        "name": "Magistrate Marduke"
+        "name": "Magistrate Marduke",
+        "zoneName": "Western Plaguelands",
+        "mapID": 1422,
+        "x": 70.4,
+        "y": 74
       },
       "finish": {
         "npcID": 11036,
-        "name": "Leonid Barthalomew the Revered"
+        "name": "Leonid Barthalomew the Revered",
+        "zoneName": "Eastern Plaguelands",
+        "mapID": 1423,
+        "x": 81.6,
+        "y": 57.8
       },
       "storyline": [
         5461,
@@ -9858,7 +9926,11 @@
       "source": "https://www.wowhead.com/forever/quest=5463/menethils-gift",
       "start": {
         "npcID": 11036,
-        "name": "Leonid Barthalomew the Revered"
+        "name": "Leonid Barthalomew the Revered",
+        "zoneName": "Eastern Plaguelands",
+        "mapID": 1423,
+        "x": 81.6,
+        "y": 57.8
       },
       "finish": {
         "objectID": 176631,
@@ -9890,7 +9962,11 @@
       },
       "finish": {
         "npcID": 11036,
-        "name": "Leonid Barthalomew the Revered"
+        "name": "Leonid Barthalomew the Revered",
+        "zoneName": "Eastern Plaguelands",
+        "mapID": 1423,
+        "x": 81.6,
+        "y": 57.8
       },
       "storyline": [
         5461,
@@ -9914,11 +9990,19 @@
       "source": "https://www.wowhead.com/forever/quest=5465/soulbound-keepsake",
       "start": {
         "npcID": 11036,
-        "name": "Leonid Barthalomew the Revered"
+        "name": "Leonid Barthalomew the Revered",
+        "zoneName": "Eastern Plaguelands",
+        "mapID": 1423,
+        "x": 81.6,
+        "y": 57.8
       },
       "finish": {
         "npcID": 11286,
-        "name": "Magistrate Marduke"
+        "name": "Magistrate Marduke",
+        "zoneName": "Western Plaguelands",
+        "mapID": 1422,
+        "x": 70.4,
+        "y": 74
       },
       "storyline": [
         5461,
@@ -9942,11 +10026,19 @@
       "source": "https://www.wowhead.com/forever/quest=5522/leonid-barthalomew",
       "start": {
         "npcID": 10267,
-        "name": "Tinkee Steamboil"
+        "name": "Tinkee Steamboil",
+        "zoneName": "Burning Steppes",
+        "mapID": 1428,
+        "x": 65.2,
+        "y": 23.8
       },
       "finish": {
         "npcID": 11036,
-        "name": "Leonid Barthalomew the Revered"
+        "name": "Leonid Barthalomew the Revered",
+        "zoneName": "Eastern Plaguelands",
+        "mapID": 1423,
+        "x": 81.6,
+        "y": 57.8
       },
       "storyline": [
         5522,
@@ -10910,11 +11002,19 @@
       "source": "https://www.wowhead.com/forever/quest=5848/of-love-and-family",
       "start": {
         "npcID": 11936,
-        "name": "Artist Renfray"
+        "name": "Artist Renfray",
+        "zoneName": "Western Plaguelands",
+        "mapID": 1422,
+        "x": 65.4,
+        "y": 75.4
       },
       "finish": {
         "npcID": 1855,
-        "name": "Tirion Fordring"
+        "name": "Tirion Fordring",
+        "zoneName": "Eastern Plaguelands",
+        "mapID": 1423,
+        "x": 7.4,
+        "y": 43.4
       },
       "storyline": [
         5742,
@@ -10940,12 +11040,18 @@
       "start": {
         "npcID": 11039,
         "name": "Duke Nicholas Zverenhoff",
-        "zoneName": "Eastern Plaguelands"
+        "zoneName": "Eastern Plaguelands",
+        "mapID": 1423,
+        "x": 81.4,
+        "y": 59.8
       },
       "finish": {
         "npcID": 11039,
         "name": "Duke Nicholas Zverenhoff",
-        "zoneName": "Eastern Plaguelands"
+        "zoneName": "Eastern Plaguelands",
+        "mapID": 1423,
+        "x": 81.4,
+        "y": 59.8
       },
       "storyline": [
         5262,
@@ -11022,12 +11128,18 @@
       "start": {
         "npcID": 11035,
         "name": "Betina Bigglezink",
-        "zoneName": "Eastern Plaguelands"
+        "zoneName": "Eastern Plaguelands",
+        "mapID": 1423,
+        "x": 81.4,
+        "y": 59.4
       },
       "finish": {
         "npcID": 11035,
         "name": "Betina Bigglezink",
-        "zoneName": "Eastern Plaguelands"
+        "zoneName": "Eastern Plaguelands",
+        "mapID": 1423,
+        "x": 81.4,
+        "y": 59.4
       },
       "storyline": [
         5212,
@@ -11147,12 +11259,18 @@
       "start": {
         "npcID": 11038,
         "name": "Caretaker Alen",
-        "zoneName": "Eastern Plaguelands"
+        "zoneName": "Eastern Plaguelands",
+        "mapID": 1423,
+        "x": 79.4,
+        "y": 63.8
       },
       "finish": {
         "npcID": 11140,
         "name": "Egan",
-        "zoneName": "Eastern Plaguelands"
+        "zoneName": "Eastern Plaguelands",
+        "mapID": 1423,
+        "x": 14.4,
+        "y": 33.6
       },
       "storyline": [
         5281,
@@ -11173,12 +11291,18 @@
       "start": {
         "npcID": 1855,
         "name": "Tirion Fordring",
-        "zoneName": "Eastern Plaguelands"
+        "zoneName": "Eastern Plaguelands",
+        "mapID": 1423,
+        "x": 7.4,
+        "y": 43.4
       },
       "finish": {
         "npcID": 1855,
         "name": "Tirion Fordring",
-        "zoneName": "Eastern Plaguelands"
+        "zoneName": "Eastern Plaguelands",
+        "mapID": 1423,
+        "x": 7.4,
+        "y": 43.4
       },
       "storyline": [
         5742,
@@ -11204,12 +11328,18 @@
       "start": {
         "npcID": 1855,
         "name": "Tirion Fordring",
-        "zoneName": "Eastern Plaguelands"
+        "zoneName": "Eastern Plaguelands",
+        "mapID": 1423,
+        "x": 7.4,
+        "y": 43.4
       },
       "finish": {
         "npcID": 1855,
         "name": "Tirion Fordring",
-        "zoneName": "Eastern Plaguelands"
+        "zoneName": "Eastern Plaguelands",
+        "mapID": 1423,
+        "x": 7.4,
+        "y": 43.4
       },
       "storyline": [
         5742,
@@ -11235,12 +11365,18 @@
       "start": {
         "npcID": 1855,
         "name": "Tirion Fordring",
-        "zoneName": "Eastern Plaguelands"
+        "zoneName": "Eastern Plaguelands",
+        "mapID": 1423,
+        "x": 7.4,
+        "y": 43.4
       },
       "finish": {
         "npcID": 1855,
         "name": "Tirion Fordring",
-        "zoneName": "Eastern Plaguelands"
+        "zoneName": "Eastern Plaguelands",
+        "mapID": 1423,
+        "x": 7.4,
+        "y": 43.4
       },
       "storyline": [
         5742,
@@ -11265,11 +11401,19 @@
       "source": "https://www.wowhead.com/forever/quest=5846/of-love-and-family",
       "start": {
         "npcID": 1855,
-        "name": "Tirion Fordring"
+        "name": "Tirion Fordring",
+        "zoneName": "Eastern Plaguelands",
+        "mapID": 1423,
+        "x": 7.4,
+        "y": 43.4
       },
       "finish": {
         "npcID": 11936,
-        "name": "Artist Renfray"
+        "name": "Artist Renfray",
+        "zoneName": "Western Plaguelands",
+        "mapID": 1422,
+        "x": 65.4,
+        "y": 75.4
       },
       "storyline": [
         5742,
@@ -11294,11 +11438,19 @@
       "source": "https://www.wowhead.com/forever/quest=5861/find-myranda",
       "start": {
         "npcID": 1855,
-        "name": "Tirion Fordring"
+        "name": "Tirion Fordring",
+        "zoneName": "Eastern Plaguelands",
+        "mapID": 1423,
+        "x": 7.4,
+        "y": 43.4
       },
       "finish": {
         "npcID": 11872,
-        "name": "Myranda the Hag"
+        "name": "Myranda the Hag",
+        "zoneName": "Western Plaguelands",
+        "mapID": 1422,
+        "x": 50.8,
+        "y": 77.8
       },
       "storyline": [
         5742,
@@ -11324,7 +11476,10 @@
       "start": {
         "npcID": 11872,
         "name": "Myranda the Hag",
-        "zoneName": "Western Plaguelands"
+        "zoneName": "Western Plaguelands",
+        "mapID": 1422,
+        "x": 50.8,
+        "y": 77.8
       },
       "finish": {
         "npcID": 1842,
@@ -11882,7 +12037,11 @@
       "source": "https://www.wowhead.com/forever/quest=4907/tinkee-steamboil",
       "finish": {
         "npcID": 10267,
-        "name": "Tinkee Steamboil"
+        "name": "Tinkee Steamboil",
+        "zoneName": "Burning Steppes",
+        "mapID": 1428,
+        "x": 65.2,
+        "y": 23.8
       },
       "start": {
         "npcID": 10468,
@@ -11907,12 +12066,18 @@
       "finish": {
         "npcID": 10267,
         "name": "Tinkee Steamboil",
-        "zoneName": "Burning Steppes"
+        "zoneName": "Burning Steppes",
+        "mapID": 1428,
+        "x": 65.2,
+        "y": 23.8
       },
       "start": {
         "npcID": 10267,
         "name": "Tinkee Steamboil",
-        "zoneName": "Burning Steppes"
+        "zoneName": "Burning Steppes",
+        "mapID": 1428,
+        "x": 65.2,
+        "y": 23.8
       },
       "storyline": [
         4907,
@@ -11932,12 +12097,18 @@
       "finish": {
         "npcID": 11872,
         "name": "Myranda the Hag",
-        "zoneName": "Western Plaguelands"
+        "zoneName": "Western Plaguelands",
+        "mapID": 1422,
+        "x": 50.8,
+        "y": 77.8
       },
       "start": {
         "npcID": 11872,
         "name": "Myranda the Hag",
-        "zoneName": "Western Plaguelands"
+        "zoneName": "Western Plaguelands",
+        "mapID": 1422,
+        "x": 50.8,
+        "y": 77.8
       },
       "storyline": [
         6566,
@@ -12079,7 +12250,11 @@
       },
       "finish": {
         "npcID": 11872,
-        "name": "Myranda the Hag"
+        "name": "Myranda the Hag",
+        "zoneName": "Western Plaguelands",
+        "mapID": 1422,
+        "x": 50.8,
+        "y": 77.8
       },
       "storyline": [
         6566,
@@ -12101,7 +12276,11 @@
       "requirementsKnown": false,
       "start": {
         "npcID": 11872,
-        "name": "Myranda the Hag"
+        "name": "Myranda the Hag",
+        "zoneName": "Western Plaguelands",
+        "mapID": 1422,
+        "x": 50.8,
+        "y": 77.8
       },
       "finish": {
         "npcID": 10321,
