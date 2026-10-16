@@ -267,7 +267,14 @@
         "x": 65.3,
         "y": 21.2,
         "npcID": 656
-      }
+      },
+      "objectiveItems": [
+        {
+          "itemID": 1894,
+          "quantity": 4,
+          "name": "Miners' Union Card"
+        }
+      ]
     },
     {
       "id": 214,
@@ -298,6 +305,13 @@
           "ids": [
             155
           ]
+        }
+      ],
+      "objectiveItems": [
+        {
+          "itemID": 915,
+          "quantity": 10,
+          "name": "Red Silk Bandana"
         }
       ]
     },
@@ -1409,7 +1423,14 @@
       "finish": {
         "npcID": 5767,
         "name": "Nalpak"
-      }
+      },
+      "objectiveItems": [
+        {
+          "itemID": 6443,
+          "quantity": 20,
+          "name": "Deviate Hide"
+        }
+      ]
     },
     {
       "id": 962,
@@ -1434,7 +1455,14 @@
         "mapID": 1456,
         "x": 23.6,
         "y": 21.4
-      }
+      },
+      "objectiveItems": [
+        {
+          "itemID": 5339,
+          "quantity": 10,
+          "name": "Serpentbloom"
+        }
+      ]
     },
     {
       "id": 1490,
@@ -18641,7 +18669,24 @@
         8424,
         8425
       ],
-      "storylineEvidence": "https://www.wowhead.com/forever/quest=8424/war-on-the-shadowsworn"
+      "storylineEvidence": "https://www.wowhead.com/forever/quest=8424/war-on-the-shadowsworn",
+      "objectiveItems": [
+        {
+          "itemID": 20606,
+          "quantity": 2,
+          "name": "Amber Voodoo Feather"
+        },
+        {
+          "itemID": 20607,
+          "quantity": 2,
+          "name": "Blue Voodoo Feather"
+        },
+        {
+          "itemID": 20608,
+          "quantity": 2,
+          "name": "Green Voodoo Feather"
+        }
+      ]
     },
     {
       "id": 8257,
@@ -20283,7 +20328,24 @@
         "npcID": 6176,
         "name": "Bath'rah the Windwatcher",
         "zoneName": "Alterac Mountains"
-      }
+      },
+      "objectiveItems": [
+        {
+          "itemID": 20606,
+          "quantity": 2,
+          "name": "Amber Voodoo Feather"
+        },
+        {
+          "itemID": 20607,
+          "quantity": 2,
+          "name": "Blue Voodoo Feather"
+        },
+        {
+          "itemID": 20608,
+          "quantity": 2,
+          "name": "Green Voodoo Feather"
+        }
+      ]
     },
     {
       "id": 7643,

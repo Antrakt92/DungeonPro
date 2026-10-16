@@ -680,5 +680,41 @@ class CatalogTests(unittest.TestCase):
         self.assertIn('["wing"] = "upper"', catalog.generate(data))
 
 
+    def test_objective_items_preserve_only_informational_facts(self):
+        data = self.minimal_catalog()
+        quest = data["quests"][0]
+        quest["requirementsKnown"] = False
+        quest["objectiveItems"] = [{"itemID": 10001, "quantity": 2, "name": "Listed material"},
+                                   {"itemID": 10002, "quantity": 1}]
+        before = copy.deepcopy(data)
+        catalog.validate(data)
+        generated = catalog.generate(data)
+        self.assertEqual(data, before)
+        self.assertIn('["objectiveItems"]', generated)
+        self.assertIn('["quantity"] = 2', generated)
+        self.assertFalse(quest["requirementsKnown"])
+        self.assertNotIn("requires", quest)
+
+    def test_invalid_objective_items_are_rejected(self):
+        invalid = [None, False, {}, [], [None], [False], [1], [[]], [{}],
+                   [{"itemID": 1}], [{"quantity": 1}],
+                   [{"itemID": 1, "quantity": 1, "requires": []}],
+                   [{"itemID": 1, "quantity": 1}] * 101,
+                   [{"itemID": 1, "quantity": 1}, {"itemID": 1, "quantity": 2}]]
+        for field in ("itemID", "quantity"):
+            for value in (None, False, True, "1", 0, -1, 1.5, float("nan"), float("inf"), 2 ** 53):
+                entry = {"itemID": 1, "quantity": 1}
+                entry[field] = value
+                invalid.append([entry])
+        for value in (None, False, 1, "", "   ", "x" * 501):
+            invalid.append([{"itemID": 1, "quantity": 1, "name": value}])
+        for value in invalid:
+            with self.subTest(value=value):
+                data = self.minimal_catalog()
+                data["quests"][0]["objectiveItems"] = value
+                with self.assertRaisesRegex(ValueError, "objective item"):
+                    catalog.validate(data)
+
+
 if __name__ == "__main__":
     unittest.main()

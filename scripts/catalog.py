@@ -53,6 +53,21 @@ def validate(data):
             raise ValueError(f"Invalid startsInside flag: {q['id']}")
         if "repeatable" in q and type(q["repeatable"]) is not bool:
             raise ValueError(f"Invalid repeatable flag: {q['id']}")
+        if "objectiveItems" in q:
+            items = q["objectiveItems"]
+            if type(items) is not list or not 1 <= len(items) <= 100:
+                raise ValueError(f"Invalid objective item list: {q['id']}")
+            seen_items = set()
+            for item in items:
+                if (type(item) is not dict or set(item) - {"itemID", "quantity", "name"} or
+                        any(not integer(item.get(field)) or item[field] > 2 ** 53 - 1
+                            for field in ("itemID", "quantity"))):
+                    raise ValueError(f"Invalid objective item identity/quantity: {q['id']}")
+                if "name" in item and (not nonempty_string(item["name"]) or len(item["name"]) > 500):
+                    raise ValueError(f"Invalid objective item name: {q['id']}")
+                if item["itemID"] in seen_items:
+                    raise ValueError(f"Duplicate objective item: {q['id']}")
+                seen_items.add(item["itemID"])
         source = q.get("source")
         if type(source) is not str or not re.fullmatch(
             rf"https://www\.wowhead\.com/forever/quest={q['id']}(?:/[^\s/?#]+)?", source

@@ -13,7 +13,7 @@ local function reset()
     }
     issecretvalue = function(value) return value == secret end
     C_Item = { GetItemCount = function(id, bank, uses, reagent, account, ...)
-        assert((id == 5791 or id == 7083) and bank == false and uses == false and reagent == false and account == false)
+        assert((id == 5791 or id == 7083 or id == 20606) and bank == false and uses == false and reagent == false and account == false)
         assert(select("#", ...) == 0); calls = calls + 1; return count
     end, RequestLoadItemDataByID = function() error("item requests forbidden") end }
     C_QuestLog = { SetSelectedQuest = function() error("selection forbidden") end,
@@ -94,6 +94,75 @@ check("Counts reread live data without changing quest state actions or catalogue
         assert(after:State(65).status == "UNKNOWN" and #actions == 0 and unknown and not after:Dungeon(dungeon).ready)
     end
     assert(calls == 4 and addon.quests[65].start.itemID == 5791 and addon.quests[65].requirementsKnown == false)
+end)
+check("Objective-only items expose live carried counts without quantity or quest-state gates", function()
+    addon.quests[68] = { id = 68, minLevel = 1, requirementsKnown = false,
+        objectiveItems = { { itemID = 20606, quantity = 2 } } }
+    local context = { level = 60, active = function() return false end, completed = function() return false end }
+    for _, value in ipairs({ 0, 1, 2, 3 }) do
+        count = value; assert(addon.CarriedItemCount(20606) == value)
+        local engine = addon.Planner.New(addon.quests, context)
+        local actions, uncertain = engine:Next(68)
+        assert(engine:State(68).status == "UNKNOWN" and #actions == 0 and uncertain)
+        assert(not engine:Dungeon({ coverage = "partial", quests = { 68 } }).ready)
+    end
+    assert(calls == 4 and addon.quests[68].objectiveItems[1].quantity == 2)
+    assert(addon.db == nil and addon.char == nil)
+end)
+check("Objective links need typed Lua-safe positive identity and quantity", function()
+    local row = { itemID = 20606, quantity = 2 }
+    addon.quests[68] = { id = 68, objectiveItems = { row } }
+    for _, value in ipairs({ 0, -1, 1.5, "2", false, secret, math.huge, 0/0, 9007199254740992 }) do
+        row.quantity = value; assert(addon.CarriedItemCount(20606) == nil and calls == 0)
+    end
+    row.quantity = nil; assert(addon.CarriedItemCount(20606) == nil and calls == 0)
+    row.quantity = 2
+    for _, value in ipairs({ 0, -1, 1.5, "20606", false, secret, math.huge, 0/0, 9007199254740992 }) do
+        row.itemID = value; assert(addon.CarriedItemCount(20606) == nil and calls == 0)
+    end
+    row.itemID = nil; assert(addon.CarriedItemCount(20606) == nil and calls == 0)
+    row.itemID, row.quantity = 20606, 9007199254740991
+    assert(addon.CarriedItemCount(20606) == 3)
+end)
+check("Objective scan rejects malformed restricted oversized and unbounded tails", function()
+    addon.quests[68] = { id = 68 }
+    for _, value in ipairs({ false, 2, "items", secret }) do
+        addon.quests[68].objectiveItems = value
+        assert(addon.CarriedItemCount(20606) == nil and calls == 0)
+    end
+    addon.quests[68].objectiveItems = { secret, { itemID = secret, quantity = 2 }, { itemID = 20606, quantity = secret } }
+    assert(addon.CarriedItemCount(20606) == nil and calls == 0)
+    local entries = {}
+    for index = 1, 100 do entries[index] = { itemID = index == 100 and 20606 or 1, quantity = 2 } end
+    addon.quests[68].objectiveItems = entries
+    assert(addon.CarriedItemCount(20606) == 3 and calls == 1)
+    entries[101] = { itemID = 20606, quantity = 2 }
+    assert(addon.CarriedItemCount(20606) == nil and calls == 1)
+end)
+check("Objective removal identity and quantity changes during native reads discard results", function()
+    for mode = 1, 4 do
+        reset(); addon.quests[68] = { id = 68, objectiveItems = { { itemID = 20606, quantity = 2 } } }
+        C_Item.GetItemCount = function()
+            if mode == 1 then addon.quests[68].objectiveItems = nil
+            elseif mode == 2 then addon.quests[68].objectiveItems[1].itemID = 1
+            elseif mode == 3 then addon.quests[68].objectiveItems[1].quantity = nil
+            else addon.quests[68].objectiveItems[1].quantity = secret end
+            return 3
+        end
+        assert(addon.CarriedItemCount(20606) == nil)
+    end
+end)
+check("A remaining valid objective or starter link still authorizes a shared item", function()
+    addon.quests[68] = { id = 68, objectiveItems = { { itemID = 20606, quantity = 2 } } }
+    addon.quests[69] = { id = 69, objectiveItems = { { itemID = 20606, quantity = 3 } } }
+    C_Item.GetItemCount = function()
+        addon.quests[68].objectiveItems = nil
+        return 3
+    end
+    assert(addon.CarriedItemCount(20606) == 3)
+    addon.quests[69].objectiveItems = nil; assert(addon.CarriedItemCount(20606) == nil)
+    addon.quests[68].start = { itemID = 20606 }
+    assert(addon.CarriedItemCount(20606) == 3)
 end)
 issecretvalue = nil
 print("Carried item count checks passed: " .. total .. " (native client unverified)")

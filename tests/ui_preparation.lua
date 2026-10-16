@@ -2130,4 +2130,96 @@ check("Restriction name reentry cannot append old labels after quest or generati
     end
     addon.ClassName, addon.RaceName = className, raceName; addon.quests[9984] = nil; showDetail(2)
 end)
+check("Listed item objectives remain separate from native progress and informational carried counts", function()
+    local itemName, count, objectives = addon.ItemName, addon.CarriedItemCount, addon.QuestObjectives
+    addon.quests[9985] = { id = 9985, minLevel = 1, requirementsKnown = false,
+        objectiveItems = { { itemID = 81001, quantity = 2, name = "Source feather" }, { itemID = 81002, quantity = 3 } } }
+    addon.ItemName = function(id) if id == 81001 then return "Native feather" end end
+    addon.CarriedItemCount = function(id) return id == 81001 and 0 or 8 end
+    addon.QuestObjectives = function() return { { text = "Native progress remains separate", finished = false } } end
+    showDetail(9985)
+    assert(detailHas(addon.L("OBJECTIVE_ITEMS")) and detailHas(addon.L("OBJECTIVE_ITEMS_NOTICE")))
+    assert(detailHas(addon.L("OBJECTIVE_ITEM", "Native feather", 2)) and detailHas(addon.L("OBJECTIVE_ITEM", "#81002", 3)))
+    assert(detailHas(addon.L("ITEM_CARRIED", 0)) and detailHas(addon.L("ITEM_CARRIED", 8)))
+    assert(detailHas(addon.L("OBJECTIVE_PROGRESS")))
+    assert(ui.engine:State(9985).status == "UNKNOWN" and not ui.action and not ui.guide.enabled)
+    addon.ItemName = function() return nil end; addon.CarriedItemCount = function() return nil end; ui:RefreshDetail()
+    assert(detailHas(addon.L("OBJECTIVE_ITEM", "Source feather", 2)))
+    assert(not detailHas(addon.L("ITEM_CARRIED", 0)) and not detailHas(addon.L("ITEM_CARRIED", 8)))
+    addon.ItemName, addon.CarriedItemCount, addon.QuestObjectives = itemName, count, objectives
+    addon.quests[9985] = nil; showDetail(2)
+    assert(not detailHas(addon.L("OBJECTIVE_ITEMS")) and not detailHas(addon.L("OBJECTIVE_ITEMS_NOTICE")))
+end)
+check("Objective entries skip malformed duplicates and restricted names with safe integer quantities", function()
+    local itemName, count, checker = addon.ItemName, addon.CarriedItemCount, issecretvalue
+    local restricted = {}; issecretvalue = function(value) return value == restricted end
+    local reads = 0
+    addon.ItemName = function() reads = reads + 1; return restricted end
+    addon.CarriedItemCount = function() return -1 end
+    addon.quests[9986] = { id = 9986, minLevel = 1, requirementsKnown = false, objectiveItems = {
+        false, restricted, { itemID = 1, quantity = 0 }, { itemID = 2, quantity = 1.5 }, { itemID = "3", quantity = 2 },
+        { itemID = 4, quantity = math.huge }, { itemID = 5, quantity = 9007199254740992 }, { itemID = 6, quantity = restricted },
+        { itemID = 81003, quantity = 2, name = "Source name" }, { itemID = 81003, quantity = 7, name = "Duplicate" },
+        { itemID = 9007199254740991, quantity = 9007199254740991, name = "   " },
+    } }
+    showDetail(9986)
+    assert(reads == 2 and detailHas(addon.L("OBJECTIVE_ITEM", "Source name", 2)))
+    assert(not detailHas(addon.L("OBJECTIVE_ITEM", "Duplicate", 7)))
+    assert(detailHas(addon.L("OBJECTIVE_ITEM", "#9007199254740991", 9007199254740991)))
+    local entries = {}; for i = 1, 101 do entries[i] = { itemID = i + 82000, quantity = 1 } end
+    addon.quests[9986].objectiveItems = entries; reads = 0; ui:RefreshDetail(); assert(reads == 100)
+    addon.quests[9986].objectiveItems = { false, { itemID = 0, quantity = 2 } }; ui:RefreshDetail()
+    assert(not detailHas(addon.L("OBJECTIVE_ITEMS")) and not detailHas(addon.L("OBJECTIVE_ITEMS_NOTICE")))
+    addon.quests[9986].objectiveItems = {}; ui:RefreshDetail(); assert(not detailHas(addon.L("OBJECTIVE_ITEMS")))
+    addon.ItemName, addon.CarriedItemCount, issecretvalue = itemName, count, checker
+    addon.quests[9986] = nil; showDetail(2)
+end)
+check("Objective headings translate while client names hydrate and recycled text clears", function()
+    local itemName, count, locale = addon.ItemName, addon.CarriedItemCount, addon.db.locale
+    addon.quests[9987] = { id = 9987, minLevel = 1, requirementsKnown = false,
+        objectiveItems = { { itemID = 81004, quantity = 2, name = "Fact name" } } }
+    addon.ItemName = function() error("Cold") end; addon.CarriedItemCount = nil; showDetail(9987)
+    assert(detailHas(addon.L("OBJECTIVE_ITEM", "Fact name", 2)))
+    addon.ItemName = function() return "Client feather" end
+    local dictionaries = 0
+    for code in pairs(addon.locales) do
+        addon.db.locale = code; showDetail(9987)
+        assert(detailHas(addon.L("OBJECTIVE_ITEMS")) and detailHas(addon.L("OBJECTIVE_ITEMS_NOTICE")))
+        assert(detailHas(addon.L("OBJECTIVE_ITEM", "Client feather", 2)))
+        assert(ui.engine:State(9987).status == "UNKNOWN" and not ui.action)
+        dictionaries = dictionaries + 1
+    end
+    assert(dictionaries == 10)
+    addon.db.locale = locale; addon.quests[9987].objectiveItems = nil; ui:RefreshDetail()
+    assert(not detailHas(addon.L("OBJECTIVE_ITEMS")) and not detailHas(addon.L("OBJECTIVE_ITEM", "Client feather", 2)))
+    addon.ItemName, addon.CarriedItemCount = itemName, count; addon.quests[9987] = nil; showDetail(2)
+end)
+check("Optional objective name and count reads cannot append stale outer rows after reentry", function()
+    local itemName, count = addon.ItemName, addon.CarriedItemCount
+    for _, helper in ipairs({ "ItemName", "CarriedItemCount" }) do
+        for _, sameQuest in ipairs({ false, true }) do
+            local entries = { { itemID = 81005, quantity = 2, name = "Fact name" } }
+            addon.quests[9988] = { id = 9988, minLevel = 1, requirementsKnown = false, objectiveItems = entries }
+            addon.ItemName = function() return "Current item" end
+            addon.CarriedItemCount = function() return 1 end
+            local armed, nestedHeight = true, nil
+            local getter = function()
+                if armed then
+                    armed = false
+                    if sameQuest then ui:RefreshDetail() else showDetail(2) end
+                    nestedHeight = ui.detail.height
+                    return helper == "ItemName" and "Stale item" or 9
+                end
+                return helper == "ItemName" and "Current item" or 1
+            end
+            addon[helper] = getter; showDetail(9988)
+            assert(not armed and ui.quest == (sameQuest and 9988 or 2) and ui.detail.height == nestedHeight)
+            assert(not detailHas(addon.L("OBJECTIVE_ITEM", "Stale item", 2)) and not detailHas(addon.L("ITEM_CARRIED", 9)))
+            assert(detailHas(addon.L("OBJECTIVE_ITEMS")) == sameQuest)
+            if sameQuest then assert(detailHas(addon.L("OBJECTIVE_ITEM", "Current item", 2)) and detailHas(addon.L("ITEM_CARRIED", 1))) end
+            assert(addon[helper] == getter and addon.quests[9988].objectiveItems == entries and addon.quests[9988].requirementsKnown == false)
+        end
+    end
+    addon.ItemName, addon.CarriedItemCount = itemName, count; addon.quests[9988] = nil; showDetail(2)
+end)
 print("Preparation UI modeled checks passed: " .. total .. " (no native layout validation)")

@@ -819,6 +819,30 @@ function UI:RefreshDetail()
                 y = self:LayoutRow(row, 59, y)
             end
         end
+        local objectiveItems = addon.Clean(q.objectiveItems, "table")
+        local shownObjectives, seenItems = false, {}
+        for index = 1, math.min(objectiveItems and #objectiveItems or 0, 100) do
+            local entry = addon.Clean(objectiveItems[index], "table")
+            local itemID = entry and addon.Clean(entry.itemID, "number")
+            local quantity = entry and addon.Clean(entry.quantity, "number")
+            if itemID and itemID > 0 and itemID <= 9007199254740991 and itemID % 1 == 0 and
+                quantity and quantity > 0 and quantity <= 9007199254740991 and quantity % 1 == 0 and not seenItems[itemID] then
+                seenItems[itemID] = true
+                local name = addon.Read(addon.ItemName, "string", itemID)
+                if self.quest ~= renderQuest or self.rewardGeneration ~= rewardGeneration then return end
+                if not name or #name > 1024 or not name:find("%S") then
+                    name = addon.Clean(entry.name, "string")
+                    if not name or #name > 2000 or not name:find("%S") then name = string.format("#%.0f", itemID) end
+                end
+                local count = carried(itemID)
+                if self.quest ~= renderQuest or self.rewardGeneration ~= rewardGeneration then return end
+                if not shownObjectives then
+                    line(addon.L("OBJECTIVE_ITEMS")); line(addon.L("OBJECTIVE_ITEMS_NOTICE")); shownObjectives = true
+                end
+                line(addon.L("OBJECTIVE_ITEM", name, quantity))
+                if count then line(count) end
+            end
+        end
         line(addon.Description(id))
         local dialogueObjective
         if type(addon.DialogueObjectiveText) == "function" then

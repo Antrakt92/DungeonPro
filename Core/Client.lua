@@ -431,6 +431,17 @@ function addon.CarriedItemCount(id)
             local quest = addon.Clean(value, "table")
             local start = quest and addon.Clean(quest.start, "table")
             if start and addon.Clean(start.itemID, "number") == id then return true end
+            local objectives = quest and addon.Clean(quest.objectiveItems, "table")
+            if objectives and #objectives >= 1 and #objectives <= 100 then
+                for index = 1, #objectives do
+                    local entry = addon.Clean(objectives[index], "table")
+                    if entry then
+                        local itemID = dialogueInteger(entry.itemID, 1, 9007199254740991)
+                        local quantity = dialogueInteger(entry.quantity, 1, 9007199254740991)
+                        if itemID == id and quantity then return true end
+                    end
+                end
+            end
             local related = quest and addon.Clean(quest.completionQuests, "table")
             if related then
                 for index = 1, math.min(#related, 100) do
