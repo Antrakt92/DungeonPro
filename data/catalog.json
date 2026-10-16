@@ -1190,6 +1190,14 @@
       "finish": {
         "npcID": 8418,
         "name": "Falla Sagewind"
+      },
+      "start": {
+        "itemID": 10441,
+        "name": "Glowing Shard",
+        "itemMinLevel": 15,
+        "dropNPCID": 3654,
+        "dropName": "Mutanus the Devourer",
+        "dungeonKey": "wc"
       }
     },
     {
@@ -1840,7 +1848,12 @@
         6564,
         6565
       ],
-      "requirementsKnown": false
+      "requirementsKnown": false,
+      "start": {
+        "itemID": 16790,
+        "name": "Damp Note",
+        "itemMinLevel": 17
+      }
     },
     {
       "id": 6563,
@@ -2314,6 +2327,14 @@
       "finish": {
         "objectID": 142487,
         "name": "The Sparklematic 5200"
+      },
+      "start": {
+        "itemID": 9326,
+        "name": "Grime-Encrusted Ring",
+        "itemMinLevel": 28,
+        "dropNPCID": 6212,
+        "dropName": "Dark Iron Agent",
+        "dungeonKey": "gnom"
       }
     },
     {
@@ -6302,7 +6323,18 @@
       "source": "https://www.wowhead.com/forever/quest=95664/elder-knowledge",
       "level": 31,
       "minLevel": 24,
-      "start": null,
+      "start": {
+        "itemID": 270866,
+        "name": "Titan Relic",
+        "dropSources": [
+          {
+            "npcID": 260326,
+            "name": "Relic Guardian",
+            "locationName": "Excavation Site: Wetlands"
+          }
+        ],
+        "dungeonKey": "excavation"
+      },
       "finish": {
         "npcID": 9087,
         "name": "Bashana Runetotem"
@@ -8794,7 +8826,69 @@
       "requirementsKnown": false,
       "factions": [
         "Alliance"
-      ]
+      ],
+      "start": {
+        "itemID": 268535,
+        "name": "Bloodied Insignia",
+        "dropSources": [
+          {
+            "npcID": 250689,
+            "name": "Living Monstrosity",
+            "locationName": "Ruins of Lordaeron"
+          },
+          {
+            "npcID": 250623,
+            "name": "Mangled Cadaver",
+            "locationName": "Ruins of Lordaeron"
+          },
+          {
+            "npcID": 250626,
+            "name": "Skeletal Soldier",
+            "locationName": "Ruins of Lordaeron"
+          },
+          {
+            "npcID": 250622,
+            "name": "Ragged Ghoul",
+            "locationName": "Ruins of Lordaeron"
+          },
+          {
+            "npcID": 250624,
+            "name": "Skeletal Mage",
+            "locationName": "Ruins of Lordaeron"
+          },
+          {
+            "npcID": 255109,
+            "name": "Flesh Golem",
+            "locationName": "Ruins of Lordaeron"
+          },
+          {
+            "npcID": 250656,
+            "name": "Fallen Berserker",
+            "locationName": "Ruins of Lordaeron"
+          },
+          {
+            "npcID": 255964,
+            "name": "Fallen Necromancer",
+            "locationName": "Ruins of Lordaeron"
+          },
+          {
+            "npcID": 250630,
+            "name": "Plague Ghoul",
+            "locationName": "Ruins of Lordaeron"
+          },
+          {
+            "npcID": 250627,
+            "name": "Ghoul",
+            "locationName": "Ruins of Lordaeron"
+          },
+          {
+            "npcID": 250618,
+            "name": "Skeleton",
+            "locationName": "Ruins of Lordaeron"
+          }
+        ],
+        "dungeonKey": "lordaeron"
+      }
     },
     {
       "id": 95204,
@@ -8940,7 +9034,20 @@
         97290,
         97291,
         97292
-      ]
+      ],
+      "start": {
+        "itemID": 280438,
+        "name": "Abominable Head",
+        "dropSources": [
+          {
+            "npcID": 250660,
+            "name": "The Baron",
+            "locationName": "Ruins of Lordaeron"
+          }
+        ],
+        "dungeonKey": "lordaeron",
+        "itemMinLevel": 16
+      }
     },
     {
       "id": 97289,
@@ -9135,7 +9242,12 @@
         4903,
         4941,
         4974
-      ]
+      ],
+      "start": {
+        "itemID": 12563,
+        "name": "Warlord Goretooth's Command",
+        "itemMinLevel": 55
+      }
     },
     {
       "id": 4729,
@@ -9521,7 +9633,14 @@
       "factions": [
         "Alliance",
         "Horde"
-      ]
+      ],
+      "start": {
+        "itemID": 18987,
+        "name": "Blackhand's Command",
+        "itemMinLevel": 55,
+        "dropNPCID": 9046,
+        "dropName": "Scarshield Quartermaster"
+      }
     },
     {
       "id": 5160,
@@ -11072,7 +11191,25 @@
       "storyline": [
         5262,
         5263
-      ]
+      ],
+      "start": {
+        "itemID": 13250,
+        "name": "Head of Balnazzar",
+        "itemMinLevel": 55,
+        "dungeonKey": "strat",
+        "dropSources": [
+          {
+            "npcID": 10813,
+            "name": "Balnazzar",
+            "locationName": "Stratholme"
+          },
+          {
+            "npcID": 10812,
+            "name": "Grand Crusader Dathrohan",
+            "locationName": "Stratholme"
+          }
+        ]
+      }
     },
     {
       "id": 5213,
