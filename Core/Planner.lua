@@ -70,7 +70,10 @@ function Planner.New(quests, context)
         path = path or {}
         if path[id] then return {}, true end
         local state, q = self:State(id), self.quests[id]
-        if state.status == "UNKNOWN" then return {}, true end
+        -- A known AND/OR graph may still contain a safe branch even when a
+        -- different prerequisite has unknown requirements.
+        if state.status == "UNKNOWN" and not (q and q.requirementsKnown == true and
+            state.reason == "requirements") then return {}, true end
         if state.status == "COMPLETED" or state.status == "UNAVAILABLE" then return {}, false end
         if state.status == "ACTIVE" or state.status == "READY" then
             return { { id = id, kind = state.status == "READY" and "turnin" or "complete", place = q.finish } }, false
@@ -119,7 +122,8 @@ function Planner.New(quests, context)
                 local state = self:State(id)
                 result.rows[#result.rows + 1] = { id = id, state = state }
                 result.counts[state.status] = (result.counts[state.status] or 0) + 1
-                if state.status ~= "COMPLETED" and state.status ~= "ACTIVE" and state.status ~= "READY" and not (q and q.startsInside) then
+                if state.status ~= "COMPLETED" and state.status ~= "ACTIVE" and state.status ~= "READY" and
+                    not (q and q.startsInside and state.status == "AVAILABLE") then
                     result.ready = false
                 end
                 local actions, uncertain = self:Next(id)
