@@ -1237,7 +1237,11 @@
       "source": "https://www.wowhead.com/forever/quest=1489/hamuul-runetotem",
       "start": {
         "npcID": 3448,
-        "name": "Tonga Runetotem"
+        "name": "Tonga Runetotem",
+        "zoneName": "The Barrens",
+        "mapID": 1413,
+        "x": 52.2,
+        "y": 31.8
       },
       "finish": {
         "npcID": 5769,
@@ -1464,11 +1468,19 @@
       "source": "https://www.wowhead.com/forever/quest=870/the-forgotten-pools",
       "start": {
         "npcID": 3448,
-        "name": "Tonga Runetotem"
+        "name": "Tonga Runetotem",
+        "zoneName": "The Barrens",
+        "mapID": 1413,
+        "x": 52.2,
+        "y": 31.8
       },
       "finish": {
         "npcID": 3448,
-        "name": "Tonga Runetotem"
+        "name": "Tonga Runetotem",
+        "zoneName": "The Barrens",
+        "mapID": 1413,
+        "x": 52.2,
+        "y": 31.8
       },
       "requirementsKnown": false
     },
@@ -1483,11 +1495,19 @@
       "source": "https://www.wowhead.com/forever/quest=877/the-stagnant-oasis",
       "start": {
         "npcID": 3448,
-        "name": "Tonga Runetotem"
+        "name": "Tonga Runetotem",
+        "zoneName": "The Barrens",
+        "mapID": 1413,
+        "x": 52.2,
+        "y": 31.8
       },
       "finish": {
         "npcID": 3448,
-        "name": "Tonga Runetotem"
+        "name": "Tonga Runetotem",
+        "zoneName": "The Barrens",
+        "mapID": 1413,
+        "x": 52.2,
+        "y": 31.8
       },
       "requirementsKnown": false,
       "requires": [
@@ -1509,11 +1529,19 @@
       "source": "https://www.wowhead.com/forever/quest=880/altered-beings",
       "start": {
         "npcID": 3448,
-        "name": "Tonga Runetotem"
+        "name": "Tonga Runetotem",
+        "zoneName": "The Barrens",
+        "mapID": 1413,
+        "x": 52.2,
+        "y": 31.8
       },
       "finish": {
         "npcID": 3448,
-        "name": "Tonga Runetotem"
+        "name": "Tonga Runetotem",
+        "zoneName": "The Barrens",
+        "mapID": 1413,
+        "x": 52.2,
+        "y": 31.8
       },
       "requirementsKnown": false,
       "requires": [
@@ -1554,11 +1582,19 @@
       "source": "https://www.wowhead.com/forever/quest=6565/allegiance-to-the-old-gods",
       "start": {
         "npcID": 12736,
-        "name": "Je'neu Sancrea"
+        "name": "Je'neu Sancrea",
+        "zoneName": "Ashenvale",
+        "mapID": 1440,
+        "x": 11.6,
+        "y": 34.2
       },
       "finish": {
         "npcID": 12736,
-        "name": "Je'neu Sancrea"
+        "name": "Je'neu Sancrea",
+        "zoneName": "Ashenvale",
+        "mapID": 1440,
+        "x": 11.6,
+        "y": 34.2
       },
       "requirementsKnown": false,
       "storyline": [
@@ -1623,11 +1659,19 @@
       "source": "https://www.wowhead.com/forever/quest=6921/amongst-the-ruins",
       "start": {
         "npcID": 12736,
-        "name": "Je'neu Sancrea"
+        "name": "Je'neu Sancrea",
+        "zoneName": "Ashenvale",
+        "mapID": 1440,
+        "x": 11.6,
+        "y": 34.2
       },
       "finish": {
         "npcID": 12736,
-        "name": "Je'neu Sancrea"
+        "name": "Je'neu Sancrea",
+        "zoneName": "Ashenvale",
+        "mapID": 1440,
+        "x": 11.6,
+        "y": 34.2
       },
       "requirementsKnown": false
     },
@@ -1786,7 +1830,11 @@
       ],
       "finish": {
         "npcID": 12736,
-        "name": "Je'neu Sancrea"
+        "name": "Je'neu Sancrea",
+        "zoneName": "Ashenvale",
+        "mapID": 1440,
+        "x": 11.6,
+        "y": 34.2
       },
       "storyline": [
         6564,
@@ -1805,11 +1853,19 @@
       ],
       "start": {
         "npcID": 12736,
-        "name": "Je'neu Sancrea"
+        "name": "Je'neu Sancrea",
+        "zoneName": "Ashenvale",
+        "mapID": 1440,
+        "x": 11.6,
+        "y": 34.2
       },
       "finish": {
         "npcID": 12736,
-        "name": "Je'neu Sancrea"
+        "name": "Je'neu Sancrea",
+        "zoneName": "Ashenvale",
+        "mapID": 1440,
+        "x": 11.6,
+        "y": 34.2
       },
       "storyline": [
         6562,
@@ -1832,7 +1888,11 @@
       },
       "finish": {
         "npcID": 12736,
-        "name": "Je'neu Sancrea"
+        "name": "Je'neu Sancrea",
+        "zoneName": "Ashenvale",
+        "mapID": 1440,
+        "x": 11.6,
+        "y": 34.2
       },
       "storyline": [
         6562,
@@ -2504,7 +2564,10 @@
       "finish": {
         "npcID": 6826,
         "name": "Talvash del Kissel",
-        "zoneName": "Ironforge"
+        "zoneName": "Ironforge",
+        "mapID": 1455,
+        "x": 36,
+        "y": 3.4
       }
     },
     {
@@ -3869,7 +3932,10 @@
       "finish": {
         "npcID": 6826,
         "name": "Talvash del Kissel",
-        "zoneName": "Ironforge"
+        "zoneName": "Ironforge",
+        "mapID": 1455,
+        "x": 36,
+        "y": 3.4
       },
       "storyline": [
         2198,
@@ -3969,11 +4035,19 @@
       "source": "https://www.wowhead.com/forever/quest=17/uldaman-reagent-run",
       "start": {
         "npcID": 1470,
-        "name": "Ghak Healtouch"
+        "name": "Ghak Healtouch",
+        "zoneName": "Loch Modan",
+        "mapID": 1432,
+        "x": 37,
+        "y": 49.2
       },
       "finish": {
         "npcID": 1470,
-        "name": "Ghak Healtouch"
+        "name": "Ghak Healtouch",
+        "zoneName": "Loch Modan",
+        "mapID": 1432,
+        "x": 37,
+        "y": 49.2
       },
       "requires": [
         {
@@ -4079,7 +4153,10 @@
       "start": {
         "npcID": 6826,
         "name": "Talvash del Kissel",
-        "zoneName": "Ironforge"
+        "zoneName": "Ironforge",
+        "mapID": 1455,
+        "x": 36,
+        "y": 3.4
       },
       "finish": {
         "npcID": 6912,
@@ -4180,12 +4257,18 @@
       "start": {
         "npcID": 6826,
         "name": "Talvash del Kissel",
-        "zoneName": "Ironforge"
+        "zoneName": "Ironforge",
+        "mapID": 1455,
+        "x": 36,
+        "y": 3.4
       },
       "finish": {
         "npcID": 6826,
         "name": "Talvash del Kissel",
-        "zoneName": "Ironforge"
+        "zoneName": "Ironforge",
+        "mapID": 1455,
+        "x": 36,
+        "y": 3.4
       }
     },
     {
@@ -4201,12 +4284,18 @@
       "start": {
         "npcID": 6826,
         "name": "Talvash del Kissel",
-        "zoneName": "Ironforge"
+        "zoneName": "Ironforge",
+        "mapID": 1455,
+        "x": 36,
+        "y": 3.4
       },
       "finish": {
         "npcID": 6826,
         "name": "Talvash del Kissel",
-        "zoneName": "Ironforge"
+        "zoneName": "Ironforge",
+        "mapID": 1455,
+        "x": 36,
+        "y": 3.4
       },
       "storyline": [
         2198,
@@ -4457,7 +4546,10 @@
       "finish": {
         "npcID": 6826,
         "name": "Talvash del Kissel",
-        "zoneName": "Ironforge"
+        "zoneName": "Ironforge",
+        "mapID": 1455,
+        "x": 36,
+        "y": 3.4
       },
       "storyline": [
         2198,
@@ -4487,12 +4579,18 @@
       "start": {
         "npcID": 6826,
         "name": "Talvash del Kissel",
-        "zoneName": "Ironforge"
+        "zoneName": "Ironforge",
+        "mapID": 1455,
+        "x": 36,
+        "y": 3.4
       },
       "finish": {
         "npcID": 6826,
         "name": "Talvash del Kissel",
-        "zoneName": "Ironforge"
+        "zoneName": "Ironforge",
+        "mapID": 1455,
+        "x": 36,
+        "y": 3.4
       }
     },
     {
@@ -4760,11 +4858,19 @@
       "source": "https://www.wowhead.com/forever/quest=2500/badlands-reagent-run",
       "start": {
         "npcID": 1470,
-        "name": "Ghak Healtouch"
+        "name": "Ghak Healtouch",
+        "zoneName": "Loch Modan",
+        "mapID": 1432,
+        "x": 37,
+        "y": 49.2
       },
       "finish": {
         "npcID": 1470,
-        "name": "Ghak Healtouch"
+        "name": "Ghak Healtouch",
+        "zoneName": "Loch Modan",
+        "mapID": 1432,
+        "x": 37,
+        "y": 49.2
       }
     },
     {
@@ -4798,11 +4904,19 @@
       "source": "https://www.wowhead.com/forever/quest=2501/badlands-reagent-run-ii",
       "start": {
         "npcID": 1470,
-        "name": "Ghak Healtouch"
+        "name": "Ghak Healtouch",
+        "zoneName": "Loch Modan",
+        "mapID": 1432,
+        "x": 37,
+        "y": 49.2
       },
       "finish": {
         "npcID": 1470,
-        "name": "Ghak Healtouch"
+        "name": "Ghak Healtouch",
+        "zoneName": "Loch Modan",
+        "mapID": 1432,
+        "x": 37,
+        "y": 49.2
       }
     },
     {
@@ -5283,11 +5397,19 @@
       "source": "https://www.wowhead.com/forever/quest=2991/nekrums-medallion",
       "start": {
         "npcID": 8022,
-        "name": "Thadius Grimshade"
+        "name": "Thadius Grimshade",
+        "zoneName": "Blasted Lands",
+        "mapID": 1419,
+        "x": 67,
+        "y": 19.4
       },
       "finish": {
         "npcID": 8022,
-        "name": "Thadius Grimshade"
+        "name": "Thadius Grimshade",
+        "zoneName": "Blasted Lands",
+        "mapID": 1419,
+        "x": 67,
+        "y": 19.4
       },
       "storyline": [
         2988,
@@ -5642,7 +5764,11 @@
       },
       "finish": {
         "npcID": 8022,
-        "name": "Thadius Grimshade"
+        "name": "Thadius Grimshade",
+        "zoneName": "Blasted Lands",
+        "mapID": 1419,
+        "x": 67,
+        "y": 19.4
       },
       "storyline": [
         2988,
@@ -5673,11 +5799,19 @@
       "source": "https://www.wowhead.com/forever/quest=2992/the-divination",
       "start": {
         "npcID": 8022,
-        "name": "Thadius Grimshade"
+        "name": "Thadius Grimshade",
+        "zoneName": "Blasted Lands",
+        "mapID": 1419,
+        "x": 67,
+        "y": 19.4
       },
       "finish": {
         "npcID": 8022,
-        "name": "Thadius Grimshade"
+        "name": "Thadius Grimshade",
+        "zoneName": "Blasted Lands",
+        "mapID": 1419,
+        "x": 67,
+        "y": 19.4
       },
       "storyline": [
         2988,
@@ -5701,7 +5835,11 @@
       "source": "https://www.wowhead.com/forever/quest=2993/return-to-the-hinterlands",
       "start": {
         "npcID": 8022,
-        "name": "Thadius Grimshade"
+        "name": "Thadius Grimshade",
+        "zoneName": "Blasted Lands",
+        "mapID": 1419,
+        "x": 67,
+        "y": 19.4
       },
       "finish": {
         "npcID": 5636,
@@ -5842,7 +5980,8 @@
       "source": "https://www.wowhead.com/forever/quest=3447/secret-of-the-circle",
       "start": {
         "npcID": 7771,
-        "name": "Marvon Rivetseeker"
+        "name": "Marvon Rivetseeker",
+        "zoneName": "Tanaris"
       },
       "finish": {
         "objectID": 148838,
@@ -5920,7 +6059,8 @@
       "source": "https://www.wowhead.com/forever/quest=3446/into-the-depths",
       "start": {
         "npcID": 7771,
-        "name": "Marvon Rivetseeker"
+        "name": "Marvon Rivetseeker",
+        "zoneName": "Tanaris"
       },
       "finish": {
         "objectID": 148836,
@@ -5946,11 +6086,19 @@
       "source": "https://www.wowhead.com/forever/quest=1445/the-temple-of-atalhakkar",
       "start": {
         "npcID": 1443,
-        "name": "Fel'zerul"
+        "name": "Fel'zerul",
+        "zoneName": "Swamp of Sorrows",
+        "mapID": 1435,
+        "x": 48,
+        "y": 55
       },
       "finish": {
         "npcID": 1443,
-        "name": "Fel'zerul"
+        "name": "Fel'zerul",
+        "zoneName": "Swamp of Sorrows",
+        "mapID": 1435,
+        "x": 48,
+        "y": 55
       },
       "storyline": [
         1424,
@@ -5982,7 +6130,8 @@
       },
       "finish": {
         "npcID": 7771,
-        "name": "Marvon Rivetseeker"
+        "name": "Marvon Rivetseeker",
+        "zoneName": "Tanaris"
       },
       "storylineGroups": [
         [
@@ -6035,7 +6184,8 @@
       },
       "finish": {
         "npcID": 7771,
-        "name": "Marvon Rivetseeker"
+        "name": "Marvon Rivetseeker",
+        "zoneName": "Tanaris"
       },
       "storylineGroups": [
         [
@@ -6060,11 +6210,13 @@
       "source": "https://www.wowhead.com/forever/quest=3444/the-stone-circle",
       "start": {
         "npcID": 7771,
-        "name": "Marvon Rivetseeker"
+        "name": "Marvon Rivetseeker",
+        "zoneName": "Tanaris"
       },
       "finish": {
         "npcID": 7771,
-        "name": "Marvon Rivetseeker"
+        "name": "Marvon Rivetseeker",
+        "zoneName": "Tanaris"
       },
       "storylineGroups": [
         [
@@ -6090,11 +6242,19 @@
       ],
       "start": {
         "npcID": 2094,
-        "name": "James Halloran"
+        "name": "James Halloran",
+        "zoneName": "Wetlands",
+        "mapID": 1437,
+        "x": 8.4,
+        "y": 55.8
       },
       "finish": {
         "npcID": 2094,
-        "name": "James Halloran"
+        "name": "James Halloran",
+        "zoneName": "Wetlands",
+        "mapID": 1437,
+        "x": 8.4,
+        "y": 55.8
       },
       "requirementsKnown": false,
       "factions": [
@@ -6407,7 +6567,11 @@
       },
       "finish": {
         "npcID": 2094,
-        "name": "James Halloran"
+        "name": "James Halloran",
+        "zoneName": "Wetlands",
+        "mapID": 1437,
+        "x": 8.4,
+        "y": 55.8
       },
       "requirementsKnown": false,
       "factions": [
@@ -6434,11 +6598,19 @@
       "minLevel": 18,
       "start": {
         "npcID": 2094,
-        "name": "James Halloran"
+        "name": "James Halloran",
+        "zoneName": "Wetlands",
+        "mapID": 1437,
+        "x": 8.4,
+        "y": 55.8
       },
       "finish": {
         "npcID": 2094,
-        "name": "James Halloran"
+        "name": "James Halloran",
+        "zoneName": "Wetlands",
+        "mapID": 1437,
+        "x": 8.4,
+        "y": 55.8
       },
       "requirementsKnown": false,
       "factions": [
@@ -6465,11 +6637,19 @@
       "minLevel": 18,
       "start": {
         "npcID": 2094,
-        "name": "James Halloran"
+        "name": "James Halloran",
+        "zoneName": "Wetlands",
+        "mapID": 1437,
+        "x": 8.4,
+        "y": 55.8
       },
       "finish": {
         "npcID": 2094,
-        "name": "James Halloran"
+        "name": "James Halloran",
+        "zoneName": "Wetlands",
+        "mapID": 1437,
+        "x": 8.4,
+        "y": 55.8
       },
       "requirementsKnown": false,
       "factions": [
@@ -6538,11 +6718,19 @@
       "source": "https://www.wowhead.com/forever/quest=1424/pool-of-tears",
       "start": {
         "npcID": 1443,
-        "name": "Fel'zerul"
+        "name": "Fel'zerul",
+        "zoneName": "Swamp of Sorrows",
+        "mapID": 1435,
+        "x": 48,
+        "y": 55
       },
       "finish": {
         "npcID": 1443,
-        "name": "Fel'zerul"
+        "name": "Fel'zerul",
+        "zoneName": "Swamp of Sorrows",
+        "mapID": 1435,
+        "x": 48,
+        "y": 55
       },
       "storyline": [
         1424,
@@ -6563,7 +6751,11 @@
       "source": "https://www.wowhead.com/forever/quest=1429/the-atalai-exile",
       "start": {
         "npcID": 1443,
-        "name": "Fel'zerul"
+        "name": "Fel'zerul",
+        "zoneName": "Swamp of Sorrows",
+        "mapID": 1435,
+        "x": 48,
+        "y": 55
       },
       "finish": {
         "npcID": 5598,
@@ -6599,7 +6791,11 @@
       },
       "finish": {
         "npcID": 1443,
-        "name": "Fel'zerul"
+        "name": "Fel'zerul",
+        "zoneName": "Swamp of Sorrows",
+        "mapID": 1435,
+        "x": 48,
+        "y": 55
       },
       "storyline": [
         1424,
