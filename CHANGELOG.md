@@ -33,6 +33,7 @@
 - Hid scrollbars when a list or quest card fits without scrolling.
 - Started the quest list at the top when switching dungeons.
 - Kept item names and quest details tied to the current client data and selection.
+- Cleared an old copied quest link when switching to another quest.
 - Added missing dungeon quests and their supporting mage and faction story chains.
 - Kept newly accepted quests visible alongside past completion history, and
   retained that history when checking prerequisite chains.

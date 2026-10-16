@@ -14,6 +14,9 @@ function methods:SetScript(event, fn) self.scripts[event] = fn end
 function methods:SetText(value) self.text = value end
 function methods:SetTexture(value) self.texture = value; return true end
 function methods:GetText() return self.text or "" end
+function methods:SetFocus() self.focused = true end
+function methods:ClearFocus() self.focused = false end
+function methods:HighlightText() self.highlighted = true end
 function methods:SetEnabled(value) self.enabled = value end
 function methods:GetStringHeight() if measurement then return measurement(self) end; return 18 end
 function methods:SetScale(value) self.scale = value end
@@ -2372,4 +2375,32 @@ do
         restore()
     end)
 end
+check("Source copy field clears its URL and focus on inspection Back and dungeon clearing", function()
+    local quest, dungeon, history = ui.quest, ui.dungeon, ui.detailHistory
+    ui.detailHistory = {}; showDetail(1)
+    ui.source.scripts.OnClick()
+    assert(ui.copy.shown and ui.copy.focused and ui.copy.highlighted and ui.copy.text == "https://www.wowhead.com/forever/quest=1")
+    ui:InspectQuest(2)
+    assert(not ui.copy.shown and not ui.copy.focused and ui.copy.text == "", "old source URL must not accompany the next quest")
+    ui.source.scripts.OnClick(); assert(ui.copy.text == "https://www.wowhead.com/forever/quest=2")
+    assert(ui:BackQuest() and ui.quest == 1)
+    assert(not ui.copy.shown and not ui.copy.focused and ui.copy.text == "")
+    ui.source.scripts.OnClick(); ui.quest = nil; ui:RefreshDetail()
+    assert(not ui.copy.shown and not ui.copy.focused and ui.copy.text == "")
+    showDetail(1); ui.source.scripts.OnClick(); ui.cards[1].scripts.OnClick()
+    assert(ui.quest == nil and not ui.copy.shown and not ui.copy.focused and ui.copy.text == "")
+    ui.quest, ui.dungeon, ui.detailHistory = quest, dungeon, history; ui:Refresh()
+end)
+check("Same-card source copying survives refresh but a hidden quest change clears it on reopen", function()
+    local quest, history, locale = ui.quest, ui.detailHistory, addon.db.locale
+    ui.detailHistory = {}; showDetail(1); ui.source.scripts.OnClick()
+    local box, url = ui.copy, ui.copy.text
+    ui:RefreshDetail(); ui:Refresh(); ui:InspectQuest(1); ui.language.scripts.OnClick()
+    assert(box.shown and box.focused and box.text == url and #ui.detailHistory == 0)
+    ui.frame:Hide(); ui.quest = 2; ui:Refresh()
+    assert(box.text == url, "hidden refresh is deferred until opening")
+    ui.frame:Show(); ui.frame.scripts.OnShow(ui.frame)
+    assert(ui.quest == 2 and #ui.detailHistory == 0 and not box.shown and not box.focused and box.text == "")
+    addon.db.locale, ui.quest, ui.detailHistory = locale, quest, history; ui:Refresh()
+end)
 print("Preparation UI modeled checks passed: " .. total .. " (no native layout validation)")

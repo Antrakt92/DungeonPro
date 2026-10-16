@@ -438,6 +438,9 @@ function UI:RefreshDetail()
     local rewardGeneration = self:ResetRewardPresentation()
     if not rewardGeneration or self.quest ~= renderQuest then return end
     if self.renderedQuest ~= self.quest then
+        if self.copy then
+            self.copy:SetText(""); self.copy:Hide(); self.copy:ClearFocus()
+        end
         self.detailScroll:SetVerticalScroll(0)
         self.renderedQuest = self.quest
         self.reportedExpanded = {}
