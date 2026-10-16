@@ -5,9 +5,9 @@ local target, frame, elapsed = nil, nil, 0
 local tomtomOwner, tomtomUID, nativePoint
 local navigationGeneration = {}
 
-local function nativeWaypointEmpty()
-    if type(C_Map.GetUserWaypoint) ~= "function" then return false end
-    local ok, point = pcall(C_Map.GetUserWaypoint)
+local function nativeWaypointEmpty(getter)
+    if type(getter) ~= "function" then return false end
+    local ok, point = pcall(getter)
     if not ok then return false end
     if type(issecretvalue) == "function" then
         local checked, secret = pcall(issecretvalue, point)
@@ -33,13 +33,18 @@ end
 
 local function releaseNativePoint(pin, generation)
     if not pin or nativePoint or navigationGeneration ~= generation or not C_Map then return end
-    local current = addon.Read(C_Map.GetUserWaypoint, "table")
+    local owner, checker = pin.owner, issecretvalue
+    if C_Map ~= owner then return end
+    local getter, clearer = addon.Clean(owner.GetUserWaypoint, "function"), addon.Clean(owner.ClearUserWaypoint, "function")
+    if not getter or not clearer then return end
+    local current = addon.Read(getter, "table")
     local pos = current and addon.Clean(current.position, "table")
     local map = current and addon.Clean(current.uiMapID, "number")
     local x, y = pos and addon.Clean(pos.x, "number"), pos and addon.Clean(pos.y, "number")
-    if navigationGeneration == generation and not nativePoint and
+    if navigationGeneration == generation and not nativePoint and C_Map == owner and issecretvalue == checker and
+        addon.Clean(owner.GetUserWaypoint, "function") == getter and addon.Clean(owner.ClearUserWaypoint, "function") == clearer and
         map == pin.mapID and x == pin.x and y == pin.y then
-        if type(C_Map.ClearUserWaypoint) == "function" then pcall(C_Map.ClearUserWaypoint) end
+        pcall(clearer)
     end
 end
 
@@ -134,30 +139,43 @@ function N.Start(action)
         end
         if ok and valid then tomtomOwner, tomtomUID = owner, valid end
     end
-    if not tomtomUID and C_Map and type(C_Map.SetUserWaypoint) == "function" and UiMapPoint and
+    if not tomtomUID and N.Valid(p) and C_Map and type(C_Map.SetUserWaypoint) == "function" and UiMapPoint and
         type(UiMapPoint.CreateFromCoordinates) == "function" then
+        local mapOwner, factory, checker = C_Map, UiMapPoint, issecretvalue
+        local getter, setter, canSet, create = C_Map.GetUserWaypoint, C_Map.SetUserWaypoint,
+            C_Map.CanSetUserWaypointOnMap, UiMapPoint.CreateFromCoordinates
+        local mapID, pointX, pointY = addon.Clean(p.mapID, "number"), addon.Clean(p.x, "number"), addon.Clean(p.y, "number")
+        local x, y = pointX and pointX / 100, pointY and pointY / 100
+        local function capabilitiesCurrent()
+            return mapID and x and y and C_Map == mapOwner and UiMapPoint == factory and issecretvalue == checker and
+                mapOwner.GetUserWaypoint == getter and mapOwner.SetUserWaypoint == setter and
+                mapOwner.CanSetUserWaypointOnMap == canSet and factory.CreateFromCoordinates == create and
+                addon.Clean(p.mapID, "number") == mapID and addon.Clean(p.x, "number") == pointX and
+                addon.Clean(p.y, "number") == pointY
+        end
         -- A guide can use its own arrow without replacing the player's map pin.
-        local empty = nativeWaypointEmpty()
+        local empty = nativeWaypointEmpty(getter)
         if not current() then return false end
-        local allowed = empty and (not C_Map.CanSetUserWaypointOnMap or
-            addon.Read(C_Map.CanSetUserWaypointOnMap, "boolean", p.mapID) == true)
+        local allowed = capabilitiesCurrent() and empty and (not canSet or
+            addon.Read(canSet, "boolean", mapID) == true)
         if not current() then return false end
-        if allowed then
-            local ok, value = pcall(UiMapPoint.CreateFromCoordinates, p.mapID, p.x / 100, p.y / 100)
+        if allowed and capabilitiesCurrent() then
+            local ok, value = pcall(create, mapID, x, y)
             if not current() then return false end
             value = ok and (addon.Clean(value, "table") or addon.Clean(value, "userdata"))
-            if value then
+            if value and capabilitiesCurrent() then
                 -- A callback may have created a manual pin since the first check.
-                empty = nativeWaypointEmpty()
+                empty = nativeWaypointEmpty(getter)
                 if not current() then return false end
-                if empty then
-                    local setOK, wasSet = pcall(C_Map.SetUserWaypoint, value)
+                if empty and capabilitiesCurrent() then
+                    local setOK, wasSet = pcall(setter, value)
                     local owned = setOK and addon.Clean(wasSet, "boolean") == true
-                    local pin = { mapID = p.mapID, x = p.x / 100, y = p.y / 100 }
+                    local pin = { mapID = mapID, x = x, y = y, owner = mapOwner }
                     if not current() then
                         if owned then releaseNativePoint(pin, navigationGeneration) end
                         return false
                     end
+                    owned = owned and capabilitiesCurrent()
                     if owned then nativePoint = pin end
                     if owned and C_SuperTrack and C_SuperTrack.SetSuperTrackedUserWaypoint then
                         pcall(C_SuperTrack.SetSuperTrackedUserWaypoint, true)

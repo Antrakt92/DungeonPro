@@ -417,4 +417,78 @@ check("A title refresh starting another guide cannot overwrite the newer HUD lab
     assert(shown)
     addon.QuestName = questName
 end)
+check("Cleanup cannot clear a different map namespace installed during ownership inspection", function()
+    assert(nav.Start(action))
+    local owned = current
+    local manual = { uiMapID = 2, position = { x = 0.2, y = 0.3 } }
+    C_Map.GetUserWaypoint = function()
+        current = manual
+        C_Map = { GetUserWaypoint = function() return manual end,
+            ClearUserWaypoint = function() clears = clears + 1; current = nil end }
+        return owned
+    end
+    nav.Stop()
+    assert(clears == 0 and current == manual, "old ownership result must not authorize a new namespace clear")
+end)
+check("Cleanup cannot use a replaced getter or clearer after reading an old owned point", function()
+    for _, changed in ipairs({ "getter", "clearer" }) do
+        reset(); assert(nav.Start(action))
+        local owned = current
+        local manual = { uiMapID = 2, position = { x = 0.2, y = 0.3 } }
+        C_Map.GetUserWaypoint = function()
+            current = manual
+            if changed == "getter" then C_Map.GetUserWaypoint = function() return manual end
+            else C_Map.ClearUserWaypoint = function() clears = clears + 1; current = nil end end
+            return owned
+        end
+        nav.Stop()
+        assert(clears == 0 and current == manual, changed .. " drift must preserve replacement point")
+    end
+end)
+check("A map capability change during the final empty check cannot overwrite a manual pin", function()
+    local reads, map = 0, C_Map
+    local manual = { uiMapID = 2, position = { x = 0.2, y = 0.3 } }
+    map.GetUserWaypoint = function()
+        reads = reads + 1
+        if reads == 2 then
+            local replacement = {}; for key, value in pairs(map) do replacement[key] = value end
+            replacement.GetUserWaypoint = function() return manual end
+            C_Map, current = replacement, manual
+        end
+        return nil
+    end
+    assert(nav.Start(action))
+    assert(nativeCalls == 0 and current == manual, "a stale empty result cannot authorize a new native setter")
+    nav.Stop(); assert(clears == 0 and current == manual)
+end)
+check("Changing the final getter or setter in place preserves a newly installed manual point", function()
+    for _, field in ipairs({ "GetUserWaypoint", "SetUserWaypoint" }) do
+        reset()
+        local reads = 0
+        local manual = { uiMapID = 2, position = { x = 0.2, y = 0.3 } }
+        C_Map.GetUserWaypoint = function()
+            reads = reads + 1
+            if reads == 2 then
+                current = manual
+                if field == "GetUserWaypoint" then C_Map.GetUserWaypoint = function() return manual end
+                else C_Map.SetUserWaypoint = function(p) nativeCalls = nativeCalls + 1; current = p; return true end end
+            end
+            return nil
+        end
+        assert(nav.Start(action) and nativeCalls == 0 and current == manual)
+        nav.Stop(); assert(clears == 0 and current == manual)
+    end
+end)
+check("Restricted destination changes during native reads never reach coordinate arithmetic", function()
+    local restricted, reads = {}, 0
+    local destination = { mapID = 1, x = 60, y = 70 }
+    issecretvalue = function(value) return value == restricted end
+    C_Map.GetUserWaypoint = function()
+        reads = reads + 1
+        if reads == 2 then destination.x = restricted end
+        return nil
+    end
+    assert(nav.Start({ id = 2, place = destination }) and nativeCalls == 0)
+    noPosition(); nav.Stop(); assert(clears == 0)
+end)
 print("Navigation modeled checks passed: " .. total .. " (no native map validation)")
