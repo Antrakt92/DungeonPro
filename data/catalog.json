@@ -2629,7 +2629,14 @@
         "mapID": 1453,
         "x": 55.4,
         "y": 12.4
-      }
+      },
+      "objectiveItems": [
+        {
+          "itemID": 9309,
+          "name": "Robo-mechanical Guts",
+          "quantity": 24
+        }
+      ]
     },
     {
       "id": 2922,
@@ -2731,6 +2738,13 @@
       "storyline": [
         2925,
         2924
+      ],
+      "objectiveItems": [
+        {
+          "itemID": 9278,
+          "name": "Essential Artificial",
+          "quantity": 12
+        }
       ]
     },
     {
@@ -3706,12 +3720,58 @@
       "start": {
         "npcID": 2308,
         "name": "Andrew Brownell",
-        "zoneName": "Undercity"
+        "zoneName": "Undercity",
+        "mapID": 1458,
+        "x": 74,
+        "y": 32.4,
+        "reportedLocations": [
+          {
+            "mapID": 1458,
+            "zoneName": "Undercity",
+            "x": 74,
+            "y": 32.4
+          },
+          {
+            "mapID": 1458,
+            "zoneName": "Undercity",
+            "x": 74,
+            "y": 32.8
+          },
+          {
+            "mapID": 1458,
+            "zoneName": "Undercity",
+            "x": 74.6,
+            "y": 32.2
+          }
+        ]
       },
       "finish": {
         "npcID": 2308,
         "name": "Andrew Brownell",
-        "zoneName": "Undercity"
+        "zoneName": "Undercity",
+        "mapID": 1458,
+        "x": 74,
+        "y": 32.4,
+        "reportedLocations": [
+          {
+            "mapID": 1458,
+            "zoneName": "Undercity",
+            "x": 74,
+            "y": 32.4
+          },
+          {
+            "mapID": 1458,
+            "zoneName": "Undercity",
+            "x": 74,
+            "y": 32.8
+          },
+          {
+            "mapID": 1458,
+            "zoneName": "Undercity",
+            "x": 74.6,
+            "y": 32.2
+          }
+        ]
       },
       "requirementsKnown": false
     },
@@ -4111,12 +4171,82 @@
       "start": {
         "npcID": 3979,
         "name": "Librarian Mae Paledust",
-        "zoneName": "Ironforge"
+        "zoneName": "Ironforge",
+        "mapID": 1455,
+        "x": 74,
+        "y": 13.4,
+        "reportedLocations": [
+          {
+            "mapID": 1455,
+            "zoneName": "Ironforge",
+            "x": 74,
+            "y": 13.4
+          },
+          {
+            "mapID": 1455,
+            "zoneName": "Ironforge",
+            "x": 74,
+            "y": 13.6
+          },
+          {
+            "mapID": 1455,
+            "zoneName": "Ironforge",
+            "x": 74.4,
+            "y": 12.4
+          },
+          {
+            "mapID": 1455,
+            "zoneName": "Ironforge",
+            "x": 74.6,
+            "y": 12.4
+          },
+          {
+            "mapID": 1455,
+            "zoneName": "Ironforge",
+            "x": 74.6,
+            "y": 12.6
+          }
+        ]
       },
       "finish": {
         "npcID": 3979,
         "name": "Librarian Mae Paledust",
-        "zoneName": "Ironforge"
+        "zoneName": "Ironforge",
+        "mapID": 1455,
+        "x": 74,
+        "y": 13.4,
+        "reportedLocations": [
+          {
+            "mapID": 1455,
+            "zoneName": "Ironforge",
+            "x": 74,
+            "y": 13.4
+          },
+          {
+            "mapID": 1455,
+            "zoneName": "Ironforge",
+            "x": 74,
+            "y": 13.6
+          },
+          {
+            "mapID": 1455,
+            "zoneName": "Ironforge",
+            "x": 74.4,
+            "y": 12.4
+          },
+          {
+            "mapID": 1455,
+            "zoneName": "Ironforge",
+            "x": 74.6,
+            "y": 12.4
+          },
+          {
+            "mapID": 1455,
+            "zoneName": "Ironforge",
+            "x": 74.6,
+            "y": 12.6
+          }
+        ]
       },
       "requirementsKnown": false
     },
@@ -4422,7 +4552,10 @@
       "finish": {
         "npcID": 1182,
         "name": "Brother Anton",
-        "zoneName": "Desolace"
+        "zoneName": "Desolace",
+        "mapID": 1443,
+        "x": 66.4,
+        "y": 7.8
       },
       "requirementsKnown": false,
       "storyline": [
@@ -4443,12 +4576,18 @@
       "start": {
         "npcID": 1182,
         "name": "Brother Anton",
-        "zoneName": "Desolace"
+        "zoneName": "Desolace",
+        "mapID": 1443,
+        "x": 66.4,
+        "y": 7.8
       },
       "finish": {
         "npcID": 1182,
         "name": "Brother Anton",
-        "zoneName": "Desolace"
+        "zoneName": "Desolace",
+        "mapID": 1443,
+        "x": 66.4,
+        "y": 7.8
       },
       "requirementsKnown": false,
       "storyline": [
@@ -4469,7 +4608,10 @@
       "start": {
         "npcID": 1182,
         "name": "Brother Anton",
-        "zoneName": "Desolace"
+        "zoneName": "Desolace",
+        "mapID": 1443,
+        "x": 66.4,
+        "y": 7.8
       },
       "finish": {
         "npcID": 3980,
@@ -4525,6 +4667,13 @@
             739
           ]
         }
+      ],
+      "objectiveItems": [
+        {
+          "itemID": 4610,
+          "quantity": 4,
+          "name": "Carved Stone Urn"
+        }
       ]
     },
     {
@@ -4565,7 +4714,19 @@
       "finish": {
         "npcID": 2817,
         "name": "Rigglefuzz"
-      }
+      },
+      "objectiveItems": [
+        {
+          "itemID": 8009,
+          "quantity": 8,
+          "name": "Dentrium Power Stone"
+        },
+        {
+          "itemID": 8052,
+          "quantity": 8,
+          "name": "An'Alleum Power Stone"
+        }
+      ]
     },
     {
       "id": 2240,
@@ -4841,6 +5002,13 @@
           "ids": [
             2500
           ]
+        }
+      ],
+      "objectiveItems": [
+        {
+          "itemID": 8047,
+          "quantity": 12,
+          "name": "Magenta Fungus Cap"
         }
       ]
     },
