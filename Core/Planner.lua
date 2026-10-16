@@ -18,8 +18,8 @@ function Planner.Eligible(q, context)
     return true
 end
 
-function Planner.New(quests, context)
-    local engine = { quests = quests, context = context, states = {}, visiting = {} }
+function Planner.New(quests, context, choices)
+    local engine = { quests = quests, context = context, choices = choices, states = {}, visiting = {} }
 
     function engine:State(id)
         if self.states[id] then return self.states[id] end
@@ -86,7 +86,7 @@ function Planner.New(quests, context)
         if state.reason == "level" then return { { id = id, kind = "level", level = q.minLevel } }, false end
         path[id] = true
         local actions, uncertain, seen = {}, false, {}
-        for _, group in ipairs(q.requires or {}) do
+        for groupIndex, group in ipairs(q.requires or {}) do
             local satisfied = false
             for _, parent in ipairs(group.ids) do
                 local ps = self:State(parent).status
@@ -96,12 +96,19 @@ function Planner.New(quests, context)
             end
             if not satisfied then
                 local best, bestUnknown, bestScore
+                local selected = type(self.choices) == "table" and self.choices[id]
+                selected = type(selected) == "table" and addon.Clean(selected[groupIndex], "number") or nil
+                if selected and (not contains(group.ids, selected) or self:State(selected).status == "UNAVAILABLE") then
+                    selected = nil
+                end
                 for _, parent in ipairs(group.ids) do
-                    local candidates, missing = self:Next(parent, path)
-                    local score = missing and 10000 or 0
-                    if #candidates == 0 then score = score + 5000 end
-                    for _, action in ipairs(candidates) do score = score + (action.kind == "level" and 100 or 1) end
-                    if not bestScore or score < bestScore then best, bestUnknown, bestScore = candidates, missing, score end
+                    if (not selected or parent == selected) and self:State(parent).status ~= "UNAVAILABLE" then
+                        local candidates, missing = self:Next(parent, path)
+                        local score = missing and 10000 or 0
+                        if #candidates == 0 then score = score + 5000 end
+                        for _, action in ipairs(candidates) do score = score + (action.kind == "level" and 100 or 1) end
+                        if not bestScore or score < bestScore then best, bestUnknown, bestScore = candidates, missing, score end
+                    end
                 end
                 if bestUnknown or not best or #best == 0 then uncertain = true end
                 for _, action in ipairs(best or {}) do

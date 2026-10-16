@@ -105,6 +105,28 @@ function UI:SaveFilters()
     end
 end
 
+function UI:ChooseBranch(id, index, parent)
+    id, index = addon.Clean(id, "number"), addon.Clean(index, "number")
+    if not id or id <= 0 or id ~= math.floor(id) or not index or index <= 0 or index ~= math.floor(index) then return false end
+    local q = addon.quests[id]
+    local group = q and q.requires and q.requires[index]
+    if not group or #group.ids < 2 then return false end
+    if type(parent) ~= "nil" then
+        parent = addon.Clean(parent, "number")
+        if not parent or parent <= 0 or parent ~= math.floor(parent) then return false end
+        local member = false
+        for _, candidate in ipairs(group.ids) do if candidate == parent then member = true end end
+        if not member then return false end
+        local fresh = addon.Planner.New(addon.quests, addon.Context(), addon.Clean(addon.char.choices, "table"))
+        if fresh:State(parent).status == "UNAVAILABLE" then return false end
+    end
+    if not addon.Clean(addon.char.choices, "table") then addon.char.choices = {} end
+    if not addon.Clean(addon.char.choices[id], "table") then addon.char.choices[id] = {} end
+    addon.char.choices[id][index] = parent
+    self:Refresh()
+    return true
+end
+
 function UI:RefreshDungeons()
     local context = addon.Context()
     local n, offset = 0, 0
@@ -138,7 +160,7 @@ function UI:RefreshDungeons()
 end
 
 function UI:RefreshQuests()
-    local d, engine = self.dungeon, addon.Planner.New(addon.quests, addon.Context())
+    local d, engine = self.dungeon, addon.Planner.New(addon.quests, addon.Context(), addon.Clean(addon.char.choices, "table"))
     self.engine = engine
     self.heading:SetText(d and addon.DungeonName(d) or addon.L("QUESTS"))
     local n, offset = 0, 0
@@ -223,6 +245,7 @@ function UI:RefreshDetail()
         y = y + math.max(height or 18, measured) + 8
     end
     for _, b in ipairs(self.chainButtons) do b:Hide() end
+    for _, b in ipairs(self.branchButtons) do b:Hide() end
     local id, engine = self.quest, self.engine
     if id then
         local q = addon.quests[id] or {}
@@ -270,6 +293,44 @@ function UI:RefreshDetail()
         self.action = action
         self.map:SetEnabled(action ~= nil and action.place ~= nil and action.place.mapID ~= nil)
         self.guide:SetEnabled(action ~= nil and action.place ~= nil and action.place.x ~= nil)
+        local branchIndex = 0
+        for groupIndex, group in ipairs(q.requires or {}) do
+            if #group.ids > 1 then
+                local index = groupIndex
+                line(addon.L("BRANCH_GROUP", index))
+                local choices = addon.Clean(addon.char.choices, "table")
+                local saved = choices and addon.Clean(choices[id], "table")
+                local selected = saved and addon.Clean(saved[index], "number")
+                local valid = false
+                for _, parent in ipairs(group.ids) do
+                    if parent == selected and engine:State(parent).status ~= "UNAVAILABLE" then valid = true end
+                end
+                if not valid then selected = nil end
+                local function option(value, parent, enabled, chosen)
+                    branchIndex = branchIndex + 1
+                    local b = self.branchButtons[branchIndex]
+                    if not b then
+                        b = CreateFrame("Button", nil, self.detail)
+                        b:SetWidth(332); b.label = label(b, "", 3, -3, 326, 12)
+                        b:SetHighlightTexture("Interface\\QuestFrame\\UI-QuestTitleHighlight")
+                        self.branchButtons[branchIndex] = b
+                    end
+                    b.questID, b.groupIndex, b.parentID = id, index, parent
+                    b.label:SetText(chosen and addon.L("BRANCH_SELECTED", value) or value)
+                    local height = math.max(30, measuredHeight(b.label, 18) + 6)
+                    b:SetHeight(height); b:ClearAllPoints(); b:SetPoint("TOPLEFT", 4, -y)
+                    b:SetEnabled(enabled)
+                    b:SetScript("OnClick", enabled and function() self:ChooseBranch(id, index, parent) end or nil)
+                    b:Show(); y = y + height + 3
+                end
+                option(addon.L("BRANCH_AUTO"), nil, true, selected == nil)
+                for _, parentID in ipairs(group.ids) do
+                    local parent, status = parentID, engine:State(parentID).status
+                    option(addon.QuestName(parent) .. " — " .. addon.L(status), parent,
+                        status ~= "UNAVAILABLE", parent == selected)
+                end
+            end
+        end
         line(addon.L(q.storyline and "STORY" or "CHAIN"))
         local seen, chainIndex = {}, 0
         local function visit(qid, depth)
@@ -422,7 +483,7 @@ function UI:Create()
     end)
     self.giver:SetPoint("BOTTOMLEFT", 690, 19)
     self.footer = label(frame, "", 22, -668, 640, 11)
-    self.frame, self.cards, self.rows, self.details, self.chainButtons = frame, {}, {}, {}, {}
+    self.frame, self.cards, self.rows, self.details, self.chainButtons, self.branchButtons = frame, {}, {}, {}, {}, {}
     UISpecialFrames[#UISpecialFrames + 1] = "DungeonPrepWindow"
     for _, d in ipairs(addon.dungeons) do if d.key == addon.char.selectedDungeon then self.dungeon = d end end
     frame:SetScript("OnShow", function() self:Fit(); self:Refresh() end)

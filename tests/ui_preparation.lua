@@ -385,6 +385,48 @@ check("Invalid and restricted text measurements reuse clean geometry safely", fu
     assert(visibleRows()[1].height == height and ui.chainButtons[1].height == chainHeight)
     measurement, issecretvalue = nil, nil
 end)
+check("OR alternatives support explicit persisted choices, automatic reset and safe stale fallback", function()
+    local originalContext, originalDungeon, originalChoices = addon.Context, ui.dungeon, addon.char.choices
+    addon.Context = function() local c = originalContext(); c.faction = "Alliance"; return c end
+    for _, id in ipairs({ 400, 401, 402, 403, 404 }) do
+        addon.quests[id] = { id = id, minLevel = 1, requirementsKnown = true,
+            start = { mapID = 1, x = 20, y = 30 } }
+    end
+    addon.quests[400].requires = { { ids = { 401, 402, 403, 404 } } }
+    addon.quests[403].factions = { "Horde" }; addon.quests[404].requirementsKnown = false
+    addon.char.choices = { [999] = { retain = true }, [400] = { [2] = 777 } }
+    local choices = addon.char.choices
+    ui.dungeon = { name = "Branch fixture", coverage = "reviewed", quests = { 400 } }
+    ui.preparation, ui.quest = false, 400; ui:Refresh()
+    local function option(parent)
+        for _, b in ipairs(ui.branchButtons) do
+            if b.shown and b.questID == 400 and b.groupIndex == 1 and b.parentID == parent then return b end
+        end
+        error("Missing branch option")
+    end
+    assert(ui.action.id == 401 and option(nil).label.text == addon.L("BRANCH_SELECTED", addon.L("BRANCH_AUTO")))
+    assert(not option(403).enabled and not option(403).scripts.OnClick)
+    assert(not ui:ChooseBranch(400, 1, 403) and not ui:ChooseBranch(400, 1, 999))
+    assert(not ui:ChooseBranch(math.huge, 1, 401) and choices[400][1] == nil)
+    option(402).scripts.OnClick()
+    assert(ui.action.id == 402 and choices[400][1] == 402)
+    assert(addon.char.choices == choices and choices[999].retain and choices[400][2] == 777)
+    ui:Refresh(); assert(ui.action.id == 402)
+    option(404).scripts.OnClick()
+    assert(choices[400][1] == 404 and not ui.action and not ui.guide.enabled)
+    option(nil).scripts.OnClick()
+    assert(choices[400][1] == nil and ui.action.id == 401)
+    option(402).scripts.OnClick()
+    addon.quests[400].requires[1].ids = { 401, 403, 404 }
+    ui:Refresh()
+    assert(ui.action.id == 401 and choices[400][1] == 402)
+    assert(option(nil).label.text == addon.L("BRANCH_SELECTED", addon.L("BRANCH_AUTO")))
+    ui.quest = 2; ui:RefreshDetail()
+    for _, b in ipairs(ui.branchButtons) do assert(not b.shown) end
+    for _, id in ipairs({ 400, 401, 402, 403, 404 }) do addon.quests[id] = nil end
+    addon.Context, addon.char.choices, ui.dungeon = originalContext, originalChoices, originalDungeon
+    ui.quest = nil; ui:Refresh()
+end)
 check("Completed preparation keeps the prepared result instead of empty data warning", function()
     for id in pairs(addon.quests) do done[id] = true end
     ui.preparationButton.scripts.OnClick()

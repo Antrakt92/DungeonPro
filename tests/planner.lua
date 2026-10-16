@@ -127,6 +127,38 @@ check("OR branches choose an actionable alternative", function()
     local actions, unknown = P.New(quests, ctx()):Next(3)
     eq(actions[1].id, 2); eq(unknown, false)
 end)
+check("Explicit OR preference chooses its branch without changing availability", function()
+    local quests = { [1] = q(1), [2] = q(2), [3] = q(3, { { ids = { 1, 2 } } }) }
+    local choices = { [3] = { [1] = 2 } }
+    local e = P.New(quests, ctx(), choices)
+    eq(e:Next(3)[1].id, 2); eq(e:State(3).status, "LOCKED")
+    choices[3][1] = nil; eq(e:Next(3)[1].id, 1)
+    choices[3][1] = 999; eq(e:Next(3)[1].id, 1)
+end)
+check("Unavailable or malformed preferences fall back safely", function()
+    local quests = { [1] = q(1), [2] = q(2, nil, { factions = { "Horde" } }),
+        [3] = q(3, { { ids = { 1, 2 } } }) }
+    for _, choice in ipairs({ 2, "2", false, {}, math.huge }) do
+        local actions, unknown = P.New(quests, ctx(), { [3] = { choice } }):Next(3)
+        eq(actions[1].id, 1); eq(unknown, false)
+    end
+    eq(P.New(quests, ctx(), true):Next(3)[1].id, 1)
+end)
+check("An unknown preferred branch remains unknown and cannot grant pickup", function()
+    local quests = { [1] = q(1), [2] = q(2, nil, { requirementsKnown = false }),
+        [3] = q(3, { { ids = { 1, 2 } } }) }
+    local e = P.New(quests, ctx(), { [3] = { 2 } })
+    local actions, unknown = e:Next(3)
+    eq(#actions, 0); eq(unknown, true); eq(e:State(3).status, "UNKNOWN")
+end)
+check("Unavailable OR alternatives cannot hide useful partially-known work", function()
+    local quests = { [1] = q(1, nil, { factions = { "Horde" } }),
+        [2] = q(2, { { ids = { 4 } }, { ids = { 5 } } }),
+        [3] = q(3, { { ids = { 1, 2 } } }), [4] = q(4),
+        [5] = q(5, nil, { requirementsKnown = false }) }
+    local actions, unknown = P.New(quests, ctx()):Next(3)
+    eq(#actions, 1); eq(actions[1].id, 4); eq(unknown, true)
+end)
 check("AND groups collect both branches and deduplicate common ancestors", function()
     local quests = { [1] = q(1), [2] = q(2, { { ids = { 1 } } }), [3] = q(3, { { ids = { 1 } } }),
         [4] = q(4, { { ids = { 2 } }, { ids = { 3 } } }) }
