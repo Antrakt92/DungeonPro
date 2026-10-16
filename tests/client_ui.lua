@@ -3,6 +3,7 @@ local methods = {}
 function methods:SetSize(w, h) self.width, self.height = w, h end
 function methods:SetWidth(w) self.width = w end
 function methods:SetHeight(h) self.height = h end
+function methods:SetVerticalScroll(value) self.verticalScroll = value; self.scrollWrites = (self.scrollWrites or 0) + 1 end
 function methods:GetWidth() return self.width or 340 end
 function methods:GetHeight() return self.height or 100 end
 function methods:SetPoint(...) self.point = { ... } end
@@ -496,5 +497,24 @@ check("Offered portraits render only current display IDs and native hide values 
     for _, key in ipairs(keys) do _G[key] = saved[key] end
     addon.QuestPortrait, addon.UI.quest, addon.UI.detailHistory = logPortrait, previousQuest, {}
     addon.UI:Refresh()
+end)
+check("Client hydration and quest events preserve scroll until the inspected quest changes", function()
+    local ui, previous, history = addon.UI, addon.UI.quest, addon.UI.detailHistory
+    ui.detailHistory = {}
+    ui.quest = 166; ui:Refresh()
+    local scroll = ui.detailScroll
+    scroll:SetVerticalScroll(240)
+    local writes = scroll.scrollWrites
+    for _, event in ipairs({ "QUEST_LOG_UPDATE", "QUEST_DATA_LOAD_RESULT", "ITEM_DATA_LOAD_RESULT", "QUEST_ITEM_UPDATE" }) do
+        eventFrame.scripts.OnEvent(eventFrame, event, 166, true)
+        assert(ui.quest == 166 and scroll.verticalScroll == 240 and scroll.scrollWrites == writes, event)
+    end
+    ui:InspectQuest(65)
+    assert(scroll.verticalScroll == 0)
+    scroll:SetVerticalScroll(120)
+    ui.back.scripts.OnClick()
+    assert(ui.quest == 166 and scroll.verticalScroll == 0)
+    ui.quest, ui.detailHistory = previous, history
+    ui:Refresh()
 end)
 print("Client/UI modeled checks passed: " .. total .. " (no pixel or native-client validation)")

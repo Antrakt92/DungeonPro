@@ -276,6 +276,10 @@ function UI:RefreshQuests()
 end
 
 function UI:RefreshDetail()
+    if self.renderedQuest ~= self.quest then
+        self.detailScroll:SetVerticalScroll(0)
+        self.renderedQuest = self.quest
+    end
     local pool, n, y = self.details, 0, 0
     self.back:SetEnabled(#self.detailHistory > 0)
     if self.portrait then self.portrait:Hide(); self.portrait:SetTexture(nil) end
@@ -694,7 +698,7 @@ function UI:Create()
     self.searchHint = label(self.catalog, "", 4, 0, 220, 11)
     self.catalogNotice = label(self.catalog, "", 4, 0, 220, 13)
     self.questList = scrolling(frame, 288, -218, 355, 425)
-    self.detail = scrolling(frame, 690, -218, 350, 425)
+    self.detail, self.detailScroll = scrolling(frame, 690, -218, 350, 425)
     self.map = button(frame, "", 160, function()
         if self.action then addon.Navigation.Map(self.action.place) end
     end)

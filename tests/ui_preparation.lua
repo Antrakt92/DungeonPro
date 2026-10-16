@@ -13,6 +13,7 @@ function methods:GetText() return self.text or "" end
 function methods:SetEnabled(value) self.enabled = value end
 function methods:GetStringHeight() if measurement then return measurement(self) end; return 18 end
 function methods:SetScale(value) self.scale = value end
+function methods:SetVerticalScroll(value) self.verticalScroll = value; self.scrollWrites = (self.scrollWrites or 0) + 1 end
 function methods:GetEffectiveScale() return self.scale or 1 end
 function methods:SetClampedToScreen(value) self.clamped = value end
 function methods:IsShown() return self.shown end
@@ -1107,5 +1108,29 @@ check("Back history caps clean IDs at twenty and supports unknown cards without 
     assert(#ui.detailHistory == 0 and not ui.back.enabled and not ui:BackQuest())
     ui.quest, ui.detailHistory = quest, history
     ui:RefreshDetail()
+end)
+check("Detail scroll resets on changed card identity but preserves same-card reading position", function()
+    local quest, history, locale = ui.quest, ui.detailHistory, addon.db.locale
+    ui.detailHistory = {}
+    showDetail(1)
+    local scroll = ui.detailScroll
+    assert(scroll and scroll ~= ui.detail)
+    scroll:SetVerticalScroll(170)
+    local writes = scroll.scrollWrites
+    ui:RefreshDetail(); ui:Refresh(); ui:InspectQuest(1)
+    ui.language.scripts.OnClick()
+    assert(scroll.verticalScroll == 170 and scroll.scrollWrites == writes)
+    ui:InspectQuest(2)
+    assert(scroll.verticalScroll == 0 and scroll.scrollWrites == writes + 1)
+    scroll:SetVerticalScroll(90)
+    assert(ui:BackQuest() and ui.quest == 1 and scroll.verticalScroll == 0)
+    scroll:SetVerticalScroll(125)
+    ui.cards[1].scripts.OnClick()
+    assert(ui.quest == nil and scroll.verticalScroll == 0)
+    scroll:SetVerticalScroll(30); writes = scroll.scrollWrites
+    ui:RefreshDetail()
+    assert(scroll.verticalScroll == 30 and scroll.scrollWrites == writes, "same nil-card redraw is not new navigation")
+    addon.db.locale, ui.quest, ui.detailHistory = locale, quest, history
+    ui:Refresh()
 end)
 print("Preparation UI modeled checks passed: " .. total .. " (no native layout validation)")
