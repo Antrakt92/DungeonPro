@@ -1,6 +1,113 @@
 local _, addon = ...
 local requested, requestedItems = {}, {}
 local offerGeneration, currentOffers = {}, nil
+local dialogueGeneration, dialogueReward = {}, nil
+
+local function dialogueInteger(value, minimum, maximum)
+    value = addon.Clean(value, "number")
+    if value and value >= minimum and value % 1 == 0 and (not maximum or value <= maximum) then return value end
+end
+
+local function dialogueScope()
+    local id = dialogueInteger(addon.Read(GetQuestID, "number"), 1)
+    local player = addon.Read(UnitGUID, "string", "player")
+    local locale = addon.Read(GetLocale, "string")
+    if not id or not addon.quests[id] or not player or player == "" or #player > 256 or
+        not locale or locale == "" or #locale > 32 then return nil end
+    return id, player, locale
+end
+
+local function clearDialogueReward()
+    dialogueGeneration, dialogueReward = {}, nil
+end
+
+local function currentDialogueReward(snapshot)
+    if snapshot ~= dialogueReward or snapshot.generation ~= dialogueGeneration then return false end
+    local id, player, locale = dialogueScope()
+    local current = snapshot == dialogueReward and snapshot.generation == dialogueGeneration and
+        id == snapshot.id and player == snapshot.player and locale == snapshot.locale
+    if not current and snapshot == dialogueReward then clearDialogueReward() end
+    return current
+end
+
+function addon.DialogueRewardEvent(event)
+    event = addon.Clean(event, "string")
+    if event == "QUEST_DETAIL" then
+        clearDialogueReward()
+        local generation = dialogueGeneration
+        local id, player, locale = dialogueScope()
+        if not id or generation ~= dialogueGeneration then return end
+        local snapshot = { id = id, player = player, locale = locale, generation = generation }
+        dialogueReward = snapshot
+        currentDialogueReward(snapshot)
+    elseif event == "QUEST_FINISHED" or event == "QUEST_PROGRESS" or event == "QUEST_COMPLETE" or
+        event == "QUEST_ACCEPTED" or event == "QUEST_REMOVED" or event == "QUEST_TURNED_IN" or
+        event == "GOSSIP_SHOW" or event == "GOSSIP_CLOSED" or event == "GOSSIP_OPTIONS_REFRESHED" or
+        event == "QUEST_GREETING" or event == "PLAYER_LEAVING_WORLD" or event == "PLAYER_ENTERING_WORLD" or
+        event == "PLAYER_LOGOUT" then
+        clearDialogueReward()
+    end
+end
+
+function addon.DialogueRewards(id)
+    id = dialogueInteger(id, 1)
+    local snapshot = dialogueReward
+    if not id or not snapshot or snapshot.id ~= id or not currentDialogueReward(snapshot) then return nil end
+    -- A matching native quest ID can outlive its closed detail window.
+    local function open()
+        return addon.Read(function() return QuestFrame:IsShown() end, "boolean") == true and
+            addon.Read(function() return QuestFrameDetailPanel:IsShown() end, "boolean") == true
+    end
+    local function live()
+        local shown = open()
+        if shown and currentDialogueReward(snapshot) then return true end
+        if dialogueReward == snapshot then clearDialogueReward() end
+    end
+    if not live() then return nil end
+    local visible = addon.Read(C_QuestLog and C_QuestLog.ShouldShowQuestRewards, "boolean", id)
+    if not live() then return nil end
+    if visible == nil then return nil end
+    if not visible then return { hidden = true, source = "dialogue" } end
+    local rewards = dialogueInteger(addon.Read(GetNumQuestRewards, "number"), 0, 100)
+    if not live() then return nil end
+    local choices = dialogueInteger(addon.Read(GetNumQuestChoices, "number"), 0, 100)
+    if not rewards or not choices or not live() then return nil end
+    local function items(kind, count)
+        if count > 0 and type(GetQuestItemInfo) ~= "function" then return nil end
+        local result = {}
+        for i = 1, count do
+            local ok, name, texture, amount, quality, usable, itemID = pcall(GetQuestItemInfo, kind, i)
+            if not ok or not live() then return nil end
+            if type(issecretvalue) == "function" then
+                local fields = { name, texture, amount, quality, usable, itemID }
+                for j = 1, 6 do
+                    local readable, secret = pcall(issecretvalue, fields[j])
+                    if not readable or secret ~= false then return nil end
+                end
+            end
+            name = addon.Clean(name, "string")
+            amount, itemID = dialogueInteger(amount, 1), dialogueInteger(itemID, 1)
+            if not name or name == "" or #name > 30000 or not amount or not itemID then return nil end
+            local row = { id = itemID, name = name, count = amount }
+            local icon = addon.Clean(texture, "string")
+            if icon and icon ~= "" and #icon <= 1024 then row.texture = icon
+            else row.texture = dialogueInteger(texture, 1) end
+            row.quality = dialogueInteger(quality, 0)
+            row.usable = addon.Clean(usable, "boolean")
+            result[i] = row
+        end
+        return result
+    end
+    local fixed = items("reward", rewards)
+    if not fixed then return nil end
+    local choice = items("choice", choices)
+    if not choice then return nil end
+    local money = dialogueInteger(addon.Read(GetRewardMoney, "number"), 0)
+    if not live() then return nil end
+    local xp = dialogueInteger(addon.Read(GetRewardXP, "number"), 0)
+    if not live() then return nil end
+    return { items = fixed, choices = choice, money = money, xp = xp, source = "dialogue" }
+end
 
 function addon.ClearOffers()
     offerGeneration, currentOffers = {}, nil
@@ -216,7 +323,7 @@ function addon.Description(id)
     local locale = addon.Read(GetLocale, "string")
     local index = addon.Read(C_QuestLog and C_QuestLog.GetLogIndexForQuestID, "number", id)
     local selectedID = addon.Read(C_QuestLog and C_QuestLog.GetSelectedQuest, "number")
-    -- Vanilla's reader uses the current selection; never change it to fetch text.
+    -- The text reader uses the current selection; never change it to fetch text.
     if selectedID == id and index and index >= 1 and index % 1 == 0 then
         local text = addon.Read(GetQuestLogQuestText, "string")
         if text and text ~= "" and #text <= 30000 and
@@ -273,7 +380,7 @@ function addon.QuestRewards(id)
         return addon.Read(quest.GetSelectedQuest, "number") == id and
             integer(addon.Read(quest.GetLogIndexForQuestID, "number", id), 1) ~= nil
     end
-    -- Vanilla reward readers use the current selection and take no quest ID.
+    -- Selected-log reward readers use the current selection and take no quest ID.
     if not selected() then return nil end
     local rewards = integer(addon.Read(GetNumQuestLogRewards, "number"), 0, 100)
     local choices = integer(addon.Read(GetNumQuestLogChoices, "number"), 0, 100)

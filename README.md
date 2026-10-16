@@ -49,6 +49,8 @@ Level ranges are provisional recommendations.
   client provides them. Unknown reward data is shown explicitly.
 - A separate note shows a quest observed in the current NPC dialogue. It expires
   and does not replace prerequisite or availability checks.
+- Rewards, choices, money and experience from the quest dialogue while you
+  view an offer, including quests started by an item.
 - Quest objectives from the client appear when available. The window adjusts to
   screen width and height and recovers saved positions outside the visible area.
 - Interface dictionaries for English, Russian, German, French, Spanish, Italian,

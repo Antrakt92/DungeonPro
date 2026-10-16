@@ -333,4 +333,74 @@ check("Gossip transition and world quest events clear the actual UI marker while
     eventFrame.scripts.OnEvent(eventFrame, "GOSSIP_CLOSED")
     C_GossipInfo, UnitGUID, GetTime = oldGossip, oldGUID, oldTime
 end)
+check("Native dialogue events render offered rewards and item refreshes without selected-log fallback", function()
+    local saved, keys = {}, { "GetQuestID", "UnitGUID", "QuestFrame", "QuestFrameDetailPanel",
+        "GetNumQuestRewards", "GetNumQuestChoices", "GetQuestItemInfo", "GetRewardMoney", "GetRewardXP",
+        "GetNumQuestLogRewards", "GetNumQuestLogChoices", "GetQuestLogRewardInfo", "GetQuestLogChoiceInfo",
+        "GetQuestLogRewardMoney", "AcceptQuest", "CompleteQuest", "GetQuestReward", "SelectAvailableQuest",
+        "SelectGossipAvailableQuest", "CloseQuest" }
+    for _, key in ipairs(keys) do saved[key] = _G[key] end
+    local predicate, selection, selectedRewards = C_QuestLog.ShouldShowQuestRewards,
+        C_QuestLog.SetSelectedQuest, addon.QuestRewards
+    local previousQuest, forbiddenCalls, fallbackCalls = addon.UI.quest, 0, 0
+    local function forbidden()
+        forbiddenCalls = forbiddenCalls + 1
+        error("dialogue rendering must not mutate the client or read selected-log rewards")
+    end
+    for i = 10, #keys do _G[keys[i]] = forbidden end
+    C_QuestLog.SetSelectedQuest = forbidden
+    addon.QuestRewards = function(...)
+        fallbackCalls = fallbackCalls + 1
+        return selectedRewards(...)
+    end
+    local allowed, rewardName, amount, xp = true, "Native fixed reward", 2, 730
+    GetQuestID = function() return 65 end
+    UnitGUID = function(unit) return unit == "player" and "Player-dialogue-integration" or nil end
+    QuestFrame, QuestFrameDetailPanel = { IsShown = function() return true end },
+        { IsShown = function() return true end }
+    C_QuestLog.ShouldShowQuestRewards = function(id) assert(id == 65); return allowed end
+    GetNumQuestRewards = function(...) assert(select("#", ...) == 0); return 1 end
+    GetNumQuestChoices = function(...) assert(select("#", ...) == 0); return 1 end
+    GetQuestItemInfo = function(kind, index, ...)
+        assert(index == 1 and select("#", ...) == 0)
+        if kind == "reward" then return rewardName, 123, amount, 3, false, 7001 end
+        assert(kind == "choice"); return "Native choice reward", 124, 4, 4, true, 8001
+    end
+    GetRewardMoney = function() return 0 end
+    GetRewardXP = function() return xp end
+    local function shown(text)
+        for _, fs in ipairs(addon.UI.details) do if fs.shown and fs.text == text then return true end end
+        return false
+    end
+    local function event(name)
+        assert(eventFrame.events[name], name .. " must be registered")
+        eventFrame.scripts.OnEvent(eventFrame, name)
+    end
+    event("QUEST_FINISHED")
+    addon.UI.quest = 65; addon.UI:Refresh()
+    assert(shown(addon.L("REWARD_UNAVAILABLE")) and not shown(addon.L("REWARD_DIALOGUE")))
+    fallbackCalls = 0
+    event("QUEST_DETAIL")
+    assert(shown(addon.L("REWARD_DIALOGUE")) and shown(addon.L("REWARD_ITEMS")))
+    assert(shown(addon.L("REWARD_ITEM", rewardName, 2)))
+    assert(shown(addon.L("REWARD_CHOICES")) and shown(addon.L("REWARD_ITEM", "Native choice reward", 4)))
+    assert(shown(addon.L("REWARD_XP", 730)) and fallbackCalls == 0 and forbiddenCalls == 0)
+    rewardName, amount, xp = "Hydrated native reward", 3, 810
+    event("QUEST_ITEM_UPDATE")
+    assert(shown(addon.L("REWARD_ITEM", rewardName, 3)) and shown(addon.L("REWARD_XP", 810)))
+    assert(not shown(addon.L("REWARD_ITEM", "Native fixed reward", 2)) and not shown(addon.L("REWARD_XP", 730)))
+    allowed = false; event("QUEST_ITEM_UPDATE")
+    assert(shown(addon.L("REWARD_DIALOGUE")) and shown(addon.L("REWARD_HIDDEN")))
+    assert(not shown(addon.L("REWARD_NO_ITEMS")) and not shown(addon.L("REWARD_UNAVAILABLE")))
+    assert(not shown(addon.L("REWARD_ITEM", rewardName, 3)) and not shown(addon.L("REWARD_XP", 810)))
+    assert(fallbackCalls == 0 and forbiddenCalls == 0, "hidden rewards must not fall back to selected-log data")
+    allowed = true; event("QUEST_FINISHED")
+    assert(shown(addon.L("REWARD_UNAVAILABLE")) and not shown(addon.L("REWARD_DIALOGUE")))
+    assert(not shown(addon.L("REWARD_HIDDEN")) and not shown(addon.L("REWARD_ITEM", rewardName, 3)))
+    assert(forbiddenCalls == 0)
+    for _, key in ipairs(keys) do _G[key] = saved[key] end
+    C_QuestLog.ShouldShowQuestRewards, C_QuestLog.SetSelectedQuest = predicate, selection
+    addon.QuestRewards, addon.UI.quest = selectedRewards, previousQuest
+    addon.UI:Refresh()
+end)
 print("Client/UI modeled checks passed: " .. total .. " (no pixel or native-client validation)")

@@ -31,6 +31,7 @@
   without inventing map coordinates.
 - Preserved the correct quest and language when the selected quest changes during
   a description read.
+- Showed rewards, choices, money and experience from the open quest dialogue.
 - Kept quests already in your log visible when catalogue restrictions are stale.
 - Added a short-lived note for quests observed in the current NPC dialogue,
   with cleanup when the dialogue or character context changes.

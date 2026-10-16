@@ -33,7 +33,7 @@ events:SetScript("OnEvent", function(_, event, arg1, arg2)
         for _, e in ipairs({ "QUEST_LOG_UPDATE", "QUEST_DATA_LOAD_RESULT", "ITEM_DATA_LOAD_RESULT", "QUEST_ACCEPTED", "QUEST_REMOVED",
             "QUEST_TURNED_IN", "PLAYER_LEVEL_UP", "PLAYER_ENTERING_WORLD", "QUEST_DETAIL", "PLAYER_LOGOUT",
             "GOSSIP_SHOW", "GOSSIP_CLOSED", "GOSSIP_OPTIONS_REFRESHED", "QUEST_GREETING", "QUEST_FINISHED",
-            "QUEST_PROGRESS", "QUEST_COMPLETE", "PLAYER_LEAVING_WORLD" }) do
+            "QUEST_PROGRESS", "QUEST_COMPLETE", "QUEST_ITEM_UPDATE", "PLAYER_LEAVING_WORLD" }) do
             events:RegisterEvent(e)
         end
         SLASH_DUNGEONPREP1 = "/dprep"
@@ -46,6 +46,7 @@ events:SetScript("OnEvent", function(_, event, arg1, arg2)
         return
     end
     if not initialized then return end
+    if addon.DialogueRewardEvent then addon.DialogueRewardEvent(event) end
     if event ~= "QUEST_DATA_LOAD_RESULT" and event ~= "ITEM_DATA_LOAD_RESULT" then addon.OfferEvent(event) end
     if event == "QUEST_DATA_LOAD_RESULT" then addon.QuestDataResult(arg1, arg2) end
     if event == "ITEM_DATA_LOAD_RESULT" then addon.ItemDataResult(arg1, arg2) end

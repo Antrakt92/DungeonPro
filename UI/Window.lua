@@ -499,10 +499,14 @@ function UI:RefreshDetail()
         for _, objective in ipairs(objectives or {}) do
             line("|cff" .. (objective.finished and COLOR.COMPLETED or COLOR.ACTIVE) .. objective.text .. "|r")
         end
-        local rewards = addon.Read(addon.QuestRewards, "table", id)
+        local rewards = addon.Read(addon.DialogueRewards, "table", id) or
+            addon.Read(addon.QuestRewards, "table", id)
+        if rewards and addon.Clean(rewards.source, "string") == "dialogue" then line(addon.L("REWARD_DIALOGUE")) end
         local items = rewards and addon.Clean(rewards.items, "table")
         local choices = rewards and addon.Clean(rewards.choices, "table")
-        if items and choices then
+        if rewards and addon.Clean(rewards.hidden, "boolean") == true then
+            line(addon.L("REWARD_HIDDEN"))
+        elseif items and choices then
             if #items > 0 then
                 line(addon.L("REWARD_ITEMS"))
                 for _, item in ipairs(items) do line(addon.L("REWARD_ITEM", item.name, item.count)) end
@@ -512,6 +516,8 @@ function UI:RefreshDetail()
                 for _, item in ipairs(choices) do line(addon.L("REWARD_ITEM", item.name, item.count)) end
             end
             if #items == 0 and #choices == 0 then line(addon.L("REWARD_NO_ITEMS")) end
+            local xp = addon.Clean(rewards.xp, "number")
+            if xp and xp >= 0 and xp % 1 == 0 then line(addon.L("REWARD_XP", xp)) end
             local money = addon.Clean(rewards.money, "number")
             if money and money > 0 then
                 local formatted = addon.Read(GetCoinTextureString, "string", money)

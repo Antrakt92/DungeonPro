@@ -30,6 +30,7 @@ def main():
     run(lua, "tests/portraits.lua")
     run(lua, "tests/items.lua")
     run(lua, "tests/offers.lua")
+    run(lua, "tests/offered_rewards.lua")
     run(lua, "tests/probe.lua")
     run(lua, "tests/navigation.lua")
     run(sys.executable, "-m", "unittest", "discover", "-s", "tests", "-p", "test_*.py", "-v")

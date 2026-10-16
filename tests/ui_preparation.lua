@@ -889,4 +889,34 @@ check("Starter item class labels use native localization and safe token fallback
     assert(not detailHas(addon.L("ITEM_REQUIREMENTS_NOTICE")))
     addon.quests[920], LOCALIZED_CLASS_NAMES_MALE, LocalizedClassList = nil, oldNames, oldList
 end)
+check("Open dialogue rewards take precedence and display experience without reading another source", function()
+    local logReads = 0
+    addon.QuestRewards = function() logReads = logReads + 1; return { items = {}, choices = {} } end
+    addon.DialogueRewards = function(id)
+        assert(id == 2)
+        return { source = "dialogue", items = { { name = "Offered token", count = 2 } },
+            choices = {}, money = 0, xp = 1234 }
+    end
+    showDetail(2)
+    assert(detailHas(addon.L("REWARD_ITEM", "Offered token", 2)))
+    assert(detailHas(addon.L("REWARD_DIALOGUE")) and detailHas(addon.L("REWARD_XP", 1234)))
+    assert(logReads == 0)
+    addon.DialogueRewards = function() return nil end
+    showDetail(2)
+    assert(logReads == 1 and not detailHas(addon.L("REWARD_ITEM", "Offered token", 2)))
+    assert(not detailHas(addon.L("REWARD_DIALOGUE")) and not detailHas(addon.L("REWARD_XP", 1234)))
+    addon.DialogueRewards, addon.QuestRewards = nil, nil
+end)
+check("Hidden dialogue rewards never become an empty list or fall through to quest log rewards", function()
+    addon.DialogueRewards = function() return { source = "dialogue", hidden = true } end
+    addon.QuestRewards = function() error("hidden dialogue must not use log fallback") end
+    showDetail(2)
+    assert(detailHas(addon.L("REWARD_HIDDEN")))
+    assert(not detailHas(addon.L("REWARD_NO_ITEMS")) and not detailHas(addon.L("REWARD_UNAVAILABLE")))
+    addon.DialogueRewards = function() return { source = "dialogue", items = {}, choices = {}, xp = 0 } end
+    showDetail(2)
+    assert(detailHas(addon.L("REWARD_NO_ITEMS")) and detailHas(addon.L("REWARD_XP", 0)))
+    assert(not detailHas(addon.L("REWARD_HIDDEN")))
+    addon.DialogueRewards, addon.QuestRewards = nil, nil
+end)
 print("Preparation UI modeled checks passed: " .. total .. " (no native layout validation)")
