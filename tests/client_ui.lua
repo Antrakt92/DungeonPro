@@ -552,4 +552,43 @@ check("Gossip refresh localizes only the actual matching NPC and closing restore
     ui.quest, ui.dungeon, ui.preparation = previousQuest, previousDungeon, preparation
     ui:Refresh()
 end)
+check("Reported giver clicks route the chosen sourced point through native navigation without altering the primary", function()
+    local ui, previous, history = addon.UI, addon.UI.quest, addon.UI.detailHistory
+    local get, clear, oldTomTom = C_Map.GetUserWaypoint, C_Map.ClearUserWaypoint, TomTom
+    addon.Navigation.Stop(); TomTom = nil
+    local pin, clears = nil, 0
+    C_Map.GetUserWaypoint = function() return pin end
+    C_Map.ClearUserWaypoint = function() clears = clears + 1; pin = nil end
+    local set = C_Map.SetUserWaypoint
+    C_Map.SetUserWaypoint = function(p)
+        pin = { uiMapID = p.mapID, position = { x = p.x, y = p.y } }
+        waypoints[#waypoints + 1] = p; return true
+    end
+    local q = addon.quests[8927]
+    assert(q.start.npcID == 16012 and #q.start.reportedLocations == 4)
+    local before, maps, primaryX = #waypoints, mapCalls, q.start.x
+    ui:InspectQuest(q.id)
+    local toggle
+    for _, row in ipairs(ui.reportedToggles) do if row.shown and row.locationKey == "start" then toggle = row end end
+    assert(toggle and #waypoints == before)
+    toggle.scripts.OnClick()
+    local row = ui.reportedRows[2]
+    local point, stale = q.start.reportedLocations[2], row.scripts.OnClick
+    assert(row.shown and row.destination ~= point)
+    row.scripts.OnClick()
+    assert(#waypoints == before + 1 and mapCalls == maps + 1)
+    local actual = waypoints[#waypoints]
+    assert(actual.mapID == point.mapID and actual.x == point.x / 100 and actual.y == point.y / 100)
+    assert(q.start.x == primaryX and ui.giverAction.place == q.start)
+    eventFrame.scripts.OnEvent(eventFrame, "QUEST_LOG_UPDATE")
+    stale(); assert(#waypoints == before + 1, "old refresh callback cannot restart navigation")
+    addon.Navigation.Stop(); assert(clears == 1 and pin == nil)
+    pin = { uiMapID = 1454, position = { x = 0.8, y = 0.9 } }
+    local manual = pin
+    ui.reportedRows[3].scripts.OnClick()
+    assert(pin == manual and #waypoints == before + 1, "manual native pin survives candidate visit")
+    addon.Navigation.Stop(); assert(pin == manual and clears == 1)
+    C_Map.GetUserWaypoint, C_Map.ClearUserWaypoint, C_Map.SetUserWaypoint, TomTom = get, clear, set, oldTomTom
+    ui.quest, ui.detailHistory = previous, history; ui:Refresh()
+end)
 print("Client/UI modeled checks passed: " .. total .. " (no pixel or native-client validation)")

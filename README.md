@@ -43,6 +43,8 @@ Level ranges are provisional recommendations.
   toward a coordinate; it does not find paths around terrain or plan transport.
 - A separate quest-giver button opens a known zone or guides to a known location.
   Visiting a giver does not confirm that the quest is available to pick up.
+- Expand reported positions when a giver has several sourced points, then choose
+  a point to visit. Movement and quest phases may affect which position is current.
 - Quest text saved when you open the quest at its giver. Complete unseen quest
   descriptions and verified quest-giver portraits are not yet included.
 - Optional quest portraits from the current offer or selected quest log entry,

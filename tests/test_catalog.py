@@ -410,6 +410,81 @@ class CatalogTests(unittest.TestCase):
                 catalog.validate(data)
 
 
+    def test_reported_locations_reject_invalid_outer_and_nested_shapes(self):
+        point = {"mapID": 1, "x": 10, "y": 20}
+        invalids = [None, False, "points", {}, [], [point], [point] * 101,
+                    [point, None], [point, []], [point, "point"], [point, {}],
+                    [point, {"mapID": 2, "x": 10}], [point, {"x": 10, "y": 20}],
+                    [point, {"mapID": 2, "x": 10, "y": 20, "npcID": 3}],
+                    [point, {"mapID": 2, "x": 10, "y": 20, "unexpected": "field"}]]
+        for value in invalids:
+            data = self.minimal_catalog()
+            data["quests"][1]["start"] = {"npcID": 1, "reportedLocations": value}
+            with self.subTest(value=value), self.assertRaisesRegex(ValueError, "reported location"):
+                catalog.validate(data)
+
+    def test_reported_locations_require_clean_map_coordinates_and_optional_zone(self):
+        fields = {
+            "mapID": [None, False, True, 0, -1, 1.0, "1", {}, float("inf")],
+            "x": [None, False, True, -0.1, 100.1, "10", {}, float("inf"), float("nan")],
+            "y": [None, False, True, -0.1, 100.1, "20", [], float("inf"), float("nan")],
+            "zoneName": [None, False, 1, {}, "", " \t\n", "x" * 501],
+        }
+        for field, values in fields.items():
+            for value in values:
+                data = self.minimal_catalog()
+                point = {"mapID": 2, "x": 10, "y": 20, field: value}
+                data["quests"][1]["finish"] = {"objectID": 1, "reportedLocations": [
+                    {"mapID": 1, "x": 0, "y": 100}, point]}
+                with self.subTest(field=field, value=value), self.assertRaisesRegex(ValueError, "reported location"):
+                    catalog.validate(data)
+
+    def test_reported_locations_reject_duplicate_points_and_missing_primary_point(self):
+        for points in ([{"mapID": 1, "x": 10, "y": 20}, {"mapID": 1, "x": 10.0, "y": 20.0}],
+                       [{"mapID": 2, "x": 10, "y": 20}, {"mapID": 3, "x": 10, "y": 20}]):
+            data = self.minimal_catalog()
+            data["quests"][1]["start"] = {"npcID": 1, "mapID": 1, "x": 10, "y": 20,
+                                          "reportedLocations": points}
+            with self.subTest(points=points), self.assertRaisesRegex(ValueError, "reported location"):
+                catalog.validate(data)
+
+    def test_reported_locations_belong_only_to_npc_or_object_endpoints(self):
+        points = [{"mapID": 1, "x": 10, "y": 20}, {"mapID": 2, "x": 30, "y": 40}]
+        for identity in ({}, {"name": "Unknown giver"}, {"itemID": 10}):
+            data = self.minimal_catalog()
+            data["quests"][1]["start"] = {**identity, "reportedLocations": points}
+            with self.subTest(identity=identity), self.assertRaisesRegex(ValueError, "reported location"):
+                catalog.validate(data)
+        data = self.minimal_catalog()
+        data["quests"][1]["start"] = {"itemID": 10, "dropSources": [
+            {"npcID": 1, "name": "Drop NPC", "locationName": "Zone", "reportedLocations": points}]}
+        with self.assertRaisesRegex(ValueError, "reported location"):
+            catalog.validate(data)
+
+    def test_reported_locations_preserve_candidates_without_changing_quest_requirements(self):
+        data = self.minimal_catalog()
+        quest = data["quests"][1]
+        quest["requirementsKnown"] = False
+        quest["classes"] = ["MAGE"]
+        quest["start"] = {"npcID": 1, "mapID": 1, "x": 0, "y": 100, "reportedLocations": [
+            {"mapID": 1, "x": 0, "y": 100}, {"mapID": 2, "x": 100.0, "y": 0, "zoneName": "x" * 500}]}
+        before = copy.deepcopy(data)
+        catalog.validate(data)
+        generated = catalog.generate(data)
+        self.assertEqual(data, before)
+        self.assertIn('["reportedLocations"]', generated)
+        self.assertIn('["mapID"] = 2', generated)
+        quest["start"].pop("x")
+        quest["start"].pop("y")
+        quest["start"]["mapID"] = 99
+        catalog.validate(data)
+        quest["finishAlternatives"] = [
+            {"objectID": 10, "name": "First", "reportedLocations": quest["start"]["reportedLocations"]},
+            {"npcID": 11, "name": "Second"}]
+        catalog.validate(data)
+        quest["start"]["reportedLocations"] = [{"mapID": 1, "x": i, "y": 0} for i in range(100)]
+        catalog.validate(data)
+
     @staticmethod
     def minimal_catalog():
         return {"schema": 1, "quests": [

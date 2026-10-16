@@ -1275,4 +1275,147 @@ check("Alternative NPC rows refresh while object labels and item names keep sepa
     assert(invalidCalls == 0, "object and item labels never query current NPC names")
     addon.GiverName, addon.ItemName = producer, itemName; ui:Refresh()
 end)
+local function reportedFixture()
+    local start = { npcID = 101, name = "Reported NPC", mapID = 1, x = 10, y = 20, zoneName = "Start zone",
+        reportedLocations = { { mapID = 1, x = 10, y = 20 }, { mapID = 1, x = 11, y = 21 } } }
+    local finish = { objectID = 202, name = "Reported object", mapID = 2, x = 30, y = 40, zoneName = "End zone",
+        reportedLocations = { { mapID = 2, x = 30, y = 40 }, { mapID = 2, x = 31, y = 41 } } }
+    addon.quests[9920] = { id = 9920, minLevel = 1, requirementsKnown = false, start = start, finish = finish }
+    return start, finish
+end
+local function reportToggle(key)
+    for _, b in ipairs(ui.reportedToggles or {}) do if b.shown and b.locationKey == key then return b end end
+end
+local function reportRows()
+    local rows = {}; for _, b in ipairs(ui.reportedRows or {}) do if b.shown then rows[#rows + 1] = b end end
+    return rows
+end
+local function endReports()
+    addon.quests[9920] = nil; showDetail(2)
+end
+check("Reported NPC and object positions default closed without changing primary guidance or availability", function()
+    local start, finish = reportedFixture()
+    local nav, calls = addon.Navigation, 0
+    addon.Navigation = { Start = function() calls = calls + 1 end }
+    showDetail(9920)
+    assert(reportToggle("start") and reportToggle("finish") and #reportRows() == 0)
+    assert(reportToggle("start").title.text:find(addon.L("REPORTED_POSITIONS", "Reported NPC", 2), 1, true))
+    assert(not detailHas(addon.L("REPORTED_NOTICE")) and calls == 0)
+    assert(ui.giverAction.place == start and ui.giverAction.place.x == 10 and not ui.action)
+    assert(ui.engine:State(9920).status == "UNKNOWN" and start.x == 10 and finish.x == 30)
+    addon.Navigation = nav; endReports()
+end)
+check("Explicit reported position clicks create detached visit actions and keep each parent independent", function()
+    local start, finish = reportedFixture()
+    local nav, actions = addon.Navigation, {}
+    addon.Navigation = { Start = function(action) actions[#actions + 1] = action end }
+    showDetail(9920); reportToggle("start").scripts.OnClick()
+    local rows = reportRows(); assert(#rows == 2 and #actions == 0 and not ui.action)
+    assert(detailHas(addon.L("REPORTED_NOTICE")))
+    rows[2].scripts.OnClick()
+    assert(#actions == 1 and actions[1].id == 9920 and actions[1].kind == "visit")
+    local p = actions[1].place
+    assert(p.npcID == 101 and not p.objectID and p.mapID == 1 and p.x == 11 and p.y == 21)
+    assert(p ~= start and p ~= start.reportedLocations[2] and start.x == 10 and start.reportedLocations[2].x == 11)
+    reportToggle("finish").scripts.OnClick(); rows = reportRows(); assert(#rows == 4)
+    rows[4].scripts.OnClick(); p = actions[2].place
+    assert(p.objectID == 202 and not p.npcID and p.mapID == 2 and p.x == 31 and p.y == 41)
+    assert(ui.giverAction.place == start and ui.engine:State(9920).status == "UNKNOWN")
+    reportToggle("start").scripts.OnClick()
+    assert(#reportRows() == 2 and reportRows()[1].locationKey == "finish")
+    addon.Navigation = nav; endReports()
+end)
+check("Each alternative endpoint owns its own reported-position expansion and original navigation", function()
+    local a, b = reportedFixture()
+    local other = { npcID = 101, name = "Second location set", mapID = 3, x = 50, y = 60,
+        reportedLocations = { { mapID = 3, x = 50, y = 60 }, { mapID = 3, x = 51, y = 61 } } }
+    addon.quests[9920].startAlternatives = { a, other }
+    addon.quests[9920].finishAlternatives = { b }
+    local nav, actions = addon.Navigation, {}
+    addon.Navigation = { Start = function(action) actions[#actions + 1] = action end }
+    showDetail(9920)
+    assert(not reportToggle("start") and not reportToggle("finish"))
+    assert(reportToggle("startAlternative:1") and reportToggle("startAlternative:2") and reportToggle("finishAlternative:1"))
+    reportToggle("startAlternative:2").scripts.OnClick()
+    assert(#reportRows() == 2 and reportRows()[1].destination.mapID == 3)
+    assert(not ui.reportedExpanded["startAlternative:1"] and not ui.reportedExpanded["finishAlternative:1"])
+    ui.startButtons[1].scripts.OnClick()
+    assert(actions[1].place == a and actions[1].place.x == 10, "ordinary location visit retains actual primary")
+    reportRows()[2].scripts.OnClick()
+    assert(actions[2].place.npcID == 101 and actions[2].place.x == 51 and actions[2].place.mapID == 3)
+    assert(not ui.action and addon.quests[9920].start == a)
+    addon.Navigation = nav; endReports()
+end)
+check("Same-card refresh and language preserve expansion and scroll while Back resets card session", function()
+    reportedFixture()
+    local locale, history, nav = addon.db.locale, ui.detailHistory, addon.Navigation
+    local calls = 0; addon.Navigation = { Start = function() calls = calls + 1 end }; ui.detailHistory = {}
+    showDetail(9920); reportToggle("start").scripts.OnClick()
+    local staleVisit = reportRows()[1].scripts.OnClick
+    ui.detailScroll:SetVerticalScroll(77); ui:RefreshDetail()
+    assert(#reportRows() == 2 and ui.detailScroll.verticalScroll == 77)
+    staleVisit(); assert(calls == 0, "old generation cannot navigate")
+    addon.db.locale = "ruRU"; ui:RefreshDetail()
+    assert(#reportRows() == 2 and detailHas(addon.L("REPORTED_NOTICE")) and ui.detailScroll.verticalScroll == 77)
+    local oldRows = { unpack(reportRows()) }; ui:InspectQuest(2)
+    for _, row in ipairs(oldRows) do assert(not row.shown and not row.enabled and row.scripts.OnClick == nil) end
+    for _, row in ipairs(ui.reportedToggles) do assert(not row.shown and row.scripts.OnClick == nil) end
+    ui:BackQuest(); assert(ui.quest == 9920 and #reportRows() == 0 and not ui.reportedExpanded.start)
+    assert(ui.detailScroll.verticalScroll == 0 and calls == 0)
+    addon.db.locale, ui.detailHistory, addon.Navigation = locale, history, nav; endReports()
+end)
+check("Reported positions use measured wrapping and recycle expanded rows without stale destinations", function()
+    reportedFixture()
+    measurement = function(fs)
+        if fs.text and fs.text:find("reported positions", 1, true) then return 72 end
+        if fs.text == addon.L("REPORTED_VISIT") then return 54 end
+        if fs.text and fs.text:find("(10.0, 20.0)", 1, true) then return 70 end
+        return 18
+    end
+    showDetail(9920); reportToggle("start").scripts.OnClick()
+    local first, second = reportRows()[1], reportRows()[2]
+    assert(reportToggle("start").height >= 7 + 72 + 7)
+    assert(first.height >= 7 + 70 + 4 + 54 + 7 and first.point[3] - second.point[3] >= first.height + 4)
+    reportToggle("start").scripts.OnClick()
+    assert(not first.shown and first.scripts.OnClick == nil)
+    reportToggle("finish").scripts.OnClick()
+    assert(reportRows()[1] == first and first.destination.objectID == 202 and first.destination.x == 30)
+    assert(not first.destination.npcID and first.locationKey == "finish")
+    measurement = nil; endReports()
+end)
+check("Reported position rendering is bounded and invalid or restricted reports never create visits", function()
+    local start = reportedFixture()
+    start.reportedLocations = {}; for i = 1, 100 do start.reportedLocations[i] = { mapID = 1, x = i - 1, y = 20 } end
+    showDetail(9920); reportToggle("start").scripts.OnClick(); assert(#reportRows() == 100)
+    start.reportedLocations[101] = { mapID = 1, x = 100, y = 20 }
+    ui:RefreshDetail(); assert(not reportToggle("start") and #reportRows() == 0)
+    local restricted = {}; issecretvalue = function(v) return v == restricted end
+    for _, bad in ipairs({ restricted, {}, { { mapID = 1, x = 10, y = 20 } },
+        { { mapID = 1, x = 10, y = 20 }, { mapID = 0, x = 11, y = 21 } },
+        { { mapID = 1, x = 10, y = 20 }, { mapID = 1, x = restricted, y = 21 } },
+        { { mapID = 1, x = 10, y = 20 }, { mapID = 1, x = 11, y = 101 } } }) do
+        start.reportedLocations = bad; ui:RefreshDetail()
+        assert(not reportToggle("start") and #reportRows() == 0)
+    end
+    issecretvalue = nil; endReports()
+end)
+check("A report on another map does not borrow the primary zone label when native map names are unavailable", function()
+    local start = reportedFixture(); local maps = C_Map
+    C_Map = nil; start.reportedLocations[2].mapID = 3
+    showDetail(9920); reportToggle("start").scripts.OnClick()
+    assert(reportRows()[1].title.text == "Start zone (10.0, 20.0)")
+    assert(reportRows()[2].title.text == addon.L("UNKNOWN_PLACE") .. " (11.0, 21.0)")
+    C_Map = maps; endReports()
+end)
+check("Reported-position copy is explicitly translated for all ten locales", function()
+    local count = 0
+    for locale, strings in pairs(addon.locales) do
+        for _, key in ipairs({ "REPORTED_POSITIONS", "REPORTED_NOTICE", "REPORTED_VISIT" }) do
+            assert(type(strings[key]) == "string" and strings[key] ~= "", locale .. " missing " .. key)
+        end
+        local label = string.format(strings.REPORTED_POSITIONS, "Entity", 2)
+        assert(label:find("Entity", 1, true) and label:find("2", 1, true)); count = count + 1
+    end
+    assert(count == 10)
+end)
 print("Preparation UI modeled checks passed: " .. total .. " (no native layout validation)")

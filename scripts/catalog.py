@@ -120,6 +120,8 @@ def validate(data):
                     raise ValueError(f"Invalid item drop sources: {q['id']}")
                 seen_drops = set()
                 for drop in drops:
+                    if type(drop) is dict and "reportedLocations" in drop:
+                        raise ValueError(f"Invalid reported locations on item drop: {q['id']}")
                     if (type(drop) is not dict or not integer(drop.get("npcID")) or
                         type(drop.get("name")) is not str or not drop["name"] or
                         type(drop.get("locationName")) is not str or not drop["locationName"]):
@@ -136,6 +138,28 @@ def validate(data):
                     v = p[axis]
                     if type(v) not in (int, float) or not math.isfinite(v) or not 0 <= v <= 100 or "mapID" not in p:
                         raise ValueError("Invalid coordinate")
+            if "reportedLocations" in p:
+                points = p["reportedLocations"]
+                if ("itemID" in p or not any(field in p for field in ("npcID", "objectID")) or
+                    type(points) is not list or not 2 <= len(points) <= 100):
+                    raise ValueError(f"Invalid reported locations: {q['id']}")
+                seen_points = set()
+                for point in points:
+                    if (type(point) is not dict or not {"mapID", "x", "y"}.issubset(point) or
+                        set(point) - {"mapID", "x", "y", "zoneName"} or not integer(point["mapID"])):
+                        raise ValueError(f"Invalid reported location identity: {q['id']}")
+                    for axis in ("x", "y"):
+                        value = point[axis]
+                        if type(value) not in (int, float) or not math.isfinite(value) or not 0 <= value <= 100:
+                            raise ValueError(f"Invalid reported location coordinate: {q['id']}")
+                    if "zoneName" in point and (not nonempty_string(point["zoneName"]) or len(point["zoneName"]) > 500):
+                        raise ValueError(f"Invalid reported location zone name: {q['id']}")
+                    triple = (point["mapID"], point["x"], point["y"])
+                    if triple in seen_points:
+                        raise ValueError(f"Duplicate reported location: {q['id']}")
+                    seen_points.add(triple)
+                if all(field in p for field in ("mapID", "x", "y")) and (p["mapID"], p["x"], p["y"]) not in seen_points:
+                    raise ValueError(f"Primary point missing from reported locations: {q['id']}")
     for q in quests.values():
         for field in ("requires", "storyline"):
             if field in q and type(q[field]) is not list:

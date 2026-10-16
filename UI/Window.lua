@@ -27,6 +27,37 @@ local function giverName(place)
     return name and name ~= "" and name or addon.L("UNKNOWN_PLACE")
 end
 
+local function reportedPlaces(parent)
+    parent = addon.Clean(parent, "table")
+    local locations = parent and addon.Clean(parent.reportedLocations, "table")
+    if not locations or #locations < 2 or #locations > 100 then return nil end
+    local count, last = 0, 0
+    for key in next, locations do
+        count = count + 1
+        key = addon.Clean(key, "number")
+        if count > 100 or not key or key < 1 or key > 100 or key % 1 ~= 0 then return nil end
+        if key > last then last = key end
+    end
+    if last ~= count then return nil end
+    local npcID, objectID = addon.Clean(parent.npcID, "number"), addon.Clean(parent.objectID, "number")
+    if npcID and (npcID <= 0 or npcID % 1 ~= 0) then npcID = nil end
+    if objectID and (objectID <= 0 or objectID % 1 ~= 0) then objectID = nil end
+    if not npcID and not objectID then return nil end
+    local result = {}
+    for i = 1, #locations do
+        local report = addon.Clean(locations[i], "table")
+        if not report then return nil end
+        local mapID = addon.Clean(report.mapID, "number")
+        local x, y = addon.Clean(report.x, "number"), addon.Clean(report.y, "number")
+        if not mapID or mapID <= 0 or mapID % 1 ~= 0 or not x or not y or
+            x < 0 or x > 100 or y < 0 or y > 100 then return nil end
+        result[i] = { npcID = npcID, objectID = objectID, name = addon.Clean(parent.name, "string"),
+            mapID = mapID, x = x, y = y, zoneName = addon.Clean(report.zoneName, "string") or
+                (addon.Clean(parent.mapID, "number") == mapID and addon.Clean(parent.zoneName, "string") or nil) }
+    end
+    return result
+end
+
 local function searchText(value)
     -- Only ASCII bytes are folded; UTF-8 sequences pass through unchanged.
     return value:gsub("[A-Z]", function(letter) return string.char(letter:byte() + 32) end)
@@ -300,8 +331,16 @@ function UI:RefreshDetail()
     if self.renderedQuest ~= self.quest then
         self.detailScroll:SetVerticalScroll(0)
         self.renderedQuest = self.quest
+        self.reportedExpanded = {}
     end
     local pool, n, y = self.details, 0, 0
+    self.reportedExpanded = self.reportedExpanded or {}
+    self.reportedToggles, self.reportedRows = self.reportedToggles or {}, self.reportedRows or {}
+    local reportedGeneration, toggleIndex, reportIndex = {}, 0, 0
+    self.reportedGeneration = reportedGeneration
+    for _, buttons in ipairs({ self.reportedToggles, self.reportedRows }) do
+        for _, row in ipairs(buttons) do row:Hide(); row:SetEnabled(false); row:SetScript("OnClick", nil) end
+    end
     self.back:SetEnabled(#self.detailHistory > 0)
     if self.portrait then self.portrait:Hide(); self.portrait:SetTexture(nil) end
     self.action = nil
@@ -366,6 +405,40 @@ function UI:RefreshDetail()
                 else line(addon.L("REASON_levelUnknown")) end
             else line(addon.L(reason)) end
         end
+        local function reported(parent, key)
+            local places = reportedPlaces(parent)
+            if not places then return end
+            toggleIndex = toggleIndex + 1
+            local toggle = self:MakeRow(self.detail, self.reportedToggles, toggleIndex, 40)
+            toggle.locationKey, toggle.heading = key, true
+            local expanded = self.reportedExpanded[key] == true
+            toggle.title:SetText((expanded and "− " or "+ ") .. addon.L("REPORTED_POSITIONS", giverName(parent), #places))
+            toggle.note:SetText(""); toggle:SetEnabled(true)
+            toggle:SetScript("OnClick", function()
+                if self.quest ~= id or self.reportedGeneration ~= reportedGeneration then return end
+                self.reportedExpanded[key] = not expanded
+                self:RefreshDetail()
+            end)
+            y = self:LayoutRow(toggle, 40, y)
+            if not expanded then return end
+            line(addon.L("REPORTED_NOTICE"))
+            for _, destination in ipairs(places) do
+                local point = destination
+                reportIndex = reportIndex + 1
+                local row = self:MakeRow(self.detail, self.reportedRows, reportIndex, 59)
+                row.locationKey, row.destination, row.heading = key, point, nil
+                local zone = addon.Read(C_Map and C_Map.GetMapInfo, "table", point.mapID)
+                local zoneName = (zone and addon.Clean(zone.name, "string")) or point.zoneName or addon.L("UNKNOWN_PLACE")
+                row.title:SetText(zoneName .. string.format(" (%.1f, %.1f)", point.x, point.y))
+                row.note:SetText(addon.L("REPORTED_VISIT")); row:SetEnabled(true)
+                row:SetScript("OnClick", function()
+                    if self.quest == id and self.reportedGeneration == reportedGeneration then
+                        addon.Navigation.Start({ id = id, kind = "visit", place = point })
+                    end
+                end)
+                y = self:LayoutRow(row, 59, y)
+            end
+        end
         local function place(p)
             if not p then return addon.L("UNKNOWN_PLACE") end
             local zone = p.mapID and addon.Read(C_Map and C_Map.GetMapInfo, "table", p.mapID)
@@ -377,7 +450,7 @@ function UI:RefreshDetail()
             return name .. (zoneName and (" — " .. zoneName) or "") ..
                 (p.x and string.format(" (%.1f, %.1f)", p.x, p.y) or "")
         end
-        local function alternativePlaces(places, buttons, heading)
+        local function alternativePlaces(places, buttons, heading, slot)
             line(addon.L(heading))
             for index, possible in ipairs(places) do
                 local destination = possible
@@ -398,11 +471,12 @@ function UI:RefreshDetail()
                     else addon.Navigation.Map(destination) end
                 end or nil)
                 y = self:LayoutRow(row, 59, y)
+                reported(destination, slot .. index)
             end
         end
         if q.startAlternatives then
-            alternativePlaces(q.startAlternatives, self.startButtons, "START_ALTERNATIVES")
-        else line(addon.L("START") .. ": " .. place(q.start)) end
+            alternativePlaces(q.startAlternatives, self.startButtons, "START_ALTERNATIVES", "startAlternative:")
+        else line(addon.L("START") .. ": " .. place(q.start)); reported(q.start, "start") end
         local start = q.start
         if start and start.itemID then
             local shown = false
@@ -447,8 +521,8 @@ function UI:RefreshDetail()
             if state.status ~= "AVAILABLE" then line(addon.L("LOCATION_ONLY")) end
         end
         if q.finishAlternatives then
-            alternativePlaces(q.finishAlternatives, self.finishButtons, "POSSIBLE_TURNINS")
-        else line(addon.L("ENDING") .. ": " .. place(q.finish)) end
+            alternativePlaces(q.finishAlternatives, self.finishButtons, "POSSIBLE_TURNINS", "finishAlternative:")
+        else line(addon.L("ENDING") .. ": " .. place(q.finish)); reported(q.finish, "finish") end
         local actions, uncertain = engine:Next(id)
         line(addon.L("NEXT"))
         local action = actions[1]
