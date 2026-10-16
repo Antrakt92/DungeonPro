@@ -1,8 +1,12 @@
-local methods, measurement = {}, nil
-function methods:SetSize(w, h) self.width, self.height = w, h end
+local methods, measurement, updateScrollRange = {}, nil, nil
+function methods:SetSize(w, h)
+    self.width, self.height = w, h
+    if updateScrollRange then updateScrollRange(self) end
+end
 function methods:GetWidth() return self.width or 340 end
+function methods:GetHeight() return self.height or 100 end
 function methods:SetWidth(w) self.width = w end
-function methods:SetHeight(h) self.height = h end
+function methods:SetHeight(h) self.height = h; if updateScrollRange then updateScrollRange(self) end end
 function methods:SetPoint(...) self.point = { ... } end
 function methods:GetPoint() return unpack(self.point) end
 function methods:ClearAllPoints() self.point = nil end
@@ -23,9 +27,43 @@ function methods:SetShown(value) if value then self:Show() else self:Hide() end 
 for _, name in ipairs({ "SetFont", "SetJustifyH", "SetTextColor", "SetAllPoints", "SetColorTexture",
     "SetHighlightTexture", "SetFrameStrata", "EnableMouse", "SetMovable", "RegisterForDrag",
     "StartMoving", "StopMovingOrSizing", "SetBackdrop", "SetBackdropColor", "SetBackdropBorderColor",
-    "SetAutoFocus", "SetScrollChild" }) do methods[name] = function() end end
-local function object(_, name)
-    local frame = setmetatable({ scripts = {}, name = name }, { __index = methods })
+    "SetAutoFocus" }) do methods[name] = function() end end
+function methods:SetScrollChild(child)
+    self.scrollChild = child
+    updateScrollRange(self)
+end
+function methods:GetVerticalScrollRange()
+    return math.max(0, (self.scrollChild and self.scrollChild:GetHeight() or 0) - self:GetHeight())
+end
+-- Model only the pinned SecureScrollTemplates visibility/range contract, not native pixels or engine clamping.
+local function templateRangeChanged(scroll, _, range)
+    range = math.floor(range or scroll:GetVerticalScrollRange())
+    scroll.templateRangeEvents = (scroll.templateRangeEvents or 0) + 1
+    local bar = scroll.ScrollBar
+    bar.minimum, bar.maximum = 0, range
+    bar.value = math.min(bar.value or 0, range)
+    local shown = range ~= 0 or not scroll.scrollBarHideable
+    for _, part in ipairs({ bar, bar.ScrollUpButton, bar.ScrollDownButton, bar.ThumbTexture }) do part:SetShown(shown) end
+end
+updateScrollRange = function(changed)
+    local scroll = changed.kind == "ScrollFrame" and changed or changed.parent
+    if scroll and scroll.scrollChild and (changed == scroll or changed == scroll.scrollChild) and scroll.scripts.OnScrollRangeChanged then
+        scroll.scripts.OnScrollRangeChanged(scroll, 0, scroll:GetVerticalScrollRange())
+    end
+end
+local function object(kind, name, parent, template)
+    local frame = setmetatable({ scripts = {}, name = name, kind = kind, parent = parent }, { __index = methods })
+    if template == "UIPanelScrollFrameTemplate" then
+        frame.ScrollBar = setmetatable({ scripts = {}, shown = true, value = 0 }, { __index = methods })
+        for _, key in ipairs({ "ScrollUpButton", "ScrollDownButton", "ThumbTexture" }) do
+            frame.ScrollBar[key] = setmetatable({ scripts = {}, shown = true }, { __index = methods })
+        end
+        frame.scripts.OnScrollRangeChanged = templateRangeChanged
+        frame.templateRangeHandler = templateRangeChanged
+        frame.scripts.OnVerticalScroll = function() end
+        frame.scripts.OnMouseWheel = function() end
+        frame.templateVerticalHandler, frame.templateWheelHandler = frame.scripts.OnVerticalScroll, frame.scripts.OnMouseWheel
+    end
     if name then _G[name] = frame end
     return frame
 end
@@ -2221,5 +2259,62 @@ check("Optional objective name and count reads cannot append stale outer rows af
         end
     end
     addon.ItemName, addon.CarriedItemCount = itemName, count; addon.quests[9988] = nil; showDetail(2)
+end)
+check("All three native-template scrollbars hide short and exact-fit content and show overflow", function()
+    for _, child in ipairs({ ui.catalog, ui.questList, ui.detail }) do
+        local scroll = child.parent
+        assert(scroll and scroll.kind == "ScrollFrame" and scroll.scrollChild == child)
+        local oldHeight, viewport = child:GetHeight(), scroll:GetHeight()
+        child:SetHeight(viewport - 1)
+        assert(not scroll.ScrollBar.shown and scroll.ScrollBar.maximum == 0)
+        child:SetHeight(viewport)
+        assert(not scroll.ScrollBar.shown and scroll.ScrollBar.maximum == 0)
+        child:SetHeight(viewport + 1)
+        assert(scroll.ScrollBar.shown and scroll.ScrollBar.maximum == 1)
+        child:SetHeight(viewport + 0.5)
+        assert(not scroll.ScrollBar.shown, "native template floors subpixel ranges")
+        assert(scroll.scripts.OnScrollRangeChanged == scroll.templateRangeHandler)
+        assert(scroll.scripts.OnVerticalScroll == scroll.templateVerticalHandler and scroll.scripts.OnMouseWheel == scroll.templateWheelHandler)
+        assert(not scroll.scripts.OnUpdate, "scroll visibility must not require polling")
+        child:SetHeight(oldHeight)
+    end
+end)
+check("Native range changes update scrollbar visibility after viewport resize and content shrink", function()
+    for _, child in ipairs({ ui.catalog, ui.questList, ui.detail }) do
+        local scroll = child.parent
+        local oldChild, oldView = child:GetHeight(), scroll:GetHeight()
+        local events = scroll.templateRangeEvents
+        child:SetHeight(600); scroll:SetSize(scroll:GetWidth(), 300)
+        assert(scroll.ScrollBar.shown and scroll.ScrollBar.maximum == 300)
+        scroll:SetSize(scroll:GetWidth(), 600)
+        assert(not scroll.ScrollBar.shown and scroll.ScrollBar.maximum == 0)
+        scroll:SetHeight(200)
+        assert(scroll.ScrollBar.shown and scroll.ScrollBar.maximum == 400)
+        child:SetHeight(100)
+        assert(not scroll.ScrollBar.shown and scroll.ScrollBar.maximum == 0 and scroll.templateRangeEvents > events)
+        scroll:SetHeight(oldView); child:SetHeight(oldChild)
+    end
+end)
+check("Dungeon search and a shortened quest detail refresh inherited scrollbar state", function()
+    local dungeons, search, range, description, quest = addon.dungeons, ui.search, ui.range, addon.Description, ui.quest
+    local catalogScroll = ui.catalog.parent
+    addon.dungeons = {}
+    for index = 1, 30 do addon.dungeons[index] = { key = "scroll" .. index, name = "Scroll dungeon " .. index,
+        minLevel = 1, maxLevel = 60, quests = {} } end
+    ui.search, ui.range = "", false; ui:RefreshDungeons()
+    assert(catalogScroll.ScrollBar.shown)
+    ui.searchBox:SetText("Scroll dungeon 30"); ui.searchBox.scripts.OnTextChanged(ui.searchBox)
+    assert(ui.cards[1].shown and ui.cards[1].title.text == "Scroll dungeon 30" and not ui.cards[2].shown)
+    assert(not catalogScroll.ScrollBar.shown and ui.catalog:GetHeight() <= catalogScroll:GetHeight())
+    ui.clearSearch.scripts.OnClick(); assert(catalogScroll.ScrollBar.shown)
+    local long = "Long description for overflow"
+    addon.Description = function() return long end
+    measurement = function(fs) return fs.text == long and 700 or 18 end
+    showDetail(2); assert(ui.detailScroll.ScrollBar.shown)
+    addon.Description = function() return "Short description" end
+    ui:RefreshDetail()
+    assert(ui.detail:GetHeight() <= ui.detailScroll:GetHeight() and not ui.detailScroll.ScrollBar.shown)
+    addon.dungeons, ui.search, ui.range, addon.Description, ui.quest = dungeons, search, range, description, quest
+    measurement = nil; ui.searchBox:SetText(search); ui:Refresh()
 end)
 print("Preparation UI modeled checks passed: " .. total .. " (no native layout validation)")

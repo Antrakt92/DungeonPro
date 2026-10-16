@@ -88,6 +88,8 @@ end
 
 local function scrolling(parent, x, y, width, height)
     local scroll = CreateFrame("ScrollFrame", nil, parent, "UIPanelScrollFrameTemplate")
+    scroll.scrollBarHideable = true
+    if scroll.ScrollBar then scroll.ScrollBar:Hide() end
     scroll:SetPoint("TOPLEFT", x, y)
     scroll:SetSize(width, height)
     local child = CreateFrame("Frame", nil, scroll)

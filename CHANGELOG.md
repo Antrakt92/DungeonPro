@@ -30,6 +30,7 @@
 - Added `/rl` as a shortcut for reloading the interface.
 - Added a movable minimap button, with commands to hide or reset it.
 - Showed sourced objective-item quantities separately from current carried counts.
+- Hid scrollbars when a list or quest card fits without scrolling.
 - Added missing dungeon quests and their supporting mage and faction story chains.
 - Kept newly accepted quests visible alongside past completion history, and
   retained that history when checking prerequisite chains.
