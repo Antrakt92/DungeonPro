@@ -99,6 +99,50 @@ check("Cleanup preserves a native waypoint moved by the player", function()
     current = { uiMapID = 1, position = { x = 0.2, y = 0.3 } }
     nav.Stop(); assert(clears == 0)
 end)
+check("Quest cancellation preserves a nearby but different player waypoint", function()
+    assert(nav.Start(action))
+    current = { uiMapID = 1, position = { x = point.x / 100 + 0.000005, y = point.y / 100 } }
+    local playerPin = current
+    nav.QuestChanged(999); assert(clears == 0)
+    nav.QuestChanged(action.id)
+    assert(clears == 0 and current == playerPin)
+end)
+check("Reentrant cleanup cannot remove the same TomTom waypoint twice", function()
+    local removed = 0
+    TomTom = { AddWaypoint = function() return 123 end, RemoveWaypoint = function()
+        removed = removed + 1
+        if removed == 1 then nav.Stop() end
+    end }
+    assert(nav.Start(action)); nav.Stop()
+    assert(removed == 1)
+end)
+check("A replacement guide started by cleanup retains its owner and stays visible", function()
+    local nextUID, removed = 0, {}
+    TomTom = { AddWaypoint = function() nextUID = nextUID + 1; return nextUID end,
+        RemoveWaypoint = function(_, uid)
+            removed[#removed + 1] = uid
+            if uid == 1 then assert(nav.Start({ id = 2, kind = "visit", place = point })) end
+        end }
+    assert(nav.Start(action)); nav.Stop()
+    local shown = false
+    for _, frame in ipairs(frames) do if frame.shown and frame.scripts.OnUpdate then shown = true end end
+    assert(shown and #removed == 1)
+    nav.QuestChanged(2)
+    assert(#removed == 2 and removed[2] == 2)
+end)
+check("An older Start cannot overwrite a replacement requested during cleanup", function()
+    local nextUID, removed = 0, {}
+    TomTom = { AddWaypoint = function() nextUID = nextUID + 1; return nextUID end,
+        RemoveWaypoint = function(_, uid)
+            removed[#removed + 1] = uid
+            if uid == 1 then assert(nav.Start({ id = 3, kind = "visit", place = point })) end
+        end }
+    assert(nav.Start(action))
+    assert(not nav.Start({ id = 2, kind = "visit", place = point }))
+    assert(nextUID == 2)
+    nav.QuestChanged(2); assert(#removed == 1)
+    nav.QuestChanged(3); assert(#removed == 2 and removed[2] == 2)
+end)
 check("Rejected native waypoint never claims an existing matching player pin", function()
     local tracked = 0
     current = { uiMapID = 1, position = { x = point.x / 100, y = point.y / 100 } }

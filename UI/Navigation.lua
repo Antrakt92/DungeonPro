@@ -20,22 +20,22 @@ function N.Map(point)
 end
 
 function N.Stop()
-    if tomtomUID and tomtomOwner and type(tomtomOwner.RemoveWaypoint) == "function" then
-        pcall(tomtomOwner.RemoveWaypoint, tomtomOwner, tomtomUID)
+    local owner, uid, pin = tomtomOwner, tomtomUID, nativePoint
+    -- Release ownership before third-party cleanup can invoke callbacks.
+    tomtomOwner, tomtomUID, nativePoint, target = nil, nil, nil, nil
+    if frame then frame:Hide() end
+    if uid and owner and type(owner.RemoveWaypoint) == "function" then
+        pcall(owner.RemoveWaypoint, owner, uid)
     end
-    tomtomOwner, tomtomUID = nil, nil
-    if nativePoint and C_Map then
+    if pin and not nativePoint and C_Map then
         local current = addon.Read(C_Map.GetUserWaypoint, "table")
         local pos = current and addon.Clean(current.position, "table")
         local map = current and addon.Clean(current.uiMapID, "number")
         local x, y = pos and addon.Clean(pos.x, "number"), pos and addon.Clean(pos.y, "number")
-        if map == nativePoint.mapID and x and y and math.abs(x - nativePoint.x) < 0.00001 and math.abs(y - nativePoint.y) < 0.00001 then
+        if map == pin.mapID and x == pin.x and y == pin.y then
             if type(C_Map.ClearUserWaypoint) == "function" then pcall(C_Map.ClearUserWaypoint) end
         end
     end
-    nativePoint = nil
-    target = nil
-    if frame then frame:Hide() end
 end
 
 function N.QuestChanged(id)
@@ -88,6 +88,7 @@ end
 function N.Start(action)
     if not action or not N.Valid(action.place) then return false end
     N.Stop()
+    if target then return false end
     target = action
     local p = action.place
     if TomTom and type(TomTom.AddWaypoint) == "function" then
