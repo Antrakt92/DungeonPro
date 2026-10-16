@@ -162,17 +162,33 @@ local function label(parent, value, x, y, width, size)
     return fs
 end
 
+function UI:CloseCopyLink()
+    self.copyQuest = nil
+    if self.copy then self.copy:SetText(""); self.copy:Hide(); self.copy:ClearFocus() end
+    if self.copyHint then self.copyHint:SetText(""); self.copyHint:Hide() end
+end
+
 function UI:CopyLink(id)
+    id = addon.Clean(id, "number")
+    if not id or id < 1 or id % 1 ~= 0 or id ~= self.quest or
+        addon.Read(self.frame.IsShown, "boolean", self.frame) ~= true then return false end
     if not self.copy then
-        local box = CreateFrame("EditBox", nil, self.frame, "InputBoxTemplate")
-        box:SetSize(650, 26)
-        box:SetPoint("BOTTOM", 0, 13)
+        local box = CreateFrame("EditBox", nil, self.detail, "InputBoxTemplate")
+        box:SetSize(326, 26)
         box:SetAutoFocus(false)
-        box:SetScript("OnEscapePressed", function(b) b:Hide(); b:ClearFocus() end)
-        self.copy = box
+        box:SetScript("OnEscapePressed", function() self:CloseCopyLink(); self:RefreshDetail() end)
+        self.copy, self.copyHint = box, label(box, "", 0, -34, 326, 11)
     end
+    self.copyQuest = id
     self.copy:SetText("https://www.wowhead.com/forever/quest=" .. id)
-    self.copy:Show(); self.copy:SetFocus(); self.copy:HighlightText()
+    self:RefreshDetail()
+    if self.quest ~= id or self.copyQuest ~= id or addon.Read(self.copy.IsShown, "boolean", self.copy) ~= true then return false end
+    local content = addon.Read(self.detail.GetHeight, "number", self.detail)
+    local viewport = addon.Read(self.detailScroll.GetHeight, "number", self.detailScroll)
+    if content and viewport and content >= 0 and viewport > 0 then self.detailScroll:SetVerticalScroll(math.max(0, content - viewport)) end
+    if self.quest ~= id or self.copyQuest ~= id then return false end
+    self.copy:SetFocus(); self.copy:HighlightText()
+    return true
 end
 
 function UI:MakeRow(parent, pool, index, height)
@@ -514,9 +530,7 @@ function UI:RefreshDetail()
     if not rewardGeneration or self.quest ~= renderQuest then return end
     local overviewIdentity = not renderQuest and renderDungeon and (addon.Clean(renderDungeon.key, "string") or renderDungeon) or nil
     if self.renderedQuest ~= self.quest or self.renderedOverview ~= overviewIdentity then
-        if self.copy then
-            self.copy:SetText(""); self.copy:Hide(); self.copy:ClearFocus()
-        end
+        self:CloseCopyLink()
         self.detailScroll:SetVerticalScroll(0)
         self.renderedQuest, self.renderedOverview = self.quest, overviewIdentity
         self.reportedExpanded = {}
@@ -1021,6 +1035,12 @@ function UI:RefreshDetail()
             line(addon.L("OVERVIEW_PICK"))
         else line(addon.L("PICK")) end
     end
+    if renderQuest and self.copyQuest == renderQuest and self.copy then
+        self.copy:ClearAllPoints(); self.copy:SetPoint("TOPLEFT", 8, -(y + 6))
+        self.copyHint:SetFont(FONT, 11, ""); self.copyHint:SetText(addon.L("COPY")); self.copyHint:Show()
+        self.copy:Show()
+        y = y + 6 + 26 + 8 + measuredHeight(self.copyHint, 18) + 8
+    end
     hideRest(pool, n)
     self.detail:SetHeight(math.max(1, y + 12))
     self:ApplyTheme()
@@ -1163,7 +1183,7 @@ function UI:Create()
     UISpecialFrames[#UISpecialFrames + 1] = "DungeonProWindow"
     for _, d in ipairs(addon.dungeons) do if d.key == addon.char.selectedDungeon then self.dungeon = d end end
     frame:SetScript("OnShow", function() self:Fit(); self:Refresh() end)
-    frame:SetScript("OnHide", function() self:ResetRewardPresentation() end)
+    frame:SetScript("OnHide", function() self:ResetRewardPresentation(); self:CloseCopyLink() end)
     self:ApplyTheme()
     frame:Hide()
 end

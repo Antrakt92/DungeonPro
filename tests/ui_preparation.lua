@@ -2411,14 +2411,14 @@ check("Source copy field clears its URL and focus on inspection Back and dungeon
     assert(ui.quest == nil and not ui.copy.shown and not ui.copy.focused and ui.copy.text == "")
     ui.quest, ui.dungeon, ui.detailHistory = quest, dungeon, history; ui:Refresh()
 end)
-check("Same-card source copying survives refresh but a hidden quest change clears it on reopen", function()
+check("Same-card source copying survives refresh but closing the window clears the cached link", function()
     local quest, history, locale = ui.quest, ui.detailHistory, addon.db.locale
     ui.detailHistory = {}; showDetail(1); ui.source.scripts.OnClick()
     local box, url = ui.copy, ui.copy.text
     ui:RefreshDetail(); ui:Refresh(); ui:InspectQuest(1); ui.language.scripts.OnClick()
     assert(box.shown and box.focused and box.text == url and #ui.detailHistory == 0)
-    ui.frame:Hide(); ui.quest = 2; ui:Refresh()
-    assert(box.text == url, "hidden refresh is deferred until opening")
+    ui.frame:Hide(); ui.frame.scripts.OnHide(ui.frame); ui.quest = 2; ui:Refresh()
+    assert(box.text == "" and not box.shown and not box.focused, "closing the window clears copy state before reopening")
     ui.frame:Show(); ui.frame.scripts.OnShow(ui.frame)
     assert(ui.quest == 2 and #ui.detailHistory == 0 and not box.shown and not box.focused and box.text == "")
     addon.db.locale, ui.quest, ui.detailHistory = locale, quest, history; ui:Refresh()
@@ -2876,5 +2876,44 @@ check("Back exhausts positive quest history before overview and never fabricates
     ui:InspectQuest(2001); assert(ui:BackQuest() and ui.quest == 2000 and not ui.back.enabled)
     assert(not ui:BackQuest() and addon.char.detailHistory == nil and addon.db.detailHistory == nil)
     ui.quest, ui.dungeon, ui.detailHistory = quest, dungeon, history; ui:Refresh()
+end)
+check("Source copy instructions live inside the detail scroll content and remain readable across locales", function()
+    local quest, history, locale = ui.quest, ui.detailHistory, addon.db.locale
+    ui.detailHistory = {}; showDetail(1); ui.source.scripts.OnClick(ui.source, "LeftButton", false)
+    assert(ui.copyHint and ui.copyHint.shown and ui.copyHint.text == addon.L("COPY"))
+    assert(ui.copy.parent == ui.detail and ui.copy.width <= 334 and ui.copyHint.width <= 334 and ui.copy.point[1] == "TOPLEFT")
+    local url = ui.copy.text
+    assert(ui.copy.focused and ui.detailScroll.verticalScroll == math.max(0, ui.detail:GetHeight() - ui.detailScroll:GetHeight()))
+    measurement = function(fs) return fs == ui.copyHint and 54 or 18 end
+    ui.source.scripts.OnClick(ui.source, "LeftButton", false)
+    local top = -ui.copy.point[3] - ui.detailScroll.verticalScroll
+    assert(top >= 0 and top + 34 + 54 <= ui.detailScroll:GetHeight(), "the full wrapped copy hint stays inside its scroll viewport")
+    ui.copy:SetText("User-selected text")
+    for code in pairs(addon.locales) do
+        addon.db.locale = code; ui:Refresh()
+        assert(ui.copy.text == "User-selected text" and ui.copy.focused and ui.copyHint.text == addon.L("COPY") and ui.copyHint.shown)
+    end
+    ui.source.scripts.OnClick(ui.source, "LeftButton", false); assert(ui.copy.text == url and ui.copy.focused)
+    ui.copy.scripts.OnEscapePressed(ui.copy)
+    assert(not ui.copy.shown and not ui.copy.focused and ui.copy.text == "" and not ui.copyHint.shown and ui.copyHint.text == "")
+    assert(ui.quest == 1 and #ui.detailHistory == 0)
+    assert(not ui:CopyLink(2) and ui.copy.text == "" and not ui.copy.shown, "a stale requested quest cannot reopen a cached link")
+    measurement = nil; addon.db.locale, ui.quest, ui.detailHistory = locale, quest, history; ui:Refresh()
+end)
+check("Source copy drawer clears cached URLs and focus on quest Back and window close without touching external tooltips", function()
+    local quest, history, tooltip = ui.quest, ui.detailHistory, GameTooltip
+    local foreign = {}; GameTooltip = foreign
+    ui.detailHistory = {}; showDetail(1); ui:InspectQuest(2); ui.source.scripts.OnClick(ui.source, "LeftButton", false)
+    assert(ui.copyHint.shown); assert(ui:BackQuest() and ui.quest == 1)
+    assert(ui.copy.text == "" and not ui.copy.shown and not ui.copyHint.shown and not ui.copy.focused)
+    ui.source.scripts.OnClick(ui.source, "LeftButton", false)
+    ui.frame:Hide(); ui.frame.scripts.OnHide(ui.frame)
+    assert(ui.copy.text == "" and not ui.copy.shown and not ui.copyHint.shown and not ui.copy.focused)
+    ui.frame:Show(); ui.frame.scripts.OnShow(ui.frame)
+    assert(ui.quest == 1 and not ui.copy.shown and ui.copy.text == "" and GameTooltip == foreign)
+    ui.source.scripts.OnClick(ui.source, "LeftButton", false); assert(ui:BackQuest() and ui.quest == nil)
+    assert(not ui.copy.shown and not ui.copyHint.shown and ui.copy.text == "" and not ui.source.enabled)
+    assert(addon.char.copyQuest == nil and addon.db.copyQuest == nil)
+    GameTooltip, ui.quest, ui.detailHistory = tooltip, quest, history; ui:Refresh()
 end)
 print("Preparation UI modeled checks passed: " .. total .. " (no native layout validation)")
