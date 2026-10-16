@@ -410,5 +410,81 @@ class CatalogTests(unittest.TestCase):
                 catalog.validate(data)
 
 
+    @staticmethod
+    def minimal_catalog():
+        return {"schema": 1, "quests": [
+            {"id": 1, "name": "Parent", "minLevel": 1, "requirementsKnown": True,
+             "source": "https://www.wowhead.com/forever/quest=1"},
+            {"id": 2, "name": "Target", "minLevel": 1, "requirementsKnown": True,
+             "source": "https://www.wowhead.com/forever/quest=2"},
+        ], "dungeons": [{"key": "test", "name": "Test", "minLevel": 1, "maxLevel": 10,
+                          "coverage": "partial", "quests": [2]}]}
+
+    def test_requirement_and_story_collections_require_lists(self):
+        for field in ("requires", "storyline"):
+            for invalid in (None, "", "1", False, 1, {}):
+                data = self.minimal_catalog()
+                data["quests"][1][field] = invalid
+                with self.subTest(field=field, invalid=invalid), self.assertRaises(ValueError):
+                    catalog.validate(data)
+        for invalid in (None, "", "1", False, 1, {}):
+            data = self.minimal_catalog()
+            data["dungeons"][0]["quests"] = invalid
+            with self.subTest(invalid=invalid), self.assertRaises(ValueError):
+                catalog.validate(data)
+
+    def test_requirement_groups_and_ids_have_explicit_types(self):
+        for invalid in (None, False, "ids", [], 1):
+            data = self.minimal_catalog()
+            data["quests"][1]["requires"] = [invalid]
+            with self.subTest(group=invalid), self.assertRaises(ValueError):
+                catalog.validate(data)
+        for invalid in (None, False, "", "1", {}, 1, []):
+            data = self.minimal_catalog()
+            data["quests"][1]["requires"] = [{"ids": invalid}]
+            with self.subTest(ids=invalid), self.assertRaises(ValueError):
+                catalog.validate(data)
+
+    def test_reference_ids_reject_boolean_numeric_aliases_before_membership(self):
+        for invalid in (True, False, 1.0, 0, -1, "1", None, {}, []):
+            for field in ("requires", "storyline", "dungeon"):
+                data = self.minimal_catalog()
+                if field == "requires":
+                    data["quests"][1][field] = [{"ids": [invalid]}]
+                elif field == "storyline":
+                    data["quests"][1][field] = [invalid]
+                else:
+                    data["dungeons"][0]["quests"] = [invalid]
+                with self.subTest(field=field, invalid=invalid), self.assertRaises(ValueError):
+                    catalog.validate(data)
+
+    def test_display_names_and_dungeon_keys_require_nonblank_strings(self):
+        for invalid in (None, False, True, 1, {}, {"bad": "name"}, [], "", " \t\n"):
+            for field in ("quest", "dungeon", "key", "name", "dropName"):
+                data = self.minimal_catalog()
+                if field == "quest":
+                    data["quests"][1]["name"] = invalid
+                elif field in ("dungeon", "key"):
+                    data["dungeons"][0]["key" if field == "key" else "name"] = invalid
+                else:
+                    data["quests"][1]["start"] = {field: invalid}
+                with self.subTest(field=field, invalid=invalid), self.assertRaises(ValueError):
+                    catalog.validate(data)
+
+    def test_omitted_unknown_fields_and_legitimate_empty_lists_stay_valid(self):
+        data = self.minimal_catalog()
+        catalog.validate(data)
+        target = data["quests"][1]
+        target.update(requires=[], storyline=[], start={}, finish={})
+        data["dungeons"][0]["quests"] = []
+        catalog.validate(data)
+        self.assertIn('["storyline"] = {  }', catalog.generate(data))
+        target["requires"] = [{"ids": [1], "mode": "active"}]
+        target["storyline"] = [1, 2]
+        data["dungeons"][0]["quests"] = [1, 2]
+        target["start"] = {"name": "Known giver", "dropName": "Known drop source"}
+        catalog.validate(data)
+
+
 if __name__ == "__main__":
     unittest.main()

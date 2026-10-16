@@ -19,6 +19,10 @@ def integer(value):
     return type(value) is int and value > 0
 
 
+def nonempty_string(value):
+    return type(value) is str and bool(value.strip())
+
+
 def validate(data):
     if data.get("schema") != 1:
         raise ValueError("Unsupported catalogue schema")
@@ -27,7 +31,7 @@ def validate(data):
         if not integer(q["id"]) or q["id"] in quests:
             raise ValueError("Invalid or duplicate quest ID")
         quests[q["id"]] = q
-        if not q.get("name") or not integer(q.get("minLevel")):
+        if not nonempty_string(q.get("name")) or not integer(q.get("minLevel")):
             raise ValueError(f"Missing quest name/level: {q['id']}")
         if type(q.get("requirementsKnown")) is not bool:
             raise ValueError(f"Explicit requirements evidence needed: {q['id']}")
@@ -83,6 +87,9 @@ def validate(data):
                 continue
             if type(p) is not dict:
                 raise ValueError(f"Invalid quest {key} place: {q['id']}")
+            for field in ("name", "dropName"):
+                if field in p and not nonempty_string(p[field]):
+                    raise ValueError(f"Invalid place {field}: {q['id']}")
             if "zoneName" in p and (type(p["zoneName"]) is not str or
                                     not p["zoneName"].strip() or len(p["zoneName"]) > 500):
                 raise ValueError(f"Invalid place zone name: {q['id']}")
@@ -130,6 +137,9 @@ def validate(data):
                     if type(v) not in (int, float) or not math.isfinite(v) or not 0 <= v <= 100 or "mapID" not in p:
                         raise ValueError("Invalid coordinate")
     for q in quests.values():
+        for field in ("requires", "storyline"):
+            if field in q and type(q[field]) is not list:
+                raise ValueError(f"Invalid {field} list: {q['id']}")
         if "storylineGroups" in q:
             groups = q["storylineGroups"]
             if "storyline" in q:
@@ -146,6 +156,8 @@ def validate(data):
                     if qid in seen_story:
                         raise ValueError("Duplicate grouped storyline quest")
                     seen_story.add(qid)
+        if any(not integer(qid) for qid in q.get("storyline", [])):
+            raise ValueError("Invalid storyline quest ID")
         if any(qid not in quests for qid in q.get("storyline", [])):
             raise ValueError("Missing storyline quest")
         if "completionQuests" in q:
@@ -163,8 +175,11 @@ def validate(data):
                     raise ValueError(f"Missing completion quest definition: {q['id']}")
                 seen_related.add(qid)
         for g in q.get("requires", []):
-            if not g.get("ids") or g.get("mode", "completed") not in ("completed", "active"):
+            if (type(g) is not dict or type(g.get("ids")) is not list or not g["ids"] or
+                g.get("mode", "completed") not in ("completed", "active")):
                 raise ValueError("Invalid requirement group")
+            if any(not integer(parent) for parent in g["ids"]):
+                raise ValueError("Invalid prerequisite quest ID")
             if len(g["ids"]) != len(set(g["ids"])):
                 raise ValueError("Duplicate requirement")
             if any(parent not in quests for parent in g["ids"]):
@@ -187,6 +202,8 @@ def validate(data):
         visit(qid)
     keys = set()
     for d in data["dungeons"]:
+        if not nonempty_string(d.get("key")) or not nonempty_string(d.get("name")):
+            raise ValueError("Invalid dungeon key/name")
         if d["key"] in keys:
             raise ValueError("Duplicate dungeon")
         keys.add(d["key"])
@@ -194,6 +211,10 @@ def validate(data):
             raise ValueError("Invalid dungeon identity/levels")
         if d.get("coverage") not in ("pending", "partial", "reviewed"):
             raise ValueError("Explicit dungeon coverage needed")
+        if type(d.get("quests")) is not list:
+            raise ValueError("Invalid dungeon quest list")
+        if any(not integer(qid) for qid in d["quests"]):
+            raise ValueError("Invalid dungeon quest ID")
         if any(qid not in quests for qid in d["quests"]):
             raise ValueError("Dungeon references a missing quest")
         if len(d["quests"]) != len(set(d["quests"])):
