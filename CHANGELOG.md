@@ -21,6 +21,12 @@
   waypoints for three Shadowfang Keep quest-givers.
 - Extended Blackfathom's Horde quest list and its known story sequences.
 - Added The Stockade and the paladin's Kor Gem support quest.
+- Added initial Scarlet Monastery, Uldaman and City of Dalaran quest lists,
+  supporting story records and sourced Scarlet Monastery giver locations.
+- Listed distinct sources when a quest-starting item drops from several creatures.
+- Added initial Zul’Farrak, Temple of Atal’Hakkar and Excavation Site quest lists.
+- Preserved multiple possible NPC/object starting points and known source zones
+  without inventing map coordinates.
 - Added initial Razorfen Kraul and Razorfen Downs quests, item starters and
   four sourced Razorfen quest-giver locations.
 - Added optional native quest-log portraits when the client provides one.

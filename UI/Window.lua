@@ -266,6 +266,9 @@ function UI:RefreshDetail()
     for _, b in ipairs(self.chainButtons) do b:Hide() end
     for _, b in ipairs(self.branchButtons) do b:Hide() end
     for _, b in ipairs(self.materialButtons) do b:Hide() end
+    for _, b in ipairs(self.startButtons) do
+        b:Hide(); b:SetEnabled(false); b:SetScript("OnClick", nil)
+    end
     local id, engine = self.quest, self.engine
     if id then
         local q = addon.quests[id] or {}
@@ -306,14 +309,37 @@ function UI:RefreshDetail()
         local function place(p)
             if not p then return addon.L("UNKNOWN_PLACE") end
             local zone = p.mapID and addon.Read(C_Map and C_Map.GetMapInfo, "table", p.mapID)
+            local zoneName = (zone and addon.Clean(zone.name, "string")) or addon.Clean(p.zoneName, "string")
             local name = p.name or "?"
             if p.itemID then
                 name = addon.L("ITEM_STARTER", addon.Read(addon.ItemName, "string", p.itemID) or name)
             end
-            return name .. (zone and zone.name and (" — " .. zone.name) or "") ..
+            return name .. (zoneName and (" — " .. zoneName) or "") ..
                 (p.x and string.format(" (%.1f, %.1f)", p.x, p.y) or "")
         end
-        line(addon.L("START") .. ": " .. place(q.start))
+        if q.startAlternatives then
+            line(addon.L("START_ALTERNATIVES"))
+            for index, possible in ipairs(q.startAlternatives) do
+                local destination = possible
+                local row = self:MakeRow(self.detail, self.startButtons, index, 59)
+                row.title:SetText(destination.name)
+                local mapID = addon.Clean(destination.mapID, "number")
+                local validMap = mapID ~= nil and mapID > 0 and mapID % 1 == 0
+                local zone = validMap and addon.Read(C_Map and C_Map.GetMapInfo, "table", mapID)
+                local x, py = addon.Clean(destination.x, "number"), addon.Clean(destination.y, "number")
+                local coordinates = validMap and x ~= nil and py ~= nil and x >= 0 and x <= 100 and py >= 0 and py <= 100
+                row.note:SetText(((zone and addon.Clean(zone.name, "string")) or
+                    addon.Clean(destination.zoneName, "string") or destination.locationName or addon.L("UNKNOWN_PLACE")) ..
+                    (coordinates and string.format(" (%.1f, %.1f)", x, py) or ""))
+                row:SetEnabled(validMap)
+                row:SetScript("OnClick", validMap and function()
+                    local visit = { id = id, kind = "visit", place = destination }
+                    if coordinates then addon.Navigation.Start(visit)
+                    else addon.Navigation.Map(destination) end
+                end or nil)
+                y = self:LayoutRow(row, 59, y)
+            end
+        else line(addon.L("START") .. ": " .. place(q.start)) end
         local start = q.start
         if start and start.itemID and start.dropNPCID then
             local dungeonName = addon.L("UNKNOWN_PLACE")
@@ -321,6 +347,9 @@ function UI:RefreshDetail()
                 if dungeon.key == start.dungeonKey then dungeonName = addon.DungeonName(dungeon); break end
             end
             line(addon.L("ITEM_DROP_SOURCE", start.dropName or ("#" .. start.dropNPCID), dungeonName))
+        end
+        for _, drop in ipairs(start and start.dropSources or {}) do
+            line(addon.L("ITEM_DROP_SOURCE", drop.name, drop.locationName))
         end
         local map = start and addon.Clean(start.mapID, "number")
         if map and map > 0 then
@@ -577,6 +606,7 @@ function UI:Create()
     self.footer = label(frame, "", 22, -668, 640, 11)
     self.frame, self.cards, self.rows, self.details, self.chainButtons, self.branchButtons = frame, {}, {}, {}, {}, {}
     self.materialButtons = {}
+    self.startButtons = {}
     UISpecialFrames[#UISpecialFrames + 1] = "DungeonPrepWindow"
     for _, d in ipairs(addon.dungeons) do if d.key == addon.char.selectedDungeon then self.dungeon = d end end
     frame:SetScript("OnShow", function() self:Fit(); self:Refresh() end)

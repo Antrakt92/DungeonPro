@@ -50,12 +50,35 @@ def validate(data):
             raise ValueError(f"Invalid repeatable flag: {q['id']}")
         if not q.get("source", "").startswith("https://www.wowhead.com/forever/"):
             raise ValueError(f"Missing Forever source: {q['id']}")
-        for key in ("start", "finish"):
-            p = q.get(key)
+        alternatives = q.get("startAlternatives", [])
+        if "startAlternatives" in q:
+            if type(alternatives) is not list or not 2 <= len(alternatives) <= 100:
+                raise ValueError(f"Invalid alternative starting points: {q['id']}")
+            if "start" in q:
+                raise ValueError(f"Ambiguous single and alternative starts: {q['id']}")
+            identities = set()
+            for p in alternatives:
+                if (type(p) is not dict or
+                    sum(field in p for field in ("npcID", "objectID", "itemID")) != 1 or
+                    "itemID" in p or type(p.get("name")) is not str or not p["name"].strip()):
+                    raise ValueError(f"Invalid alternative starting identity: {q['id']}")
+                field = "npcID" if "npcID" in p else "objectID"
+                if not integer(p[field]):
+                    raise ValueError(f"Invalid alternative starting identity: {q['id']}")
+                identity = (field, p[field])
+                if identity in identities:
+                    raise ValueError(f"Duplicate alternative starting identity: {q['id']}")
+                identities.add(identity)
+        places = [(key, q.get(key)) for key in ("start", "finish")]
+        places.extend(("startAlternatives", p) for p in alternatives)
+        for key, p in places:
             if p is None:
                 continue
             if type(p) is not dict:
                 raise ValueError(f"Invalid quest {key} place: {q['id']}")
+            if "zoneName" in p and (type(p["zoneName"]) is not str or
+                                    not p["zoneName"].strip() or len(p["zoneName"]) > 500):
+                raise ValueError(f"Invalid place zone name: {q['id']}")
             for identity in ("npcID", "objectID", "itemID", "dropNPCID"):
                 if identity in p and not integer(p[identity]):
                     raise ValueError(f"Invalid {identity} entity ID: {q['id']}")
@@ -65,6 +88,19 @@ def validate(data):
                 raise ValueError(f"Item drop source without starter item: {q['id']}")
             if "dungeonKey" in p and (type(p["dungeonKey"]) is not str or not p["dungeonKey"]):
                 raise ValueError(f"Invalid pickup dungeon: {q['id']}")
+            if "dropSources" in p:
+                drops = p["dropSources"]
+                if "itemID" not in p or type(drops) is not list or not 1 <= len(drops) <= 100:
+                    raise ValueError(f"Invalid item drop sources: {q['id']}")
+                seen_drops = set()
+                for drop in drops:
+                    if (type(drop) is not dict or not integer(drop.get("npcID")) or
+                        type(drop.get("name")) is not str or not drop["name"] or
+                        type(drop.get("locationName")) is not str or not drop["locationName"]):
+                        raise ValueError(f"Invalid item drop identity: {q['id']}")
+                    if drop["npcID"] in seen_drops:
+                        raise ValueError(f"Duplicate item drop source: {q['id']}")
+                    seen_drops.add(drop["npcID"])
             if "mapID" in p and not integer(p["mapID"]):
                 raise ValueError("Invalid map ID")
             if ("x" in p) != ("y" in p):
@@ -130,8 +166,9 @@ def validate(data):
         if d["coverage"] == "reviewed" and not d["quests"]:
             raise ValueError("Empty dungeon cannot claim reviewed coverage")
     for q in quests.values():
-        for field in ("start", "finish"):
-            place = q.get(field)
+        places = [q.get(field) for field in ("start", "finish")]
+        places.extend(q.get("startAlternatives", []))
+        for place in places:
             if place and "dungeonKey" in place and place["dungeonKey"] not in keys:
                 raise ValueError(f"Missing pickup dungeon: {q['id']}")
     return data

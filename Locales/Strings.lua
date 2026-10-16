@@ -1,6 +1,7 @@
 local _, addon = ...
 local strings = {
     enUS = {
+        START_ALTERNATIVES = "Possible starting points — availability unconfirmed",
         ITEM_STARTER = "Quest-starting item: %s", ITEM_DROP_SOURCE = "Drops from %s in %s.",
         QUEST_PORTRAIT = "Quest portrait",
         TITLE = "DungeonPrep", SUBTITLE = "Prepare before you enter", SEARCH = "Search dungeons",
@@ -47,6 +48,7 @@ local strings = {
         ONLY_EN_RU = "Language", COPY = "Select the link and press Ctrl+C.",
     },
     ruRU = {
+        START_ALTERNATIVES = "Возможные места начала — доступность не подтверждена",
         ITEM_STARTER = "Предмет для начала задания: %s", ITEM_DROP_SOURCE = "Выпадает с %s в %s.",
         QUEST_PORTRAIT = "Портрет из журнала",
         TITLE = "DungeonPrep", SUBTITLE = "Подготовься перед походом", SEARCH = "Поиск подземелий",

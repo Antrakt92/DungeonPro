@@ -4,11 +4,10 @@ Prepare your dungeon quests before entering: see what you already carry, follow
 prerequisite quests and find the next available step.
 
 **Early development build for WoW Forever. Quest coverage is incomplete.**
-The catalogue has 29 dungeon entries; initial quest data covers The Deadmines,
-Ragefire Chasm, The Hall of Thanes, Wailing Caverns, Shadowfang Keep,
-Blackfathom Deeps, The Stockade, Gnomeregan, Razorfen Kraul and Razorfen Downs.
-Other entries explicitly show that their
-quests have not been added. Level ranges are provisional recommendations.
+The catalogue has 29 dungeon entries, including classic and new Forever dungeons.
+Quest lists and preparation chains are still being reviewed. Entries without
+quest data say so explicitly, and incomplete coverage stays visible in game.
+Level ranges are provisional recommendations.
 
 ## Current features
 
@@ -29,7 +28,9 @@ quests have not been added. Level ranges are provisional recommendations.
   and some dungeon associations still need checking.
 - Separate story order for chains whose hard prerequisites still need checking.
 - Item-started quests show the known item and drop dungeon separately, including
-  quests whose starter drops in a different dungeon.
+  quests whose starter drops in a different dungeon. Multiple starting NPCs,
+  objects or item-drop sources stay visible separately; a location visit does
+  not confirm that your character can accept the quest there.
 - Related quests for completion materials appear separately from acceptance
   requirements. Their completion does not confirm you still hold the item.
 - Explicitly sourced repeatable quests have their own label.

@@ -143,6 +143,23 @@ class CatalogTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "without starter"):
             catalog.validate(self.data)
 
+    def test_item_drop_alternatives_require_real_distinct_named_sources(self):
+        place = {"itemID": 7666, "dropSources": [
+            {"npcID": 4852, "name": "Stonevault Oracle", "locationName": "Uldaman"},
+            {"npcID": 4845, "name": "Shadowforge Ruffian", "locationName": "Badlands"},
+        ]}
+        self.data["quests"][0]["start"] = place
+        catalog.validate(self.data)
+        for value in (None, [], {}, [None], [{"npcID": True}], [place["dropSources"][0]] * 2):
+            with self.subTest(drops=value):
+                data = copy.deepcopy(self.data)
+                data["quests"][0]["start"]["dropSources"] = value
+                with self.assertRaises(ValueError):
+                    catalog.validate(data)
+        del place["itemID"]
+        with self.assertRaisesRegex(ValueError, "drop sources"):
+            catalog.validate(self.data)
+
     def test_coordinates_require_both_axes_and_a_map(self):
         for field in ("start", "finish"):
             for missing in ("x", "y", "mapID"):
@@ -222,6 +239,61 @@ class CatalogTests(unittest.TestCase):
         quest, other = self.data["quests"][:2]
         quest["completionQuests"] = [{"id": other["id"], "itemID": 7083}]
         other["completionQuests"] = [{"id": quest["id"], "itemID": 272448}]
+        catalog.validate(self.data)
+
+    def test_alternative_starts_preserve_typed_entities_without_class_inference(self):
+        q = self.data["quests"][0]
+        q.pop("start", None)
+        q.pop("classes", None)
+        q["startAlternatives"] = [{"npcID": 4568, "name": "Anastasia"},
+                                  {"objectID": 4568, "name": "Object", "mapID": 1, "x": 0, "y": 100}]
+        catalog.validate(self.data)
+        self.assertNotIn("classes", q)
+        self.assertNotIn("start", q)
+        self.assertIn('["startAlternatives"]', catalog.generate(self.data))
+        q["startAlternatives"] = [{"objectID": i, "name": "Object"} for i in range(1, 13)]
+        catalog.validate(self.data)
+
+    def test_alternative_starts_reject_ambiguous_invalid_and_duplicate_places(self):
+        valid = [{"npcID": 1, "name": "First"}, {"objectID": 2, "name": "Second"}]
+        invalid = [None, True, {}, [], valid[:1], valid * 51,
+                   [valid[0], valid[0]], [valid[0], {"itemID": 2, "name": "Item"}],
+                   [valid[0], {"npcID": True, "name": "Bad"}],
+                   [valid[0], {"npcID": 2, "objectID": 3, "name": "Mixed"}],
+                   [valid[0], {"npcID": 2}], [valid[0], {"npcID": 2, "name": " "}],
+                   [valid[0], {"npcID": 2, "name": "Bad", "x": 10}],
+                   [valid[0], {"npcID": 2, "name": "Bad", "x": 10, "y": 20}],
+                   [valid[0], {"npcID": 2, "name": "Bad", "mapID": True}],
+                   [valid[0], {"npcID": 2, "name": "Bad", "mapID": 1, "x": float("inf"), "y": 1}],
+                   [valid[0], {"npcID": 2, "name": "Bad", "dungeonKey": "missing-dungeon"}]]
+        for value in invalid:
+            with self.subTest(value=value):
+                data = copy.deepcopy(self.data)
+                data["quests"][0].pop("start", None)
+                data["quests"][0]["startAlternatives"] = value
+                with self.assertRaises(ValueError):
+                    catalog.validate(data)
+        for start in (None, {"npcID": 3}):
+            data = copy.deepcopy(self.data)
+            data["quests"][0].update(start=start, startAlternatives=valid)
+            with self.assertRaisesRegex(ValueError, "single and alternative"):
+                catalog.validate(data)
+
+    def test_place_zone_name_requires_bounded_nonempty_string(self):
+        for field in ("start", "finish", "startAlternatives"):
+            for value in (None, True, 1, "", " ", "x" * 501):
+                with self.subTest(field=field, value=value):
+                    data = copy.deepcopy(self.data)
+                    q = data["quests"][0]
+                    if field == "startAlternatives":
+                        q.pop("start", None)
+                        q[field] = [{"npcID": 1, "name": "First", "zoneName": value},
+                                    {"objectID": 2, "name": "Second"}]
+                    else:
+                        q[field] = {"npcID": 1, "name": "Giver", "zoneName": value}
+                    with self.assertRaisesRegex(ValueError, "zone name"):
+                        catalog.validate(data)
+        self.data["quests"][0]["start"] = {"npcID": 1, "zoneName": "Alterac Mountains"}
         catalog.validate(self.data)
 
 

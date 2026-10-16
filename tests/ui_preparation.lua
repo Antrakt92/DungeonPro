@@ -687,4 +687,78 @@ check("Material rows use fresh client item names and retain explicit ID fallback
     assert(ui.materialButtons[1].note.text:find(addon.L("MATERIAL_ITEM", 7083), 1, true))
     addon.ItemName = nil; addon.quests[900], addon.quests[901] = nil, nil
 end)
+check("Multiple item drop sources remain distinct without an invented interior pickup", function()
+    local start = addon.quests[2].start
+    addon.quests[2].start = { itemID = 7666, name = "Shattered Necklace", dropSources = {
+        { npcID = 4852, name = "Stonevault Oracle", locationName = "Uldaman" },
+        { npcID = 4845, name = "Shadowforge Ruffian", locationName = "Badlands" },
+    } }
+    showDetail(2)
+    assert(detailHas(addon.L("ITEM_DROP_SOURCE", "Stonevault Oracle", "Uldaman")))
+    assert(detailHas(addon.L("ITEM_DROP_SOURCE", "Shadowforge Ruffian", "Badlands")))
+    assert(not ui.giver.enabled and not ui.guide.enabled and not addon.quests[2].startsInside)
+    showDetail(3)
+    assert(not detailHas(addon.L("ITEM_DROP_SOURCE", "Stonevault Oracle", "Uldaman")))
+    addon.quests[2].start = start
+end)
+check("Alternative starters remain uncertain and navigate only the explicitly selected location", function()
+    local visited, mapped = {}, {}
+    addon.Navigation = { Start = function(a) visited[#visited + 1] = a end,
+        Map = function(a) mapped[#mapped + 1] = a end }
+    addon.quests[2861] = { id = 2861, minLevel = 1, requirementsKnown = false,
+        startAlternatives = {
+            { npcID = 4568, name = "Anastasia", mapID = 1, x = 10, y = 20 },
+            { objectID = 142702, name = "Bottle", zoneName = "Known zone" },
+            { npcID = 5144, name = "Bink", mapID = 2 },
+        } }
+    measurement = function(fs) if fs.text == "Anastasia" then return 54 end; return 18 end
+    showDetail(2861)
+    assert(detailHas(addon.L("START_ALTERNATIVES")))
+    assert(ui.engine:State(2861).status == "UNKNOWN" and ui.action == nil)
+    assert(not ui.giver.enabled and not ui.guide.enabled and #visited == 0 and #mapped == 0)
+    assert(ui.startButtons[1].title.text == "Anastasia" and ui.startButtons[1].height > 59)
+    assert(ui.startButtons[2].title.text == "Bottle" and ui.startButtons[2].note.text == "Known zone")
+    assert(not ui.startButtons[2].enabled and not ui.startButtons[2].scripts.OnClick)
+    ui.startButtons[1].scripts.OnClick()
+    assert(#visited == 1 and visited[1].kind == "visit" and visited[1].place.npcID == 4568)
+    ui.startButtons[3].scripts.OnClick()
+    assert(#mapped == 1 and mapped[1].npcID == 5144 and mapped[1].mapID == 2 and mapped[1].place == nil)
+    assert(ui.engine:State(2861).status == "UNKNOWN" and ui.action == nil)
+    assert(not addon.quests[2861].classes and not addon.quests[2861].start)
+    measurement = nil
+    showDetail(2)
+    for _, row in ipairs(ui.startButtons) do
+        assert(not row.shown and not row.enabled and not row.scripts.OnClick)
+    end
+    assert(not detailHas(addon.L("START_ALTERNATIVES")))
+    addon.quests[2861].startAlternatives = { { npcID = 10, name = "Short" }, { objectID = 11, name = "Other" } }
+    showDetail(2861)
+    assert(ui.startButtons[1].title.text == "Short" and ui.startButtons[1].height == 59)
+    assert(not ui.startButtons[3].shown and not ui.startButtons[3].scripts.OnClick)
+    addon.quests[2861].requirementsKnown = true
+    addon.quests[2861].requires = { { ids = { 1 } } }
+    addon.quests[2861].startAlternatives[1] = { npcID = 10, name = "Known", mapID = 3, x = 40, y = 50 }
+    showDetail(2861, { level = 20, completed = function() return false end, active = function() return false end })
+    local prerequisite = ui.action
+    assert(ui.engine:State(2861).status == "LOCKED" and prerequisite.id == 1)
+    ui.startButtons[1].scripts.OnClick()
+    assert(ui.action == prerequisite and visited[#visited].place.npcID == 10)
+    assert(ui.engine:State(2861).status == "LOCKED")
+    addon.quests[2861] = nil
+end)
+check("Known source zones display without inventing a client map or navigation", function()
+    local start, finish, maps = addon.quests[2].start, addon.quests[2].finish, C_Map
+    addon.quests[2].start = { npcID = 1, name = "Olvek", zoneName = "Alterac Mountains" }
+    addon.quests[2].finish = { npcID = 2, name = "Other", zoneName = "Known finish" }
+    showDetail(2)
+    assert(detailHas(addon.L("START") .. ": Olvek — Alterac Mountains"))
+    assert(detailHas(addon.L("ENDING") .. ": Other — Known finish"))
+    assert(not ui.giver.enabled and not ui.guide.enabled and not ui.map.enabled)
+    addon.quests[2].start.mapID = 1
+    C_Map = { GetMapInfo = function() return { name = "Native zone" } end }
+    showDetail(2)
+    assert(detailHas(addon.L("START") .. ": Olvek — Native zone"))
+    assert(ui.giver.enabled and not ui.giverHasCoordinates)
+    addon.quests[2].start, addon.quests[2].finish, C_Map = start, finish, maps
+end)
 print("Preparation UI modeled checks passed: " .. total .. " (no native layout validation)")

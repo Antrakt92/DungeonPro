@@ -195,4 +195,17 @@ check("Native item-data results route ID and success to the bounded item produce
     assert(calls[2][1] == 272448 and calls[2][2] == false)
     addon.ItemDataResult = original
 end)
+check("Alternative map-only starters pass a direct place to the actual navigation adapter", function()
+    local q, ui = addon.quests[166], addon.UI
+    local start, alternatives = q.start, q.startAlternatives
+    q.start = nil
+    q.startAlternatives = { { npcID = 234, name = "Map-only giver", mapID = 1436 },
+        { objectID = 123, name = "Unknown object" } }
+    ui.quest = 166; ui:Refresh()
+    local before = mapCalls
+    assert(ui.startButtons[1].enabled and not ui.startButtons[2].enabled)
+    ui.startButtons[1].scripts.OnClick()
+    assert(mapCalls == before + 1)
+    q.start, q.startAlternatives = start, alternatives; ui:Refresh()
+end)
 print("Client/UI modeled checks passed: " .. total .. " (no pixel or native-client validation)")
