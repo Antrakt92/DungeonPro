@@ -78,6 +78,7 @@ local eventFrame = objects[#objects]
 check("Addon initializes on the matching Forever client", function()
     eventFrame.scripts.OnEvent(eventFrame, "ADDON_LOADED", "DungeonPro")
     assert(SlashCmdList.DUNGEONPRO and addon.db and addon.char)
+    assert(SLASH_DUNGEONPRO1 == "/DP" and SLASH_DUNGEONPRO2 == "/DungeonPro")
 end)
 check("Window opens and filters without requiring cached quest titles", function()
     SlashCmdList.DUNGEONPRO("")

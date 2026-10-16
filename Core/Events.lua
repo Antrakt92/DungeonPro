@@ -36,8 +36,8 @@ events:SetScript("OnEvent", function(_, event, arg1, arg2)
             "QUEST_PROGRESS", "QUEST_COMPLETE", "QUEST_ITEM_UPDATE", "PLAYER_LEAVING_WORLD" }) do
             events:RegisterEvent(e)
         end
-        SLASH_DUNGEONPRO1 = "/dpro"
-        SLASH_DUNGEONPRO2 = "/dungeonpro"
+        SLASH_DUNGEONPRO1 = "/DP"
+        SLASH_DUNGEONPRO2 = "/DungeonPro"
         SLASH_DUNGEONPRO3 = "/dprep"
         SLASH_DUNGEONPRO4 = "/dungeonprep"
         SlashCmdList.DUNGEONPRO = function(msg)

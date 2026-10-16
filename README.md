@@ -68,9 +68,9 @@ Build with `python scripts/package.py`. Extract the ZIP's `DungeonPro` folder
 into your **Forever client's** `Interface/AddOns` folder, then reload the UI.
 This build has not yet passed native-client or visual acceptance.
 
-- `/dpro` or `/dungeonpro`: open or close the browser.
-- `/dpro clear`: clear the built-in guide.
-- `/dpro probe`: save a small capability/quest-line report in this addon's own
+- `/DP` or `/DungeonPro`: open or close the browser.
+- `/DP clear`: clear the built-in guide.
+- `/DP probe`: save a small capability/quest-line report in this addon's own
   character settings. It does not export character identity or quest text.
 
 Development aliases `/dprep` and `/dungeonprep` are also supported.
