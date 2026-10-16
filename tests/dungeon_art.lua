@@ -214,6 +214,54 @@ check("A reentrant newer paint retains ownership over the reused icon", function
     assert(not addon.PaintDungeonArt(icon, { art = { fileID = 131833, gameMapID = 36 } }))
     assert(icon.texture == 7963781 and icon.shown and icon.coords[1] == 0.18)
 end)
+check("A newer paint during coordinate cropping keeps its fallback coordinates and visibility", function()
+    local icon = canvas(); local native = icon.SetTexCoord
+    local shows, entered = 0, false
+    icon.Show = function(self) shows = shows + 1; self.shown = true end
+    icon.SetTexCoord = function(self, ...)
+        native(self, ...)
+        if not entered then
+            entered = true
+            assert(addon.PaintDungeonArt(self, {}))
+        end
+    end
+    assert(not addon.PaintDungeonArt(icon, {art={fileID=131833,gameMapID=36}}))
+    assert(icon.texture == generic and icon.coords[1] == 0 and icon.coords[2] == 1)
+    assert(icon.shown and shows == 1, "superseded outer paint must not show again")
+end)
+check("Rejected unknown and restricted results from both art and fallback clear stale pixels", function()
+    for _, mode in ipairs({"false", "nil", "secret", "string", "throw"}) do
+        local icon = canvas(); icon.texture, icon.shown = "old/dungeon", true
+        local attempts, shows = {}, 0
+        icon.Show = function() shows = shows + 1 end
+        icon.SetTexture = function(self, value)
+            attempts[#attempts+1] = value or false
+            self.texture = value
+            if mode == "false" then return false end
+            if mode == "secret" then return secret end
+            if mode == "string" then return "true" end
+            if mode == "throw" then error("unavailable") end
+            return nil
+        end
+        assert(not addon.PaintDungeonArt(icon, {art={fileID=131833,gameMapID=36}}))
+        assert(attempts[1] == 131833 and attempts[2] == generic and attempts[3] == false and #attempts == 3)
+        assert(icon.texture == nil and not icon.shown and shows == 0)
+    end
+end)
+check("A newer paint during failed-art clearing cannot be hidden by the abandoned paint", function()
+    local icon = canvas(); local entered, hides = false, 0
+    icon.Hide = function(self) hides = hides + 1; self.shown = false end
+    icon.SetTexture = function(self, value)
+        self.texture = value
+        if value == nil and not entered then
+            entered = true
+            assert(addon.PaintDungeonArt(self, {art={fileID=7963781,gameMapID=3065}}))
+        end
+        return value == 7963781
+    end
+    assert(not addon.PaintDungeonArt(icon, {art={fileID=131833,gameMapID=36}}))
+    assert(icon.texture == 7963781 and icon.coords[1] == .18 and icon.shown and hides == 0)
+end)
 check("Every reviewed catalogue image matches its sourced game-map identity", function()
     assert(loadfile("Database/Catalog.lua"))("DungeonPro", addon)
     GetLFDChoiceOrder, GetLFGDungeonInfo, C_EncounterJournal = nil, nil, nil
