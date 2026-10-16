@@ -47,6 +47,56 @@ function addon.GiverName(place)
     return name
 end
 
+local function restrictionNameScope()
+    local getter, checker = GetLocale, issecretvalue
+    local locale = addon.Read(getter, "string")
+    if not locale or #locale > 32 or not locale:find("%S") or
+        GetLocale ~= getter or issecretvalue ~= checker then return nil end
+    return function()
+        if GetLocale ~= getter or issecretvalue ~= checker then return false end
+        local current = addon.Read(getter, "string")
+        return current == locale and GetLocale == getter and issecretvalue == checker
+    end
+end
+
+function addon.ClassName(token)
+    token = addon.Clean(token, "string")
+    if not token or #token > 100 or not token:match("^[A-Z]+$") then return nil end
+    local scope = restrictionNameScope()
+    if not scope then return nil end
+    local source = addon.Clean(LOCALIZED_CLASS_NAMES_MALE, "table")
+    local getter = addon.Clean(LocalizedClassList, "function")
+    local map = source
+    if not map then map = addon.Read(getter, "table", false) end
+    if not scope() or addon.Clean(LOCALIZED_CLASS_NAMES_MALE, "table") ~= source or
+        addon.Clean(LocalizedClassList, "function") ~= getter or not map then return nil end
+    local name = addon.Clean(rawget(map, token), "string")
+    if not name or #name > 500 or not name:find("%S") then return nil end
+    if not scope() or addon.Clean(LOCALIZED_CLASS_NAMES_MALE, "table") ~= source or
+        addon.Clean(LocalizedClassList, "function") ~= getter or
+        addon.Clean(rawget(map, token), "string") ~= name then return nil end
+    return name
+end
+
+function addon.RaceName(id)
+    id = dialogueInteger(id, 1)
+    if not id then return nil end
+    local scope = restrictionNameScope()
+    if not scope then return nil end
+    local library = addon.Clean(C_CreatureInfo, "table")
+    local getter = library and addon.Clean(rawget(library, "GetRaceInfo"), "function")
+    if not getter then return nil end
+    local info = addon.Read(getter, "table", id)
+    if not scope() or addon.Clean(C_CreatureInfo, "table") ~= library or
+        addon.Clean(rawget(library, "GetRaceInfo"), "function") ~= getter or not info then return nil end
+    local returnedID = dialogueInteger(rawget(info, "raceID"), 1)
+    local name = addon.Clean(rawget(info, "raceName"), "string")
+    if returnedID ~= id or not name or #name > 500 or not name:find("%S") then return nil end
+    if not scope() or addon.Clean(C_CreatureInfo, "table") ~= library or
+        addon.Clean(rawget(library, "GetRaceInfo"), "function") ~= getter then return nil end
+    return name
+end
+
 local function dialogueScope()
     local id = dialogueInteger(addon.Read(GetQuestID, "number"), 1)
     local player = addon.Read(UnitGUID, "string", "player")
