@@ -379,15 +379,33 @@ function addon.Context()
 end
 
 function addon.QuestName(id)
-    local title = addon.Read(C_QuestLog and C_QuestLog.GetTitleForQuestID, "string", id)
-    if title and title ~= "" then return title end
+    id = dialogueInteger(id, 1)
+    if not id then return "#?" end
+    local function fallback()
+        local quests = addon.Clean(addon.quests, "table")
+        local definition = quests and addon.Clean(rawget(quests, id), "table")
+        local name = definition and addon.Clean(rawget(definition, "name"), "string")
+        return name and #name <= 1024 and name:find("%S") and name or ("#" .. id)
+    end
+    local quest = addon.Clean(C_QuestLog, "table")
+    local scope = restrictionNameScope()
+    if not quest or not scope then return fallback() end
+    local getter, loader = addon.Clean(rawget(quest, "GetTitleForQuestID"), "function"),
+        addon.Clean(rawget(quest, "RequestLoadQuestByID"), "function")
+    local function current()
+        return scope() and addon.Clean(C_QuestLog, "table") == quest and
+            addon.Clean(rawget(quest, "GetTitleForQuestID"), "function") == getter and
+            addon.Clean(rawget(quest, "RequestLoadQuestByID"), "function") == loader
+    end
+    local title = addon.Read(getter, "string", id)
+    if not current() then return fallback() end
+    if title and #title <= 1024 and title:find("%S") then return title end
     local request = requested[id]
-    if (not request or not (request.pending or request.waiting or request.finished)) and
-        C_QuestLog and type(C_QuestLog.RequestLoadQuestByID) == "function" then
+    if (not request or not (request.pending or request.waiting or request.finished)) and loader then
         request = request or { attempts = 0 }
         requested[id] = request
         request.attempts, request.pending = request.attempts + 1, true
-        local ok = pcall(C_QuestLog.RequestLoadQuestByID, id)
+        local ok = pcall(loader, id)
         if not ok then addon.QuestDataResult(id, false)
         elseif request.pending then
             local attempt = request.attempts
@@ -402,7 +420,7 @@ function addon.QuestName(id)
             end
         end
     end
-    return (addon.quests[id] or {}).name or ("#" .. id)
+    return fallback()
 end
 
 function addon.ItemDataResult(id, success)

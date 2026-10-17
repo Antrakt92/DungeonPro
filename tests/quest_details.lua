@@ -556,4 +556,54 @@ check("A nested offered capture retains its newer description instead of the out
     assert(addon.char.texts[166].text == "New verified text")
     addon.char, addon.quests = character, quests
 end)
+check("Quest titles reject malformed namespaces and native locale changes without leaking stale labels", function()
+    local character, quests, localeGetter = addon.char, addon.quests, GetLocale
+    addon.quests = { [166] = { name = "Verified source title" } }
+    C_QuestLog = false
+    assert(addon.QuestName(166) == "Verified source title")
+    GetLocale = function() return "ruRU" end
+    C_QuestLog = { GetTitleForQuestID = function()
+        GetLocale = function() return "enUS" end
+        return "Stale localized title"
+    end }
+    assert(addon.QuestName(166) == "Verified source title")
+    addon.char, addon.quests, GetLocale = character, quests, localeGetter
+end)
+check("Quest title inputs and strings are bounded before native reads or fallback display", function()
+    local quests = addon.quests
+    local calls = 0
+    C_QuestLog = { GetTitleForQuestID = function() calls = calls + 1; return "Localized" end }
+    addon.quests = {}
+    for _, id in ipairs({ secret, true, "166", 0, -1, 1.5, math.huge }) do
+        assert(addon.QuestName(id) == "#?" and calls == 0)
+    end
+    for _, name in ipairs({ "", "  ", string.rep("a", 1025), secret, false }) do
+        C_QuestLog.GetTitleForQuestID = function() return name end
+        addon.quests[166] = { name = name }
+        assert(addon.QuestName(166) == "#166")
+    end
+    C_QuestLog.GetTitleForQuestID = function() return "Native localized title" end
+    assert(addon.QuestName(166) == "Native localized title")
+    addon.quests = quests
+end)
+check("Quest title capability replacement returns the fresh catalogue fallback without starting an old loader", function()
+    local quests, localeGetter, checker = addon.quests, GetLocale, issecretvalue
+    for _, mutation in ipairs({ "namespace", "getter", "loader", "locale", "checker" }) do
+        addon.quests = { [166] = { name = "Fresh fallback" } }
+        local calls = 0
+        GetLocale = function() return "ruRU" end
+        C_QuestLog = { RequestLoadQuestByID = function() calls = calls + 1 end }
+        C_QuestLog.GetTitleForQuestID = function()
+            if mutation == "namespace" then C_QuestLog = {}
+            elseif mutation == "getter" then C_QuestLog.GetTitleForQuestID = function() return "New native title" end
+            elseif mutation == "loader" then C_QuestLog.RequestLoadQuestByID = function() calls = calls + 1 end
+            elseif mutation == "locale" then GetLocale = function() return "enUS" end
+            else issecretvalue = function(value) return value == secret end end
+            return "Stale native title"
+        end
+        assert(addon.QuestName(166) == "Fresh fallback" and calls == 0, mutation)
+        issecretvalue = checker
+    end
+    addon.quests, GetLocale = quests, localeGetter
+end)
 print("Quest detail modeled checks passed: " .. total .. " (native client unverified)")
