@@ -1309,4 +1309,46 @@ check("Actual level-one Defias giver click couples source UI navigation and owne
     ui.quest,ui.dungeon,addon.db.locale=quest,dungeon,locale
 end)
 
+check("Navigation probe prints only the shown world-map ID in decimal and keeps the other two diagnostic lines unchanged",function()
+    local getter,originalPrint,toggle,probe=addon.Navigation.ProbeGeometry,print,addon.UI.Toggle,addon.ProbeClient
+    local saved,beforeFrames,beforeMaps,beforeRequests=addon.char.probe,#objects,mapCalls,requests
+    local toggles,questReads=0,0
+    local expectedHud="Dungeon Pro nav/hud: shown=true visible=false strata=MEDIUM level=4 scale=0.750 uiUnit=(-2.50,9.00,354.00,104.00)"
+    addon.UI.Toggle=function()toggles=toggles+1 end;addon.ProbeClient=function()questReads=questReads+1 end
+    for _,sample in ipairs({{id=1,text="1"},{id=1436,text="1436"},{id=9007199254740991,text="9007199254740991"}})do
+        local output={}
+        addon.Navigation.ProbeGeometry=function()return{status="known",frames={
+            hud={status="known",shown=true,visible=false,strata="MEDIUM",level=4,scale=.75,left=-2.5,bottom=9,width=354,height=104,
+                displayedMapID=777,questText="DO_NOT_PRINT"},
+            planner={status="unknown",displayedMapID=888},
+            worldMap={status="known",shown=true,visible=false,displayedMapID=sample.id,questText="DO_NOT_PRINT"},
+            player={name="DO_NOT_PRINT",mapID=999}}}end
+        print=function(line)output[#output+1]=line end
+        SlashCmdList.DUNGEONPRO("probe nav")
+        assert(#output==3 and output[1]==expectedHud and output[2]=="Dungeon Pro nav/planner: unknown")
+        assert(output[3]:sub(-#(" mapID="..sample.text))==" mapID="..sample.text)
+        for _,line in ipairs(output)do assert(#line<=240 and not line:find("DO_NOT_PRINT",1,true))end
+    end
+    addon.Navigation.ProbeGeometry,print,addon.UI.Toggle,addon.ProbeClient=getter,originalPrint,toggle,probe
+    assert(toggles==0 and questReads==0 and addon.char.probe==saved and #objects==beforeFrames and mapCalls==beforeMaps and requests==beforeRequests)
+end)
+check("Navigation probe rejects malformed restricted hidden and unknown displayed-map IDs without extra output",function()
+    local getter,originalPrint,checker=addon.Navigation.ProbeGeometry,print,issecretvalue
+    local restricted={};issecretvalue=function(value)return rawequal(value,restricted)end
+    local cases={{},{value=0},{value=-1},{value=1.5},{value=9007199254740992},{value=math.huge},{value=0/0},
+        {value="1436"},{value=true},{value={}},{value=restricted},
+        {value=1436,shown=false},{value=1436,shown=restricted},{value=1436,status="unknown"},{value=1436,missing=true}}
+    for _,case in ipairs(cases)do
+        local output={}
+        addon.Navigation.ProbeGeometry=function()return{status="known",frames={worldMap=not case.missing and{
+            status=case.status or"known",shown=case.shown==nil and true or case.shown,displayedMapID=case.value}}}end
+        print=function(line)output[#output+1]=line end
+        SlashCmdList.DUNGEONPRO("probe nav")
+        assert(#output==3 and output[1]=="Dungeon Pro nav/hud: unknown"and output[2]=="Dungeon Pro nav/planner: unknown")
+        assert(output[3]:sub(-#" mapID=unknown")==" mapID=unknown")
+        for _,line in ipairs(output)do assert(#line<=240 and not line:find("nan",1,true)and not line:find("inf",1,true))end
+    end
+    addon.Navigation.ProbeGeometry,print,issecretvalue=getter,originalPrint,checker
+end)
+
 print("Client/UI modeled checks passed: " .. total .. " (no pixel or native-client validation)")

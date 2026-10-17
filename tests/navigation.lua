@@ -1185,4 +1185,51 @@ check("Planner-layer callbacks cannot resurrect a canceled guide or suppress its
     f.finish()
 end)
 
+check("Geometry probe samples only the shown world map raw ID without player fallback or extra getters",function()
+    local f=geometryFixture();local mapUtil,unit=MapUtil,UnitGUID
+    local effects=0;local function forbidden()effects=effects+1;error("no player or map fallback reads")end
+    f.world.mapID=1436;f.hud.mapID=999;f.planner.mapID=998
+    f.world.GetMapID=forbidden;MapUtil={GetDisplayableMapForPlayer=forbidden};UnitGUID=forbidden
+    C_Map.GetBestMapForUnit=forbidden
+    local result=nav.ProbeGeometry()
+    assert(result.status=="known"and result.frames.worldMap.displayedMapID==1436)
+    assert(result.frames.hud.displayedMapID==nil and result.frames.planner.displayedMapID==nil and effects==0)
+    local calls=0;for _,getters in pairs(f.calls)do for _,count in pairs(getters)do assert(count==1);calls=calls+count end end
+    assert(calls==27)
+    MapUtil,UnitGUID=mapUtil,unit;f.finish()
+end)
+check("Displayed map ID remains optional for hidden missing userdata restricted and invalid state",function()
+    for _,kind in ipairs({"missing","hidden","unknownShown","userdata","zero","negative","fraction","infinite","nan","large","string","restricted","maximum"})do
+        local f=geometryFixture();local restricted={};f.world.mapID=1436
+        if kind=="missing"then f.world.mapID=nil
+        elseif kind=="hidden"then f.world.IsShown=function()return false end
+        elseif kind=="unknownShown"then f.world.IsShown=function()return nil end
+        elseif kind=="userdata"then local proxy=newproxy(true);getmetatable(proxy).__index=f.world;WorldMapFrame=proxy
+        elseif kind=="zero"then f.world.mapID=0
+        elseif kind=="negative"then f.world.mapID=-1
+        elseif kind=="fraction"then f.world.mapID=1.5
+        elseif kind=="infinite"then f.world.mapID=math.huge
+        elseif kind=="nan"then f.world.mapID=0/0
+        elseif kind=="large"then f.world.mapID=9007199254740992
+        elseif kind=="string"then f.world.mapID="1436"
+        elseif kind=="restricted"then f.world.mapID=restricted;issecretvalue=function(v)return v==restricted end
+        else f.world.mapID=9007199254740991 end
+        local result=nav.ProbeGeometry()
+        assert(result.status=="known",kind)
+        assert(result.frames.worldMap.displayedMapID==(kind=="maximum"and 9007199254740991 or nil),kind)
+        f.finish()
+    end
+end)
+check("Displayed map ID binding expires after geometry or final-checker replacement",function()
+    for _,kind in ipairs({"geometry","checker"})do
+        local f=geometryFixture();f.world.mapID=1436;local sampled=false
+        local watched=function()sampled=true;if kind=="geometry"then f.world.mapID=1453 end;return 104 end
+        f.world.GetHeight=watched
+        if kind=="checker"then issecretvalue=function(v)if sampled and v==watched then f.world.mapID=1453 end;return false end end
+        local result=nav.ProbeGeometry()
+        assert(result.status=="unknown"and result.frames.worldMap.displayedMapID==nil,kind)
+        f.finish()
+    end
+end)
+
 print("Navigation modeled checks passed: " .. total .. " (no native map validation)")

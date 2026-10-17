@@ -16,7 +16,8 @@ local function probeNavigation()
     for _, key in ipairs({ "hud", "planner", "worldMap" }) do
         local row = frames and addon.Clean(rawget(frames, key), "table")
         local prefix = "Dungeon Pro nav/" .. key .. ": "
-        if not row or addon.Clean(rawget(row, "status"), "string") ~= "known" then
+        local known = row and addon.Clean(rawget(row, "status"), "string") == "known"
+        if not known then
             lines[#lines + 1] = prefix .. "unknown"
         else
             local function flag(field)
@@ -37,6 +38,13 @@ local function probeNavigation()
                 " strata=" .. layer .. " level=" .. number("level", "%.0f") .. " scale=" .. number("scale", "%.3f") ..
                 " uiUnit=(" .. number("left", "%.2f") .. "," .. number("bottom", "%.2f") ..
                 "," .. number("width", "%.2f") .. "," .. number("height", "%.2f") .. ")"
+        end
+        if key == "worldMap" then
+            local mapID = known and addon.Clean(rawget(row, "shown"), "boolean") == true and
+                addon.Clean(rawget(row, "displayedMapID"), "number")
+            local displayed = "unknown"
+            if mapID and mapID > 0 and mapID <= 9007199254740991 and mapID % 1 == 0 then displayed = string.format("%.0f", mapID) end
+            lines[#lines] = lines[#lines] .. " mapID=" .. displayed
         end
     end
     for _, line in ipairs(lines) do print(line) end

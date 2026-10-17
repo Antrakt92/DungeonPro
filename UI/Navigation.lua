@@ -75,6 +75,13 @@ function N.ProbeGeometry()
         local roles = { { key = "hud", owner = object(hud) },
             { key = "planner", owner = card and object(cardValues.frame) },
             { key = "worldMap", owner = object(mapRoot) } }
+        -- The inherited GetMapID can fall back to player-location APIs.
+        local mapOwner = type(roles[3].owner) == "table" and roles[3].owner or nil
+        local rawMapID = mapOwner and rawget(mapOwner, "mapID")
+        if not readable(rawMapID) then mapOwner = nil end
+        local displayedMapID = mapOwner and clean(rawMapID, "number")
+        if displayedMapID and (displayedMapID <= 0 or displayedMapID > 9007199254740991 or displayedMapID % 1 ~= 0) then displayedMapID = nil end
+        if not displayedMapID then mapOwner = nil end
         local specs = { { "shown", "IsShown", "boolean" }, { "visible", "IsVisible", "boolean" },
             { "strata", "GetFrameStrata", "string" }, { "level", "GetFrameLevel", "number" },
             { "scale", "GetEffectiveScale", "number" }, { "left", "GetLeft", "number" },
@@ -111,6 +118,7 @@ function N.ProbeGeometry()
                 end
             end
         end
+        if output.frames.worldMap.shown == true then output.frames.worldMap.displayedMapID = displayedMapID end
         if addon.Clean ~= clean or addon.Read ~= read or issecretvalue ~= checker or GetLocale ~= localeGetter or
             addon.Navigation ~= N or navigationGeneration ~= generation or target ~= action or frame ~= hud or
             not same(addon.UI, ui) or not same(WorldMapFrame, mapRoot) then return unknown end
@@ -150,6 +158,7 @@ function N.ProbeGeometry()
                 end
             end
         end
+        if mapOwner and not rawequal(rawget(mapOwner, "mapID"), rawMapID) then return unknown end
         return output
     end)
     return ok and result or unknown
