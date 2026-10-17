@@ -6977,4 +6977,76 @@ check("Localized inspection labels wrap below their catalogue card without shrin
     measurement=nil;f:search("Source target");assert(ui.catalogInspectButtons[1].height==28)
     f:finish()
 end)
+local function dialoguePresentationFixture()
+    local f=rewardPresentationFixture()
+    local oldGetter,oldDescription=addon.DialogueText,addon.Description
+    f.stage,f.text,f.valid,f.token="progress","Current progress paragraph.",true,{}
+    addon.Description=function()return"Original narrative remains separate."end
+    addon.DialogueText=function(id,owner)
+        if id~=9970 or not f.valid then return nil end
+        local token=f.token
+        local dto={source="dialogue",stage=f.stage,text=f.text,current=function()return f.valid and f.token==token and owner()end}
+        f.last=dto;return dto
+    end
+    local finish=f.finish
+    function f:finish()addon.DialogueText,addon.Description=oldGetter,oldDescription;finish(self)end
+    ui:RefreshDetail();return f
+end
+check("current dialogue stage uses a distinct owned heading and keeps reward original narrative and quest state",function()
+    local f=dialoguePresentationFixture()
+    for _,stage in ipairs({"progress","completion"})do f.stage=stage;f.token={};ui:RefreshDetail()
+        local heading=addon.L(stage=="progress"and"DIALOGUE_PROGRESS_TEXT"or"DIALOGUE_TURNIN_TEXT")
+        assert(detailHas(heading)and detailHas(f.text)and detailHas("Original narrative remains separate."))
+        assert(detailSectionY(addon.L("REWARD_ITEMS"))<detailSectionY(heading)and detailSectionY(heading)<detailSectionY(addon.L("QUEST_TEXT")))
+        assert(ui.engine:State(9970).status=="UNKNOWN"and not ui.action)
+    end
+    f:finish()
+end)
+check("unknown closed malformed or restricted dialogue DTOs omit headings without changing source narrative",function()
+    local f=dialoguePresentationFixture();local getter=addon.DialogueText;local checker=issecretvalue;local restricted={}
+    for _,dto in ipairs({{}, {source="cache",stage="progress",text="Wrong",current=function()return true end},
+        {source="dialogue",stage="offered",text="Wrong",current=function()return true end},
+        {source="dialogue",stage="progress",text=" ",current=function()return true end},
+        {source="dialogue",stage="progress",text=string.rep("x",30001),current=function()return true end},
+        {source="dialogue",stage="progress",text="Wrong",current=false}})do
+        addon.DialogueText=function()return dto end;ui:RefreshDetail()
+        assert(not detailHas(addon.L("DIALOGUE_PROGRESS_TEXT"))and not detailHas(addon.L("DIALOGUE_TURNIN_TEXT"))and detailHas("Original narrative remains separate."))
+    end
+    addon.DialogueText=function()return{source="dialogue",stage="progress",text=restricted,current=function()return true end}end
+    issecretvalue=function(v)return v==restricted end;ui:RefreshDetail();issecretvalue=checker
+    assert(not detailHas(addon.L("DIALOGUE_PROGRESS_TEXT")))
+    addon.DialogueText=getter;f.valid=false;ui:RefreshDetail();assert(not detailHas(f.text));f:finish()
+end)
+check("current dialogue wraps long prose and ten language headings without shrinking fonts or rereading source",function()
+    local f=dialoguePresentationFixture();f.text=string.rep("Long narrative paragraph. ",1000)
+    measurement=function(fs)return fs.text==f.text and 900 or 18 end
+    for code in pairs(addon.locales)do addon.db.locale=code;ui:RefreshDetail()
+        assert(detailHas(addon.L("DIALOGUE_PROGRESS_TEXT")))
+        for _,fs in ipairs(ui.details)do if fs.shown and fs.text==f.text then assert(fs.fontSize==14 and fs.measuredHeight==900)end end
+    end
+    measurement=nil;f:finish()
+end)
+check("localization closing current dialogue omits only live prose and preserves the factual card",function()
+    local f=dialoguePresentationFixture();local localize=addon.L;local armed=true
+    addon.L=function(key,...)local value=localize(key,...);if armed and key=="DIALOGUE_PROGRESS_TEXT"then armed=false;f.valid=false end;return value end
+    ui:RefreshDetail();addon.L=localize
+    assert(not armed and not detailHas(f.text)and not detailHas(addon.L("DIALOGUE_PROGRESS_TEXT")))
+    assert(detailHas("Original narrative remains separate.")and detailHas(addon.L("REWARD_ITEM","Fixed reward",2)))
+    f:finish()
+end)
+check("dialogue owned native text setters preserve newer stage before and after nested refresh",function()
+    for _,before in ipairs({true,false})do
+        local f=dialoguePresentationFixture();local field
+        for _,fs in ipairs(ui.details)do if fs.shown and fs.text==f.text then field=fs end end
+        local setter,oldText,armed=field.SetText,f.text,true
+        field.SetText=function(self,text)
+            if not before then setter(self,text)end
+            if armed and text==oldText then armed=false;f.token={};f.stage="completion";f.text="Fresh turn-in paragraph.";ui:RefreshDetail()end
+            if before then setter(self,text)end
+        end
+        ui:RefreshDetail();field.SetText=setter
+        assert(not armed and detailHas(f.text)and detailHas(addon.L("DIALOGUE_TURNIN_TEXT"))and not detailHas(oldText))
+        assert(detailHas("Original narrative remains separate."));f:finish()
+    end
+end)
 print("Preparation UI modeled checks passed: " .. total .. " (no native layout validation)")

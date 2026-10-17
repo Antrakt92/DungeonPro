@@ -34,6 +34,7 @@ def main():
     run(lua, "tests/held_quest_payment.lua")
     run(lua, "tests/held_quest_waypoint.lua")
     run(lua, "tests/quest_details.lua")
+    run(lua, "tests/dialogue_text.lua")
     run(lua, "tests/rewards.lua")
     run(lua, "tests/cached_rewards.lua")
     run(lua, "tests/portraits.lua")

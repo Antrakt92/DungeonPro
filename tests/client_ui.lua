@@ -1098,4 +1098,35 @@ check("Owned native title SetText before and after replacement reentry preserves
     end
 end)
 
+check("Real quest events expose only the matching visible progress or turn-in dialogue without replacing saved quest prose", function()
+    assert(type(addon.DialogueTextEvent) == "function" and type(addon.DialogueText) == "function")
+    local keys = { "GetQuestID", "UnitGUID", "QuestFrame", "QuestFrameProgressPanel", "QuestFrameRewardPanel", "GetProgressText", "GetRewardText" }
+    local saved = {}; for _, key in ipairs(keys) do saved[key] = _G[key] end
+    local texts, oldText = addon.char.texts, addon.char.texts[65]
+    local progressReads, completionReads = 0, 0
+    GetQuestID = function(...) assert(select("#", ...) == 0); return 65 end
+    UnitGUID = function(unit) assert(unit == "player"); return "Player-dialogue-events" end
+    local historyBefore = addon.Context().completed(65)
+    QuestFrame, QuestFrameProgressPanel, QuestFrameRewardPanel = create("Frame"), create("Frame"), create("Frame")
+    GetProgressText = function(...) assert(select("#", ...) == 0); progressReads = progressReads + 1; return "Bring the requested materials." end
+    GetRewardText = function(...) assert(select("#", ...) == 0); completionReads = completionReads + 1; return "Thank you for your help." end
+    eventFrame.scripts.OnEvent(eventFrame, "QUEST_PROGRESS")
+    assert(progressReads == 0 and completionReads == 0, "Events must capture metadata without reading prose")
+    QuestFrame:Show(); QuestFrameProgressPanel:Show()
+    local progress = assert(addon.DialogueText(65), "Registered progress event did not reach the current-dialogue adapter")
+    assert(progress.stage == "progress" and progress.text == "Bring the requested materials." and progressReads == 1 and completionReads == 0)
+    assert(progress.current() and progress.current() and progressReads == 1, "Scope validation must not reread prose")
+    eventFrame.scripts.OnEvent(eventFrame, "QUEST_COMPLETE")
+    assert(not progress.current() and completionReads == 0)
+    QuestFrameProgressPanel:Hide(); QuestFrameRewardPanel:Show()
+    local completion = assert(addon.DialogueText(65))
+    assert(completion.stage == "completion" and completion.text == "Thank you for your help." and completionReads == 1)
+    assert(addon.char.texts == texts and texts[65] == oldText, "Dialogue stages must not overwrite saved original quest text")
+    assert(historyBefore ~= true and addon.Context().completed(65) == historyBefore, "The reward panel is not a completed-history fact")
+    eventFrame.scripts.OnEvent(eventFrame, "QUEST_FINISHED")
+    assert(not completion.current() and addon.DialogueText(65) == nil)
+    for _, key in ipairs(keys) do _G[key] = saved[key] end
+    addon.DialogueTextEvent("PLAYER_LEAVING_WORLD")
+end)
+
 print("Client/UI modeled checks passed: " .. total .. " (no pixel or native-client validation)")

@@ -58,6 +58,7 @@ events:SetScript("OnEvent", function(_, event, arg1, arg2)
     end
     if not initialized then return end
     if event == "PLAYER_ENTERING_WORLD" and addon.Minimap then addon.Minimap:Initialize() end
+    if addon.DialogueTextEvent then addon.DialogueTextEvent(event) end
     if addon.DialogueRewardEvent then addon.DialogueRewardEvent(event) end
     if event ~= "QUEST_DATA_LOAD_RESULT" and event ~= "ITEM_DATA_LOAD_RESULT" and event ~= "BAG_UPDATE_DELAYED" then
         addon.OfferEvent(event)

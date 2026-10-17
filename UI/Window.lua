@@ -2191,6 +2191,54 @@ function UI:RefreshDetail()
                 line(formatted and (addon.L("REWARD_MONEY") .. ": " .. formatted) or addon.L("REWARD_MONEY_UNKNOWN"))
             end
         else line(addon.L("REWARD_UNAVAILABLE")) end
+        do
+            local getter, checker, localize = addon.Clean(addon.DialogueText, "function"), issecretvalue, addon.L
+            if getter then
+                local database, selectedLocale, localeGetter = addon.db, addon.db.locale, GetLocale
+                local gameLocale = addon.Read(localeGetter, "string")
+                local engineGetter = renderEngine and renderEngine.Current
+                local function baseCurrent()
+                    local language = addon.Read(localeGetter, "string")
+                    local fresh = engineGetter == nil or addon.Read(engineGetter, "boolean", renderEngine) == true
+                    local ok, same = pcall(function()
+                        return fresh and portraitCardCurrent() and addon.quests[id] == definition and rawget(q, "id") == id and
+                            addon.DialogueText == getter and issecretvalue == checker and addon.L == localize and
+                            addon.db == database and database.locale == selectedLocale and GetLocale == localeGetter and
+                            language == gameLocale and renderEngine.Current == engineGetter
+                    end)
+                    return ok and same == true
+                end
+                local result = addon.Read(getter, "table", id, baseCurrent)
+                if not portraitCardCurrent() then return end
+                if result and baseCurrent() then
+                    local source, stage, text, proof = addon.Clean(rawget(result, "source"), "string"),
+                        addon.Clean(rawget(result, "stage"), "string"), addon.Clean(rawget(result, "text"), "string"),
+                        addon.Clean(rawget(result, "current"), "function")
+                    local function dialogueCurrent()
+                        if not baseCurrent() or addon.Read(proof, "boolean") ~= true or not baseCurrent() then return false end
+                        local ok, same = pcall(function()
+                            return portraitCardCurrent() and addon.quests[id] == definition and rawget(q, "id") == id and
+                                rawget(result, "source") == source and rawget(result, "stage") == stage and
+                                rawget(result, "text") == text and rawget(result, "current") == proof and
+                                addon.DialogueText == getter and issecretvalue == checker and addon.L == localize and
+                                addon.db == database and database.locale == selectedLocale and GetLocale == localeGetter and
+                                renderEngine.Current == engineGetter
+                        end)
+                        return ok and same == true
+                    end
+                    if not portraitCardCurrent() then return end
+                    if source == "dialogue" and (stage == "progress" or stage == "completion") and proof and
+                        text and #text <= 30000 and text:find("%S") and dialogueCurrent() then
+                        local heading = addon.Read(localize, "string", stage == "progress" and "DIALOGUE_PROGRESS_TEXT" or "DIALOGUE_TURNIN_TEXT")
+                        if not portraitCardCurrent() then return end
+                        if heading and dialogueCurrent() then
+                            if line(heading, "section", nil, nil, dialogueCurrent) == false or
+                                line(text, nil, nil, nil, dialogueCurrent) == false then return end
+                        end
+                    end
+                end
+            end
+        end
         local starterSource = addon.Clean(q.start, "table")
         local starterID = starterSource and addon.Clean(rawget(starterSource, "itemID"), "number")
         local starterName = starterSource and addon.Clean(rawget(starterSource, "name"), "string")
