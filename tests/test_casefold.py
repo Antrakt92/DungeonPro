@@ -128,8 +128,10 @@ assert(loadfile('Core/Search.lua'))('DungeonPro',addon)
         if source:
             flush()
         result = self.run_lua("""
+local bytes = {}
+for value = 0, 255 do bytes[string.format('%02x',value)] = string.char(value) end
 local function decode(hex)
-    return (hex:gsub('..',function(pair) return string.char(tonumber(pair,16)) end))
+    return (hex:gsub('..',bytes))
 end
 local count=0
 for record in io.lines() do
