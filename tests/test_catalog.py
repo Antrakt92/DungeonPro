@@ -1193,7 +1193,9 @@ class ObjectiveAcquisitionTests(unittest.TestCase):
         return data,quest,quest["objectiveItemSources"][0],quest["objectiveItemSources"][0]["containerSources"][0]
 
     def test_acquisition_three_exact_sources_generate_and_reverse_without_role_changes(self):
-        baseline=json.loads((ROOT/"data/catalog.json").read_text(encoding="utf-8")); original=copy.deepcopy(baseline)
+        baseline=json.loads((ROOT/"data/catalog.json").read_text(encoding="utf-8"))
+        next(q for q in baseline["quests"] if q["id"] == 1221).pop("objectiveItemSources", None)
+        original=copy.deepcopy(baseline)
         data,quest,_,_=self.fixture()
         for item,obj,name in [(5897,21530,"Snufflenose Owner's Manual"),(6684,68865,"Snufflenose Command Sticks")]:
             quest["objectiveItemSources"].append({"itemID":item,"containerSources":[{"objectID":obj,"name":name,

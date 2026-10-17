@@ -4703,6 +4703,50 @@
           "itemID": 6684,
           "name": "Snufflenose Command Stick"
         }
+      ],
+      "objectiveItemSources": [
+        {
+          "itemID": 5880,
+          "containerSources": [
+            {
+              "objectID": 21277,
+              "name": "Crate with Holes",
+              "zoneName": "The Barrens",
+              "mapID": 1413,
+              "x": 62.3,
+              "y": 37.6,
+              "source": "https://www.wowhead.com/forever/object=21277/crate-with-holes"
+            }
+          ]
+        },
+        {
+          "itemID": 5897,
+          "containerSources": [
+            {
+              "objectID": 21530,
+              "name": "Snufflenose Owner's Manual",
+              "zoneName": "The Barrens",
+              "mapID": 1413,
+              "x": 62.3,
+              "y": 37.6,
+              "source": "https://www.wowhead.com/forever/object=21530/snufflenose-owners-manual"
+            }
+          ]
+        },
+        {
+          "itemID": 6684,
+          "containerSources": [
+            {
+              "objectID": 68865,
+              "name": "Snufflenose Command Sticks",
+              "zoneName": "The Barrens",
+              "mapID": 1413,
+              "x": 62.3,
+              "y": 37.6,
+              "source": "https://www.wowhead.com/forever/object=68865/snufflenose-command-sticks"
+            }
+          ]
+        }
       ]
     },
     {

@@ -1364,7 +1364,7 @@ function UI:RefreshDetail()
     for _, b in ipairs(self.branchInspectButtons) do b:Hide(); b:SetEnabled(false); b:SetScript("OnClick", nil) end
     for _, b in ipairs(self.requirementButtons) do b:Hide(); b:SetEnabled(false); b:SetScript("OnClick", nil) end
     for _, b in ipairs(self.materialButtons) do b:Hide(); b:SetEnabled(false); b:SetScript("OnClick", nil) end
-    for _, buttons in ipairs({ self.startButtons, self.finishButtons, self.containerButtons, self.dropButtons }) do
+    for _, buttons in ipairs({ self.startButtons, self.finishButtons, self.containerButtons, self.dropButtons, self.objectiveContainerButtons }) do
         for _, b in ipairs(buttons) do
             b:Hide(); b:SetEnabled(false); b:SetScript("OnClick", nil)
         end
@@ -1781,10 +1781,14 @@ function UI:RefreshDetail()
             return name .. (zoneName and (" — " .. zoneName) or "") ..
                 (p.x and string.format(" (%.1f, %.1f)", p.x, p.y) or "")
         end
-        local function alternativePlaces(places, buttons, heading, slot, ownerCurrent)
+        local function alternativePlaces(places, buttons, heading, slot, ownerCurrent, offset, clickCurrent, rowWriter)
             local function current() return locationCurrent() and (not ownerCurrent or ownerCurrent()) end
+            local function write(object, method, ...)
+                if rowWriter then return rowWriter(current, object, method, ...) end
+                return locationWrite(current, object, method, ...)
+            end
             if not current() then return false end
-            line(addon.L(heading), "section")
+            if heading then line(addon.L(heading), "section") end
             if not current() then return false end
             for index, possible in ipairs(places) do
                 local destination = possible
@@ -1800,13 +1804,13 @@ function UI:RefreshDetail()
                     addon.Clean(destination.zoneName, "string") or destination.locationName or addon.L("UNKNOWN_PLACE")) ..
                     (coordinates and string.format(" (%.1f, %.1f)", x, py) or "")
                 if not current() then return false end
-                local row = self:MakeRow(self.detail, buttons, index, 59)
+                local row = self:MakeRow(self.detail, buttons, (offset or 0) + index, 59)
                 if not current() then return false end
-                if not locationWrite(current, row.title, "SetText", title) or
-                    not locationWrite(current, row.note, "SetText", note) or
-                    not locationWrite(current, row, "SetEnabled", validMap) then return false end
-                if not locationWrite(current, row, "SetScript", "OnClick", validMap and function()
-                    if not current() then return end
+                if not write(row.title, "SetText", title) or
+                    not write(row.note, "SetText", note) or
+                    not write(row, "SetEnabled", validMap) then return false end
+                if not write(row, "SetScript", "OnClick", validMap and function()
+                    if not current() or (clickCurrent and not clickCurrent()) then return end
                     local visit = { id = id, kind = "visit", place = destination }
                     if coordinates then addon.Navigation.Start(visit)
                     else addon.Navigation.Map(destination) end
@@ -2309,6 +2313,158 @@ function UI:RefreshDetail()
                 end
             end
         end
+
+        do
+            local sources = addon.Clean(rawget(q, "objectiveItemSources"), "table")
+            local items = addon.Clean(rawget(q, "objectiveItems"), "table")
+            local checker, localize, nameGetter = issecretvalue, addon.L, addon.ItemName
+            local database, choice, localeGetter = addon.db, addon.db.locale, GetLocale
+            local locale = addon.Read(localeGetter, "string")
+            local mapNamespace, mapGetter = C_Map, C_Map and C_Map.GetMapInfo
+            local navigation = addon.Navigation
+            local navigate, showMap = navigation and navigation.Start, navigation and navigation.Map
+            local snapshots = {}
+            local function capture(object, fields, list, exact)
+                local values, count = {}, 0
+                if exact then for _ in next, object do count = count + 1 end end
+                for _, field in ipairs(fields) do values[field] = rawget(object, field) end
+                snapshots[#snapshots + 1] = { object = object, fields = fields, values = values, length = list and #object or nil, count = exact and count or nil }
+            end
+            capture(q, { "objectiveItemSources", "objectiveItems" })
+            local function current()
+                local language = addon.Read(localeGetter, "string")
+                local ok, same = pcall(function()
+                    if not portraitCardCurrent() or not locationCurrent() or addon.quests[id] ~= definition or
+                        issecretvalue ~= checker or addon.L ~= localize or addon.ItemName ~= nameGetter or
+                        addon.db ~= database or database.locale ~= choice or GetLocale ~= localeGetter or language ~= locale or
+                        C_Map ~= mapNamespace or (mapNamespace and mapNamespace.GetMapInfo ~= mapGetter) or
+                        addon.Navigation ~= navigation or (navigation and (navigation.Start ~= navigate or navigation.Map ~= showMap)) then return false end
+                    for _, snapshot in ipairs(snapshots) do
+                        if snapshot.length and #snapshot.object ~= snapshot.length then return false end
+                        if snapshot.count then
+                            local count = 0; for _ in next, snapshot.object do count = count + 1 end
+                            if count ~= snapshot.count then return false end
+                        end
+                        for _, field in ipairs(snapshot.fields) do
+                            if rawget(snapshot.object, field) ~= snapshot.values[field] then return false end
+                        end
+                    end
+                    return true
+                end)
+                return ok and same == true
+            end
+            local function positive(value, maximum)
+                value = addon.Clean(value, "number")
+                return value and value > 0 and value <= maximum and value % 1 == 0 and value
+            end
+            local routes, definitions, seen, valid = {}, {}, {}, sources and items and #sources > 0 and #sources <= 100 and #items <= 100
+            if valid then
+                capture(sources, {}, true); capture(items, {}, true)
+                for index = 1, #items do
+                    capture(items, { index })
+                    local entry = addon.Clean(rawget(items, index), "table")
+                    if entry then
+                        capture(entry, { "itemID", "name" })
+                        local item = positive(rawget(entry, "itemID"), 9007199254740991)
+                        if item then
+                            if definitions[item] ~= nil then valid = false; break end
+                            definitions[item] = entry
+                        end
+                    end
+                end
+                for index = 1, #sources do
+                    if not valid then break end
+                    capture(sources, { index })
+                    local entry = addon.Clean(rawget(sources, index), "table")
+                    local item = entry and positive(rawget(entry, "itemID"), 9007199254740991)
+                    local containers = entry and addon.Clean(rawget(entry, "containerSources"), "table")
+                    if not item or not definitions[item] or seen[item] or not containers or #containers < 1 or #containers > 100 then valid = false; break end
+                    for key in next, entry do local cleanKey = addon.Clean(key, "string"); if not cleanKey or (cleanKey ~= "itemID" and cleanKey ~= "containerSources") then valid = false; break end end
+                    if not valid then break end
+                    seen[item] = true
+                    capture(entry, { "itemID", "containerSources" }, nil, true); capture(containers, {}, true)
+                    local route = { itemID = item, definition = definitions[item], containers = containers, index = index }
+                    local objects = {}
+                    for sourceIndex = 1, #containers do
+                        capture(containers, { sourceIndex })
+                        local point = addon.Clean(rawget(containers, sourceIndex), "table")
+                        if not point then valid = false; break end
+                        local pointFields = { "objectID", "name", "source", "zoneName", "mapID", "x", "y" }
+                        for _, field in ipairs(pointFields) do
+                            if type(checker) == "function" and addon.Read(checker, "boolean", rawget(point, field)) ~= false then valid = false; break end
+                        end
+                        if not valid then break end
+                        capture(point, pointFields, nil, true)
+                        local object = positive(rawget(point, "objectID"), 4294967295)
+                        local name, source = addon.Clean(rawget(point, "name"), "string"), addon.Clean(rawget(point, "source"), "string")
+                        local zone = rawget(point, "zoneName")
+                        local validZone = zone == nil or (addon.Clean(zone, "string") and #zone <= 500 and zone:find("%S"))
+                        local map = rawget(point, "mapID")
+                        local x, py = rawget(point, "x"), rawget(point, "y")
+                        local allowed = { objectID = true, name = true, source = true, zoneName = true, mapID = true, x = true, y = true }
+                        for key in next, point do local cleanKey = addon.Clean(key, "string"); if not cleanKey or not allowed[cleanKey] then valid = false; break end end
+                        local prefix = object and ("https://www.wowhead.com/forever/object=" .. string.format("%.0f", object))
+                        local matched = prefix and source and (source == prefix or
+                            (source:sub(1, #prefix + 1) == prefix .. "/" and source:sub(#prefix + 2):match("^[^%s/?#]+$")))
+                        local cleanMap = map == nil or positive(map, 9007199254740991)
+                        local cleanX, cleanY = addon.Clean(x, "number"), addon.Clean(py, "number")
+                        local coordinates = x == nil and py == nil or (cleanMap and map ~= nil and cleanX and cleanY and
+                            cleanX >= 0 and cleanX <= 100 and cleanY >= 0 and cleanY <= 100)
+                        if not valid or not object or objects[object] or not validZone or not name or #name > 500 or not name:find("%S") or
+                            not source or #source > 2048 or not matched or not cleanMap or not coordinates then valid = false; break end
+                        objects[object] = true
+                    end
+                    if not valid then break end
+                    routes[#routes + 1] = route
+                end
+            end
+            if not current() then return end
+            local function writeRow(ownerCurrent, object, method, ...)
+                if not ownerCurrent() then return false end
+                local args, count = { ... }, select("#", ...)
+                local bindings = object.objectiveSourceWrites or {}
+                object.objectiveSourceWrites = bindings
+                local binding = { current = ownerCurrent, args = args, count = count }
+                bindings[method] = binding
+                local ok = pcall(object[method], object, unpack(args, 1, count))
+                local fresh = ownerCurrent()
+                if not fresh then
+                    local latest = object.objectiveSourceWrites
+                    local newer = latest and latest[method]
+                    if newer and newer ~= binding and not newer.repairing then
+                        newer.repairing = true
+                        local repairCurrent = newer.current()
+                        if repairCurrent and object.objectiveSourceWrites == latest and latest[method] == newer then
+                            pcall(object[method], object, unpack(newer.args, 1, newer.count))
+                        end
+                        newer.repairing = nil
+                    end
+                end
+                return ok and fresh
+            end
+            if valid and #routes > 0 then
+                local heading, notice = addon.Read(localize, "string", "OBJECTIVE_ITEM_SOURCES"),
+                    addon.Read(localize, "string", "OBJECTIVE_ITEM_SOURCES_NOTICE")
+                if not current() then return end
+                if heading and notice then
+                    if line(heading, "section", nil, nil, current) == false or line(notice, nil, nil, nil, current) == false then return end
+                    local offset = 0
+                    for _, route in ipairs(routes) do
+                        local name = addon.Read(nameGetter, "string", route.itemID)
+                        if not current() then return end
+                        if not name or #name > 1024 or not name:find("%S") then
+                            name = addon.Clean(rawget(route.definition, "name"), "string")
+                            if not name or #name > 2000 or not name:find("%S") then name = string.format("#%.0f", route.itemID) end
+                        end
+                        if line(name, "section", nil, nil, current) == false then return end
+                        local slot = "objectiveItem:" .. string.format("%.0f", route.itemID) .. ":"
+                        if alternativePlaces(route.containers, self.objectiveContainerButtons, nil, slot, current, offset, function() return addon.Read(self.frame.IsShown, "boolean", self.frame) == true and current() end, writeRow) == false then return end
+                        offset = offset + #route.containers
+                    end
+                end
+            end
+        end
+
         do
             local paymentGetter, paymentChecker, localize = addon.QuestPayment, issecretvalue, addon.L
             local currencyRoot = C_CurrencyInfo
@@ -2519,8 +2675,9 @@ function UI:RefreshDetail()
             local routes, snapshots, mappedDrops = {}, {}, {}
             local mapNamespace, mapGetter = C_Map, C_Map and C_Map.GetMapInfo
             local giverGetter, dungeonGetter = addon.GiverName, addon.DungeonName
-            local function capture(object, fields, list)
-                local values = {}
+            local function capture(object, fields, list, exact)
+                local values, count = {}, 0
+                if exact then for _ in next, object do count = count + 1 end end
                 for _, field in ipairs(fields) do values[field] = rawget(object, field) end
                 snapshots[#snapshots + 1] = { object = object, values = values, fields = fields, length = list and #object or nil }
             end
@@ -2532,6 +2689,10 @@ function UI:RefreshDetail()
                         addon.GiverName ~= giverGetter or addon.DungeonName ~= dungeonGetter then return false end
                     for _, snapshot in ipairs(snapshots) do
                         if snapshot.length and #snapshot.object ~= snapshot.length then return false end
+                        if snapshot.count then
+                            local count = 0; for _ in next, snapshot.object do count = count + 1 end
+                            if count ~= snapshot.count then return false end
+                        end
                         for _, field in ipairs(snapshot.fields) do
                             if rawget(snapshot.object, field) ~= snapshot.values[field] then return false end
                         end
@@ -3088,6 +3249,7 @@ function UI:Create()
     self.requirementButtons, self.branchInspectButtons = {}, {}
     self.actionButtons, self.actionInspectButtons, self.preparationForButtons = {}, {}, {}
     self.startButtons, self.finishButtons, self.containerButtons, self.dropButtons = {}, {}, {}, {}
+    self.objectiveContainerButtons = {}
     UISpecialFrames[#UISpecialFrames + 1] = "DungeonProWindow"
     for _, d in ipairs(addon.dungeons) do if d.key == addon.char.selectedDungeon then self.dungeon = d end end
     frame:RegisterEvent("DISPLAY_SIZE_CHANGED")
