@@ -329,7 +329,9 @@
         "mapID": 1436,
         "x": 56.3,
         "y": 47.5,
-        "npcID": 820
+        "npcID": 820,
+        "creatureDisplayID": 2374,
+        "portraitSource": "https://www.wowhead.com/forever/npc=820"
       },
       "finish": {
         "name": "Gryan Stoutmantle",
@@ -1483,7 +1485,9 @@
         "x": 64.8,
         "y": 58.4,
         "npcID": 264936,
-        "zoneName": "Dun Morogh"
+        "zoneName": "Dun Morogh",
+        "creatureDisplayID": 144321,
+        "portraitSource": "https://www.wowhead.com/forever/npc=264936"
       },
       "finish": {
         "name": "King Magni Bronzebeard",
@@ -1531,7 +1535,9 @@
         "x": 32.8,
         "y": 48.6,
         "npcID": 264943,
-        "zoneName": "Ironforge"
+        "zoneName": "Ironforge",
+        "creatureDisplayID": 144322,
+        "portraitSource": "https://www.wowhead.com/forever/npc=264943"
       },
       "objectiveKills": [
         {
@@ -2012,7 +2018,13 @@
         "x": 53.6,
         "y": 54.0
       },
-      "requirementsKnown": false
+      "requirementsKnown": false,
+      "objectiveItems": [
+        {
+          "itemID": 6283,
+          "name": "The Book of Ur"
+        }
+      ]
     },
     {
       "id": 1014,
@@ -2291,7 +2303,13 @@
         1198,
         1200
       ],
-      "startsInside": true
+      "startsInside": true,
+      "objectiveItems": [
+        {
+          "itemID": 5881,
+          "name": "Head of Kelris"
+        }
+      ]
     },
     {
       "id": 1198,
@@ -4333,6 +4351,12 @@
           "ids": [
             1100
           ]
+        }
+      ],
+      "objectiveItems": [
+        {
+          "itemID": 5792,
+          "name": "Razorflank's Medallion"
         }
       ]
     },
@@ -24484,7 +24508,9 @@
         "zoneName": "Dun Morogh",
         "mapID": 1426,
         "x": 64.8,
-        "y": 58.4
+        "y": 58.4,
+        "creatureDisplayID": 144321,
+        "portraitSource": "https://www.wowhead.com/forever/npc=264936"
       },
       "finish": {
         "npcID": 264936,
@@ -24492,7 +24518,9 @@
         "zoneName": "Dun Morogh",
         "mapID": 1426,
         "x": 64.8,
-        "y": 58.4
+        "y": 58.4,
+        "creatureDisplayID": 144321,
+        "portraitSource": "https://www.wowhead.com/forever/npc=264936"
       }
     },
     {
