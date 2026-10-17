@@ -17,6 +17,69 @@ class CatalogTests(unittest.TestCase):
     def test_generated_data_matches(self):
         self.assertEqual(catalog.generate(self.data), (ROOT / "Database/Catalog.lua").read_text(encoding="utf-8"))
 
+    def test_objective_kills_preserve_sourced_counts_without_requirement_inference(self):
+        data = copy.deepcopy(self.data)
+        quest = data["quests"][0]
+        quest["objectiveKills"] = [{"npcID": 11318, "name": "Ragefire Trogg", "quantity": 8},
+                                   {"npcID": 11519, "name": "Bazzalan"}]
+        before = copy.deepcopy(data)
+        catalog.validate(data)
+        generated = catalog.generate(data)
+        self.assertEqual(before, data)
+        self.assertIn('["objectiveKills"]', generated)
+        self.assertEqual(quest["objectiveKills"][1], {"npcID": 11519, "name": "Bazzalan"})
+        self.assertEqual(quest.get("requires"), self.data["quests"][0].get("requires"))
+        self.assertEqual(quest["requirementsKnown"], self.data["quests"][0]["requirementsKnown"])
+
+    def test_objective_kills_reject_invalid_lists_and_non_npc_roles(self):
+        for kills in (None, {}, [], [None], [1], [True], ["NPC"],
+                      [{"npcID": 1, "name": "A"}] * 101,
+                      [{"itemID": 1, "name": "A"}], [{"objectID": 1, "name": "A"}],
+                      [{"npcID": 1, "name": "A", "itemID": 2}],
+                      [{"npcID": 1, "name": "A", "mapID": 1}],
+                      [{"npcID": 1, "name": "A", "sharedQuantity": 8}],
+                      [{"npcID": 1, "name": "A", "creatureDisplayID": 1}]):
+            with self.subTest(kills=kills):
+                self.data["quests"][0]["objectiveKills"] = kills
+                with self.assertRaisesRegex(ValueError, "objective kill"):
+                    catalog.validate(self.data)
+
+    def test_objective_kills_require_strict_bounded_identity_and_optional_explicit_quantity(self):
+        for field, values in (("npcID", (None, False, True, 0, -1, 1.0, 1.5, "1", 2 ** 32)),
+                              ("quantity", (None, False, True, 0, -1, 1.0, 1.5, "1",
+                                            float("nan"), float("inf"), 2 ** 53))):
+            for value in values:
+                with self.subTest(field=field, value=value):
+                    kill = {"npcID": 1, "name": "A", field: value}
+                    self.data["quests"][0]["objectiveKills"] = [kill]
+                    with self.assertRaisesRegex(ValueError, "objective kill"):
+                        catalog.validate(self.data)
+        self.data["quests"][0]["objectiveKills"] = [
+            {"npcID": 2 ** 32 - 1, "name": "A", "quantity": 2 ** 53 - 1}]
+        catalog.validate(self.data)
+
+    def test_objective_kills_require_names_and_unique_npc_identity(self):
+        for name in (None, False, 1, "", " \t\n", "x" * 501):
+            with self.subTest(name=name):
+                self.data["quests"][0]["objectiveKills"] = [{"npcID": 1, "name": name}]
+                with self.assertRaisesRegex(ValueError, "objective kill name"):
+                    catalog.validate(self.data)
+        self.data["quests"][0]["objectiveKills"] = [
+            {"npcID": 1, "name": "A"}, {"npcID": 1, "name": "Different label", "quantity": 8}]
+        with self.assertRaisesRegex(ValueError, "Duplicate objective kill"):
+            catalog.validate(self.data)
+
+    def test_objective_kill_name_budget_matches_utf8_runtime_bytes(self):
+        for name in ("x" * 500, "中" * 166, "Ж" * 250, "😀" * 125):
+            with self.subTest(valid_bytes=len(name.encode("utf-8"))):
+                self.data["quests"][0]["objectiveKills"] = [{"npcID": 1, "name": name}]
+                catalog.validate(self.data)
+        for name in ("x" * 501, "中" * 167, "Ж" * 251, "😀" * 126, "\ud800"):
+            with self.subTest(invalid_name=repr(name)):
+                self.data["quests"][0]["objectiveKills"] = [{"npcID": 1, "name": name}]
+                with self.assertRaisesRegex(ValueError, "objective kill name"):
+                    catalog.validate(self.data)
+
     def test_giver_portrait_requires_a_typed_npc_and_matching_forever_source(self):
         valid = {"npcID": 234, "name": "Gryan", "creatureDisplayID": 1690,
                  "portraitSource": "https://www.wowhead.com/forever/npc=234/gryan-stoutmantle"}

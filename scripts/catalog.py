@@ -69,6 +69,27 @@ def validate(data):
                 if item["itemID"] in seen_items:
                     raise ValueError(f"Duplicate objective item: {q['id']}")
                 seen_items.add(item["itemID"])
+        if "objectiveKills" in q:
+            kills = q["objectiveKills"]
+            if type(kills) is not list or not 1 <= len(kills) <= 100:
+                raise ValueError(f"Invalid objective kill list: {q['id']}")
+            seen_kills = set()
+            for kill in kills:
+                if (type(kill) is not dict or set(kill) - {"npcID", "name", "quantity"} or
+                        not integer(kill.get("npcID")) or kill["npcID"] > 2 ** 32 - 1 or
+                        ("quantity" in kill and
+                         (not integer(kill["quantity"]) or kill["quantity"] > 2 ** 53 - 1))):
+                    raise ValueError(f"Invalid objective kill identity/quantity: {q['id']}")
+                name = kill.get("name")
+                try:
+                    name_valid = nonempty_string(name) and len(name.encode("utf-8")) <= 500
+                except UnicodeEncodeError:
+                    name_valid = False
+                if not name_valid:
+                    raise ValueError(f"Invalid objective kill name: {q['id']}")
+                if kill["npcID"] in seen_kills:
+                    raise ValueError(f"Duplicate objective kill: {q['id']}")
+                seen_kills.add(kill["npcID"])
         source = q.get("source")
         if type(source) is not str or not re.fullmatch(
             rf"https://www\.wowhead\.com/forever/quest={q['id']}(?:/[^\s/?#]+)?", source

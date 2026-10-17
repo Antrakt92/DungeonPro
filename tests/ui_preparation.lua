@@ -3912,4 +3912,86 @@ check("Native journal portrait rendering also rejects reentrant old-card publica
     ui:RefreshDetail();assert(ui.portrait.shown and ui.portrait.texture=="fresh:6002")
     restore()
 end)
+check("Sourced kill objectives show known and unknown quantities separately from live quest-log progress",function()
+    local objectives,itemName,giverPortrait=addon.QuestObjectives,addon.ItemName,addon.GiverPortrait
+    local calls=0
+    addon.quests[27001]={id=27001,minLevel=1,requirementsKnown=false,objectiveKills={
+        {npcID=3001,name="Known target",quantity=6},{npcID=3002,name="Unknown target"}}}
+    addon.QuestObjectives=function(id)assert(id==27001);calls=calls+1;return{{text="Native progress 1/9",finished=false}}end
+    addon.ItemName=function()error("kill objective must not request item names")end
+    addon.GiverPortrait=function()error("kill objective must not derive an NPC portrait")end
+    showDetail(27001)
+    assert(detailHas(addon.L("OBJECTIVE_KILLS")) and detailHas(addon.L("OBJECTIVE_KILLS_NOTICE")))
+    assert(detailHas(addon.L("OBJECTIVE_ITEM","Known target",6)) and detailHas(addon.L("OBJECTIVE_ITEM_UNKNOWN","Unknown target")))
+    local live=false;for _,fs in ipairs(ui.details)do if fs.shown and fs.text:find("Native progress 1/9",1,true)then live=true end end
+    assert(calls==1 and live and detailHas(addon.L("OBJECTIVE_PROGRESS")))
+    assert(ui.engine:State(27001).status=="UNKNOWN" and not ui.action and not ui.map.enabled and not ui.guide.enabled)
+    addon.QuestObjectives,addon.ItemName,addon.GiverPortrait=objectives,itemName,giverPortrait
+    addon.quests[27001]=nil;showDetail(2)
+    assert(not detailHas(addon.L("OBJECTIVE_KILLS")) and not detailHas(addon.L("OBJECTIVE_ITEM_UNKNOWN","Unknown target")))
+end)
+check("Kill objective counts remain explicit through known unknown locale and recycled-card changes",function()
+    local locale=addon.db.locale
+    local row={npcID=3003,name="Source creature"}
+    addon.quests[27002]={id=27002,minLevel=1,requirementsKnown=true,objectiveKills={row}}
+    for code in pairs(addon.locales)do
+        addon.db.locale=code;showDetail(27002)
+        assert(detailHas(addon.L("OBJECTIVE_ITEM_UNKNOWN",row.name)))
+        row.quantity=2;ui:RefreshDetail()
+        assert(detailHas(addon.L("OBJECTIVE_ITEM",row.name,2)) and not detailHas(addon.L("OBJECTIVE_ITEM_UNKNOWN",row.name)))
+        row.quantity=nil;ui:RefreshDetail()
+        assert(not detailHas(addon.L("OBJECTIVE_ITEM",row.name,2)) and ui.engine:State(27002).status=="AVAILABLE")
+        addon.quests[27002].objectiveKills=nil;ui:RefreshDetail();assert(not detailHas(addon.L("OBJECTIVE_KILLS")))
+        addon.quests[27002].objectiveKills={row}
+    end
+    addon.db.locale=locale;addon.quests[27002]=nil;showDetail(2)
+end)
+check("Malformed restricted duplicate and over-bound kill entries cannot become unknown objectives",function()
+    local checker=issecretvalue;local restricted={}
+    issecretvalue=function(value)return value==restricted end
+    local q={id=27003,minLevel=1,requirementsKnown=false};addon.quests[27003]=q
+    for _,entry in ipairs({{npcID=0,name="Invalid"},{npcID=4294967296,name="Invalid"},{npcID=1.5,name="Invalid"},
+        {npcID="1",name="Invalid"},{npcID=3004},{npcID=3004,name=" "},{npcID=3004,name=string.rep("x",501)},
+        {npcID=3004,name=restricted},{npcID=3004,name="Invalid",quantity=false},{npcID=3004,name="Invalid",quantity=0},
+        {npcID=3004,name="Invalid",quantity=1.5},{npcID=3004,name="Invalid",quantity=restricted},
+        {npcID=3004,name="Invalid",quantity=9007199254740992}})do
+        q.objectiveKills={entry};showDetail(27003);assert(not detailHas(addon.L("OBJECTIVE_KILLS")))
+    end
+    q.objectiveKills={{npcID=3004,name="First"},{npcID=3004,name="Duplicate"}}
+    for index=3,101 do q.objectiveKills[index]={npcID=3004+index,name="Target "..index}end
+    showDetail(27003)
+    assert(detailHas(addon.L("OBJECTIVE_ITEM_UNKNOWN","First")) and not detailHas(addon.L("OBJECTIVE_ITEM_UNKNOWN","Duplicate")))
+    assert(detailHas(addon.L("OBJECTIVE_ITEM_UNKNOWN","Target 100")) and not detailHas(addon.L("OBJECTIVE_ITEM_UNKNOWN","Target 101")))
+    issecretvalue=checker;addon.quests[27003]=nil;showDetail(2)
+end)
+check("Kill objective sanitization cannot continue an old card or generation after reentrant ownership changes",function()
+    local checker=issecretvalue
+    for _,sameQuest in ipairs({false,true})do
+        local q={id=27004,minLevel=1,requirementsKnown=false,objectiveKills={{npcID=3005,name="Old kill target",quantity=3}}}
+        addon.quests[27004]=q;local armed=true;local nestedHeight
+        issecretvalue=function(value)
+            if armed and value=="Old kill target"then
+                armed=false
+                if sameQuest then q.objectiveKills={{npcID=3006,name="Fresh kill target"}};ui:RefreshDetail()else showDetail(2)end
+                nestedHeight=ui.detail.height
+            end
+            return false
+        end
+        showDetail(27004)
+        assert(not armed and ui.detail.height==nestedHeight and not detailHas(addon.L("OBJECTIVE_ITEM","Old kill target",3)))
+        if sameQuest then assert(detailHas(addon.L("OBJECTIVE_ITEM_UNKNOWN","Fresh kill target")))else assert(ui.quest==2 and not detailHas(addon.L("OBJECTIVE_KILLS")))end
+        issecretvalue=checker;addon.quests[27004]=nil;showDetail(2)
+    end
+end)
+check("Kill objective source names follow the explicit 500 UTF-8 byte budget across alphabets",function()
+    local q={id=27005,minLevel=1,requirementsKnown=false};addon.quests[27005]=q
+    for _,entry in ipairs({{name=string.rep("界",166),accepted=true},{name=string.rep("界",167),accepted=false},
+        {name=string.rep("x",500),accepted=true},{name=string.rep("x",501),accepted=false}})do
+        q.objectiveKills={{npcID=3010,name=entry.name,quantity=2}};showDetail(27005)
+        assert(detailHas(addon.L("OBJECTIVE_KILLS"))==entry.accepted)
+        assert(detailHas(addon.L("OBJECTIVE_ITEM",entry.name,2))==entry.accepted)
+        assert(ui.engine:State(27005).status=="UNKNOWN" and not ui.action)
+    end
+    addon.quests[27005]=nil;showDetail(2)
+end)
 print("Preparation UI modeled checks passed: " .. total .. " (no native layout validation)")

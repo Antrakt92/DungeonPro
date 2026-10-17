@@ -1330,6 +1330,31 @@ function UI:RefreshDetail()
                 y = self:LayoutRow(row, 59, y)
             end
         end
+        local objectiveKills = addon.Clean(q.objectiveKills, "table")
+        local shownKills, seenKills = false, {}
+        for index = 1, math.min(objectiveKills and #objectiveKills or 0, 100) do
+            local entry = addon.Clean(objectiveKills[index], "table")
+            local npcID = entry and addon.Clean(rawget(entry, "npcID"), "number")
+            local name = entry and addon.Clean(rawget(entry, "name"), "string")
+            local rawQuantity = entry and rawget(entry, "quantity")
+            local quantityReadable = true
+            if type(issecretvalue) == "function" then
+                local ok, restricted = pcall(issecretvalue, rawQuantity)
+                quantityReadable = ok and addon.Clean(restricted, "boolean") == false
+            end
+            local quantityUnknown = quantityReadable and rawQuantity == nil
+            local quantity = quantityReadable and addon.Clean(rawQuantity, "number")
+            if not portraitCardCurrent() or addon.quests[id] ~= q or q.objectiveKills ~= objectiveKills then return end
+            if npcID and npcID > 0 and npcID <= 4294967295 and npcID % 1 == 0 and
+                name and #name <= 500 and name:find("%S") and not seenKills[npcID] and
+                (quantityUnknown or (quantity and quantity > 0 and quantity <= 9007199254740991 and quantity % 1 == 0)) then
+                seenKills[npcID] = true
+                if not shownKills then
+                    line(addon.L("OBJECTIVE_KILLS"), "section"); line(addon.L("OBJECTIVE_KILLS_NOTICE")); shownKills = true
+                end
+                line(quantityUnknown and addon.L("OBJECTIVE_ITEM_UNKNOWN", name) or addon.L("OBJECTIVE_ITEM", name, quantity))
+            end
+        end
         local objectiveItems = addon.Clean(q.objectiveItems, "table")
         local shownObjectives, seenItems = false, {}
         for index = 1, math.min(objectiveItems and #objectiveItems or 0, 100) do
