@@ -1,8 +1,10 @@
 import copy
 import importlib.util
 import json
+import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[1]
 SPEC = importlib.util.spec_from_file_location("catalog", ROOT / "scripts/catalog.py")
@@ -16,6 +18,30 @@ class CatalogTests(unittest.TestCase):
 
     def test_generated_data_matches(self):
         self.assertEqual(catalog.generate(self.data), (ROOT / "Database/Catalog.lua").read_text(encoding="utf-8"))
+
+    def test_duplicate_json_fields_fail_before_replacing_generated_catalogue(self):
+        # Even equal values or JSON-escaped spellings are ambiguous source facts.
+        original = json.dumps(self.data)
+        documents = (
+            original.replace('"schema": 1', '"schema": 1, "schema": 1', 1),
+            original.replace('"requirementsKnown": false',
+                             '"requirementsKnown": true, "requirementsKnown": false', 1),
+            original.replace('"name": ', '"na\\u006de": "Shadowed name", "name": ', 1),
+        )
+        for index, document in enumerate(documents):
+            for check in (False, True):
+                with self.subTest(case=index, check=check), tempfile.TemporaryDirectory() as directory:
+                    root = Path(directory)
+                    (root / "data").mkdir()
+                    (root / "Database").mkdir()
+                    (root / "data/catalog.json").write_text(document, encoding="utf-8")
+                    target = root / "Database/Catalog.lua"
+                    target.write_bytes(b"existing generated catalogue\n")
+                    arguments = ["catalog.py"] + (["--check"] if check else [])
+                    with patch.object(catalog, "ROOT", root), patch("sys.argv", arguments):
+                        with self.assertRaisesRegex(ValueError, "Duplicate catalogue key"):
+                            catalog.main()
+                    self.assertEqual(target.read_bytes(), b"existing generated catalogue\n")
 
     def test_objective_kills_preserve_sourced_counts_without_requirement_inference(self):
         data = copy.deepcopy(self.data)

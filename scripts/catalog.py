@@ -19,6 +19,15 @@ def integer(value):
     return type(value) is int and value > 0
 
 
+def unique_fields(pairs):
+    fields = {}
+    for key, value in pairs:
+        if key in fields:
+            raise ValueError(f"Duplicate catalogue key: {key!r}")
+        fields[key] = value
+    return fields
+
+
 def nonempty_string(value):
     return type(value) is str and bool(value.strip())
 
@@ -364,7 +373,8 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--check", action="store_true")
     args = parser.parse_args()
-    data = json.loads((ROOT / "data/catalog.json").read_text(encoding="utf-8"))
+    data = json.loads((ROOT / "data/catalog.json").read_text(encoding="utf-8"),
+                      object_pairs_hook=unique_fields)
     content = generate(data)
     target = ROOT / "Database/Catalog.lua"
     if args.check:
