@@ -489,7 +489,10 @@ function N.Start(action)
                         if owned then releaseNativePoint(pin, navigationGeneration) end
                         return false
                     end
-                    owned = owned and capabilitiesCurrent()
+                    if owned and not capabilitiesCurrent() then
+                        releaseNativePoint(pin, generation)
+                        owned = false
+                    end
                     if owned then nativePoint = pin end
                     if owned and C_SuperTrack and C_SuperTrack.SetSuperTrackedUserWaypoint then
                         pcall(C_SuperTrack.SetSuperTrackedUserWaypoint, true)

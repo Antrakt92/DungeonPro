@@ -1286,4 +1286,49 @@ check("Entrance title callback cannot send a destination it invalidated to TomTo
     addon.DungeonName = previous
 end)
 
+check("A successful native setter cannot orphan its pin after changing the source coordinates", function()
+    for _, field in ipairs({ "mapID", "x", "y" }) do
+        reset()
+        local mutable = { mapID = 1, x = 60, y = 70 }
+        C_Map.SetUserWaypoint = function(p)
+            nativeCalls = nativeCalls + 1; current = p
+            mutable[field] = mutable[field] + 1
+            return true
+        end
+        assert(nav.Start({ id = 99, kind = "visit", place = mutable }))
+        assert(nativeCalls == 1 and clears == 1 and current == nil)
+        nav.Stop(); assert(clears == 1)
+    end
+end)
+check("Rejected native ownership cleanup preserves a newer manual pin or guide", function()
+    for _, replacement in ipairs({ "manual", "guide" }) do
+        reset()
+        local mutable = { mapID = 1, x = 60, y = 70 }
+        local manual = { uiMapID = 2, position = { x = .1, y = .2 } }
+        C_Map.SetUserWaypoint = function(p)
+            nativeCalls = nativeCalls + 1; current = p; mutable.x = 61
+            if replacement == "manual" then current = manual end
+            return true
+        end
+        local getter, entered = C_Map.GetUserWaypoint, false
+        if replacement == "guide" then
+            C_Map.GetUserWaypoint = function()
+                if nativeCalls == 1 and not entered then
+                    entered = true; current = nil
+                    assert(nav.Start({ id = 100, kind = "visit", place = point }))
+                end
+                return getter()
+            end
+        end
+        local started = nav.Start({ id = 99, kind = "visit", place = mutable })
+        if replacement == "manual" then
+            assert(started and current == manual and clears == 0)
+            nav.Stop(); assert(current == manual and clears == 0)
+        else
+            assert(not started and entered and nativeCalls == 2 and clears == 0 and current)
+            nav.QuestChanged(99); assert(clears == 0 and current)
+            nav.QuestChanged(100); assert(clears == 1 and current == nil)
+        end
+    end
+end)
 print("Navigation modeled checks passed: " .. total .. " (no native map validation)")

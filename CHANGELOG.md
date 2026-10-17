@@ -2,6 +2,8 @@
 
 ## 0.1.0 - 16-Oct-2026 — Development preview
 
+- Improved cleanup of guide-created map pins when a navigation destination changes.
+
 - Improved planner window focus and the opaque background when other addon windows are open.
 
 - Redesigned the language picker with flags, immediate hover previews and a compact flag button.
