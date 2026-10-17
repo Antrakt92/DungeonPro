@@ -207,7 +207,7 @@ check("Current active and ready dungeon targets survive stale catalog character 
             local c = ctx({ [3] = true }, { [1] = true, [4] = true })
             c.ready = function(id) return id == 1 and ready end
             local engine = P.New(quests, c)
-            eq(P.Eligible(quests[1], c), false)
+            eq(P.Eligible(quests[1], c), restriction.races ~= nil)
             eq(engine:State(1).status, ready and "READY" or "ACTIVE")
             local dungeon = { quests = { 1, 2, 3 }, coverage = "reviewed" }
             local plan = engine:Dungeon(dungeon)
@@ -226,7 +226,7 @@ check("Current active and ready dungeon targets survive stale catalog character 
 end)
 check("Completed history unknown activity and readiness alone never override character exclusions", function()
     local quests = { [1] = q(1, nil, { factions = { "Horde" } }),
-        [2] = q(2, nil, { classes = { "WARRIOR" } }), [3] = q(3, nil, { races = { 1 } }) }
+        [2] = q(2, nil, { classes = { "WARRIOR" } }), [3] = q(3, nil, { factions = { "Horde" } }) }
     local c = ctx({ [1] = true })
     c.active = function(id) if id == 3 then return false end end
     c.ready = function() return true end
@@ -252,10 +252,10 @@ check("All-character inspection retains unavailable rows without changing readin
     eq(#all.actions, #filtered.actions)
     eq(e:Dungeon({ quests = { 2 }, coverage = "reviewed" }, { includeUnavailable = true }).ready, false)
 end)
-check("Forever race IDs are not truncated to a classic eight-bit mask", function()
+check("Retained Forever race facts do not restrict planning", function()
     local c = ctx(); c.race = 95
     eq(P.Eligible(addon.quests[96393], c), true)
-    c.race = 1; eq(P.Eligible(addon.quests[96393], c), false)
+    c.race = 1; eq(P.Eligible(addon.quests[96393], c), true)
 end)
 check("A known class exclusion wins even when faction information is missing", function()
     local c = ctx(); c.faction = nil
@@ -268,12 +268,12 @@ check("A known class exclusion wins even when faction information is missing", f
     eq(#e:Dungeon(d).rows, 0)
     eq(e:Dungeon(d, { includeUnavailable = true }).rows[1].state.reason, "class")
 end)
-check("A known race exclusion wins over unknown class and faction", function()
+check("Ignored race facts never override unknown class and faction", function()
     local c = ctx(); c.faction, c.class = nil, nil
     local eligible, reason = P.Eligible(q(1, nil, {
         factions = { "Alliance" }, classes = { "MAGE" }, races = { 1 },
     }), c)
-    eq(eligible, false); eq(reason, "race")
+    eq(eligible, nil); eq(reason, "faction")
 end)
 check("Unknown restrictions remain unknown when all known restrictions match", function()
     local c = ctx(); c.faction = nil
@@ -282,13 +282,13 @@ check("Unknown restrictions remain unknown when all known restrictions match", f
     }), c)
     eq(eligible, nil); eq(reason, "faction")
 end)
-check("Shared dungeon class quests preserve current faction race and class gates", function()
+check("Shared dungeon class quests preserve faction and class gates while ignoring race facts", function()
     local c = ctx(); c.faction, c.class, c.race = "Horde", "PALADIN", 6
     local e = P.New(addon.quests, c)
     eq(e:State(95036).status, "UNKNOWN")
     eq(e:State(1654).status, "UNAVAILABLE")
     c.class = "MAGE"; eq(P.New(addon.quests, c):State(95036).status, "UNAVAILABLE")
-    c.class, c.race = "PALADIN", 2; eq(P.New(addon.quests, c):State(95036).status, "UNAVAILABLE")
+    c.class, c.race = "PALADIN", 2; eq(P.New(addon.quests, c):State(95036).status, "UNKNOWN")
     c.class = "WARLOCK"; eq(P.New(addon.quests, c):State(1740).status, "UNKNOWN")
     c.faction = "Alliance"; eq(P.New(addon.quests, c):State(1740).status, "UNKNOWN")
     eq(addon.quests[1654].level, 22)
@@ -547,7 +547,7 @@ check("Partial cycles terminate while a separate safe held branch remains action
 end)
 check("Partial traversal never bypasses character exclusions unknown context or level gates", function()
     local parent = q(1, nil, { requirementsKnown = false })
-    for _, restriction in ipairs({ { factions = { "Horde" } }, { classes = { "WARRIOR" } }, { races = { 1 } } }) do
+    for _, restriction in ipairs({ { factions = { "Horde" } }, { classes = { "WARRIOR" } } }) do
         restriction.requirementsKnown = false
         local e = P.New({ [1] = parent, [2] = q(2, { { ids = { 1 } } }, restriction) }, ctx({}, { [1] = true }))
         local actions, unknown = e:Next(2)
@@ -609,6 +609,61 @@ check("Class API exceptions become unknown restrictions", function()
     UnitFactionGroup = function() return "Alliance" end
     local c = addon.Context()
     eq(c.class, nil); eq(c.race, 3)
+end)
+check("Every retained race-restricted catalogue record plans identically for Human Skyborne missing and restricted race", function()
+    local restricted = setmetatable({}, { __eq = function() error("race value compared") end })
+    local checker = issecretvalue
+    issecretvalue = function(value) return rawequal(value, restricted) end
+    local races, count = { {1}, {95}, {}, {restricted} }, 0
+    for id, quest in pairs(addon.quests) do
+        if quest.races then
+            count = count + 1
+            local original = quest.races
+            for _, mode in ipairs({ "new", "active", "ready", "completed", "unknown" }) do
+                local expected
+                for _, race in ipairs(races) do
+                    local c = ctx(); c.race = race[1]; c.level = 60
+                    c.faction = quest.factions and quest.factions[1] or "Alliance"
+                    c.class = quest.classes and quest.classes[1] or "MAGE"
+                    c.active = function() if mode ~= "unknown" then return mode == "active" or mode == "ready" end end
+                    c.completed = function() if mode ~= "unknown" then return mode == "completed" end end
+                    c.ready = function() return mode == "ready" end
+                    local engine = P.New(addon.quests, c)
+                    local state = engine:State(id)
+                    local actions, unknown = engine:Next(id)
+                    local parts = {state.status, tostring(state.reason), tostring(state.completedHistory), tostring(unknown)}
+                    for _, action in ipairs(actions) do parts[#parts + 1] = action.id .. ":" .. action.kind end
+                    local result = table.concat(parts, "|")
+                    if expected then eq(result, expected) else expected = result end
+                    eq(quest.races, original)
+                end
+            end
+        end
+    end
+    eq(count, 31)
+    issecretvalue = checker
+end)
+check("Ignored race facts preserve prerequisite traversal and all ordinary eligibility gates", function()
+    for _, race in ipairs({ {1}, {95}, {}, {{}} }) do
+        local c = ctx(); c.race = race[1]
+        local parent = q(1, nil, {races = {95}, factions = {"Alliance"}, classes = {"MAGE"}})
+        local target = q(2, {{ids = {1}}}, {races = {95}})
+        local quests = {[1] = parent, [2] = target}
+        local engine = P.New(quests, c)
+        eq(engine:State(1).status, "AVAILABLE"); eq(engine:State(2).status, "LOCKED")
+        local actions, unknown = engine:Next(2)
+        eq(#actions, 1); eq(actions[1].id, 1); eq(actions[1].kind, "pickup"); eq(unknown, false)
+        parent.minLevel = 30; eq(P.New(quests, c):State(1).reason, "level"); parent.minLevel = 1
+        c.faction = "Horde"; eq(P.New(quests, c):State(1).reason, "faction")
+        c.faction, c.class = "Alliance", "WARRIOR"; eq(P.New(quests, c):State(1).reason, "class")
+        c.class = nil; eq(P.New(quests, c):State(1).status, "UNKNOWN")
+        c.class = "MAGE"; parent.requirementsKnown = false
+        eq(P.New(quests, c):State(1).reason, "requirements")
+        c.active = function() return true end; eq(P.New(quests, c):State(1).status, "ACTIVE")
+        c.ready = function() return true end; eq(P.New(quests, c):State(1).status, "READY")
+        c.active = function() return false end; c.completed = function() return true end
+        eq(P.New(quests, c):State(1).status, "COMPLETED")
+    end
 end)
 check("Secret and nonfinite values cannot authorize decisions", function()
     local secret = {}; issecretvalue = function(v) return v == secret end

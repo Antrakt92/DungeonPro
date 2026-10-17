@@ -35,7 +35,8 @@ Level ranges are provisional recommendations.
   unknown quest states, with explanations for level gates, missing prerequisites,
   character restrictions and unverified data.
   Detail cards distinguish the recorded quest level from its minimum pickup level,
-  and show any listed class/race limits. Level alone does not confirm availability.
+  and show listed class limits. Race does not filter or block dungeon quests.
+  Level alone does not confirm availability.
   Quests in progress and ready to turn in use familiar quest icons when available.
 - Recursive prerequisite planning where acceptance conditions are verified;
   unverified chains remain available for inspection.
@@ -47,7 +48,7 @@ Level ranges are provisional recommendations.
 - Switch between quests for your character and all character restrictions.
   Restricted quests stay available for inspection and do not add preparation
   actions. Character and level filters are remembered per character.
-  Restricted rows identify the recorded faction, class and race instead of only
+  Restricted rows identify the recorded faction and class instead of only
   saying that a quest is not for your character.
 - Initial paladin and warlock quests are also listed for their associated
   dungeons, beyond the ordinary dungeon categories. Their preparation chains

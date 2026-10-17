@@ -1032,7 +1032,7 @@ check("Actual cached rewards expose native item icons and current-source-only ho
     for _, key in ipairs(keys) do _G[key] = saved[key] end
     ui.quest, ui.detailHistory = previous, history; ui:Refresh()
 end)
-check("All-character inspection explains actual paladin race and level limits without authorizing pickup", function()
+check("All-character inspection retains paladin class and level limits without racial conditions", function()
     local ui = addon.UI
     local previous, history, all = ui.quest, ui.detailHistory, ui.includeUnavailable
     local classes, creatures = LOCALIZED_CLASS_NAMES_MALE, C_CreatureInfo
@@ -1053,11 +1053,28 @@ check("All-character inspection explains actual paladin race and level limits wi
     ui.includeUnavailable = true; ui:InspectQuest(7647); ui:Refresh()
     assert(shown(addon.L("QUEST_LEVEL", 60) .. " · " .. addon.L("QUEST_MIN_LEVEL", 60)))
     assert(shown(addon.L("QUEST_CLASSES", "Native Paladin")))
-    assert(shown(addon.L("QUEST_RACES", "Native Human, Native Dwarf")))
+    assert(not shown(addon.L("QUEST_RACES", "Native Human, Native Dwarf")))
     assert(ui.engine:State(7647).status == "UNAVAILABLE" and not ui.action and #waypoints == pins)
     LOCALIZED_CLASS_NAMES_MALE, C_CreatureInfo = classes, creatures
     ui.quest, ui.detailHistory, ui.includeUnavailable = previous, history, all; ui:Refresh()
     assert(not shown(addon.L("QUEST_CLASSES", "Native Paladin")))
+end)
+check("A Human sees actual Destruction in Deadmines without racial exclusion or invented pickup readiness", function()
+    local ui = addon.UI
+    local previous, dungeon, all, race = ui.quest, ui.dungeon, ui.includeUnavailable, UnitRace
+    local active, completed = C_QuestLog.IsOnQuest, C_QuestLog.IsQuestFlaggedCompleted
+    UnitRace = function() return "Human", "Human", 1 end
+    C_QuestLog.IsOnQuest = function() return false end
+    C_QuestLog.IsQuestFlaggedCompleted = function() return false end
+    for _, d in ipairs(addon.dungeons) do if d.key == "dm" then ui.dungeon = d end end
+    ui.includeUnavailable = false; ui.quest = 92753; ui:Refresh()
+    local row
+    for _, r in ipairs(ui.rows) do if r.shown and r.questID == 92753 then row = r end end
+    assert(row and ui.engine:State(92753).status == "UNKNOWN" and not ui.action)
+    assert(addon.quests[92753].races[1] == 3 and addon.quests[92753].requirementsKnown == false)
+    assert(ui.engine:State(1654).status == "UNAVAILABLE", "class restriction still applies to Mage")
+    UnitRace = race; C_QuestLog.IsOnQuest, C_QuestLog.IsQuestFlaggedCompleted = active, completed
+    ui.quest, ui.dungeon, ui.includeUnavailable = previous, dungeon, all; ui:Refresh()
 end)
 check("The rl alias invokes native reload only on command and preserves other addon handlers", function()
     local saved, calls, others = ReloadUI, 0, 0

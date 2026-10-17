@@ -25,7 +25,7 @@ end
 function Planner.Eligible(q, context)
     if not contextCurrent(context) then return nil, "character" end
     local unknown
-    for _, rule in ipairs({ { "factions", "faction" }, { "classes", "class" }, { "races", "race" } }) do
+    for _, rule in ipairs({ { "factions", "faction" }, { "classes", "class" } }) do
         if q[rule[1]] then
             local value = context[rule[2]]
             if value == nil then unknown = unknown or rule[2]

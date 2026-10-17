@@ -325,15 +325,13 @@ local function audienceLabel(q, current)
     q = addon.Clean(q, "table")
     if not q then return nil end
     local groups = {}
-    for _, rule in ipairs({ { "factions", "string" }, { "classes", "string", addon.ClassName },
-        { "races", "number", addon.RaceName } }) do
+    for _, rule in ipairs({ { "factions", "string" }, { "classes", "string", addon.ClassName } }) do
         local entries = addon.Clean(q[rule[1]], "table")
         local names, seen = {}, {}
         for index = 1, math.min(entries and #entries or 0, 100) do
             local value = addon.Clean(entries[index], rule[2])
             local valid = rule[1] == "factions" and (value == "Alliance" or value == "Horde" or value == "Neutral") or
-                rule[1] == "classes" and value and #value <= 100 and value:match("^[A-Z]+$") or
-                rule[1] == "races" and value and value > 0 and value <= 9007199254740991 and value % 1 == 0
+                rule[1] == "classes" and value and #value <= 100 and value:match("^[A-Z]+$")
             if valid and not seen[value] then
                 seen[value] = true
                 local name
@@ -342,7 +340,7 @@ local function audienceLabel(q, current)
                     name = addon.Read(rule[3], "string", value)
                     if not current() then return false end
                     if not name or #name > 500 or not name:find("%S") then
-                        name = rule[1] == "races" and addon.L("RACE_ID", value) or value
+                        name = value
                     end
                 end
                 names[#names + 1] = audienceName(rule[1], value, name)
@@ -1795,20 +1793,18 @@ function UI:RefreshDetail()
         end)
         if factions == false then return end
         if factions then metadataParts[#metadataParts + 1] = addon.L("QUEST_FACTIONS", factions) end
-        for _, rule in ipairs({ { "classes", "string", "QUEST_CLASSES", addon.ClassName },
-            { "races", "number", "QUEST_RACES", addon.RaceName } }) do
+        for _, rule in ipairs({ { "classes", "string", "QUEST_CLASSES", addon.ClassName } }) do
             local entries = addon.Clean(q[rule[1]], "table")
             local names, seen = {}, {}
             for index = 1, math.min(entries and #entries or 0, 100) do
                 local value = addon.Clean(entries[index], rule[2])
-                local valid = rule[2] == "number" and value and value > 0 and value % 1 == 0 or
-                    rule[2] == "string" and value and #value <= 100 and value:find("%S")
+                local valid = value and #value <= 100 and value:find("%S")
                 if valid and not seen[value] then
                     seen[value] = true
                     local name = addon.Read(rule[4], "string", value)
                     if self.quest ~= renderQuest or self.rewardGeneration ~= rewardGeneration then return end
                     if not name or #name > 500 or not name:find("%S") then
-                        name = rule[2] == "number" and addon.L("RACE_ID", value) or value
+                        name = value
                     end
                     names[#names + 1] = audienceName(rule[1], value, name)
                 end

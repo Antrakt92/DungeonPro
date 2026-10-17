@@ -447,7 +447,7 @@ check("Character history and each restriction have specific detail reasons", fun
     showDetail(2, context)
     assert(detailHas(addon.L("REASON_character")) and not ui.action)
     for _, rule in ipairs({ { "factions", "faction", "Horde", "Alliance" },
-        { "classes", "class", "WARRIOR", "MAGE" }, { "races", "race", 1, 3 } }) do
+        { "classes", "class", "WARRIOR", "MAGE" } }) do
         context = addon.Context(); context[rule[2]] = rule[4]
         addon.quests[2][rule[1]] = { rule[3] }
         showDetail(2, context)
@@ -2209,7 +2209,7 @@ check("A throwing icon setter releases its busy guard before the next ordinary r
     assert(not ui.rewardTextureBusy and first.shown and first.rewardBinding.id == 701)
     f:finish()
 end)
-check("All-character inspection explains recorded quest classes races and minimum level", function()
+check("All-character inspection explains class and minimum level without racial restrictions", function()
     local oldContext, className, raceName = addon.Context, addon.ClassName, addon.RaceName
     local dungeon, include, quest = ui.dungeon, ui.includeUnavailable, ui.quest
     addon.Context = function() return { level = 60, class = "WARRIOR", race = 1,
@@ -2221,12 +2221,12 @@ check("All-character inspection explains recorded quest classes races and minimu
     ui.includeUnavailable, ui.quest = true, 9980; ui:Refresh()
     assert(ui.engine:State(9980).status == "UNAVAILABLE" and not ui.action and not ui.guide.enabled)
     assert(detailIncludes(addon.L("QUEST_MIN_LEVEL", 40)))
-    assert(detailIncludes(addon.L("QUEST_CLASSES", "Native mage")) and detailIncludes(addon.L("QUEST_RACES", "Native new race")))
+    assert(detailIncludes(addon.L("QUEST_CLASSES", "Native mage")) and not detailIncludes(addon.L("QUEST_RACES", "Native new race")))
     local found = false
     for _, row in ipairs(visibleRows()) do if row.title.text == "Quest 9980" then found = true end end
     assert(found)
     addon.ClassName, addon.RaceName = nil, nil; ui:RefreshDetail()
-    assert(detailIncludes(addon.L("QUEST_CLASSES", "MAGE")) and detailIncludes(addon.L("QUEST_RACES", addon.L("RACE_ID", 95))))
+    assert(detailIncludes(addon.L("QUEST_CLASSES", "MAGE")) and not detailIncludes(addon.L("QUEST_RACES", addon.L("RACE_ID", 95))))
     assert(not detailIncludes(addon.L("QUEST_RACES", "Native new race")) and ui.engine:State(9980).status == "UNAVAILABLE" and not ui.action)
     addon.Context, addon.ClassName, addon.RaceName = oldContext, className, raceName
     addon.quests[9980] = nil; ui.dungeon, ui.includeUnavailable, ui.quest = dungeon, include, quest; ui:Refresh()
@@ -2243,13 +2243,13 @@ check("Restriction display cleans deduplicates and bounds entries without guessi
     local context = { level = 60, active = function() return true end, completed = function() return false end }
     showDetail(9981, context)
     classReads, raceReads = 0, 0; ui:RefreshDetail()
-    assert(classReads == 1 and raceReads == 2)
+    assert(classReads == 1 and raceReads == 0)
     assert(detailIncludes(addon.L("QUEST_CLASSES", "MAGE")))
-    assert(detailIncludes(addon.L("QUEST_RACES", addon.L("RACE_ID", 95) .. ", " .. addon.L("RACE_ID", 1))))
+    assert(not detailIncludes(addon.L("QUEST_RACES", addon.L("RACE_ID", 95) .. ", " .. addon.L("RACE_ID", 1))))
     assert(ui.engine:State(9981).status == "ACTIVE")
     local many = {}; for i = 1, 101 do many[i] = i end
     addon.quests[9981].races = many; raceReads = 0; addon.RaceName = function() raceReads = raceReads + 1; return nil end
-    ui:RefreshDetail(); assert(raceReads == 100)
+    ui:RefreshDetail(); assert(raceReads == 0)
     for _, minimum in ipairs({ 0, -1, 1.5, "35", math.huge, restricted }) do
         addon.quests[9981].minLevel = minimum; ui:RefreshDetail()
         assert(not detailIncludes(addon.L("QUEST_MIN_LEVEL", 35)))
@@ -2271,7 +2271,7 @@ check("Restriction labels refresh all locales and recycled cards omit absent lim
         addon.db.locale = code; showDetail(9982)
         assert(detailIncludes(addon.L("QUEST_MIN_LEVEL", 50)))
         assert(detailIncludes(addon.L("QUEST_CLASSES", "Client class")))
-        assert(detailIncludes(addon.L("QUEST_RACES", addon.L("RACE_ID", 95))))
+        assert(not detailIncludes(addon.L("QUEST_RACES", addon.L("RACE_ID", 95))))
         assert(ui.engine:State(9982).status == "UNKNOWN" and not ui.action)
         dictionaries = dictionaries + 1
     end
@@ -2283,7 +2283,7 @@ check("Restriction labels refresh all locales and recycled cards omit absent lim
 end)
 check("Restriction name reentry cannot append old labels after quest or generation changes", function()
     local className, raceName = addon.ClassName, addon.RaceName
-    for _, helper in ipairs({ "ClassName", "RaceName" }) do
+    for _, helper in ipairs({ "ClassName" }) do
         for _, sameQuest in ipairs({ false, true }) do
             local classes, races = { "MAGE" }, { 95 }
             addon.quests[9984] = { id = 9984, minLevel = 1, requirementsKnown = false, classes = classes, races = races }
@@ -2306,7 +2306,7 @@ check("Restriction name reentry cannot append old labels after quest or generati
             assert(not detailIncludes(addon.L("QUEST_CLASSES", "Stale outer restriction")))
             assert(not detailIncludes(addon.L("QUEST_RACES", "Stale outer restriction")))
             if sameQuest then
-                assert(detailIncludes(addon.L("QUEST_CLASSES", "Current class")) and detailIncludes(addon.L("QUEST_RACES", "Current race")))
+                assert(detailIncludes(addon.L("QUEST_CLASSES", "Current class")) and not detailIncludes(addon.L("QUEST_RACES", "Current race")))
             else
                 assert(not detailIncludes(addon.L("QUEST_CLASSES", "Current class")) and not detailIncludes(addon.L("QUEST_RACES", "Current race")))
             end
@@ -2664,7 +2664,7 @@ do
         end
         LOCALIZED_CLASS_NAMES_MALE = localized; restore()
     end)
-    check("Audience icons remain distinct deduplicate clean tokens and leave neutral custom and race labels as text", function()
+    check("Audience icons retain factions and classes while race labels remain absent", function()
         local restore = audienceFixture()
         local q = addon.quests[13003]
         q.factions = { "Alliance", "Horde", "Neutral", "Alliance" }
@@ -2682,16 +2682,17 @@ do
         assert(metadata:find("PVP-AllianceIcon:14:14|a " .. addon.L("FACTION_Alliance"), 1, true))
         assert(metadata:find(", CUSTOM", 1, true) and not metadata:find("classicon-custom", 1, true))
         assert(metadata:find(addon.L("FACTION_Neutral"), 1, true) and not metadata:find("NeutralIcon", 1, true))
-        assert(metadata:find("Human, New race", 1, true) and not metadata:find("raceicon", 1, true))
+        assert(not metadata:find("Human, New race", 1, true) and not metadata:find("raceicon", 1, true))
         q.factions, q.classes = nil, { "CUSTOM" }; ui:RefreshDetail()
         for _, fs in ipairs(ui.details) do if fs.shown then assert(not fs.text:find("|A:", 1, true)) end end
         restore()
     end)
-    check("Unavailable quest rows show recorded faction class and race audiences without changing other statuses", function()
+    check("Unavailable quest rows show faction and class audiences without racial exclusions", function()
         local restore = audienceFixture()
         assert(ui.rows[1].note.text:find(addon.L("FACTION_Alliance"), 1, true))
         assert(ui.rows[2].note.text:find("Paladin", 1, true) and not ui.rows[2].note.text:find(addon.L("UNAVAILABLE"), 1, true))
-        assert(audienceText(ui.rows[3].note.text):find(addon.L("FACTION_Alliance") .. " · Paladin · Human, New race", 1, true))
+        assert(audienceText(ui.rows[3].note.text):find(addon.L("FACTION_Alliance") .. " · Paladin", 1, true))
+        assert(not ui.rows[3].note.text:find("Human, New race", 1, true))
         assert(ui.rows[4].note.text:find(addon.L("UNKNOWN_REQUIREMENTS"), 1, true))
         assert(ui.rows[5].note.text:find(addon.L("ACTIVE"), 1, true) and not ui.rows[5].note.text:find(addon.L("FACTION_Alliance"), 1, true))
         assert(ui.rows[6].note.text:find(addon.L("COMPLETED"), 1, true) and not ui.rows[6].note.text:find("Paladin", 1, true))
@@ -2713,7 +2714,8 @@ do
         for code, strings in pairs(addon.locales) do
             addon.db.locale = code; ui:RefreshQuests()
             assert(type(strings.FACTION_Alliance) == "string" and type(strings.FACTION_Horde) == "string" and type(strings.FACTION_Neutral) == "string")
-            assert(audienceText(ui.rows[3].note.text):find(addon.L("FACTION_Alliance") .. " · PALADIN · " .. addon.L("RACE_ID", 1) .. ", " .. addon.L("RACE_ID", 95), 1, true))
+            assert(audienceText(ui.rows[3].note.text):find(addon.L("FACTION_Alliance") .. " · PALADIN", 1, true))
+            assert(not ui.rows[3].note.text:find(addon.L("RACE_ID", 95), 1, true))
         end
         issecretvalue = checker
         local long = string.rep("Long localized paladin ", 12)
@@ -2728,7 +2730,7 @@ do
     check("Reentrant audience-name reads cannot overwrite the newly rendered dungeon list", function()
         local restore = audienceFixture()
         local other = { key = "audience-other", name = "Other", minLevel = 1, maxLevel = 60, quests = { 13007 } }
-        for _, helper in ipairs({ "ClassName", "RaceName" }) do
+        for _, helper in ipairs({ "ClassName" }) do
             ui.dungeon = addon.dungeons[1]
             addon.ClassName = function() return "Paladin" end; addon.RaceName = function() return "Human" end
             local armed = true
@@ -6575,12 +6577,12 @@ local function emptyPreparationFixture()
 end
 check("Actual completed Deadmines quests remain directly listed without a retired preparation-mode detour",function()
     local finish=emptyPreparationFixture()
-    assert(#ui.currentPlan.rows==6 and #visibleRows()==6 and not ui.currentPlan.preparationEmpty)
+    assert(#ui.currentPlan.rows==7 and #visibleRows()==7 and not ui.currentPlan.preparationEmpty)
     local notice=addon.L("PREPARATION_EMPTY",addon.L("QUESTS"));local row=ui.rows[1]
     assert(row.shown and row.enabled and row.scripts.OnClick)
     assert(not detailHas(notice) and detailHas(addon.L("OVERVIEW_PICK")) and ui.coverage.text==addon.L("PARTIAL"))
     assert(not detailHas(addon.L("PREPARED")) and not ui.action and ui.quest==nil and #ui.detailHistory==0)
-    assert(not ui.preparation and #visibleRows()==6 and not ui.currentPlan.preparationEmpty)
+    assert(not ui.preparation and #visibleRows()==7 and not ui.currentPlan.preparationEmpty)
     assert(detailHas(addon.L("OVERVIEW_PICK")) and not detailHas(notice) and ui.rows[1].enabled)
     ui.rows[1].scripts.OnClick(ui.rows[1],"LeftButton");assert(ui.quest==ui.rows[1].questID)
     finish()
@@ -6589,7 +6591,7 @@ check("Direct quest browsing localizes and preserves genuinely empty or excluded
     local finish=emptyPreparationFixture()
     for code in pairs(addon.locales)do
         addon.db.locale=code;ui:Refresh();local notice=addon.L("PREPARATION_EMPTY",addon.L("QUESTS"))
-        assert(#visibleRows()==6 and detailOccurrences(notice)==0 and ui.rows[1].enabled and not ui.preparation)
+        assert(#visibleRows()==7 and detailOccurrences(notice)==0 and ui.rows[1].enabled and not ui.preparation)
     end
     ui.dungeon={key="empty-guidance",name="No target data",minLevel=1,maxLevel=60,coverage="partial",quests={}}
     ui:Refresh();assert(not ui.currentPlan.preparationEmpty and ui.coverage.text==addon.L("EMPTY") and not ui.rows[1].shown)
@@ -6608,7 +6610,7 @@ check("Empty preparation label reentry preserves a newer quest view and its actu
         if armed then armed=false;ui.preparation=false;ui:Refresh()end
     end
     ui:Refresh();ui.rows[1].title.SetText=original
-    assert(not ui.preparation and #visibleRows()==6 and not ui.currentPlan.preparationEmpty)
+    assert(not ui.preparation and #visibleRows()==7 and not ui.currentPlan.preparationEmpty)
     assert(ui.rows[1].enabled and ui.rows[1].title.text==addon.QuestName(ui.rows[1].questID))
     ui.rows[1].scripts.OnClick(ui.rows[1],"LeftButton");assert(ui.quest==ui.rows[1].questID)
     finish()
@@ -6623,7 +6625,7 @@ check("Empty preparation overview prompt localization cannot overwrite a nested 
         return value
     end
     ui:RefreshDetail();addon.L=original
-    assert(not ui.preparation and #visibleRows()==6 and detailHas(addon.L("OVERVIEW_PICK")))
+    assert(not ui.preparation and #visibleRows()==7 and detailHas(addon.L("OVERVIEW_PICK")))
     assert(not detailHas(addon.L("PREPARATION_EMPTY",addon.L("QUESTS"))))
     finish()
 end)
@@ -8632,5 +8634,42 @@ check("Refreshing a footer hint clears only owned stale text and reentry cannot 
     tip.Hide=function(self)hide(self);if armed then armed=false;showCompactDetail(2)end end
     ui:RefreshDetail();assert(not armed and ui.quest==2 and not detailHas("Quest 3"))
     GameTooltip=old;ui.quest=quest;ui:Refresh()
+end)
+check("Human inspection lists actual92753 without racial labels while unknown requirements remain unknown",function()
+    local finish=emptyPreparationFixture();local raceName=addon.RaceName;local reads=0
+    addon.RaceName=function()reads=reads+1;error("race names are outside audience policy")end
+    addon.Context=function()return{level=60,faction="Alliance",class="WARRIOR",race=1,
+        active=function()return false end,completed=function()return false end}end
+    local q=addon.quests[92753];local races=q.races
+    assert(races and #races>0 and q.requirementsKnown==false)
+    for code in pairs(addon.locales)do
+        addon.db.locale=code;ui.quest=92753;ui:Refresh()
+        local row;for _,candidate in ipairs(visibleRows())do if candidate.questID==92753 then row=candidate end end
+        assert(row and ui.engine:State(92753).status=="UNKNOWN" and not ui.action)
+        assert(not row.note.text:find(addon.L("UNAVAILABLE"),1,true))
+        for _,expanded in ipairs({false,true})do
+            if expanded then expandDetail()end
+            for _,fs in ipairs(ui.details)do if fs.shown then
+                assert(not fs.text:find(addon.L("RACE_ID",95),1,true) and not fs.text:find("High Order",1,true))
+                assert(not fs.text:find(addon.L("QUEST_RACES",""),1,true))
+            end end
+            assert(detailIncludes(addon.L("QUEST_MIN_LEVEL",q.minLevel)))
+        end
+        assert(q.races==races and #races==4 and reads==0)
+    end
+    addon.RaceName=raceName;finish()
+end)
+check("Race-only facts never create an unavailable audience note or call native race naming",function()
+    local finish=emptyPreparationFixture();local raceName=addon.RaceName
+    addon.RaceName=function()error("race labels must not be read")end
+    addon.quests[99094]={id=99094,name="Race-only source",races={3,4,7,95},minLevel=1,requirementsKnown=false}
+    ui.dungeon={key="race-policy",name="Race policy",minLevel=1,maxLevel=60,quests={99094}}
+    addon.Context=function()return{level=60,faction="Alliance",class="WARRIOR",race=1,
+        active=function()return false end,completed=function()return false end}end
+    ui.quest=99094;ui.includeUnavailable=false;ui:Refresh()
+    assert(#visibleRows()==1 and ui.engine:State(99094).status=="UNKNOWN" and not ui.action)
+    assert(ui.rows[1].note.text:find(addon.L("UNKNOWN_REQUIREMENTS"),1,true))
+    assert(not ui.rows[1].note.text:find(addon.L("UNAVAILABLE"),1,true))
+    addon.RaceName=raceName;finish()
 end)
 print("Preparation UI modeled checks passed: " .. total .. " (no native layout validation)")
