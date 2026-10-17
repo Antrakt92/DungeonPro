@@ -1637,6 +1637,24 @@
             1490
           ]
         }
+      ],
+      "objectiveItems": [
+        {
+          "itemID": 9738,
+          "name": "Gem of Cobrahn"
+        },
+        {
+          "itemID": 9739,
+          "name": "Gem of Anacondra"
+        },
+        {
+          "itemID": 9740,
+          "name": "Gem of Pythas"
+        },
+        {
+          "itemID": 9741,
+          "name": "Gem of Serpentis"
+        }
       ]
     },
     {
@@ -1667,7 +1685,13 @@
         "dropNPCID": 3654,
         "dropName": "Mutanus the Devourer",
         "dungeonKey": "wc"
-      }
+      },
+      "providedItems": [
+        {
+          "itemID": 10441,
+          "name": "Glowing Shard"
+        }
+      ]
     },
     {
       "id": 1491,
@@ -1703,6 +1727,13 @@
           "ids": [
             865
           ]
+        }
+      ],
+      "objectiveItems": [
+        {
+          "itemID": 6464,
+          "name": "Wailing Essence",
+          "quantity": 6
         }
       ]
     },
@@ -1845,7 +1876,13 @@
         "mapID": 1413,
         "x": 63.0,
         "y": 37.4
-      }
+      },
+      "objectiveItems": [
+        {
+          "itemID": 5334,
+          "name": "99-Year-Old Port"
+        }
+      ]
     },
     {
       "id": 1486,
@@ -2219,7 +2256,13 @@
         ]
       },
       "requirementsKnown": false,
-      "startsInside": true
+      "startsInside": true,
+      "objectiveItems": [
+        {
+          "itemID": 5881,
+          "name": "Head of Kelris"
+        }
+      ]
     },
     {
       "id": 6565,
@@ -2254,6 +2297,12 @@
       "storyline": [
         6564,
         6565
+      ],
+      "objectiveKills": [
+        {
+          "npcID": 12902,
+          "name": "Lorgus Jett"
+        }
       ]
     },
     {
