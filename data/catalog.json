@@ -779,7 +779,53 @@
         92753,
         92819
       ],
-      "storylineEvidence": "https://www.wowhead.com/forever/storyline/toxic-soil-6026"
+      "storylineEvidence": "https://www.wowhead.com/forever/storyline/toxic-soil-6026",
+      "objectiveEvents": [
+        {
+          "npcID": 253370,
+          "name": "Explosives placed"
+        }
+      ],
+      "providedItems": [
+        {
+          "itemID": 254553,
+          "name": "Extra-Destructive Explosives"
+        }
+      ],
+      "finish": {
+        "npcID": 253279,
+        "name": "Alba Fairmoon",
+        "mapID": 1436,
+        "zoneName": "Westfall",
+        "x": 38.4,
+        "y": 83.4,
+        "reportedLocations": [
+          {
+            "mapID": 1436,
+            "zoneName": "Westfall",
+            "x": 38.4,
+            "y": 83.4
+          },
+          {
+            "mapID": 1436,
+            "zoneName": "Westfall",
+            "x": 38.4,
+            "y": 83.6
+          },
+          {
+            "mapID": 1436,
+            "zoneName": "Westfall",
+            "x": 38.6,
+            "y": 83.4
+          },
+          {
+            "mapID": 1436,
+            "zoneName": "Westfall",
+            "x": 38.6,
+            "y": 83.6
+          }
+        ]
+      }
     },
     {
       "id": 92819,
@@ -1149,7 +1195,13 @@
           ]
         }
       ],
-      "startsInside": true
+      "startsInside": true,
+      "providedItems": [
+        {
+          "itemID": 14381,
+          "name": "Grimtotem Satchel"
+        }
+      ]
     },
     {
       "id": 5725,
@@ -2576,6 +2628,24 @@
         {
           "id": 95042,
           "itemID": 272448
+        }
+      ],
+      "objectiveItems": [
+        {
+          "itemID": 267454,
+          "name": "Trevan's Weapon Notes"
+        },
+        {
+          "itemID": 6994,
+          "name": "Whitestone Oak Lumber"
+        },
+        {
+          "itemID": 267361,
+          "name": "Enchanted Silver Ingot"
+        },
+        {
+          "itemID": 272448,
+          "name": "Purified Kor Gem"
         }
       ]
     },
