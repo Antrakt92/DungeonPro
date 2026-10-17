@@ -91,7 +91,7 @@ end)
 check("Automatic selection displays the actual language and aliases retain native captions", function()
     local addon, ui = fixture(); addon.db.locale = "auto"; GetLocale = function() return "ruRU" end
     assert(addon.Language:Refresh(ui) and ui.language.languageCaption == "Русский" and ui.language.text == "RU")
-    assert(addon.Language:Caption("enGB") == "English" and addon.Language:Caption("esMX") == "Español")
+    assert(addon.Language:Caption("enGB") == "English" and addon.Language:Caption("esMX") == "Español (España)")
     GetLocale = function() return "unknown" end
     assert(addon.Language:Refresh(ui) and ui.language.languageCaption == "English")
 end)
@@ -320,12 +320,14 @@ check("Popup requests screen clamping and each row keeps its own script across p
     state.rows[3].scripts.OnEnter()
     assert(state.rows[1].fontLocale == "ruRU" and state.rows[2].fontLocale == "enUS")
     assert(state.rows[3].fontLocale == "ruRU" and state.rows[4].fontLocale == "deDE")
-    assert(state.rows[9].text == "Korean" and state.rows[10].text == "Chinese (Simplified)" and
-        state.rows[11].text == "Chinese (Traditional)")
+    assert(state.rows[9].text == "한국어" and state.rows[10].text == "简体中文" and
+        state.rows[11].text == "繁體中文")
+    assert(state.rows[6].text == "Español (España)" and state.rows[8].text == "Português (Brasil)")
+    assert(state.rows[9].fontLocale == "koKR" and state.rows[10].fontLocale == "zhCN" and state.rows[11].fontLocale == "zhTW")
     state.rows[4].scripts.OnEnter()
     assert(state.rows[1].fontLocale == "deDE" and state.rows[3].fontLocale == "ruRU")
     state.rows[10].scripts.OnClick()
-    assert(addon.db.locale == "zhCN", "readable fallback must retain the real language choice")
+    assert(addon.db.locale == "zhCN", "native labels retain the real language choice")
 end)
 
 print("Language preview modeled checks passed: " .. total .. " (native pointer and font acceptance pending)")

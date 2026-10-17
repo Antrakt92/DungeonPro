@@ -2,8 +2,8 @@ local _, addon = ...
 local Language = {}
 addon.Language = Language
 local choices = { { "auto" }, { "enUS", "English" }, { "ruRU", "Русский" }, { "deDE", "Deutsch" },
-    { "frFR", "Français" }, { "esES", "Español" }, { "itIT", "Italiano" }, { "ptBR", "Português" },
-    { "koKR", "한국어", "Korean" }, { "zhCN", "简体中文", "Chinese (Simplified)" }, { "zhTW", "繁體中文", "Chinese (Traditional)" } }
+    { "frFR", "Français" }, { "esES", "Español (España)" }, { "itIT", "Italiano" }, { "ptBR", "Português (Brasil)" },
+    { "koKR", "한국어" }, { "zhCN", "简体中文" }, { "zhTW", "繁體中文" } }
 
 local function code(value)
     value = addon.Clean(value, "string")
@@ -146,13 +146,8 @@ function Language:RefreshRows(state)
             local font = theme and addon.Clean(theme.StyleLanguageRow, "function")
             if font then
                 local locale = choice[1] == "auto" and resolved(selection) or choice[1]
-                local supported = addon.Read(font, "boolean", row, locale)
+                addon.Read(font, "boolean", row, locale)
                 if not same() then return false end
-                if supported ~= true and choice[3] then
-                    label = choice[3]
-                    addon.Read(font, "boolean", row, "enUS")
-                    if not same() then return false end
-                end
             end
             invoke(row, "SetText", label)
             if not same() then return false end
