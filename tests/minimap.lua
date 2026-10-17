@@ -170,5 +170,28 @@ check("Failed show preserves hidden intent so the next toggle recovers immediate
     width=0; assert(not m:Reset() and config.angle==17 and config.hide==false)
     width=200; assert(m:Reset() and config.angle==225 and config.hide==false)
 end)
+check("A hidden launcher recovers in one toggle after initially unavailable minimap geometry",function()
+    local config={hide=false,angle=17};local m=reset(config);width=0
+    assert(not m:Initialize() and not m.button.shown and config.hide==false)
+    width=200
+    assert(m:ToggleVisibility() and m.button.shown and config.hide==false and config.angle==17)
+    assert(m:ToggleVisibility() and not m.button.shown and config.hide==true)
+    assert(m:ToggleVisibility() and m.button.shown and config.hide==false)
+end)
+check("Unknown visibility and replaced launcher sessions cannot toggle a newer preference",function()
+    for _,kind in ipairs({"unknown","restricted","throw","session","config","owner"})do
+        local config={hide=false,angle=17};local m=reset(config);assert(m:Initialize())
+        local button=m.button;local newer
+        button.IsShown=function()
+            if kind=="throw"then error("visibility unavailable")end
+            if kind=="session"then m.session={};return true end
+            if kind=="config"then newer={hide=false};m.config=newer;return true end
+            if kind=="owner"then addon.Minimap={};return true end
+            return kind=="restricted"and secret or nil
+        end
+        assert(m:ToggleVisibility()==false and config.hide==false and button.shown,kind)
+        assert(not newer or newer.hide==false)
+    end
+end)
 issecretvalue=nil
 print("Minimap modeled checks passed: "..total.." (native client unverified)")

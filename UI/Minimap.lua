@@ -204,15 +204,26 @@ end
 
 function M:ToggleVisibility()
     if not self:Current() and not self:Initialize() then return false end
-    if addon.Clean(self.config.hide, "boolean") ~= true then
-        self.config.hide = true
-        self.button:Hide(); self:StopDrag(false); self:ReleaseTooltip()
-    else
-        if not self:Place(angle(self.config.angle) or 225) then self.button:Hide(); return false end
-        self.config.hide = false
-        self.button:Show()
+    local button, parent, config, session = self.button, self.parent, self.config, self.session
+    local function current()
+        return addon.Minimap == self and self:Current() and self.button == button and self.parent == parent and
+            self.config == config and self.session == session
     end
-    return true
+    local shown = addon.Read(method(button, "IsShown"), "boolean", button)
+    if not current() or shown == nil then return false end
+    if shown then
+        config.hide = true
+        button:Hide(); self:StopDrag(false); self:ReleaseTooltip()
+    else
+        local position = angle(config.angle) or 225
+        if not current() then return false end
+        local placed = self:Place(position)
+        if not current() then return false end
+        if not placed then button:Hide(); return false end
+        config.hide = false
+        button:Show()
+    end
+    return current()
 end
 
 function M:Reset()
