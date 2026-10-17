@@ -34,26 +34,23 @@ local function resolved(value)
     return value
 end
 
-local function flag(owner, value, row, check)
+local function languageIcon(owner, check)
     if not check() then return false end
-    local texture = owner.languageFlag
+    local texture = owner.languageIcon
     if not texture then
         local create = method(owner, "CreateTexture")
         local ok, made = pcall(function() return create and create(owner, nil, "ARTWORK") end)
         texture = ok and object(made)
         if not check() then return false end
         if not texture then return false end
-        owner.languageFlag = texture
+        owner.languageIcon = texture
     end
     if not invoke(texture, "Hide") or not check() then return false end
-    if not invoke(texture, "SetSize", 24, 16) or not check() then return false end
+    if not invoke(texture, "SetSize", 18, 18) or not check() then return false end
     if not invoke(texture, "ClearAllPoints") or not check() then return false end
-    local ok
-    if row then ok = invoke(texture, "SetPoint", "LEFT", owner, "LEFT", 12, 0)
-    else ok = invoke(texture, "SetPoint", "CENTER", owner, "CENTER", 0, 0) end
-    if not ok or not check() then return false end
+    if not invoke(texture, "SetPoint", "LEFT", owner, "LEFT", 8, 0) or not check() then return false end
     local accepted = addon.Read(method(texture, "SetTexture"), "boolean", texture,
-        "Interface\\AddOns\\DungeonPro\\Media\\Flags\\" .. value)
+        "Interface\\AddOns\\DungeonPro\\Media\\Icons\\Language")
     if accepted ~= true or not check() then return false end
     return invoke(texture, "Show") and check()
 end
@@ -103,10 +100,22 @@ function Language:Refresh(ui)
         return ok and value == true
     end
     if not same() then return false end
-    local painted = flag(button, locale, false, same)
+    local painted = languageIcon(button, same)
     if not same() then return false end
     button.languageCaption, button.languageLocale = name, locale
-    local text = painted and "" or locale:sub(1, 2):upper()
+    local text = locale:sub(1, 2):upper()
+    local label = object(addon.Read(method(button, "GetFontString"), "table", button))
+    if not same() then return false end
+    if label then
+        invoke(label, "ClearAllPoints")
+        if not same() then return false end
+        invoke(label, "SetPoint", painted and "LEFT" or "CENTER", button, painted and "LEFT" or "CENTER", painted and 32 or 0, 0)
+        if not same() then return false end
+        invoke(label, "SetWidth", painted and 24 or 48)
+        if not same() then return false end
+        invoke(label, "SetJustifyH", "CENTER")
+        if not same() then return false end
+    end
     local binding = { current = same, value = text }; button.languageLabelText = binding
     local ok = invoke(button, "SetText", text)
     local state = self.session
@@ -277,12 +286,10 @@ function Language:Open(ui)
             if not current(state) then return false end
         end
         invoke(row, "SetText", choice[2] or addon.L("LANGUAGE_AUTO"))
-        flag(row, resolved(value), true, function() return current(state) end)
-        if not current(state) then return false end
         local text = addon.Read(method(row, "GetFontString"), "table", row)
         if text then
-            invoke(text, "ClearAllPoints"); invoke(text, "SetPoint", "LEFT", row, "LEFT", 46, 0)
-            invoke(text, "SetWidth", 142); invoke(text, "SetJustifyH", "LEFT")
+            invoke(text, "ClearAllPoints"); invoke(text, "SetPoint", "LEFT", row, "LEFT", 12, 0)
+            invoke(text, "SetWidth", 170); invoke(text, "SetJustifyH", "LEFT")
         end
         if not row.languageMark then
             local create = method(row, "CreateTexture")

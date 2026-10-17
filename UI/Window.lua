@@ -3653,7 +3653,7 @@ function UI:Create()
     self.entrance = button(frame, "", 160, function() self:VisitEntrance() end)
     self.entrance:SetPoint("TOPLEFT", 520, -84)
     styleRow(self.entrance, "control", false)
-    local language = button(frame, "", 36, function() self:OpenLanguageMenu() end)
+    local language = button(frame, "", 64, function() self:OpenLanguageMenu() end)
     self.language = language
     language:SetPoint("TOPRIGHT", -44, -45)
     local languageModule = addon.Clean(addon.Language, "table")

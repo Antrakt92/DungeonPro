@@ -25,11 +25,11 @@ class PackageTests(unittest.TestCase):
                 self.assertIn("DungeonPro/Database/Catalog.lua", names)
                 for resource in ("NotoSans-Regular.ttf", "OFL.txt", "NOTICE.txt"):
                     self.assertIn("DungeonPro/Media/Fonts/" + resource, names)
-                for resource in ("Wowhead.tga", "NOTICE.txt"):
+                for resource in ("Wowhead.tga", "Language.tga", "NOTICE.txt"):
                     name = "Media/Icons/" + resource
                     self.assertIn("DungeonPro/" + name, names)
                     self.assertEqual(archive.read("DungeonPro/" + name), (ROOT / name).read_bytes())
-                self.assertFalse(any("tests/" in p or "scripts/" in p or "data/" in p for p in names))
+                self.assertFalse(any("tests/" in p or "scripts/" in p or "data/" in p or "Media/Flags/" in p for p in names))
                 self.assertTrue(all(p.startswith("DungeonPro/") for p in names))
 
     def test_default_archive_name_and_required_toc_follow_the_new_addon_identifier(self):
@@ -44,13 +44,8 @@ class PackageTests(unittest.TestCase):
                 (media / name).write_bytes(b"fixture")
             icons = root / "Media" / "Icons"
             icons.mkdir()
-            for name in ("Wowhead.tga", "NOTICE.txt"):
+            for name in ("Wowhead.tga", "Language.tga", "NOTICE.txt"):
                 (icons / name).write_bytes(b"fixture")
-            flags = root / "Media" / "Flags"
-            flags.mkdir()
-            for locale in ("enUS", "ruRU", "deDE", "frFR", "esES", "itIT", "ptBR", "koKR", "zhCN", "zhTW"):
-                (flags / (locale + ".tga")).write_bytes(b"fixture")
-            (flags / "NOTICE.txt").write_text("fixture\n", encoding="utf-8")
             path, _ = packager.package(root=root)
             self.assertEqual(path, root / "dist" / "DungeonPro-1.2.3-Forever-dev.zip")
             with zipfile.ZipFile(path) as archive:
@@ -94,7 +89,7 @@ class PackageTests(unittest.TestCase):
             self.assertEqual(list(Path(tmp).iterdir()), [output])
 
     def test_missing_icon_or_attribution_preserves_previous_verified_archive(self):
-        for missing in ("Media/Icons/Wowhead.tga", "Media/Icons/NOTICE.txt"):
+        for missing in ("Media/Icons/Wowhead.tga", "Media/Icons/Language.tga", "Media/Icons/NOTICE.txt"):
             with self.subTest(missing=missing), tempfile.TemporaryDirectory() as tmp:
                 output = Path(tmp) / "addon.zip"
                 packager.package(output=output)

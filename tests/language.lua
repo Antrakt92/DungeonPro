@@ -53,7 +53,7 @@ check("Hover opens all language choices and previews labels without writing sett
     local state = assert(addon.Language.session)
     assert(state.popup:IsShown() and #state.rows == 11 and state.popup.strata == "TOOLTIP")
     state.rows[3].scripts.OnEnter()
-    assert(addon.L("NEXT") == addon.locales.ruRU.NEXT and ui.language.languageCaption == "Русский" and ui.language.text == "")
+    assert(addon.L("NEXT") == addon.locales.ruRU.NEXT and ui.language.languageCaption == "Русский" and ui.language.text == "RU")
     assert(ui.samples[#ui.samples].next == addon.locales.ruRU.NEXT)
     assert(addon.db == database and addon.db.locale == "enUS" and addon.db.preserved == preserved)
     local renders = ui.renders; state.rows[3].scripts.OnEnter(); assert(ui.renders == renders)
@@ -90,7 +90,7 @@ end)
 
 check("Automatic selection displays the actual language and aliases retain native captions", function()
     local addon, ui = fixture(); addon.db.locale = "auto"; GetLocale = function() return "ruRU" end
-    assert(addon.Language:Refresh(ui) and ui.language.languageCaption == "Русский" and ui.language.text == "")
+    assert(addon.Language:Refresh(ui) and ui.language.languageCaption == "Русский" and ui.language.text == "RU")
     assert(addon.Language:Caption("enGB") == "English" and addon.Language:Caption("esMX") == "Español")
     GetLocale = function() return "unknown" end
     assert(addon.Language:Refresh(ui) and ui.language.languageCaption == "English")
@@ -221,32 +221,31 @@ check("Cancelling from a hidden planner restores the actual tracked HUD font con
     ChatFontNormal, CreateFont = chat, creator
 end)
 
-check("Flag-only launcher and polished rows retain native names selection and reusable regions", function()
+check("Neutral language launcher keeps its globe while menu rows show names and committed check only", function()
     local addon, ui = fixture()
-    local styled=0
-    addon.Theme={StyleRow=function(row,options)styled=styled+1;row.selected=options.selected;return true end}
+    local styled = 0
+    addon.Theme = { StyleRow = function(row, options) styled = styled + 1; row.selected = options.selected; return true end }
     assert(addon.Language:Refresh(ui))
-    local icon=ui.language.languageFlag
-    assert(ui.language.text=="" and ui.language.languageCaption=="English" and ui.language.languageLocale=="enUS")
-    assert(icon.shown and icon.width==24 and icon.height==16 and icon.texture=="Interface\\AddOns\\DungeonPro\\Media\\Flags\\enUS")
-    ui.language.scripts.OnEnter();local state=addon.Language.session
-    assert(state.popup.width==224 and state.popup.height==366 and state.popup.point[5]==0)
-    local locales={"enUS","enUS","ruRU","deDE","frFR","esES","itIT","ptBR","koKR","zhCN","zhTW"}
-    for i,row in ipairs(state.rows)do
-        assert(row.width==212 and row.height==30 and row.languageFlag.width==24 and row.languageFlag.height==16)
-        assert(row.languageFlag.shown and row.languageFlag.texture=="Interface\\AddOns\\DungeonPro\\Media\\Flags\\"..locales[i])
-        assert(row.languageMark.texture=="Interface\\Buttons\\UI-CheckBox-Check" and row.languageMark.shown==(i==2))
-        assert(row.label.point[1]=="LEFT" and row.label.point[4]==46)
+    local icon = ui.language.languageIcon
+    assert(ui.language.text == "EN" and ui.language.languageCaption == "English" and ui.language.languageLocale == "enUS")
+    assert(icon.shown and icon.width == 18 and icon.height == 18 and icon.texture == "Interface\\AddOns\\DungeonPro\\Media\\Icons\\Language")
+    assert(ui.language.label.point[4] == 32)
+    ui.language.scripts.OnEnter(); local state = addon.Language.session
+    assert(state.popup.width == 224 and state.popup.height == 366 and state.popup.point[5] == 0)
+    for i, row in ipairs(state.rows) do
+        assert(row.width == 212 and row.height == 30 and not row.languageFlag and not row.languageIcon)
+        assert(row.languageMark.texture == "Interface\\Buttons\\UI-CheckBox-Check" and row.languageMark.shown == (i == 2))
+        assert(row.label.point[1] == "LEFT" and row.label.point[4] == 12)
     end
-    assert(styled==11 and state.rows[9].text=="한국어" and state.rows[10].text=="简体中文" and state.rows[11].text=="繁體中文")
-    local row,flag,mark=state.rows[3],state.rows[3].languageFlag,state.rows[3].languageMark
-    local renders=ui.renders;row.scripts.OnEnter()
-    assert(ui.renders==renders+1 and not state.popup.scripts.OnUpdate and ui.language.languageFlag==icon)
-    assert(icon.texture=="Interface\\AddOns\\DungeonPro\\Media\\Flags\\ruRU" and row.languagePreview and not row.languageSelected and not row.languageMark.shown)
-    assert(state.rows[2].languageMark.shown and state.rows[1].text==addon.locales.ruRU.LANGUAGE_AUTO)
-    for _=1,10 do addon.Language:Cancel(ui);ui.language.scripts.OnEnter()end
-    assert(addon.Language.session.rows[3]==row and row.languageFlag==flag and row.languageMark==mark)
-    assert(#row.textures==2 and #ui.language.textures==1 and addon.db.locale=="enUS")
+    assert(styled == 11 and state.rows[9].text == "한국어" and state.rows[10].text == "简体中文" and state.rows[11].text == "繁體中文")
+    local row, mark = state.rows[3], state.rows[3].languageMark
+    local renders = ui.renders; row.scripts.OnEnter()
+    assert(ui.renders == renders + 1 and not state.popup.scripts.OnUpdate and ui.language.languageIcon == icon)
+    assert(ui.language.text == "RU" and row.languagePreview and not row.languageSelected and not row.languageMark.shown)
+    assert(state.rows[2].languageMark.shown and state.rows[1].text == addon.locales.ruRU.LANGUAGE_AUTO)
+    for _ = 1, 10 do addon.Language:Cancel(ui); ui.language.scripts.OnEnter() end
+    assert(addon.Language.session.rows[3] == row and row.languageMark == mark)
+    assert(#row.textures == 1 and #ui.language.textures == 1 and addon.db.locale == "enUS")
 end)
 
 check("Pointer transition uses the next frame without a time threshold and includes hovered rows",function()
@@ -258,7 +257,7 @@ check("Pointer transition uses the next frame without a time threshold and inclu
     assert(not addon.Language.session and addon.db.locale=="enUS" and not state.popup.scripts.OnUpdate)
 end)
 
-check("Missing or rejected flag rendering retains an accessible short launcher caption",function()
+check("Missing or rejected globe rendering retains an accessible short launcher caption",function()
     for _,failure in ipairs({"missing","false","throw"})do
         local addon,ui,frame=fixture()
         if failure=="missing"then ui.language.CreateTexture=false
@@ -267,7 +266,7 @@ check("Missing or rejected flag rendering retains an accessible short launcher c
             return icon
         end end
         assert(addon.Language:Refresh(ui) and ui.language.text=="EN" and ui.language.languageCaption=="English")
-        assert(not ui.language.languageFlag or not ui.language.languageFlag.shown)
+        assert(not ui.language.languageIcon or not ui.language.languageIcon.shown)
         ui.language.scripts.OnEnter();assert(addon.Language.session.popup.shown)
     end
 end)

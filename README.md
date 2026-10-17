@@ -45,8 +45,8 @@ Level ranges are provisional recommendations.
 - Each quest card shows its next preparation step and known prerequisite chain.
   Choose a known step to view its location or follow the direction guide, and
   inspect supporting quests without changing the dungeon target.
-- Hover the current-language flag in the top corner to open the language menu.
-  Hover a flag to preview immediately, click to save, or move away to cancel.
+- Hover the language button (globe and language code) in the top corner to open the language menu.
+  Hover a language to preview immediately, click to save, or move away to cancel.
 - Switch between quests for your character and all character restrictions.
   Restricted quests stay available for inspection and do not add preparation
   actions. Character and level filters are remembered per character.

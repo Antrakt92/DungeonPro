@@ -1,5 +1,0 @@
-Language flag artwork drawn for Dungeon Pro.
-These small UI illustrations identify language choices, not player nationality.
-National emblems are simplified for legibility at 24 x 16 pixels.
-Reproduce the textures with scripts/generate_flags.py (Python standard library).
-Artwork is distributed under the repository LICENSE.

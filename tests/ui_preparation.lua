@@ -7440,7 +7440,7 @@ check("language control shows native names and aliases without rewriting stored 
     local names={enUS="English",ruRU="Русский",deDE="Deutsch",frFR="Français",esES="Español",itIT="Italiano",ptBR="Português",koKR="한국어",zhCN="简体中文",zhTW="繁體中文",enGB="English",esMX="Español",unsupported="English",[""]="English"}
     for code,name in pairs(names)do
         addon.db.locale=code;ui:Refresh()
-        assert(ui.language.text==name and addon.db.locale==code and ui.language.width==36)
+        assert(ui.language.text==name and addon.db.locale==code and ui.language.width==64)
     end
     addon.db.locale=old;ui:Refresh()
 end)
@@ -7449,7 +7449,7 @@ check("automatic language uses short localized labels without changing the menu 
     local menuLabel={}
     for code,dict in pairs(addon.locales)do if dict.LANGUAGE_AUTO_SHORT then
         GetLocale=function()return code end;addon.db.locale="auto";ui:Refresh()
-        assert(ui.language.text==dict.LANGUAGE_AUTO_SHORT and addon.db.locale=="auto" and ui.language.width==36)
+        assert(ui.language.text==dict.LANGUAGE_AUTO_SHORT and addon.db.locale=="auto" and ui.language.width==64)
         menuLabel[code]=dict.LANGUAGE_AUTO
     end end
     for code,value in pairs(menuLabel)do assert(addon.locales[code].LANGUAGE_AUTO==value)end
@@ -8504,7 +8504,7 @@ check("Normal browsing ignores a saved preparation mode and exposes no Back or m
     assert(#visibleRows()==3)
     for _,row in ipairs(visibleRows())do assert(not row.heading and (row.questID==31001 or row.questID==31002))end
     ui.preparation=true;ui:Refresh();assert(not ui.preparation and #visibleRows()==3 and addon.char.filters.preparation==true)
-    assert(ui.characterButton.point[2]==390 and ui.entrance.point[2]==520 and ui.language.width==36 and not ui.languageChevron)
+    assert(ui.characterButton.point[2]==390 and ui.entrance.point[2]==520 and ui.language.width==64 and not ui.languageChevron)
     addon.char.filters=filters;f:finish()
 end)
 check("Blocked level navigation explicitly routes to a known giver without claiming the quest available",function()
@@ -8569,7 +8569,7 @@ check("Real language hover previews the existing window and restores its labels 
     assert(language:Attach(ui.language,ui));ui.language.scripts.OnEnter()
     assert(language.session and #language.session.rows==11)
     language.session.rows[3].scripts.OnEnter()
-    assert(addon.db.locale=="enUS" and ui.language.languageCaption=="Русский" and ui.language.text=="")
+    assert(addon.db.locale=="enUS" and ui.language.languageCaption=="Русский" and ui.language.text=="RU")
     assert(ui.rangeButton.text==addon.L(ui.range and "RANGE"or"ALL")and ui.rangeButton.text~=range)
     assert(ui.rows[1].note.text~=note)
     assert(detailHas(addon.locales.ruRU.NEXT) and ui.back==nil and ui.preparationButton==nil)
@@ -8579,8 +8579,8 @@ check("Real language hover previews the existing window and restores its labels 
     for index,code in ipairs(selections)do
         local row=session.rows[index+1];row.scripts.OnEnter()
         assert(language:GetSelection()==code and addon.db.locale=="enUS")
-        assert(ui.language.text=="" and ui.language.languageLocale==code and ui.language.width==36)
-        assert(ui.language.languageFlag.texture=="Interface\\AddOns\\DungeonPro\\Media\\Flags\\"..code)
+        assert(ui.language.text==code:sub(1,2):upper() and ui.language.languageLocale==code and ui.language.width==64)
+        assert(ui.language.languageIcon.texture=="Interface\\AddOns\\DungeonPro\\Media\\Icons\\Language")
         assert(ui.rangeButton.text==addon.locales[code][ui.range and "RANGE"or"ALL"])
         assert(session.rows[1].text==addon.locales[code].LANGUAGE_AUTO and row.languagePreview)
         assert(session.rows[2].languageSelected and row.languageSelected==(code=="enUS"),"checkmark follows committed English while hover previews another locale")
