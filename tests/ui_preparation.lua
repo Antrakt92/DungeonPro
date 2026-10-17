@@ -5020,4 +5020,132 @@ check("Narrative heading does not merge dialogue objectives log counters or hidd
     addon.Description,addon.DialogueObjectiveText,addon.QuestObjectives,addon.DialogueRewards=getter,dialogue,objectives,rewards
     f:finish()
 end)
+local function questLogControlFixture()
+    local f,q=starterPresentationFixture();local can,open=addon.CanOpenQuestLog,addon.OpenQuestLogQuest
+    f.held,f.reads,f.opens=true,0,{}
+    addon.CanOpenQuestLog=function(id)f.reads=f.reads+1;return id==9970 and f.held end
+    addon.OpenQuestLogQuest=function(id)f.opens[#f.opens+1]=id;return true end
+    local finish=f.finish
+    function f:finish()addon.CanOpenQuestLog,addon.OpenQuestLogQuest=can,open;finish(self)end
+    ui.frame:Show();ui:RefreshDetail();return f,q
+end
+check("Held quest-log control is explicit click-only and capability omission leaves no empty layout slot",function()
+    local f,q=questLogControlFixture();local control=ui.questLogButton
+    assert(control and control.shown and control.enabled and control.title==control.label and control.label.text==addon.L("OPEN_QUEST_LOG"))
+    assert(#f.opens==0 and not control.scripts.OnEnter)
+    local reads=f.reads;ui:RefreshDetail();assert(f.reads==reads+1 and #f.opens==0)
+    local history,engine=ui.detailHistory,ui.engine
+    control.scripts.OnClick(control,"LeftButton",false)
+    assert(#f.opens==1 and f.opens[1]==9970 and ui.quest==9970 and ui.detailHistory==history and ui.engine==engine)
+    local stale=control.scripts.OnClick;f.held=false;stale();assert(#f.opens==1)
+    ui:RefreshDetail();local without=ui.detail.height
+    assert(not control.shown and not control.enabled and not control.scripts.OnClick)
+    for _,candidate in ipairs({false,function()return nil end,function()return"true"end,function()error("unavailable")end})do
+        addon.CanOpenQuestLog=candidate or nil;ui:RefreshDetail()
+        assert(not control.shown and ui.detail.height==without and #f.opens==1)
+    end
+    f:finish()
+end)
+check("Quest-log capability read reentry preserves a replacement card or a newer same-card omission",function()
+    local f=questLogControlFixture();local can=addon.CanOpenQuestLog
+    for _,same in ipairs({false,true})do
+        local armed,nestedHeight=true
+        addon.CanOpenQuestLog=function(id)
+            if armed and id==9970 then
+                armed=false
+                if same then f.held=false;ui:RefreshDetail()else showDetail(9971)end
+                nestedHeight=ui.detail.height
+                return true
+            end
+            return can(id)
+        end
+        f.held=true;showDetail(9970)
+        assert(not armed and ui.detail.height==nestedHeight and not ui.questLogButton.shown and #f.opens==0)
+    end
+    addon.CanOpenQuestLog=can;f:finish()
+end)
+check("Captured quest-log clicks reject changed card character engine helpers and restriction ownership",function()
+    local f,q=questLogControlFixture();local can,open,character,checker=addon.CanOpenQuestLog,addon.OpenQuestLogQuest,addon.char,issecretvalue
+    for _,change in ipairs({"character","engine","definition","can","open","checker","quest","dungeon"})do
+        showDetail(9970);local click=ui.questLogButton.scripts.OnClick;local reads=f.reads
+        local engine,dungeon=ui.engine,ui.dungeon
+        if change=="character"then addon.char={}
+        elseif change=="engine"then ui.engine={}
+        elseif change=="definition"then addon.quests[9970]={id=9970}
+        elseif change=="can"then addon.CanOpenQuestLog=function()return true end
+        elseif change=="open"then addon.OpenQuestLogQuest=function()error("stale opener")end
+        elseif change=="checker"then issecretvalue=function()return false end
+        elseif change=="quest"then ui.quest=9971
+        else ui.dungeon={}end
+        click();assert(#f.opens==0 and f.reads==reads,change)
+        addon.char,ui.engine,addon.quests[9970],addon.CanOpenQuestLog,addon.OpenQuestLogQuest,issecretvalue,ui.quest,ui.dungeon=
+            character,engine,q,can,open,checker,9970,dungeon
+    end
+    ui:RefreshDetail();local old=ui.questLogButton.scripts.OnClick
+    ui.frame:Hide();ui.frame.scripts.OnHide();assert(not ui.questLogButton.shown and not ui.questLogButton.scripts.OnClick)
+    ui.frame:Show();ui.frame.scripts.OnShow();old();assert(#f.opens==0)
+    ui.questLogButton.scripts.OnClick();assert(#f.opens==1 and f.opens[1]==9970)
+    f:finish()
+end)
+check("Quest-log label measurement and native row writes cannot resurrect a superseded control",function()
+    local f=questLogControlFixture();local control=ui.questLogButton
+    for _,boundary in ipairs({"text","measure","height","script","show"})do
+        f.held=true;ui:RefreshDetail()
+        local target=(boundary=="text"or boundary=="measure")and control.label or control
+        local key=({text="SetText",measure="GetStringHeight",height="SetHeight",script="SetScript",show="Show"})[boundary]
+        local original,armed=target[key],true
+        target[key]=function(self,...)
+            local result=original(self,...)
+            if armed and (boundary~="script"or select(2,...)~=nil)then
+                armed=false;f.held=false;ui:RefreshDetail()
+            end
+            return result
+        end
+        ui:RefreshDetail();target[key]=original
+        assert(not armed and not control.shown and not control.enabled and not control.scripts.OnClick,boundary)
+        assert(#f.opens==0)
+    end
+    f.held=true;ui:RefreshDetail();local original,armed=control.Hide,true
+    control.Hide=function(self)original(self);if armed then armed=false;ui:RefreshDetail()end end
+    ui:RefreshDetail();control.Hide=original
+    assert(not armed and control.shown and control.enabled and control.scripts.OnClick)
+    control.scripts.OnClick();assert(#f.opens==1)
+    f:finish()
+end)
+check("Quest-log control wraps localized labels in detail flow and preserves same-card reading history and actions",function()
+    local f,q=questLogControlFixture();local locale=addon.db.locale
+    local history=ui.detailHistory;local control=ui.questLogButton
+    measurement=function(fs)return fs==control.label and 54 or 18 end
+    for code in pairs(addon.locales)do
+        addon.db.locale=code;ui:RefreshDetail()
+        assert(control.label.text==addon.L("OPEN_QUEST_LOG") and control.label.fontSize==14 and control.width==334 and control.height==64)
+        local minimum=objectiveText(addon.L("QUEST_MIN_LEVEL",q.minLevel))
+        assert(-minimum.point[3]>=-control.point[3]+control.height+8)
+        assert(control.point[2]==4 and ui.detailHistory==history and not ui.action and not ui.giverAction and #f.opens==0)
+    end
+    local offset=math.min(21,ui.detailScroll:GetVerticalScrollRange());ui.detailScroll:SetVerticalScroll(offset)
+    ui:RefreshDetail();assert(ui.detailScroll.verticalScroll==offset)
+    measurement=nil;addon.db.locale=locale;f:finish()
+end)
+check("Explicit quest-log click rechecks live capability ownership and dispatch failures remain quiet",function()
+    local f=questLogControlFixture();local can,open=addon.CanOpenQuestLog,addon.OpenQuestLogQuest
+    for _,same in ipairs({false,true})do
+        local armed=false
+        addon.CanOpenQuestLog=function(id)
+            if armed and id==9970 then
+                armed=false
+                if same then ui:RefreshDetail()else showDetail(9971)end
+                return true
+            end
+            return can(id)
+        end
+        showDetail(9970);local click=ui.questLogButton.scripts.OnClick;armed=true;click()
+        assert(not armed and #f.opens==0)
+        if same then assert(ui.questLogButton.shown)else assert(not ui.questLogButton.shown)end
+    end
+    addon.CanOpenQuestLog=can;addon.OpenQuestLogQuest=function()error("native panel unavailable")end
+    showDetail(9970);local control=ui.questLogButton;local height=ui.detail.height
+    control.scripts.OnClick();assert(control.shown and ui.quest==9970 and ui.detail.height==height and #f.opens==0)
+    addon.OpenQuestLogQuest=open;f:finish()
+end)
 print("Preparation UI modeled checks passed: " .. total .. " (no native layout validation)")

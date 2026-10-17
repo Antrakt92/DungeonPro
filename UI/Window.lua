@@ -821,6 +821,19 @@ function UI:EnterObjective(button, binding)
     if owned ~= true or not current() then self:ReleaseObjectiveTooltip(held) end
 end
 
+function UI:ResetQuestLogControl()
+    local revision, control = {}, self.questLogButton
+    self.questLogGeneration = revision
+    if control then
+        local function clear(method, ...)
+            pcall(control[method], control, ...)
+            return self.questLogGeneration == revision
+        end
+        if not clear("Hide") or not clear("SetEnabled", false) or not clear("SetScript", "OnClick", nil) then return false end
+    end
+    return true
+end
+
 function UI:RefreshDetail()
     local renderQuest, renderDungeon = self.quest, self.dungeon
     local renderEngine, renderCharacter, pendingAction, pendingGiver = self.engine, addon.char, nil, nil
@@ -956,6 +969,7 @@ function UI:RefreshDetail()
             b:Hide(); b:SetEnabled(false); b:SetScript("OnClick", nil)
         end
     end
+    if not self:ResetQuestLogControl() or not portraitCardCurrent() then return end
     local id, engine = self.quest, self.engine
     if id then
         local definition = addon.quests[id]
@@ -963,6 +977,44 @@ function UI:RefreshDetail()
         line(addon.QuestName(id), "title")
         local state = engine:State(id)
         line("|cff" .. COLOR[state.status] .. statusLabel(state) .. "|r")
+        local logCapability, logOpener = addon.CanOpenQuestLog, addon.OpenQuestLogQuest
+        local logRevision, logChecker = self.questLogGeneration, issecretvalue
+        local function logCurrent()
+            return portraitCardCurrent() and addon.quests[id] == definition and self.questLogGeneration == logRevision and
+                addon.CanOpenQuestLog == logCapability and addon.OpenQuestLogQuest == logOpener and issecretvalue == logChecker
+        end
+        local canOpen = addon.Read(logCapability, "boolean", id)
+        local usableOpener = addon.Clean(logOpener, "function")
+        if not logCurrent() then return end
+        if canOpen == true and usableOpener then
+            local control = self.questLogButton
+            if not control then
+                control = CreateFrame("Button", nil, self.detail); control:Hide(); control:SetWidth(334)
+                control.label = label(control, "", 7, -5, 320, 14)
+                control.title = control.label
+                control:SetHighlightTexture("Interface\\QuestFrame\\UI-QuestTitleHighlight")
+                if not logCurrent() then return end
+                self.questLogButton = control
+            end
+            local function write(object, method, ...)
+                if not logCurrent() then return false end
+                local ok = pcall(object[method], object, ...)
+                return ok and logCurrent()
+            end
+            if not write(control.label, "SetText", addon.L("OPEN_QUEST_LOG")) then return end
+            local height = math.max(28, measuredHeight(control.label, 18) + 10)
+            if not logCurrent() then return end
+            styleRow(control, "control", false)
+            if not logCurrent() then return end
+            if not write(control, "SetHeight", height) or not write(control, "ClearAllPoints") or
+                not write(control, "SetPoint", "TOPLEFT", 4, -y) or not write(control, "SetEnabled", true) or
+                not write(control, "SetScript", "OnClick", function()
+                    if not logCurrent() or addon.Read(self.frame.IsShown, "boolean", self.frame) ~= true or not logCurrent() then return end
+                    local fresh = addon.Read(logCapability, "boolean", id)
+                    if fresh == true and logCurrent() then addon.Read(logOpener, "boolean", id) end
+                end) or not write(control, "Show") then return end
+            y = y + height + 8
+        end
         local minimum = addon.Clean(q.minLevel, "number")
         if minimum and minimum > 0 and minimum % 1 == 0 then line(addon.L("QUEST_MIN_LEVEL", minimum)) end
         local factions = audienceLabel({ factions = q.factions }, function()
@@ -2004,7 +2056,7 @@ function UI:Create()
             addon.Read(f.IsShown, "boolean", f) == true then self:Fit() end
     end)
     frame:SetScript("OnShow", function() self:Fit(); self:Refresh() end)
-    frame:SetScript("OnHide", function() self.detailActionChoice = nil; self.languageMenuRevision = {}; self:ResetHistoryReading(); self:ResetRewardPresentation(); self:CloseCopyLink() end)
+    frame:SetScript("OnHide", function() if not self:ResetQuestLogControl() then return end; self.detailActionChoice = nil; self.languageMenuRevision = {}; self:ResetHistoryReading(); self:ResetRewardPresentation(); self:CloseCopyLink() end)
     self:ApplyTheme()
     frame:Hide()
 end
