@@ -7531,6 +7531,12 @@
         2200,
         2201,
         2204
+      ],
+      "providedItems": [
+        {
+          "itemID": 7666,
+          "name": "Shattered Necklace"
+        }
       ]
     },
     {
@@ -7725,6 +7731,12 @@
         2284,
         2318,
         2338
+      ],
+      "objectiveItems": [
+        {
+          "itemID": 7666,
+          "name": "Shattered Necklace"
+        }
       ]
     },
     {
@@ -8059,6 +8071,12 @@
             2199
           ]
         }
+      ],
+      "providedItems": [
+        {
+          "itemID": 7667,
+          "name": "Talvash's Phial of Scrying"
+        }
       ]
     },
     {
@@ -8232,6 +8250,13 @@
           "ids": [
             2198
           ]
+        }
+      ],
+      "objectiveItems": [
+        {
+          "itemID": 2842,
+          "name": "Silver Bar",
+          "quantity": 5
         }
       ]
     },
@@ -8545,6 +8570,12 @@
       "storyline": [
         2340,
         2341
+      ],
+      "providedItems": [
+        {
+          "itemID": 7887,
+          "name": "Necklace and Gem Salvage"
+        }
       ]
     },
     {
@@ -8800,7 +8831,21 @@
         "y": 3.4,
         "creatureDisplayID": 5647,
         "portraitSource": "https://www.wowhead.com/forever/npc=6826"
-      }
+      },
+      "objectiveItems": [
+        {
+          "itemID": 3827,
+          "name": "Mana Potion"
+        },
+        {
+          "itemID": 3857,
+          "name": "Coal"
+        },
+        {
+          "itemID": 1708,
+          "name": "Sweet Nectar"
+        }
+      ]
     },
     {
       "id": 707,
@@ -11563,7 +11608,13 @@
       "finish": {
         "objectID": 148512,
         "name": "Essence Font"
-      }
+      },
+      "providedItems": [
+        {
+          "itemID": 10454,
+          "name": "Essence of Eranikus"
+        }
+      ]
     },
     {
       "id": 1475,
@@ -11644,6 +11695,12 @@
           "ids": [
             3444
           ]
+        }
+      ],
+      "providedItems": [
+        {
+          "itemID": 10466,
+          "name": "Atal'ai Stone Circle"
         }
       ]
     },
@@ -15834,7 +15891,26 @@
         "mapID": 1443,
         "x": 68.4,
         "y": 8.8
-      }
+      },
+      "objectiveEvents": [
+        {
+          "npcID": 13696,
+          "name": "Vylestem Vines healed",
+          "quantity": 8
+        }
+      ],
+      "objectiveItems": [
+        {
+          "itemID": 17696,
+          "name": "Filled Cerulean Vial"
+        }
+      ],
+      "providedItems": [
+        {
+          "itemID": 17693,
+          "name": "Coated Cerulean Vial"
+        }
+      ]
     },
     {
       "id": 7044,
@@ -16050,7 +16126,13 @@
             "zoneName": "Moonglade"
           }
         ]
-      }
+      },
+      "providedItems": [
+        {
+          "itemID": 17760,
+          "name": "Seed of Life"
+        }
+      ]
     },
     {
       "id": 7067,
@@ -16214,7 +16296,23 @@
             "zoneName": "Desolace"
           }
         ]
-      }
+      },
+      "objectiveItems": [
+        {
+          "itemID": 17758,
+          "name": "Amulet of Union"
+        },
+        {
+          "itemID": 17757,
+          "name": "Amulet of Spirits"
+        }
+      ],
+      "providedItems": [
+        {
+          "itemID": 17781,
+          "name": "The Pariah's Instructions"
+        }
+      ]
     },
     {
       "id": 7068,
