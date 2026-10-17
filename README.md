@@ -108,8 +108,9 @@ Level ranges are provisional recommendations.
   A low-level character can still visit a known giver without treating the quest
   as available. The planner stays open; move it if it covers the map.
   Viewing a location or expanding its choices does not start a guide.
-- A separate dungeon entrance button prefers matching portal points supplied by the
-  client, with sourced player-recorded locations as a fallback where available.
+- A map-pin icon on each dungeon card starts its entrance route without changing
+  the quest you are reading. Hover for the destination and source details.
+  Matching client portal points are preferred, with recorded locations as a fallback.
   Recorded locations, shared entrances and outside approaches are labelled separately;
   missing or ambiguous destinations stay unavailable.
 - Expand reported positions when a giver has several sourced points, then choose

@@ -24,6 +24,7 @@ for _, key in ipairs({ "Context", "DungeonName", "DungeonArt", "PaintDungeonArt"
     track(addon, key)
 end
 track(addon.Planner, "New", "Planner.New")
+track(addon.Entrances, "Get", "Entrance.Get")
 for _, key in ipairs({ "GetTitleForQuestID", "IsOnQuest", "IsQuestFlaggedCompleted", "RequestLoadQuestByID" }) do
     track(C_QuestLog, key, "API." .. key)
 end
@@ -46,7 +47,9 @@ for index, row in ipairs(ui.cards) do
         return titleSetter(self, value)
     end
     cards[index] = { row = row, click = row.scripts.OnClick, title = row.title.text,
-        artwork = row.art.texture, match = row.matchQuestID, note = row.note.text }
+        artwork = row.art.texture, match = row.matchQuestID, note = row.note.text,
+        entrance = row.entranceControl, entranceBinding = row.entranceBinding,
+        entranceClick = row.entranceControl and row.entranceControl.scripts.OnClick }
 end
 local database, character, dungeon = addon.db, addon.char, ui.dungeon
 local function retained()
@@ -59,9 +62,13 @@ local function retained()
         check(row == before.row and row.scripts.OnClick == before.click and row.title.text == before.title
             and row.art.texture == before.artwork and row.matchQuestID == before.match,
             "hover retains catalogue row identity, title, artwork and click ownership")
+        check(row.entranceControl == before.entrance and row.entranceBinding == before.entranceBinding and
+            (not row.entranceControl or row.entranceControl.scripts.OnClick == before.entranceClick),
+            "hover retains per-card entrance controls and route ownership")
     end
 end
 local function bounded()
+    check(count("Entrance.Get") <= 1, "hover does not resolve every dungeon entrance again")
     check(count("unchangedTitleWrites") == 0, "hover does not repeat native writes for unchanged catalogue titles")
     check(count("catalogArt") == 0 and count("PaintDungeonArt") <= 1 and count("DungeonArt") <= 1,
         "hover retains catalogue artwork with at most the active pane artwork pass")

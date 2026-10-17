@@ -75,37 +75,84 @@ function UI:DispatchDetail(action, mapOnly, giver, ownerCurrent)
     return pcall(method, mapOnly and place or action)
 end
 
-function UI:RefreshEntrance()
-    local control, frame, dungeon, quest, character, generation = self.entrance, self.frame, self.dungeon, self.quest, addon.char, self.rewardGeneration
-    if not control then return false end
-    self.entranceBinding = nil; control:SetEnabled(false); control:SetText(addon.L("DUNGEON_ENTRANCE"))
+function UI:GetEntranceBinding(dungeon, ownerCurrent)
     local provider = addon.Clean(addon.Entrances, "table")
     local getter = provider and addon.Clean(provider.Get, "function")
     local navigation = addon.Clean(addon.Navigation, "table")
     local start = navigation and addon.Clean(navigation.StartEntrance, "function")
     local function owned()
-        return addon.UI == self and self.entrance == control and self.frame == frame and self.dungeon == dungeon and self.quest == quest and
-            addon.char == character and self.rewardGeneration == generation and addon.Entrances == provider and
-            (not provider or provider.Get == getter) and addon.Navigation == navigation and (not navigation or navigation.StartEntrance == start)
+        return addon.UI == self and ownerCurrent() and addon.Entrances == provider and
+            provider and provider.Get == getter and addon.Navigation == navigation and navigation and navigation.StartEntrance == start
     end
-    if not owned() or not dungeon or not getter or not start then return false end
+    if not dungeon or not getter or not start or not owned() then return end
     local ok, point, predicate = pcall(getter, dungeon)
     point, predicate = ok and addon.Clean(point, "table"), ok and addon.Clean(predicate, "function")
-    if not owned() or not point or not predicate then return false end
+    if not owned() or not point or not predicate then return end
     local map, x, y = addon.Clean(point.mapID, "number"), addon.Clean(point.x, "number"), addon.Clean(point.y, "number")
-    if not owned() or not map or map <= 0 or map % 1 ~= 0 or not x or not y or x < 0 or x > 100 or y < 0 or y > 100 then return false end
+    if not owned() or not map or map <= 0 or map % 1 ~= 0 or not x or not y or x < 0 or x > 100 or y < 0 or y > 100 then return end
     local function current()
         local valid = addon.Read(predicate, "boolean") == true
-        return valid and owned() and addon.Clean(point.mapID, "number") == map and addon.Clean(point.x, "number") == x and addon.Clean(point.y, "number") == y and owned()
+        if not valid or not owned() then return false end
+        return addon.Clean(point.mapID, "number") == map and addon.Clean(point.x, "number") == x and addon.Clean(point.y, "number") == y
     end
-    if not current() then return false end
-    self.entranceBinding = { current = current, dungeon = dungeon, point = point, navigation = navigation, start = start }
-    local scope, kind = addon.Clean(point.scope, "string"), addon.Clean(point.kind, "string")
-    if kind == "approach" then control:SetText(addon.L("ENTRANCE_APPROACH_ACTION"))
-    elseif scope == "shared" then control:SetText(addon.L("ENTRANCE_SHARED_ACTION")) end
-    if not current() then return false end
-    control:SetEnabled(true)
-    return current()
+    if current() then return { current = current, dungeon = dungeon, point = point, navigation = navigation, start = start } end
+end
+
+function UI:RefreshEntrance()
+    local frame, dungeon, quest, character, generation = self.frame, self.dungeon, self.quest, addon.char, self.rewardGeneration
+    self.entranceBinding = nil
+    local function current()
+        return addon.UI == self and self.frame == frame and self.dungeon == dungeon and self.quest == quest and
+            addon.char == character and self.rewardGeneration == generation
+    end
+    local binding = self:GetEntranceBinding(dungeon, current)
+    if current() then self.entranceBinding = binding end
+    return binding ~= nil
+end
+
+function UI:CatalogEntranceHint(row)
+    self:HideNavigationHint()
+    local control, binding, owner = row.entranceControl, row.entranceBinding, row.entranceCurrent
+    local tip = addon.Clean(GameTooltip, "table") or addon.Clean(GameTooltip, "userdata")
+    local function current()
+        return tip and GameTooltip == tip and row.entranceCurrent == owner and owner and owner() and
+            row.entranceBinding == binding and addon.Read(self.frame.IsShown, "boolean", self.frame) == true
+    end
+    if not current() then return end
+    local text = addon.Read(addon.DungeonName, "string", row.entranceDungeon)
+    if not current() or not text then return end
+    local point = binding and binding.current() and binding.point
+    if not current() then return end
+    if point then
+        local zone = addon.Clean(point.zoneName, "string") or addon.Clean(point.name, "string")
+        if zone then text = text .. "\n" .. zone end
+        local x, y = addon.Clean(point.x, "number"), addon.Clean(point.y, "number")
+        if not x or not y or x < 0 or x > 100 or y < 0 or y > 100 or not binding.current() or not current() then return end
+        text = text .. string.format(" (%.1f, %.1f)", x, y)
+        if addon.Clean(point.origin, "string") == "recorded" then
+            text = text .. "\n" .. addon.L("DUNGEON_ENTRANCE_RECORDED")
+            local source = addon.Clean(point.source, "string")
+            if source and #source <= 2048 and source:match("^https://") then text = text .. "\n" .. source end
+        end
+        if addon.Clean(point.kind, "string") == "approach" then text = text .. "\n" .. addon.L("DUNGEON_ENTRANCE_APPROACH") end
+        if addon.Clean(point.scope, "string") == "shared" then text = text .. "\n" .. addon.L("DUNGEON_ENTRANCE_SHARED") end
+    else text = text .. "\n" .. addon.L("DUNGEON_ENTRANCE_UNKNOWN") end
+    if not current() then return end
+    local held = { tip = tip, button = control }; self.navigationTooltip = held
+    for _, call in ipairs({ { "SetOwner", control, "ANCHOR_RIGHT" }, { "SetText", addon.L("DUNGEON_ENTRANCE") },
+        { "AddLine", text, 1, 1, 1, true }, { "Show" } }) do
+        if not current() or self.navigationTooltip ~= held then return end
+        local fn = addon.Clean(tip[call[1]], "function")
+        if not fn or not pcall(fn, tip, unpack(call, 2)) then
+            if self.navigationTooltip == held then self:HideNavigationHint() end
+            return
+        end
+        if not current() or self.navigationTooltip ~= held or addon.Read(tip.IsOwned, "boolean", tip, control) ~= true or
+            not current() or self.navigationTooltip ~= held then
+            if self.navigationTooltip == held then self:HideNavigationHint() end
+            return
+        end
+    end
 end
 
 function UI:VisitEntrance()
@@ -252,7 +299,7 @@ function UI:FitHeaderControls()
             (not database or database.locale == locale) and issecretvalue == checker
     end
     local controls, wrapped = {}, false
-    for _, button in ipairs({ self.rangeButton, self.characterButton, self.entrance, self.map, self.guide }) do
+    for _, button in ipairs({ self.rangeButton, self.characterButton, self.map, self.guide }) do
         local getter = addon.Clean(button.GetFontString, "function")
         local ok, value
         if getter then ok, value = pcall(getter, button) end
@@ -291,7 +338,6 @@ function UI:ApplyTheme()
     if theme then addon.Read(theme.Apply, "boolean", self) end
     styleRow(self.rangeButton, "control", self.range)
     styleRow(self.characterButton, "control", self.includeUnavailable)
-    styleRow(self.entrance, "control", false)
     self:FitHeaderControls()
 end
 
@@ -1044,6 +1090,49 @@ function UI:RefreshDungeons()
             if not write(row.art, "SetSize", 44, 44) or not write(row.art, "SetPoint", "TOPLEFT", 6, -9) or
                 not write(row.title, "SetWidth", 158) or not write(row.note, "SetWidth", 158) then return end
         end
+        if not row.entranceControl then
+            local control = CreateFrame("Button", nil, row)
+            row.entranceControl = control
+            control:SetSize(32, 32); control:SetPoint("TOPRIGHT", row, "TOPRIGHT", -3, -7)
+            if type(control.SetMotionScriptsWhileDisabled) == "function" then control:SetMotionScriptsWhileDisabled(true) end
+            local icon = control:CreateTexture(nil, "ARTWORK"); control.footerIcon = icon
+            icon:SetSize(24, 24); icon:SetPoint("CENTER", control, "CENTER", 0, 0)
+            local atlas = "Waypoint-MapPin-Untracked"
+            local loaded = type(icon.SetAtlas) == "function" and pcall(icon.SetAtlas, icon, atlas)
+            if not loaded or addon.Read(icon.GetAtlas, "string", icon) ~= atlas then icon:SetTexture("Interface\\Icons\\INV_Misc_Map_01") end
+            icon:Show()
+            control:SetScript("OnEnter", function() control.footerHovered = true; self:RefreshFooterIcon(control); self:CatalogEntranceHint(row) end)
+            control:SetScript("OnLeave", function() control.footerHovered = false; self:RefreshFooterIcon(control); self:HideNavigationHint() end)
+            control:SetScript("OnHide", function() control.footerHovered = false; self:RefreshFooterIcon(control); self:HideNavigationHint() end)
+        end
+        -- Reserve the navigation hit area before native wrapping measurements.
+        local textWidth = math.max(1, row:GetWidth() - 58 - 40)
+        if not write(row.title, "SetWidth", textWidth) or not write(row.note, "SetWidth", textWidth) then return end
+        local control, frame = row.entranceControl, self.frame
+        local function entranceCurrent()
+            local shown = addon.Read(row.IsShown, "boolean", row)
+            return shown == true and addon.UI == self and self.frame == frame and self.catalogGeneration == generation and self.cards[index] == row and
+                row.entranceDungeon == dungeon and row.entranceCurrent == entranceCurrent and addon.dungeons == catalogue and
+                addon.char == character and addon.db == database and self.search == search and self.range == range and sourceReady
+        end
+        row.entranceDungeon, row.entranceCurrent = dungeon, entranceCurrent
+        local candidate = self:GetEntranceBinding(dungeon, entranceCurrent)
+        if not current() or not entranceCurrent() then return end
+        row.entranceBinding = candidate
+        local enabled = candidate ~= nil
+        control.footerEnabled = enabled
+        if not enabled then control.footerPressed, control.footerHovered = false, false end
+        if not write(control, "SetEnabled", enabled) then return end
+        local icon = control.footerIcon
+        local alpha = enabled and (control.footerHovered and 1 or .88) or .3
+        if type(icon.SetAlpha) == "function" and not write(icon, "SetAlpha", alpha) then return end
+        if type(icon.SetDesaturated) == "function" and not write(icon, "SetDesaturated", not enabled) then return end
+        local binding = row.entranceBinding
+        if not write(control, "SetScript", "OnClick", function()
+            if not entranceCurrent() or row.entranceBinding ~= binding or not binding or not binding.current() then return end
+            if addon.Read(frame.IsShown, "boolean", frame) ~= true or not entranceCurrent() or not binding.current() then return end
+            pcall(binding.start, binding.dungeon, binding.point)
+        end) then return end
         if not write(row.art, "Hide") then return end
         addon.Read(addon.PaintDungeonArt, "boolean", row.art, dungeon)
         if not current() then return end
@@ -1126,6 +1215,7 @@ function UI:RefreshDungeons()
         local row = self.cards[index]
         if not write(row, "Hide") or not write(row, "SetScript", "OnClick", nil) then return end
         row.matchQuestID = nil
+        row.entranceCurrent, row.entranceBinding, row.entranceDungeon = nil, nil, nil
     end
     if #results == 0 then
         if not write(self.catalogNotice, "SetText", addon.L("NO_DUNGEONS")) or
@@ -3846,9 +3936,6 @@ function UI:Create()
         self.includeUnavailable = not self.includeUnavailable; self:SaveFilters(); self:Refresh()
     end)
     self.characterButton:SetPoint("TOPLEFT", 390, -84)
-    self.entrance = button(frame, "", 160, function() self:VisitEntrance() end)
-    self.entrance:SetPoint("TOPLEFT", 520, -84)
-    styleRow(self.entrance, "control", false)
     local language = button(frame, "", 64, function() self:OpenLanguageMenu() end)
     self.language = language
     language:SetPoint("TOPRIGHT", -44, -45)
@@ -3936,10 +4023,6 @@ function UI:Create()
             self:HideNavigationHint()
         end)
     end
-    navigationHint(self.entrance, function()
-        local binding = self.entranceBinding
-        return binding and binding.current() and binding.point or nil
-    end)
     navigationHint(self.map, function() local action = self:NavigationDestination(false); return action and action.place end)
     navigationHint(self.guide, function() local action = self:NavigationDestination(true); return action and action.place end)
     navigationHint(self.giver, function() return self.giverAction and self.giverAction.place or {} end)

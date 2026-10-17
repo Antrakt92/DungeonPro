@@ -4795,7 +4795,7 @@ check("Hidden browser ignores resize events and reopens using current geometry w
     screenWidth,screenHeight=width,height;ui:Fit();ui.frame:SetShown(shown)
 end)
 local function headerFitFixture()
-    local buttons={ui.rangeButton,ui.characterButton,ui.entrance,ui.map,ui.guide}
+    local buttons={ui.rangeButton,ui.characterButton,ui.map,ui.guide}
     local saved,fonts={},{}
     for index,b in ipairs(buttons)do
         saved[index]={getter=rawget(b,"GetFontString"),height=b.height}
@@ -4830,7 +4830,7 @@ end)
 check("Filter fit follows ten localized labels and toggle clicks without changing widths or native handlers",function()
     local buttons,fonts,finish=headerFitFixture();local locale=addon.db.locale
     local range,preparation,all=ui.range,ui.preparation,ui.includeUnavailable
-    local x={273,390,520,690,856};local widths={105,120,160,160,172};local handlers={}
+    local x={273,390,690,856};local widths={105,120,160,172};local handlers={}
     for i,b in ipairs(buttons)do handlers[i]=b.scripts.OnClick end
     for code in pairs(addon.locales)do
         addon.db.locale=code
@@ -5664,7 +5664,7 @@ check("Target match cues wrap dynamically across locales and recycle without cha
     for locale in pairs(addon.locales)do
         addon.db.locale=locale;f:search("Long target");local rows=f:cards()
         assert(#rows==2 and rows[1].height>=144 and -rows[2].point[3]>=-rows[1].point[3]+rows[1].height)
-        assert(rows[1].title.width==158 and rows[1].note.width==158 and rows[1].note.text:find(addon.L("SEARCH_QUEST_MATCH",long),1,true))
+        assert(rows[1].title.width==rows[1]:GetWidth()-98 and rows[1].note.width==rows[1]:GetWidth()-98 and rows[1].note.text:find(addon.L("SEARCH_QUEST_MATCH",long),1,true))
     end
     measurement=nil;f:search("Alpha");local row=f:cards()[1]
     assert(not row.matchQuestID and not row.note.text:find(long,1,true) and row.height==64)
@@ -8510,7 +8510,7 @@ check("Normal browsing ignores a saved preparation mode and exposes no Back or m
     assert(#visibleRows()==3)
     for _,row in ipairs(visibleRows())do assert(not row.heading and (row.questID==31001 or row.questID==31002))end
     ui.preparation=true;ui:Refresh();assert(not ui.preparation and #visibleRows()==3 and addon.char.filters.preparation==true)
-    assert(ui.characterButton.point[2]==390 and ui.entrance.point[2]==520 and ui.language.width==64 and not ui.languageChevron)
+    assert(ui.characterButton.point[2]==390 and ui.entrance==nil and ui.language.width==64 and not ui.languageChevron)
     addon.char.filters=filters;f:finish()
 end)
 check("Blocked level navigation explicitly routes to a known giver without claiming the quest available",function()
@@ -8540,9 +8540,9 @@ check("Navigation tooltips name the destination and leave foreign tooltip owners
     ui.map.scripts.OnEnter();ui.map.scripts.OnLeave();assert(hidden==1 and not tip.shown)
     GameTooltip=previous
 end)
-check("Localized navigation labels wrap within all five fixed toolbar slots without shrinking shared fonts",function()
+check("Localized navigation labels wrap within all four fixed toolbar slots without shrinking shared fonts",function()
     local buttons,fonts,finish=headerFitFixture();local locale=addon.db.locale
-    for i=3,5 do fonts[i].GetUnboundedStringWidth=function()return 420 end end
+    for i=3,4 do fonts[i].GetUnboundedStringWidth=function()return 420 end end
     for code in pairs(addon.locales)do addon.db.locale=code;ui:Refresh()
         for i,b in ipairs(buttons)do assert(b.height==36 and fonts[i].width==b.width-16 and fonts[i].maxLines==2 and -b.point[3]+b.height<=120)end
     end
@@ -8555,15 +8555,15 @@ check("Dungeon entrance uses only a current explicit producer point and its sepa
     addon.Entrances={Get=function(d)assert(d==selected);return point,function()return valid end end}
     addon.Navigation={StartEntrance=function(d,p)assert(d==selected and p==point);calls=calls+1;return true end}
     ui.quest,ui.dungeon=nil,selected;ui:RefreshDetail()
-    assert(ui.entrance.enabled and ui.entrance.text==addon.L("DUNGEON_ENTRANCE")and calls==0)
-    ui.entrance.scripts.OnClick();assert(calls==1 and ui.quest==nil and ui.frame.shown)
-    valid=false;ui.entrance.scripts.OnClick();assert(calls==1)
-    valid=true;point.x=80;ui.entrance.scripts.OnClick();assert(calls==1,"a changed point invalidates an older entrance binding")
+    assert(ui.entrance==nil and ui.entranceBinding and calls==0)
+    ui:VisitEntrance();assert(calls==1 and ui.quest==nil and ui.frame.shown)
+    valid=false;ui:VisitEntrance();assert(calls==1)
+    valid=true;point.x=80;ui:VisitEntrance();assert(calls==1,"a changed point invalidates an older entrance binding")
     for _,bad in ipairs({false,{},function()return false end})do
-        addon.Entrances={Get=function()return point,bad end};ui:RefreshDetail();assert(not ui.entrance.enabled and not ui.entranceBinding)
+        addon.Entrances={Get=function()return point,bad end};ui:RefreshDetail();assert(not ui.entranceBinding)
     end
-    addon.Entrances={Get=function()return point end};ui:RefreshDetail();assert(not ui.entrance.enabled)
-    addon.Entrances={Get=function()return nil end};ui:RefreshDetail();assert(not ui.entrance.enabled and not ui.entranceBinding)
+    addon.Entrances={Get=function()return point end};ui:RefreshDetail();assert(not ui.entranceBinding)
+    addon.Entrances={Get=function()return nil end};ui:RefreshDetail();assert(not ui.entranceBinding)
     assert(detailHas(addon.L("DUNGEON_ENTRANCE_UNKNOWN")))
     addon.Entrances,addon.Navigation=provider,nav;ui.quest,ui.dungeon=quest,dungeon;ui:Refresh()
 end)
@@ -8938,8 +8938,8 @@ check("Shared dungeon approaches use a short header and retain both notices with
     local point={mapID=1,x=20,y=30,name="Dungeon approach",origin="recorded",kind="approach",scope="shared",source="https://classicdb.ch/?zone=1584"}
     addon.Entrances={Get=function()return point,function()return true end end}
     addon.Navigation={StartEntrance=function()return true end}
-    ui.dungeon={key="shared-approach",name="Shared approach",quests={}};ui.quest=nil;ui:RefreshDetail()
-    assert(ui.entrance.enabled and ui.entrance.text==addon.L("ENTRANCE_APPROACH_ACTION"))
+    ui.dungeon={key="shared-approach",name="Shared approach",minLevel=1,maxLevel=60,quests={}};ui.quest=nil;ui:RefreshDetail()
+    assert(ui.entrance==nil and ui.entranceBinding)
     assert(detailHas(addon.L("DUNGEON_ENTRANCE_APPROACH")) and detailHas(addon.L("DUNGEON_ENTRANCE_SHARED")))
     local tip={}
     function tip:SetOwner(owner)self.owner=owner end
@@ -8948,9 +8948,113 @@ check("Shared dungeon approaches use a short header and retain both notices with
     function tip:AddLine(text)self.line=text end
     function tip:Show()self.shown=true end
     function tip:Hide()self.shown=false end
-    GameTooltip=tip;ui.entrance.scripts.OnEnter()
+    local ds,search=addon.dungeons,ui.search
+    addon.dungeons={ui.dungeon};ui.search="";ui:RefreshDungeons()
+    GameTooltip=tip;ui.cards[1].entranceControl.scripts.OnEnter()
+    addon.dungeons,ui.search=ds,search
     assert(tip.shown and tip.line:find(point.source,1,true) and tip.line:find(addon.L("DUNGEON_ENTRANCE_APPROACH"),1,true)
         and tip.line:find(addon.L("DUNGEON_ENTRANCE_SHARED"),1,true))
     GameTooltip=tooltip;addon.Entrances,addon.Navigation=provider,navigation;ui.quest,ui.dungeon=quest,dungeon;ui:Refresh()
+end)
+check("Catalogue entrance icons route their own nonselected dungeon and expire on recycling or hidden rows",function()
+    local provider,navigation=addon.Entrances,addon.Navigation
+    local f=targetSearchFixture();local calls={};local valid=true
+    addon.Entrances={Get=function(d)return {mapID=1,x=20,y=30,name=d.name},function()return valid end end}
+    addon.Navigation={StartEntrance=function(d,p)calls[#calls+1]={d,p};return true end}
+    ui:RefreshDungeons();local row=ui.cards[2];local click=row.entranceControl.scripts.OnClick
+    local selected,quest=ui.dungeon,ui.quest
+    assert(ui.entrance==nil and row.entranceControl.width==32 and row.entranceControl.footerIcon.width==24)
+    click();assert(#calls==1 and calls[1][1]==addon.dungeons[2] and ui.dungeon==selected and ui.quest==quest)
+    valid=false;click();assert(#calls==1);valid=true
+    row:Hide();click();assert(#calls==1);row:Show()
+    ui.search="Gamma";ui:RefreshDungeons();click();assert(#calls==1,"recycled card cannot route its old dungeon")
+    ui.cards[1].entranceControl.scripts.OnClick();assert(#calls==2 and calls[2][1]==addon.dungeons[3])
+    local fresh=ui.cards[1].entranceControl.scripts.OnClick
+    ui.frame:Hide();fresh();assert(#calls==2);ui.frame:Show()
+    addon.Entrances,addon.Navigation=provider,navigation;f:finish()
+end)
+check("Warm catalogue language paint retains icon bindings without querying all entrances again",function()
+    local provider,navigation=addon.Entrances,addon.Navigation
+    local f=targetSearchFixture();local reads,calls=0,0
+    addon.Entrances={Get=function(d)reads=reads+1;return {mapID=1,x=20,y=30},function()return true end end}
+    addon.Navigation={StartEntrance=function()calls=calls+1;return true end}
+    ui:RefreshDungeons();assert(reads==3)
+    local control,binding,click=ui.cards[2].entranceControl,ui.cards[2].entranceBinding,ui.cards[2].entranceControl.scripts.OnClick
+    for i=1,10 do assert(ui:RefreshCatalogLanguage());assert(reads==3 and ui.cards[2].entranceControl==control and ui.cards[2].entranceBinding==binding)end
+    click();assert(calls==1)
+    addon.Entrances,addon.Navigation=provider,navigation;f:finish()
+end)
+check("Catalogue reserves icon hit area before measuring wrapped titles and notes",function()
+    local f=targetSearchFixture();local measured=0
+    measurement=function(fs)
+        for _,row in ipairs(ui.cards)do if fs==row.title or fs==row.note then
+            assert(fs.width==row:GetWidth()-98,"icon width must be reserved before text wrapping")
+            measured=measured+1;return 72
+        end end
+        return 18
+    end
+    ui:RefreshDungeons();assert(measured>=6 and ui.cards[1].height>=162)
+    measurement=nil;f:finish()
+end)
+check("A reentrant entrance producer cannot erase a newer catalogue icon binding",function()
+    local provider,navigation=addon.Entrances,addon.Navigation
+    local f=targetSearchFixture();local armed,calls=true,0
+    addon.Navigation={StartEntrance=function(d)assert(d==addon.dungeons[3]);calls=calls+1;return true end}
+    addon.Entrances={Get=function()
+        if armed then armed=false;ui.search="Gamma";ui:RefreshDungeons()end
+        return {mapID=1,x=20,y=30},function()return true end
+    end}
+    ui:RefreshDungeons();assert(ui.search=="Gamma" and ui.cards[1].entranceBinding and ui.cards[1].entranceDungeon==addon.dungeons[3])
+    ui.cards[1].entranceControl.scripts.OnClick();assert(calls==1)
+    addon.Entrances,addon.Navigation=provider,navigation;f:finish()
+end)
+check("Catalogue entrance hints explain unknown routes and keep a newer tooltip published during native setters",function()
+    local provider,navigation,tooltip=addon.Entrances,addon.Navigation,GameTooltip
+    local f=targetSearchFixture();local armed,hidden=false,0
+    addon.Entrances={Get=function(d)
+        if d==addon.dungeons[3]then return nil end
+        return {mapID=1,x=20,y=30,name=d.name},function()return true end
+    end}
+    addon.Navigation={StartEntrance=function()return true end};ui:RefreshDungeons()
+    local tip={}
+    function tip:SetOwner(owner)self.owner=owner end
+    function tip:IsOwned(owner)return self.owner==owner end
+    function tip:SetText(value)
+        self.text=value
+        if armed then armed=false;ui.cards[2].entranceControl.scripts.OnEnter()end
+    end
+    function tip:AddLine(value)self.line=value end
+    function tip:Show()self.shown=true end
+    function tip:Hide()hidden=hidden+1;self.shown=false end
+    GameTooltip=tip
+    ui.cards[3].entranceControl.scripts.OnEnter()
+    assert(not ui.cards[3].entranceControl.enabled and tip.line:find(addon.L("DUNGEON_ENTRANCE_UNKNOWN"),1,true))
+    ui:HideNavigationHint();hidden=0;armed=true
+    ui.cards[1].entranceControl.scripts.OnEnter()
+    assert(tip.owner==ui.cards[2].entranceControl and tip.shown and tip.line:find("Beta dungeon",1,true))
+    assert(hidden==1,"only replacing the original tooltip may hide it; old cleanup must not hide the newer one")
+    ui:HideNavigationHint();GameTooltip=tooltip;addon.Entrances,addon.Navigation=provider,navigation;f:finish()
+end)
+check("Late catalogue icon native enabled and alpha setters restore the newer recycled binding",function()
+    for _,method in ipairs({"SetEnabled","SetAlpha","SetDesaturated"})do
+        local provider,navigation=addon.Entrances,addon.Navigation
+        local f=targetSearchFixture()
+        addon.Entrances={Get=function(d)
+            if d==addon.dungeons[3]then return nil end
+            return {mapID=1,x=20,y=30},function()return true end
+        end}
+        addon.Navigation={StartEntrance=function()return true end};ui:RefreshDungeons()
+        local control=ui.cards[1].entranceControl
+        local target=method=="SetEnabled"and control or control.footerIcon
+        local original,armed=target[method],true
+        target[method]=function(self,value)
+            if armed then armed=false;ui.search="Gamma";ui:RefreshDungeons()end
+            return original(self,value)
+        end
+        ui:RefreshDungeons()
+        assert(ui.search=="Gamma"and not control.enabled and not control.footerEnabled and not ui.cards[1].entranceBinding)
+        assert(control.footerIcon.alpha==.3 and control.footerIcon.desaturated==true,"new disabled icon style owns late setters")
+        target[method]=original;addon.Entrances,addon.Navigation=provider,navigation;f:finish()
+    end
 end)
 print("Preparation UI modeled checks passed: " .. total .. " (no native layout validation)")
