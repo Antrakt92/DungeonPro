@@ -3430,7 +3430,13 @@
         "dropNPCID": 6212,
         "dropName": "Dark Iron Agent",
         "dungeonKey": "gnom"
-      }
+      },
+      "providedItems": [
+        {
+          "itemID": 9326,
+          "name": "Grime-Encrusted Ring"
+        }
+      ]
     },
     {
       "id": 2951,
@@ -3903,7 +3909,13 @@
         "y": 3.4,
         "creatureDisplayID": 5647,
         "portraitSource": "https://www.wowhead.com/forever/npc=6826"
-      }
+      },
+      "providedItems": [
+        {
+          "itemID": 9362,
+          "name": "Brilliant Gold Ring"
+        }
+      ]
     },
     {
       "id": 2927,
