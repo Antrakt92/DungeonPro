@@ -1123,17 +1123,62 @@ function UI:RefreshDetail()
                 if reported(destination, slot .. index) == false or not locationCurrent() then return false end
             end
         end
+        local starterSource = addon.Clean(q.start, "table")
+        local starterID = starterSource and addon.Clean(rawget(starterSource, "itemID"), "number")
+        local starterName = starterSource and addon.Clean(rawget(starterSource, "name"), "string")
+        local starterChecker, starterIconGetter = issecretvalue, addon.ItemIcon
+        local starterNameGetter, starterCountGetter = addon.ItemName, addon.CarriedItemCount
+        local starterCount
+        local typedStarter = false
+        if starterID and starterID > 0 and starterID <= 9007199254740991 and starterID % 1 == 0 then
+            local ok, typed = pcall(function()
+                return rawget(starterSource, "npcID") == nil and rawget(starterSource, "objectID") == nil and
+                    q.startAlternatives == nil and true or false
+            end)
+            typedStarter = ok and typed == true
+        end
+        local function starterCurrent(binding)
+            if not locationCurrent() or addon.quests[id] ~= definition or q.start ~= starterSource or
+                issecretvalue ~= starterChecker or addon.ItemIcon ~= starterIconGetter or
+                addon.ItemName ~= starterNameGetter or addon.CarriedItemCount ~= starterCountGetter or
+                addon.Clean(rawget(starterSource, "itemID"), "number") ~= starterID then return false end
+            local ok, same = pcall(function()
+                return self.quest == renderQuest and self.dungeon == renderDungeon and self.engine == renderEngine and
+                    addon.char == renderCharacter and self.rewardGeneration == rewardGeneration and
+                    self.reportedGeneration == reportedGeneration and addon.quests[id] == definition and q.start == starterSource and
+                    rawget(starterSource, "itemID") == starterID and rawget(starterSource, "name") == starterName and
+                    rawget(starterSource, "npcID") == nil and rawget(starterSource, "objectID") == nil and q.startAlternatives == nil and
+                    (not binding or (binding.id == starterID and binding.role == "starter" and binding.sourceField == "start")) and
+                    issecretvalue == starterChecker and addon.ItemIcon == starterIconGetter and
+                    addon.ItemName == starterNameGetter and addon.CarriedItemCount == starterCountGetter and true or false
+            end)
+            return ok and same == true
+        end
         if q.startAlternatives then
             if alternativePlaces(q.startAlternatives, self.startButtons, "START_ALTERNATIVES", "startAlternative:") == false then return end
         else
+            if typedStarter and not starterCurrent() then return end
             local starting = place(q.start)
-            if not starting then return end
-            line(addon.L("START") .. ": " .. starting)
+            if not starting or (typedStarter and not starterCurrent()) then return end
+            local starterBinding
+            if typedStarter then
+                starterCount = carried(starterID)
+                if not starterCurrent() then return end
+                local icon = starterID <= 4294967295 and addon.Read(starterIconGetter, "number", starterID) or nil
+                if not starterCurrent() then return end
+                if icon and icon > 0 and icon <= 4294967295 and icon % 1 == 0 then
+                    starterBinding = { id = starterID, texture = icon, role = "starter", sourceField = "start" }
+                    starterBinding.current = function() return starterCurrent(starterBinding) end
+                end
+            end
+            if line(addon.L("START") .. ": " .. starting, nil, nil, starterBinding) == false then return end
             if reported(q.start, "start") == false then return end
         end
         local start = q.start
         if start and start.itemID then
-            local count = carried(start.itemID)
+            local count = typedStarter and starterCount or nil
+            if not typedStarter then count = carried(start.itemID) end
+            if typedStarter and not starterCurrent() then return end
             if count then line(count) end
             local shown = false
             local classes = addon.Clean(start.itemClasses, "table")

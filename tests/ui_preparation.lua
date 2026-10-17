@@ -4353,4 +4353,125 @@ check("Plain provided-item rows reject mandatory source changes after hydration 
     end
     addon.ItemName,addon.CarriedItemCount=names,counts;f:finish()
 end)
+local function starterPresentationFixture()
+    local f=objectivePresentationFixture();local q=addon.quests[9970]
+    q.objectiveItems=nil;q.providedItems=nil
+    q.start={itemID=801,name="Source starter",itemClasses={"PALADIN"},itemMinLevel=10}
+    ui:RefreshDetail();return f,q
+end
+check("Direct quest-starting items use a distinct optional icon and tooltip without quantity or item-use actions",function()
+    local f,q=starterPresentationFixture();local button=ui.objectiveButtons[1]
+    local text=addon.L("START")..": "..addon.L("ITEM_STARTER","Objective 801")
+    assert(detailHas(text) and objectiveText(text).width==304 and button.shown and button.icon.texture==1801)
+    assert(button.objectiveBinding.role=="starter" and button.objectiveBinding.sourceField=="start" and button.objectiveBinding.id==801)
+    assert(not button.objectiveBinding.quantity and not button.scripts.OnClick)
+    assert(not detailHas(addon.L("OBJECTIVE_ITEM","Objective 801",1)) and detailHas(addon.L("ITEM_CARRIED",0)))
+    assert(detailHas(addon.L("ITEM_CLASSES","PALADIN")) and detailHas(addon.L("ITEM_MIN_LEVEL",10)))
+    assert(not detailHas(addon.L("OBJECTIVE_ITEMS")) and not detailHas(addon.L("PROVIDED_ITEMS")))
+    button.scripts.OnEnter();assert(f.tip.owner==button and f.tip.items[#f.tip.items]==801)
+    assert(ui.engine:State(9970).status=="UNKNOWN" and not ui.action and q.start.itemID==801)
+    f:finish()
+end)
+check("Cold missing invalid and failed starter icon capabilities retain the original starter line and carried zero",function()
+    local f,q=starterPresentationFixture();local button=ui.objectiveButtons[1]
+    local text=addon.L("START")..": "..addon.L("ITEM_STARTER","Objective 801")
+    for _,getter in ipairs({false,function()return nil end,function()return"asset"end,function()return 0 end,function()error("cold")end})do
+        addon.ItemIcon=getter or nil;ui:RefreshDetail()
+        assert(detailHas(text) and objectiveText(text).width==334 and not button.shown and detailHas(addon.L("ITEM_CARRIED",0)))
+    end
+    addon.ItemIcon=function()return 1801 end;local setter=button.icon.SetTexture
+    button.icon.SetTexture=function(self,value)if value then return false end;return setter(self,value)end
+    ui:RefreshDetail();assert(not button.shown and objectiveText(text).width==334)
+    button.icon.SetTexture=setter;ui:RefreshDetail();assert(button.shown)
+    local checker=issecretvalue;local restricted={};issecretvalue=function(v)return v==restricted end
+    addon.ItemIcon=function()return restricted end;ui:RefreshDetail();assert(not button.shown and detailHas(text))
+    issecretvalue=checker;f:finish()
+end)
+check("Starter icons never promote alternate finish NPC object or oversized source identities",function()
+    local f,q=starterPresentationFixture();local button=ui.objectiveButtons[1];local original=q.start
+    for _,start in ipairs({{npcID=4001,name="NPC"},{objectID=5001,name="Object"},{npcID=4001,itemID=801,name="Mixed NPC"},
+        {objectID=5001,itemID=801,name="Mixed object"},false})do
+        q.start=start or nil;q.finish={itemID=801,name="Finish item"};ui:RefreshDetail();assert(not button.shown)
+    end
+    q.start=nil;q.startAlternatives={{npcID=4001,name="Alternative"}};ui:RefreshDetail();assert(not button.shown)
+    q.startAlternatives=nil;q.start={itemID=9007199254740991,name="Large source ID"}
+    local calls=0;addon.ItemIcon=function()calls=calls+1;return 1801 end;ui:RefreshDetail()
+    assert(calls==0 and not button.shown and detailHas(addon.L("START")..": "..addon.L("ITEM_STARTER","Objective "..tostring(9007199254740991))))
+    q.start=original;f:finish()
+end)
+check("Starter source changes during name count or icon hydration invalidate the old binding on plain fallback",function()
+    local f,q=starterPresentationFixture();local originalStart=q.start
+    for _,helper in ipairs({"ItemName","CarriedItemCount","ItemIcon"})do
+        for _,mutation in ipairs({"id","table","role","helper"})do
+            q.start=originalStart;q.start.itemID=801;q.start.npcID=nil
+            local getter=addon[helper];local armed=true
+            addon[helper]=function(id)
+                if armed and id==801 then
+                    armed=false
+                    if mutation=="id"then q.start.itemID=802
+                    elseif mutation=="table"then q.start={itemID=802,name="Replacement"}
+                    elseif mutation=="role"then q.start.npcID=4001
+                    else addon[helper]=function()return nil end end
+                end
+                return getter(id)
+            end
+            ui:RefreshDetail();assert(not armed and not ui.objectiveButtons[1].shown)
+            addon[helper]=getter
+        end
+    end
+    q.start=originalStart;q.start.itemID=801;q.start.npcID=nil
+    addon.ItemIcon=nil;local names=addon.ItemName
+    showDetail(9971)
+    addon.ItemName=function(id)q.start={itemID=802,name="Plain replacement"};return names(id)end
+    showDetail(9970);assert(not ui.objectiveButtons[1].shown)
+    assert(not detailHas(addon.L("START")..": "..addon.L("ITEM_STARTER","Objective 801")))
+    addon.ItemName=names;f:finish()
+end)
+check("Starter hydration and texture reentry retain the new card or same-card generation and recover on refresh",function()
+    local f,q=starterPresentationFixture();local button=ui.objectiveButtons[1]
+    for _,boundary in ipairs({"ItemName","CarriedItemCount","ItemIcon","texture"})do
+        for _,sameQuest in ipairs({false,true})do
+            q.start={itemID=801,name="Old starter"};local armed=true;local nestedHeight
+            local owner=boundary=="texture"and button.icon or addon
+            local key=boundary=="texture"and"SetTexture"or boundary;local getter=owner[key]
+            owner[key]=function(...)
+                local value=boundary=="texture"and select(2,...)or(...)
+                if armed and (boundary=="texture"and value or value==801)then
+                    armed=false
+                    if sameQuest then q.start={itemID=802,name="Fresh starter"};ui:RefreshDetail()else showDetail(9971)end
+                    nestedHeight=ui.detail.height
+                end
+                return getter(...)
+            end
+            showDetail(9970);assert(not armed and ui.detail.height==nestedHeight and not ui.rewardTextureBusy)
+            if not sameQuest then assert(ui.quest==9971 and not button.shown)
+            else assert(detailHas(addon.L("START")..": "..addon.L("ITEM_STARTER","Objective 802")))end
+            owner[key]=getter;q.start={itemID=801,name="Recovered"};showDetail(9970)
+            assert(button.shown and button.objectiveBinding.id==801)
+        end
+    end
+    f:finish()
+end)
+check("Starter objective provided and reward hovers remain source-distinct and stale starter leaves preserve newer owners",function()
+    local f,q=starterPresentationFixture()
+    q.objectiveItems={{itemID=801,name="Goal",quantity=6}};q.providedItems={{itemID=801,name="Supplied"}};ui:RefreshDetail()
+    local starter,objective,provided=ui.objectiveButtons[1],ui.objectiveButtons[2],ui.objectiveButtons[3]
+    assert(starter.objectiveBinding.role=="starter" and objective.objectiveBinding.role=="objective" and provided.objectiveBinding.role=="provided")
+    starter.scripts.OnEnter();local oldLeave,oldEnter=starter.scripts.OnLeave,starter.scripts.OnEnter
+    objective.scripts.OnEnter();local hides=f.tip.hides;oldLeave();assert(f.tip.hides==hides and f.tip.owner==objective)
+    provided.scripts.OnEnter();oldLeave();assert(f.tip.owner==provided)
+    ui.rewardButtons[1].scripts.OnEnter();oldLeave();assert(f.tip.owner==ui.rewardButtons[1])
+    q.start={itemID=802,name="Changed"};local count=#f.tip.items;oldEnter();assert(#f.tip.items==count)
+    f.tip.owner={foreign=true};f.tip.shown=true;ui:RefreshDetail();assert(f.tip.shown)
+    f:finish()
+end)
+check("Final starter source proof rejects item replacement during restriction cleaning after native texture assignment",function()
+    local f,q=starterPresentationFixture();local button=ui.objectiveButtons[1]
+    local setter,checker=button.icon.SetTexture,issecretvalue;local armed=false
+    button.icon.SetTexture=function(self,value)if value then armed=true end;return setter(self,value)end
+    issecretvalue=function(value)if armed and value==801 then armed=false;q.start.itemID=802 end;return false end
+    ui:RefreshDetail();assert(not button.shown and not button.objectiveBinding)
+    button.icon.SetTexture=setter;issecretvalue=checker;ui:RefreshDetail();assert(button.shown and button.objectiveBinding.id==802)
+    f:finish()
+end)
 print("Preparation UI modeled checks passed: " .. total .. " (no native layout validation)")
