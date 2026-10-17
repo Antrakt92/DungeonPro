@@ -10650,7 +10650,73 @@
       "source": "https://www.wowhead.com/forever/quest=4121/precarious-predicament",
       "start": {
         "npcID": 9520,
-        "name": "Grark Lorkrub"
+        "name": "Grark Lorkrub",
+        "zoneName": "Burning Steppes",
+        "mapID": 1428,
+        "x": 33.4,
+        "y": 50.8,
+        "reportedLocations": [
+          {
+            "mapID": 1428,
+            "x": 33.4,
+            "y": 50.8,
+            "zoneName": "Burning Steppes"
+          },
+          {
+            "mapID": 1428,
+            "x": 40,
+            "y": 34.6,
+            "zoneName": "Burning Steppes"
+          },
+          {
+            "mapID": 1428,
+            "x": 40.2,
+            "y": 34.2,
+            "zoneName": "Burning Steppes"
+          },
+          {
+            "mapID": 1428,
+            "x": 40.4,
+            "y": 33.2,
+            "zoneName": "Burning Steppes"
+          },
+          {
+            "mapID": 1428,
+            "x": 40.8,
+            "y": 32.8,
+            "zoneName": "Burning Steppes"
+          },
+          {
+            "mapID": 1428,
+            "x": 41.2,
+            "y": 33.6,
+            "zoneName": "Burning Steppes"
+          },
+          {
+            "mapID": 1428,
+            "x": 41.2,
+            "y": 35,
+            "zoneName": "Burning Steppes"
+          },
+          {
+            "mapID": 1428,
+            "x": 41.6,
+            "y": 35.2,
+            "zoneName": "Burning Steppes"
+          },
+          {
+            "mapID": 1428,
+            "x": 42.2,
+            "y": 35.6,
+            "zoneName": "Burning Steppes"
+          },
+          {
+            "mapID": 1428,
+            "x": 42.6,
+            "y": 42,
+            "zoneName": "Burning Steppes"
+          }
+        ]
       },
       "finish": {
         "npcID": 9080,
@@ -10709,7 +10775,73 @@
       },
       "finish": {
         "npcID": 9520,
-        "name": "Grark Lorkrub"
+        "name": "Grark Lorkrub",
+        "zoneName": "Burning Steppes",
+        "mapID": 1428,
+        "x": 33.4,
+        "y": 50.8,
+        "reportedLocations": [
+          {
+            "mapID": 1428,
+            "x": 33.4,
+            "y": 50.8,
+            "zoneName": "Burning Steppes"
+          },
+          {
+            "mapID": 1428,
+            "x": 40,
+            "y": 34.6,
+            "zoneName": "Burning Steppes"
+          },
+          {
+            "mapID": 1428,
+            "x": 40.2,
+            "y": 34.2,
+            "zoneName": "Burning Steppes"
+          },
+          {
+            "mapID": 1428,
+            "x": 40.4,
+            "y": 33.2,
+            "zoneName": "Burning Steppes"
+          },
+          {
+            "mapID": 1428,
+            "x": 40.8,
+            "y": 32.8,
+            "zoneName": "Burning Steppes"
+          },
+          {
+            "mapID": 1428,
+            "x": 41.2,
+            "y": 33.6,
+            "zoneName": "Burning Steppes"
+          },
+          {
+            "mapID": 1428,
+            "x": 41.2,
+            "y": 35,
+            "zoneName": "Burning Steppes"
+          },
+          {
+            "mapID": 1428,
+            "x": 41.6,
+            "y": 35.2,
+            "zoneName": "Burning Steppes"
+          },
+          {
+            "mapID": 1428,
+            "x": 42.2,
+            "y": 35.6,
+            "zoneName": "Burning Steppes"
+          },
+          {
+            "mapID": 1428,
+            "x": 42.6,
+            "y": 42,
+            "zoneName": "Burning Steppes"
+          }
+        ]
       }
     },
     {
@@ -10823,7 +10955,25 @@
       "source": "https://www.wowhead.com/forever/quest=4128/ragnar-thunderbrew",
       "start": {
         "npcID": 9540,
-        "name": "Enohar Thunderbrew"
+        "name": "Enohar Thunderbrew",
+        "zoneName": "Blasted Lands",
+        "mapID": 1419,
+        "x": 63.6,
+        "y": 20.4,
+        "reportedLocations": [
+          {
+            "mapID": 1419,
+            "x": 63.6,
+            "y": 20.4,
+            "zoneName": "Blasted Lands"
+          },
+          {
+            "mapID": 1419,
+            "x": 63.6,
+            "y": 20.6,
+            "zoneName": "Blasted Lands"
+          }
+        ]
       },
       "finish": {
         "npcID": 1267,
@@ -10931,7 +11081,37 @@
       "source": "https://www.wowhead.com/forever/quest=4133/vivian-lagrave",
       "start": {
         "npcID": 5204,
-        "name": "Apothecary Zinge"
+        "name": "Apothecary Zinge",
+        "zoneName": "Undercity",
+        "mapID": 1458,
+        "x": 49.2,
+        "y": 68.4,
+        "reportedLocations": [
+          {
+            "mapID": 1458,
+            "x": 49.2,
+            "y": 68.4,
+            "zoneName": "Undercity"
+          },
+          {
+            "mapID": 1458,
+            "x": 49.2,
+            "y": 68.6,
+            "zoneName": "Undercity"
+          },
+          {
+            "mapID": 1458,
+            "x": 50,
+            "y": 68.4,
+            "zoneName": "Undercity"
+          },
+          {
+            "mapID": 1458,
+            "x": 50,
+            "y": 68.6,
+            "zoneName": "Undercity"
+          }
+        ]
       },
       "finish": {
         "npcID": 9078,
@@ -16692,7 +16872,37 @@
       },
       "start": {
         "npcID": 5204,
-        "name": "Apothecary Zinge"
+        "name": "Apothecary Zinge",
+        "zoneName": "Undercity",
+        "mapID": 1458,
+        "x": 49.2,
+        "y": 68.4,
+        "reportedLocations": [
+          {
+            "mapID": 1458,
+            "x": 49.2,
+            "y": 68.4,
+            "zoneName": "Undercity"
+          },
+          {
+            "mapID": 1458,
+            "x": 49.2,
+            "y": 68.6,
+            "zoneName": "Undercity"
+          },
+          {
+            "mapID": 1458,
+            "x": 50,
+            "y": 68.4,
+            "zoneName": "Undercity"
+          },
+          {
+            "mapID": 1458,
+            "x": 50,
+            "y": 68.6,
+            "zoneName": "Undercity"
+          }
+        ]
       },
       "storyline": [
         4769,
@@ -19454,12 +19664,46 @@
       "start": {
         "npcID": 11801,
         "name": "Rabine Saturna",
-        "zoneName": "Moonglade"
+        "zoneName": "Moonglade",
+        "mapID": 1450,
+        "x": 51.6,
+        "y": 44.4,
+        "reportedLocations": [
+          {
+            "mapID": 1450,
+            "x": 51.6,
+            "y": 44.4,
+            "zoneName": "Moonglade"
+          },
+          {
+            "mapID": 1450,
+            "x": 51.6,
+            "y": 44.8,
+            "zoneName": "Moonglade"
+          }
+        ]
       },
       "finish": {
         "npcID": 11801,
         "name": "Rabine Saturna",
-        "zoneName": "Moonglade"
+        "zoneName": "Moonglade",
+        "mapID": 1450,
+        "x": 51.6,
+        "y": 44.4,
+        "reportedLocations": [
+          {
+            "mapID": 1450,
+            "x": 51.6,
+            "y": 44.4,
+            "zoneName": "Moonglade"
+          },
+          {
+            "mapID": 1450,
+            "x": 51.6,
+            "y": 44.8,
+            "zoneName": "Moonglade"
+          }
+        ]
       },
       "requirementsKnown": false,
       "source": "https://www.wowhead.com/forever/quest=5526/shards-of-the-felvine",
@@ -19480,12 +19724,46 @@
       "start": {
         "npcID": 11801,
         "name": "Rabine Saturna",
-        "zoneName": "Moonglade"
+        "zoneName": "Moonglade",
+        "mapID": 1450,
+        "x": 51.6,
+        "y": 44.4,
+        "reportedLocations": [
+          {
+            "mapID": 1450,
+            "x": 51.6,
+            "y": 44.4,
+            "zoneName": "Moonglade"
+          },
+          {
+            "mapID": 1450,
+            "x": 51.6,
+            "y": 44.8,
+            "zoneName": "Moonglade"
+          }
+        ]
       },
       "finish": {
         "npcID": 11801,
         "name": "Rabine Saturna",
-        "zoneName": "Moonglade"
+        "zoneName": "Moonglade",
+        "mapID": 1450,
+        "x": 51.6,
+        "y": 44.4,
+        "reportedLocations": [
+          {
+            "mapID": 1450,
+            "x": 51.6,
+            "y": 44.4,
+            "zoneName": "Moonglade"
+          },
+          {
+            "mapID": 1450,
+            "x": 51.6,
+            "y": 44.8,
+            "zoneName": "Moonglade"
+          }
+        ]
       },
       "requirementsKnown": false,
       "source": "https://www.wowhead.com/forever/quest=5527/a-reliquary-of-purity",
