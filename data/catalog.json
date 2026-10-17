@@ -1562,7 +1562,9 @@
       "start": {
         "name": "Ghostly Attendant",
         "npcID": 265002,
-        "zoneName": "Hall of Thanes"
+        "zoneName": "Hall of Thanes",
+        "creatureDisplayID": 144348,
+        "portraitSource": "https://www.wowhead.com/forever/npc=265002"
       },
       "startsInside": true,
       "objectiveKills": [
@@ -1588,7 +1590,9 @@
         "x": 32.6,
         "y": 44.6,
         "npcID": 265003,
-        "zoneName": "Ironforge"
+        "zoneName": "Ironforge",
+        "creatureDisplayID": 144349,
+        "portraitSource": "https://www.wowhead.com/forever/npc=265003"
       },
       "objectiveItems": [
         {
@@ -4482,7 +4486,14 @@
         "y": 37.6,
         "creatureDisplayID": 7034,
         "portraitSource": "https://www.wowhead.com/forever/npc=3446"
-      }
+      },
+      "objectiveItems": [
+        {
+          "itemID": 5876,
+          "name": "Blueleaf Tuber",
+          "quantity": 6
+        }
+      ]
     },
     {
       "id": 1142,
@@ -26411,7 +26422,13 @@
         "creatureDisplayID": 12953,
         "portraitSource": "https://www.wowhead.com/forever/npc=12736"
       },
-      "requirementsKnown": false
+      "requirementsKnown": false,
+      "providedItems": [
+        {
+          "itemID": 16782,
+          "name": "Strange Water Globe"
+        }
+      ]
     },
     {
       "id": 1951,
