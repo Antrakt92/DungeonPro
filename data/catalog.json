@@ -12866,7 +12866,14 @@
         "npcID": 9503,
         "name": "Private Rocknot",
         "zoneName": "Blackrock Depths"
-      }
+      },
+      "objectiveItems": [
+        {
+          "itemID": 11325,
+          "name": "Dark Iron Ale Mug",
+          "quantity": 2
+        }
+      ]
     },
     {
       "id": 4322,
@@ -15299,6 +15306,12 @@
         5464,
         5465,
         5466
+      ],
+      "objectiveItems": [
+        {
+          "itemID": 13626,
+          "name": "Human Head of Ras Frostwhisper"
+        }
       ]
     },
     {
@@ -17039,7 +17052,14 @@
         "mapID": 1423,
         "x": 81.6,
         "y": 57.8
-      }
+      },
+      "objectiveItems": [
+        {
+          "itemID": 13180,
+          "name": "Stratholme Holy Water",
+          "quantity": 5
+        }
+      ]
     },
     {
       "id": 5125,
@@ -17187,7 +17207,13 @@
         "npcID": 10917,
         "name": "Aurius",
         "zoneName": "Stratholme"
-      }
+      },
+      "objectiveItems": [
+        {
+          "itemID": 12845,
+          "name": "Medallion of Faith"
+        }
+      ]
     },
     {
       "id": 5212,
