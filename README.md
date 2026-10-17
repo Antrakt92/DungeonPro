@@ -102,8 +102,8 @@ Level ranges are provisional recommendations.
   The message and heart icons offer issue-report and project-support links for copying.
   Select a quest to expand its related steps in place, then select any step to
   read its details without losing the opened list. Completed steps remain visible.
-  Indented branches connect to their target; a map badge marks quests listed for
-  the selected dungeon, including dungeon quests within an expanded branch.
+  Indented branches connect to their target; inside an expanded branch, a map
+  badge identifies quests listed for the selected dungeon.
   The target stays at its recorded story position and has a dungeon label.
   Highlighted connectors show its earlier steps; this does not turn story order
   into required prerequisites. Same-named steps show their quest IDs.
@@ -126,6 +126,10 @@ Level ranges are provisional recommendations.
   Viewing a location or expanding its choices does not start a guide.
 - A map-pin icon on each dungeon card starts its entrance route without changing
   the quest you are reading. Hover for the destination and source details.
+  A separate quest icon summarizes listed quests for your current character:
+  ready to turn in, available, in progress, blocked or unconfirmed. Red means
+  all remaining listed quests need more levels; a green check means all matching
+  listed quests are completed. Hover for the meaning and scope.
   Matching client portal points are preferred, with recorded locations as a fallback.
   Recorded locations, shared entrances and outside approaches are labelled separately;
   missing or ambiguous destinations stay unavailable.

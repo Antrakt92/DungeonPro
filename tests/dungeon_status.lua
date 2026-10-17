@@ -1,0 +1,146 @@
+local addon,total,secret={},0,{}
+assert(loadfile("Core/Namespace.lua"))("DungeonPro",addon)
+assert(loadfile("Core/Planner.lua"))("DungeonPro",addon)
+assert(loadfile("Core/DungeonStatus.lua"))("DungeonPro",addon)
+local function check(name,fn)
+    issecretvalue=function(v)return v==secret end
+    local ok,err=pcall(fn);assert(ok,name..": "..tostring(err));total=total+1;print("PASS "..name)
+end
+local function fixture(rows,definitions)
+    local quests,states,list={},{},{}
+    for i,row in ipairs(rows)do
+        list[i]=i;quests[i]=definitions and definitions[i]or{minLevel=1,requirementsKnown=true}
+        states[i]={id=i,status=row[1],reason=row[2],completedHistory=row[1]=="COMPLETED"}
+    end
+    local alive,calls=true,0
+    local engine={quests=quests,context={level=20,faction="Alliance",class="MAGE"},choices={}}
+    function engine:Current()return alive end
+    function engine:State(id)calls=calls+1;return states[id]end
+    function engine:Dungeon()error("aggregate must not build preparation actions")end
+    function engine:Next()error("aggregate must not walk action routes")end
+    return {dungeon={key="test",quests=list,coverage="partial"},engine=engine,states=states,
+        calls=function()return calls end,expire=function()alive=false end}
+end
+local function status(f)
+    local value,current=addon.DungeonStatus.Get(f.dungeon,f.engine);assert(value and current())
+    return value,current
+end
+check("Ready available active unknown and locked precedence describes at least one known listed quest",function()
+    for _,case in ipairs({{{"READY"},{"AVAILABLE"},{"ACTIVE"},{"UNKNOWN"},{"LOCKED","level"}},
+        {{"AVAILABLE"},{"ACTIVE"},{"UNKNOWN"}},{{"ACTIVE"},{"UNKNOWN"}},{{"UNKNOWN"},{"LOCKED","level"}},{{"LOCKED","requirements"}}})do
+        local f=fixture(case);local value=status(f);assert(value.status==case[1][1])
+        assert(value.partial and value.listed==#case and value.eligible==#case)
+    end
+end)
+check("Red level blocking requires every unfinished listed quest to have that exact known reason",function()
+    local f=fixture({{"COMPLETED"},{"LOCKED","level"},{"LOCKED","level"}})
+    local value=status(f);assert(value.status=="LOCKED"and value.reason=="level"and value.allLevelBlocked)
+    f.states[3].reason="requirements";value=status(f);assert(value.status=="LOCKED"and value.reason==nil and not value.allLevelBlocked)
+    f.states[3].status="UNKNOWN";value=status(f);assert(value.status=="UNKNOWN"and value.reason==nil)
+end)
+check("Only nonempty positive completed eligible lists receive a listed-only completion check",function()
+    local f=fixture({{"COMPLETED"},{"COMPLETED"}});local value=status(f)
+    assert(value.status=="COMPLETED"and value.completed==2 and value.unfinished==0 and value.partial)
+    f.states[2].completedHistory=nil;value=status(f);assert(value.status=="UNKNOWN"and value.completed==1)
+    f=fixture({});value=status(f);assert(value.status=="UNAVAILABLE"and value.eligible==0 and value.completed==0)
+end)
+check("Foreign-character inspection does not affect aggregates even with positive past completion",function()
+    local f=fixture({{"COMPLETED"},{"AVAILABLE"},{"UNAVAILABLE","class"}},
+        {{minLevel=1,factions={"Horde"}},{minLevel=1},{minLevel=1,classes={"WARRIOR"}}})
+    local value=status(f);assert(value.status=="AVAILABLE"and value.eligible==1 and value.excluded==2 and value.completed==0)
+    f.dungeon.includeUnavailable=true;value=status(f);assert(value.status=="AVAILABLE"and value.eligible==1)
+    f.engine.quests[2].factions={"Horde"};value=status(f)
+    assert(value.status=="UNAVAILABLE"and value.eligible==0 and value.excluded==3)
+end)
+check("Current active and ready log evidence retains precedence over stale catalogue restrictions",function()
+    local f=fixture({{"ACTIVE"},{"READY"}},{{factions={"Horde"}},{classes={"WARRIOR"}}})
+    local value=status(f);assert(value.status=="READY"and value.eligible==2 and value.excluded==0)
+end)
+check("Unknown character eligibility cannot certify a completed list",function()
+    local f=fixture({{"COMPLETED"}},{{factions={"Alliance"}}});f.engine.context.faction=nil
+    local value=status(f);assert(value.status=="UNKNOWN"and value.completed==0 and value.eligible==1)
+end)
+check("Duplicate IDs count once and no action builder or native hydration is used",function()
+    local f=fixture({{"AVAILABLE"}});f.dungeon.quests={1,1,1}
+    local native,eligibilityCalls=addon.Planner.Eligible,0
+    addon.Planner.Eligible=function(...)eligibilityCalls=eligibilityCalls+1;return native(...)end
+    local value,current=status(f);assert(value.listed==1 and value.eligible==1 and f.calls()==1)
+    for i=1,100 do assert(current())end
+    assert(f.calls()==1 and eligibilityCalls==1,"warm source proof must never call State or Eligible again")
+    addon.Planner.Eligible=native
+end)
+check("State callback reentry cannot publish an expired character or source",function()
+    for _,mode in ipairs({"context","quests","list","provider","expire","definition"})do
+        local f=fixture({{"AVAILABLE"}});local getter=f.engine.State
+        f.engine.State=function(self,id)
+            local value=getter(self,id)
+            if mode=="context"then self.context={}elseif mode=="quests"then self.quests={}
+            elseif mode=="list"then f.dungeon.quests={1}elseif mode=="provider"then self.State=function()return value end
+            elseif mode=="definition"then self.quests[1]={}else f.expire()end
+            return value
+        end
+        local value=addon.DungeonStatus.Get(f.dungeon,f.engine);assert(value==nil,mode)
+    end
+end)
+check("Published source proofs expire on context list eligibility state and provider drift",function()
+    for _,mode in ipairs({"level","class","faction","coverage","list","definition","restriction","state","getter","cache"})do
+        local f=fixture({{"AVAILABLE"}},{{minLevel=1,classes={"MAGE"}}});local _,current=status(f)
+        if mode=="level"then f.engine.context.level=1 elseif mode=="class"then f.engine.context.class="WARRIOR"
+        elseif mode=="faction"then f.engine.context.faction="Horde"elseif mode=="coverage"then f.dungeon.coverage="reviewed"
+        elseif mode=="list"then f.dungeon.quests[1]=2 elseif mode=="definition"then f.engine.quests[1]={}
+        elseif mode=="restriction"then f.engine.quests[1].classes[1]="WARRIOR"
+        elseif mode=="state"then f.states[1].status="READY"elseif mode=="cache"then f.engine.states={}
+        else f.engine.State=function()return f.states[1]end end
+        assert(not current(),mode)
+    end
+end)
+check("Invalid restricted sparse or oversized quest snapshots fail closed",function()
+    for _,bad in ipairs({{0},{secret},{1,2,3},{[1]=1,[3]=1},{["wrong"]=1}})do
+        local f=fixture({{"AVAILABLE"}});f.dungeon.quests=bad
+        assert(addon.DungeonStatus.Get(f.dungeon,f.engine)==nil)
+    end
+    local f=fixture({{"AVAILABLE"}});f.states[1].status=secret
+    assert(addon.DungeonStatus.Get(f.dungeon,f.engine)==nil)
+    f=fixture({{"AVAILABLE"}});f.dungeon.quests={};for i=1,201 do f.dungeon.quests[i]=1 end
+    assert(addon.DungeonStatus.Get(f.dungeon,f.engine)==nil)
+end)
+check("In-place requirement group membership and mode changes expire the aggregate",function()
+    for _,mode in ipairs({"member","mode","append","replace"})do
+        local f=fixture({{"LOCKED","requirements"}},{{minLevel=1,requires={{ids={2},mode="completed"}}}})
+        local _,current=status(f);local group=f.engine.quests[1].requires[1]
+        if mode=="member"then group.ids[1]=3 elseif mode=="mode"then group.mode="active"
+        elseif mode=="append"then group.ids[2]=3 else f.engine.quests[1].requires[1]={ids={2}}end
+        assert(not current(),mode)
+    end
+end)
+check("Reachable dependency definitions are captured without querying their states on warm proof",function()
+    for _,mode in ipairs({"level","restriction","deepMember","replacement","missing"})do
+        local f=fixture({{"LOCKED","requirements"}},{{minLevel=1,requires={{ids={2}}}}})
+        f.engine.quests[2]={minLevel=1,requires={{ids={3}}}};f.engine.quests[3]={minLevel=1,classes={"MAGE"}}
+        local _,current=status(f);assert(f.calls()==1)
+        if mode=="level"then f.engine.quests[3].minLevel=25
+        elseif mode=="restriction"then f.engine.quests[3].classes[1]="WARRIOR"
+        elseif mode=="deepMember"then f.engine.quests[2].requires[1].ids[1]=4
+        elseif mode=="replacement"then f.engine.quests[2]={}
+        else f.engine.quests[3]=nil end
+        assert(not current()and f.calls()==1,mode)
+    end
+    local f=fixture({{"AVAILABLE"}});for i=1,201 do f.engine.quests[i]={requires=i<201 and{{ids={i+1}}}or nil}end
+    assert(addon.DungeonStatus.Get(f.dungeon,f.engine)==nil and f.calls()==0,"dependency capture has a hard source budget")
+end)
+check("Every actual dungeon aggregates planner states without changing them or invoking Next",function()
+    local actual={};assert(loadfile("Database/Catalog.lua"))("DungeonPro",actual)
+    local engine=addon.Planner.New(actual.quests,{level=60,faction="Alliance",class="MAGE",
+        completed=function()return false end,active=function()return false end},{})
+    engine.Next=function()error("No action walk")end;engine.Dungeon=function()error("No full preparation")end
+    local count=0
+    for _,d in ipairs(actual.dungeons)do
+        local before={};for _,id in ipairs(d.quests)do before[id]=engine:State(id)end
+        local result,current=addon.DungeonStatus.Get(d,engine)
+        assert(result and current()and result.listed==#d.quests)
+        for id,state in pairs(before)do assert(engine:State(id)==state)end
+        count=count+1
+    end
+    assert(count==29)
+end)
+print("Dungeon status modeled checks passed: "..total)

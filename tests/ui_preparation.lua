@@ -146,6 +146,7 @@ addon.dungeons = { { key = "fixture", name = "Dungeon", minLevel = 10, maxLevel 
 assert(loadfile("UI/Theme.lua"))("DungeonPro", addon)
 assert(loadfile("UI/QuestStatus.lua"))("DungeonPro", addon)
 assert(loadfile("Core/QuestTree.lua"))("DungeonPro", addon)
+assert(loadfile("Core/DungeonStatus.lua"))("DungeonPro", addon)
 assert(loadfile("UI/QuestListRewards.lua"))("DungeonPro", addon)
 assert(loadfile("UI/Window.lua"))("DungeonPro", addon)
 function methods:SetToplevel(value) self.topLevel=value end
@@ -586,7 +587,7 @@ check("Wrapped catalogue, quest and giver text expands cumulative rows without o
     assert(ui.chainButtons[1].point[3] - ui.chainButtons[2].point[3] >= 81)
     addon.QuestName, addon.DungeonName, addon.quests[2].start.name = questName, dungeonName, giver
     measurement = nil; ui.preparation = false; ui:Refresh(); showDetail(100)
-    assert(visibleRows()[1] == first and first.height == 30 and ui.cards[1].height == 64)
+    assert(visibleRows()[1] == first and first.height == 30 and ui.cards[1].height == 84)
     assert(not first.note.shown and ui.chainButtons[1].height == 34)
 end)
 check("Invalid and restricted text measurements reuse clean geometry safely", function()
@@ -1216,14 +1217,14 @@ check("Catalogue labels distinguish listed targets from character eligibility an
     measurement = function(fs) return fs.text and fs.text:find("\n", 1, true) and 36 or 18 end
     ui:RefreshDungeons()
     local card = ui.cards[1]
-    assert(card.note.text == addon.L("CATALOG_LEVELS", 10, 30) .. "\n" .. addon.L("CATALOG_QUESTS", 2))
-    assert(card.height == 72 and ui.cards[2].point[3] == -76, "two metadata lines must fit cumulative geometry")
+    assert(card.note.text == addon.L("CATALOG_COMPACT_META", 10, 30, 2))
+    assert(card.height == 84 and ui.cards[2].point[3] == -92, "compact metadata and cover fit cumulative geometry")
     assert(addon.Planner.Eligible(addon.quests[2], addon.Context()) == false)
     ui.includeUnavailable = true; ui:RefreshDungeons()
-    assert(card.note.text:find(addon.L("CATALOG_QUESTS", 2), 1, true), "listed count is independent of character filtering")
+    assert(card.note.text==addon.L("CATALOG_COMPACT_META",10,30,2), "listed count is independent of character filtering")
     ui.search = "Empty"; ui:RefreshDungeons()
     assert(ui.cards[1] == card and card.title.text == "Empty dungeon")
-    assert(card.note.text == addon.L("CATALOG_LEVELS", 40, 50) .. "\n" .. addon.L("CATALOG_QUESTS", 0))
+    assert(card.note.text == addon.L("CATALOG_COMPACT_META",40,50,0))
     assert(not ui.cards[2].shown and ui.dungeon == listed and ui.quest == 2)
     ui.search = "no such dungeon"; ui:RefreshDungeons()
     assert(ui.catalogNotice.shown and not card.shown and ui.dungeon == listed and ui.quest == 2)
@@ -5565,7 +5566,7 @@ check("Dungeon search finds only listed target source names and keeps selected q
     f:search("SOURCE TARGET");local rows=f:cards()
     assert(#rows==2 and rows[1].matchQuestID==31001 and rows[2].matchQuestID==31001)
     assert(rows[1].note.text:find(addon.L("SEARCH_QUEST_MATCH","Source target"),1,true))
-    assert(rows[1].note.text:find(addon.L("CATALOG_QUESTS",3),1,true) and rows[2].note.text:find(addon.L("CATALOG_QUESTS",1),1,true))
+    assert(rows[1].note.text:find(addon.L("CATALOG_COMPACT_META",10,30,3),1,true) and rows[2].note.text:find(addon.L("CATALOG_COMPACT_META",10,30,1),1,true))
     assert(#f.reads==0,"source match should not query cached native titles")
     addon.dungeons[2].quests={};f:search("Other source");assert(#f:cards()==1 and #f.reads==0,"all source names precede optional cached reads")
     f:search("Support only");assert(#f:cards()==0 and ui.catalogNotice.shown)
@@ -5604,10 +5605,10 @@ check("Target match cues wrap dynamically across locales and recycle without cha
     for locale in pairs(addon.locales)do
         addon.db.locale=locale;f:search("Long target");local rows=f:cards()
         assert(#rows==2 and rows[1].height>=144 and -rows[2].point[3]>=-rows[1].point[3]+rows[1].height)
-        assert(rows[1].title.width==rows[1]:GetWidth()-98 and rows[1].note.width==rows[1]:GetWidth()-98 and rows[1].note.text:find(addon.L("SEARCH_QUEST_MATCH",long),1,true))
+        assert(rows[1].title.width==rows[1]:GetWidth()-108 and rows[1].note.width==rows[1]:GetWidth()-108 and rows[1].note.text:find(addon.L("SEARCH_QUEST_MATCH",long),1,true))
     end
     measurement=nil;f:search("Alpha");local row=f:cards()[1]
-    assert(not row.matchQuestID and not row.note.text:find(long,1,true) and row.height==64)
+    assert(not row.matchQuestID and not row.note.text:find(long,1,true) and row.height==84)
     ui.range=true;f:search("Gamma");assert(#f:cards()==0)
     ui.clearSearch.scripts.OnClick();assert(ui.search=="" and ui.range==true and #f:cards()==2)
     f:finish()
@@ -6176,7 +6177,7 @@ check("Quest glyphs clear on state and heading recycling and never indent note t
     assert(row.questID==32001 and row.statusIcon.shown and row.statusInset==20 and row.title.width==width-20 and row.title.point[2]==28 and not row.note.shown)
     ui.preparation=true;ui:RefreshQuests();assert(ui.rows[1].heading and not ui.rows[1].statusIcon.shown and ui.rows[1].title.width==ui.rows[1]:GetWidth()-22)
     ui.preparation=false;f.active[32001]=true;ui:RefreshQuests();assert(row.statusIcon.shown and row.title.width==width-20)
-    ui:RefreshDungeons();for _,card in ipairs(ui.cards)do if card.shown then assert(card.title.point[2]==58 and card.note.point[2]==58)end end
+    ui:RefreshDungeons();for _,card in ipairs(ui.cards)do if card.shown then assert(card.title.point[2]==72 and card.note.point[2]==72)end end
     f:finish()
 end)
 check("Optional glyph painter failures and missing capabilities preserve textual original-width quest rows",function()
@@ -8898,7 +8899,7 @@ check("Catalogue entrance icons route their own nonselected dungeon and expire o
     addon.Navigation={StartEntrance=function(d,p)calls[#calls+1]={d,p};return true end}
     ui:RefreshDungeons();local row=ui.cards[2];local click=row.entranceControl.scripts.OnClick
     local selected,quest=ui.dungeon,ui.quest
-    assert(ui.entrance==nil and row.entranceControl.width==32 and row.entranceControl.footerIcon.width==24)
+    assert(ui.entrance==nil and row.entranceControl.width==28 and row.entranceControl.footerIcon.width==20)
     click();assert(#calls==1 and calls[1][1]==addon.dungeons[2] and ui.dungeon==selected and ui.quest==quest)
     valid=false;click();assert(#calls==1);valid=true
     row:Hide();click();assert(#calls==1);row:Show()
@@ -8923,7 +8924,7 @@ check("Catalogue reserves icon hit area before measuring wrapped titles and note
     local f=targetSearchFixture();local measured=0
     measurement=function(fs)
         for _,row in ipairs(ui.cards)do if fs==row.title or fs==row.note then
-            assert(fs.width==row:GetWidth()-98,"icon width must be reserved before text wrapping")
+            assert(fs.width==row:GetWidth()-108,"icon width must be reserved before text wrapping")
             measured=measured+1;return 72
         end end
         return 18
@@ -9125,7 +9126,7 @@ check("Inline child surfaces attach to their root with rails and exact-ID dungeo
             assert(row.treeRail.shown and row.treeElbow.shown and row.height==30 and row.title.point[2]==28)
         else assert(row.point[2]==0)end
         local target=row.questID==43000 or row.questID==43003 or row.questID==43004
-        assert(row.dungeonTarget==target and (row.dungeonBadge and row.dungeonBadge.shown or false)==target)
+        assert(row.dungeonTarget==target and (row.dungeonBadge and row.dungeonBadge.shown or false)==(target and row.questTreeNode))
     end end
     assert(seen[43000]and seen[43003]and not f:row(43003,false))
     assert(f:row(43000,false).title.text=="Same visible title #43000"and f:row(43003,true).title.text=="Same visible title #43003","duplicate names retain distinct visible IDs")
@@ -9195,12 +9196,12 @@ check("No-dungeon PICK notice clears recycled quest decorations and reward owner
     local f=inlineTreeFixture();local context=addon.Context
     addon.Context=function()return{level=60,active=function()return false end,completed=function()return true end}end
     ui:RefreshQuests();local row=ui.rows[1]
-    assert(row.dungeonBadge.shown and row.statusIcon.shown and row.completedStrike.shown)
+    assert((not row.dungeonBadge or not row.dungeonBadge.shown)and row.statusIcon.shown and row.completedStrike.shown)
     local clear,clears=addon.QuestListRewards.Clear,0
     addon.QuestListRewards.Clear=function(value)if value==row then clears=clears+1 end;return clear(value)end
     ui.dungeon,ui.quest=nil,nil;ui:RefreshQuests()
     assert(ui.currentPlan==nil and row.shown and row.heading=="PICK"and row.title.text==addon.L("PICK"))
-    assert(not row.dungeonBadge.shown and not row.statusIcon.shown and not row.completedStrike.shown and clears==1)
+    assert((not row.dungeonBadge or not row.dungeonBadge.shown) and not row.statusIcon.shown and not row.completedStrike.shown and clears==1)
     assert(row.width==ui.questList:GetWidth()-4 and row.title.width==ui.questList:GetWidth()-22 and not row.scripts.OnClick)
     addon.QuestListRewards.Clear=clear;addon.Context=context;f:finish()
 end)
@@ -9364,5 +9365,91 @@ check("Actual Toxic Soil first step selects while the exact dungeon target stays
     addon.quests,addon.QuestName,addon.Context=saved.quests,saved.name,saved.context
     ui.dungeon,ui.quest,ui.questTreeRoot,ui.questTreeDungeon=saved.dungeon,saved.quest,saved.root,saved.treeDungeon
     ui.detailHistory,ui.includeUnavailable,addon.db.locale=saved.history,saved.all,saved.locale;ui:Refresh()
+end)
+local function dungeonCardStatusFixture()
+    local f={quests=addon.quests,dungeons=addon.dungeons,context=addon.Context,name=addon.DungeonName,search=ui.search,range=ui.range,
+        namespace=C_Texture,atlas=methods.SetAtlas,vertex=methods.SetVertexColor,revision=1,done={[52001]=true},active={[52002]=true,[52003]=true},ready={[52003]=true}}
+    addon.quests={};addon.dungeons={}
+    for id=52001,52008 do addon.quests[id]={id=id,name="Status quest "..id,minLevel=1,requirementsKnown=true}end
+    addon.quests[52005].minLevel=80;addon.quests[52006].requirementsKnown=false;addon.quests[52007].requires={{ids={52004}}}
+    addon.quests[52008].factions={"Horde"}
+    for index,id in ipairs({52001,52002,52003,52004,52005,52006,52007,52008})do
+        addon.dungeons[index]={key="status-card-"..id,name="Status dungeon "..id,minLevel=10,maxLevel=30,coverage="partial",quests={id}}
+    end
+    addon.dungeons[9]={key="empty-status",name="Empty status dungeon",minLevel=10,maxLevel=30,coverage="partial",quests={}}
+    addon.Context=function()
+        local revision=f.revision
+        return {level=60,faction="Alliance",current=function()return f.revision==revision end,
+            completed=function(id)return f.done[id]==true end,active=function(id)return f.active[id]==true end,ready=function(id)return f.ready[id]==true end}
+    end
+    addon.DungeonName=function(d)return d.name end
+    methods.SetAtlas=function(self,atlas)self.atlas=atlas end
+    methods.SetVertexColor=function(self,...)self.vertexColor={...}end
+    C_Texture={GetAtlasInfo=function()return{}end}
+    ui.search="";ui.range=false;ui.frame:Show();ui:RefreshDungeons()
+    function f:finish()
+        addon.quests,addon.dungeons,addon.Context,addon.DungeonName=self.quests,self.dungeons,self.context,self.name
+        C_Texture,methods.SetAtlas,methods.SetVertexColor=self.namespace,self.atlas,self.vertex
+        ui.search,ui.range=self.search,self.range;ui:RefreshDungeons()
+    end
+    return f
+end
+check("Compact dungeon cards separate cover titles metadata entrance actions and truthful character status glyphs",function()
+    local f=dungeonCardStatusFixture();local statuses={"COMPLETED","ACTIVE","READY","AVAILABLE","LOCKED","UNKNOWN","LOCKED","UNAVAILABLE","UNAVAILABLE"}
+    for index,status in ipairs(statuses)do
+        local row=ui.cards[index];local control=row.dungeonStatusControl;local icon=control.statusIcon
+        assert(row.dungeonStatusDTO.status==status and control.shown and icon.shown and control.kind=="Frame"and not control.scripts.OnClick)
+        assert(row.art.width==52 and row.art.height==56 and row.art.point[2]==8 and row.art.point[3]==-8)
+        assert(row.title.point[2]==72 and row.note.point[2]==72 and row.title.width==row:GetWidth()-108 and row.note.fontSize==12)
+        assert(row.height>=84 and -row.entranceControl.point[5]+row.entranceControl.height<=44)
+        assert(control.point[5]==-44 and control.width==28 and icon.width==20)
+        assert(row.note.text==addon.L("CATALOG_COMPACT_META",10,30,index==9 and 0 or 1))
+        if index>1 then assert(-row.point[3]>=-ui.cards[index-1].point[3]+ui.cards[index-1].height+8)end
+    end
+    assert(ui.cards[1].dungeonStatusControl.statusIcon.texture=="Interface\\RaidFrame\\ReadyCheck-Ready")
+    assert(ui.cards[2].dungeonStatusControl.statusIcon.atlas=="Quest-In-Progress-Icon-yellow")
+    assert(ui.cards[3].dungeonStatusControl.statusIcon.atlas=="UI-QuestIcon-TurnIn-Normal")
+    assert(ui.cards[5].dungeonStatusControl.statusIcon.vertexColor[2]==.2 and not ui.cards[5].dungeonStatusControl.statusIcon.desaturated)
+    assert(ui.cards[6].dungeonStatusControl.statusIcon.desaturated and ui.cards[7].dungeonStatusControl.statusIcon.desaturated)
+    f:finish()
+end)
+check("Warm catalogue language paint reuses status snapshots without new aggregation or quest State queries",function()
+    local f=dungeonCardStatusFixture();local get,new=addon.DungeonStatus.Get,addon.Planner.New;local gets,states=0,0
+    addon.DungeonStatus.Get=function(...)gets=gets+1;return get(...)end
+    addon.Planner.New=function(...)
+        local engine=new(...);local state=engine.State
+        engine.State=function(self,...)states=states+1;return state(self,...)end
+        return engine
+    end
+    ui:RefreshDungeons();assert(gets==9 and states>=8)
+    local snapshot,initialStates=ui.cards[1].dungeonStatusDTO,states
+    for index=1,10 do assert(ui:RefreshCatalogLanguage());assert(ui.cards[1].dungeonStatusDTO==snapshot)end
+    assert(gets==9 and states==initialStates)
+    f.done[52004]=true;f.revision=f.revision+1
+    assert(not ui:RefreshCatalogLanguage());ui:RefreshDungeons()
+    assert(ui.cards[4].dungeonStatusDTO.status=="COMPLETED"and gets==18 and states>initialStates)
+    addon.DungeonStatus.Get,addon.Planner.New=get,new;f:finish()
+end)
+check("Dungeon status tooltips explain listed-character scope and reject stale rows foreign owners and player changes",function()
+    local f=dungeonCardStatusFixture();local previous,locale=GameTooltip,addon.db.locale;local tip={}
+    function tip:SetOwner(owner)self.owner=owner;self.lines={}end;function tip:IsOwned(owner)return self.owner==owner end
+    function tip:SetText(value)self.text=value end;function tip:AddLine(value)self.lines[#self.lines+1]=value end
+    function tip:Show()self.shown=true end;function tip:Hide()self.shown=false end
+    GameTooltip=tip
+    for code in pairs(addon.locales)do
+        addon.db.locale=code;ui:RefreshDungeons()
+        for _,entry in ipairs({{5,"DUNGEON_STATUS_LEVEL"},{6,"DUNGEON_STATUS_UNKNOWN"},{9,"DUNGEON_STATUS_EMPTY"}})do
+            local control=ui.cards[entry[1]].dungeonStatusControl;control.scripts.OnEnter()
+            assert(tip.shown and tip.lines[1]==addon.L(entry[2])and tip.lines[3]==addon.L("DUNGEON_STATUS_SCOPE"))
+            control.scripts.OnLeave();assert(not tip.shown)
+        end
+    end
+    local row=ui.cards[5];local old=row.dungeonStatusControl.scripts.OnEnter
+    row:Hide();old();assert(not tip.shown);row:Show()
+    local char=addon.char;addon.char={};old();assert(not tip.shown);addon.char=char
+    local text=tip.SetText;local foreign={}
+    tip.SetText=function(self)self.owner=foreign end;old();assert(not tip.shown and tip.owner==foreign)
+    tip.SetText=text;ui.search="Empty";ui:RefreshDungeons();old();assert(not tip.shown)
+    GameTooltip,addon.db.locale=previous,locale;f:finish()
 end)
 print("Preparation UI modeled checks passed: " .. total .. " (no native layout validation)")

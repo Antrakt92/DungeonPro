@@ -93,8 +93,43 @@ test("recycled selected dungeon clears accent and restores border", function()
     local selected = r.bg.color[1]
     assert(addon.Theme.StyleRow(r, {kind="dungeon",selected=false}))
     assert(not accent.shown and r.bg.color[1] < selected and edge.color[1] < .2)
-    assert(#r.textures == 5)
+    assert(#r.textures == 9)
 end)
+test("dungeon cards frame existing art and preserve layout assets handlers and bounded decoration", function()
+    local r = row(); r.art.texture = "original-cover"
+    local click, enter = function() end, function() end
+    r.scripts.OnClick, r.scripts.OnEnter = click, enter
+    assert(addon.Theme.StyleRow(r, { kind = "dungeon" }))
+    assert(#r.textures == 9)
+    for i = 6, 9 do
+        assert(r.textures[i].shown and r.textures[i].points[1][2] == r.art)
+    end
+    assert(r.title.textColor[1] > r.note.textColor[1] and r.highlight.color[4] <= .07)
+    for _ = 1, 100 do assert(addon.Theme.StyleRow(r, { kind = "dungeon" })) end
+    assert(#r.textures == 9 and r.art.texture == "original-cover" and not r.art.points)
+    assert(r.width == 200 and r.height == 40 and not r.points)
+    assert(r.scripts.OnClick == click and r.scripts.OnEnter == enter and not r.scripts.OnUpdate)
+    assert(addon.Theme.StyleRow(r, { kind = "quest" }))
+    for i = 6, 9 do assert(not r.textures[i].shown) end
+end)
+
+test("late card-frame tint cannot restore a recycled quest thumbnail border", function()
+    local r = row()
+    assert(addon.Theme.StyleRow(r, { kind = "dungeon" }))
+    local edge, armed = r.textures[6], true
+    local setter = edge.SetColorTexture
+    edge.SetColorTexture = function(self, ...)
+        if armed then
+            armed = false
+            assert(addon.Theme.StyleRow(r, { kind = "quest", selected = true }))
+        end
+        return setter(self, ...)
+    end
+    assert(not addon.Theme.StyleRow(r, { kind = "dungeon", selected = true }))
+    for i = 6, 9 do assert(not r.textures[i].shown) end
+    assert(r.bg.color[2] > r.bg.color[1] and r.title.textColor[2] > .8)
+end)
+
 test("quest and section styles retain text art layout and actions", function()
     local r = row(); r.art.texture = "native-art"; r.enabled = false
     local click = function() end; r.scripts.OnClick = click

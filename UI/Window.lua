@@ -181,6 +181,46 @@ function UI:HideNavigationHint()
     end
 end
 
+function UI:CatalogStatusHint(row)
+    self:HideNavigationHint()
+    local frame, dto, owned, result = self.frame, row.dungeonStatusDTO, row.dungeonStatusCurrent, row.catalogResult
+    local control = row.dungeonStatusControl
+    local tip = addon.Clean(GameTooltip, "table") or addon.Clean(GameTooltip, "userdata")
+    local isOwned = tip and addon.Clean(tip.IsOwned, "function")
+    local function current()
+        local shown = addon.Read(frame.IsShown, "boolean", frame)
+        return shown == true and addon.UI == self and self.frame == frame and row.catalogResult == result and row.dungeonStatusDTO == dto and
+            row.dungeonStatusCurrent == owned and owned and owned() and GameTooltip == tip and tip.IsOwned == isOwned
+    end
+    if not tip or not isOwned or not dto or not current() then return end
+    local status = addon.Clean(dto.status, "string")
+    local allowed = { READY=true, AVAILABLE=true, ACTIVE=true, UNKNOWN=true, LOCKED=true, COMPLETED=true, UNAVAILABLE=true }
+    if not status or not allowed[status] or not current() then return end
+    local name = addon.Read(addon.DungeonName, "string", row.entranceDungeon)
+    if not name or not current() then return end
+    local reason = addon.Clean(dto.reason, "string")
+    local listed = addon.Clean(dto.listed, "number")
+    local statusKey = reason == "level" and "DUNGEON_STATUS_LEVEL" or
+        (listed == 0 and "DUNGEON_STATUS_EMPTY" or ("DUNGEON_STATUS_" .. status))
+    local minimum = result and addon.Clean(result.minimum, "number")
+    local maximum = result and addon.Clean(result.maximum, "number")
+    local count = result and addon.Clean(result.count, "number")
+    if not minimum or not maximum or not count or not current() then return end
+    local held = { tip=tip, button=control }; self.navigationTooltip=held
+    for _, call in ipairs({ { "SetOwner", control, "ANCHOR_RIGHT" }, { "SetText", name .. " — " .. addon.L("DUNGEON_STATUS") },
+        { "AddLine", addon.L(statusKey), 1, 1, 1, true },
+        { "AddLine", addon.L("CATALOG_LEVELS", minimum, maximum) .. " · " .. addon.L("CATALOG_QUESTS", count), .8, .8, .8, true },
+        { "AddLine", addon.L("DUNGEON_STATUS_SCOPE"), .7, .7, .7, true }, { "Show" } }) do
+        if not current() or self.navigationTooltip ~= held then return end
+        local method = addon.Clean(tip[call[1]], "function")
+        if not method or not pcall(method, tip, unpack(call, 2)) or not current() or self.navigationTooltip ~= held or
+            addon.Read(isOwned, "boolean", tip, control) ~= true or not current() or self.navigationTooltip ~= held then
+            if self.navigationTooltip == held then self:HideNavigationHint() end
+            return
+        end
+    end
+end
+
 function UI:QuestListHint(row)
     self:HideNavigationHint()
     local owner, frame = row.questListCurrent, self.frame
@@ -736,6 +776,16 @@ function UI:LayoutRow(row, minimum, offset, ownerCurrent, ownerWrite)
         return current()
     end
     if not current() then return nil end
+    if row.catalogCard then
+        local titleHeight = measuredHeight(row.title, 18)
+        local noteHeight = measuredHeight(row.note, 14)
+        local height = math.max(84, 8 + titleHeight + 4 + noteHeight + 8)
+        if not current() or not write(row.title, "ClearAllPoints") or not write(row.title, "SetPoint", "TOPLEFT", 72, -8) or
+            not write(row.note, "Show") or not write(row.note, "ClearAllPoints") or
+            not write(row.note, "SetPoint", "TOPLEFT", 72, -(8 + titleHeight + 4)) or not write(row, "SetHeight", height) or
+            not write(row, "ClearAllPoints") or not write(row, "SetPoint", "TOPLEFT", 0, -offset) then return nil end
+        return offset + height + 8
+    end
     if row.compact then
         local left = 8 + (row.statusInset or 0)
         local height = math.max(minimum, 12 + measuredHeight(row.title, 18))
@@ -902,7 +952,7 @@ function UI:QueueSearch()
 end
 
 function UI:CatalogResultNote(result, matchedName)
-    local note = addon.L("CATALOG_LEVELS", result.minimum, result.maximum) .. "\n" .. addon.L("CATALOG_QUESTS", result.count)
+    local note = addon.L("CATALOG_COMPACT_META", result.minimum, result.maximum, result.count)
     matchedName = matchedName or result.matchedName
     if matchedName then note = note .. "\n" .. addon.L("SEARCH_QUEST_MATCH", matchedName) end
     if result.sourceMatch then
@@ -936,6 +986,8 @@ function UI:RefreshCatalogLanguage()
     for _, result in ipairs(view.results) do
         if not current() then return failed() end
         local row = result.row
+        if result.statusCurrent and addon.Read(result.statusCurrent, "boolean") ~= true then return false end
+        if not current() then return failed() end
         local title = addon.Read(addon.DungeonName, "string", result.dungeon)
         local matchedName = result.questID and result.matchedName and addon.Read(addon.CachedQuestName, "string", result.questID)
         if not current() or not title or not write(row.title, "SetText", title) or
@@ -1210,6 +1262,18 @@ function UI:RefreshDungeons()
         end
     end
     if not proveSources() then return end
+    local statusModule = addon.Clean(addon.DungeonStatus, "table")
+    local statusGetter = statusModule and addon.Clean(statusModule.Get, "function")
+    local statusEngine = statusGetter and addon.Read(addon.Planner.New, "table", definitions, context, addon.Clean(character.choices, "table"))
+    if not current() then return end
+    for _, result in ipairs(results) do
+        local ok, dto, fresh
+        if statusEngine then ok, dto, fresh = pcall(statusGetter, result.dungeon, statusEngine) end
+        if not current() then return end
+        if ok and addon.Clean(dto, "table") and addon.Clean(fresh, "function") then
+            result.statusDTO, result.statusCurrent = dto, fresh
+        end
+    end
     local function write(object, method, ...)
         return ownedWrite(current, false, object, method, ...)
     end
@@ -1229,21 +1293,25 @@ function UI:RefreshDungeons()
     if not current() then return end
     for index, result in ipairs(results) do
         local dungeon = result.dungeon
-        local row = self:MakeRow(self.catalog, self.cards, index, 64)
+        local row = self:MakeRow(self.catalog, self.cards, index, 84)
+        row.catalogCard = true
+        local theme = addon.Clean(addon.Theme, "table")
+        if theme then addon.Read(theme.ApplyFont, "boolean", row.note, 12) end
+        if not current() then return end
         result.row = row
+        row.catalogResult = result
         if not current() or not write(row, "Show") then return end
         if not row.art then
             row.art = row:CreateTexture(nil, "ARTWORK")
-            if not write(row.art, "SetSize", 44, 44) or not write(row.art, "SetPoint", "TOPLEFT", 6, -9) or
-                not write(row.title, "SetWidth", 158) or not write(row.note, "SetWidth", 158) then return end
+            if not write(row.art, "SetSize", 52, 56) or not write(row.art, "SetPoint", "TOPLEFT", 8, -8) then return end
         end
         if not row.entranceControl then
             local control = CreateFrame("Button", nil, row)
             row.entranceControl = control
-            control:SetSize(32, 32); control:SetPoint("TOPRIGHT", row, "TOPRIGHT", -3, -7)
+            control:SetSize(28, 28); control:SetPoint("TOPRIGHT", row, "TOPRIGHT", -4, -6)
             if type(control.SetMotionScriptsWhileDisabled) == "function" then control:SetMotionScriptsWhileDisabled(true) end
             local icon = control:CreateTexture(nil, "ARTWORK"); control.footerIcon = icon
-            icon:SetSize(24, 24); icon:SetPoint("CENTER", control, "CENTER", 0, 0)
+            icon:SetSize(20, 20); icon:SetPoint("CENTER", control, "CENTER", 0, 0)
             local atlas = "Waypoint-MapPin-Untracked"
             local loaded = type(icon.SetAtlas) == "function" and pcall(icon.SetAtlas, icon, atlas)
             if not loaded or addon.Read(icon.GetAtlas, "string", icon) ~= atlas then icon:SetTexture("Interface\\Icons\\INV_Misc_Map_01") end
@@ -1252,8 +1320,8 @@ function UI:RefreshDungeons()
             control:SetScript("OnLeave", function() control.footerHovered = false; self:RefreshFooterIcon(control); self:HideNavigationHint() end)
             control:SetScript("OnHide", function() control.footerHovered = false; self:RefreshFooterIcon(control); self:HideNavigationHint() end)
         end
-        -- Reserve the navigation hit area before native wrapping measurements.
-        local textWidth = math.max(1, row:GetWidth() - 58 - 40)
+        -- The separate icon rail never overlaps title or metadata wrapping.
+        local textWidth = math.max(1, row:GetWidth() - 72 - 36)
         if not write(row.title, "SetWidth", textWidth) or not write(row.note, "SetWidth", textWidth) then return end
         local control, frame = row.entranceControl, self.frame
         local function entranceCurrent()
@@ -1274,6 +1342,33 @@ function UI:RefreshDungeons()
         local alpha = enabled and (control.footerHovered and 1 or .88) or .3
         if type(icon.SetAlpha) == "function" and not write(icon, "SetAlpha", alpha) then return end
         if type(icon.SetDesaturated) == "function" and not write(icon, "SetDesaturated", not enabled) then return end
+        if not row.dungeonStatusControl then
+            local statusControl = CreateFrame("Frame", nil, row)
+            row.dungeonStatusControl = statusControl
+            statusControl:SetSize(28, 28); statusControl:SetPoint("TOPRIGHT", row, "TOPRIGHT", -4, -44)
+            statusControl:EnableMouse(true)
+            local statusIcon = statusControl:CreateTexture(nil, "ARTWORK"); statusControl.statusIcon = statusIcon
+            statusIcon:SetSize(20, 20); statusIcon:SetPoint("CENTER", statusControl, "CENTER", 0, 0)
+            statusControl:SetScript("OnEnter", function() self:CatalogStatusHint(row) end)
+            statusControl:SetScript("OnLeave", function() self:HideNavigationHint() end)
+            statusControl:SetScript("OnHide", function() self:HideNavigationHint() end)
+        end
+        local dto, statusCurrent = result.statusDTO, result.statusCurrent
+        local function statusOwned()
+            if not entranceCurrent() or row.dungeonStatusDTO ~= dto or row.dungeonStatusCurrent ~= statusOwned then return false end
+            if not statusCurrent or addon.Read(statusCurrent, "boolean") ~= true then return false end
+            return entranceCurrent() and row.dungeonStatusDTO == dto and row.dungeonStatusCurrent == statusOwned
+        end
+        row.dungeonStatusDTO, row.dungeonStatusCurrent = dto, statusOwned
+        local statusIcon = row.dungeonStatusControl.statusIcon
+        if not write(row.dungeonStatusControl, "SetShown", dto ~= nil) or not write(statusIcon, "Hide") then return end
+        if dto and statusOwned() then
+            local status = addon.Clean(dto.status, "string")
+            local painter = (status == "ACTIVE" or status == "READY") and addon.PaintQuestStatus or addon.PaintCompactQuestStatus
+            if status == "ACTIVE" or status == "READY" then addon.Read(painter, "boolean", statusIcon, status, statusOwned)
+            else addon.Read(painter, "boolean", statusIcon, status, dto.reason, statusOwned) end
+            if not current() then return end
+        end
         local binding = row.entranceBinding
         if not write(control, "SetScript", "OnClick", function()
             if not entranceCurrent() or row.entranceBinding ~= binding or not binding or not binding.current() then return end
@@ -1635,6 +1730,7 @@ function UI:RefreshQuests()
             row.questTreeDepth = entry.tree and entry.tree.depth or 0
             row.questTreeIndent, row.questTreeInset = 0, entry.tree and 24 or 0
             row.dungeonTarget, row.dungeonName = targetSet[id] == true, heading
+            row.dungeonBadgeVisible = row.dungeonTarget and row.questTreeNode
             local width = addon.Read(self.questList.GetWidth, "number", self.questList)
             if not current() or not width or width <= 28 or not write(row, "SetWidth", width - 4 - row.questTreeInset) then return end
             row.questListCurrent = current
@@ -1648,14 +1744,14 @@ function UI:RefreshQuests()
             if (entry.heading or entry.anchorID) and rewards then addon.Read(rewards.Clear, "nil", row) end
             if not current() then return end
             local badge = row.dungeonBadge
-            if row.dungeonTarget and not badge then
+            if row.dungeonBadgeVisible and not badge then
                 local ok, texture = pcall(row.CreateTexture, row, nil, "ARTWORK")
                 if not current() then return end
                 if ok then row.dungeonBadge, badge = texture, texture end
             end
             if badge then
                 if not write(badge, "Hide") then return end
-                if row.dungeonTarget then
+                if row.dungeonBadgeVisible then
                     if not write(badge, "SetTexture", "Interface\\Icons\\INV_Misc_Map_01") or not write(badge, "SetSize", 12, 12) or
                         not write(badge, "ClearAllPoints") or not write(badge, "SetPoint", "TOPRIGHT", row, "TOPRIGHT", -6 - reserve, -9) or
                         not write(badge, "Show") then return end
@@ -1679,7 +1775,7 @@ function UI:RefreshQuests()
                         not write(targetLabel, "SetTextColor", .96, .78, .35) or not write(targetLabel, "Show") then return end
                 end
             end
-            row.dungeonBadgeReserve = row.dungeonTarget and (18 + (labelledTarget and 4 + targetLabelWidth or 0)) or 0
+            row.dungeonBadgeReserve = row.dungeonBadgeVisible and (22 + targetLabelWidth) or 0
             row.statusBaseWidth = math.max(24, row:GetWidth() - 22 - reserve - row.dungeonBadgeReserve)
             if not current() then return end
             if not self:PaintQuestRowStatus(row, entry, engine, current) then return end
@@ -1750,7 +1846,7 @@ function UI:RefreshQuests()
         n = 1; row.heading, row.questID, row.compact = "PICK", nil, false
         row.questTreeNode, row.questTreeIndent, row.questTreeInset = false, 0, 0
         row.questTreeAnchor, row.anchorQuestID, row.questTreeSelected, row.questTreePath, row.questTreeTarget = false, nil, false, false, false
-        row.dungeonTarget, row.dungeonBadgeReserve, row.statusInset, row.questCompleted = false, 0, 0, false
+        row.dungeonTarget, row.dungeonBadgeVisible, row.dungeonBadgeReserve, row.statusInset, row.questCompleted = false, false, 0, 0, false
         row.questListCurrent = current
         local rewards = addon.Clean(addon.QuestListRewards, "table")
         if rewards then addon.Read(rewards.Clear, "nil", row) end

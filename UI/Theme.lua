@@ -6,6 +6,7 @@ local windows = setmetatable({}, { __mode = "k" })
 local palette = {
     base = { 0.027, 0.038, 0.049, 1 }, panel = { 0.041, 0.058, 0.071, 0.96 },
     row = { 0.059, 0.077, 0.090, 0.96 }, selected = { 0.088, 0.119, 0.132, 1 },
+    card = { 0.045, 0.059, 0.071, 1 }, cardSelected = { 0.080, 0.093, 0.101, 1 },
     edge = { 0.20, 0.27, 0.30, 0.55 }, faint = { 0.16, 0.21, 0.24, 0.50 },
     amber = { 0.83, 0.64, 0.34, 0.95 }, teal = { 0.31, 0.67, 0.65, 0.95 },
     scrollThumb = { 0.39, 0.48, 0.51, 0.65 },
@@ -404,6 +405,28 @@ local function textColor(fontString, value)
     if cleanObject(fontString) then invoke(fontString, "SetTextColor", unpack(value)) end
 end
 
+local function cardArt(state, row, active, selected)
+    local art = cleanObject(row.art)
+    if active and art and not state.cardFrame then
+        state.cardFrame = {}
+        for index = 1, 4 do
+            local edge = texture(row, "OVERLAY")
+            if not edge then break end
+            state.cardFrame[index] = edge
+            local horizontal = index <= 2
+            invoke(edge, horizontal and "SetHeight" or "SetWidth", 1)
+            local first = index == 2 and "BOTTOMLEFT" or index == 4 and "TOPRIGHT" or "TOPLEFT"
+            local last = index == 1 and "TOPRIGHT" or index == 3 and "BOTTOMLEFT" or "BOTTOMRIGHT"
+            anchor(edge, first, art, first, 0, 0)
+            anchor(edge, last, art, last, 0, 0)
+        end
+    end
+    for _, edge in ipairs(state.cardFrame or {}) do
+        color(edge, selected and palette.amber or palette.edge)
+        invoke(edge, active and "Show" or "Hide")
+    end
+end
+
 function Theme.StyleRow(row, options)
     row = cleanObject(row)
     if not row then return false end
@@ -422,6 +445,7 @@ function Theme.StyleRow(row, options)
     local dungeon = branch and addon.Clean(row.dungeonTarget, "boolean") == true
     local background = selected and palette.selected or (target and palette.target or
         ((kind == "section" or anchor) and palette.panel or palette.row))
+    if kind == "dungeon" then background = selected and palette.cardSelected or palette.card end
     local border = (target and palette.amber) or ((selected or anchor) and palette.teal) or palette.faint
     color(state.bg, background)
     edges(state, kind == "dungeon" and selected and palette.amber or border)
@@ -430,12 +454,14 @@ function Theme.StyleRow(row, options)
     textColor(row.title, (anchor or target or dungeon or kind == "section") and palette.heading or
         (branch and not path and not selected and palette.muted or palette.text))
     textColor(row.note, palette.muted)
+    if kind == "dungeon" then textColor(row.title, selected and palette.heading or palette.text) end
+    cardArt(state, row, kind == "dungeon", selected)
     textColor(row.dungeonTargetLabel, palette.heading)
     for _, connector in ipairs({ row.treeRail, row.treeElbow }) do
         if cleanObject(connector) then color(connector, path and palette.path or palette.faint) end
     end
     local highlight = objectResult(row, "GetHighlightTexture")
-    if highlight then invoke(highlight, "SetColorTexture", 0.55, 0.72, 0.73, 0.09) end
+    if highlight then invoke(highlight, "SetColorTexture", 0.55, 0.72, 0.73, kind == "dungeon" and .055 or .09) end
     if kind == "control" then
         Theme.StyleButtonFonts(row)
         for _, name in ipairs({ "GetNormalTexture", "GetPushedTexture", "GetDisabledTexture" }) do

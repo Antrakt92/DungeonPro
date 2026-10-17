@@ -114,7 +114,7 @@ source.minLevel = sourceMinimum + 1
 reset(); session.rows[2].scripts.OnEnter()
 check(ui.catalogGeneration ~= beforeSourceChange and count("catalogArt") > 0,
     "changed catalogue member falls back to a fresh validated result scan")
-check(ui.cards[1].note.text:find(addon.L("CATALOG_LEVELS", source.minLevel, source.maxLevel), 1, true) ~= nil,
+check(ui.cards[1].note.text:find(addon.L("CATALOG_COMPACT_META", source.minLevel, source.maxLevel, #source.quests), 1, true) ~= nil,
     "source change refresh publishes the new localized level range")
 source.minLevel = sourceMinimum
 addon.Language:Cancel(ui)
@@ -246,17 +246,17 @@ heightRow.note.GetStringHeight = function()
     return addon.L("NEXT") == addon.locales.ruRU.NEXT and 100 or 18
 end
 heightRow.SetHeight = function(self, value)
-    if not heightEntered and value > 64 then
+    if not heightEntered and value > 84 then
         heightEntered = true
         session.rows[2].scripts.OnEnter()
-        nestedHeight, nestedAnchor = self.height, followingRow.point[5]
+        nestedHeight, nestedAnchor = self.height, followingRow.point[3]
     end
     return rowHeight(self, value)
 end
 session.rows[3].scripts.OnEnter()
 heightRow.note.GetStringHeight, heightRow.SetHeight = noteHeight, rowHeight
-check(heightEntered and nestedHeight == 64, "old tall-language native setter triggers a newer short-language row")
-check(heightRow.height == nestedHeight and followingRow.point[5] == nestedAnchor,
+check(heightEntered and nestedHeight == 84, "old tall-language native setter triggers a newer short-language row")
+check(type(nestedAnchor) == "number" and heightRow.height == nestedHeight and followingRow.point[3] == nestedAnchor,
     "old native row height and anchor cannot overwrite the newer language layout")
 check(addon.L("NEXT") == addon.locales.enUS.NEXT, "reentrant layout retains the newer language selection")
 addon.Language:Cancel(ui)
@@ -276,7 +276,7 @@ session.rows[3].scripts.OnEnter()
 ui.cards[1].title.GetText = titleGetter
 check(getterEntered and addon.L("NEXT") == addon.locales.enUS.NEXT,
     "native text getter reentry keeps the newer English preview")
-check(ui.cards[1].note.text:find(addon.L("CATALOG_LEVELS", addon.dungeons[1].minLevel, addon.dungeons[1].maxLevel), 1, true) ~= nil,
+check(ui.cards[1].note.text:find(addon.L("CATALOG_COMPACT_META", addon.dungeons[1].minLevel, addon.dungeons[1].maxLevel, #addon.dungeons[1].quests), 1, true) ~= nil,
     "superseded getter cannot leave older-language catalogue notes")
 addon.Language:Cancel(ui)
 
