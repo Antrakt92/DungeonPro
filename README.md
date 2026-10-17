@@ -118,7 +118,9 @@ Development aliases `/dprep` and `/dungeonprep` are also supported.
 Run `/DP minimap` again to restore a hidden button. `reset` only returns it to
 its default position and makes it visible.
 
-The language button cycles through the interface languages. Search checks both
+The language button opens a menu of interface languages, with an automatic option
+that follows the game language. If the client menu is unavailable, clicking the
+button cycles through the choices. Search checks both
 localized and English dungeon names without distinguishing letter case, including
 Cyrillic and accented Latin letters. Accents and spelling still matter. Use the ×
 button to clear the search.

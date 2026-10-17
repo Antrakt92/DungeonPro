@@ -16,6 +16,58 @@ local function styleRow(row, kind, selected)
     if theme then addon.Read(theme.StyleRow, "boolean", row, { kind = kind, selected = selected == true }) end
 end
 
+function UI:OpenLanguageMenu()
+    local choices = { { "auto" }, { "enUS", "English" }, { "ruRU", "Русский" }, { "deDE", "Deutsch" },
+        { "frFR", "Français" }, { "esES", "Español" }, { "itIT", "Italiano" }, { "ptBR", "Português" },
+        { "koKR", "한국어" }, { "zhCN", "简体中文" }, { "zhTW", "繁體中文" } }
+    local database, owner, checker = addon.Clean(addon.db, "table"), self.language, issecretvalue
+    if not database then return false end
+    local previous = addon.Clean(database.locale, "string")
+    local revision = {}
+    self.languageMenuRevision = revision
+    local function current()
+        local shown = addon.Read(self.frame.IsShown, "boolean", self.frame)
+        return shown == true and self.languageMenuRevision == revision and addon.Clean(addon.db, "table") == database and
+            self.language == owner and issecretvalue == checker and addon.Clean(database.locale, "string") == previous
+    end
+    local function cycle()
+        if not current() then return false end
+        local index = 1
+        for i, choice in ipairs(choices) do if previous == choice[1] then index = i end end
+        database.locale = choices[index % #choices + 1][1]
+        self:Refresh()
+        return false
+    end
+    local library = addon.Clean(MenuUtil, "table")
+    local create = library and addon.Clean(library.CreateContextMenu, "function")
+    if not create then return cycle() end
+    local selected = false
+    local function capable()
+        return current() and addon.Clean(MenuUtil, "table") == library and
+            addon.Clean(library.CreateContextMenu, "function") == create
+    end
+    local ok, menu = pcall(create, owner, function(menuOwner, root)
+        if not capable() or menuOwner ~= owner then error("Language menu context changed") end
+        root = addon.Clean(root, "table") or addon.Clean(root, "userdata")
+        local radio = root and addon.Clean(root.CreateRadio, "function")
+        if not radio then error("Language menu choices unavailable") end
+        for _, choice in ipairs(choices) do
+            local code = choice[1]
+            local name = choice[2] or addon.L("LANGUAGE_AUTO")
+            radio(root, name, function() return capable() and previous == code end, function()
+                if not capable() then return end
+                selected = true
+                database.locale = code
+                self:Refresh()
+            end, code)
+            if not capable() and not selected then error("Language menu context changed") end
+        end
+    end)
+    if selected then return true end
+    if ok and (addon.Clean(menu, "table") or addon.Clean(menu, "userdata")) and capable() then return true end
+    return cycle()
+end
+
 function UI:ApplyTheme()
     local theme = addon.Clean(addon.Theme, "table")
     if theme then addon.Read(theme.Apply, "boolean", self) end
@@ -1243,12 +1295,7 @@ function UI:Create()
         self.includeUnavailable = not self.includeUnavailable; self:SaveFilters(); self:Refresh()
     end)
     self.characterButton:SetPoint("TOPLEFT", 564, -84)
-    local language = button(frame, "Auto", 100, function()
-        local order = { "auto", "enUS", "ruRU", "deDE", "frFR", "esES", "itIT", "ptBR", "koKR", "zhCN", "zhTW" }
-        local current = 1
-        for i, code in ipairs(order) do if addon.db.locale == code then current = i end end
-        addon.db.locale = order[current % #order + 1]; self:Refresh()
-    end)
+    local language = button(frame, "Auto", 100, function() self:OpenLanguageMenu() end)
     self.language = language
     language:SetPoint("TOPRIGHT", -44, -45)
     self.heading = label(frame, "", 288, -125, 730, 20)
@@ -1286,7 +1333,7 @@ function UI:Create()
     UISpecialFrames[#UISpecialFrames + 1] = "DungeonProWindow"
     for _, d in ipairs(addon.dungeons) do if d.key == addon.char.selectedDungeon then self.dungeon = d end end
     frame:SetScript("OnShow", function() self:Fit(); self:Refresh() end)
-    frame:SetScript("OnHide", function() self:ResetHistoryReading(); self:ResetRewardPresentation(); self:CloseCopyLink() end)
+    frame:SetScript("OnHide", function() self.languageMenuRevision = {}; self:ResetHistoryReading(); self:ResetRewardPresentation(); self:CloseCopyLink() end)
     self:ApplyTheme()
     frame:Hide()
 end

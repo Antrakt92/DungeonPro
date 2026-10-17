@@ -3220,4 +3220,63 @@ check("Missing restricted and failing optional family setters retain the working
     GameFontHighlight, methods.SetFontObject, methods.SetTextHeight, issecretvalue = previous, objectSetter, heightSetter, checker
     ui:Refresh()
 end)
+local function languageMenuFixture()
+    local old, rows = MenuUtil, {}
+    MenuUtil={CreateContextMenu=function(owner,generator)
+        assert(owner==ui.language)
+        rows={}
+        local root={CreateRadio=function(_,name,checked,select,data)
+            rows[#rows+1]={name=name,checked=checked,select=select,data=data};return {}
+        end}
+        generator(owner,root);return {}
+    end}
+    return function() return rows end,function()MenuUtil=old end
+end
+check("Language button opens eleven explicit native-language radio choices without cycling",function()
+    local locale=addon.db.locale
+    local rows,restore=languageMenuFixture()
+    addon.db.locale="enUS";showDetail(1);ui.detailScroll:SetVerticalScroll(23)
+    ui.language.scripts.OnClick(ui.language,"LeftButton",false)
+    assert(addon.db.locale=="enUS" and #rows()==11)
+    assert(rows()[1].data=="auto" and rows()[1].name==addon.L("LANGUAGE_AUTO"))
+    assert(rows()[2].name=="English" and rows()[2].checked() and not rows()[3].checked())
+    assert(rows()[3].name=="Русский" and rows()[9].name=="한국어" and rows()[11].name=="繁體中文")
+    for _,row in ipairs(rows()) do
+        local code=row.data
+        ui.language.scripts.OnClick();local live
+        for _,choice in ipairs(rows()) do if choice.data==code then live=choice end end
+        live.select(code);assert(addon.db.locale==code and ui.quest==1 and ui.detailScroll.verticalScroll==23)
+    end
+    addon.db.locale="unknown";ui.language.scripts.OnClick()
+    for _,row in ipairs(rows())do assert(not row.checked())end
+    rows()[1].select("auto");assert(addon.db.locale=="auto")
+    restore();addon.db.locale=locale;ui:Refresh()
+end)
+check("Missing failing and malformed language menus retain one fallback cycle without double selection",function()
+    local original,locale=MenuUtil,addon.db.locale
+    for _,creator in ipairs({false,function()error("not ready")end,function(_,generator)generator(ui.language,nil)end,function()return nil end})do
+        MenuUtil={CreateContextMenu=creator};addon.db.locale="auto"
+        ui.language.scripts.OnClick();assert(addon.db.locale=="enUS")
+    end
+    MenuUtil={CreateContextMenu=function(owner,generator)
+        local root={CreateRadio=function(_,name,checked,select,code)
+            if code=="ruRU" then select(code);error("failure after actual selection")end
+        end}
+        generator(owner,root)
+    end}
+    addon.db.locale="auto";ui.language.scripts.OnClick();assert(addon.db.locale=="ruRU")
+    MenuUtil,addon.db.locale=original,locale;ui:Refresh()
+end)
+check("Old language menu callbacks cannot edit a replacement database closed window or newer menu",function()
+    local database,locale=addon.db,addon.db.locale
+    local rows,restore=languageMenuFixture()
+    addon.db.locale="enUS";ui.language.scripts.OnClick();local old=rows()[3].select
+    ui.language.scripts.OnClick();old();assert(addon.db.locale=="enUS")
+    local replaced=rows()[3].select
+    addon.db={locale="enUS"};replaced();assert(addon.db.locale=="enUS" and database.locale=="enUS")
+    addon.db=database;ui.language.scripts.OnClick();local hidden=rows()[3].select
+    ui.frame:Hide();ui.frame.scripts.OnHide(ui.frame)
+    ui.frame:Show();ui.frame.scripts.OnShow(ui.frame);hidden();assert(addon.db.locale=="enUS")
+    restore();addon.db.locale=locale;ui:Refresh()
+end)
 print("Preparation UI modeled checks passed: " .. total .. " (no native layout validation)")

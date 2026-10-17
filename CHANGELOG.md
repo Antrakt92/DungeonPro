@@ -22,6 +22,7 @@
   context when the bearing is unavailable.
 - Added initial quest facts for The Deadmines, Ragefire Chasm and The Hall of Thanes.
 - Added explicit notices for incomplete data and interface translations.
+- Added a language menu with a visible automatic option and direct language selection.
 - Renamed the addon to Dungeon Pro, with `/DP` and `/DungeonPro` commands.
 - Added current quest-offer rewards, experience and objective summaries, kept
   separate from quest-log progress and preparation requirements.
