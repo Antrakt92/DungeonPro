@@ -17469,6 +17469,16 @@
           "npcID": 11261,
           "name": "Doctor Theolen Krastinov"
         }
+      ],
+      "objectiveObjects": [
+        {
+          "objectID": 176544,
+          "name": "Remains of Eva Sarkhoff Burned"
+        },
+        {
+          "objectID": 176545,
+          "name": "Remains of Lucien Sarkhoff Burned"
+        }
       ]
     },
     {
@@ -19315,6 +19325,12 @@
         {
           "npcID": 10811,
           "name": "Archivist Galford"
+        }
+      ],
+      "objectiveObjects": [
+        {
+          "objectID": 176245,
+          "name": "Archive Burned"
         }
       ]
     },
