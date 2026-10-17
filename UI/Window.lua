@@ -536,7 +536,30 @@ function UI:ChooseBranch(id, index, parent)
     return true
 end
 
+function UI:FlushPendingSearch(expected)
+    local pending = self.pendingSearch
+    if not pending or (expected and pending ~= expected) then return false end
+    self.pendingSearch = nil
+    local frame = pending.frame
+    local shown = frame and addon.Read(frame.IsShown, "boolean", frame)
+    if self.pendingSearch or addon.UI ~= self or self.frame ~= frame or self.search ~= pending.query or
+        self.RefreshDungeons ~= pending.refresh or shown ~= true then return false end
+    self:RefreshDungeons()
+    return true
+end
+
+function UI:QueueSearch()
+    local pending = { frame = self.frame, query = self.search, refresh = self.RefreshDungeons }
+    self.pendingSearch = pending
+    local timer = addon.Clean(C_Timer, "table")
+    local after = timer and addon.Clean(timer.After, "function")
+    -- Only the latest edit renders; the timer API does not provide cancellation.
+    if after and pcall(after, 0.15, function() self:FlushPendingSearch(pending) end) then return end
+    self:FlushPendingSearch(pending)
+end
+
 function UI:RefreshDungeons()
+    self.pendingSearch = nil
     local generation = {}
     self.catalogGeneration = generation
     local catalogue, definitions, character, database = addon.dungeons, addon.quests, addon.char, addon.db
@@ -3346,9 +3369,14 @@ function UI:Create()
     self.searchBox = search
     setInputFont(search)
     self.searchPlaceholder = label(search, "", 5, -5, 188, 13)
-    search:SetScript("OnTextChanged", function(b) self.search = addon.Read(b.GetText, "string", b) or ""; self:RefreshDungeons() end)
+    search:SetScript("OnTextChanged", function(b, userInput)
+        self.search = addon.Read(b.GetText, "string", b) or ""
+        if self.searchPlaceholder then self.searchPlaceholder:SetShown(self.search == "") end
+        if self.clearSearch then self.clearSearch:SetEnabled(self.search ~= "") end
+        if addon.Clean(userInput, "boolean") == true then self:QueueSearch() else self:RefreshDungeons() end
+    end)
     search:SetScript("OnEscapePressed", function(b) b:ClearFocus() end)
-    search:SetScript("OnEnterPressed", function(b) b:ClearFocus() end)
+    search:SetScript("OnEnterPressed", function(b) self:FlushPendingSearch(); b:ClearFocus() end)
     self.clearSearch = button(frame, "×", 25, function()
         self.search = ""; self.searchBox:SetText(""); self:RefreshDungeons()
     end)
@@ -3411,7 +3439,7 @@ function UI:Create()
             addon.Read(f.IsShown, "boolean", f) == true then self:Fit() end
     end)
     frame:SetScript("OnShow", function() self:Fit(); self:Refresh() end)
-    frame:SetScript("OnHide", function() self.storyStates, self.storyOrder = nil, nil; if not self:ResetQuestLogControl() then return end; self.detailActionChoice = nil; self.languageMenuRevision = {}; self:ResetHistoryReading(); self:ResetRewardPresentation(); self:CloseCopyLink() end)
+    frame:SetScript("OnHide", function() self.pendingSearch = nil; self.storyStates, self.storyOrder = nil, nil; if not self:ResetQuestLogControl() then return end; self.detailActionChoice = nil; self.languageMenuRevision = {}; self:ResetHistoryReading(); self:ResetRewardPresentation(); self:CloseCopyLink() end)
     self:ApplyTheme()
     frame:Hide()
 end

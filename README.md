@@ -162,7 +162,8 @@ that follows the game language. If the client menu is unavailable, clicking the
 button cycles through the choices. Search checks localized and English dungeon
 names, listed quests, and recorded NPCs and source places. It ignores letter case,
 including Cyrillic and accented Latin letters; accents and spelling still matter.
-Use the × button to clear the search.
+Results update after a short pause in typing. Press Enter to apply the current
+search immediately, or use the × button to clear it.
 
 ## Contributing data
 

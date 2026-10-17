@@ -7816,4 +7816,94 @@ check("Compact overview uses explicit painter classification without shrinking a
     addon.PaintDungeonArt=paint;ui.quest,ui.dungeon,ui.engine=quest,dungeon,engine
 end)
 
+local function coalescedSearchFixture()
+    local f=targetSearchFixture()
+    local timer,refresh=C_Timer,ui.RefreshDungeons
+    f.callbacks={};f.renders=0
+    C_Timer={After=function(delay,callback)
+        assert(delay==0.15);f.callbacks[#f.callbacks+1]=callback
+    end}
+    ui.RefreshDungeons=function(self)f.renders=f.renders+1;return refresh(self)end
+    function f:input(value,userInput)
+        ui.searchBox:SetText(value);ui.searchBox.scripts.OnTextChanged(ui.searchBox,userInput)
+    end
+    function f:drain()
+        local callbacks=self.callbacks;self.callbacks={}
+        for _,callback in ipairs(callbacks)do callback()end
+    end
+    local finish=f.finish
+    function f:finish()
+        C_Timer,ui.RefreshDungeons=timer,refresh;finish(self)
+    end
+    return f
+end
+check("User search edits coalesce to one latest query while programmatic edits remain immediate",function()
+    local f=coalescedSearchFixture()
+    local quest,dungeon,range=ui.quest,ui.dungeon,ui.range
+    for _,query in ipairs({"S","So","Sou","Sour","Sourc","Source","Source target"})do
+        f:input(query,true)
+        assert(f.renders==0 and not ui.searchPlaceholder.shown and ui.clearSearch.enabled)
+    end
+    assert(f.renders==0 and ui.search=="Source target")
+    f:drain();assert(f.renders==1 and #f:cards()==2)
+    assert(ui.quest==quest and ui.dungeon==dungeon and ui.range==range)
+    f:input("Other source",true);assert(f.renders==1);f:drain();assert(f.renders==2 and #f:cards()==1)
+    f:input("Alpha",false);assert(f.renders==3 and #f:cards()==1)
+    f:input("Beta",nil);assert(f.renders==4 and #f:cards()==1)
+    f:input("",true)
+    assert(f.renders==4 and ui.searchPlaceholder.shown and not ui.clearSearch.enabled)
+    f:drain();assert(f.renders==5 and #f:cards()==3)
+    f:finish()
+end)
+check("Enter flushes pending search once and clear immediately invalidates earlier callbacks",function()
+    local f=coalescedSearchFixture()
+    ui.searchBox:SetFocus();f:input("Other source",true)
+    ui.searchBox.scripts.OnEnterPressed(ui.searchBox)
+    assert(f.renders==1 and not ui.searchBox.focused and #f:cards()==1)
+    f:drain();assert(f.renders==1)
+    f:input("Source target",true);ui.clearSearch.scripts.OnClick()
+    assert(ui.search=="" and f.renders==2 and #f:cards()==3)
+    f:drain();assert(f.renders==2)
+    f:finish()
+end)
+check("Hidden and directly refreshed search callbacks cannot publish obsolete queries",function()
+    local f=coalescedSearchFixture()
+    f:input("Source target",true)
+    ui.frame:Hide();ui.frame.scripts.OnHide(ui.frame)
+    ui.frame:Show();f:drain();assert(f.renders==0)
+    local questName=addon.QuestName;addon.QuestName=f.questName
+    ui.frame.scripts.OnShow(ui.frame);addon.QuestName=questName
+    assert(f.renders==1 and #f:cards()==2)
+    f:input("Other source",true);ui:RefreshDungeons()
+    assert(f.renders==2 and #f:cards()==1);f:drain();assert(f.renders==2)
+    f:input("Alpha",true);f:input("Beta",false)
+    assert(f.renders==3 and ui.search=="Beta");f:drain();assert(f.renders==3 and #f:cards()==1)
+    f:finish()
+end)
+check("Optional search schedulers fall back safely without duplicate inline or stale renders",function()
+    for _,kind in ipairs({"missing","throw","inline","inlineThrow","queuedThrow"})do
+        local f=coalescedSearchFixture()
+        if kind=="missing"then C_Timer=nil
+        elseif kind=="throw"then C_Timer={After=function()error("unavailable")end}
+        elseif kind=="inline"then C_Timer={After=function(_,callback)callback()end}
+        elseif kind=="inlineThrow"then C_Timer={After=function(_,callback)callback();error("completed then failed")end}
+        else C_Timer={After=function(_,callback)f.callbacks[#f.callbacks+1]=callback;error("queued then failed")end}end
+        f:input("Source target",true)
+        assert(f.renders==1 and #f:cards()==2,kind);f:drain();assert(f.renders==1,kind)
+        f:finish()
+    end
+end)
+
+check("A newer user edit queued during a catalogue callback survives the earlier flush",function()
+    local f=coalescedSearchFixture();local getter=addon.DungeonName;local armed=true
+    addon.DungeonName=function(d)
+        if armed then armed=false;f:input("Beta",true)end
+        return d.name
+    end
+    f:input("Alpha",true);f:drain()
+    assert(not armed and ui.search=="Beta"and f.renders==1 and #f.callbacks==1)
+    f:drain();assert(f.renders==2 and #f:cards()==1 and f:cards()[1].title.text=="Beta dungeon")
+    f:drain();assert(f.renders==2);addon.DungeonName=getter;f:finish()
+end)
+
 print("Preparation UI modeled checks passed: " .. total .. " (no native layout validation)")
