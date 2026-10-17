@@ -1333,7 +1333,9 @@
         "x": 39.4,
         "y": 55.4,
         "npcID": 2784,
-        "zoneName": "Ironforge"
+        "zoneName": "Ironforge",
+        "creatureDisplayID": 3597,
+        "portraitSource": "https://www.wowhead.com/forever/npc=2784"
       },
       "requires": [
         {
@@ -1528,7 +1530,9 @@
         "zoneName": "The Barrens",
         "mapID": 1413,
         "x": 52.2,
-        "y": 31.8
+        "y": 31.8,
+        "creatureDisplayID": 3914,
+        "portraitSource": "https://www.wowhead.com/forever/npc=3448"
       },
       "finish": {
         "npcID": 5769,
@@ -1851,7 +1855,9 @@
         "zoneName": "The Barrens",
         "mapID": 1413,
         "x": 52.2,
-        "y": 31.8
+        "y": 31.8,
+        "creatureDisplayID": 3914,
+        "portraitSource": "https://www.wowhead.com/forever/npc=3448"
       },
       "finish": {
         "npcID": 3448,
@@ -1859,7 +1865,9 @@
         "zoneName": "The Barrens",
         "mapID": 1413,
         "x": 52.2,
-        "y": 31.8
+        "y": 31.8,
+        "creatureDisplayID": 3914,
+        "portraitSource": "https://www.wowhead.com/forever/npc=3448"
       },
       "requirementsKnown": false
     },
@@ -1878,7 +1886,9 @@
         "zoneName": "The Barrens",
         "mapID": 1413,
         "x": 52.2,
-        "y": 31.8
+        "y": 31.8,
+        "creatureDisplayID": 3914,
+        "portraitSource": "https://www.wowhead.com/forever/npc=3448"
       },
       "finish": {
         "npcID": 3448,
@@ -1886,7 +1896,9 @@
         "zoneName": "The Barrens",
         "mapID": 1413,
         "x": 52.2,
-        "y": 31.8
+        "y": 31.8,
+        "creatureDisplayID": 3914,
+        "portraitSource": "https://www.wowhead.com/forever/npc=3448"
       },
       "requirementsKnown": false,
       "requires": [
@@ -1912,7 +1924,9 @@
         "zoneName": "The Barrens",
         "mapID": 1413,
         "x": 52.2,
-        "y": 31.8
+        "y": 31.8,
+        "creatureDisplayID": 3914,
+        "portraitSource": "https://www.wowhead.com/forever/npc=3448"
       },
       "finish": {
         "npcID": 3448,
@@ -1920,7 +1934,9 @@
         "zoneName": "The Barrens",
         "mapID": 1413,
         "x": 52.2,
-        "y": 31.8
+        "y": 31.8,
+        "creatureDisplayID": 3914,
+        "portraitSource": "https://www.wowhead.com/forever/npc=3448"
       },
       "requirementsKnown": false,
       "requires": [
@@ -3660,7 +3676,9 @@
         "zoneName": "Ironforge",
         "mapID": 1455,
         "x": 36,
-        "y": 3.4
+        "y": 3.4,
+        "creatureDisplayID": 5647,
+        "portraitSource": "https://www.wowhead.com/forever/npc=6826"
       }
     },
     {
@@ -5058,7 +5076,9 @@
         "mapID": 1458,
         "x": 57.4,
         "y": 65.4,
-        "zoneName": "Undercity"
+        "zoneName": "Undercity",
+        "creatureDisplayID": 10197,
+        "portraitSource": "https://www.wowhead.com/forever/npc=4488"
       },
       "finish": {
         "npcID": 4488,
@@ -5066,7 +5086,9 @@
         "mapID": 1458,
         "x": 57.4,
         "y": 65.4,
-        "zoneName": "Undercity"
+        "zoneName": "Undercity",
+        "creatureDisplayID": 10197,
+        "portraitSource": "https://www.wowhead.com/forever/npc=4488"
       },
       "requirementsKnown": false,
       "storyline": [
@@ -5207,7 +5229,9 @@
         "mapID": 1441,
         "x": 53.8,
         "y": 41.4,
-        "zoneName": "Thousand Needles"
+        "zoneName": "Thousand Needles",
+        "creatureDisplayID": 10969,
+        "portraitSource": "https://www.wowhead.com/forever/npc=2986"
       },
       "finish": {
         "npcID": 2986,
@@ -5215,7 +5239,9 @@
         "mapID": 1441,
         "x": 53.8,
         "y": 41.4,
-        "zoneName": "Thousand Needles"
+        "zoneName": "Thousand Needles",
+        "creatureDisplayID": 10969,
+        "portraitSource": "https://www.wowhead.com/forever/npc=2986"
       },
       "requirementsKnown": false
     },
@@ -5234,7 +5260,9 @@
         "mapID": 1441,
         "x": 53.8,
         "y": 41.4,
-        "zoneName": "Thousand Needles"
+        "zoneName": "Thousand Needles",
+        "creatureDisplayID": 10969,
+        "portraitSource": "https://www.wowhead.com/forever/npc=2986"
       },
       "finish": {
         "npcID": 2986,
@@ -5242,7 +5270,9 @@
         "mapID": 1441,
         "x": 53.8,
         "y": 41.4,
-        "zoneName": "Thousand Needles"
+        "zoneName": "Thousand Needles",
+        "creatureDisplayID": 10969,
+        "portraitSource": "https://www.wowhead.com/forever/npc=2986"
       },
       "requirementsKnown": false,
       "requires": [
@@ -5268,7 +5298,9 @@
         "mapID": 1441,
         "x": 53.8,
         "y": 41.4,
-        "zoneName": "Thousand Needles"
+        "zoneName": "Thousand Needles",
+        "creatureDisplayID": 10969,
+        "portraitSource": "https://www.wowhead.com/forever/npc=2986"
       },
       "finish": {
         "npcID": 2986,
@@ -5276,7 +5308,9 @@
         "mapID": 1441,
         "x": 53.8,
         "y": 41.4,
-        "zoneName": "Thousand Needles"
+        "zoneName": "Thousand Needles",
+        "creatureDisplayID": 10969,
+        "portraitSource": "https://www.wowhead.com/forever/npc=2986"
       },
       "requirementsKnown": false,
       "requires": [
@@ -5302,7 +5336,9 @@
         "mapID": 1441,
         "x": 53.8,
         "y": 41.4,
-        "zoneName": "Thousand Needles"
+        "zoneName": "Thousand Needles",
+        "creatureDisplayID": 10969,
+        "portraitSource": "https://www.wowhead.com/forever/npc=2986"
       },
       "finish": {
         "npcID": 4489,
@@ -5310,7 +5346,9 @@
         "mapID": 1442,
         "x": 78.6,
         "y": 45.4,
-        "zoneName": "Stonetalon Mountains"
+        "zoneName": "Stonetalon Mountains",
+        "creatureDisplayID": 3907,
+        "portraitSource": "https://www.wowhead.com/forever/npc=4489"
       },
       "requirementsKnown": false,
       "requires": [
@@ -5336,7 +5374,9 @@
         "mapID": 1442,
         "x": 78.6,
         "y": 45.4,
-        "zoneName": "Stonetalon Mountains"
+        "zoneName": "Stonetalon Mountains",
+        "creatureDisplayID": 3907,
+        "portraitSource": "https://www.wowhead.com/forever/npc=4489"
       },
       "finish": {
         "npcID": 4489,
@@ -5344,7 +5384,9 @@
         "mapID": 1442,
         "x": 78.6,
         "y": 45.4,
-        "zoneName": "Stonetalon Mountains"
+        "zoneName": "Stonetalon Mountains",
+        "creatureDisplayID": 3907,
+        "portraitSource": "https://www.wowhead.com/forever/npc=4489"
       },
       "requirementsKnown": false,
       "requires": [
@@ -5370,7 +5412,9 @@
         "mapID": 1442,
         "x": 78.6,
         "y": 45.4,
-        "zoneName": "Stonetalon Mountains"
+        "zoneName": "Stonetalon Mountains",
+        "creatureDisplayID": 3907,
+        "portraitSource": "https://www.wowhead.com/forever/npc=4489"
       },
       "finish": {
         "npcID": 4489,
@@ -5378,7 +5422,9 @@
         "mapID": 1442,
         "x": 78.6,
         "y": 45.4,
-        "zoneName": "Stonetalon Mountains"
+        "zoneName": "Stonetalon Mountains",
+        "creatureDisplayID": 3907,
+        "portraitSource": "https://www.wowhead.com/forever/npc=4489"
       },
       "requirementsKnown": false,
       "requires": [
@@ -5404,7 +5450,9 @@
         "mapID": 1442,
         "x": 78.6,
         "y": 45.4,
-        "zoneName": "Stonetalon Mountains"
+        "zoneName": "Stonetalon Mountains",
+        "creatureDisplayID": 3907,
+        "portraitSource": "https://www.wowhead.com/forever/npc=4489"
       },
       "finish": {
         "npcID": 4488,
@@ -5412,7 +5460,9 @@
         "mapID": 1458,
         "x": 57.4,
         "y": 65.4,
-        "zoneName": "Undercity"
+        "zoneName": "Undercity",
+        "creatureDisplayID": 10197,
+        "portraitSource": "https://www.wowhead.com/forever/npc=4488"
       },
       "requirementsKnown": false,
       "requires": [
@@ -5438,7 +5488,9 @@
         "mapID": 1458,
         "x": 57.4,
         "y": 65.4,
-        "zoneName": "Undercity"
+        "zoneName": "Undercity",
+        "creatureDisplayID": 10197,
+        "portraitSource": "https://www.wowhead.com/forever/npc=4488"
       },
       "finish": {
         "npcID": 4488,
@@ -5446,7 +5498,9 @@
         "mapID": 1458,
         "x": 57.4,
         "y": 65.4,
-        "zoneName": "Undercity"
+        "zoneName": "Undercity",
+        "creatureDisplayID": 10197,
+        "portraitSource": "https://www.wowhead.com/forever/npc=4488"
       },
       "requirementsKnown": false
     },
@@ -5465,7 +5519,9 @@
         "mapID": 1458,
         "x": 57.4,
         "y": 65.4,
-        "zoneName": "Undercity"
+        "zoneName": "Undercity",
+        "creatureDisplayID": 10197,
+        "portraitSource": "https://www.wowhead.com/forever/npc=4488"
       },
       "finish": {
         "npcID": 2986,
@@ -5473,7 +5529,9 @@
         "mapID": 1441,
         "x": 53.8,
         "y": 41.4,
-        "zoneName": "Thousand Needles"
+        "zoneName": "Thousand Needles",
+        "creatureDisplayID": 10969,
+        "portraitSource": "https://www.wowhead.com/forever/npc=2986"
       },
       "requirementsKnown": false
     },
@@ -6047,7 +6105,9 @@
         "zoneName": "Ironforge",
         "mapID": 1455,
         "x": 36,
-        "y": 3.4
+        "y": 3.4,
+        "creatureDisplayID": 5647,
+        "portraitSource": "https://www.wowhead.com/forever/npc=6826"
       },
       "storyline": [
         2198,
@@ -6259,7 +6319,9 @@
         "zoneName": "Loch Modan",
         "mapID": 1432,
         "x": 37,
-        "y": 49.2
+        "y": 49.2,
+        "creatureDisplayID": 1834,
+        "portraitSource": "https://www.wowhead.com/forever/npc=1470"
       },
       "finish": {
         "npcID": 1470,
@@ -6267,7 +6329,9 @@
         "zoneName": "Loch Modan",
         "mapID": 1432,
         "x": 37,
-        "y": 49.2
+        "y": 49.2,
+        "creatureDisplayID": 1834,
+        "portraitSource": "https://www.wowhead.com/forever/npc=1470"
       },
       "requires": [
         {
@@ -6314,7 +6378,9 @@
             "x": 2.6,
             "y": 46
           }
-        ]
+        ],
+        "creatureDisplayID": 5646,
+        "portraitSource": "https://www.wowhead.com/forever/npc=6868"
       },
       "finish": {
         "npcID": 6868,
@@ -6336,7 +6402,9 @@
             "x": 2.6,
             "y": 46
           }
-        ]
+        ],
+        "creatureDisplayID": 5646,
+        "portraitSource": "https://www.wowhead.com/forever/npc=6868"
       },
       "storyline": [
         2258,
@@ -6539,7 +6607,9 @@
         "zoneName": "Ironforge",
         "mapID": 1455,
         "x": 36,
-        "y": 3.4
+        "y": 3.4,
+        "creatureDisplayID": 5647,
+        "portraitSource": "https://www.wowhead.com/forever/npc=6826"
       },
       "finish": {
         "npcID": 6912,
@@ -6667,7 +6737,9 @@
         "zoneName": "Ironforge",
         "mapID": 1455,
         "x": 36,
-        "y": 3.4
+        "y": 3.4,
+        "creatureDisplayID": 5647,
+        "portraitSource": "https://www.wowhead.com/forever/npc=6826"
       },
       "finish": {
         "npcID": 6826,
@@ -6675,7 +6747,9 @@
         "zoneName": "Ironforge",
         "mapID": 1455,
         "x": 36,
-        "y": 3.4
+        "y": 3.4,
+        "creatureDisplayID": 5647,
+        "portraitSource": "https://www.wowhead.com/forever/npc=6826"
       }
     },
     {
@@ -6694,7 +6768,9 @@
         "zoneName": "Ironforge",
         "mapID": 1455,
         "x": 36,
-        "y": 3.4
+        "y": 3.4,
+        "creatureDisplayID": 5647,
+        "portraitSource": "https://www.wowhead.com/forever/npc=6826"
       },
       "finish": {
         "npcID": 6826,
@@ -6702,7 +6778,9 @@
         "zoneName": "Ironforge",
         "mapID": 1455,
         "x": 36,
-        "y": 3.4
+        "y": 3.4,
+        "creatureDisplayID": 5647,
+        "portraitSource": "https://www.wowhead.com/forever/npc=6826"
       },
       "storyline": [
         2198,
@@ -6749,7 +6827,9 @@
             "x": 2.6,
             "y": 46
           }
-        ]
+        ],
+        "creatureDisplayID": 5646,
+        "portraitSource": "https://www.wowhead.com/forever/npc=6868"
       },
       "finish": {
         "npcID": 6868,
@@ -6771,7 +6851,9 @@
             "x": 2.6,
             "y": 46
           }
-        ]
+        ],
+        "creatureDisplayID": 5646,
+        "portraitSource": "https://www.wowhead.com/forever/npc=6868"
       },
       "requires": [
         {
@@ -6951,7 +7033,9 @@
             "x": 2.6,
             "y": 46
           }
-        ]
+        ],
+        "creatureDisplayID": 5646,
+        "portraitSource": "https://www.wowhead.com/forever/npc=6868"
       },
       "storyline": [
         2340,
@@ -6988,7 +7072,9 @@
             "x": 2.6,
             "y": 46
           }
-        ]
+        ],
+        "creatureDisplayID": 5646,
+        "portraitSource": "https://www.wowhead.com/forever/npc=6868"
       },
       "finish": {
         "npcID": 6986,
@@ -7052,7 +7138,9 @@
             "x": 2.6,
             "y": 46
           }
-        ]
+        ],
+        "creatureDisplayID": 5646,
+        "portraitSource": "https://www.wowhead.com/forever/npc=6868"
       },
       "storyline": [
         2283,
@@ -7148,7 +7236,9 @@
             "x": 2.6,
             "y": 46
           }
-        ]
+        ],
+        "creatureDisplayID": 5646,
+        "portraitSource": "https://www.wowhead.com/forever/npc=6868"
       },
       "finish": {
         "npcID": 6868,
@@ -7170,7 +7260,9 @@
             "x": 2.6,
             "y": 46
           }
-        ]
+        ],
+        "creatureDisplayID": 5646,
+        "portraitSource": "https://www.wowhead.com/forever/npc=6868"
       },
       "storyline": [
         2283,
@@ -7206,7 +7298,9 @@
         "zoneName": "Ironforge",
         "mapID": 1455,
         "x": 36,
-        "y": 3.4
+        "y": 3.4,
+        "creatureDisplayID": 5647,
+        "portraitSource": "https://www.wowhead.com/forever/npc=6826"
       },
       "storyline": [
         2198,
@@ -7245,7 +7339,9 @@
         "zoneName": "Ironforge",
         "mapID": 1455,
         "x": 36,
-        "y": 3.4
+        "y": 3.4,
+        "creatureDisplayID": 5647,
+        "portraitSource": "https://www.wowhead.com/forever/npc=6826"
       },
       "finish": {
         "npcID": 6826,
@@ -7253,7 +7349,9 @@
         "zoneName": "Ironforge",
         "mapID": 1455,
         "x": 36,
-        "y": 3.4
+        "y": 3.4,
+        "creatureDisplayID": 5647,
+        "portraitSource": "https://www.wowhead.com/forever/npc=6826"
       }
     },
     {
@@ -7464,7 +7562,9 @@
             "x": 2.6,
             "y": 46
           }
-        ]
+        ],
+        "creatureDisplayID": 5646,
+        "portraitSource": "https://www.wowhead.com/forever/npc=6868"
       },
       "finish": {
         "npcID": 6868,
@@ -7486,7 +7586,9 @@
             "x": 2.6,
             "y": 46
           }
-        ]
+        ],
+        "creatureDisplayID": 5646,
+        "portraitSource": "https://www.wowhead.com/forever/npc=6868"
       },
       "storyline": [
         2258,
@@ -7831,7 +7933,9 @@
         "zoneName": "Loch Modan",
         "mapID": 1432,
         "x": 37,
-        "y": 49.2
+        "y": 49.2,
+        "creatureDisplayID": 1834,
+        "portraitSource": "https://www.wowhead.com/forever/npc=1470"
       },
       "finish": {
         "npcID": 1470,
@@ -7839,7 +7943,9 @@
         "zoneName": "Loch Modan",
         "mapID": 1432,
         "x": 37,
-        "y": 49.2
+        "y": 49.2,
+        "creatureDisplayID": 1834,
+        "portraitSource": "https://www.wowhead.com/forever/npc=1470"
       }
     },
     {
@@ -7872,7 +7978,9 @@
             "x": 2.6,
             "y": 46
           }
-        ]
+        ],
+        "creatureDisplayID": 5646,
+        "portraitSource": "https://www.wowhead.com/forever/npc=6868"
       },
       "finish": {
         "npcID": 6868,
@@ -7894,7 +8002,9 @@
             "x": 2.6,
             "y": 46
           }
-        ]
+        ],
+        "creatureDisplayID": 5646,
+        "portraitSource": "https://www.wowhead.com/forever/npc=6868"
       }
     },
     {
@@ -7913,7 +8023,9 @@
         "zoneName": "Loch Modan",
         "mapID": 1432,
         "x": 37,
-        "y": 49.2
+        "y": 49.2,
+        "creatureDisplayID": 1834,
+        "portraitSource": "https://www.wowhead.com/forever/npc=1470"
       },
       "finish": {
         "npcID": 1470,
@@ -7921,7 +8033,9 @@
         "zoneName": "Loch Modan",
         "mapID": 1432,
         "x": 37,
-        "y": 49.2
+        "y": 49.2,
+        "creatureDisplayID": 1834,
+        "portraitSource": "https://www.wowhead.com/forever/npc=1470"
       }
     },
     {
@@ -8627,7 +8741,9 @@
         "zoneName": "Tanaris",
         "mapID": 1446,
         "x": 67,
-        "y": 22.4
+        "y": 22.4,
+        "creatureDisplayID": 7902,
+        "portraitSource": "https://www.wowhead.com/forever/npc=8579"
       },
       "finish": {
         "npcID": 8579,
@@ -8635,7 +8751,9 @@
         "zoneName": "Tanaris",
         "mapID": 1446,
         "x": 67,
-        "y": 22.4
+        "y": 22.4,
+        "creatureDisplayID": 7902,
+        "portraitSource": "https://www.wowhead.com/forever/npc=8579"
       },
       "storyline": [
         3520,
@@ -8926,7 +9044,9 @@
         "zoneName": "Blasted Lands",
         "mapID": 1419,
         "x": 67,
-        "y": 19.4
+        "y": 19.4,
+        "creatureDisplayID": 7273,
+        "portraitSource": "https://www.wowhead.com/forever/npc=8022"
       },
       "finish": {
         "npcID": 8022,
@@ -8934,7 +9054,9 @@
         "zoneName": "Blasted Lands",
         "mapID": 1419,
         "x": 67,
-        "y": 19.4
+        "y": 19.4,
+        "creatureDisplayID": 7273,
+        "portraitSource": "https://www.wowhead.com/forever/npc=8022"
       },
       "storyline": [
         2988,
@@ -9022,7 +9144,9 @@
         "zoneName": "Tanaris",
         "mapID": 1446,
         "x": 67,
-        "y": 22.4
+        "y": 22.4,
+        "creatureDisplayID": 7902,
+        "portraitSource": "https://www.wowhead.com/forever/npc=8579"
       },
       "finish": {
         "npcID": 8579,
@@ -9030,7 +9154,9 @@
         "zoneName": "Tanaris",
         "mapID": 1446,
         "x": 67,
-        "y": 22.4
+        "y": 22.4,
+        "creatureDisplayID": 7902,
+        "portraitSource": "https://www.wowhead.com/forever/npc=8579"
       },
       "storyline": [
         3520,
@@ -9302,7 +9428,9 @@
         "mapID": 1425,
         "x": 9.8,
         "y": 44.4,
-        "zoneName": "The Hinterlands"
+        "zoneName": "The Hinterlands",
+        "creatureDisplayID": 7007,
+        "portraitSource": "https://www.wowhead.com/forever/npc=5636"
       },
       "finish": {
         "npcID": 5636,
@@ -9310,7 +9438,9 @@
         "mapID": 1425,
         "x": 9.8,
         "y": 44.4,
-        "zoneName": "The Hinterlands"
+        "zoneName": "The Hinterlands",
+        "creatureDisplayID": 7007,
+        "portraitSource": "https://www.wowhead.com/forever/npc=5636"
       },
       "storyline": [
         2988,
@@ -9338,7 +9468,9 @@
         "mapID": 1425,
         "x": 9.8,
         "y": 44.4,
-        "zoneName": "The Hinterlands"
+        "zoneName": "The Hinterlands",
+        "creatureDisplayID": 7007,
+        "portraitSource": "https://www.wowhead.com/forever/npc=5636"
       },
       "finish": {
         "npcID": 5636,
@@ -9346,7 +9478,9 @@
         "mapID": 1425,
         "x": 9.8,
         "y": 44.4,
-        "zoneName": "The Hinterlands"
+        "zoneName": "The Hinterlands",
+        "creatureDisplayID": 7007,
+        "portraitSource": "https://www.wowhead.com/forever/npc=5636"
       },
       "storyline": [
         2988,
@@ -9381,7 +9515,9 @@
         "mapID": 1425,
         "x": 9.8,
         "y": 44.4,
-        "zoneName": "The Hinterlands"
+        "zoneName": "The Hinterlands",
+        "creatureDisplayID": 7007,
+        "portraitSource": "https://www.wowhead.com/forever/npc=5636"
       },
       "finish": {
         "npcID": 8022,
@@ -9389,7 +9525,9 @@
         "zoneName": "Blasted Lands",
         "mapID": 1419,
         "x": 67,
-        "y": 19.4
+        "y": 19.4,
+        "creatureDisplayID": 7273,
+        "portraitSource": "https://www.wowhead.com/forever/npc=8022"
       },
       "storyline": [
         2988,
@@ -9424,7 +9562,9 @@
         "zoneName": "Blasted Lands",
         "mapID": 1419,
         "x": 67,
-        "y": 19.4
+        "y": 19.4,
+        "creatureDisplayID": 7273,
+        "portraitSource": "https://www.wowhead.com/forever/npc=8022"
       },
       "finish": {
         "npcID": 8022,
@@ -9432,7 +9572,9 @@
         "zoneName": "Blasted Lands",
         "mapID": 1419,
         "x": 67,
-        "y": 19.4
+        "y": 19.4,
+        "creatureDisplayID": 7273,
+        "portraitSource": "https://www.wowhead.com/forever/npc=8022"
       },
       "storyline": [
         2988,
@@ -9460,7 +9602,9 @@
         "zoneName": "Blasted Lands",
         "mapID": 1419,
         "x": 67,
-        "y": 19.4
+        "y": 19.4,
+        "creatureDisplayID": 7273,
+        "portraitSource": "https://www.wowhead.com/forever/npc=8022"
       },
       "finish": {
         "npcID": 5636,
@@ -9468,7 +9612,9 @@
         "mapID": 1425,
         "x": 9.8,
         "y": 44.4,
-        "zoneName": "The Hinterlands"
+        "zoneName": "The Hinterlands",
+        "creatureDisplayID": 7007,
+        "portraitSource": "https://www.wowhead.com/forever/npc=5636"
       },
       "storyline": [
         2988,
@@ -9496,7 +9642,9 @@
         "mapID": 1425,
         "x": 9.8,
         "y": 44.4,
-        "zoneName": "The Hinterlands"
+        "zoneName": "The Hinterlands",
+        "creatureDisplayID": 7007,
+        "portraitSource": "https://www.wowhead.com/forever/npc=5636"
       },
       "finish": {
         "npcID": 5636,
@@ -9504,7 +9652,9 @@
         "mapID": 1425,
         "x": 9.8,
         "y": 44.4,
-        "zoneName": "The Hinterlands"
+        "zoneName": "The Hinterlands",
+        "creatureDisplayID": 7007,
+        "portraitSource": "https://www.wowhead.com/forever/npc=5636"
       },
       "storyline": [
         2988,
@@ -9533,7 +9683,9 @@
         "zoneName": "Tanaris",
         "mapID": 1446,
         "x": 67,
-        "y": 22.4
+        "y": 22.4,
+        "creatureDisplayID": 7902,
+        "portraitSource": "https://www.wowhead.com/forever/npc=8579"
       },
       "finish": {
         "npcID": 8579,
@@ -9541,7 +9693,9 @@
         "zoneName": "Tanaris",
         "mapID": 1446,
         "x": 67,
-        "y": 22.4
+        "y": 22.4,
+        "creatureDisplayID": 7902,
+        "portraitSource": "https://www.wowhead.com/forever/npc=8579"
       },
       "storyline": [
         3520,
@@ -9567,7 +9721,9 @@
         "zoneName": "Tanaris",
         "mapID": 1446,
         "x": 67,
-        "y": 22.4
+        "y": 22.4,
+        "creatureDisplayID": 7902,
+        "portraitSource": "https://www.wowhead.com/forever/npc=8579"
       },
       "finish": {
         "npcID": 8579,
@@ -9575,7 +9731,9 @@
         "zoneName": "Tanaris",
         "mapID": 1446,
         "x": 67,
-        "y": 22.4
+        "y": 22.4,
+        "creatureDisplayID": 7902,
+        "portraitSource": "https://www.wowhead.com/forever/npc=8579"
       },
       "storyline": [
         3520,
@@ -9645,7 +9803,9 @@
         "zoneName": "Tanaris",
         "mapID": 1446,
         "x": 52.6,
-        "y": 45.8
+        "y": 45.8,
+        "creatureDisplayID": 7188,
+        "portraitSource": "https://www.wowhead.com/forever/npc=7771"
       },
       "finish": {
         "objectID": 148838,
@@ -9692,7 +9852,9 @@
         "mapID": 1453,
         "x": 64.2,
         "y": 20.8,
-        "zoneName": "Stormwind City"
+        "zoneName": "Stormwind City",
+        "creatureDisplayID": 5079,
+        "portraitSource": "https://www.wowhead.com/forever/npc=5384"
       },
       "finish": {
         "npcID": 5384,
@@ -9700,7 +9862,9 @@
         "mapID": 1453,
         "x": 64.2,
         "y": 20.8,
-        "zoneName": "Stormwind City"
+        "zoneName": "Stormwind City",
+        "creatureDisplayID": 5079,
+        "portraitSource": "https://www.wowhead.com/forever/npc=5384"
       },
       "storyline": [
         1469,
@@ -9738,7 +9902,9 @@
         "zoneName": "Tanaris",
         "mapID": 1446,
         "x": 52.6,
-        "y": 45.8
+        "y": 45.8,
+        "creatureDisplayID": 7188,
+        "portraitSource": "https://www.wowhead.com/forever/npc=7771"
       },
       "finish": {
         "objectID": 148836,
@@ -9768,7 +9934,9 @@
         "zoneName": "Swamp of Sorrows",
         "mapID": 1435,
         "x": 48,
-        "y": 55
+        "y": 55,
+        "creatureDisplayID": 4554,
+        "portraitSource": "https://www.wowhead.com/forever/npc=1443"
       },
       "finish": {
         "npcID": 1443,
@@ -9776,7 +9944,9 @@
         "zoneName": "Swamp of Sorrows",
         "mapID": 1435,
         "x": 48,
-        "y": 55
+        "y": 55,
+        "creatureDisplayID": 4554,
+        "portraitSource": "https://www.wowhead.com/forever/npc=1443"
       },
       "storyline": [
         1424,
@@ -9823,7 +9993,9 @@
         "zoneName": "Tanaris",
         "mapID": 1446,
         "x": 52.6,
-        "y": 45.8
+        "y": 45.8,
+        "creatureDisplayID": 7188,
+        "portraitSource": "https://www.wowhead.com/forever/npc=7771"
       },
       "storylineGroups": [
         [
@@ -9917,7 +10089,9 @@
         "zoneName": "Tanaris",
         "mapID": 1446,
         "x": 52.6,
-        "y": 45.8
+        "y": 45.8,
+        "creatureDisplayID": 7188,
+        "portraitSource": "https://www.wowhead.com/forever/npc=7771"
       },
       "storylineGroups": [
         [
@@ -9946,7 +10120,9 @@
         "zoneName": "Tanaris",
         "mapID": 1446,
         "x": 52.6,
-        "y": 45.8
+        "y": 45.8,
+        "creatureDisplayID": 7188,
+        "portraitSource": "https://www.wowhead.com/forever/npc=7771"
       },
       "finish": {
         "npcID": 7771,
@@ -9954,7 +10130,9 @@
         "zoneName": "Tanaris",
         "mapID": 1446,
         "x": 52.6,
-        "y": 45.8
+        "y": 45.8,
+        "creatureDisplayID": 7188,
+        "portraitSource": "https://www.wowhead.com/forever/npc=7771"
       },
       "storylineGroups": [
         [
@@ -9984,7 +10162,9 @@
         "zoneName": "Wetlands",
         "mapID": 1437,
         "x": 8.4,
-        "y": 55.8
+        "y": 55.8,
+        "creatureDisplayID": 1408,
+        "portraitSource": "https://www.wowhead.com/forever/npc=2094"
       },
       "finish": {
         "npcID": 2094,
@@ -9992,7 +10172,9 @@
         "zoneName": "Wetlands",
         "mapID": 1437,
         "x": 8.4,
-        "y": 55.8
+        "y": 55.8,
+        "creatureDisplayID": 1408,
+        "portraitSource": "https://www.wowhead.com/forever/npc=2094"
       },
       "requirementsKnown": false,
       "factions": [
@@ -10706,7 +10888,9 @@
         "zoneName": "Wetlands",
         "mapID": 1437,
         "x": 8.4,
-        "y": 55.8
+        "y": 55.8,
+        "creatureDisplayID": 1408,
+        "portraitSource": "https://www.wowhead.com/forever/npc=2094"
       },
       "requirementsKnown": false,
       "factions": [
@@ -10737,7 +10921,9 @@
         "zoneName": "Wetlands",
         "mapID": 1437,
         "x": 8.4,
-        "y": 55.8
+        "y": 55.8,
+        "creatureDisplayID": 1408,
+        "portraitSource": "https://www.wowhead.com/forever/npc=2094"
       },
       "finish": {
         "npcID": 2094,
@@ -10745,7 +10931,9 @@
         "zoneName": "Wetlands",
         "mapID": 1437,
         "x": 8.4,
-        "y": 55.8
+        "y": 55.8,
+        "creatureDisplayID": 1408,
+        "portraitSource": "https://www.wowhead.com/forever/npc=2094"
       },
       "requirementsKnown": false,
       "factions": [
@@ -10776,7 +10964,9 @@
         "zoneName": "Wetlands",
         "mapID": 1437,
         "x": 8.4,
-        "y": 55.8
+        "y": 55.8,
+        "creatureDisplayID": 1408,
+        "portraitSource": "https://www.wowhead.com/forever/npc=2094"
       },
       "finish": {
         "npcID": 2094,
@@ -10784,7 +10974,9 @@
         "zoneName": "Wetlands",
         "mapID": 1437,
         "x": 8.4,
-        "y": 55.8
+        "y": 55.8,
+        "creatureDisplayID": 1408,
+        "portraitSource": "https://www.wowhead.com/forever/npc=2094"
       },
       "requirementsKnown": false,
       "factions": [
@@ -10827,7 +11019,9 @@
         "mapID": 1453,
         "x": 64.2,
         "y": 20.8,
-        "zoneName": "Stormwind City"
+        "zoneName": "Stormwind City",
+        "creatureDisplayID": 5079,
+        "portraitSource": "https://www.wowhead.com/forever/npc=5384"
       },
       "storyline": [
         1469,
@@ -10857,7 +11051,9 @@
         "zoneName": "Swamp of Sorrows",
         "mapID": 1435,
         "x": 48,
-        "y": 55
+        "y": 55,
+        "creatureDisplayID": 4554,
+        "portraitSource": "https://www.wowhead.com/forever/npc=1443"
       },
       "finish": {
         "npcID": 1443,
@@ -10865,7 +11061,9 @@
         "zoneName": "Swamp of Sorrows",
         "mapID": 1435,
         "x": 48,
-        "y": 55
+        "y": 55,
+        "creatureDisplayID": 4554,
+        "portraitSource": "https://www.wowhead.com/forever/npc=1443"
       },
       "storyline": [
         1424,
@@ -10890,7 +11088,9 @@
         "zoneName": "Swamp of Sorrows",
         "mapID": 1435,
         "x": 48,
-        "y": 55
+        "y": 55,
+        "creatureDisplayID": 4554,
+        "portraitSource": "https://www.wowhead.com/forever/npc=1443"
       },
       "finish": {
         "npcID": 5598,
@@ -10938,7 +11138,9 @@
         "zoneName": "Swamp of Sorrows",
         "mapID": 1435,
         "x": 48,
-        "y": 55
+        "y": 55,
+        "creatureDisplayID": 4554,
+        "portraitSource": "https://www.wowhead.com/forever/npc=1443"
       },
       "storyline": [
         1424,
@@ -11596,7 +11798,9 @@
         "zoneName": "Burning Steppes",
         "mapID": 1428,
         "x": 94.8,
-        "y": 31.6
+        "y": 31.6,
+        "creatureDisplayID": 2552,
+        "portraitSource": "https://www.wowhead.com/forever/npc=9459"
       },
       "finish": {
         "npcID": 9459,
@@ -11604,7 +11808,9 @@
         "zoneName": "Burning Steppes",
         "mapID": 1428,
         "x": 94.8,
-        "y": 31.6
+        "y": 31.6,
+        "creatureDisplayID": 2552,
+        "portraitSource": "https://www.wowhead.com/forever/npc=9459"
       },
       "storylineGroups": [
         [
@@ -11633,7 +11839,9 @@
         "zoneName": "Burning Steppes",
         "mapID": 1428,
         "x": 94.8,
-        "y": 31.6
+        "y": 31.6,
+        "creatureDisplayID": 2552,
+        "portraitSource": "https://www.wowhead.com/forever/npc=9459"
       },
       "finish": {
         "npcID": 9459,
@@ -11641,7 +11849,9 @@
         "zoneName": "Burning Steppes",
         "mapID": 1428,
         "x": 94.8,
-        "y": 31.6
+        "y": 31.6,
+        "creatureDisplayID": 2552,
+        "portraitSource": "https://www.wowhead.com/forever/npc=9459"
       },
       "storylineGroups": [
         [
@@ -11670,7 +11880,9 @@
         "zoneName": "Burning Steppes",
         "mapID": 1428,
         "x": 94.8,
-        "y": 31.6
+        "y": 31.6,
+        "creatureDisplayID": 2552,
+        "portraitSource": "https://www.wowhead.com/forever/npc=9459"
       },
       "finish": {
         "npcID": 9459,
@@ -11678,7 +11890,9 @@
         "zoneName": "Burning Steppes",
         "mapID": 1428,
         "x": 94.8,
-        "y": 31.6
+        "y": 31.6,
+        "creatureDisplayID": 2552,
+        "portraitSource": "https://www.wowhead.com/forever/npc=9459"
       },
       "storylineGroups": [
         [
@@ -11903,7 +12117,9 @@
             "x": 5.8,
             "y": 47.6
           }
-        ]
+        ],
+        "creatureDisplayID": 8331,
+        "portraitSource": "https://www.wowhead.com/forever/npc=9077"
       }
     },
     {
@@ -11950,7 +12166,9 @@
             "x": 5.8,
             "y": 47.6
           }
-        ]
+        ],
+        "creatureDisplayID": 8331,
+        "portraitSource": "https://www.wowhead.com/forever/npc=9077"
       },
       "requires": [
         {
@@ -12399,7 +12617,9 @@
             "x": 5.8,
             "y": 47.6
           }
-        ]
+        ],
+        "creatureDisplayID": 8331,
+        "portraitSource": "https://www.wowhead.com/forever/npc=9077"
       },
       "finish": {
         "npcID": 9077,
@@ -12427,7 +12647,9 @@
             "x": 5.8,
             "y": 47.6
           }
-        ]
+        ],
+        "creatureDisplayID": 8331,
+        "portraitSource": "https://www.wowhead.com/forever/npc=9077"
       }
     },
     {
@@ -12482,7 +12704,9 @@
         "zoneName": "Badlands",
         "mapID": 1418,
         "x": 3,
-        "y": 47.6
+        "y": 47.6,
+        "creatureDisplayID": 8330,
+        "portraitSource": "https://www.wowhead.com/forever/npc=9078"
       },
       "storyline": [
         4133,
@@ -12505,7 +12729,9 @@
         "zoneName": "Badlands",
         "mapID": 1418,
         "x": 3,
-        "y": 47.6
+        "y": 47.6,
+        "creatureDisplayID": 8330,
+        "portraitSource": "https://www.wowhead.com/forever/npc=9078"
       },
       "finish": {
         "npcID": 9078,
@@ -12513,7 +12739,9 @@
         "zoneName": "Badlands",
         "mapID": 1418,
         "x": 3,
-        "y": 47.6
+        "y": 47.6,
+        "creatureDisplayID": 8330,
+        "portraitSource": "https://www.wowhead.com/forever/npc=9078"
       },
       "storyline": [
         4133,
@@ -12704,7 +12932,9 @@
         "zoneName": "Stormwind City",
         "mapID": 1453,
         "x": 77.4,
-        "y": 18.4
+        "y": 18.4,
+        "creatureDisplayID": 5566,
+        "portraitSource": "https://www.wowhead.com/forever/npc=1748"
       },
       "storyline": [
         4182,
@@ -12734,7 +12964,9 @@
         "zoneName": "Stormwind City",
         "mapID": 1453,
         "x": 77.4,
-        "y": 18.4
+        "y": 18.4,
+        "creatureDisplayID": 5566,
+        "portraitSource": "https://www.wowhead.com/forever/npc=1748"
       },
       "finish": {
         "npcID": 1748,
@@ -12742,7 +12974,9 @@
         "zoneName": "Stormwind City",
         "mapID": 1453,
         "x": 77.4,
-        "y": 18.4
+        "y": 18.4,
+        "creatureDisplayID": 5566,
+        "portraitSource": "https://www.wowhead.com/forever/npc=1748"
       },
       "storyline": [
         4182,
@@ -12772,7 +13006,9 @@
         "zoneName": "Stormwind City",
         "mapID": 1453,
         "x": 77.4,
-        "y": 18.4
+        "y": 18.4,
+        "creatureDisplayID": 5566,
+        "portraitSource": "https://www.wowhead.com/forever/npc=1748"
       },
       "finish": {
         "npcID": 344,
@@ -12896,7 +13132,9 @@
         "zoneName": "Burning Steppes",
         "mapID": 1428,
         "x": 84.6,
-        "y": 68.8
+        "y": 68.8,
+        "creatureDisplayID": 8685,
+        "portraitSource": "https://www.wowhead.com/forever/npc=9560"
       },
       "storyline": [
         4182,
@@ -12926,7 +13164,9 @@
         "zoneName": "Burning Steppes",
         "mapID": 1428,
         "x": 84.6,
-        "y": 68.8
+        "y": 68.8,
+        "creatureDisplayID": 8685,
+        "portraitSource": "https://www.wowhead.com/forever/npc=9560"
       },
       "finish": {
         "npcID": 9560,
@@ -12934,7 +13174,9 @@
         "zoneName": "Burning Steppes",
         "mapID": 1428,
         "x": 84.6,
-        "y": 68.8
+        "y": 68.8,
+        "creatureDisplayID": 8685,
+        "portraitSource": "https://www.wowhead.com/forever/npc=9560"
       },
       "storyline": [
         4182,
@@ -12964,7 +13206,9 @@
         "zoneName": "Burning Steppes",
         "mapID": 1428,
         "x": 84.6,
-        "y": 68.8
+        "y": 68.8,
+        "creatureDisplayID": 8685,
+        "portraitSource": "https://www.wowhead.com/forever/npc=9560"
       },
       "finish": {
         "npcID": 9023,
@@ -13004,7 +13248,9 @@
         "zoneName": "Burning Steppes",
         "mapID": 1428,
         "x": 84.6,
-        "y": 68.8
+        "y": 68.8,
+        "creatureDisplayID": 8685,
+        "portraitSource": "https://www.wowhead.com/forever/npc=9560"
       },
       "storyline": [
         4182,
@@ -13294,7 +13540,9 @@
         "zoneName": "Burning Steppes",
         "mapID": 1428,
         "x": 84.6,
-        "y": 68.8
+        "y": 68.8,
+        "creatureDisplayID": 8685,
+        "portraitSource": "https://www.wowhead.com/forever/npc=9560"
       },
       "storyline": [
         4322,
@@ -13349,7 +13597,9 @@
         "zoneName": "Ironforge",
         "mapID": 1455,
         "x": 39.4,
-        "y": 55.4
+        "y": 55.4,
+        "creatureDisplayID": 3597,
+        "portraitSource": "https://www.wowhead.com/forever/npc=2784"
       },
       "finish": {
         "npcID": 9021,
@@ -13405,7 +13655,9 @@
         "zoneName": "Ironforge",
         "mapID": 1455,
         "x": 39.4,
-        "y": 55.4
+        "y": 55.4,
+        "creatureDisplayID": 3597,
+        "portraitSource": "https://www.wowhead.com/forever/npc=2784"
       },
       "storyline": [
         4342,
@@ -13430,7 +13682,9 @@
         "zoneName": "Ironforge",
         "mapID": 1455,
         "x": 39.4,
-        "y": 55.4
+        "y": 55.4,
+        "creatureDisplayID": 3597,
+        "portraitSource": "https://www.wowhead.com/forever/npc=2784"
       },
       "finish": {
         "npcID": 8929,
@@ -13465,7 +13719,9 @@
         "zoneName": "Ironforge",
         "mapID": 1455,
         "x": 39.4,
-        "y": 55.4
+        "y": 55.4,
+        "creatureDisplayID": 3597,
+        "portraitSource": "https://www.wowhead.com/forever/npc=2784"
       },
       "storyline": [
         4342,
@@ -13490,7 +13746,9 @@
         "zoneName": "Burning Steppes",
         "mapID": 1428,
         "x": 84.6,
-        "y": 68.8
+        "y": 68.8,
+        "creatureDisplayID": 8685,
+        "portraitSource": "https://www.wowhead.com/forever/npc=9560"
       },
       "finish": {
         "npcID": 12580,
@@ -14138,7 +14396,9 @@
         "zoneName": "Badlands",
         "mapID": 1418,
         "x": 3,
-        "y": 47.6
+        "y": 47.6,
+        "creatureDisplayID": 8330,
+        "portraitSource": "https://www.wowhead.com/forever/npc=9078"
       },
       "finish": {
         "npcID": 9078,
@@ -14146,7 +14406,9 @@
         "zoneName": "Badlands",
         "mapID": 1418,
         "x": 3,
-        "y": 47.6
+        "y": 47.6,
+        "creatureDisplayID": 8330,
+        "portraitSource": "https://www.wowhead.com/forever/npc=9078"
       },
       "requires": [
         {
@@ -14204,7 +14466,9 @@
       },
       "finish": {
         "npcID": 16016,
-        "name": "Anthion Harmon"
+        "name": "Anthion Harmon",
+        "creatureDisplayID": 15968,
+        "portraitSource": "https://www.wowhead.com/forever/npc=16016"
       },
       "startsInside": true
     },
@@ -15020,7 +15284,9 @@
             "x": 5.8,
             "y": 47.6
           }
-        ]
+        ],
+        "creatureDisplayID": 8331,
+        "portraitSource": "https://www.wowhead.com/forever/npc=9077"
       },
       "requirementsKnown": false,
       "factions": [
@@ -15206,12 +15472,16 @@
       "start": {
         "npcID": 10257,
         "name": "Bijou",
-        "zoneName": "Blackrock Spire"
+        "zoneName": "Blackrock Spire",
+        "creatureDisplayID": 9553,
+        "portraitSource": "https://www.wowhead.com/forever/npc=10257"
       },
       "finish": {
         "npcID": 10257,
         "name": "Bijou",
-        "zoneName": "Blackrock Spire"
+        "zoneName": "Blackrock Spire",
+        "creatureDisplayID": 9553,
+        "portraitSource": "https://www.wowhead.com/forever/npc=10257"
       },
       "requirementsKnown": false,
       "factions": [
@@ -15232,12 +15502,16 @@
       "start": {
         "npcID": 10257,
         "name": "Bijou",
-        "zoneName": "Blackrock Spire"
+        "zoneName": "Blackrock Spire",
+        "creatureDisplayID": 9553,
+        "portraitSource": "https://www.wowhead.com/forever/npc=10257"
       },
       "finish": {
         "npcID": 10257,
         "name": "Bijou",
-        "zoneName": "Blackrock Spire"
+        "zoneName": "Blackrock Spire",
+        "creatureDisplayID": 9553,
+        "portraitSource": "https://www.wowhead.com/forever/npc=10257"
       },
       "requirementsKnown": false,
       "factions": [
@@ -15261,7 +15535,9 @@
         "zoneName": "Burning Steppes",
         "mapID": 1428,
         "x": 84.6,
-        "y": 68.8
+        "y": 68.8,
+        "creatureDisplayID": 8685,
+        "portraitSource": "https://www.wowhead.com/forever/npc=9560"
       },
       "finish": {
         "npcID": 9560,
@@ -15269,7 +15545,9 @@
         "zoneName": "Burning Steppes",
         "mapID": 1428,
         "x": 84.6,
-        "y": 68.8
+        "y": 68.8,
+        "creatureDisplayID": 8685,
+        "portraitSource": "https://www.wowhead.com/forever/npc=9560"
       },
       "requirementsKnown": false,
       "factions": [
@@ -15293,7 +15571,9 @@
         "zoneName": "Badlands",
         "mapID": 1418,
         "x": 3,
-        "y": 47.6
+        "y": 47.6,
+        "creatureDisplayID": 8330,
+        "portraitSource": "https://www.wowhead.com/forever/npc=9078"
       },
       "finish": {
         "npcID": 9078,
@@ -15301,7 +15581,9 @@
         "zoneName": "Badlands",
         "mapID": 1418,
         "x": 3,
-        "y": 47.6
+        "y": 47.6,
+        "creatureDisplayID": 8330,
+        "portraitSource": "https://www.wowhead.com/forever/npc=9078"
       },
       "requirementsKnown": false,
       "factions": [
@@ -15418,7 +15700,9 @@
         "zoneName": "Burning Steppes",
         "mapID": 1428,
         "x": 84.6,
-        "y": 68.8
+        "y": 68.8,
+        "creatureDisplayID": 8685,
+        "portraitSource": "https://www.wowhead.com/forever/npc=9560"
       },
       "finish": {
         "npcID": 9560,
@@ -15426,7 +15710,9 @@
         "zoneName": "Burning Steppes",
         "mapID": 1428,
         "x": 84.6,
-        "y": 68.8
+        "y": 68.8,
+        "creatureDisplayID": 8685,
+        "portraitSource": "https://www.wowhead.com/forever/npc=9560"
       },
       "requirementsKnown": false,
       "factions": [
@@ -15463,7 +15749,9 @@
             "y": 51.2,
             "zoneName": "Winterspring"
           }
-        ]
+        ],
+        "creatureDisplayID": 10199,
+        "portraitSource": "https://www.wowhead.com/forever/npc=10929"
       },
       "finish": {
         "npcID": 10929,
@@ -15485,7 +15773,9 @@
             "y": 51.2,
             "zoneName": "Winterspring"
           }
-        ]
+        ],
+        "creatureDisplayID": 10199,
+        "portraitSource": "https://www.wowhead.com/forever/npc=10929"
       },
       "requirementsKnown": false,
       "factions": [
@@ -15550,7 +15840,9 @@
             "y": 51.2,
             "zoneName": "Winterspring"
           }
-        ]
+        ],
+        "creatureDisplayID": 10199,
+        "portraitSource": "https://www.wowhead.com/forever/npc=10929"
       },
       "requirementsKnown": false,
       "factions": [
@@ -15642,7 +15934,9 @@
             "y": 73.6,
             "zoneName": "Azshara"
           }
-        ]
+        ],
+        "creatureDisplayID": 10849,
+        "portraitSource": "https://www.wowhead.com/forever/npc=13278"
       },
       "finish": {
         "npcID": 13278,
@@ -15664,7 +15958,9 @@
             "y": 73.6,
             "zoneName": "Azshara"
           }
-        ]
+        ],
+        "creatureDisplayID": 10849,
+        "portraitSource": "https://www.wowhead.com/forever/npc=13278"
       },
       "requirementsKnown": false,
       "factions": [
@@ -15835,7 +16131,9 @@
         "zoneName": "Eastern Plaguelands",
         "mapID": 1423,
         "x": 81.4,
-        "y": 59.4
+        "y": 59.4,
+        "creatureDisplayID": 10465,
+        "portraitSource": "https://www.wowhead.com/forever/npc=11035"
       },
       "finish": {
         "npcID": 11035,
@@ -15843,7 +16141,9 @@
         "zoneName": "Eastern Plaguelands",
         "mapID": 1423,
         "x": 81.4,
-        "y": 59.4
+        "y": 59.4,
+        "creatureDisplayID": 10465,
+        "portraitSource": "https://www.wowhead.com/forever/npc=11035"
       },
       "storyline": [
         5522,
@@ -16021,7 +16321,9 @@
         "zoneName": "Eastern Plaguelands",
         "mapID": 1423,
         "x": 81.4,
-        "y": 59.4
+        "y": 59.4,
+        "creatureDisplayID": 10465,
+        "portraitSource": "https://www.wowhead.com/forever/npc=11035"
       }
     },
     {
@@ -16041,7 +16343,9 @@
         "zoneName": "Eastern Plaguelands",
         "mapID": 1423,
         "x": 81.4,
-        "y": 59.4
+        "y": 59.4,
+        "creatureDisplayID": 10465,
+        "portraitSource": "https://www.wowhead.com/forever/npc=11035"
       },
       "finish": {
         "npcID": 11035,
@@ -16049,7 +16353,9 @@
         "zoneName": "Eastern Plaguelands",
         "mapID": 1423,
         "x": 81.4,
-        "y": 59.4
+        "y": 59.4,
+        "creatureDisplayID": 10465,
+        "portraitSource": "https://www.wowhead.com/forever/npc=11035"
       }
     },
     {
@@ -16142,11 +16448,15 @@
       "source": "https://www.wowhead.com/forever/quest=8992/the-right-piece-of-lord-valthalaks-amulet",
       "start": {
         "npcID": 16033,
-        "name": "Bodley"
+        "name": "Bodley",
+        "creatureDisplayID": 15994,
+        "portraitSource": "https://www.wowhead.com/forever/npc=16033"
       },
       "finish": {
         "npcID": 16033,
-        "name": "Bodley"
+        "name": "Bodley",
+        "creatureDisplayID": 15994,
+        "portraitSource": "https://www.wowhead.com/forever/npc=16033"
       },
       "storylineGroups": [
         [
@@ -16185,11 +16495,15 @@
       "source": "https://www.wowhead.com/forever/quest=8969/the-left-piece-of-lord-valthalaks-amulet",
       "start": {
         "npcID": 16033,
-        "name": "Bodley"
+        "name": "Bodley",
+        "creatureDisplayID": 15994,
+        "portraitSource": "https://www.wowhead.com/forever/npc=16033"
       },
       "finish": {
         "npcID": 16033,
-        "name": "Bodley"
+        "name": "Bodley",
+        "creatureDisplayID": 15994,
+        "portraitSource": "https://www.wowhead.com/forever/npc=16033"
       },
       "storylineGroups": [
         [
@@ -16232,7 +16546,9 @@
         "zoneName": "Eastern Plaguelands",
         "mapID": 1423,
         "x": 81.6,
-        "y": 57.8
+        "y": 57.8,
+        "creatureDisplayID": 10474,
+        "portraitSource": "https://www.wowhead.com/forever/npc=11036"
       },
       "finish": {
         "npcID": 11035,
@@ -16240,7 +16556,9 @@
         "zoneName": "Eastern Plaguelands",
         "mapID": 1423,
         "x": 81.4,
-        "y": 59.4
+        "y": 59.4,
+        "creatureDisplayID": 10465,
+        "portraitSource": "https://www.wowhead.com/forever/npc=11035"
       },
       "storyline": [
         5522,
@@ -16309,7 +16627,9 @@
         "zoneName": "Eastern Plaguelands",
         "mapID": 1423,
         "x": 81.6,
-        "y": 57.8
+        "y": 57.8,
+        "creatureDisplayID": 10474,
+        "portraitSource": "https://www.wowhead.com/forever/npc=11036"
       },
       "storyline": [
         5461,
@@ -16337,7 +16657,9 @@
         "zoneName": "Eastern Plaguelands",
         "mapID": 1423,
         "x": 81.6,
-        "y": 57.8
+        "y": 57.8,
+        "creatureDisplayID": 10474,
+        "portraitSource": "https://www.wowhead.com/forever/npc=11036"
       },
       "finish": {
         "objectID": 176631,
@@ -16375,7 +16697,9 @@
         "zoneName": "Eastern Plaguelands",
         "mapID": 1423,
         "x": 81.6,
-        "y": 57.8
+        "y": 57.8,
+        "creatureDisplayID": 10474,
+        "portraitSource": "https://www.wowhead.com/forever/npc=11036"
       },
       "storyline": [
         5461,
@@ -16403,7 +16727,9 @@
         "zoneName": "Eastern Plaguelands",
         "mapID": 1423,
         "x": 81.6,
-        "y": 57.8
+        "y": 57.8,
+        "creatureDisplayID": 10474,
+        "portraitSource": "https://www.wowhead.com/forever/npc=11036"
       },
       "finish": {
         "npcID": 11286,
@@ -16447,7 +16773,9 @@
         "zoneName": "Eastern Plaguelands",
         "mapID": 1423,
         "x": 81.6,
-        "y": 57.8
+        "y": 57.8,
+        "creatureDisplayID": 10474,
+        "portraitSource": "https://www.wowhead.com/forever/npc=11036"
       },
       "storyline": [
         5522,
@@ -16614,11 +16942,15 @@
       "source": "https://www.wowhead.com/forever/quest=8985/more-components-of-importance",
       "start": {
         "npcID": 16033,
-        "name": "Bodley"
+        "name": "Bodley",
+        "creatureDisplayID": 15994,
+        "portraitSource": "https://www.wowhead.com/forever/npc=16033"
       },
       "finish": {
         "npcID": 16033,
-        "name": "Bodley"
+        "name": "Bodley",
+        "creatureDisplayID": 15994,
+        "portraitSource": "https://www.wowhead.com/forever/npc=16033"
       },
       "storylineGroups": [
         [
@@ -16657,11 +16989,15 @@
       "source": "https://www.wowhead.com/forever/quest=8986/more-components-of-importance",
       "start": {
         "npcID": 16033,
-        "name": "Bodley"
+        "name": "Bodley",
+        "creatureDisplayID": 15994,
+        "portraitSource": "https://www.wowhead.com/forever/npc=16033"
       },
       "finish": {
         "npcID": 16033,
-        "name": "Bodley"
+        "name": "Bodley",
+        "creatureDisplayID": 15994,
+        "portraitSource": "https://www.wowhead.com/forever/npc=16033"
       },
       "storylineGroups": [
         [
@@ -16700,11 +17036,15 @@
       "source": "https://www.wowhead.com/forever/quest=8987/more-components-of-importance",
       "start": {
         "npcID": 16033,
-        "name": "Bodley"
+        "name": "Bodley",
+        "creatureDisplayID": 15994,
+        "portraitSource": "https://www.wowhead.com/forever/npc=16033"
       },
       "finish": {
         "npcID": 16033,
-        "name": "Bodley"
+        "name": "Bodley",
+        "creatureDisplayID": 15994,
+        "portraitSource": "https://www.wowhead.com/forever/npc=16033"
       },
       "storylineGroups": [
         [
@@ -16743,11 +17083,15 @@
       "source": "https://www.wowhead.com/forever/quest=8988/more-components-of-importance",
       "start": {
         "npcID": 16033,
-        "name": "Bodley"
+        "name": "Bodley",
+        "creatureDisplayID": 15994,
+        "portraitSource": "https://www.wowhead.com/forever/npc=16033"
       },
       "finish": {
         "npcID": 16033,
-        "name": "Bodley"
+        "name": "Bodley",
+        "creatureDisplayID": 15994,
+        "portraitSource": "https://www.wowhead.com/forever/npc=16033"
       },
       "storylineGroups": [
         [
@@ -16786,11 +17130,15 @@
       "source": "https://www.wowhead.com/forever/quest=8989/the-right-piece-of-lord-valthalaks-amulet",
       "start": {
         "npcID": 16033,
-        "name": "Bodley"
+        "name": "Bodley",
+        "creatureDisplayID": 15994,
+        "portraitSource": "https://www.wowhead.com/forever/npc=16033"
       },
       "finish": {
         "npcID": 16033,
-        "name": "Bodley"
+        "name": "Bodley",
+        "creatureDisplayID": 15994,
+        "portraitSource": "https://www.wowhead.com/forever/npc=16033"
       },
       "storylineGroups": [
         [
@@ -16833,11 +17181,15 @@
       "source": "https://www.wowhead.com/forever/quest=8990/the-right-piece-of-lord-valthalaks-amulet",
       "start": {
         "npcID": 16033,
-        "name": "Bodley"
+        "name": "Bodley",
+        "creatureDisplayID": 15994,
+        "portraitSource": "https://www.wowhead.com/forever/npc=16033"
       },
       "finish": {
         "npcID": 16033,
-        "name": "Bodley"
+        "name": "Bodley",
+        "creatureDisplayID": 15994,
+        "portraitSource": "https://www.wowhead.com/forever/npc=16033"
       },
       "storylineGroups": [
         [
@@ -16876,11 +17228,15 @@
       "source": "https://www.wowhead.com/forever/quest=8991/the-right-piece-of-lord-valthalaks-amulet",
       "start": {
         "npcID": 16033,
-        "name": "Bodley"
+        "name": "Bodley",
+        "creatureDisplayID": 15994,
+        "portraitSource": "https://www.wowhead.com/forever/npc=16033"
       },
       "finish": {
         "npcID": 16033,
-        "name": "Bodley"
+        "name": "Bodley",
+        "creatureDisplayID": 15994,
+        "portraitSource": "https://www.wowhead.com/forever/npc=16033"
       },
       "storylineGroups": [
         [
@@ -16919,11 +17275,15 @@
       "source": "https://www.wowhead.com/forever/quest=8994/final-preparations",
       "start": {
         "npcID": 16033,
-        "name": "Bodley"
+        "name": "Bodley",
+        "creatureDisplayID": 15994,
+        "portraitSource": "https://www.wowhead.com/forever/npc=16033"
       },
       "finish": {
         "npcID": 16033,
-        "name": "Bodley"
+        "name": "Bodley",
+        "creatureDisplayID": 15994,
+        "portraitSource": "https://www.wowhead.com/forever/npc=16033"
       },
       "storylineGroups": [
         [
@@ -16962,7 +17322,9 @@
       "source": "https://www.wowhead.com/forever/quest=8995/mea-culpa-lord-valthalak",
       "start": {
         "npcID": 16033,
-        "name": "Bodley"
+        "name": "Bodley",
+        "creatureDisplayID": 15994,
+        "portraitSource": "https://www.wowhead.com/forever/npc=16033"
       },
       "finish": {
         "npcID": 16073,
@@ -17011,7 +17373,9 @@
       },
       "finish": {
         "npcID": 16033,
-        "name": "Bodley"
+        "name": "Bodley",
+        "creatureDisplayID": 15994,
+        "portraitSource": "https://www.wowhead.com/forever/npc=16033"
       },
       "storylineGroups": [
         [
@@ -17054,11 +17418,15 @@
       "source": "https://www.wowhead.com/forever/quest=8962/components-of-importance",
       "start": {
         "npcID": 16033,
-        "name": "Bodley"
+        "name": "Bodley",
+        "creatureDisplayID": 15994,
+        "portraitSource": "https://www.wowhead.com/forever/npc=16033"
       },
       "finish": {
         "npcID": 16033,
-        "name": "Bodley"
+        "name": "Bodley",
+        "creatureDisplayID": 15994,
+        "portraitSource": "https://www.wowhead.com/forever/npc=16033"
       },
       "storylineGroups": [
         [
@@ -17095,11 +17463,15 @@
       "source": "https://www.wowhead.com/forever/quest=8963/components-of-importance",
       "start": {
         "npcID": 16033,
-        "name": "Bodley"
+        "name": "Bodley",
+        "creatureDisplayID": 15994,
+        "portraitSource": "https://www.wowhead.com/forever/npc=16033"
       },
       "finish": {
         "npcID": 16033,
-        "name": "Bodley"
+        "name": "Bodley",
+        "creatureDisplayID": 15994,
+        "portraitSource": "https://www.wowhead.com/forever/npc=16033"
       },
       "storylineGroups": [
         [
@@ -17136,11 +17508,15 @@
       "source": "https://www.wowhead.com/forever/quest=8964/components-of-importance",
       "start": {
         "npcID": 16033,
-        "name": "Bodley"
+        "name": "Bodley",
+        "creatureDisplayID": 15994,
+        "portraitSource": "https://www.wowhead.com/forever/npc=16033"
       },
       "finish": {
         "npcID": 16033,
-        "name": "Bodley"
+        "name": "Bodley",
+        "creatureDisplayID": 15994,
+        "portraitSource": "https://www.wowhead.com/forever/npc=16033"
       },
       "storylineGroups": [
         [
@@ -17173,11 +17549,15 @@
       "source": "https://www.wowhead.com/forever/quest=8965/components-of-importance",
       "start": {
         "npcID": 16033,
-        "name": "Bodley"
+        "name": "Bodley",
+        "creatureDisplayID": 15994,
+        "portraitSource": "https://www.wowhead.com/forever/npc=16033"
       },
       "finish": {
         "npcID": 16033,
-        "name": "Bodley"
+        "name": "Bodley",
+        "creatureDisplayID": 15994,
+        "portraitSource": "https://www.wowhead.com/forever/npc=16033"
       },
       "storylineGroups": [
         [
@@ -17210,11 +17590,15 @@
       "source": "https://www.wowhead.com/forever/quest=8966/the-left-piece-of-lord-valthalaks-amulet",
       "start": {
         "npcID": 16033,
-        "name": "Bodley"
+        "name": "Bodley",
+        "creatureDisplayID": 15994,
+        "portraitSource": "https://www.wowhead.com/forever/npc=16033"
       },
       "finish": {
         "npcID": 16033,
-        "name": "Bodley"
+        "name": "Bodley",
+        "creatureDisplayID": 15994,
+        "portraitSource": "https://www.wowhead.com/forever/npc=16033"
       },
       "storylineGroups": [
         [
@@ -17247,11 +17631,15 @@
       "requirementsKnown": false,
       "start": {
         "npcID": 16033,
-        "name": "Bodley"
+        "name": "Bodley",
+        "creatureDisplayID": 15994,
+        "portraitSource": "https://www.wowhead.com/forever/npc=16033"
       },
       "finish": {
         "npcID": 16033,
-        "name": "Bodley"
+        "name": "Bodley",
+        "creatureDisplayID": 15994,
+        "portraitSource": "https://www.wowhead.com/forever/npc=16033"
       },
       "storylineGroups": [
         [
@@ -17312,7 +17700,9 @@
       "source": "https://www.wowhead.com/forever/quest=8945/dead-mans-plea",
       "start": {
         "npcID": 16016,
-        "name": "Anthion Harmon"
+        "name": "Anthion Harmon",
+        "creatureDisplayID": 15968,
+        "portraitSource": "https://www.wowhead.com/forever/npc=16016"
       },
       "finish": {
         "npcID": 16031,
@@ -17421,7 +17811,9 @@
         "zoneName": "Eastern Plaguelands",
         "mapID": 1423,
         "x": 81.4,
-        "y": 59.4
+        "y": 59.4,
+        "creatureDisplayID": 10465,
+        "portraitSource": "https://www.wowhead.com/forever/npc=11035"
       },
       "finish": {
         "npcID": 11035,
@@ -17429,7 +17821,9 @@
         "zoneName": "Eastern Plaguelands",
         "mapID": 1423,
         "x": 81.4,
-        "y": 59.4
+        "y": 59.4,
+        "creatureDisplayID": 10465,
+        "portraitSource": "https://www.wowhead.com/forever/npc=11035"
       },
       "storyline": [
         5212,
@@ -17481,7 +17875,9 @@
         "zoneName": "Eastern Plaguelands",
         "mapID": 1423,
         "x": 81.6,
-        "y": 57.8
+        "y": 57.8,
+        "creatureDisplayID": 10474,
+        "portraitSource": "https://www.wowhead.com/forever/npc=11036"
       },
       "finish": {
         "npcID": 11036,
@@ -17489,7 +17885,9 @@
         "zoneName": "Eastern Plaguelands",
         "mapID": 1423,
         "x": 81.6,
-        "y": 57.8
+        "y": 57.8,
+        "creatureDisplayID": 10474,
+        "portraitSource": "https://www.wowhead.com/forever/npc=11036"
       },
       "objectiveItems": [
         {
@@ -17547,7 +17945,9 @@
         "zoneName": "Eastern Plaguelands",
         "mapID": 1423,
         "x": 7.4,
-        "y": 43.4
+        "y": 43.4,
+        "creatureDisplayID": 9477,
+        "portraitSource": "https://www.wowhead.com/forever/npc=1855"
       },
       "storyline": [
         5742,
@@ -17670,7 +18070,9 @@
         "zoneName": "Eastern Plaguelands",
         "mapID": 1423,
         "x": 81.4,
-        "y": 59.4
+        "y": 59.4,
+        "creatureDisplayID": 10465,
+        "portraitSource": "https://www.wowhead.com/forever/npc=11035"
       },
       "finish": {
         "npcID": 11035,
@@ -17678,7 +18080,9 @@
         "zoneName": "Eastern Plaguelands",
         "mapID": 1423,
         "x": 81.4,
-        "y": 59.4
+        "y": 59.4,
+        "creatureDisplayID": 10465,
+        "portraitSource": "https://www.wowhead.com/forever/npc=11035"
       },
       "storyline": [
         5212,
@@ -17765,11 +18169,15 @@
       "source": "https://www.wowhead.com/forever/quest=8968/the-left-piece-of-lord-valthalaks-amulet",
       "start": {
         "npcID": 16033,
-        "name": "Bodley"
+        "name": "Bodley",
+        "creatureDisplayID": 15994,
+        "portraitSource": "https://www.wowhead.com/forever/npc=16033"
       },
       "finish": {
         "npcID": 16033,
-        "name": "Bodley"
+        "name": "Bodley",
+        "creatureDisplayID": 15994,
+        "portraitSource": "https://www.wowhead.com/forever/npc=16033"
       },
       "classes": [
         "HUNTER",
@@ -17806,11 +18214,15 @@
       "source": "https://www.wowhead.com/forever/quest=8967/the-left-piece-of-lord-valthalaks-amulet",
       "start": {
         "npcID": 16033,
-        "name": "Bodley"
+        "name": "Bodley",
+        "creatureDisplayID": 15994,
+        "portraitSource": "https://www.wowhead.com/forever/npc=16033"
       },
       "finish": {
         "npcID": 16033,
-        "name": "Bodley"
+        "name": "Bodley",
+        "creatureDisplayID": 15994,
+        "portraitSource": "https://www.wowhead.com/forever/npc=16033"
       },
       "storylineGroups": [
         [
@@ -17879,7 +18291,9 @@
         "zoneName": "Eastern Plaguelands",
         "mapID": 1423,
         "x": 7.4,
-        "y": 43.4
+        "y": 43.4,
+        "creatureDisplayID": 9477,
+        "portraitSource": "https://www.wowhead.com/forever/npc=1855"
       },
       "finish": {
         "npcID": 1855,
@@ -17887,7 +18301,9 @@
         "zoneName": "Eastern Plaguelands",
         "mapID": 1423,
         "x": 7.4,
-        "y": 43.4
+        "y": 43.4,
+        "creatureDisplayID": 9477,
+        "portraitSource": "https://www.wowhead.com/forever/npc=1855"
       },
       "storyline": [
         5742,
@@ -17916,7 +18332,9 @@
         "zoneName": "Eastern Plaguelands",
         "mapID": 1423,
         "x": 7.4,
-        "y": 43.4
+        "y": 43.4,
+        "creatureDisplayID": 9477,
+        "portraitSource": "https://www.wowhead.com/forever/npc=1855"
       },
       "finish": {
         "npcID": 1855,
@@ -17924,7 +18342,9 @@
         "zoneName": "Eastern Plaguelands",
         "mapID": 1423,
         "x": 7.4,
-        "y": 43.4
+        "y": 43.4,
+        "creatureDisplayID": 9477,
+        "portraitSource": "https://www.wowhead.com/forever/npc=1855"
       },
       "storyline": [
         5742,
@@ -17953,7 +18373,9 @@
         "zoneName": "Eastern Plaguelands",
         "mapID": 1423,
         "x": 7.4,
-        "y": 43.4
+        "y": 43.4,
+        "creatureDisplayID": 9477,
+        "portraitSource": "https://www.wowhead.com/forever/npc=1855"
       },
       "finish": {
         "npcID": 1855,
@@ -17961,7 +18383,9 @@
         "zoneName": "Eastern Plaguelands",
         "mapID": 1423,
         "x": 7.4,
-        "y": 43.4
+        "y": 43.4,
+        "creatureDisplayID": 9477,
+        "portraitSource": "https://www.wowhead.com/forever/npc=1855"
       },
       "storyline": [
         5742,
@@ -17990,7 +18414,9 @@
         "zoneName": "Eastern Plaguelands",
         "mapID": 1423,
         "x": 7.4,
-        "y": 43.4
+        "y": 43.4,
+        "creatureDisplayID": 9477,
+        "portraitSource": "https://www.wowhead.com/forever/npc=1855"
       },
       "finish": {
         "npcID": 11936,
@@ -18027,7 +18453,9 @@
         "zoneName": "Eastern Plaguelands",
         "mapID": 1423,
         "x": 7.4,
-        "y": 43.4
+        "y": 43.4,
+        "creatureDisplayID": 9477,
+        "portraitSource": "https://www.wowhead.com/forever/npc=1855"
       },
       "finish": {
         "npcID": 11872,
@@ -18362,7 +18790,9 @@
         "mapID": 1453,
         "x": 64.2,
         "y": 20.8,
-        "zoneName": "Stormwind City"
+        "zoneName": "Stormwind City",
+        "creatureDisplayID": 5079,
+        "portraitSource": "https://www.wowhead.com/forever/npc=5384"
       },
       "finish": {
         "npcID": 5384,
@@ -18370,7 +18800,9 @@
         "mapID": 1453,
         "x": 64.2,
         "y": 20.8,
-        "zoneName": "Stormwind City"
+        "zoneName": "Stormwind City",
+        "creatureDisplayID": 5079,
+        "portraitSource": "https://www.wowhead.com/forever/npc=5384"
       },
       "requirementsKnown": false,
       "source": "https://www.wowhead.com/forever/quest=1448",
@@ -18396,7 +18828,9 @@
         "mapID": 1453,
         "x": 64.2,
         "y": 20.8,
-        "zoneName": "Stormwind City"
+        "zoneName": "Stormwind City",
+        "creatureDisplayID": 5079,
+        "portraitSource": "https://www.wowhead.com/forever/npc=5384"
       },
       "finish": {
         "npcID": 5635,
@@ -18438,7 +18872,9 @@
         "mapID": 1425,
         "x": 9.8,
         "y": 44.4,
-        "zoneName": "The Hinterlands"
+        "zoneName": "The Hinterlands",
+        "creatureDisplayID": 7007,
+        "portraitSource": "https://www.wowhead.com/forever/npc=5636"
       },
       "requirementsKnown": false,
       "source": "https://www.wowhead.com/forever/quest=1450",
@@ -18464,7 +18900,9 @@
         "mapID": 1425,
         "x": 9.8,
         "y": 44.4,
-        "zoneName": "The Hinterlands"
+        "zoneName": "The Hinterlands",
+        "creatureDisplayID": 7007,
+        "portraitSource": "https://www.wowhead.com/forever/npc=5636"
       },
       "finish": {
         "npcID": 5634,
@@ -18614,7 +19052,9 @@
         "zoneName": "Badlands",
         "mapID": 1418,
         "x": 3,
-        "y": 47.6
+        "y": 47.6,
+        "creatureDisplayID": 8330,
+        "portraitSource": "https://www.wowhead.com/forever/npc=9078"
       },
       "start": {
         "npcID": 5204,
@@ -18673,7 +19113,9 @@
         "zoneName": "Burning Steppes",
         "mapID": 1428,
         "x": 84.6,
-        "y": 68.8
+        "y": 68.8,
+        "creatureDisplayID": 8685,
+        "portraitSource": "https://www.wowhead.com/forever/npc=9560"
       },
       "start": {
         "itemID": 12780,
@@ -18796,7 +19238,9 @@
       "finish": {
         "npcID": 10257,
         "name": "Bijou",
-        "zoneName": "Blackrock Spire"
+        "zoneName": "Blackrock Spire",
+        "creatureDisplayID": 9553,
+        "portraitSource": "https://www.wowhead.com/forever/npc=10257"
       },
       "start": {
         "npcID": 9080,
@@ -18987,7 +19431,9 @@
       "start": {
         "npcID": 10257,
         "name": "Bijou",
-        "zoneName": "Blackrock Spire"
+        "zoneName": "Blackrock Spire",
+        "creatureDisplayID": 9553,
+        "portraitSource": "https://www.wowhead.com/forever/npc=10257"
       },
       "storyline": [
         4981,
@@ -19011,12 +19457,16 @@
         "zoneName": "Burning Steppes",
         "mapID": 1428,
         "x": 84.6,
-        "y": 68.8
+        "y": 68.8,
+        "creatureDisplayID": 8685,
+        "portraitSource": "https://www.wowhead.com/forever/npc=9560"
       },
       "start": {
         "npcID": 10257,
         "name": "Bijou",
-        "zoneName": "Blackrock Spire"
+        "zoneName": "Blackrock Spire",
+        "creatureDisplayID": 9553,
+        "portraitSource": "https://www.wowhead.com/forever/npc=10257"
       },
       "storyline": [
         5001,
@@ -19216,7 +19666,9 @@
             "x": 5.8,
             "y": 47.6
           }
-        ]
+        ],
+        "creatureDisplayID": 8331,
+        "portraitSource": "https://www.wowhead.com/forever/npc=9077"
       },
       "finish": {
         "npcID": 4949,
@@ -19297,7 +19749,9 @@
             "y": 51.2,
             "zoneName": "Winterspring"
           }
-        ]
+        ],
+        "creatureDisplayID": 10199,
+        "portraitSource": "https://www.wowhead.com/forever/npc=10929"
       },
       "finish": {
         "npcID": 10929,
@@ -19319,7 +19773,9 @@
             "y": 51.2,
             "zoneName": "Winterspring"
           }
-        ]
+        ],
+        "creatureDisplayID": 10199,
+        "portraitSource": "https://www.wowhead.com/forever/npc=10929"
       },
       "storyline": [
         5160,
@@ -19359,7 +19815,9 @@
             "y": 51.2,
             "zoneName": "Winterspring"
           }
-        ]
+        ],
+        "creatureDisplayID": 10199,
+        "portraitSource": "https://www.wowhead.com/forever/npc=10929"
       },
       "finish": {
         "npcID": 10976,
@@ -19427,7 +19885,9 @@
         "zoneName": "Stormwind City",
         "mapID": 1453,
         "x": 77.4,
-        "y": 18.4
+        "y": 18.4,
+        "creatureDisplayID": 5566,
+        "portraitSource": "https://www.wowhead.com/forever/npc=1748"
       },
       "storyline": [
         6403,
@@ -19451,7 +19911,9 @@
         "zoneName": "Stormwind City",
         "mapID": 1453,
         "x": 77.4,
-        "y": 18.4
+        "y": 18.4,
+        "creatureDisplayID": 5566,
+        "portraitSource": "https://www.wowhead.com/forever/npc=1748"
       },
       "finish": {
         "npcID": 10929,
@@ -19473,7 +19935,9 @@
             "y": 51.2,
             "zoneName": "Winterspring"
           }
-        ]
+        ],
+        "creatureDisplayID": 10199,
+        "portraitSource": "https://www.wowhead.com/forever/npc=10929"
       },
       "storyline": [
         6403,
@@ -19634,7 +20098,9 @@
             "y": 73.6,
             "zoneName": "Azshara"
           }
-        ]
+        ],
+        "creatureDisplayID": 10849,
+        "portraitSource": "https://www.wowhead.com/forever/npc=13278"
       },
       "finish": {
         "npcID": 13278,
@@ -19656,7 +20122,9 @@
             "y": 73.6,
             "zoneName": "Azshara"
           }
-        ]
+        ],
+        "creatureDisplayID": 10849,
+        "portraitSource": "https://www.wowhead.com/forever/npc=13278"
       },
       "storyline": [
         6821,
@@ -19696,7 +20164,9 @@
             "y": 73.6,
             "zoneName": "Azshara"
           }
-        ]
+        ],
+        "creatureDisplayID": 10849,
+        "portraitSource": "https://www.wowhead.com/forever/npc=13278"
       },
       "finish": {
         "npcID": 13278,
@@ -19718,7 +20188,9 @@
             "y": 73.6,
             "zoneName": "Azshara"
           }
-        ]
+        ],
+        "creatureDisplayID": 10849,
+        "portraitSource": "https://www.wowhead.com/forever/npc=13278"
       },
       "storyline": [
         6821,
@@ -19758,7 +20230,9 @@
             "y": 73.6,
             "zoneName": "Azshara"
           }
-        ]
+        ],
+        "creatureDisplayID": 10849,
+        "portraitSource": "https://www.wowhead.com/forever/npc=13278"
       },
       "finish": {
         "npcID": 13278,
@@ -19780,7 +20254,9 @@
             "y": 73.6,
             "zoneName": "Azshara"
           }
-        ]
+        ],
+        "creatureDisplayID": 10849,
+        "portraitSource": "https://www.wowhead.com/forever/npc=13278"
       },
       "storyline": [
         6821,
@@ -19856,7 +20332,9 @@
         "npcID": 14368,
         "name": "Lorekeeper Lydros",
         "zoneName": "Dire Maul",
-        "dungeonKey": "dire"
+        "dungeonKey": "dire",
+        "creatureDisplayID": 14407,
+        "portraitSource": "https://www.wowhead.com/forever/npc=14368"
       }
     },
     {
@@ -19941,7 +20419,9 @@
         "npcID": 14368,
         "name": "Lorekeeper Lydros",
         "zoneName": "Dire Maul",
-        "dungeonKey": "dire"
+        "dungeonKey": "dire",
+        "creatureDisplayID": 14407,
+        "portraitSource": "https://www.wowhead.com/forever/npc=14368"
       },
       "start": {
         "itemID": 18513,
@@ -20023,12 +20503,16 @@
       "start": {
         "npcID": 14338,
         "name": "Knot Thimblejack",
-        "zoneName": "Dire Maul"
+        "zoneName": "Dire Maul",
+        "creatureDisplayID": 14381,
+        "portraitSource": "https://www.wowhead.com/forever/npc=14338"
       },
       "finish": {
         "npcID": 14338,
         "name": "Knot Thimblejack",
-        "zoneName": "Dire Maul"
+        "zoneName": "Dire Maul",
+        "creatureDisplayID": 14381,
+        "portraitSource": "https://www.wowhead.com/forever/npc=14338"
       }
     },
     {
@@ -20127,13 +20611,17 @@
         "npcID": 14368,
         "name": "Lorekeeper Lydros",
         "zoneName": "Dire Maul",
-        "dungeonKey": "dire"
+        "dungeonKey": "dire",
+        "creatureDisplayID": 14407,
+        "portraitSource": "https://www.wowhead.com/forever/npc=14368"
       },
       "finish": {
         "npcID": 14368,
         "name": "Lorekeeper Lydros",
         "zoneName": "Dire Maul",
-        "dungeonKey": "dire"
+        "dungeonKey": "dire",
+        "creatureDisplayID": 14407,
+        "portraitSource": "https://www.wowhead.com/forever/npc=14368"
       },
       "startsInside": true
     },
@@ -20438,13 +20926,17 @@
         "npcID": 14368,
         "name": "Lorekeeper Lydros",
         "zoneName": "Dire Maul",
-        "dungeonKey": "dire"
+        "dungeonKey": "dire",
+        "creatureDisplayID": 14407,
+        "portraitSource": "https://www.wowhead.com/forever/npc=14368"
       },
       "finish": {
         "npcID": 14368,
         "name": "Lorekeeper Lydros",
         "zoneName": "Dire Maul",
-        "dungeonKey": "dire"
+        "dungeonKey": "dire",
+        "creatureDisplayID": 14407,
+        "portraitSource": "https://www.wowhead.com/forever/npc=14368"
       },
       "repeatable": true,
       "requirementsKnown": false,
@@ -20463,12 +20955,16 @@
       "start": {
         "npcID": 14338,
         "name": "Knot Thimblejack",
-        "zoneName": "Dire Maul"
+        "zoneName": "Dire Maul",
+        "creatureDisplayID": 14381,
+        "portraitSource": "https://www.wowhead.com/forever/npc=14338"
       },
       "finish": {
         "npcID": 14338,
         "name": "Knot Thimblejack",
-        "zoneName": "Dire Maul"
+        "zoneName": "Dire Maul",
+        "creatureDisplayID": 14381,
+        "portraitSource": "https://www.wowhead.com/forever/npc=14338"
       },
       "requirementsKnown": false,
       "source": "https://www.wowhead.com/forever/quest=5525/free-knot"
@@ -21292,13 +21788,17 @@
         "npcID": 14368,
         "name": "Lorekeeper Lydros",
         "zoneName": "Dire Maul",
-        "dungeonKey": "dire"
+        "dungeonKey": "dire",
+        "creatureDisplayID": 14407,
+        "portraitSource": "https://www.wowhead.com/forever/npc=14368"
       },
       "finish": {
         "npcID": 14368,
         "name": "Lorekeeper Lydros",
         "zoneName": "Dire Maul",
-        "dungeonKey": "dire"
+        "dungeonKey": "dire",
+        "creatureDisplayID": 14407,
+        "portraitSource": "https://www.wowhead.com/forever/npc=14368"
       },
       "repeatable": true,
       "requirementsKnown": false,
@@ -21317,12 +21817,16 @@
       "start": {
         "npcID": 14338,
         "name": "Knot Thimblejack",
-        "zoneName": "Dire Maul"
+        "zoneName": "Dire Maul",
+        "creatureDisplayID": 14381,
+        "portraitSource": "https://www.wowhead.com/forever/npc=14338"
       },
       "finish": {
         "npcID": 14338,
         "name": "Knot Thimblejack",
-        "zoneName": "Dire Maul"
+        "zoneName": "Dire Maul",
+        "creatureDisplayID": 14381,
+        "portraitSource": "https://www.wowhead.com/forever/npc=14338"
       },
       "repeatable": true,
       "requirementsKnown": false,
@@ -21341,13 +21845,17 @@
         "npcID": 14368,
         "name": "Lorekeeper Lydros",
         "zoneName": "Dire Maul",
-        "dungeonKey": "dire"
+        "dungeonKey": "dire",
+        "creatureDisplayID": 14407,
+        "portraitSource": "https://www.wowhead.com/forever/npc=14368"
       },
       "finish": {
         "npcID": 14368,
         "name": "Lorekeeper Lydros",
         "zoneName": "Dire Maul",
-        "dungeonKey": "dire"
+        "dungeonKey": "dire",
+        "creatureDisplayID": 14407,
+        "portraitSource": "https://www.wowhead.com/forever/npc=14368"
       },
       "repeatable": true,
       "requirementsKnown": false,
@@ -21365,7 +21873,9 @@
       ],
       "start": {
         "npcID": 16016,
-        "name": "Anthion Harmon"
+        "name": "Anthion Harmon",
+        "creatureDisplayID": 15968,
+        "portraitSource": "https://www.wowhead.com/forever/npc=16016"
       },
       "finish": {
         "npcID": 16032,
@@ -21458,12 +21968,16 @@
       "start": {
         "npcID": 14338,
         "name": "Knot Thimblejack",
-        "zoneName": "Dire Maul"
+        "zoneName": "Dire Maul",
+        "creatureDisplayID": 14381,
+        "portraitSource": "https://www.wowhead.com/forever/npc=14338"
       },
       "finish": {
         "npcID": 14338,
         "name": "Knot Thimblejack",
-        "zoneName": "Dire Maul"
+        "zoneName": "Dire Maul",
+        "creatureDisplayID": 14381,
+        "portraitSource": "https://www.wowhead.com/forever/npc=14338"
       },
       "requirementsKnown": false,
       "source": "https://www.wowhead.com/forever/quest=5519/the-gordok-ogre-suit"
@@ -21528,7 +22042,9 @@
         "zoneName": "Ironforge",
         "mapID": 1455,
         "x": 39.4,
-        "y": 55.4
+        "y": 55.4,
+        "creatureDisplayID": 3597,
+        "portraitSource": "https://www.wowhead.com/forever/npc=2784"
       },
       "startsInside": true
     },
@@ -21582,13 +22098,17 @@
         "npcID": 14368,
         "name": "Lorekeeper Lydros",
         "zoneName": "Dire Maul",
-        "dungeonKey": "dire"
+        "dungeonKey": "dire",
+        "creatureDisplayID": 14407,
+        "portraitSource": "https://www.wowhead.com/forever/npc=14368"
       },
       "finish": {
         "npcID": 14368,
         "name": "Lorekeeper Lydros",
         "zoneName": "Dire Maul",
-        "dungeonKey": "dire"
+        "dungeonKey": "dire",
+        "creatureDisplayID": 14407,
+        "portraitSource": "https://www.wowhead.com/forever/npc=14368"
       },
       "requirementsKnown": false,
       "source": "https://www.wowhead.com/forever/quest=7509/the-forging-of-quelserrar",
@@ -21764,7 +22284,9 @@
             "y": 52,
             "zoneName": "Ironforge"
           }
-        ]
+        ],
+        "creatureDisplayID": 15965,
+        "portraitSource": "https://www.wowhead.com/forever/npc=16013"
       },
       "finish": {
         "npcID": 16013,
@@ -21804,7 +22326,9 @@
             "y": 52,
             "zoneName": "Ironforge"
           }
-        ]
+        ],
+        "creatureDisplayID": 15965,
+        "portraitSource": "https://www.wowhead.com/forever/npc=16013"
       },
       "requirementsKnown": false,
       "source": "https://www.wowhead.com/forever/quest=8926/just-compensation"
@@ -21849,7 +22373,9 @@
             "y": 37.4,
             "zoneName": "Orgrimmar"
           }
-        ]
+        ],
+        "creatureDisplayID": 15966,
+        "portraitSource": "https://www.wowhead.com/forever/npc=16012"
       },
       "finish": {
         "npcID": 16012,
@@ -21883,7 +22409,9 @@
             "y": 37.4,
             "zoneName": "Orgrimmar"
           }
-        ]
+        ],
+        "creatureDisplayID": 15966,
+        "portraitSource": "https://www.wowhead.com/forever/npc=16012"
       },
       "requirementsKnown": false,
       "source": "https://www.wowhead.com/forever/quest=8927/just-compensation"
@@ -21934,7 +22462,9 @@
             "y": 52,
             "zoneName": "Ironforge"
           }
-        ]
+        ],
+        "creatureDisplayID": 15965,
+        "portraitSource": "https://www.wowhead.com/forever/npc=16013"
       },
       "finish": {
         "npcID": 16013,
@@ -21974,7 +22504,9 @@
             "y": 52,
             "zoneName": "Ironforge"
           }
-        ]
+        ],
+        "creatureDisplayID": 15965,
+        "portraitSource": "https://www.wowhead.com/forever/npc=16013"
       },
       "requirementsKnown": false,
       "source": "https://www.wowhead.com/forever/quest=8931/just-compensation"
@@ -22025,7 +22557,9 @@
             "y": 52,
             "zoneName": "Ironforge"
           }
-        ]
+        ],
+        "creatureDisplayID": 15965,
+        "portraitSource": "https://www.wowhead.com/forever/npc=16013"
       },
       "finish": {
         "npcID": 16013,
@@ -22065,7 +22599,9 @@
             "y": 52,
             "zoneName": "Ironforge"
           }
-        ]
+        ],
+        "creatureDisplayID": 15965,
+        "portraitSource": "https://www.wowhead.com/forever/npc=16013"
       },
       "requirementsKnown": false,
       "source": "https://www.wowhead.com/forever/quest=8932/just-compensation"
@@ -22116,7 +22652,9 @@
             "y": 52,
             "zoneName": "Ironforge"
           }
-        ]
+        ],
+        "creatureDisplayID": 15965,
+        "portraitSource": "https://www.wowhead.com/forever/npc=16013"
       },
       "finish": {
         "npcID": 16013,
@@ -22156,7 +22694,9 @@
             "y": 52,
             "zoneName": "Ironforge"
           }
-        ]
+        ],
+        "creatureDisplayID": 15965,
+        "portraitSource": "https://www.wowhead.com/forever/npc=16013"
       },
       "requirementsKnown": false,
       "source": "https://www.wowhead.com/forever/quest=8933/just-compensation"
@@ -22207,7 +22747,9 @@
             "y": 52,
             "zoneName": "Ironforge"
           }
-        ]
+        ],
+        "creatureDisplayID": 15965,
+        "portraitSource": "https://www.wowhead.com/forever/npc=16013"
       },
       "finish": {
         "npcID": 16013,
@@ -22247,7 +22789,9 @@
             "y": 52,
             "zoneName": "Ironforge"
           }
-        ]
+        ],
+        "creatureDisplayID": 15965,
+        "portraitSource": "https://www.wowhead.com/forever/npc=16013"
       },
       "requirementsKnown": false,
       "source": "https://www.wowhead.com/forever/quest=8934/just-compensation"
@@ -22301,7 +22845,9 @@
             "y": 52,
             "zoneName": "Ironforge"
           }
-        ]
+        ],
+        "creatureDisplayID": 15965,
+        "portraitSource": "https://www.wowhead.com/forever/npc=16013"
       },
       "finish": {
         "npcID": 16013,
@@ -22341,7 +22887,9 @@
             "y": 52,
             "zoneName": "Ironforge"
           }
-        ]
+        ],
+        "creatureDisplayID": 15965,
+        "portraitSource": "https://www.wowhead.com/forever/npc=16013"
       },
       "requirementsKnown": false,
       "source": "https://www.wowhead.com/forever/quest=8935/just-compensation"
@@ -22392,7 +22940,9 @@
             "y": 52,
             "zoneName": "Ironforge"
           }
-        ]
+        ],
+        "creatureDisplayID": 15965,
+        "portraitSource": "https://www.wowhead.com/forever/npc=16013"
       },
       "finish": {
         "npcID": 16013,
@@ -22432,7 +22982,9 @@
             "y": 52,
             "zoneName": "Ironforge"
           }
-        ]
+        ],
+        "creatureDisplayID": 15965,
+        "portraitSource": "https://www.wowhead.com/forever/npc=16013"
       },
       "requirementsKnown": false,
       "source": "https://www.wowhead.com/forever/quest=8936/just-compensation"
@@ -22486,7 +23038,9 @@
             "y": 52,
             "zoneName": "Ironforge"
           }
-        ]
+        ],
+        "creatureDisplayID": 15965,
+        "portraitSource": "https://www.wowhead.com/forever/npc=16013"
       },
       "finish": {
         "npcID": 16013,
@@ -22526,7 +23080,9 @@
             "y": 52,
             "zoneName": "Ironforge"
           }
-        ]
+        ],
+        "creatureDisplayID": 15965,
+        "portraitSource": "https://www.wowhead.com/forever/npc=16013"
       },
       "requirementsKnown": false,
       "source": "https://www.wowhead.com/forever/quest=8937/just-compensation"
@@ -22571,7 +23127,9 @@
             "y": 37.4,
             "zoneName": "Orgrimmar"
           }
-        ]
+        ],
+        "creatureDisplayID": 15966,
+        "portraitSource": "https://www.wowhead.com/forever/npc=16012"
       },
       "finish": {
         "npcID": 16012,
@@ -22605,7 +23163,9 @@
             "y": 37.4,
             "zoneName": "Orgrimmar"
           }
-        ]
+        ],
+        "creatureDisplayID": 15966,
+        "portraitSource": "https://www.wowhead.com/forever/npc=16012"
       },
       "requirementsKnown": false,
       "source": "https://www.wowhead.com/forever/quest=8938/just-compensation"
@@ -22650,7 +23210,9 @@
             "y": 37.4,
             "zoneName": "Orgrimmar"
           }
-        ]
+        ],
+        "creatureDisplayID": 15966,
+        "portraitSource": "https://www.wowhead.com/forever/npc=16012"
       },
       "finish": {
         "npcID": 16012,
@@ -22684,7 +23246,9 @@
             "y": 37.4,
             "zoneName": "Orgrimmar"
           }
-        ]
+        ],
+        "creatureDisplayID": 15966,
+        "portraitSource": "https://www.wowhead.com/forever/npc=16012"
       },
       "requirementsKnown": false,
       "source": "https://www.wowhead.com/forever/quest=8939/just-compensation"
@@ -22729,7 +23293,9 @@
             "y": 37.4,
             "zoneName": "Orgrimmar"
           }
-        ]
+        ],
+        "creatureDisplayID": 15966,
+        "portraitSource": "https://www.wowhead.com/forever/npc=16012"
       },
       "finish": {
         "npcID": 16012,
@@ -22763,7 +23329,9 @@
             "y": 37.4,
             "zoneName": "Orgrimmar"
           }
-        ]
+        ],
+        "creatureDisplayID": 15966,
+        "portraitSource": "https://www.wowhead.com/forever/npc=16012"
       },
       "requirementsKnown": false,
       "source": "https://www.wowhead.com/forever/quest=8940/just-compensation"
@@ -22811,7 +23379,9 @@
             "y": 37.4,
             "zoneName": "Orgrimmar"
           }
-        ]
+        ],
+        "creatureDisplayID": 15966,
+        "portraitSource": "https://www.wowhead.com/forever/npc=16012"
       },
       "finish": {
         "npcID": 16012,
@@ -22845,7 +23415,9 @@
             "y": 37.4,
             "zoneName": "Orgrimmar"
           }
-        ]
+        ],
+        "creatureDisplayID": 15966,
+        "portraitSource": "https://www.wowhead.com/forever/npc=16012"
       },
       "requirementsKnown": false,
       "source": "https://www.wowhead.com/forever/quest=8941/just-compensation"
@@ -22890,7 +23462,9 @@
             "y": 37.4,
             "zoneName": "Orgrimmar"
           }
-        ]
+        ],
+        "creatureDisplayID": 15966,
+        "portraitSource": "https://www.wowhead.com/forever/npc=16012"
       },
       "finish": {
         "npcID": 16012,
@@ -22924,7 +23498,9 @@
             "y": 37.4,
             "zoneName": "Orgrimmar"
           }
-        ]
+        ],
+        "creatureDisplayID": 15966,
+        "portraitSource": "https://www.wowhead.com/forever/npc=16012"
       },
       "requirementsKnown": false,
       "source": "https://www.wowhead.com/forever/quest=8942/just-compensation"
@@ -22969,7 +23545,9 @@
             "y": 37.4,
             "zoneName": "Orgrimmar"
           }
-        ]
+        ],
+        "creatureDisplayID": 15966,
+        "portraitSource": "https://www.wowhead.com/forever/npc=16012"
       },
       "finish": {
         "npcID": 16012,
@@ -23003,7 +23581,9 @@
             "y": 37.4,
             "zoneName": "Orgrimmar"
           }
-        ]
+        ],
+        "creatureDisplayID": 15966,
+        "portraitSource": "https://www.wowhead.com/forever/npc=16012"
       },
       "requirementsKnown": false,
       "source": "https://www.wowhead.com/forever/quest=8943/just-compensation"
@@ -23048,7 +23628,9 @@
             "y": 37.4,
             "zoneName": "Orgrimmar"
           }
-        ]
+        ],
+        "creatureDisplayID": 15966,
+        "portraitSource": "https://www.wowhead.com/forever/npc=16012"
       },
       "finish": {
         "npcID": 16012,
@@ -23082,7 +23664,9 @@
             "y": 37.4,
             "zoneName": "Orgrimmar"
           }
-        ]
+        ],
+        "creatureDisplayID": 15966,
+        "portraitSource": "https://www.wowhead.com/forever/npc=16012"
       },
       "requirementsKnown": false,
       "source": "https://www.wowhead.com/forever/quest=8944/just-compensation"
@@ -23134,7 +23718,9 @@
               "y": 52,
               "zoneName": "Ironforge"
             }
-          ]
+          ],
+          "creatureDisplayID": 15965,
+          "portraitSource": "https://www.wowhead.com/forever/npc=16013"
         },
         {
           "npcID": 230319,
@@ -23191,7 +23777,9 @@
       ],
       "finish": {
         "npcID": 16016,
-        "name": "Anthion Harmon"
+        "name": "Anthion Harmon",
+        "creatureDisplayID": 15968,
+        "portraitSource": "https://www.wowhead.com/forever/npc=16016"
       },
       "requirementsKnown": false,
       "source": "https://www.wowhead.com/forever/quest=8929/in-search-of-anthion"
@@ -23237,7 +23825,9 @@
               "y": 37.4,
               "zoneName": "Orgrimmar"
             }
-          ]
+          ],
+          "creatureDisplayID": 15966,
+          "portraitSource": "https://www.wowhead.com/forever/npc=16012"
         },
         {
           "npcID": 230317,
@@ -23282,7 +23872,9 @@
       ],
       "finish": {
         "npcID": 16016,
-        "name": "Anthion Harmon"
+        "name": "Anthion Harmon",
+        "creatureDisplayID": 15968,
+        "portraitSource": "https://www.wowhead.com/forever/npc=16016"
       },
       "requirementsKnown": false,
       "source": "https://www.wowhead.com/forever/quest=8930/in-search-of-anthion"
@@ -23303,7 +23895,9 @@
       },
       "finish": {
         "npcID": 16016,
-        "name": "Anthion Harmon"
+        "name": "Anthion Harmon",
+        "creatureDisplayID": 15968,
+        "portraitSource": "https://www.wowhead.com/forever/npc=16016"
       },
       "requirementsKnown": false,
       "source": "https://www.wowhead.com/forever/quest=8946/proof-of-life"
@@ -23319,11 +23913,15 @@
       ],
       "start": {
         "npcID": 16016,
-        "name": "Anthion Harmon"
+        "name": "Anthion Harmon",
+        "creatureDisplayID": 15968,
+        "portraitSource": "https://www.wowhead.com/forever/npc=16016"
       },
       "finish": {
         "npcID": 16016,
-        "name": "Anthion Harmon"
+        "name": "Anthion Harmon",
+        "creatureDisplayID": 15968,
+        "portraitSource": "https://www.wowhead.com/forever/npc=16016"
       },
       "requirementsKnown": false,
       "source": "https://www.wowhead.com/forever/quest=8947/anthions-strange-request"
