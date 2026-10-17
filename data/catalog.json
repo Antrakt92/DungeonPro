@@ -4039,6 +4039,12 @@
       "storyline": [
         2949,
         2950
+      ],
+      "providedItems": [
+        {
+          "itemID": 9362,
+          "name": "Brilliant Gold Ring"
+        }
       ]
     },
     {
@@ -4213,7 +4219,14 @@
         "objectID": 175085,
         "name": "The Sparklematic 5200"
       },
-      "repeatable": true
+      "repeatable": true,
+      "objectiveItems": [
+        {
+          "itemID": 9308,
+          "name": "Grime-Encrusted Object"
+        }
+      ],
+      "requiredMoney": 300
     },
     {
       "id": 4606,
@@ -4254,7 +4267,14 @@
         "objectID": 175084,
         "name": "The Sparklematic 5200"
       },
-      "repeatable": true
+      "repeatable": true,
+      "objectiveItems": [
+        {
+          "itemID": 9308,
+          "name": "Grime-Encrusted Object"
+        }
+      ],
+      "requiredMoney": 300
     },
     {
       "id": 4601,
@@ -4274,7 +4294,14 @@
       "finish": {
         "objectID": 175084,
         "name": "The Sparklematic 5200"
-      }
+      },
+      "objectiveItems": [
+        {
+          "itemID": 9308,
+          "name": "Grime-Encrusted Object"
+        }
+      ],
+      "requiredMoney": 300
     },
     {
       "id": 4602,
@@ -4294,7 +4321,14 @@
       "finish": {
         "objectID": 175085,
         "name": "The Sparklematic 5200"
-      }
+      },
+      "objectiveItems": [
+        {
+          "itemID": 9308,
+          "name": "Grime-Encrusted Object"
+        }
+      ],
+      "requiredMoney": 300
     },
     {
       "id": 2950,
@@ -5192,6 +5226,12 @@
       "storyline": [
         3523,
         3525
+      ],
+      "providedItems": [
+        {
+          "itemID": 10682,
+          "name": "Belnistrasz's Oathstone"
+        }
       ]
     },
     {
