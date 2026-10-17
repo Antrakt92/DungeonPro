@@ -130,7 +130,14 @@ end)
 check("Storyline renders separately without inventing dependency readiness", function()
     addon.UI.quest = 92753; addon.UI:RefreshDetail()
     assert(not addon.UI.action and not addon.UI.guide.enabled)
-    assert(#addon.UI.chainButtons == 11)
+    local ui = addon.UI
+    assert(ui.storyToggle and ui.storyToggle:IsShown())
+    assert(ui.storyToggle.label.text == "+ " .. addon.L("STORY_SOURCE_QUESTS", 11))
+    for _, row in ipairs(ui.chainButtons) do assert(not row:IsShown()) end
+    ui.storyToggle.scripts.OnClick()
+    local visible = 0
+    for _, row in ipairs(ui.chainButtons) do if row:IsShown() then visible = visible + 1 end end
+    assert(visible == 11 and not ui.action and not ui.guide.enabled)
 end)
 check("Quest title hydration is requested only once per ID", function()
     local before = requests

@@ -5259,4 +5259,159 @@ check("Final object entry proof rejects source replacement during quantity clean
     assert(ui.engine:State(9970).status=="UNKNOWN" and q.objectiveObjects[1].quantity==nil)
     f:finish()
 end)
+local function storyCollapseFixture(actualID)
+    local f = rewardPresentationFixture()
+    local actual = {}; assert(loadfile("Database/Catalog.lua"))("DungeonPro", actual)
+    local q = addon.quests[9970]
+    local record = actual.quests[actualID or 8950]
+    q.storyline, q.storylineGroups = record.storyline, record.storylineGroups
+    q.objectiveKills = { { npcID = 42, name = "Visible independent goal" } }
+    ui.storyStates, ui.storyOrder = nil, nil
+    ui:RefreshDetail()
+    return f, q
+end
+local function visibleStory()
+    local rows = {}
+    for _, row in ipairs(ui.chainButtons) do if row.shown then rows[#rows + 1] = row end end
+    return rows
+end
+check("Long actual grouped source stories default closed and expand all24 source rows with original group order", function()
+    local f,q = storyCollapseFixture(8950)
+    assert(ui.storyToggle.shown and ui.storyToggle.enabled and #visibleStory() == 0)
+    assert(ui.storyToggle.label.text == "+ " .. addon.L("STORY_SOURCE_QUESTS",24))
+    assert(not detailHas(addon.L("STORY_GROUP_NOTICE")))
+    assert(detailHas(addon.L("OBJECTIVE_ITEM_UNKNOWN","Visible independent goal")))
+    assert(detailHas(addon.L("REWARD_ITEM","Fixed reward",2)))
+    local state, action = ui.engine:State(9970).status, ui.action
+    ui.storyToggle.scripts.OnClick()
+    local rows=visibleStory();assert(#rows==24 and detailHas(addon.L("STORY_GROUP_NOTICE")))
+    assert(detailHas(addon.L("STORY_GROUP",8)))
+    assert(rows[1].label.text:find("• Quest 8926",1,true) and rows[24].label.text:find("• Quest 8950",1,true))
+    assert(ui.engine:State(9970).status==state and ui.action==action)
+    local click=rows[1].scripts.OnClick
+    ui.storyToggle.scripts.OnClick();assert(#visibleStory()==0)
+    click();assert(ui.quest==9970,"captured expanded rows must not inspect after collapse")
+    f:finish()
+end)
+check("Actual eleven-listed source story preserves expanded ordinary ancestor traversal and short/fallback chains",function()
+    local f,q=storyCollapseFixture(92819)
+    assert(ui.storyToggle.label.text=="+ "..addon.L("STORY_SOURCE_QUESTS",11) and #visibleStory()==0)
+    local old=addon.quests[92742]
+    addon.quests[92742]={id=92742,minLevel=1,requirementsKnown=false,requires={{ids={9971}}}}
+    ui.storyToggle.scripts.OnClick();assert(#visibleStory()==12)
+    assert(visibleStory()[1].label.text:find("Quest 9971",1,true))
+    q.storyline={9971,9970};q.storylineGroups=nil;ui:RefreshDetail()
+    assert(not ui.storyToggle.shown and #visibleStory()==2)
+    q.storyline=nil;q.requires={{ids={9971}}};ui:RefreshDetail()
+    assert(not ui.storyToggle.shown and #visibleStory()==2 and detailHas(addon.L("CHAIN")))
+    addon.quests[92742]=old;f:finish()
+end)
+check("Story expansion survives all locale refreshes and actual inspection Back but resets on source and session changes",function()
+    local f,q=storyCollapseFixture();local locale=addon.db.locale
+    ui.storyToggle.scripts.OnClick()
+    for code in pairs(addon.locales)do
+        addon.db.locale=code;ui:RefreshDetail()
+        assert(#visibleStory()==24 and ui.storyToggle.label.text=="− "..addon.L("STORY_SOURCE_QUESTS",24))
+    end
+    local history=ui.detailHistory;ui.detailHistory={}
+    visibleStory()[1].scripts.OnClick();assert(ui.quest==8926)
+    assert(ui:BackQuest() and ui.quest==9970 and #visibleStory()==24)
+    local old=ui.storyToggle.scripts.OnClick
+    q.storylineGroups={unpack(q.storylineGroups)};ui:RefreshDetail()
+    assert(#visibleStory()==0);old();assert(#visibleStory()==0)
+    ui.storyToggle.scripts.OnClick();assert(#visibleStory()==24)
+    ui.frame.scripts.OnHide();ui.frame.scripts.OnShow();assert(#visibleStory()==0)
+    ui.detailHistory=history;addon.db.locale=locale;f:finish()
+end)
+check("Source story counts deduplicate only listed IDs and prerequisites and completion materials stay independent",function()
+    local f,q=storyCollapseFixture()
+    q.storylineGroups={{9971,9971},{41,42,43,44},{9970}}
+    q.requires={{ids={9971}}};q.completionQuests={{id=9971,itemID=555}}
+    ui:RefreshDetail()
+    assert(ui.storyToggle.label.text=="+ "..addon.L("STORY_SOURCE_QUESTS",6))
+    assert(ui.requirementButtons[1].shown and ui.materialButtons[1].shown and #visibleStory()==0)
+    ui.storyToggle.scripts.OnClick();assert(#visibleStory()==6)
+    assert(ui.requirementButtons[1].shown and ui.materialButtons[1].shown)
+    local old=ui.storyToggle.scripts.OnClick
+    q.storylineGroups[2][1]=45;old();assert(#visibleStory()==6)
+    ui:RefreshDetail();assert(#visibleStory()==0)
+    f:finish()
+end)
+check("Story title hydration and native label setters preserve a newer card or same-card source render",function()
+    for _,sameCard in ipairs({false,true})do
+        local f,q=storyCollapseFixture();local getter=addon.QuestName;local armed=true
+        addon.QuestName=function(id)
+            if armed and id==8926 then
+                armed=false
+                if sameCard then q.storylineGroups={{9971,9970}};ui:RefreshDetail() else ui:InspectQuest(9971) end
+            end
+            return getter(id)
+        end
+        ui.storyToggle.scripts.OnClick()
+        assert(ui.quest==(sameCard and 9970 or 9971) and not ui.storyToggle.shown)
+        assert(#visibleStory()==(sameCard and 2 or 1))
+        addon.QuestName=getter;f:finish()
+    end
+    local f,q=storyCollapseFixture();local row=ui.chainButtons[1];local setter=row.label.SetText;local armed=true
+    row.label.SetText=function(self,value)
+        setter(self,value)
+        if armed then armed=false;q.storylineGroups={{9971,9970}};ui:RefreshDetail() end
+    end
+    ui.storyToggle.scripts.OnClick();assert(#visibleStory()==2 and visibleStory()[1].label.text:find("Quest 9971",1,true))
+    row.label.SetText=setter;f:finish()
+end)
+check("Story collapse retains valid reading offsets and clamps long expanded content without saving preferences",function()
+    local f,q=storyCollapseFixture();local prefs=addon.char
+    ui.storyToggle.scripts.OnClick()
+    local expanded=ui.detail.height
+    ui.detailScroll:SetVerticalScroll(expanded)
+    ui.storyToggle.scripts.OnClick()
+    local range=math.max(0,ui.detail.height-ui.detailScroll:GetHeight())
+    assert(ui.detailScroll.verticalScroll==range and ui.detail.height<expanded)
+    ui.detailScroll:SetVerticalScroll(0);ui.storyToggle.scripts.OnClick();assert(ui.detailScroll.verticalScroll==0)
+    local cb=ui.storyToggle.scripts.OnClick;local getter=ui.detailScroll.GetVerticalScroll
+    ui.detailScroll.GetVerticalScroll=function()return nil end
+    cb();assert(#visibleStory()==0)
+    ui.detailScroll.GetVerticalScroll=getter
+    assert(addon.char==prefs and addon.char.storyStates==nil)
+    f:finish()
+end)
+check("Story scroll restoration never replaces a newer same-card reading position or reopened session",function()
+    for _,reopen in ipairs({false,true})do
+        local f,q=storyCollapseFixture();local description=addon.Description;local armed=true
+        ui.storyToggle.scripts.OnClick();ui.detailScroll:SetVerticalScroll(95)
+        addon.Description=function(id)
+            if armed then
+                armed=false
+                if reopen then ui.frame.scripts.OnHide();ui.frame.scripts.OnShow() else ui:RefreshDetail() end
+                ui.detailScroll:SetVerticalScroll(7)
+            end
+            return description(id)
+        end
+        ui.storyToggle.scripts.OnClick()
+        assert(ui.detailScroll.verticalScroll==7,"a newer reader session owns its offset")
+        addon.Description=description;f:finish()
+    end
+end)
+check("Story controls wrap measured locale labels and reject changed context list membership and session callbacks",function()
+    local f,q=storyCollapseFixture();local locale=addon.db.locale
+    measurement=function(fs)
+        if fs==ui.storyToggle.label then return 64 end
+        return 18
+    end
+    for code in pairs(addon.locales)do addon.db.locale=code;ui:RefreshDetail();assert(ui.storyToggle.height==74) end
+    measurement=nil;addon.db.locale=locale;ui:RefreshDetail();assert(ui.storyToggle.height==30)
+    local old=ui.storyToggle.scripts.OnClick;local char=addon.char
+    addon.char={};old();assert(#visibleStory()==0);addon.char=char
+    local engine=ui.engine;ui.engine={};old();assert(#visibleStory()==0);ui.engine=engine
+    local checker=issecretvalue;issecretvalue=function()return false end;old();assert(#visibleStory()==0);issecretvalue=checker
+    q.storylineGroups[1][#q.storylineGroups[1]+1]=9971;old();assert(#visibleStory()==0)
+    ui:RefreshDetail();assert(ui.storyToggle.label.text=="+ "..addon.L("STORY_SOURCE_QUESTS",25))
+    old=ui.storyToggle.scripts.OnClick;ui.frame.scripts.OnHide();old();assert(#visibleStory()==0)
+    ui.frame.scripts.OnShow();assert(#visibleStory()==0)
+    q.storylineGroups=nil;q.storyline={9970,9971,41,42};ui:RefreshDetail()
+    assert(not ui.storyToggle.shown and #visibleStory()==4)
+    q.storyline[5]=43;ui:RefreshDetail();assert(ui.storyToggle.shown and #visibleStory()==0)
+    f:finish()
+end)
 print("Preparation UI modeled checks passed: " .. total .. " (no native layout validation)")

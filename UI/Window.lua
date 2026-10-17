@@ -834,6 +834,62 @@ function UI:ResetQuestLogControl()
     return true
 end
 
+function UI:SourceStory(id, definition, current)
+    local checker, source = issecretvalue, definition.storylineGroups or definition.storyline
+    local grouped = definition.storylineGroups ~= nil
+    if not addon.Clean(source, "table") then return nil end
+    local snapshots, distinct, count = {}, {}, 0
+    local function capture(list)
+        local length = #list
+        if length < 1 or length > 100 then return false end
+        local copy = { list = list, length = length, values = {} }
+        snapshots[#snapshots + 1] = copy
+        for index = 1, length do copy.values[index] = rawget(list, index) end
+        return copy
+    end
+    local top = capture(source)
+    if not top then return nil end
+    local function add(value)
+        local clean = addon.Clean(value, "number")
+        if not clean or clean <= 0 or clean > 9007199254740991 or clean % 1 ~= 0 then return false end
+        if not distinct[clean] then distinct[clean] = true; count = count + 1 end
+        return true
+    end
+    for index = 1, top.length do
+        if grouped then
+            local group = addon.Clean(top.values[index], "table")
+            local copy = group and capture(group)
+            if not copy then return nil end
+            for other = 1, copy.length do if not add(copy.values[other]) then return nil end end
+        elseif not add(top.values[index]) then return nil end
+    end
+    local function same()
+        local ok, valid = pcall(function()
+            if issecretvalue ~= checker or addon.quests[id] ~= definition or
+                definition.storylineGroups ~= (grouped and source or nil) or
+                (not grouped and definition.storyline ~= source) then return false end
+            for _, copy in ipairs(snapshots) do
+                if #copy.list ~= copy.length then return false end
+                for index = 1, copy.length do if rawget(copy.list, index) ~= copy.values[index] then return false end end
+            end
+            return true
+        end)
+        return ok and valid == true
+    end
+    if not same() or not current() then return nil end
+    self.storyStates, self.storyOrder = self.storyStates or {}, self.storyOrder or {}
+    local record = self.storyStates[id]
+    if not record or record.definition ~= definition or not record.same() then
+        record = { definition = definition, same = same, count = count, expanded = count <= 4 }
+        if not self.storyStates[id] then
+            self.storyOrder[#self.storyOrder + 1] = id
+            if #self.storyOrder > 100 then self.storyStates[table.remove(self.storyOrder, 1)] = nil end
+        end
+        self.storyStates[id] = record
+    end
+    return record
+end
+
 function UI:RefreshDetail()
     local renderQuest, renderDungeon = self.quest, self.dungeon
     local renderEngine, renderCharacter, pendingAction, pendingGiver = self.engine, addon.char, nil, nil
@@ -956,6 +1012,7 @@ function UI:RefreshDetail()
         y = y + math.max(height or 18, measured) + 8
         return true
     end
+    if self.storyToggle then self.storyToggle:Hide(); self.storyToggle:SetEnabled(false); self.storyToggle:SetScript("OnClick", nil) end
     for _, b in ipairs(self.chainButtons) do b:Hide(); b:SetEnabled(false); b:SetScript("OnClick", nil) end
     for _, buttons in ipairs({ self.actionButtons, self.actionInspectButtons, self.preparationForButtons }) do
         for _, b in ipairs(buttons) do b:Hide(); b:SetEnabled(false); b:SetScript("OnClick", nil) end
@@ -1629,9 +1686,60 @@ function UI:RefreshDetail()
             end
         end
         line(addon.L((q.storyline or q.storylineGroups) and "STORY" or "CHAIN"), "section")
+        do
+        local source = self:SourceStory(id, q, portraitCardCurrent)
+        if not portraitCardCurrent() then return end
+        local states = self.storyStates
+        local function storyCurrent()
+            return portraitCardCurrent() and addon.quests[id] == definition and
+                (not source or (self.storyStates == states and states[id] == source and source.same()))
+        end
+        local function write(row, method, ...)
+            if not storyCurrent() then return false end
+            local ok = pcall(row[method], row, ...)
+            return ok and storyCurrent()
+        end
+        if source and source.count > 4 then
+            local toggle = self.storyToggle
+            if not toggle then
+                toggle = CreateFrame("Button", nil, self.detail)
+                toggle:SetWidth(332); toggle.label = label(toggle, "", 7, -5, 318, 14)
+                toggle.title = toggle.label
+                toggle:SetHighlightTexture("Interface\\QuestFrame\\UI-QuestTitleHighlight")
+                self.storyToggle = toggle
+            end
+            local value = (source.expanded and "− " or "+ ") .. addon.L("STORY_SOURCE_QUESTS", source.count)
+            if not write(toggle.label, "SetText", value) then return end
+            local height = math.max(30, measuredHeight(toggle.label, 18) + 10)
+            if not write(toggle, "SetHeight", height) or not write(toggle, "ClearAllPoints") or
+                not write(toggle, "SetPoint", "TOPLEFT", 4, -y) or not write(toggle, "SetEnabled", true) then return end
+            styleRow(toggle, "control", source.expanded)
+            if not storyCurrent() then return end
+            if not write(toggle, "SetScript", "OnClick", function()
+                if not storyCurrent() then return end
+                local scroll, getter, checker = self.detailScroll, self.detailScroll.GetVerticalScroll, issecretvalue
+                local offset = addon.Read(getter, "number", scroll)
+                if not storyCurrent() or scroll.GetVerticalScroll ~= getter or issecretvalue ~= checker then return end
+                source.expanded = not source.expanded
+                local generation = self:RefreshDetail()
+                local function fresh()
+                    if not generation then return false end
+                    return self.quest == renderQuest and self.dungeon == renderDungeon and self.engine == renderEngine and
+                        addon.char == renderCharacter and self.storyStates == states and states[id] == source and
+                        source.same() and self.rewardGeneration == generation and issecretvalue == checker
+                end
+                if not fresh() or not offset or offset < 0 then return end
+                local content = addon.Read(self.detail.GetHeight, "number", self.detail)
+                local viewport = addon.Read(scroll.GetHeight, "number", scroll)
+                if fresh() and self.detailScroll == scroll and content and content >= 0 and viewport and viewport > 0 then
+                    scroll:SetVerticalScroll(math.min(offset, math.max(0, content - viewport)))
+                end
+            end) or not write(toggle, "Show") then return end
+            y = y + height + 6
+        end
         local seen, chainIndex = {}, 0
         local function visit(qid, depth, grouped)
-            if seen[qid] or depth > 50 then return end
+            if not storyCurrent() or seen[qid] or depth > 50 then return end
             seen[qid] = true
             local def = addon.quests[qid]
             if not grouped then
@@ -1639,6 +1747,7 @@ function UI:RefreshDetail()
                     for _, parent in ipairs(group.ids) do visit(parent, depth + 1) end
                 end
             end
+            if not storyCurrent() then return end
             chainIndex = chainIndex + 1
             local b = self.chainButtons[chainIndex]
             if not b then
@@ -1648,17 +1757,18 @@ function UI:RefreshDetail()
                 b:SetHighlightTexture("Interface\\QuestFrame\\UI-QuestTitleHighlight")
                 self.chainButtons[chainIndex] = b
             end
-            b:ClearAllPoints(); b:SetPoint("TOPLEFT", 4, -y)
             local questState = engine:State(qid)
-            b.label:SetText("|cff" .. COLOR[questState.status] .. (grouped and "• " or (chainIndex .. ". ")) ..
-                statusLabel(questState, addon.QuestName(qid)) .. "|r")
+            local value = "|cff" .. COLOR[questState.status] .. (grouped and "• " or (chainIndex .. ". ")) ..
+                statusLabel(questState, addon.QuestName(qid)) .. "|r"
+            if not write(b.label, "SetText", value) or not write(b, "ClearAllPoints") or not write(b, "SetPoint", "TOPLEFT", 4, -y) then return end
             local height = math.max(34, measuredHeight(b.label, 18) + 6)
-            b:SetHeight(height)
-            b:SetEnabled(true)
+            if not write(b, "SetHeight", height) or not write(b, "SetEnabled", true) then return end
             styleRow(b, "quest", qid == self.quest)
-            b:SetScript("OnClick", function() self:InspectQuest(qid) end)
-            b:Show(); y = y + height + 3
+            if not write(b, "SetScript", "OnClick", function() if storyCurrent() then self:InspectQuest(qid) end end) or
+                not write(b, "Show") then return end
+            y = y + height + 3
         end
+        if not source or source.expanded then
         if q.storylineGroups then
             line(addon.L("STORY_GROUP_NOTICE"))
             for groupIndex, group in ipairs(q.storylineGroups) do
@@ -1668,6 +1778,9 @@ function UI:RefreshDetail()
         elseif q.storyline then
             for _, stepID in ipairs(q.storyline) do visit(stepID, 0) end
         else visit(id, 0) end
+        end
+        if not storyCurrent() then return end
+        end
         local materialSource, materialGetter = q.completionQuests, engine.CompletionSteps
         local function materialCurrent()
             return current() and portraitCardCurrent() and addon.quests[id] == definition and
@@ -1966,6 +2079,7 @@ function UI:RefreshDetail()
         self.giver:SetText(addon.L(pendingGiver.coordinates and "VISIT_GIVER" or "GIVER_MAP"))
         self.giver:SetEnabled(true)
     end
+    return portraitCardCurrent() and rewardGeneration or nil
 end
 
 function UI:Refresh()
@@ -2110,7 +2224,7 @@ function UI:Create()
             addon.Read(f.IsShown, "boolean", f) == true then self:Fit() end
     end)
     frame:SetScript("OnShow", function() self:Fit(); self:Refresh() end)
-    frame:SetScript("OnHide", function() if not self:ResetQuestLogControl() then return end; self.detailActionChoice = nil; self.languageMenuRevision = {}; self:ResetHistoryReading(); self:ResetRewardPresentation(); self:CloseCopyLink() end)
+    frame:SetScript("OnHide", function() self.storyStates, self.storyOrder = nil, nil; if not self:ResetQuestLogControl() then return end; self.detailActionChoice = nil; self.languageMenuRevision = {}; self:ResetHistoryReading(); self:ResetRewardPresentation(); self:CloseCopyLink() end)
     self:ApplyTheme()
     frame:Hide()
 end
