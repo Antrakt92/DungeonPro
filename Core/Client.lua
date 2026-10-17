@@ -48,6 +48,40 @@ function addon.GiverName(place)
     return name
 end
 
+function addon.GiverPortrait(place)
+    local checker = issecretvalue
+    place = addon.Clean(place, "table")
+    if not place or issecretvalue ~= checker then return nil end
+    local function snapshot()
+        for _, field in ipairs({ "objectID", "itemID", "dropNPCID" }) do
+            local value = rawget(place, field)
+            if type(checker) == "function" then
+                local ok, restricted = pcall(checker, value)
+                if not ok or restricted ~= false or issecretvalue ~= checker then return nil end
+            end
+            if value ~= nil then return nil end
+        end
+        local npc = dialogueInteger(rawget(place, "npcID"), 1, 4294967295)
+        local display = dialogueInteger(rawget(place, "creatureDisplayID"), 1, 4294967295)
+        local source = addon.Clean(rawget(place, "portraitSource"), "string")
+        if not npc or not display or not source or #source > 2048 then return nil end
+        local prefix = "https://www.wowhead.com/forever/npc=" .. npc
+        if source:sub(1, #prefix) ~= prefix then return nil end
+        local suffix = source:sub(#prefix + 1)
+        if suffix ~= "" and not suffix:match("^/[^%s/?#]+$") then return nil end
+        local name = addon.Clean(rawget(place, "name"), "string")
+        if name and (#name > 1024 or not name:find("%S")) then name = nil end
+        if issecretvalue ~= checker then return nil end
+        return npc, display, source, name
+    end
+    local npc, display, source, name = snapshot()
+    if not npc then return nil end
+    local currentNPC, currentDisplay, currentSource, currentName = snapshot()
+    if npc == currentNPC and display == currentDisplay and source == currentSource and name == currentName then
+        return { npcID = npc, displayID = display, source = source, name = name }
+    end
+end
+
 local function restrictionNameScope()
     local getter, checker = GetLocale, issecretvalue
     local locale = addon.Read(getter, "string")

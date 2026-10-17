@@ -122,6 +122,14 @@ def validate(data):
                     raise ValueError(f"Invalid {identity} entity ID: {q['id']}")
             if sum(identity in p for identity in ("npcID", "objectID", "itemID")) > 1:
                 raise ValueError(f"Ambiguous quest place identity: {q['id']}")
+            portrait_fields = {"creatureDisplayID", "portraitSource"}
+            if portrait_fields.intersection(p):
+                npc_id, display_id, source = p.get("npcID"), p.get("creatureDisplayID"), p.get("portraitSource")
+                if (not portrait_fields.issubset(p) or not integer(npc_id) or npc_id > 2 ** 32 - 1 or
+                        not integer(display_id) or display_id > 2 ** 32 - 1 or type(source) is not str or
+                        len(source) > 2048 or not re.fullmatch(
+                            rf"https://www\.wowhead\.com/forever/npc={npc_id}(?:/[^\s/?#]+)?", source)):
+                    raise ValueError(f"Invalid sourced giver portrait: {q['id']}")
             if "dropNPCID" in p and "itemID" not in p:
                 raise ValueError(f"Item drop source without starter item: {q['id']}")
             if "itemClasses" in p or "itemMinLevel" in p:
@@ -144,6 +152,8 @@ def validate(data):
                     raise ValueError(f"Invalid item drop sources: {q['id']}")
                 seen_drops = set()
                 for drop in drops:
+                    if type(drop) is dict and portrait_fields.intersection(drop):
+                        raise ValueError(f"Giver portrait on an item drop source: {q['id']}")
                     if type(drop) is dict and "containerSource" in drop:
                         raise ValueError(f"Invalid container source on item drop: {q['id']}")
                     if type(drop) is dict and "reportedLocations" in drop:

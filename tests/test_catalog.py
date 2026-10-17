@@ -17,6 +17,40 @@ class CatalogTests(unittest.TestCase):
     def test_generated_data_matches(self):
         self.assertEqual(catalog.generate(self.data), (ROOT / "Database/Catalog.lua").read_text(encoding="utf-8"))
 
+    def test_giver_portrait_requires_a_typed_npc_and_matching_forever_source(self):
+        valid = {"npcID": 234, "name": "Gryan", "creatureDisplayID": 1690,
+                 "portraitSource": "https://www.wowhead.com/forever/npc=234/gryan-stoutmantle"}
+        self.data["quests"][0]["start"] = valid.copy()
+        catalog.validate(self.data)
+        self.assertIn('["creatureDisplayID"] = 1690', catalog.generate(self.data))
+        for field, value in (("creatureDisplayID", None), ("creatureDisplayID", True),
+                             ("creatureDisplayID", 0), ("creatureDisplayID", 1.5),
+                             ("creatureDisplayID", 2 ** 32), ("creatureDisplayID", "1690"),
+                             ("portraitSource", None), ("portraitSource", True),
+                             ("portraitSource", "https://www.wowhead.com/forever/npc=235"),
+                             ("portraitSource", "https://www.wowhead.com/classic/npc=234"),
+                             ("portraitSource", "https://www.wowhead.com/forever/quest=234"),
+                             ("portraitSource", "https://www.wowhead.com/forever/npc=234/one/two"),
+                             ("portraitSource", "https://www.wowhead.com/forever/npc=234#model")):
+            with self.subTest(field=field, value=value):
+                self.data["quests"][0]["start"] = {**valid, field: value}
+                with self.assertRaisesRegex(ValueError, "giver portrait"):
+                    catalog.validate(self.data)
+        for omitted in ("creatureDisplayID", "portraitSource", "npcID"):
+            place = valid.copy()
+            del place[omitted]
+            self.data["quests"][0]["start"] = place
+            with self.subTest(omitted=omitted), self.assertRaisesRegex(ValueError, "giver portrait"):
+                catalog.validate(self.data)
+
+    def test_giver_portraits_do_not_promote_objects_items_or_drop_creatures_to_givers(self):
+        portrait = {"creatureDisplayID": 1690, "portraitSource": "https://www.wowhead.com/forever/npc=234"}
+        for place in ({"objectID": 234}, {"itemID": 234}, {"itemID": 234, "dropNPCID": 234},
+                      {"itemID": 234, "dropSources": [{"npcID": 234, "name": "NPC", "locationName": "Zone", **portrait}]}):
+            self.data["quests"][0]["start"] = {"name": "Starter", **place, **(portrait if "dropSources" not in place else {})}
+            with self.subTest(place=place), self.assertRaisesRegex(ValueError, "portrait"):
+                catalog.validate(self.data)
+
     def test_missing_parent_is_rejected(self):
         self.data["quests"][0]["requires"] = [{"ids": [999999]}]
         with self.assertRaisesRegex(ValueError, "Missing prerequisite"):
