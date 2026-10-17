@@ -144,6 +144,8 @@ addon.dungeons = { { key = "fixture", name = "Dungeon", minLevel = 10, maxLevel 
     coverage = "reviewed", quests = { 100, 101, 3, 4, 5, 6, 7 } } }
 assert(loadfile("UI/Theme.lua"))("DungeonPro", addon)
 assert(loadfile("UI/Window.lua"))("DungeonPro", addon)
+function methods:SetToplevel(value) self.topLevel=value end
+function methods:Raise() self.raises=(self.raises or 0)+1 end
 local ui, total = addon.UI, 0
 local function check(name, fn)
     local ok, err = pcall(fn)
@@ -8685,4 +8687,23 @@ check("Race-only facts never create an unavailable audience note or call native 
     assert(not ui.rows[1].note.text:find(addon.L("UNAVAILABLE"),1,true))
     addon.RaceName=raceName;finish()
 end)
+check("Planner owns normal top-level focus without changing another window or its strata",function()
+    local f=ui.frame
+    assert(f.topLevel==true)
+    local before=f.raises or 0;local savedFit,savedRefresh=ui.Fit,ui.Refresh;local fit,refresh=0,0
+    ui.Fit=function()fit=fit+1 end;ui.Refresh=function()refresh=refresh+1 end
+    f.scripts.OnShow(f);assert(f.raises==before+1 and fit==1 and refresh==1)
+    f.scripts.OnMouseDown(f,"LeftButton");assert(f.raises==before+2)
+    local start=f.StartMoving;local moved=false;f.StartMoving=function()moved=true end
+    f.scripts.OnDragStart(f);assert(moved and f.raises==before+3)
+    f.StartMoving=start
+    local foreign={Raise=function()error("foreign frame must not be raised")end}
+    f.scripts.OnMouseDown(foreign,"LeftButton");assert(f.raises==before+3)
+    local raise=f.Raise;f.Raise=function()error("restricted frame API")end
+    f.scripts.OnShow(f);assert(fit==2 and refresh==2)
+    f.Raise=false;f.scripts.OnMouseDown(f,"LeftButton");f.scripts.OnShow(f)
+    assert(fit==3 and refresh==3)
+    f.Raise=raise;ui.Fit,ui.Refresh=savedFit,savedRefresh
+end)
+
 print("Preparation UI modeled checks passed: " .. total .. " (no native layout validation)")

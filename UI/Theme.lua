@@ -4,7 +4,7 @@ addon.Theme = Theme
 local surfaces = setmetatable({}, { __mode = "k" })
 local windows = setmetatable({}, { __mode = "k" })
 local palette = {
-    base = { 0.027, 0.038, 0.049, 0.99 }, panel = { 0.041, 0.058, 0.071, 0.96 },
+    base = { 0.027, 0.038, 0.049, 1 }, panel = { 0.041, 0.058, 0.071, 0.96 },
     row = { 0.059, 0.077, 0.090, 0.96 }, selected = { 0.088, 0.119, 0.132, 1 },
     edge = { 0.20, 0.27, 0.30, 0.55 }, faint = { 0.16, 0.21, 0.24, 0.50 },
     amber = { 0.83, 0.64, 0.34, 0.95 }, teal = { 0.31, 0.67, 0.65, 0.95 },

@@ -550,4 +550,14 @@ test("transient language preview switches existing font roles without changing t
     addon.Language = previous; f.finish()
 end)
 
+test("Window base is opaque so lower windows cannot read through the planner",function()
+    local window=region();assert(addon.Theme.Apply({frame=window}))
+    local found=false
+    for _,texture in ipairs(window.textures)do
+        if texture.allPoints==window and texture.color and texture.color[1]==0.027 then
+            assert(texture.color[4]==1);found=true
+        end
+    end
+    assert(found)
+end)
 print("theme: " .. total .. " scenarios passed")

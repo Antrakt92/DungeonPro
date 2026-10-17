@@ -3576,8 +3576,13 @@ function UI:Create()
     self:Fit()
     if frame.SetClampedToScreen then frame:SetClampedToScreen(true) end
     frame:SetFrameStrata("DIALOG"); frame:EnableMouse(true); frame:SetMovable(true)
+    if type(frame.SetToplevel) == "function" then pcall(frame.SetToplevel, frame, true) end
+    local function raiseWindow(f)
+        if self.frame == f and type(f.Raise) == "function" then pcall(f.Raise, f) end
+    end
+    frame:SetScript("OnMouseDown", raiseWindow)
     frame:RegisterForDrag("LeftButton")
-    frame:SetScript("OnDragStart", function(f) f:StartMoving() end)
+    frame:SetScript("OnDragStart", function(f) raiseWindow(f); f:StartMoving() end)
     frame:SetScript("OnDragStop", function(f)
         f:StopMovingOrSizing()
         local point, _, relativePoint, x, y = f:GetPoint()
@@ -3733,7 +3738,7 @@ function UI:Create()
         if (event == "DISPLAY_SIZE_CHANGED" or event == "UI_SCALE_CHANGED") and
             addon.Read(f.IsShown, "boolean", f) == true then self:Fit() end
     end)
-    frame:SetScript("OnShow", function() self:Fit(); self:Refresh() end)
+    frame:SetScript("OnShow", function(f) raiseWindow(f); self:Fit(); self:Refresh() end)
     frame:SetScript("OnHide", function() self:HideNavigationHint(); local language = addon.Clean(addon.Language, "table"); if language then addon.Read(language.Cancel, "boolean", language, self) end; self.pendingSearch = nil; self.detailReferencesExpanded, self.detailChainExpanded = false, false; self.storyStates, self.storyOrder = nil, nil; if not self:ResetQuestLogControl() then return end; self.detailActionChoice = nil; self.languageMenuRevision = {}; self:ResetHistoryReading(); self:ResetRewardPresentation(); self:CloseCopyLink() end)
     self:ApplyTheme()
     frame:Hide()
