@@ -16381,6 +16381,12 @@
         5382,
         5515,
         5384
+      ],
+      "objectiveKills": [
+        {
+          "npcID": 10506,
+          "name": "Kirtonos the Herald"
+        }
       ]
     },
     {
@@ -16418,6 +16424,12 @@
         5382,
         5515,
         5384
+      ],
+      "objectiveKills": [
+        {
+          "npcID": 11261,
+          "name": "Doctor Theolen Krastinov"
+        }
       ]
     },
     {
@@ -16666,7 +16678,14 @@
         "y": 59.4,
         "creatureDisplayID": 10465,
         "portraitSource": "https://www.wowhead.com/forever/npc=11035"
-      }
+      },
+      "objectiveKills": [
+        {
+          "npcID": 10678,
+          "name": "Plagued Hatchling",
+          "quantity": 20
+        }
+      ]
     },
     {
       "id": 5341,
@@ -24515,7 +24534,13 @@
         "creatureDisplayID": 13341,
         "portraitSource": "https://www.wowhead.com/forever/npc=13417"
       },
-      "requirementsKnown": false
+      "requirementsKnown": false,
+      "objectiveItems": [
+        {
+          "itemID": 18880,
+          "name": "Darkreaver's Head"
+        }
+      ]
     },
     {
       "id": 4143,
@@ -25479,7 +25504,13 @@
         7667,
         8258
       ],
-      "storylineEvidence": "https://www.wowhead.com/forever/quest=7667/material-assistance"
+      "storylineEvidence": "https://www.wowhead.com/forever/quest=7667/material-assistance",
+      "objectiveItems": [
+        {
+          "itemID": 18880,
+          "name": "Darkreaver's Head"
+        }
+      ]
     },
     {
       "id": 8425,
