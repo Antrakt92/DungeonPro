@@ -141,7 +141,7 @@ into your **Forever client's** `Interface/AddOns` folder, then reload the UI.
 This build has not yet passed native-client or visual acceptance.
 
 - `/DP` or `/DungeonPro`: open or close the browser.
-- `/DP clear`: clear the built-in guide.
+- `/DP clear`: clear the guide and its map or TomTom waypoint.
 - `/DP minimap`: hide or show the minimap button.
 - `/DP minimap reset`: show the button at its default position.
 - `/DP probe`: save a small capability/quest-line report in this addon's own
