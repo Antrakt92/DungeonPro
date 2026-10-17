@@ -95,8 +95,8 @@ Level ranges are provisional recommendations.
   Visiting a giver does not confirm that the quest is available to pick up.
 - Expand reported positions when a giver has several sourced points, then choose
   a point to visit. Movement and quest phases may affect which position is current.
-- Quest text saved when you open the quest at its giver. Complete unseen quest
-  descriptions are not yet included.
+- Original quest text is saved when you open its quest offer, including
+  item-started offers. Complete unseen quest descriptions are not yet included.
 - Text from the current progress or turn-in conversation appears separately
   while its matching quest dialogue is open. It does not replace the saved original
   description or mark the quest completed.
