@@ -1840,7 +1840,8 @@
       "source": "https://www.wowhead.com/forever/quest=6561/blackfathom-villainy",
       "start": {
         "npcID": 4787,
-        "name": "Argent Guard Thaelrid"
+        "name": "Argent Guard Thaelrid",
+        "zoneName": "Blackfathom Deeps"
       },
       "finish": {
         "npcID": 9087,
@@ -1920,7 +1921,8 @@
       "source": "https://www.wowhead.com/forever/quest=1200/blackfathom-villainy",
       "start": {
         "npcID": 4787,
-        "name": "Argent Guard Thaelrid"
+        "name": "Argent Guard Thaelrid",
+        "zoneName": "Blackfathom Deeps"
       },
       "finish": {
         "npcID": 4783,
@@ -2001,7 +2003,8 @@
       },
       "finish": {
         "npcID": 4787,
-        "name": "Argent Guard Thaelrid"
+        "name": "Argent Guard Thaelrid",
+        "zoneName": "Blackfathom Deeps"
       },
       "requirementsKnown": false,
       "storyline": [
@@ -2856,7 +2859,8 @@
       "source": "https://www.wowhead.com/forever/quest=2904/a-fine-mess",
       "start": {
         "npcID": 7850,
-        "name": "Kernobee"
+        "name": "Kernobee",
+        "zoneName": "Gnomeregan"
       },
       "finish": {
         "npcID": 7853,
@@ -3782,11 +3786,13 @@
       "source": "https://www.wowhead.com/forever/quest=1144/willix-the-importer",
       "start": {
         "npcID": 4508,
-        "name": "Willix the Importer"
+        "name": "Willix the Importer",
+        "zoneName": "Razorfen Kraul"
       },
       "finish": {
         "npcID": 4508,
-        "name": "Willix the Importer"
+        "name": "Willix the Importer",
+        "zoneName": "Razorfen Kraul"
       }
     },
     {
@@ -3827,7 +3833,8 @@
       "source": "https://www.wowhead.com/forever/quest=1142/mortality-wanes",
       "start": {
         "npcID": 4510,
-        "name": "Heralath Fallowbrook"
+        "name": "Heralath Fallowbrook",
+        "zoneName": "Razorfen Kraul"
       },
       "finish": {
         "npcID": 4521,
@@ -5266,12 +5273,46 @@
       "start": {
         "npcID": 1344,
         "name": "Prospector Ironband",
-        "zoneName": "Loch Modan"
+        "zoneName": "Loch Modan",
+        "mapID": 1432,
+        "x": 65.8,
+        "y": 65.4,
+        "reportedLocations": [
+          {
+            "mapID": 1432,
+            "x": 65.8,
+            "y": 65.4,
+            "zoneName": "Loch Modan"
+          },
+          {
+            "mapID": 1432,
+            "x": 65.8,
+            "y": 65.6,
+            "zoneName": "Loch Modan"
+          }
+        ]
       },
       "finish": {
         "npcID": 1344,
         "name": "Prospector Ironband",
-        "zoneName": "Loch Modan"
+        "zoneName": "Loch Modan",
+        "mapID": 1432,
+        "x": 65.8,
+        "y": 65.4,
+        "reportedLocations": [
+          {
+            "mapID": 1432,
+            "x": 65.8,
+            "y": 65.4,
+            "zoneName": "Loch Modan"
+          },
+          {
+            "mapID": 1432,
+            "x": 65.8,
+            "y": 65.6,
+            "zoneName": "Loch Modan"
+          }
+        ]
       },
       "storyline": [
         707,
@@ -5472,7 +5513,8 @@
       "source": "https://www.wowhead.com/forever/quest=2240/the-hidden-chamber",
       "start": {
         "npcID": 6906,
-        "name": "Baelog"
+        "name": "Baelog",
+        "zoneName": "Uldaman"
       },
       "finish": {
         "npcID": 1356,
@@ -5583,7 +5625,8 @@
       },
       "finish": {
         "npcID": 6906,
-        "name": "Baelog"
+        "name": "Baelog",
+        "zoneName": "Uldaman"
       },
       "storyline": [
         2398,
@@ -6875,7 +6918,24 @@
       "finish": {
         "npcID": 1344,
         "name": "Prospector Ironband",
-        "zoneName": "Loch Modan"
+        "zoneName": "Loch Modan",
+        "mapID": 1432,
+        "x": 65.8,
+        "y": 65.4,
+        "reportedLocations": [
+          {
+            "mapID": 1432,
+            "x": 65.8,
+            "y": 65.4,
+            "zoneName": "Loch Modan"
+          },
+          {
+            "mapID": 1432,
+            "x": 65.8,
+            "y": 65.6,
+            "zoneName": "Loch Modan"
+          }
+        ]
       },
       "storyline": [
         707,
@@ -6897,7 +6957,24 @@
       "start": {
         "npcID": 1344,
         "name": "Prospector Ironband",
-        "zoneName": "Loch Modan"
+        "zoneName": "Loch Modan",
+        "mapID": 1432,
+        "x": 65.8,
+        "y": 65.4,
+        "reportedLocations": [
+          {
+            "mapID": 1432,
+            "x": 65.8,
+            "y": 65.4,
+            "zoneName": "Loch Modan"
+          },
+          {
+            "mapID": 1432,
+            "x": 65.8,
+            "y": 65.6,
+            "zoneName": "Loch Modan"
+          }
+        ]
       },
       "finish": {
         "objectID": 2875,
@@ -6927,7 +7004,24 @@
       "finish": {
         "npcID": 1344,
         "name": "Prospector Ironband",
-        "zoneName": "Loch Modan"
+        "zoneName": "Loch Modan",
+        "mapID": 1432,
+        "x": 65.8,
+        "y": 65.4,
+        "reportedLocations": [
+          {
+            "mapID": 1432,
+            "x": 65.8,
+            "y": 65.4,
+            "zoneName": "Loch Modan"
+          },
+          {
+            "mapID": 1432,
+            "x": 65.8,
+            "y": 65.6,
+            "zoneName": "Loch Modan"
+          }
+        ]
       },
       "storyline": [
         707,
