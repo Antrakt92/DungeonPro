@@ -546,7 +546,8 @@ function UI:RefreshDungeons()
     local contextCurrent = context.current
     local query = (addon.Clean(search, "string") or ""):gsub("^%s+", ""):gsub("%s+$", "")
     local needle = searchText(query)
-    local inputs, results, memo = {}, {}, {}
+    local inputs, results, memo, sourceMemo, sourceMatches = {}, {}, {}, {}, {}
+    local sourceGetter = addon.QuestSourceSearchTerms
     for index, dungeon in ipairs(catalogue) do
         local targets = dungeon.quests
         local input = { dungeon = dungeon, name = dungeon.name, key = dungeon.key,
@@ -557,15 +558,17 @@ function UI:RefreshDungeons()
             input.members[other] = { id = id, quest = quest, name = quest and quest.name }
         end
     end
-    local function current()
-        if contextCurrent and addon.Read(contextCurrent, "boolean") ~= true then return false end
+    local sourceReady = true
+    local function baseCurrent(sourceOnly)
         local ok, valid = pcall(function()
-            if context.current ~= contextCurrent then return false end
+            if context.current ~= contextCurrent or addon.QuestSourceSearchTerms ~= sourceGetter then return false end
             if self.catalogGeneration ~= generation or self.search ~= search or self.range ~= range or
                 addon.dungeons ~= catalogue or addon.quests ~= definitions or addon.char ~= character or
                 addon.db ~= database or database.locale ~= locale or addon.CachedQuestName ~= getter or
                 addon.DungeonName ~= dungeonGetter or addon.SearchFold ~= fold or issecretvalue ~= checker or
                 #catalogue ~= #inputs then return false end
+            -- The source-only scan has no effects; publication still proves every member.
+            if sourceOnly then return true end
             for index, input in ipairs(inputs) do
                 local dungeon = input.dungeon
                 if catalogue[index] ~= dungeon or dungeon.name ~= input.name or dungeon.key ~= input.key or
@@ -580,6 +583,76 @@ function UI:RefreshDungeons()
         end)
         return ok and valid == true
     end
+    local function ownedWrite(ownerCurrent, object, method, ...)
+        if not ownerCurrent() then return false end
+        local bindings = object.catalogWrites or {}
+        object.catalogWrites = bindings
+        local key = (method == "Show" or method == "Hide" or method == "SetShown") and "visibility" or method
+        local args, count = { ... }, select("#", ...)
+        local binding = { current = ownerCurrent, args = args, count = count, method = method }
+        bindings[key] = binding
+        local ok = pcall(object[method], object, unpack(args, 1, count))
+        local fresh = ownerCurrent()
+        if not fresh then
+            local latest = object.catalogWrites
+            local newer = latest and latest[key]
+            if newer and newer ~= binding and not newer.repairing then
+                newer.repairing = true
+                local repairCurrent = newer.current()
+                if repairCurrent and object.catalogWrites == latest and latest[key] == newer then
+                    pcall(object[newer.method], object, unpack(newer.args, 1, newer.count))
+                end
+                newer.repairing = nil
+            end
+        end
+        return ok and fresh
+    end
+    local function expireSources()
+        sourceReady = false
+        for _, controls in ipairs({ self.cards, self.catalogInspectButtons }) do
+            for _, control in ipairs(controls) do
+                if not ownedWrite(baseCurrent, control, "Hide") or
+                    not ownedWrite(baseCurrent, control, "SetScript", "OnClick", nil) then return false end
+            end
+        end
+        return false
+    end
+    local function unchanged(cached)
+        local ok, valid = pcall(cached.unchanged)
+        if not ok or valid ~= true then return false end
+        ok, valid = pcall(function()
+            if #cached.terms ~= #cached.entries then return false end
+            for index, entry in ipairs(cached.entries) do
+                local term = rawget(cached.terms, index)
+                if term ~= entry.term or rawget(term, "text") ~= entry.text or rawget(term, "kind") ~= entry.kind then return false end
+            end
+            return true
+        end)
+        return ok and valid == true
+    end
+    local function current()
+        if not sourceReady or not baseCurrent() then return false end
+        if contextCurrent and addon.Read(contextCurrent, "boolean") ~= true then return false end
+        for _, cached in ipairs(sourceMatches) do
+            if addon.Read(cached.current, "boolean") ~= true then return expireSources() end
+        end
+        for _, cached in ipairs(sourceMatches) do
+            if not unchanged(cached) then return expireSources() end
+        end
+        return baseCurrent()
+    end
+    local function proveSources()
+        if not current() then return false end
+        for _, cached in pairs(sourceMemo) do
+            if cached.current and addon.Read(cached.current, "boolean") ~= true then return expireSources() end
+        end
+        if not current() then return false end
+        -- Complete callback preflights before the callback-free ownership pass.
+        for _, cached in pairs(sourceMemo) do
+            if cached.current and not unchanged(cached) then return expireSources() end
+        end
+        return baseCurrent()
+    end
     if not current() then return end
     for _, input in ipairs(inputs) do
         local dungeon = input.dungeon
@@ -587,7 +660,7 @@ function UI:RefreshDungeons()
             local name = addon.Read(dungeonGetter, "string", dungeon) or addon.Clean(input.name, "string") or ""
             if not current() then return end
             local matches = query == "" or searchText(name):find(needle, 1, true) or searchText(input.name):find(needle, 1, true)
-            local matchedName, matchedID
+            local matchedName, matchedID, sourceMatch
             if not matches then
                 for _, member in ipairs(input.members) do
                     local source = addon.Clean(member.name, "string")
@@ -610,19 +683,66 @@ function UI:RefreshDungeons()
                     end
                 end
             end
+            if not matches and not matchedName and addon.Clean(sourceGetter, "function") then
+                for _, member in ipairs(input.members) do
+                    if not baseCurrent(true) then return end
+                    local cached = sourceMemo[member.id]
+                    if not cached then
+                        cached = {}; sourceMemo[member.id] = cached
+                        local ok, terms, owner, proof = false, nil, nil, nil
+                        if member.quest then ok, terms, owner, proof = pcall(sourceGetter, member.quest) end
+                        terms, owner, proof = addon.Clean(terms, "table"), addon.Clean(owner, "function"), addon.Clean(proof, "function")
+                        if ok and terms and owner and proof and #terms <= 1024 then
+                            local entries, valid = {}, true
+                            local length, count = #terms, 0
+                            for key in next, terms do
+                                local index = addon.Clean(key, "number")
+                                if not index or index < 1 or index > length or index % 1 ~= 0 then valid = false; break end
+                                count = count + 1
+                            end
+                            if count ~= length then valid = false end
+                            for index = 1, length do
+                                if not valid then break end
+                                local term = addon.Clean(rawget(terms, index), "table")
+                                local text = term and addon.Clean(rawget(term, "text"), "string")
+                                local kind = term and addon.Clean(rawget(term, "kind"), "string")
+                                if not text or #text > 2000 or not text:find("%S") or (kind ~= "npc" and kind ~= "place") then
+                                    valid = false; break
+                                end
+                                entries[index] = { term = term, text = text, kind = kind }
+                            end
+                            if valid then
+                                local ready = addon.Read(owner, "boolean")
+                                if ready == true then cached.terms, cached.current, cached.entries, cached.unchanged = terms, owner, entries, proof end
+                            end
+                        end
+                    end
+                    for _, entry in ipairs(cached.entries or {}) do
+                        local found = searchText(entry.text):find(needle, 1, true)
+                        if found then
+                            local title = addon.Clean(member.name, "string")
+                            matchedName = title and title ~= "" and title or (memo[member.id] and memo[member.id].name) or ("#" .. member.id)
+                            matchedID, sourceMatch = member.id, entry
+                            if not cached.matched then cached.matched = true; sourceMatches[#sourceMatches + 1] = cached end
+                            break
+                        end
+                    end
+                    if matchedName then break end
+                end
+            end
             if not current() then return end
             if matches or matchedName then
                 local note = addon.L("CATALOG_LEVELS", input.minimum, input.maximum) .. "\n" .. addon.L("CATALOG_QUESTS", #input.members)
                 if matchedName then note = note .. "\n" .. addon.L("SEARCH_QUEST_MATCH", matchedName) end
+                if sourceMatch then note = note .. "\n" .. addon.L(sourceMatch.kind == "npc" and "SEARCH_NPC_MATCH" or "SEARCH_PLACE_MATCH", sourceMatch.text) end
                 if not current() then return end
-                results[#results + 1] = { dungeon = dungeon, title = name, note = note, questID = matchedID }
+                results[#results + 1] = { dungeon = dungeon, title = name, note = note, questID = matchedID, sourceMatch = sourceMatch }
             end
         end
     end
+    if not proveSources() then return end
     local function write(object, method, ...)
-        if not current() then return false end
-        local ok = pcall(object[method], object, ...)
-        return ok and current()
+        return ownedWrite(current, object, method, ...)
     end
     for _, control in ipairs(self.catalogInspectButtons) do
         if not write(control, "Hide") or not write(control, "SetEnabled", false) or
@@ -641,7 +761,7 @@ function UI:RefreshDungeons()
     for index, result in ipairs(results) do
         local dungeon = result.dungeon
         local row = self:MakeRow(self.catalog, self.cards, index, 64)
-        if not current() then return end
+        if not current() or not write(row, "Show") then return end
         if not row.art then
             row.art = row:CreateTexture(nil, "ARTWORK")
             if not write(row.art, "SetSize", 44, 44) or not write(row.art, "SetPoint", "TOPLEFT", 6, -9) or
@@ -656,7 +776,7 @@ function UI:RefreshDungeons()
         if not current() then return end
         row.matchQuestID = result.questID
         if not write(row, "SetScript", "OnClick", function()
-            if not current() then return end
+            if not proveSources() then return end
             self:ResetHistoryReading()
             self.detailHistory = {}
             self.dungeon, self.quest = dungeon, nil
@@ -699,15 +819,21 @@ function UI:RefreshDungeons()
             if not inspectCurrent() or not write(inspect, "SetScript", "OnClick", function()
                 local shown = addon.Read(self.frame.IsShown, "boolean", self.frame)
                 if shown ~= true or not inspectCurrent() then return end
-                local source = addon.Clean(rawget(definition, "name"), "string")
-                local matches = source and searchText(source):find(needle, 1, true)
-                if not inspectCurrent() then return end
-                if not matches then
-                    local cached = addon.Read(getter, "string", questID)
+                local matches
+                if result.sourceMatch then
+                    matches = searchText(result.sourceMatch.text):find(needle, 1, true)
                     if not inspectCurrent() then return end
-                    matches = cached and searchText(cached):find(needle, 1, true)
+                else
+                    local source = addon.Clean(rawget(definition, "name"), "string")
+                    matches = source and searchText(source):find(needle, 1, true)
+                    if not inspectCurrent() then return end
+                    if not matches then
+                        local cached = addon.Read(getter, "string", questID)
+                        if not inspectCurrent() then return end
+                        matches = cached and searchText(cached):find(needle, 1, true)
+                    end
                 end
-                if not matches or not inspectCurrent() then return end
+                if not matches or not inspectCurrent() or not proveSources() then return end
                 self:ResetHistoryReading(); self.detailHistory = {}
                 self.dungeon, self.quest = dungeon, questID
                 character.selectedDungeon = dungeon.key
@@ -729,6 +855,7 @@ function UI:RefreshDungeons()
     end
     if not current() then return end
     write(self.catalog, "SetHeight", math.max(1, offset))
+    if not proveSources() then return end
 end
 
 function UI:PaintQuestRowStatus(row, entry, engine, ownerCurrent)

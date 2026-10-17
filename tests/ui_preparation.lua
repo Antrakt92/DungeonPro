@@ -7551,4 +7551,174 @@ check("reading profile preserves ten locale wrapping and short viewport scroll b
     ui.detailScroll:SetHeight(viewport);ui:Fit();ui:Refresh()
 end)
 
+local function sourceSearchFixture()
+    local f=targetSearchFixture()
+    local finish=f.finish
+    f.provider,f.navigation,f.character,f.shown=addon.QuestSourceSearchTerms,addon.Navigation,addon.char,ui.frame.shown
+    f.calls,f.terms,f.navigationCalls={},{},0
+    addon.quests[31001].start={npcID=801,name="Recorded Priestess",zoneName="Recorded Ashenvale"}
+    addon.quests[31001].finish={npcID=802,name="Recorded Turn-in",zoneName="Recorded Ashenvale"}
+    addon.quests[31002].start={itemID=900,name="Unindexed starter",
+        containerSource={objectID=901,name="Recorded Chest",zoneName="Recorded Hinterland"},
+        dropSources={{npcID=803,name="Recorded Dropper",locationName="Recorded Cavern"}}}
+    addon.QuestSourceSearchTerms=function(q)
+        if q then f.calls[q.id]=(f.calls[q.id]or 0)+1 end
+        local terms,current,proof=f.provider(q)
+        if q then f.terms[q.id]=terms end
+        return terms,current,proof
+    end
+    addon.Navigation={Start=function()f.navigationCalls=f.navigationCalls+1 end,Map=function()f.navigationCalls=f.navigationCalls+1 end}
+    ui.frame:Show()
+    function f:finish()
+        addon.QuestSourceSearchTerms,addon.Navigation,addon.char=self.provider,self.navigation,self.character
+        finish(self);ui.frame:SetShown(self.shown)
+    end
+    return f
+end
+check("Recorded NPC and place matches keep original quest cues precedence and effect-free per-quest memoization",function()
+    local f=sourceSearchFixture()
+    local quest,dungeon,engine,choice=ui.quest,ui.dungeon,ui.engine,addon.char.choices
+    f:search("");assert(next(f.calls)==nil)
+    f:search("Source target");assert(next(f.calls)==nil)
+    f:search("RECORDED PRIESTESS");local rows=f:cards()
+    assert(#rows==2 and f.calls[31001]==1 and not f.calls[31002])
+    for _,row in ipairs(rows)do
+        assert(row.matchQuestID==31001 and row.note.text:find(addon.L("SEARCH_NPC_MATCH","Recorded Priestess"),1,true))
+        assert(row.note.text:find(addon.L("SEARCH_QUEST_MATCH","Source target"),1,true))
+    end
+    f:search("Recorded Chest");assert(#f:cards()==1 and f:cards()[1].matchQuestID==31002)
+    assert(f:cards()[1].note.text:find(addon.L("SEARCH_PLACE_MATCH","Recorded Chest"),1,true))
+    f:search("Recorded Dropper");assert(#f:cards()==1 and f:cards()[1].matchQuestID==31002)
+    f:search("Recorded Turn-in");assert(#f:cards()==2 and f:cards()[1].matchQuestID==31001)
+    f:search("Unindexed starter");assert(#f:cards()==0)
+    assert(ui.quest==quest and ui.dungeon==dungeon and ui.engine==engine and addon.char.choices==choice and f.navigationCalls==0)
+    f:finish()
+end)
+check("Recorded-source inspection opens only the explicit associated target and preserves ordinary card browsing",function()
+    local f=sourceSearchFixture();f:search("Recorded Priestess")
+    local row=f:cards()[1];addon.QuestName=f.questName;row.scripts.OnClick()
+    assert(ui.dungeon.key=="target-a"and ui.quest==nil)
+    f:search("Recorded Priestess");ui.catalogInspectButtons[1].scripts.OnClick()
+    assert(ui.dungeon.key=="target-a"and ui.quest==31001 and f.navigationCalls==0)
+    f:finish()
+end)
+check("Source matches reject changed source DTO helper locale character and hidden inspection callbacks",function()
+    for _,mode in ipairs({"source","term","list","helper","locale","character","hidden"})do
+        local f=sourceSearchFixture();f:search("Recorded Priestess")
+        local click=ui.catalogInspectButtons[1].scripts.OnClick
+        local quest,dungeon=ui.quest,ui.dungeon
+        if mode=="source"then addon.quests[31001].start.name="Changed Priestess"
+        elseif mode=="term"then f.terms[31001][1].text="Changed term"
+        elseif mode=="list"then table.remove(f.terms[31001],1)
+        elseif mode=="helper"then addon.QuestSourceSearchTerms=f.provider
+        elseif mode=="locale"then addon.db.locale="ruRU"
+        elseif mode=="character"then addon.char={}
+        else ui.frame:Hide()end
+        click();assert(ui.quest==quest and ui.dungeon==dungeon and f.navigationCalls==0)
+        f:finish()
+    end
+end)
+check("Source search falls back to titles for missing third capability and malformed bounded term payloads",function()
+    for _,mode in ipairs({"missing","kind","oversize","sparse","text","key"})do
+        local f=sourceSearchFixture()
+        addon.QuestSourceSearchTerms=function()
+            local terms={{text="Malformed source needle",kind="npc"}}
+            if mode=="missing"then return terms,function()return true end
+            elseif mode=="kind"then terms[1].kind="giver"
+            elseif mode=="oversize"then terms[1].text=string.rep("x",2001)
+            elseif mode=="sparse"then terms[3]=terms[1]
+            elseif mode=="text"then terms[1].text={}
+            else terms.invalid=true end
+            return terms,function()return true end,function()return true end
+        end
+        f:search("Malformed source needle");assert(#f:cards()==0)
+        f:search("Source target");assert(#f:cards()==2 and f:cards()[1].matchQuestID==31001)
+        f:finish()
+    end
+end)
+check("Valid empty source ownership expires when a later source checker adds an earlier matching source",function()
+    local f=sourceSearchFixture();addon.quests[31001].start,addon.quests[31001].finish=nil,nil
+    local provider=f.provider;local checked=0
+    addon.QuestSourceSearchTerms=function(q)
+        local terms,current,proof=provider(q)
+        if q and q.id==31002 then
+            return terms,function()
+                checked=checked+1
+                if checked==2 then addon.quests[31001].start={npcID=804,name="Added Source"}end
+                return current()
+            end,proof
+        end
+        return terms,current,proof
+    end
+    f:search("Added Source");assert(checked>=2 and #f:cards()==0)
+    f:search("Added Source");assert(#f:cards()==2 and f:cards()[1].matchQuestID==31001)
+    assert(f.navigationCalls==0);f:finish()
+end)
+check("Source hint localization and setter reentry preserve a complete newer query and handlers",function()
+    for _,mode in ipairs({"localize","text","script"})do
+        local f=sourceSearchFixture();f:search("Recorded Priestess")
+        local row=f:cards()[1];local localize=addon.L;local setter=row.note.SetText;local script=row.SetScript;local armed=true
+        if mode=="localize"then
+            addon.L=function(key,...)
+                local value=localize(key,...)
+                if armed and key=="SEARCH_NPC_MATCH"then armed=false;f:search("Recorded Ashenvale")end
+                return value
+            end
+        elseif mode=="text"then
+            row.note.SetText=function(self,value)
+                if armed then armed=false;f:search("Recorded Ashenvale")end
+                return setter(self,value)
+            end
+        else
+            row.SetScript=function(self,key,value)
+                if armed and key=="OnClick"then armed=false;f:search("Recorded Ashenvale")end
+                return script(self,key,value)
+            end
+        end
+        f:search("Recorded Priestess")
+        row.note.SetText,row.SetScript,addon.L=setter,script,localize
+        assert(not armed and ui.search=="Recorded Ashenvale"and #f:cards()==2)
+        assert(f:cards()[1].note.text:find(addon.L("SEARCH_PLACE_MATCH","Recorded Ashenvale"),1,true))
+        assert(not f:cards()[1].note.text:find(addon.L("SEARCH_NPC_MATCH","Recorded Priestess"),1,true))
+        addon.QuestName=f.questName;ui.catalogInspectButtons[1].scripts.OnClick();assert(ui.quest==31001 and f.navigationCalls==0)
+        f:finish()
+    end
+end)
+check("Recorded-source hints wrap in ten locales without changing filters or inferring quest readiness",function()
+    local f=sourceSearchFixture();local range,preparation,include=ui.range,ui.preparation,ui.includeUnavailable
+    local long=string.rep("Recorded source ",20);addon.quests[31001].start.name=long
+    measurement=function(fs)if fs.text and fs.text:find(long,1,true)then return 126 end;return 18 end
+    local count=0
+    for code in pairs(addon.locales)do
+        count=count+1;addon.db.locale=code;f:search("Recorded source")
+        local rows=f:cards();assert(#rows==2 and rows[1].height>=162 and -rows[2].point[3]>=-rows[1].point[3]+rows[1].height)
+        assert(rows[1].note.text:find(addon.L("SEARCH_NPC_MATCH",long),1,true))
+        assert(ui.range==range and ui.preparation==preparation and ui.includeUnavailable==include and addon.quests[31001].requirementsKnown==false)
+    end
+    assert(count==10 and f.navigationCalls==0);measurement=nil;f:finish()
+end)
+check("Expired source cleanup cannot hide or clear handlers from a newer complete source query",function()
+    for _,method in ipairs({"Hide","SetScript"})do
+        local f=sourceSearchFixture();f:search("Recorded Priestess")
+        local row=f:cards()[1];local click=ui.catalogInspectButtons[1].scripts.OnClick
+        local target=method=="Hide"and row or ui.catalogInspectButtons[1]
+        local original,armed=target[method],true
+        target[method]=function(self,...)
+            local event,callback=...
+            if armed and(method=="Hide"or(event=="OnClick"and callback==nil))then
+                armed=false;f:search("Recorded Ashenvale")
+            end
+            return original(self,...)
+        end
+        addon.quests[31001].start.name="Changed before expired click"
+        click();target[method]=original
+        assert(not armed and ui.search=="Recorded Ashenvale"and #f:cards()==2 and row.shown)
+        assert(row.note.text:find(addon.L("SEARCH_PLACE_MATCH","Recorded Ashenvale"),1,true))
+        assert(row.scripts.OnClick and ui.catalogInspectButtons[1].scripts.OnClick)
+        addon.QuestName=f.questName;ui.catalogInspectButtons[1].scripts.OnClick()
+        assert(ui.dungeon.key=="target-a"and ui.quest==31001 and f.navigationCalls==0)
+        f:finish()
+    end
+end)
+
 print("Preparation UI modeled checks passed: " .. total .. " (no native layout validation)")
