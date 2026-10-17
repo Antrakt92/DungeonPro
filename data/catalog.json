@@ -2582,6 +2582,12 @@
           "itemID": 7083,
           "name": "Purified Kor Gem"
         }
+      ],
+      "providedItems": [
+        {
+          "itemID": 6996,
+          "name": "Jordan's Weapon Notes"
+        }
       ]
     },
     {
@@ -2659,7 +2665,13 @@
         "itemID": 16790,
         "name": "Damp Note",
         "itemMinLevel": 17
-      }
+      },
+      "providedItems": [
+        {
+          "itemID": 16790,
+          "name": "Damp Note"
+        }
+      ]
     },
     {
       "id": 6563,
@@ -9992,6 +10004,12 @@
           "itemID": 10663,
           "name": "Essence of Hakkar"
         }
+      ],
+      "providedItems": [
+        {
+          "itemID": 10465,
+          "name": "Egg of Hakkar"
+        }
       ]
     },
     {
@@ -13400,6 +13418,12 @@
           "itemID": 11413,
           "name": "Nagmara's Filled Vial"
         }
+      ],
+      "providedItems": [
+        {
+          "itemID": 11412,
+          "name": "Nagmara's Vial"
+        }
       ]
     },
     {
@@ -14179,7 +14203,13 @@
         "mapID": 1443,
         "x": 23.2,
         "y": 70.2
-      }
+      },
+      "providedItems": [
+        {
+          "itemID": 17693,
+          "name": "Coated Cerulean Vial"
+        }
+      ]
     },
     {
       "id": 7041,
@@ -16925,6 +16955,12 @@
         {
           "itemID": 21984,
           "name": "Left Piece of Lord Valthalak's Amulet"
+        }
+      ],
+      "providedItems": [
+        {
+          "itemID": 22052,
+          "name": "Brazier of Beckoning"
         }
       ]
     },
@@ -22703,6 +22739,12 @@
       "storyline": [
         5527,
         5526
+      ],
+      "providedItems": [
+        {
+          "itemID": 18539,
+          "name": "Reliquary of Purity"
+        }
       ]
     },
     {
@@ -24801,7 +24843,13 @@
         4147,
         4146
       ],
-      "storylineEvidence": "https://www.wowhead.com/forever/quest=4146/zapper-fuel"
+      "storylineEvidence": "https://www.wowhead.com/forever/quest=4146/zapper-fuel",
+      "providedItems": [
+        {
+          "itemID": 11319,
+          "name": "Unloaded Zapper"
+        }
+      ]
     },
     {
       "id": 7848,
