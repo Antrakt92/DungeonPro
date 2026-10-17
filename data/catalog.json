@@ -2353,6 +2353,24 @@
           "id": 1442,
           "itemID": 7083
         }
+      ],
+      "objectiveItems": [
+        {
+          "itemID": 6994,
+          "name": "Whitestone Oak Lumber"
+        },
+        {
+          "itemID": 6993,
+          "name": "Jordan's Refined Ore Shipment"
+        },
+        {
+          "itemID": 6895,
+          "name": "Jordan's Smithing Hammer"
+        },
+        {
+          "itemID": 7083,
+          "name": "Purified Kor Gem"
+        }
       ]
     },
     {
@@ -2698,7 +2716,13 @@
         "x": 37.4,
         "y": 40.2
       },
-      "requirementsKnown": false
+      "requirementsKnown": false,
+      "objectiveItems": [
+        {
+          "itemID": 6995,
+          "name": "Corrupted Kor Gem"
+        }
+      ]
     },
     {
       "id": 2930,
@@ -3305,7 +3329,13 @@
           }
         ]
       },
-      "requirementsKnown": false
+      "requirementsKnown": false,
+      "objectiveItems": [
+        {
+          "itemID": 6995,
+          "name": "Corrupted Kor Gem"
+        }
+      ]
     },
     {
       "id": 2949,
@@ -19735,7 +19765,13 @@
         1956,
         1957
       ],
-      "storylineEvidence": "https://www.wowhead.com/forever/quest=1957/mana-surges"
+      "storylineEvidence": "https://www.wowhead.com/forever/quest=1957/mana-surges",
+      "objectiveItems": [
+        {
+          "itemID": 8053,
+          "name": "Obsidian Power Source"
+        }
+      ]
     },
     {
       "id": 7668,
