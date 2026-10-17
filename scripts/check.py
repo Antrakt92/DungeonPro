@@ -33,6 +33,7 @@ def main():
     run(lua, "tests/search.lua")
     run(lua, "tests/ui_preparation.lua")
     run(lua, "tests/quest_tree_ui.lua")
+    run(lua, "tests/quest_target_path_ui.lua")
     run(lua, "tests/localized_names_ui.lua")
     run(lua, "tests/header_controls_ui.lua")
     run(lua, "tests/theme.lua")

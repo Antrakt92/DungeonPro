@@ -96,6 +96,8 @@ function Tree.Build(quests, engine, rootID)
         byID[qid] = node
     end
     local rootSource
+    local storyNodes, storySeen = {}, {}
+    local rootStoryIndex, rootStoryGroup
     local function visit(qid, depth, edge)
         if failed then return end
         if seen[qid] then
@@ -127,12 +129,22 @@ function Tree.Build(quests, engine, rootID)
     local function story(qid, group, index)
         if failed then return end
         if not id(qid) then failed = "source"; return end
-        if seen[qid] then return end
-        if #nodes >= 80 then nodes.truncated = true; return end
-        local source = capture(qid)
-        if not source or failed then return end
-        seen[qid] = true
-        append(qid, source, 1, "story", { group = group, storyIndex = index })
+        local node = byID[qid]
+        if not seen[qid] then
+            if #nodes >= 80 then nodes.truncated = true; return end
+            local source = capture(qid)
+            if not source or failed then return end
+            seen[qid] = true
+            append(qid, source, 1, "story", { group = group, storyIndex = index })
+            node = byID[qid]
+        end
+        if not node or failed or storySeen[qid] then return end
+        storySeen[qid] = true
+        -- Story position also belongs to an already-emitted target or required
+        -- node. Its dependency relation and OR-group identity stay unchanged.
+        node.storyIndex, node.storyGroup = index, group
+        storyNodes[#storyNodes + 1] = node
+        if qid == rootID then rootStoryIndex, rootStoryGroup = index, group end
     end
     if rootSource and rootSource.quest then
         local ordered = list(rootSource, rootSource.quest, "storyline")
@@ -147,6 +159,35 @@ function Tree.Build(quests, engine, rootID)
         end
     end
     if failed or not current() then return nil, failed or "expired" end
+    local presentation, presented = {}, {}
+    local function present(node)
+        if presented[node.id] then return end
+        presented[node.id] = true
+        presentation[#presentation + 1] = node
+    end
+    -- Actual requirements retain topological order and are never inferred from
+    -- the optional story. The target itself appears at its recorded story slot.
+    for _, node in ipairs(nodes) do
+        node.onTargetPath = node.root == true or node.relation == "required"
+        node.presentationRelation = node.relation
+        if node.relation == "required" and not node.root then present(node) end
+    end
+    local target = byID[rootID]
+    if target and not storySeen[rootID] then present(target) end
+    for _, node in ipairs(storyNodes) do
+        if node.relation == "story" or node.root then
+            node.presentationRelation = "story"
+            if not node.root and rootStoryIndex then
+                -- Parallel peers in the target's group have no recorded order.
+                node.onTargetPath = rootStoryGroup and node.storyGroup < rootStoryGroup or
+                    (not rootStoryGroup and node.storyGroup == nil and node.storyIndex < rootStoryIndex) or false
+            end
+            present(node)
+        end
+    end
+    for _, node in ipairs(nodes) do present(node) end
+    if not current() then return nil, "expired" end
+    nodes.presentation, nodes.targetID = presentation, rootID
     nodes.current = current
     return nodes
 end

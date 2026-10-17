@@ -144,6 +144,73 @@ check("Engine graph character context and branch-choice ownership expire before 
     local engine=fixture(quests);engine.quests={}
     assert(addon.QuestTree.Build(quests,engine,1)==nil)
 end)
+check("Actual same-name Deadmines quests retain the target at its exact recorded story position",function()
+    local actual={};assert(loadfile("Database/Catalog.lua"))("DungeonPro",actual)
+    assert(actual.quests[92753].name==actual.quests[92819].name)
+    local engine=fixture(actual.quests,{[92742]="COMPLETED"})
+    local tree=assert(addon.QuestTree.Build(actual.quests,engine,92753))
+    assert(tree.targetID==92753 and #tree.presentation==11 and tree[1].id==92753 and tree[1].root)
+    for index,node in ipairs(tree.presentation)do
+        assert(node.id==actual.quests[92753].storyline[index] and node.storyIndex==index)
+        assert(node.onTargetPath==(index<=10))
+        assert(node.presentationRelation=="story")
+    end
+    assert(tree.presentation[10].root and not tree.presentation[11].root)
+    assert(tree.presentation[1].state.completedHistory and tree.presentation[1].relation=="story")
+    assert(tree.presentation[10].relation=="required","presentation does not rewrite dependency semantics")
+    tree=assert(addon.QuestTree.Build(actual.quests,engine,92819))
+    assert(tree.presentation[11].root and tree.presentation[11].id==92819)
+    assert(tree.presentation[10].id==92753 and not tree.presentation[10].root and tree.presentation[10].onTargetPath)
+end)
+check("Recorded route highlighting distinguishes repeated names without inventing required ancestors",function()
+    local quests={[1]={name="Same name",storyline={3,1,2}},[2]={name="Same name"},[3]={name="First"}}
+    local engine=fixture(quests)
+    local tree=assert(addon.QuestTree.Build(quests,engine,1))
+    assert(ids(tree.presentation)=="3,1,2")
+    assert(tree.presentation[1].onTargetPath and tree.presentation[2].onTargetPath and not tree.presentation[3].onTargetPath)
+    assert(tree.presentation[1].relation=="story" and #tree.presentation[1].links==0)
+    assert(tree.presentation[2].id==1 and tree.presentation[3].id==2)
+end)
+check("Required paths stay deduplicated before optional story and OR alternatives never become a chosen route",function()
+    local quests={[1]={requires={{ids={2,3}}},storyline={5,2,1,4}},[2]={requires={{ids={6}}}},
+        [3]={requires={{ids={6}}}},[4]={},[5]={},[6]={}}
+    local engine=fixture(quests)
+    local tree=assert(addon.QuestTree.Build(quests,engine,1))
+    assert(ids(tree.presentation)=="6,2,3,5,1,4")
+    local seen={};for _,node in ipairs(tree.presentation)do assert(not seen[node.id]);seen[node.id]=true end
+    assert(tree.presentation[2].alternatives==2 and tree.presentation[3].alternatives==2)
+    assert(tree.presentation[1].onTargetPath and #tree.presentation[1].links==2)
+    assert(tree.presentation[2].storyIndex==2 and tree.presentation[2].relation=="required")
+    assert(tree.presentation[4].relation=="story" and tree.presentation[4].onTargetPath)
+    assert(tree.presentation[5].root and not tree.presentation[6].onTargetPath)
+end)
+check("Parallel target-group peers and stories without the target do not claim a route into it",function()
+    local quests={[1]={storylineGroups={{2,3},{1,4},{5}}},[2]={},[3]={},[4]={},[5]={}}
+    local engine=fixture(quests)
+    local tree=assert(addon.QuestTree.Build(quests,engine,1))
+    assert(ids(tree.presentation)=="2,3,1,4,5")
+    assert(tree.presentation[1].onTargetPath and tree.presentation[2].onTargetPath)
+    assert(tree.presentation[3].root and tree.presentation[3].storyGroup==2)
+    assert(not tree.presentation[4].onTargetPath and not tree.presentation[5].onTargetPath)
+    quests[1]={requires={{ids={2}}},storyline={3,4}}
+    tree=assert(addon.QuestTree.Build(quests,engine,1))
+    assert(ids(tree.presentation)=="2,1,3,4" and tree.presentation[2].root)
+    assert(not tree.presentation[3].onTargetPath and not tree.presentation[4].onTargetPath)
+end)
+check("Truncated unknown and cyclic routes retain one exact target and current source ownership",function()
+    local quests={};for n=1,100 do quests[n]={}end
+    quests[90].storyline={};for n=1,100 do quests[90].storyline[n]=n end
+    local engine=fixture(quests)
+    local tree=assert(addon.QuestTree.Build(quests,engine,90))
+    assert(tree.truncated and #tree.presentation==80 and tree.presentation[80].id==90 and tree.presentation[80].root)
+    assert(tree.presentation[80].storyIndex==90 and tree.current())
+    quests[90].storyline[90]=91;assert(not tree.current())
+    local missingEngine=fixture({});tree=assert(addon.QuestTree.Build({},missingEngine,999))
+    assert(#tree.presentation==1 and tree.presentation[1].missing and tree.presentation[1].root and tree.presentation[1].onTargetPath)
+    quests={[1]={requires={{ids={2}}}},[2]={requires={{ids={1}}}}};engine=fixture(quests)
+    tree=assert(addon.QuestTree.Build(quests,engine,1))
+    assert(tree.cycle and ids(tree.presentation)=="2,1" and tree.presentation[2].root)
+end)
 check("Every generated catalogue quest builds from the real planner without rewriting availability", function()
     local actual = {}
     assert(loadfile("Database/Catalog.lua"))("DungeonPro",actual)
@@ -159,6 +226,13 @@ check("Every generated catalogue quest builds from the real planner without rewr
             if node.root then assert(node.id==questID and node.state==before);found=true end
         end
         assert(found and #tree<=80 and tree.current() and engine:State(questID)==before)
+        local seen,targets={},0
+        assert(#tree.presentation==#tree and tree.targetID==questID)
+        for _,node in ipairs(tree.presentation)do
+            assert(not seen[node.id] and type(node.onTargetPath)=="boolean");seen[node.id]=true
+            if node.root then assert(node.id==questID and node.onTargetPath);targets=targets+1 end
+        end
+        assert(targets==1)
         count=count+1
     end
     assert(count==571)

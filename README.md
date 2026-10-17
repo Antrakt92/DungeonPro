@@ -104,6 +104,9 @@ Level ranges are provisional recommendations.
   read its details without losing the opened list. Completed steps remain visible.
   Indented branches connect to their target; a map badge marks quests listed for
   the selected dungeon, including dungeon quests within an expanded branch.
+  The target stays at its recorded story position and has a dungeon label.
+  Highlighted connectors show its earlier steps; this does not turn story order
+  into required prerequisites. Same-named steps show their quest IDs.
   Quest icons show journal progress and completion; hover for the status reason.
   Required prerequisites and source-listed story quests are labelled separately.
   The detail pane focuses on the selected quest's giver, objectives, rewards and

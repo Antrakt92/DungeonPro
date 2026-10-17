@@ -33,12 +33,19 @@ assert(not ui.map and not ui.guide)
 assert(ui.summary==nil and ui.coverage==nil,"aggregate status and coverage labels must not occupy the workspace")
 assert(ui.questScroll.point[3]>-200 and ui.detailScroll.point[3]==ui.questScroll.point[3],"quest and detail panes reclaim the former summary space")
 local show=fixture.methods.Show
-local expected={71003,71001,71002,71004,71005}
+local expected={0,71001,71002,71003,71004,71005}
 function fixture.methods:Show()
     for index,value in ipairs(ui.rows)do
         if value==self then
-            assert(self.questID==expected[index] and not self.heading,"publish only the finished branch, without old rows or oversized headings")
-            assert(self.title.text==addon.QuestName(self.questID),"published row already has its final quest title")
+            assert(not self.heading,"publish only the finished branch, without old rows or oversized headings")
+            if expected[index]==0 then
+                assert(self.questTreeAnchor and self.questID==nil and self.anchorQuestID==71003,"expanded header is a separate nonquest anchor")
+            else
+                assert(self.questID==expected[index])
+                local title=addon.QuestName(self.questID)
+                if self.questID==71003 or self.questID==71004 then title=title.." #"..self.questID end
+                assert(self.title.text==title,"published row already has its final disambiguated quest title")
+            end
         end
     end
     return show(self)
@@ -46,7 +53,8 @@ end
 row(71003,false).scripts.OnClick()
 fixture.methods.Show=show
 assert(ui.quest==71003 and ui.questTreeRoot==71003)
-local target=row(71003,false)
+local anchor=ui.rows[1]
+local target=row(71003,true)
 assert(not ui.storyToggle or not ui.storyToggle:IsShown(),"the default right pane does not repeat the left quest tree")
 local description,giverLines,rewardLine=nil,0,false
 for _,value in ipairs(ui.details)do if value:IsShown() then
@@ -70,10 +78,10 @@ assert(otherTarget.dungeonTarget and otherTarget.dungeonBadge:IsShown(),"every d
 local matches=0
 for _,value in ipairs(ui.rows)do if value:IsShown() and value.questID==71004 then matches=matches+1 end end
 assert(matches==1,"nested dungeon targets are not duplicated as independent cards")
-assert(target.title.text==otherTarget.title.text,"distinct same-named quest IDs stay inspectable")
+assert(target.title.text~=otherTarget.title.text and target.title.text:find("#71003",1,true) and otherTarget.title.text:find("#71004",1,true),"same-named quest IDs have visible disambiguation")
 local completed=row(71001,true)
 assert(not completed.dungeonTarget and (not completed.dungeonBadge or not completed.dungeonBadge:IsShown()),"supporting steps are not invented dungeon quests")
-assert(completed.questTreeInset==24 and completed.point[2]==24 and completed:GetWidth()==target:GetWidth()-24,"child surface is inset with its right edge aligned")
+assert(completed.questTreeInset==24 and completed.point[2]==24 and completed:GetWidth()==target:GetWidth() and completed:GetWidth()==anchor:GetWidth()-24,"chronological quest surfaces share an aligned right edge beneath the anchor")
 assert(completed.treeRail:IsShown() and completed.treeElbow:IsShown(),"branch lines visibly connect steps to their owning quest")
 for _,value in ipairs(ui.details)do if value:IsShown() then assert(value.text~=addon.L("STORY"),"bulky story caution is absent from the visible detail heading") end end
 assert(completed.questTreeRelation=="required" and completed.questTreeDepth>0)
@@ -83,7 +91,7 @@ completed.scripts.OnClick()
 assert(ui.quest==71001 and ui.questTreeRoot==71003 and ui.giverAction.id==71001)
 row(71002,true).scripts.OnClick()
 assert(ui.quest==71002 and ui.questTreeRoot==71003 and ui.giverAction.id==71002)
-row(71003,false).scripts.OnClick()
+row(71003,true).scripts.OnClick()
 assert(ui.quest==71003 and ui.questTreeRoot==71003,"returning to target preserves the opened chain")
 local old=row(71002,true).scripts.OnClick
 row(71005,false).scripts.OnClick()

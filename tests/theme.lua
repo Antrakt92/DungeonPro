@@ -105,6 +105,51 @@ test("quest and section styles retain text art layout and actions", function()
     assert(r.title.text == "kept" and r.art.texture == "native-art" and #r.art.textures == 0)
     assert(r.width == 200 and r.height == 40 and not r.points and r.enabled == false and r.scripts.OnClick == click)
 end)
+
+test("target paths remain visible while the selected step and chronological goal have distinct styling", function()
+    local r = row(); r.questTreeNode, r.questTreePath = true, true
+    r.treeRail, r.treeElbow, r.dungeonTargetLabel = region(), region(), region()
+    assert(addon.Theme.StyleRow(r, { kind = "quest" }))
+    local path = r.treeRail.color[1]
+    assert(path > .5 and r.treeElbow.color[1] == path)
+    r.questTreePath = false; assert(addon.Theme.StyleRow(r, { kind = "quest" }))
+    assert(r.treeRail.color[1] < path and r.title.textColor[1] < .8)
+    r.questTreePath, r.questTreeTarget, r.dungeonTarget = true, true, true
+    assert(addon.Theme.StyleRow(r, { kind = "quest" }))
+    assert(r.textures[1].color[1] > .8 and r.title.textColor[1] > .9)
+    local goal = r.bg.color[1]
+    assert(addon.Theme.StyleRow(r, { kind = "quest", selected = true }))
+    assert(r.bg.color[1] ~= goal and r.textures[5].shown and r.textures[1].color[1] > .8)
+    assert(r.treeRail.color[1] == path and r.dungeonTargetLabel.textColor[1] > .9)
+end)
+
+test("expanded anchors persist across step selection and recycled rows lose their old target styling", function()
+    local anchor, step = row(), row(); anchor.questTreeAnchor = true
+    assert(addon.Theme.StyleRow(anchor, { kind = "quest" }))
+    local border = anchor.textures[1].color[2]
+    assert(anchor.textures[5].shown)
+    step.questTreeNode, step.questTreePath = true, true
+    assert(addon.Theme.StyleRow(step, { kind = "quest", selected = true }))
+    assert(anchor.textures[1].color[2] == border and anchor.textures[5].shown)
+    anchor.questTreeAnchor = false
+    assert(addon.Theme.StyleRow(anchor, { kind = "quest" }))
+    assert(not anchor.textures[5].shown and anchor.textures[1].color[2] < border)
+end)
+
+test("a late old target color cannot overwrite the newly selected pooled row", function()
+    local r = row(); r.questTreeNode, r.questTreePath, r.questTreeTarget = true, true, true
+    local setter, armed = r.title.SetTextColor, true
+    r.title.SetTextColor = function(self, ...)
+        if armed then
+            armed = false; r.questTreeTarget, r.questTreePath = false, false
+            assert(addon.Theme.StyleRow(r, { kind = "quest", selected = true }))
+        end
+        return setter(self, ...)
+    end
+    assert(not addon.Theme.StyleRow(r, { kind = "quest" }))
+    assert(not armed and r.textures[5].shown and r.textures[1].color[1] < .5)
+    assert(r.title.textColor[1] > .9 and r.title.textColor[2] > .9)
+end)
 test("modern control preserves click and disabled state", function()
     local r = row(); r.normal,r.pushed,r.disabled,r.font = region(),region(),region(),region()
     local click = function() end; r.scripts.OnClick = click; r.enabled = false

@@ -171,7 +171,7 @@ local function check(name, fn)
 end
 local function visibleRows()
     local result = {}
-    for _, row in ipairs(ui.rows) do if row.shown and not row.heading and not row.questTreeNode then result[#result + 1] = row end end
+    for _, row in ipairs(ui.rows) do if row.shown and not row.heading and not row.questTreeAnchor and (not row.questTreeNode or row.questTreeTarget) then result[#result + 1] = row end end
     return result
 end
 -- Exercise the retained planner grouping model directly; no mode widget is exposed.
@@ -2828,6 +2828,7 @@ check("Optional theme styles the shell controls and recycled row selection witho
     for _, key in ipairs({ "rangeButton", "characterButton" }) do assert(ui[key].themeKind == "control") end
     local row = visibleRows()[1]; local note, callback, height = row.note.text, row.scripts.OnClick, row.height
     callback(row, "LeftButton", false)
+    row=visibleRows()[1]
     assert(row.themeSelected and row.note.text == note and type(row.scripts.OnClick)=="function" and row.height == height)
     assert(ui.quest == 100 and ui.source.enabled)
     local second = visibleRows()[2]; local firstID,secondID=row.questID,second.questID
@@ -6532,7 +6533,7 @@ check("Actual completed Deadmines quests remain directly listed without a retire
     assert(not detailHas(addon.L("PREPARED")) and not ui.action and ui.quest==nil and #ui.detailHistory==0)
     assert(not ui.preparation and #visibleRows()==7 and not ui.currentPlan.preparationEmpty)
     assert(detailHas(addon.L("OVERVIEW_PICK")) and not detailHas(notice) and ui.rows[1].enabled)
-    ui.rows[1].scripts.OnClick(ui.rows[1],"LeftButton");assert(ui.quest==ui.rows[1].questID)
+    local id=ui.rows[1].questID;ui.rows[1].scripts.OnClick(ui.rows[1],"LeftButton");assert(ui.quest==id)
     finish()
 end)
 check("Direct quest browsing localizes and preserves genuinely empty or excluded-character notices",function()
@@ -6560,7 +6561,7 @@ check("Empty preparation label reentry preserves a newer quest view and its actu
     ui:Refresh();ui.rows[1].title.SetText=original
     assert(not ui.preparation and #visibleRows()==7 and not ui.currentPlan.preparationEmpty)
     assert(ui.rows[1].enabled and ui.rows[1].title.text==addon.QuestName(ui.rows[1].questID))
-    ui.rows[1].scripts.OnClick(ui.rows[1],"LeftButton");assert(ui.quest==ui.rows[1].questID)
+    local id=ui.rows[1].questID;ui.rows[1].scripts.OnClick(ui.rows[1],"LeftButton");assert(ui.quest==id)
     finish()
 end)
 
@@ -9015,7 +9016,11 @@ local function inlineTreeFixture()
     ui.dungeon={key="inline-tree",name="Inline tree",minLevel=1,maxLevel=60,quests={43000,43004}}
     ui.quest,ui.questTreeRoot,ui.questTreeDungeon=nil,nil,nil;ui.preparation=false;ui.detailHistory={};ui.frame:Show();ui:Refresh()
     function f:row(id,branch)
-        for _,row in ipairs(ui.rows)do if row.shown and row.questID==id and row.questTreeNode==branch then return row end end
+        for _,row in ipairs(ui.rows)do if row.shown and row.questID==id and (row.questTreeNode==branch or (not branch and row.questTreeTarget)) then return row end end
+    end
+    function f:anchor(id)
+        for _,row in ipairs(ui.rows)do if row.shown and row.anchorQuestID==id then return row end end
+        return self:row(id,false)
     end
     function f:finish()
         for id=43000,43004 do addon.quests[id]=nil end
@@ -9032,12 +9037,12 @@ check("Compact inline chains preserve the root while inspecting completed parent
     assert(parent.title.textColor[1]<.7);ui:ApplyTheme();assert(parent.title.textColor[1]<.7)
     parent.scripts.OnClick();assert(ui.quest==43001 and ui.questTreeRoot==43000 and f:row(43002,true))
     f:row(43002,true).scripts.OnClick();assert(ui.quest==43002 and ui.questTreeRoot==43000)
-    f:row(43000,false).scripts.OnClick();assert(ui.quest==43000 and ui.questTreeRoot==43000 and f:row(43001,true)and #ui.detailHistory>=3)
-    f:row(43000,false).scripts.OnClick();assert(ui.questTreeRoot==nil and not f:row(43001,true))
+    f:anchor(43000).scripts.OnClick();assert(ui.quest==43000 and ui.questTreeRoot==43000 and f:row(43001,true)and #ui.detailHistory>=3)
+    f:anchor(43000).scripts.OnClick();assert(ui.questTreeRoot==nil and not f:row(43001,true))
     f:finish()
 end)
 check("Inline OR and story context remain distinct and status reasons stay available on compact-row hover",function()
-    local f=inlineTreeFixture();f:row(43000,false).scripts.OnClick()
+    local f=inlineTreeFixture();f:anchor(43000).scripts.OnClick()
     local required,story=f:row(43002,true),f:row(43003,true)
     assert(required and story and required.questTreeRelation=="required"and story.questTreeRelation=="story")
     assert(required.note.text:find(addon.L("REQUIREMENT_NOTICE"),1,true)and story.note.text:find(addon.L("STORY_GROUP_NOTICE"),1,true))
@@ -9054,7 +9059,7 @@ check("Inline OR and story context remain distinct and status reasons stay avail
     f:finish()
 end)
 check("Inline source invalidation during title hydration retires old owned hierarchy without hiding a newer render",function()
-    local f=inlineTreeFixture();f:row(43000,false).scripts.OnClick()
+    local f=inlineTreeFixture();f:anchor(43000).scripts.OnClick()
     local getter,armed=addon.QuestName,true
     addon.QuestName=function(id)
         if armed and id==43001 then armed=false;addon.quests[43000].requires=nil;addon.quests[43000].storyline={43000,43003}end
@@ -9085,7 +9090,7 @@ check("Compact reward space is reserved before wrapped title measurement without
 end)
 check("Late expired-tree cleanup visibility and handlers cannot hide or disable a newer reused story row",function()
     for _,method in ipairs({"Hide","SetScript"})do
-        local f=inlineTreeFixture();f:row(43000,false).scripts.OnClick()
+        local f=inlineTreeFixture();f:anchor(43000).scripts.OnClick()
         local parent=f:row(43001,true);local original=parent[method];local armed=true
         local getter,source=addon.QuestName,true
         parent[method]=function(self,...)
@@ -9101,19 +9106,20 @@ check("Late expired-tree cleanup visibility and handlers cannot hide or disable 
             return getter(id)
         end
         ui:RefreshQuests();addon.QuestName=getter;parent[method]=original
-        local newer=f:row(43003,true)
+        local newer=f:row(43000,true)
         assert(not armed and newer==parent and newer.shown and type(newer.scripts.OnClick)=="function",method)
-        newer.scripts.OnClick();assert(ui.quest==43003 and ui.questTreeRoot==43000)
+        newer.scripts.OnClick();assert(ui.quest==43000 and ui.questTreeRoot==43000)
         f:finish()
     end
 end)
 check("Inline child surfaces attach to their root with rails and exact-ID dungeon badges without duplicate targets",function()
     local f=inlineTreeFixture();local names=addon.QuestName
     addon.QuestName=function(id)if id==43000 or id==43003 then return "Same visible title"end;return names(id)end
-    ui.dungeon.quests={43000,43003,43004};ui:RefreshQuests();f:row(43000,false).scripts.OnClick()
+    ui.dungeon.quests={43000,43003,43004};ui:RefreshQuests();f:anchor(43000).scripts.OnClick()
     local seen={};for _,row in ipairs(ui.rows)do if row.shown then
         assert(not row.heading,"inline branches must not add large caution headings")
-        assert(not seen[row.questID],"each exact quest ID appears once");seen[row.questID]=true
+        if row.questID then assert(not seen[row.questID],"each exact quest ID appears once");seen[row.questID]=true
+        else assert(row.questTreeAnchor and row.anchorQuestID==43000)end
         if row.questTreeNode then
             assert(row.point[2]==24 and row.width+row.point[2]==ui.questList:GetWidth()-4)
             assert(row.treeRail.shown and row.treeElbow.shown and row.height==30 and row.title.point[2]==28)
@@ -9122,7 +9128,7 @@ check("Inline child surfaces attach to their root with rails and exact-ID dungeo
         assert(row.dungeonTarget==target and (row.dungeonBadge and row.dungeonBadge.shown or false)==target)
     end end
     assert(seen[43000]and seen[43003]and not f:row(43003,false))
-    assert(f:row(43000,false).title.text==f:row(43003,true).title.text,"different IDs sharing a title remain visible")
+    assert(f:row(43000,false).title.text=="Same visible title #43000"and f:row(43003,true).title.text=="Same visible title #43003","duplicate names retain distinct visible IDs")
     local previous=GameTooltip;local tip={}
     function tip:SetOwner(owner)self.owner=owner end;function tip:IsOwned(owner)return self.owner==owner end
     function tip:SetText(value)self.text=value end;function tip:AddLine(value)self.line=value end
@@ -9166,7 +9172,7 @@ check("Default detail prioritizes narrative objectives rewards and one named giv
     addon.Description=function()return "Selected quest narrative"end
     addon.QuestObjectives=function()return{{text="Selected live objective",finished=false}}end
     addon.CachedQuestRewards=function()return{source="cache",items={{name="Selected reward",count=1}},choices={}}end
-    f:row(43000,false).scripts.OnClick()
+    f:anchor(43000).scripts.OnClick()
     assert(ui.summary==nil and ui.coverage==nil and type(ui.currentPlan.counts)=="table")
     assert(ui.questScroll.point[3]==-100 and ui.detailScroll.point[3]==-100 and ui.questScroll.height==543 and ui.detailScroll.height==543)
     assert(not ui.detailReferencesExpanded and not(ui.storyToggle and ui.storyToggle.shown))
@@ -9197,6 +9203,15 @@ check("No-dungeon PICK notice clears recycled quest decorations and reward owner
     assert(not row.dungeonBadge.shown and not row.statusIcon.shown and not row.completedStrike.shown and clears==1)
     assert(row.width==ui.questList:GetWidth()-4 and row.title.width==ui.questList:GetWidth()-22 and not row.scripts.OnClick)
     addon.QuestListRewards.Clear=clear;addon.Context=context;f:finish()
+end)
+check("No-dungeon PICK retires the persistent target anchor and all branch presentation flags",function()
+    local f=inlineTreeFixture();f:anchor(43000).scripts.OnClick();local anchor=f:anchor(43000)
+    assert(anchor==ui.rows[1]and anchor.questTreeAnchor and anchor.anchorQuestID==43000)
+    ui.dungeon,ui.quest=nil,nil;ui:RefreshQuests()
+    assert(anchor.heading=="PICK"and anchor.shown and not anchor.questTreeAnchor and anchor.anchorQuestID==nil)
+    assert(not anchor.questTreeSelected and not anchor.questTreePath and not anchor.questTreeTarget)
+    assert(not anchor.dungeonTargetLabel or not anchor.dungeonTargetLabel.shown)
+    f:finish()
 end)
 check("Right header search reserves input and clear space while icon filters sit beside the dungeon heading",function()
     local locale=addon.db.locale
@@ -9312,5 +9327,42 @@ check("Filter tooltip stops when native ownership transfers or planner closes",f
     assert(tip.owner==foreign and additions==0 and shows==0)
     ui.frame:Hide();tip.owner=nil;ui.characterButton.scripts.OnEnter();assert(tip.owner==nil)
     ui.frame:Show();GameTooltip=previous
+end)
+check("Actual Toxic Soil first step selects while the exact dungeon target stays anchored at its recorded story position",function()
+    local actual={};assert(loadfile("Database/Catalog.lua"))("DungeonPro",actual)
+    local saved={quests=addon.quests,name=addon.QuestName,context=addon.Context,dungeon=ui.dungeon,quest=ui.quest,
+        root=ui.questTreeRoot,treeDungeon=ui.questTreeDungeon,history=ui.detailHistory,all=ui.includeUnavailable,locale=addon.db.locale}
+    addon.quests=actual.quests;addon.QuestName=function(id)return actual.quests[id]and actual.quests[id].name or saved.name(id)end
+    addon.Context=function()return {level=60,faction="Alliance",raceID=3,completed=function()return false end,active=function()return false end}end
+    for _,d in ipairs(actual.dungeons)do for _,id in ipairs(d.quests)do if id==92753 then ui.dungeon=d end end end
+    assert(ui.dungeon~=saved.dungeon)
+    ui.quest,ui.questTreeRoot,ui.questTreeDungeon=nil,nil,nil;ui.includeUnavailable=true;ui.detailHistory={};ui:Refresh()
+    local function row(id)for _,r in ipairs(ui.rows)do if r.shown and r.questID==id then return r end end end
+    assert(not row(92753).dungeonTargetLabel or not row(92753).dungeonTargetLabel.shown)
+    row(92753).scripts.OnClick()
+    local anchor;local ids,order={},{}
+    for _,r in ipairs(ui.rows)do if r.shown then
+        if r.questTreeAnchor then anchor=r;assert(r.questID==nil and r.anchorQuestID==92753 and not r.dungeonTarget)
+        elseif r.questID then assert(not ids[r.questID]);ids[r.questID]=true;if r.questTreeNode then order[#order+1]=r.questID end end
+    end end
+    assert(anchor and #order==11 and order[1]==92742 and order[10]==92753 and order[11]==92819)
+    local first,target,later=row(92742),row(92753),row(92819)
+    assert(first.enabled and first.questTreePath and first.questTreeRelation=="story")
+    assert(target.questTreeTarget and target.dungeonTarget and target.dungeonTargetLabel.shown and target.dungeonTargetLabel.text==addon.L("DUNGEON_QUEST_SHORT"))
+    assert(target.title.text=="Destruction in Deadmines #92753"and later.title.text=="Destruction in Deadmines #92819")
+    assert(target.questTreePath and not later.questTreePath and not later.dungeonTarget and (not later.dungeonTargetLabel or not later.dungeonTargetLabel.shown))
+    assert(row(92750).title.text:find("#92750",1,true)and row(92751).title.text:find("#92751",1,true))
+    local firstY,targetY=-first.point[3],-target.point[3]
+    assert(firstY>=-anchor.point[3]+anchor.height+2 and targetY>firstY)
+    first.scripts.OnClick();assert(ui.quest==92742 and ui.questTreeRoot==92753 and row(92742).questTreeSelected and not row(92753).questTreeSelected)
+    local stale=row(92742).scripts.OnClick
+    row(92819).scripts.OnClick();assert(ui.quest==92819 and ui.questTreeRoot==92753 and row(92819).questTreeSelected and row(92753).questTreeTarget)
+    row(92753).scripts.OnClick();assert(ui.quest==92753 and ui.questTreeRoot==92753 and row(92753).questTreeSelected)
+    for _,r in ipairs(ui.rows)do if r.shown and r.questTreeAnchor then anchor=r end end
+    anchor.scripts.OnClick();assert(ui.questTreeRoot==nil);stale();assert(ui.quest==92753)
+    assert(not row(92753).dungeonTargetLabel or not row(92753).dungeonTargetLabel.shown)
+    addon.quests,addon.QuestName,addon.Context=saved.quests,saved.name,saved.context
+    ui.dungeon,ui.quest,ui.questTreeRoot,ui.questTreeDungeon=saved.dungeon,saved.quest,saved.root,saved.treeDungeon
+    ui.detailHistory,ui.includeUnavailable,addon.db.locale=saved.history,saved.all,saved.locale;ui:Refresh()
 end)
 print("Preparation UI modeled checks passed: " .. total .. " (no native layout validation)")

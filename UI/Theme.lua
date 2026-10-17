@@ -9,6 +9,7 @@ local palette = {
     edge = { 0.20, 0.27, 0.30, 0.55 }, faint = { 0.16, 0.21, 0.24, 0.50 },
     amber = { 0.83, 0.64, 0.34, 0.95 }, teal = { 0.31, 0.67, 0.65, 0.95 },
     scrollThumb = { 0.39, 0.48, 0.51, 0.65 },
+    path = { 0.68, 0.51, 0.25, 0.85 }, target = { 0.11, 0.09, 0.052, 0.98 },
     text = { 0.91, 0.91, 0.86, 1 }, muted = { 0.64, 0.71, 0.73, 1 },
     quiet = { 0.49, 0.59, 0.62, 1 }, heading = { 0.91, 0.77, 0.49, 1 },
 }
@@ -412,12 +413,27 @@ function Theme.StyleRow(row, options)
     local selected = addon.Clean(options.selected, "boolean") == true
     local state = surface(row, row.bg)
     if not state then return false end
-    color(state.bg, kind == "section" and palette.panel or (selected and palette.selected or palette.row))
-    edges(state, selected and (kind == "dungeon" and palette.amber or palette.teal) or palette.faint)
+    local revision = {}
+    state.rowRevision, state.rowKind, state.rowSelected = revision, kind, selected
+    local anchor = addon.Clean(row.questTreeAnchor, "boolean") == true
+    local branch = kind == "quest" and addon.Clean(row.questTreeNode, "boolean") == true
+    local path = branch and addon.Clean(row.questTreePath, "boolean") == true
+    local target = branch and addon.Clean(row.questTreeTarget, "boolean") == true
+    local dungeon = branch and addon.Clean(row.dungeonTarget, "boolean") == true
+    local background = selected and palette.selected or (target and palette.target or
+        ((kind == "section" or anchor) and palette.panel or palette.row))
+    local border = (target and palette.amber) or ((selected or anchor) and palette.teal) or palette.faint
+    color(state.bg, background)
+    edges(state, kind == "dungeon" and selected and palette.amber or border)
     color(state.accent, kind == "dungeon" and palette.amber or palette.teal)
-    invoke(state.accent, selected and "Show" or "Hide")
-    textColor(row.title, kind == "section" and palette.heading or palette.text)
+    invoke(state.accent, (selected or anchor) and "Show" or "Hide")
+    textColor(row.title, (anchor or target or dungeon or kind == "section") and palette.heading or
+        (branch and not path and not selected and palette.muted or palette.text))
     textColor(row.note, palette.muted)
+    textColor(row.dungeonTargetLabel, palette.heading)
+    for _, connector in ipairs({ row.treeRail, row.treeElbow }) do
+        if cleanObject(connector) then color(connector, path and palette.path or palette.faint) end
+    end
     local highlight = objectResult(row, "GetHighlightTexture")
     if highlight then invoke(highlight, "SetColorTexture", 0.55, 0.72, 0.73, 0.09) end
     if kind == "control" then
@@ -432,6 +448,12 @@ function Theme.StyleRow(row, options)
         end
         if highlight then invoke(highlight, "SetAllPoints", row) end
         -- The template keeps its normal, highlighted and disabled font states.
+    end
+    if addon.Theme == Theme and state.rowRevision ~= revision and not state.rowRepairing then
+        state.rowRepairing = true
+        Theme.StyleRow(row, { kind = state.rowKind, selected = state.rowSelected })
+        state.rowRepairing = nil
+        return false
     end
     return true
 end
