@@ -1605,8 +1605,12 @@ function UI:RefreshDetail()
         line("|cff" .. COLOR[state.status] .. statusLabel(state) .. "|r")
         local logCapability, logOpener = addon.CanOpenQuestLog, addon.OpenQuestLogQuest
         local logRevision, logChecker = self.questLogGeneration, issecretvalue
+        local logFrame = self.frame
+        local logHide, logShown = logFrame.Hide, logFrame.IsShown
         local function logCurrent()
-            return portraitCardCurrent() and addon.quests[id] == definition and self.questLogGeneration == logRevision and
+            return portraitCardCurrent() and addon.UI == self and self.frame == logFrame and
+                logFrame.Hide == logHide and logFrame.IsShown == logShown and
+                addon.quests[id] == definition and self.questLogGeneration == logRevision and
                 addon.CanOpenQuestLog == logCapability and addon.OpenQuestLogQuest == logOpener and issecretvalue == logChecker
         end
         local canOpen = addon.Read(logCapability, "boolean", id)
@@ -1635,9 +1639,11 @@ function UI:RefreshDetail()
             if not write(control, "SetHeight", height) or not write(control, "ClearAllPoints") or
                 not write(control, "SetPoint", "TOPLEFT", 4, -y) or not write(control, "SetEnabled", true) or
                 not write(control, "SetScript", "OnClick", function()
-                    if not logCurrent() or addon.Read(self.frame.IsShown, "boolean", self.frame) ~= true or not logCurrent() then return end
+                    if self.questLogButton ~= control or not logCurrent() or addon.Read(logShown, "boolean", logFrame) ~= true or not logCurrent() then return end
                     local fresh = addon.Read(logCapability, "boolean", id)
-                    if fresh == true and logCurrent() then addon.Read(logOpener, "boolean", id) end
+                    if fresh ~= true or not logCurrent() or self.questLogButton ~= control then return end
+                    local accepted = addon.Read(logOpener, "boolean", id)
+                    if accepted == true and logCurrent() and self.questLogButton == control then pcall(logHide, logFrame) end
                 end) or not write(control, "Show") then return end
             y = y + height + 8
         end

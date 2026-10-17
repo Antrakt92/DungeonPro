@@ -8212,4 +8212,72 @@ check("A supplied invalid or expired transient navigation predicate cannot fall 
     f:finish()
 end)
 
+local function questLogHandoffFixture()
+    local f=questLogControlFixture();local finish=f.finish
+    f.frame,f.root,f.control,f.definition=ui.frame,addon.UI,ui.questLogButton,addon.quests[9970]
+    f.hide,f.shown,f.checker=f.frame.Hide,f.frame.IsShown,issecretvalue
+    f.search=ui.search;ui.search="retained quest-log query";f.hidden=0
+    f.frame.Hide=function(frame)f.hidden=f.hidden+1;f.hide(frame);frame.scripts.OnHide(frame)end
+    ui:RefreshDetail()
+    function f:finish()
+        ui.frame=self.frame;addon.UI=self.root;ui.questLogButton=self.control;addon.quests[9970]=self.definition
+        self.frame.Hide,self.frame.IsShown=self.hide,self.shown;issecretvalue=self.checker
+        ui.search=self.search;self.frame:Show();finish(self)
+    end
+    return f
+end
+check("An accepted explicit quest-log request exposes the native destination through normal planner hide and reopen",function()
+    local f=questLogHandoffFixture();local quest,dungeon=ui.quest,ui.dungeon
+    local nativeSelection=65;local opens=0
+    addon.OpenQuestLogQuest=function(id)opens=opens+1;nativeSelection=id;return true end
+    ui:RefreshDetail();assert(opens==0 and nativeSelection==65)
+    ui.questLogButton.scripts.OnClick()
+    assert(opens==1 and nativeSelection==9970 and f.hidden==1 and not f.frame.shown)
+    assert(ui.quest==quest and ui.dungeon==dungeon and ui.search=="retained quest-log query")
+    assert(not f.control.shown and not f.control.enabled and not f.control.scripts.OnClick,"normal OnHide expires the log control")
+    f.frame:Show();f.frame.scripts.OnShow(f.frame)
+    assert(opens==1 and nativeSelection==9970 and ui.quest==quest and ui.dungeon==dungeon and ui.search=="retained quest-log query")
+    f:finish()
+end)
+check("Expired held capability and rejected throwing or restricted quest-log acknowledgements leave preparation visible",function()
+    for _,mode in ipairs({"held","false","nil","throw","restricted"})do
+        local f=questLogHandoffFixture();local calls=0;local restricted={}
+        addon.OpenQuestLogQuest=function()
+            calls=calls+1
+            if mode=="throw"then error("native quest log unavailable")end
+            if mode=="false"then return false elseif mode=="restricted"then return restricted end
+        end
+        ui:RefreshDetail();local click=f.control.scripts.OnClick
+        if mode=="held"then f.held=false end
+        if mode=="restricted"then issecretvalue=function(value)if value==restricted then return true end;return f.checker and f.checker(value)or false end;ui:RefreshDetail();click=f.control.scripts.OnClick end
+        click()
+        assert(calls==(mode=="held"and 0 or 1)and f.hidden==0 and f.frame.shown)
+        f:finish()
+    end
+end)
+check("Quest-log dispatch cannot close a newer card owner frame button or replaced capability",function()
+    for _,mode in ipairs({"same-card","quest","owner","frame","button","hide","shown","capability","opener","generation","definition","checker"})do
+        local f=questLogHandoffFixture();local calls=0
+        addon.OpenQuestLogQuest=function()
+            calls=calls+1
+            if mode=="same-card"then ui:RefreshDetail()
+            elseif mode=="quest"then showDetail(9971)
+            elseif mode=="owner"then addon.UI={frame=f.frame}
+            elseif mode=="frame"then ui.frame=object("Frame");ui.frame:Show()
+            elseif mode=="button"then ui.questLogButton=object("Button");ui.questLogButton:Show()
+            elseif mode=="hide"then f.frame.Hide=function(frame)f.hide(frame)end
+            elseif mode=="shown"then f.frame.IsShown=function()return true end
+            elseif mode=="capability"then addon.CanOpenQuestLog=function()return true end
+            elseif mode=="opener"then addon.OpenQuestLogQuest=function()return true end
+            elseif mode=="generation"then ui.questLogGeneration={}
+            elseif mode=="definition"then addon.quests[9970]={id=9970,minLevel=1}
+            else issecretvalue=function()return false end end
+            return true
+        end
+        ui:RefreshDetail();f.control.scripts.OnClick()
+        assert(calls==1 and f.hidden==0 and f.frame.shown and ui.frame.shown)
+        f:finish()
+    end
+end)
+
 print("Preparation UI modeled checks passed: " .. total .. " (no native layout validation)")

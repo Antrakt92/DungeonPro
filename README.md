@@ -88,6 +88,7 @@ Level ranges are provisional recommendations.
   quest limit when available, separately from dungeon preparation status.
   A held quest can be opened in the native quest log from its detail card when
   the client provides the action. Opening it changes the selected native quest.
+  The planner closes to make room for the quest log; `/DP` returns to your card.
 - Explicitly sourced repeatable quests have their own label.
 - Where prerequisites have alternatives, choose a branch or restore automatic
   planning. Choosing a route does not bypass requirements or confirm availability.
