@@ -15826,7 +15826,27 @@
         "itemID": 12563,
         "name": "Warlord Goretooth's Command",
         "itemMinLevel": 55
-      }
+      },
+      "objectiveKills": [
+        {
+          "npcID": 9568,
+          "name": "Overlord Wyrmthalak"
+        },
+        {
+          "npcID": 9196,
+          "name": "Highlord Omokk"
+        },
+        {
+          "npcID": 9237,
+          "name": "War Master Voone"
+        }
+      ],
+      "objectiveItems": [
+        {
+          "itemID": 12562,
+          "name": "Important Blackrock Documents"
+        }
+      ]
     },
     {
       "id": 4729,
@@ -16082,6 +16102,20 @@
         5001,
         5002,
         5081
+      ],
+      "objectiveKills": [
+        {
+          "npcID": 9237,
+          "name": "War Master Voone"
+        },
+        {
+          "npcID": 9196,
+          "name": "Highlord Omokk"
+        },
+        {
+          "npcID": 9568,
+          "name": "Overlord Wyrmthalak"
+        }
       ]
     },
     {
@@ -16153,6 +16187,12 @@
         4903,
         4941,
         4974
+      ],
+      "objectiveItems": [
+        {
+          "itemID": 12630,
+          "name": "Head of Rend Blackhand"
+        }
       ]
     },
     {
@@ -16183,6 +16223,12 @@
         6585,
         6601,
         6602
+      ],
+      "objectiveItems": [
+        {
+          "itemID": 16663,
+          "name": "Blood of the Black Dragon Champion"
+        }
       ]
     },
     {
@@ -16250,6 +16296,12 @@
       "storyline": [
         5089,
         5102
+      ],
+      "objectiveKills": [
+        {
+          "npcID": 10363,
+          "name": "General Drakkisath"
+        }
       ]
     },
     {
@@ -16439,6 +16491,19 @@
       "factions": [
         "Alliance",
         "Horde"
+      ],
+      "objectiveItems": [
+        {
+          "itemID": 12241,
+          "name": "Collected Dragon Egg",
+          "quantity": 8
+        }
+      ],
+      "providedItems": [
+        {
+          "itemID": 12287,
+          "name": "Collectronic Module"
+        }
       ]
     },
     {
@@ -16505,6 +16570,12 @@
         6822,
         6823,
         6824
+      ],
+      "objectiveItems": [
+        {
+          "itemID": 17322,
+          "name": "Eye of the Emberseer"
+        }
       ]
     },
     {
