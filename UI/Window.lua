@@ -27,13 +27,13 @@ function UI:CurrentDetailAction()
         action.place == place and action.id == id and action.kind == kind then return action end
 end
 
-function UI:NavigateDetail(action, mapOnly, giver, ownerCurrent)
+function UI:DispatchDetail(action, mapOnly, giver, ownerCurrent)
     if not action then return false end
     local frame, quest, dungeon, engine, character, generation = self.frame, self.quest, self.dungeon, self.engine, addon.char, self.rewardGeneration
     local navigation = addon.Clean(addon.Navigation, "table")
     local method = navigation and addon.Clean(navigation[mapOnly and "Map" or "Start"], "function")
     if not frame or not method then return false end
-    local hide, shown, getter = frame.Hide, frame.IsShown, engine and engine.Current
+    local shown, getter = frame.IsShown, engine and engine.Current
     local place, id, kind = action.place, action.id, action.kind
     local coordinates, checker = self.giverHasCoordinates, issecretvalue
     local slot = giver and "giverAction" or "action"
@@ -43,15 +43,12 @@ function UI:NavigateDetail(action, mapOnly, giver, ownerCurrent)
         return fresh and owned and addon.UI == self and self.frame == frame and self.quest == quest and self.dungeon == dungeon and
             self.engine == engine and addon.char == character and self.rewardGeneration == generation and
             addon.Navigation == navigation and navigation[mapOnly and "Map" or "Start"] == method and
-            frame.Hide == hide and frame.IsShown == shown and (not engine or engine.Current == getter) and
+            frame.IsShown == shown and (not engine or engine.Current == getter) and
             (ownerCurrent ~= nil or self[slot] == action) and action.place == place and action.id == id and action.kind == kind and
             (not giver or self.giverHasCoordinates == coordinates) and issecretvalue == checker
     end
     if not current() or addon.Read(shown, "boolean", frame) ~= true or not current() then return false end
-    -- Map acknowledges a request; Start additionally owns a live guide, not map visibility.
-    local accepted = addon.Read(method, "boolean", mapOnly and place or action)
-    if accepted ~= true or not current() then return false end
-    return pcall(hide, frame)
+    return pcall(method, mapOnly and place or action)
 end
 
 local LANGUAGE_CHOICES = { { "auto" }, { "enUS", "English" }, { "ruRU", "Русский" }, { "deDE", "Deutsch" },
@@ -1606,10 +1603,10 @@ function UI:RefreshDetail()
         local logCapability, logOpener = addon.CanOpenQuestLog, addon.OpenQuestLogQuest
         local logRevision, logChecker = self.questLogGeneration, issecretvalue
         local logFrame = self.frame
-        local logHide, logShown = logFrame.Hide, logFrame.IsShown
+        local logShown = logFrame.IsShown
         local function logCurrent()
             return portraitCardCurrent() and addon.UI == self and self.frame == logFrame and
-                logFrame.Hide == logHide and logFrame.IsShown == logShown and
+                logFrame.IsShown == logShown and
                 addon.quests[id] == definition and self.questLogGeneration == logRevision and
                 addon.CanOpenQuestLog == logCapability and addon.OpenQuestLogQuest == logOpener and issecretvalue == logChecker
         end
@@ -1642,8 +1639,7 @@ function UI:RefreshDetail()
                     if self.questLogButton ~= control or not logCurrent() or addon.Read(logShown, "boolean", logFrame) ~= true or not logCurrent() then return end
                     local fresh = addon.Read(logCapability, "boolean", id)
                     if fresh ~= true or not logCurrent() or self.questLogButton ~= control then return end
-                    local accepted = addon.Read(logOpener, "boolean", id)
-                    if accepted == true and logCurrent() and self.questLogButton == control then pcall(logHide, logFrame) end
+                    addon.Read(logOpener, "boolean", id)
                 end) or not write(control, "Show") then return end
             y = y + height + 8
         end
@@ -1973,7 +1969,7 @@ function UI:RefreshDetail()
                     not locationWrite(current, row, "SetEnabled", true) then return false end
                 if not locationWrite(current, row, "SetScript", "OnClick", function()
                     if current() then
-                        self:NavigateDetail({ id = id, kind = "visit", place = point }, false, nil, current)
+                        self:DispatchDetail({ id = id, kind = "visit", place = point }, false, nil, current)
                     end
                 end) then return false end
                 local nextY = self:LayoutRow(row, 59, y, current)
@@ -2033,7 +2029,7 @@ function UI:RefreshDetail()
                     if not current() or (clickCurrent and not clickCurrent()) then return end
                     local visit = { id = id, kind = "visit", place = destination }
                     local function visitCurrent() return current() and (not clickCurrent or clickCurrent()) end
-                    self:NavigateDetail(visit, not coordinates, nil, visitCurrent)
+                    self:DispatchDetail(visit, not coordinates, nil, visitCurrent)
                 end or nil) then return false end
                 local nextY = self:LayoutRow(row, 59, y, current)
                 if not nextY then return false end
@@ -2320,7 +2316,7 @@ function UI:RefreshDetail()
                                 if not fresh or self.clientWaypointBinding ~= binding or not snapshotCurrent(fresh) then return end
                                 local place = { mapID = fresh.map, x = fresh.x * 100, y = fresh.y * 100, name = fresh.text }
                                 if self.clientWaypointBinding == binding and snapshotCurrent(fresh) then
-                                    self:NavigateDetail({ id = id, kind = "visit", place = place }, false, nil,
+                                    self:DispatchDetail({ id = id, kind = "visit", place = place }, false, nil,
                                         function() return self.clientWaypointBinding == binding and snapshotCurrent(fresh) end)
                                 end
                             end) or not write(control, "Show") then return end
@@ -3462,19 +3458,19 @@ function UI:Create()
     self.detail, self.detailScroll = scrolling(frame, 690, -218, 350, 425)
     self.map = button(frame, "", 160, function()
         local action = self:CurrentDetailAction()
-        if action then self:NavigateDetail(action, true) end
+        if action then self:DispatchDetail(action, true) end
     end)
     self.map:SetPoint("TOPLEFT", 690, -84)
     self.guide = button(frame, "", 172, function()
         local action = self:CurrentDetailAction()
-        if action then self:NavigateDetail(action, false) end
+        if action then self:DispatchDetail(action, false) end
     end)
     self.guide:SetPoint("TOPLEFT", 856, -84)
     self.source = button(frame, "", 160, function() if self.quest then self:CopyLink(self.quest) end end)
     self.source:SetPoint("BOTTOMRIGHT", -43, 19)
     self.giver = button(frame, "", 195, function()
         if self.giverAction then
-            self:NavigateDetail(self.giverAction, not self.giverHasCoordinates, true)
+            self:DispatchDetail(self.giverAction, not self.giverHasCoordinates, true)
         end
     end)
     self.giver:SetPoint("BOTTOMLEFT", 690, 19)

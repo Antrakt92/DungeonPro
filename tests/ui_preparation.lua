@@ -8060,7 +8060,7 @@ local function primaryHandoffFixture(mapOnlyGiver)
     end
     return f
 end
-check("Successful primary navigation hands off the planner through its real hide lifecycle and retains selection on reopen",function()
+check("Accepted primary navigation keeps the movable planner open and only explicit closing runs its hide lifecycle",function()
     for _,route in ipairs({"guide","map","giver","giver-map"})do
         local f=primaryHandoffFixture(route=="giver-map")
         local action,giver,dungeon,quest=ui.action,ui.giverAction,ui.dungeon,ui.quest
@@ -8072,9 +8072,11 @@ check("Successful primary navigation hands off the planner through its real hide
             calls=calls+1;assert(value==(route=="map"and action.place or giver.place));return true,false
         end}
         ui[route=="giver-map"and"giver"or route].scripts.OnClick()
-        assert(calls==1 and f.hidden==1 and not ui.frame.shown,"accepted primary navigation must expose the destination view")
+        assert(calls==1 and f.hidden==0 and ui.frame.shown,"accepted primary navigation must keep preparation open")
         assert(ui.search=="retained navigation query"and ui.dungeon==dungeon and ui.quest==quest)
-        assert(ui.detailOffsets==nil and ui.detailHistory==history,"normal OnHide cleanup remains in effect")
+        assert(ui.detailOffsets and ui.detailOffsets[2]==70 and ui.detailHistory==history,"navigation cannot clear reading state")
+        ui.frame:Hide();ui.frame.scripts.OnHide(ui.frame)
+        assert(ui.detailOffsets==nil and f.hidden==1,"only explicit closing runs normal OnHide cleanup")
         ui.frame:Show();ui.frame.scripts.OnShow(ui.frame)
         assert(ui.frame.shown and ui.search=="retained navigation query"and ui.dungeon==dungeon and ui.quest==quest)
         assert(calls==1,"reopening cannot start navigation again")
@@ -8154,15 +8156,16 @@ local function manualLocationHandoffFixture(route)
     end
     return f
 end
-check("Explicit reported alternative and game-waypoint visits hand off only after acceptance and reopen without navigating again",function()
+check("Accepted reported alternative and game-waypoint visits leave preparation open without replacing the selected action",function()
     for _,route in ipairs({"reported","alternative","alternative-map","waypoint"})do
         local f=manualLocationHandoffFixture(route)
         local dungeon,quest,action=ui.dungeon,ui.quest,ui.action
         f.control.scripts.OnClick()
-        assert(f.calls==1 and f.hidden==1 and not ui.frame.shown)
+        assert(f.calls==1 and f.hidden==0 and ui.frame.shown)
         assert(ui.quest==quest and ui.dungeon==dungeon and ui.action==action and ui.search=="retained navigation query")
         if route=="alternative-map"then assert(f.mapped and not f.visited)
         else assert(f.visited and f.visited.kind=="visit"and f.visited.id==quest)end
+        ui.frame:Hide();ui.frame.scripts.OnHide(ui.frame)
         ui.frame:Show();ui.frame.scripts.OnShow(ui.frame)
         assert(ui.quest==quest and ui.dungeon==dungeon and ui.search=="retained navigation query"and f.calls==1)
         f:finish()
@@ -8201,13 +8204,13 @@ check("A supplied invalid or expired transient navigation predicate cannot fall 
     for _,predicate in ipairs({false,{},function()return nil end,function()error("expired")end})do
         local f=primaryHandoffFixture();local calls=0
         addon.Navigation={Start=function()calls=calls+1;return true end}
-        ui:NavigateDetail(ui.action,false,nil,predicate)
+        ui:DispatchDetail(ui.action,false,nil,predicate)
         assert(calls==0 and f.hidden==0 and ui.frame.shown)
         f:finish()
     end
     local f=primaryHandoffFixture();local owned=true;local calls=0
     addon.Navigation={Start=function()calls=calls+1;owned=false;return true end}
-    ui:NavigateDetail({id=35001,kind="visit",place=addon.quests[35001].start},false,nil,function()return owned end)
+    ui:DispatchDetail({id=35001,kind="visit",place=addon.quests[35001].start},false,nil,function()return owned end)
     assert(calls==1 and f.hidden==0 and ui.frame.shown)
     f:finish()
 end)
@@ -8226,15 +8229,17 @@ local function questLogHandoffFixture()
     end
     return f
 end
-check("An accepted explicit quest-log request exposes the native destination through normal planner hide and reopen",function()
+check("Accepted explicit quest-log requests keep the planner open and preserve the intended native selection",function()
     local f=questLogHandoffFixture();local quest,dungeon=ui.quest,ui.dungeon
     local nativeSelection=65;local opens=0
     addon.OpenQuestLogQuest=function(id)opens=opens+1;nativeSelection=id;return true end
     ui:RefreshDetail();assert(opens==0 and nativeSelection==65)
     ui.questLogButton.scripts.OnClick()
-    assert(opens==1 and nativeSelection==9970 and f.hidden==1 and not f.frame.shown)
+    assert(opens==1 and nativeSelection==9970 and f.hidden==0 and f.frame.shown)
     assert(ui.quest==quest and ui.dungeon==dungeon and ui.search=="retained quest-log query")
-    assert(not f.control.shown and not f.control.enabled and not f.control.scripts.OnClick,"normal OnHide expires the log control")
+    assert(f.control.shown and f.control.enabled and f.control.scripts.OnClick,"opening the log cannot expire its own preparation control")
+    f.frame:Hide();f.frame.scripts.OnHide(f.frame)
+    assert(not f.control.shown and not f.control.enabled and not f.control.scripts.OnClick,"explicit closing still expires the control")
     f.frame:Show();f.frame.scripts.OnShow(f.frame)
     assert(opens==1 and nativeSelection==9970 and ui.quest==quest and ui.dungeon==dungeon and ui.search=="retained quest-log query")
     f:finish()
