@@ -3436,7 +3436,8 @@
           "itemID": 9326,
           "name": "Grime-Encrusted Ring"
         }
-      ]
+      ],
+      "requiredMoney": 300
     },
     {
       "id": 2951,
@@ -12049,6 +12050,12 @@
       "storyline": [
         95647,
         95809
+      ],
+      "objectiveEvents": [
+        {
+          "npcID": 262681,
+          "name": "Learn what happened to Ardin Grassman"
+        }
       ]
     },
     {
@@ -16235,6 +16242,12 @@
           "itemID": 21986,
           "name": "Banner of Provocation"
         }
+      ],
+      "objectiveEvents": [
+        {
+          "npcID": 16166,
+          "name": "Theldren's Team Defeated"
+        }
       ]
     },
     {
@@ -20113,6 +20126,13 @@
         {
           "itemID": 13289,
           "name": "Egan's Blaster"
+        }
+      ],
+      "objectiveEvents": [
+        {
+          "npcID": 11122,
+          "name": "Souls Freed",
+          "quantity": 15
         }
       ]
     },
