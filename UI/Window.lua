@@ -60,6 +60,10 @@ function UI:OpenLanguageMenu()
     local database, owner, checker = addon.Clean(addon.db, "table"), self.language, issecretvalue
     if not database then return false end
     local previous = addon.Clean(database.locale, "string")
+    local checkedCode = previous == "enGB" and "enUS" or previous == "esMX" and "esES" or previous
+    local supported = false
+    for _, choice in ipairs(choices) do if choice[1] == checkedCode then supported = true; break end end
+    if not supported then checkedCode = "enUS" end
     local revision = {}
     self.languageMenuRevision = revision
     local function current()
@@ -91,7 +95,7 @@ function UI:OpenLanguageMenu()
         for _, choice in ipairs(choices) do
             local code = choice[1]
             local name = choice[2] or addon.L("LANGUAGE_AUTO")
-            radio(root, name, function() return capable() and previous == code end, function()
+            radio(root, name, function() return capable() and checkedCode == code end, function()
                 if not capable() then return end
                 selected = true
                 database.locale = code

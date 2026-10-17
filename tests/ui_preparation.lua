@@ -3264,7 +3264,7 @@ check("Language button opens eleven explicit native-language radio choices witho
         live.select(code);assert(addon.db.locale==code and ui.quest==1 and ui.detailScroll.verticalScroll==23)
     end
     addon.db.locale="unknown";ui.language.scripts.OnClick()
-    for _,row in ipairs(rows())do assert(not row.checked())end
+    for _,row in ipairs(rows())do assert(row.checked() == (row.data == "enUS"))end
     rows()[1].select("auto");assert(addon.db.locale=="auto")
     restore();addon.db.locale=locale;ui:Refresh()
 end)
@@ -7303,6 +7303,24 @@ check("short automatic label localization cannot overwrite a newer preference la
     end
     ui:Refresh();assert(addon.db.locale=="ruRU"and ui.language.text=="Русский")
     addon.L=localize;addon.db.locale=old;ui:Refresh()
+end)
+
+check("Effective menu checkmarks preserve raw aliases and unsupported preferences",function()
+    local locale=addon.db.locale
+    local rows,restore=languageMenuFixture()
+    local cases={{"enGB","enUS"},{"esMX","esES"},{"unsupported","enUS"},{"","enUS"}}
+    for _,choice in ipairs({"auto","enUS","ruRU","deDE","frFR","esES","itIT","ptBR","koKR","zhCN","zhTW"})do
+        cases[#cases+1]={choice,choice}
+    end
+    for _,case in ipairs(cases)do
+        addon.db.locale=case[1];ui:Refresh();assert(ui:OpenLanguageMenu() and #rows()==11)
+        local selected=0
+        for _,row in ipairs(rows())do
+            if row.checked()then selected=selected+1;assert(row.data==case[2])end
+        end
+        assert(selected==1 and addon.db.locale==case[1])
+    end
+    restore();addon.db.locale=locale;ui:Refresh()
 end)
 
 print("Preparation UI modeled checks passed: " .. total .. " (no native layout validation)")
