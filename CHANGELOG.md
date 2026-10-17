@@ -4,6 +4,7 @@
 
 - Added case-insensitive Unicode search for localized dungeon names.
 - Made quest titles and section headings easier to distinguish from body text.
+- Preserved native font families when sizing multilingual interface text.
 - Added missing reported locations for several early dungeon quest givers.
 - Restored quest selection when preparation section headings are present.
 - Explained faction, class and race restrictions directly in quest rows.

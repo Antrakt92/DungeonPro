@@ -16,8 +16,11 @@ function methods:SetText(value)
     self.fontPending = false
 end
 function methods:SetFont(path, size, flags)
+    self.fontFamily = nil
     self.fontPath, self.fontSize, self.fontFlags, self.fontPending = path, size, flags, true
 end
+function methods:SetFontObject(font) self.fontFamily, self.fontPending = font, true end
+function methods:SetTextHeight(size) self.fontSize, self.fontPending = size, true end
 function methods:SetTextColor(...) self.textColor = { ... } end
 function methods:SetTexture(value) self.texture = value; return true end
 function methods:GetText() return self.text or "" end
@@ -3178,5 +3181,43 @@ check("OR alternatives expose separate inspection without changing preferences o
     addon.Description,addon.db.locale=description,locale;measurement=nil
     addon.quests[19001],addon.quests[19002],addon.quests[19003]=nil,nil,nil
     ui.dungeon,ui.quest,ui.detailHistory=dungeon,quest,history;ui:Refresh()
+end)
+check("Native font families retain alphabet fallback while detail sizes and pooled styles stay explicit", function()
+    local previous, family = GameFontHighlight, {}
+    GameFontHighlight = family
+    local row = ui:MakeRow(ui.questList, {}, 1, 59)
+    assert(row.title.fontFamily == family and row.title.fontSize == 14)
+    assert(row.note.fontFamily == family and row.note.fontSize == 11)
+    showDetail(1)
+    local title = ui.details[1]
+    assert(title.fontFamily == family and title.fontSize == 20 and title.fontSizeAtText == 20)
+    local oldFamily = family; GameFontHighlight = {}
+    title.measuredHeight = 777
+    ui:RefreshDetail()
+    assert(title.fontFamily == GameFontHighlight and title.fontFamily ~= oldFamily)
+    assert(title.measuredHeight ~= 777 and title.fontResetBeforeText)
+    ui.source.scripts.OnClick(ui.source, "LeftButton", false)
+    assert(ui.copyHint.fontFamily == GameFontHighlight and ui.copyHint.fontSize == 11)
+    ui:CloseCopyLink(); row:Hide(); GameFontHighlight = previous; ui:Refresh()
+end)
+check("Missing restricted and failing optional family setters retain the working font path", function()
+    local previous, objectSetter, heightSetter, checker = GameFontHighlight, methods.SetFontObject, methods.SetTextHeight, issecretvalue
+    local restricted = {}
+    issecretvalue = function(value) return value == restricted end
+    for mode = 1, 6 do
+        GameFontHighlight, methods.SetFontObject, methods.SetTextHeight = {}, objectSetter, heightSetter
+        if mode == 1 then GameFontHighlight = nil
+        elseif mode == 2 then GameFontHighlight = restricted
+        elseif mode == 3 then methods.SetFontObject = false
+        elseif mode == 4 then methods.SetTextHeight = false
+        elseif mode == 5 then methods.SetFontObject = function() error("font object unavailable") end
+        else methods.SetTextHeight = function() error("font sizing unavailable") end end
+        local row = ui:MakeRow(ui.questList, {}, 1, 59)
+        assert(row.title.fontPath and row.title.fontFamily == nil and row.title.fontSize == 14)
+        assert(row.note.fontPath and row.note.fontFamily == nil and row.note.fontSize == 11)
+        row:Hide()
+    end
+    GameFontHighlight, methods.SetFontObject, methods.SetTextHeight, issecretvalue = previous, objectSetter, heightSetter, checker
+    ui:Refresh()
 end)
 print("Preparation UI modeled checks passed: " .. total .. " (no native layout validation)")

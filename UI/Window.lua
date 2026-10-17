@@ -126,9 +126,20 @@ local function measuredHeight(fs, fallback)
     return fs.measuredHeight or fallback
 end
 
+local function setFont(fs, size)
+    local family = addon.Clean(GameFontHighlight, "table") or addon.Clean(GameFontHighlight, "userdata")
+    local objectSetter, heightSetter = addon.Clean(fs.SetFontObject, "function"), addon.Clean(fs.SetTextHeight, "function")
+    -- Preserve the client's alphabet-specific font family when changing text size.
+    if family and objectSetter and heightSetter and pcall(objectSetter, fs, family) and pcall(heightSetter, fs, size) then
+        return family
+    end
+    fs:SetFont(FONT, size, "")
+    return FONT
+end
+
 local function text(parent, size, color)
     local fs = parent:CreateFontString(nil, "OVERLAY")
-    fs:SetFont(FONT, size or 13, "")
+    setFont(fs, size or 13)
     fs:SetJustifyH("LEFT")
     fs:SetTextColor(unpack(color or { 0.92, 0.91, 0.87 }))
     return fs
@@ -633,9 +644,9 @@ function UI:RefreshDetail()
         n = n + 1
         local fs = pool[n]
         if not fs then fs = label(self.detail, "", 4, 0, 334, 13); pool[n] = fs end
-        if fs.detailStyle ~= style or fs.detailFont ~= FONT then fs.measuredHeight = nil end
-        fs.detailStyle, fs.detailFont = style, FONT
-        fs:SetFont(FONT, format.size, "")
+        local font = setFont(fs, format.size)
+        if fs.detailStyle ~= style or fs.detailFont ~= font then fs.measuredHeight = nil end
+        fs.detailStyle, fs.detailFont = style, font
         fs:SetTextColor(unpack(format.color))
         fs:SetWidth(334)
         fs:ClearAllPoints(); fs:SetPoint("TOPLEFT", 4, -y); fs:SetText(value); fs:Show()
@@ -1129,7 +1140,7 @@ function UI:RefreshDetail()
     end
     if renderQuest and self.copyQuest == renderQuest and self.copy then
         self.copy:ClearAllPoints(); self.copy:SetPoint("TOPLEFT", 8, -(y + 6))
-        self.copyHint:SetFont(FONT, 11, ""); self.copyHint:SetText(addon.L("COPY")); self.copyHint:Show()
+        setFont(self.copyHint, 11); self.copyHint:SetText(addon.L("COPY")); self.copyHint:Show()
         self.copy:Show()
         y = y + 6 + 26 + 8 + measuredHeight(self.copyHint, 18) + 8
     end
