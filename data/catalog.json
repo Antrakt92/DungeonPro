@@ -258,14 +258,18 @@
         "mapID": 1453,
         "x": 65.3,
         "y": 21.2,
-        "npcID": 656
+        "npcID": 656,
+        "creatureDisplayID": 2363,
+        "portraitSource": "https://www.wowhead.com/forever/npc=656"
       },
       "finish": {
         "name": "Wilder Thistlenettle",
         "mapID": 1453,
         "x": 65.3,
         "y": 21.2,
-        "npcID": 656
+        "npcID": 656,
+        "creatureDisplayID": 2363,
+        "portraitSource": "https://www.wowhead.com/forever/npc=656"
       },
       "objectiveItems": [
         {
@@ -289,14 +293,18 @@
         "mapID": 1453,
         "x": 65.3,
         "y": 21.2,
-        "npcID": 656
+        "npcID": 656,
+        "creatureDisplayID": 2363,
+        "portraitSource": "https://www.wowhead.com/forever/npc=656"
       },
       "finish": {
         "name": "Wilder Thistlenettle",
         "mapID": 1453,
         "x": 65.3,
         "y": 21.2,
-        "npcID": 656
+        "npcID": 656,
+        "creatureDisplayID": 2363,
+        "portraitSource": "https://www.wowhead.com/forever/npc=656"
       },
       "objectiveItems": [
         {
@@ -388,7 +396,9 @@
         "mapID": 1436,
         "x": 52.5,
         "y": 53.1,
-        "npcID": 253092
+        "npcID": 253092,
+        "creatureDisplayID": 137727,
+        "portraitSource": "https://www.wowhead.com/forever/npc=253092"
       },
       "races": [
         3,
@@ -426,7 +436,9 @@
         "mapID": 1436,
         "x": 52.5,
         "y": 53.1,
-        "npcID": 253092
+        "npcID": 253092,
+        "creatureDisplayID": 137727,
+        "portraitSource": "https://www.wowhead.com/forever/npc=253092"
       },
       "races": [
         3,
@@ -464,7 +476,9 @@
         "mapID": 1436,
         "x": 52.5,
         "y": 53.1,
-        "npcID": 253092
+        "npcID": 253092,
+        "creatureDisplayID": 137727,
+        "portraitSource": "https://www.wowhead.com/forever/npc=253092"
       },
       "races": [
         3,
@@ -502,7 +516,9 @@
         "mapID": 1436,
         "x": 52.5,
         "y": 53.1,
-        "npcID": 253092
+        "npcID": 253092,
+        "creatureDisplayID": 137727,
+        "portraitSource": "https://www.wowhead.com/forever/npc=253092"
       },
       "races": [
         3,
@@ -540,7 +556,9 @@
         "mapID": 1436,
         "x": 52.5,
         "y": 53.1,
-        "npcID": 253092
+        "npcID": 253092,
+        "creatureDisplayID": 137727,
+        "portraitSource": "https://www.wowhead.com/forever/npc=253092"
       },
       "races": [
         3,
@@ -578,7 +596,9 @@
         "mapID": 1436,
         "x": 52.5,
         "y": 53.1,
-        "npcID": 253092
+        "npcID": 253092,
+        "creatureDisplayID": 137727,
+        "portraitSource": "https://www.wowhead.com/forever/npc=253092"
       },
       "races": [
         3,
@@ -616,7 +636,9 @@
         "mapID": 1436,
         "x": 52.5,
         "y": 53.1,
-        "npcID": 253092
+        "npcID": 253092,
+        "creatureDisplayID": 137727,
+        "portraitSource": "https://www.wowhead.com/forever/npc=253092"
       },
       "races": [
         3,
@@ -654,7 +676,9 @@
         "mapID": 1436,
         "x": 52.5,
         "y": 53.1,
-        "npcID": 253092
+        "npcID": 253092,
+        "creatureDisplayID": 137727,
+        "portraitSource": "https://www.wowhead.com/forever/npc=253092"
       },
       "races": [
         3,
@@ -692,7 +716,9 @@
         "mapID": 1436,
         "x": 52.5,
         "y": 53.1,
-        "npcID": 253092
+        "npcID": 253092,
+        "creatureDisplayID": 137727,
+        "portraitSource": "https://www.wowhead.com/forever/npc=253092"
       },
       "races": [
         3,
@@ -730,7 +756,9 @@
         "mapID": 1436,
         "x": 52.5,
         "y": 53.1,
-        "npcID": 253092
+        "npcID": 253092,
+        "creatureDisplayID": 137727,
+        "portraitSource": "https://www.wowhead.com/forever/npc=253092"
       },
       "races": [
         3,
@@ -768,7 +796,9 @@
         "mapID": 1436,
         "x": 52.5,
         "y": 53.1,
-        "npcID": 253092
+        "npcID": 253092,
+        "creatureDisplayID": 137727,
+        "portraitSource": "https://www.wowhead.com/forever/npc=253092"
       },
       "races": [
         3,
@@ -1027,7 +1057,9 @@
         "mapID": 1456,
         "x": 70.4,
         "y": 29.6,
-        "npcID": 11833
+        "npcID": 11833,
+        "creatureDisplayID": 11754,
+        "portraitSource": "https://www.wowhead.com/forever/npc=11833"
       },
       "finish": {
         "name": "Maur Grimtotem",
@@ -1050,14 +1082,18 @@
         "mapID": 1456,
         "x": 70.4,
         "y": 29.6,
-        "npcID": 11833
+        "npcID": 11833,
+        "creatureDisplayID": 11754,
+        "portraitSource": "https://www.wowhead.com/forever/npc=11833"
       },
       "finish": {
         "name": "Rahauro",
         "mapID": 1456,
         "x": 70.4,
         "y": 29.6,
-        "npcID": 11833
+        "npcID": 11833,
+        "creatureDisplayID": 11754,
+        "portraitSource": "https://www.wowhead.com/forever/npc=11833"
       }
     },
     {
@@ -1080,7 +1116,9 @@
         "mapID": 1456,
         "x": 70.4,
         "y": 29.6,
-        "npcID": 11833
+        "npcID": 11833,
+        "creatureDisplayID": 11754,
+        "portraitSource": "https://www.wowhead.com/forever/npc=11833"
       },
       "requires": [
         {
@@ -1905,7 +1943,9 @@
       "start": {
         "npcID": 4787,
         "name": "Argent Guard Thaelrid",
-        "zoneName": "Blackfathom Deeps"
+        "zoneName": "Blackfathom Deeps",
+        "creatureDisplayID": 4946,
+        "portraitSource": "https://www.wowhead.com/forever/npc=4787"
       },
       "finish": {
         "npcID": 9087,
@@ -1959,7 +1999,9 @@
         "zoneName": "Ashenvale",
         "mapID": 1440,
         "x": 11.6,
-        "y": 34.2
+        "y": 34.2,
+        "creatureDisplayID": 12953,
+        "portraitSource": "https://www.wowhead.com/forever/npc=12736"
       },
       "finish": {
         "npcID": 12736,
@@ -1967,7 +2009,9 @@
         "zoneName": "Ashenvale",
         "mapID": 1440,
         "x": 11.6,
-        "y": 34.2
+        "y": 34.2,
+        "creatureDisplayID": 12953,
+        "portraitSource": "https://www.wowhead.com/forever/npc=12736"
       },
       "requirementsKnown": false,
       "storyline": [
@@ -1987,7 +2031,9 @@
       "start": {
         "npcID": 4787,
         "name": "Argent Guard Thaelrid",
-        "zoneName": "Blackfathom Deeps"
+        "zoneName": "Blackfathom Deeps",
+        "creatureDisplayID": 4946,
+        "portraitSource": "https://www.wowhead.com/forever/npc=4787"
       },
       "finish": {
         "npcID": 4783,
@@ -2074,7 +2120,9 @@
       "finish": {
         "npcID": 4787,
         "name": "Argent Guard Thaelrid",
-        "zoneName": "Blackfathom Deeps"
+        "zoneName": "Blackfathom Deeps",
+        "creatureDisplayID": 4946,
+        "portraitSource": "https://www.wowhead.com/forever/npc=4787"
       },
       "requirementsKnown": false,
       "storyline": [
@@ -2097,7 +2145,9 @@
         "zoneName": "Ashenvale",
         "mapID": 1440,
         "x": 11.6,
-        "y": 34.2
+        "y": 34.2,
+        "creatureDisplayID": 12953,
+        "portraitSource": "https://www.wowhead.com/forever/npc=12736"
       },
       "finish": {
         "npcID": 12736,
@@ -2105,7 +2155,9 @@
         "zoneName": "Ashenvale",
         "mapID": 1440,
         "x": 11.6,
-        "y": 34.2
+        "y": 34.2,
+        "creatureDisplayID": 12953,
+        "portraitSource": "https://www.wowhead.com/forever/npc=12736"
       },
       "requirementsKnown": false,
       "objectiveItems": [
@@ -2342,7 +2394,9 @@
         "zoneName": "Silverpine Forest",
         "mapID": 1421,
         "x": 43.2,
-        "y": 41
+        "y": 41,
+        "creatureDisplayID": 131648,
+        "portraitSource": "https://www.wowhead.com/forever/npc=259620"
       },
       "finish": {
         "npcID": 248840,
@@ -2350,7 +2404,9 @@
         "zoneName": "Silverpine Forest",
         "mapID": 1421,
         "x": 43.4,
-        "y": 41
+        "y": 41,
+        "creatureDisplayID": 129405,
+        "portraitSource": "https://www.wowhead.com/forever/npc=248840"
       },
       "requirementsKnown": false,
       "completionQuests": [
@@ -2469,7 +2525,9 @@
         "zoneName": "The Barrens",
         "mapID": 1413,
         "x": 49.2,
-        "y": 57.2
+        "y": 57.2,
+        "creatureDisplayID": 4931,
+        "portraitSource": "https://www.wowhead.com/forever/npc=6247"
       },
       "finish": {
         "npcID": 6247,
@@ -2477,7 +2535,9 @@
         "zoneName": "The Barrens",
         "mapID": 1413,
         "x": 49.2,
-        "y": 57.2
+        "y": 57.2,
+        "creatureDisplayID": 4931,
+        "portraitSource": "https://www.wowhead.com/forever/npc=6247"
       },
       "requirementsKnown": false,
       "objectiveItems": [
@@ -2508,7 +2568,9 @@
         "zoneName": "Ashenvale",
         "mapID": 1440,
         "x": 11.6,
-        "y": 34.2
+        "y": 34.2,
+        "creatureDisplayID": 12953,
+        "portraitSource": "https://www.wowhead.com/forever/npc=12736"
       },
       "storyline": [
         6564,
@@ -2536,7 +2598,9 @@
         "zoneName": "Ashenvale",
         "mapID": 1440,
         "x": 11.6,
-        "y": 34.2
+        "y": 34.2,
+        "creatureDisplayID": 12953,
+        "portraitSource": "https://www.wowhead.com/forever/npc=12736"
       },
       "finish": {
         "npcID": 12736,
@@ -2544,7 +2608,9 @@
         "zoneName": "Ashenvale",
         "mapID": 1440,
         "x": 11.6,
-        "y": 34.2
+        "y": 34.2,
+        "creatureDisplayID": 12953,
+        "portraitSource": "https://www.wowhead.com/forever/npc=12736"
       },
       "storyline": [
         6562,
@@ -2582,7 +2648,9 @@
         "zoneName": "Ashenvale",
         "mapID": 1440,
         "x": 11.6,
-        "y": 34.2
+        "y": 34.2,
+        "creatureDisplayID": 12953,
+        "portraitSource": "https://www.wowhead.com/forever/npc=12736"
       },
       "storyline": [
         6562,
@@ -2673,14 +2741,18 @@
         "name": "Warden Thelwater",
         "mapID": 1453,
         "x": 51.4,
-        "y": 69.2
+        "y": 69.2,
+        "creatureDisplayID": 1865,
+        "portraitSource": "https://www.wowhead.com/forever/npc=1719"
       },
       "finish": {
         "npcID": 1719,
         "name": "Warden Thelwater",
         "mapID": 1453,
         "x": 51.4,
-        "y": 69.2
+        "y": 69.2,
+        "creatureDisplayID": 1865,
+        "portraitSource": "https://www.wowhead.com/forever/npc=1719"
       },
       "requirementsKnown": false,
       "requires": [
@@ -2774,14 +2846,18 @@
         "name": "Warden Thelwater",
         "mapID": 1453,
         "x": 51.4,
-        "y": 69.2
+        "y": 69.2,
+        "creatureDisplayID": 1865,
+        "portraitSource": "https://www.wowhead.com/forever/npc=1719"
       },
       "finish": {
         "npcID": 1719,
         "name": "Warden Thelwater",
         "mapID": 1453,
         "x": 51.4,
-        "y": 69.2
+        "y": 69.2,
+        "creatureDisplayID": 1865,
+        "portraitSource": "https://www.wowhead.com/forever/npc=1719"
       },
       "requirementsKnown": false
     },
@@ -2879,14 +2955,18 @@
         "name": "Nogg",
         "mapID": 1454,
         "x": 75.8,
-        "y": 25.2
+        "y": 25.2,
+        "creatureDisplayID": 7135,
+        "portraitSource": "https://www.wowhead.com/forever/npc=3412"
       },
       "finish": {
         "npcID": 3412,
         "name": "Nogg",
         "mapID": 1454,
         "x": 75.8,
-        "y": 25.2
+        "y": 25.2,
+        "creatureDisplayID": 7135,
+        "portraitSource": "https://www.wowhead.com/forever/npc=3412"
       },
       "objectiveItems": [
         {
@@ -2979,14 +3059,18 @@
         "name": "Ozzie Togglevolt",
         "mapID": 1426,
         "x": 45.8,
-        "y": 49.2
+        "y": 49.2,
+        "creatureDisplayID": 3441,
+        "portraitSource": "https://www.wowhead.com/forever/npc=1268"
       },
       "finish": {
         "npcID": 1268,
         "name": "Ozzie Togglevolt",
         "mapID": 1426,
         "x": 45.8,
-        "y": 49.2
+        "y": 49.2,
+        "creatureDisplayID": 3441,
+        "portraitSource": "https://www.wowhead.com/forever/npc=1268"
       }
     },
     {
@@ -3004,14 +3088,18 @@
         "name": "Ozzie Togglevolt",
         "mapID": 1426,
         "x": 45.8,
-        "y": 49.2
+        "y": 49.2,
+        "creatureDisplayID": 3441,
+        "portraitSource": "https://www.wowhead.com/forever/npc=1268"
       },
       "finish": {
         "npcID": 1268,
         "name": "Ozzie Togglevolt",
         "mapID": 1426,
         "x": 45.8,
-        "y": 49.2
+        "y": 49.2,
+        "creatureDisplayID": 3441,
+        "portraitSource": "https://www.wowhead.com/forever/npc=1268"
       },
       "requires": [
         {
@@ -3488,7 +3576,9 @@
             "y": 34.6,
             "zoneName": "Ashenvale"
           }
-        ]
+        ],
+        "creatureDisplayID": 141697,
+        "portraitSource": "https://www.wowhead.com/forever/npc=259649"
       },
       "finish": {
         "npcID": 259649,
@@ -3510,7 +3600,9 @@
             "y": 34.6,
             "zoneName": "Ashenvale"
           }
-        ]
+        ],
+        "creatureDisplayID": 141697,
+        "portraitSource": "https://www.wowhead.com/forever/npc=259649"
       },
       "requirementsKnown": false,
       "objectiveItems": [
@@ -3539,7 +3631,9 @@
         "name": "Nogg",
         "mapID": 1454,
         "x": 75.8,
-        "y": 25.2
+        "y": 25.2,
+        "creatureDisplayID": 7135,
+        "portraitSource": "https://www.wowhead.com/forever/npc=3412"
       },
       "storyline": [
         2949,
@@ -3618,7 +3712,9 @@
         "name": "Ozzie Togglevolt",
         "mapID": 1426,
         "x": 45.8,
-        "y": 49.2
+        "y": 49.2,
+        "creatureDisplayID": 3441,
+        "portraitSource": "https://www.wowhead.com/forever/npc=1268"
       }
     },
     {
@@ -3799,14 +3895,18 @@
         "name": "Nogg",
         "mapID": 1454,
         "x": 75.8,
-        "y": 25.2
+        "y": 25.2,
+        "creatureDisplayID": 7135,
+        "portraitSource": "https://www.wowhead.com/forever/npc=3412"
       },
       "finish": {
         "npcID": 3412,
         "name": "Nogg",
         "mapID": 1454,
         "x": 75.8,
-        "y": 25.2
+        "y": 25.2,
+        "creatureDisplayID": 7135,
+        "portraitSource": "https://www.wowhead.com/forever/npc=3412"
       },
       "storyline": [
         2949,
@@ -7836,7 +7936,9 @@
       "source": "https://www.wowhead.com/forever/quest=96984/heart-of-disruption",
       "start": {
         "npcID": 269127,
-        "name": "Image of Archmage Modera"
+        "name": "Image of Archmage Modera",
+        "creatureDisplayID": 130165,
+        "portraitSource": "https://www.wowhead.com/forever/npc=269127"
       },
       "finish": {
         "npcID": 2410,
@@ -7884,11 +7986,15 @@
       "source": "https://www.wowhead.com/forever/quest=92458/heart-of-disruption",
       "start": {
         "npcID": 269127,
-        "name": "Image of Archmage Modera"
+        "name": "Image of Archmage Modera",
+        "creatureDisplayID": 130165,
+        "portraitSource": "https://www.wowhead.com/forever/npc=269127"
       },
       "finish": {
         "npcID": 269127,
-        "name": "Image of Archmage Modera"
+        "name": "Image of Archmage Modera",
+        "creatureDisplayID": 130165,
+        "portraitSource": "https://www.wowhead.com/forever/npc=269127"
       },
       "storyline": [
         92432,
@@ -7908,11 +8014,15 @@
       "source": "https://www.wowhead.com/forever/quest=92457/starving-arcane",
       "start": {
         "npcID": 269127,
-        "name": "Image of Archmage Modera"
+        "name": "Image of Archmage Modera",
+        "creatureDisplayID": 130165,
+        "portraitSource": "https://www.wowhead.com/forever/npc=269127"
       },
       "finish": {
         "npcID": 269127,
-        "name": "Image of Archmage Modera"
+        "name": "Image of Archmage Modera",
+        "creatureDisplayID": 130165,
+        "portraitSource": "https://www.wowhead.com/forever/npc=269127"
       }
     },
     {
@@ -8306,7 +8416,9 @@
       },
       "finish": {
         "npcID": 269127,
-        "name": "Image of Archmage Modera"
+        "name": "Image of Archmage Modera",
+        "creatureDisplayID": 130165,
+        "portraitSource": "https://www.wowhead.com/forever/npc=269127"
       },
       "storyline": [
         92434,
@@ -8354,7 +8466,9 @@
       },
       "finish": {
         "npcID": 252085,
-        "name": "Archmage Celindra"
+        "name": "Archmage Celindra",
+        "creatureDisplayID": 130163,
+        "portraitSource": "https://www.wowhead.com/forever/npc=252085"
       },
       "storyline": [
         92434,
@@ -8378,7 +8492,9 @@
       },
       "finish": {
         "npcID": 269127,
-        "name": "Image of Archmage Modera"
+        "name": "Image of Archmage Modera",
+        "creatureDisplayID": 130165,
+        "portraitSource": "https://www.wowhead.com/forever/npc=269127"
       },
       "storyline": [
         92432,
@@ -8398,11 +8514,15 @@
       "source": "https://www.wowhead.com/forever/quest=92459/friend-of-the-kirin-tor",
       "start": {
         "npcID": 269127,
-        "name": "Image of Archmage Modera"
+        "name": "Image of Archmage Modera",
+        "creatureDisplayID": 130165,
+        "portraitSource": "https://www.wowhead.com/forever/npc=269127"
       },
       "finish": {
         "npcID": 252085,
-        "name": "Archmage Celindra"
+        "name": "Archmage Celindra",
+        "creatureDisplayID": 130163,
+        "portraitSource": "https://www.wowhead.com/forever/npc=252085"
       },
       "storyline": [
         92432,
@@ -8465,7 +8585,9 @@
         "mapID": 1445,
         "zoneName": "Dustwallow Marsh",
         "x": 46,
-        "y": 57
+        "y": 57,
+        "creatureDisplayID": 5375,
+        "portraitSource": "https://www.wowhead.com/forever/npc=6546"
       },
       "finish": {
         "npcID": 6546,
@@ -8473,7 +8595,9 @@
         "mapID": 1445,
         "zoneName": "Dustwallow Marsh",
         "x": 46,
-        "y": 57
+        "y": 57,
+        "creatureDisplayID": 5375,
+        "portraitSource": "https://www.wowhead.com/forever/npc=6546"
       },
       "storyline": [
         2861,
@@ -8777,7 +8901,9 @@
         "mapID": 1445,
         "zoneName": "Dustwallow Marsh",
         "x": 46,
-        "y": 57
+        "y": 57,
+        "creatureDisplayID": 5375,
+        "portraitSource": "https://www.wowhead.com/forever/npc=6546"
       },
       "storyline": [
         2861,
@@ -14586,7 +14712,9 @@
       "minLevel": 30,
       "start": {
         "npcID": 264074,
-        "name": "Mazu'kon"
+        "name": "Mazu'kon",
+        "creatureDisplayID": 143984,
+        "portraitSource": "https://www.wowhead.com/forever/npc=264074"
       },
       "requirementsKnown": false,
       "factions": [
@@ -14652,7 +14780,9 @@
       },
       "finish": {
         "npcID": 271613,
-        "name": "Unfinished Abomination"
+        "name": "Unfinished Abomination",
+        "creatureDisplayID": 146706,
+        "portraitSource": "https://www.wowhead.com/forever/npc=271613"
       },
       "requirementsKnown": false,
       "factions": [
@@ -14674,7 +14804,9 @@
       "minLevel": 16,
       "start": {
         "npcID": 271613,
-        "name": "Unfinished Abomination"
+        "name": "Unfinished Abomination",
+        "creatureDisplayID": 146706,
+        "portraitSource": "https://www.wowhead.com/forever/npc=271613"
       },
       "finish": {
         "npcID": 2055,
@@ -18143,7 +18275,9 @@
         "mapID": 1453,
         "x": 51.4,
         "y": 69.2,
-        "zoneName": "Stormwind City"
+        "zoneName": "Stormwind City",
+        "creatureDisplayID": 1865,
+        "portraitSource": "https://www.wowhead.com/forever/npc=1719"
       },
       "requirementsKnown": false,
       "source": "https://www.wowhead.com/forever/quest=389"
@@ -23217,7 +23351,9 @@
         "mapID": 1440,
         "zoneName": "Ashenvale",
         "x": 11.6,
-        "y": 34.2
+        "y": 34.2,
+        "creatureDisplayID": 12953,
+        "portraitSource": "https://www.wowhead.com/forever/npc=12736"
       },
       "requirementsKnown": false
     },
@@ -23262,7 +23398,9 @@
         "mapID": 1445,
         "zoneName": "Dustwallow Marsh",
         "x": 46,
-        "y": 57
+        "y": 57,
+        "creatureDisplayID": 5375,
+        "portraitSource": "https://www.wowhead.com/forever/npc=6546"
       },
       "requirementsKnown": false,
       "storyline": [
@@ -23297,7 +23435,9 @@
         "mapID": 1445,
         "zoneName": "Dustwallow Marsh",
         "x": 46,
-        "y": 57
+        "y": 57,
+        "creatureDisplayID": 5375,
+        "portraitSource": "https://www.wowhead.com/forever/npc=6546"
       },
       "finish": {
         "npcID": 6546,
@@ -23305,7 +23445,9 @@
         "mapID": 1445,
         "zoneName": "Dustwallow Marsh",
         "x": 46,
-        "y": 57
+        "y": 57,
+        "creatureDisplayID": 5375,
+        "portraitSource": "https://www.wowhead.com/forever/npc=6546"
       },
       "requirementsKnown": false,
       "storyline": [
@@ -23361,7 +23503,9 @@
             "x": 38.8,
             "y": 36.6
           }
-        ]
+        ],
+        "creatureDisplayID": 13341,
+        "portraitSource": "https://www.wowhead.com/forever/npc=13417"
       },
       "finish": {
         "npcID": 13417,
@@ -23389,7 +23533,9 @@
             "x": 38.8,
             "y": 36.6
           }
-        ]
+        ],
+        "creatureDisplayID": 13341,
+        "portraitSource": "https://www.wowhead.com/forever/npc=13417"
       },
       "requirementsKnown": false
     },
@@ -23596,7 +23742,9 @@
         "mapID": 1445,
         "zoneName": "Dustwallow Marsh",
         "x": 46,
-        "y": 57
+        "y": 57,
+        "creatureDisplayID": 5375,
+        "portraitSource": "https://www.wowhead.com/forever/npc=6546"
       },
       "storyline": [
         1949,
@@ -23690,7 +23838,9 @@
         "mapID": 1445,
         "zoneName": "Dustwallow Marsh",
         "x": 46,
-        "y": 57
+        "y": 57,
+        "creatureDisplayID": 5375,
+        "portraitSource": "https://www.wowhead.com/forever/npc=6546"
       },
       "startAlternatives": [
         {
@@ -23743,7 +23893,9 @@
         "mapID": 1445,
         "zoneName": "Dustwallow Marsh",
         "x": 46,
-        "y": 57
+        "y": 57,
+        "creatureDisplayID": 5375,
+        "portraitSource": "https://www.wowhead.com/forever/npc=6546"
       },
       "start": {
         "npcID": 6546,
@@ -23751,7 +23903,9 @@
         "mapID": 1445,
         "zoneName": "Dustwallow Marsh",
         "x": 46,
-        "y": 57
+        "y": 57,
+        "creatureDisplayID": 5375,
+        "portraitSource": "https://www.wowhead.com/forever/npc=6546"
       },
       "storyline": [
         1953,
@@ -23782,7 +23936,9 @@
         "mapID": 1445,
         "zoneName": "Dustwallow Marsh",
         "x": 46,
-        "y": 57
+        "y": 57,
+        "creatureDisplayID": 5375,
+        "portraitSource": "https://www.wowhead.com/forever/npc=6546"
       },
       "start": {
         "npcID": 6546,
@@ -23790,7 +23946,9 @@
         "mapID": 1445,
         "zoneName": "Dustwallow Marsh",
         "x": 46,
-        "y": 57
+        "y": 57,
+        "creatureDisplayID": 5375,
+        "portraitSource": "https://www.wowhead.com/forever/npc=6546"
       },
       "storyline": [
         1953,
@@ -23821,7 +23979,9 @@
         "mapID": 1445,
         "zoneName": "Dustwallow Marsh",
         "x": 46,
-        "y": 57
+        "y": 57,
+        "creatureDisplayID": 5375,
+        "portraitSource": "https://www.wowhead.com/forever/npc=6546"
       },
       "start": {
         "npcID": 6546,
@@ -23829,7 +23989,9 @@
         "mapID": 1445,
         "zoneName": "Dustwallow Marsh",
         "x": 46,
-        "y": 57
+        "y": 57,
+        "creatureDisplayID": 5375,
+        "portraitSource": "https://www.wowhead.com/forever/npc=6546"
       },
       "storyline": [
         1953,
@@ -24153,7 +24315,9 @@
             "x": 48.6,
             "y": 50
           }
-        ]
+        ],
+        "creatureDisplayID": 1499,
+        "portraitSource": "https://www.wowhead.com/forever/npc=928"
       },
       "finish": {
         "npcID": 14568,
@@ -24297,7 +24461,9 @@
             "x": 38.8,
             "y": 36.6
           }
-        ]
+        ],
+        "creatureDisplayID": 13341,
+        "portraitSource": "https://www.wowhead.com/forever/npc=13417"
       },
       "finish": {
         "npcID": 13417,
@@ -24325,7 +24491,9 @@
             "x": 38.8,
             "y": 36.6
           }
-        ]
+        ],
+        "creatureDisplayID": 13341,
+        "portraitSource": "https://www.wowhead.com/forever/npc=13417"
       },
       "source": "https://www.wowhead.com/forever/quest=8258/the-darkreaver-menace",
       "requirementsKnown": false,
@@ -24368,7 +24536,9 @@
             "x": 34.2,
             "y": 66
           }
-        ]
+        ],
+        "creatureDisplayID": 6775,
+        "portraitSource": "https://www.wowhead.com/forever/npc=7572"
       },
       "finish": {
         "npcID": 7572,
@@ -24390,7 +24560,9 @@
             "x": 34.2,
             "y": 66
           }
-        ]
+        ],
+        "creatureDisplayID": 6775,
+        "portraitSource": "https://www.wowhead.com/forever/npc=7572"
       },
       "requirementsKnown": false,
       "storyline": [
@@ -24437,7 +24609,9 @@
         "zoneName": "Azshara",
         "mapID": 1447,
         "x": 42.4,
-        "y": 42.6
+        "y": 42.6,
+        "creatureDisplayID": 1012,
+        "portraitSource": "https://www.wowhead.com/forever/npc=8405"
       },
       "finish": {
         "npcID": 10922,
@@ -24495,7 +24669,9 @@
             "x": 41.6,
             "y": 44.8
           }
-        ]
+        ],
+        "creatureDisplayID": 4449,
+        "portraitSource": "https://www.wowhead.com/forever/npc=14470"
       },
       "finish": {
         "npcID": 14470,
@@ -24517,7 +24693,9 @@
             "x": 41.6,
             "y": 44.8
           }
-        ]
+        ],
+        "creatureDisplayID": 4449,
+        "portraitSource": "https://www.wowhead.com/forever/npc=14470"
       },
       "requirementsKnown": false,
       "storylineGroups": [
@@ -24584,7 +24762,9 @@
             "x": 71.6,
             "y": 76
           }
-        ]
+        ],
+        "creatureDisplayID": 8832,
+        "portraitSource": "https://www.wowhead.com/forever/npc=9619"
       },
       "finish": {
         "npcID": 9619,
@@ -24606,7 +24786,9 @@
             "x": 71.6,
             "y": 76
           }
-        ]
+        ],
+        "creatureDisplayID": 8832,
+        "portraitSource": "https://www.wowhead.com/forever/npc=9619"
       },
       "requirementsKnown": false,
       "storyline": [
@@ -24657,7 +24839,9 @@
             "x": 34.2,
             "y": 66
           }
-        ]
+        ],
+        "creatureDisplayID": 6775,
+        "portraitSource": "https://www.wowhead.com/forever/npc=7572"
       },
       "startAlternatives": [
         {
@@ -24723,7 +24907,9 @@
             "x": 34.2,
             "y": 66
           }
-        ]
+        ],
+        "creatureDisplayID": 6775,
+        "portraitSource": "https://www.wowhead.com/forever/npc=7572"
       },
       "start": {
         "npcID": 7572,
@@ -24745,7 +24931,9 @@
             "x": 34.2,
             "y": 66
           }
-        ]
+        ],
+        "creatureDisplayID": 6775,
+        "portraitSource": "https://www.wowhead.com/forever/npc=7572"
       },
       "storyline": [
         8417,
@@ -24789,7 +24977,9 @@
             "x": 34.2,
             "y": 66
           }
-        ]
+        ],
+        "creatureDisplayID": 6775,
+        "portraitSource": "https://www.wowhead.com/forever/npc=7572"
       },
       "start": {
         "npcID": 7572,
@@ -24811,7 +25001,9 @@
             "x": 34.2,
             "y": 66
           }
-        ]
+        ],
+        "creatureDisplayID": 6775,
+        "portraitSource": "https://www.wowhead.com/forever/npc=7572"
       },
       "storyline": [
         8417,
@@ -24841,7 +25033,9 @@
         "zoneName": "Azshara",
         "mapID": 1447,
         "x": 42.4,
-        "y": 42.6
+        "y": 42.6,
+        "creatureDisplayID": 1012,
+        "portraitSource": "https://www.wowhead.com/forever/npc=8405"
       },
       "startAlternatives": [
         {
@@ -24885,7 +25079,9 @@
         "zoneName": "Azshara",
         "mapID": 1447,
         "x": 42.4,
-        "y": 42.6
+        "y": 42.6,
+        "creatureDisplayID": 1012,
+        "portraitSource": "https://www.wowhead.com/forever/npc=8405"
       },
       "start": {
         "npcID": 8405,
@@ -24893,7 +25089,9 @@
         "zoneName": "Azshara",
         "mapID": 1447,
         "x": 42.4,
-        "y": 42.6
+        "y": 42.6,
+        "creatureDisplayID": 1012,
+        "portraitSource": "https://www.wowhead.com/forever/npc=8405"
       },
       "storyline": [
         8254,
@@ -24923,7 +25121,9 @@
         "zoneName": "Azshara",
         "mapID": 1447,
         "x": 42.4,
-        "y": 42.6
+        "y": 42.6,
+        "creatureDisplayID": 1012,
+        "portraitSource": "https://www.wowhead.com/forever/npc=8405"
       },
       "start": {
         "npcID": 8405,
@@ -24931,7 +25131,9 @@
         "zoneName": "Azshara",
         "mapID": 1447,
         "x": 42.4,
-        "y": 42.6
+        "y": 42.6,
+        "creatureDisplayID": 1012,
+        "portraitSource": "https://www.wowhead.com/forever/npc=8405"
       },
       "storyline": [
         8254,
@@ -24975,7 +25177,9 @@
             "x": 41.6,
             "y": 44.8
           }
-        ]
+        ],
+        "creatureDisplayID": 4449,
+        "portraitSource": "https://www.wowhead.com/forever/npc=14470"
       },
       "startAlternatives": [
         {
@@ -25043,7 +25247,9 @@
             "x": 41.6,
             "y": 44.8
           }
-        ]
+        ],
+        "creatureDisplayID": 4449,
+        "portraitSource": "https://www.wowhead.com/forever/npc=14470"
       },
       "start": {
         "npcID": 14470,
@@ -25065,7 +25271,9 @@
             "x": 41.6,
             "y": 44.8
           }
-        ]
+        ],
+        "creatureDisplayID": 4449,
+        "portraitSource": "https://www.wowhead.com/forever/npc=14470"
       },
       "storylineGroups": [
         [
@@ -25115,7 +25323,9 @@
             "x": 41.6,
             "y": 44.8
           }
-        ]
+        ],
+        "creatureDisplayID": 4449,
+        "portraitSource": "https://www.wowhead.com/forever/npc=14470"
       },
       "start": {
         "npcID": 14470,
@@ -25137,7 +25347,9 @@
             "x": 41.6,
             "y": 44.8
           }
-        ]
+        ],
+        "creatureDisplayID": 4449,
+        "portraitSource": "https://www.wowhead.com/forever/npc=14470"
       },
       "storylineGroups": [
         [
@@ -25187,7 +25399,9 @@
             "x": 71.6,
             "y": 76
           }
-        ]
+        ],
+        "creatureDisplayID": 8832,
+        "portraitSource": "https://www.wowhead.com/forever/npc=9619"
       },
       "startAlternatives": [
         {
@@ -25249,7 +25463,9 @@
             "x": 71.6,
             "y": 76
           }
-        ]
+        ],
+        "creatureDisplayID": 8832,
+        "portraitSource": "https://www.wowhead.com/forever/npc=9619"
       },
       "start": {
         "npcID": 9619,
@@ -25271,7 +25487,9 @@
             "x": 71.6,
             "y": 76
           }
-        ]
+        ],
+        "creatureDisplayID": 8832,
+        "portraitSource": "https://www.wowhead.com/forever/npc=9619"
       },
       "storyline": [
         9063,
@@ -25315,7 +25533,9 @@
             "x": 71.6,
             "y": 76
           }
-        ]
+        ],
+        "creatureDisplayID": 8832,
+        "portraitSource": "https://www.wowhead.com/forever/npc=9619"
       },
       "start": {
         "npcID": 9619,
@@ -25337,7 +25557,9 @@
             "x": 71.6,
             "y": 76
           }
-        ]
+        ],
+        "creatureDisplayID": 8832,
+        "portraitSource": "https://www.wowhead.com/forever/npc=9619"
       },
       "storyline": [
         9063,
@@ -25422,7 +25644,9 @@
         "zoneName": "Azshara",
         "mapID": 1447,
         "x": 42.4,
-        "y": 42.6
+        "y": 42.6,
+        "creatureDisplayID": 1012,
+        "portraitSource": "https://www.wowhead.com/forever/npc=8405"
       },
       "finish": {
         "npcID": 8405,
@@ -25430,7 +25654,9 @@
         "zoneName": "Azshara",
         "mapID": 1447,
         "x": 42.4,
-        "y": 42.6
+        "y": 42.6,
+        "creatureDisplayID": 1012,
+        "portraitSource": "https://www.wowhead.com/forever/npc=8405"
       },
       "requirementsKnown": false,
       "storyline": [
@@ -25486,7 +25712,9 @@
             "x": 29.6,
             "y": 40.6
           }
-        ]
+        ],
+        "creatureDisplayID": 7591,
+        "portraitSource": "https://www.wowhead.com/forever/npc=8379"
       },
       "finish": {
         "npcID": 6768,
@@ -25550,7 +25778,9 @@
             "x": 29.6,
             "y": 40.6
           }
-        ]
+        ],
+        "creatureDisplayID": 7591,
+        "portraitSource": "https://www.wowhead.com/forever/npc=8379"
       },
       "finish": {
         "npcID": 8379,
@@ -25578,7 +25808,9 @@
             "x": 29.6,
             "y": 40.6
           }
-        ]
+        ],
+        "creatureDisplayID": 7591,
+        "portraitSource": "https://www.wowhead.com/forever/npc=8379"
       },
       "requirementsKnown": false,
       "storyline": [
@@ -25673,7 +25905,9 @@
         "zoneName": "Azshara",
         "mapID": 1447,
         "x": 42.4,
-        "y": 42.6
+        "y": 42.6,
+        "creatureDisplayID": 1012,
+        "portraitSource": "https://www.wowhead.com/forever/npc=8405"
       },
       "startAlternatives": [
         {
@@ -25725,7 +25959,9 @@
         "zoneName": "Azshara",
         "mapID": 1447,
         "x": 42.4,
-        "y": 42.6
+        "y": 42.6,
+        "creatureDisplayID": 1012,
+        "portraitSource": "https://www.wowhead.com/forever/npc=8405"
       },
       "start": {
         "npcID": 8405,
@@ -25733,7 +25969,9 @@
         "zoneName": "Azshara",
         "mapID": 1447,
         "x": 42.4,
-        "y": 42.6
+        "y": 42.6,
+        "creatureDisplayID": 1012,
+        "portraitSource": "https://www.wowhead.com/forever/npc=8405"
       },
       "storyline": [
         8151,
@@ -25763,7 +26001,9 @@
         "zoneName": "Azshara",
         "mapID": 1447,
         "x": 42.4,
-        "y": 42.6
+        "y": 42.6,
+        "creatureDisplayID": 1012,
+        "portraitSource": "https://www.wowhead.com/forever/npc=8405"
       },
       "start": {
         "npcID": 8405,
@@ -25771,7 +26011,9 @@
         "zoneName": "Azshara",
         "mapID": 1447,
         "x": 42.4,
-        "y": 42.6
+        "y": 42.6,
+        "creatureDisplayID": 1012,
+        "portraitSource": "https://www.wowhead.com/forever/npc=8405"
       },
       "storyline": [
         8151,
@@ -25821,7 +26063,9 @@
             "x": 29.6,
             "y": 40.6
           }
-        ]
+        ],
+        "creatureDisplayID": 7591,
+        "portraitSource": "https://www.wowhead.com/forever/npc=8379"
       },
       "start": {
         "npcID": 8379,
@@ -25849,7 +26093,9 @@
             "x": 29.6,
             "y": 40.6
           }
-        ]
+        ],
+        "creatureDisplayID": 7591,
+        "portraitSource": "https://www.wowhead.com/forever/npc=8379"
       },
       "storyline": [
         8251,
@@ -25898,7 +26144,9 @@
             "x": 29.6,
             "y": 40.6
           }
-        ]
+        ],
+        "creatureDisplayID": 7591,
+        "portraitSource": "https://www.wowhead.com/forever/npc=8379"
       },
       "start": {
         "npcID": 8379,
@@ -25926,7 +26174,9 @@
             "x": 29.6,
             "y": 40.6
           }
-        ]
+        ],
+        "creatureDisplayID": 7591,
+        "portraitSource": "https://www.wowhead.com/forever/npc=8379"
       },
       "storyline": [
         8251,
@@ -26027,7 +26277,9 @@
             "x": 29.6,
             "y": 40.6
           }
-        ]
+        ],
+        "creatureDisplayID": 7591,
+        "portraitSource": "https://www.wowhead.com/forever/npc=8379"
       },
       "start": {
         "npcID": 6768,
@@ -26085,7 +26337,9 @@
             "x": 29.6,
             "y": 40.6
           }
-        ]
+        ],
+        "creatureDisplayID": 7591,
+        "portraitSource": "https://www.wowhead.com/forever/npc=8379"
       },
       "start": {
         "npcID": 8379,
@@ -26113,7 +26367,9 @@
             "x": 29.6,
             "y": 40.6
           }
-        ]
+        ],
+        "creatureDisplayID": 7591,
+        "portraitSource": "https://www.wowhead.com/forever/npc=8379"
       },
       "storyline": [
         8233,
@@ -26242,7 +26498,9 @@
             "x": 48.6,
             "y": 50
           }
-        ]
+        ],
+        "creatureDisplayID": 1499,
+        "portraitSource": "https://www.wowhead.com/forever/npc=928"
       },
       "finish": {
         "npcID": 14566,
@@ -26311,7 +26569,9 @@
             "x": 48.6,
             "y": 50
           }
-        ]
+        ],
+        "creatureDisplayID": 1499,
+        "portraitSource": "https://www.wowhead.com/forever/npc=928"
       },
       "requirementsKnown": false,
       "races": [
@@ -26370,7 +26630,9 @@
             "x": 48.6,
             "y": 50
           }
-        ]
+        ],
+        "creatureDisplayID": 1499,
+        "portraitSource": "https://www.wowhead.com/forever/npc=928"
       },
       "finish": {
         "npcID": 928,
@@ -26404,7 +26666,9 @@
             "x": 48.6,
             "y": 50
           }
-        ]
+        ],
+        "creatureDisplayID": 1499,
+        "portraitSource": "https://www.wowhead.com/forever/npc=928"
       },
       "requirementsKnown": false,
       "races": [
@@ -26703,7 +26967,9 @@
             "x": 38.8,
             "y": 36.6
           }
-        ]
+        ],
+        "creatureDisplayID": 13341,
+        "portraitSource": "https://www.wowhead.com/forever/npc=13417"
       },
       "finish": {
         "npcID": 13417,
@@ -26731,7 +26997,9 @@
             "x": 38.8,
             "y": 36.6
           }
-        ]
+        ],
+        "creatureDisplayID": 13341,
+        "portraitSource": "https://www.wowhead.com/forever/npc=13417"
       },
       "requirementsKnown": false,
       "races": [
