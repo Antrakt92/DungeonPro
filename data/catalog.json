@@ -1507,6 +1507,12 @@
         4,
         7,
         95
+      ],
+      "objectiveItems": [
+        {
+          "itemID": 274286,
+          "name": "Durgen Dirgehammer's Head"
+        }
       ]
     },
     {
@@ -24448,7 +24454,13 @@
         "creatureDisplayID": 3597,
         "portraitSource": "https://www.wowhead.com/forever/npc=2784"
       },
-      "startsInside": true
+      "startsInside": true,
+      "providedItems": [
+        {
+          "itemID": 281030,
+          "name": "Treaty of Understanding"
+        }
+      ]
     },
     {
       "id": 96392,
