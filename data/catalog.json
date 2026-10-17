@@ -6386,7 +6386,8 @@
           {
             "npcID": 4852,
             "name": "Stonevault Oracle",
-            "locationName": "Uldaman"
+            "locationName": "Uldaman",
+            "zoneName": "Uldaman"
           },
           {
             "npcID": 4851,
@@ -6401,7 +6402,397 @@
           {
             "npcID": 4845,
             "name": "Shadowforge Ruffian",
-            "locationName": "Badlands"
+            "locationName": "Badlands",
+            "zoneName": "Badlands",
+            "mapID": 1418,
+            "x": 35.2,
+            "y": 11.2,
+            "reportedLocations": [
+              {
+                "mapID": 1418,
+                "x": 35.2,
+                "y": 11.2,
+                "zoneName": "Badlands"
+              },
+              {
+                "mapID": 1418,
+                "x": 35.2,
+                "y": 13.6,
+                "zoneName": "Badlands"
+              },
+              {
+                "mapID": 1418,
+                "x": 35.4,
+                "y": 15.4,
+                "zoneName": "Badlands"
+              },
+              {
+                "mapID": 1418,
+                "x": 35.6,
+                "y": 15,
+                "zoneName": "Badlands"
+              },
+              {
+                "mapID": 1418,
+                "x": 35.8,
+                "y": 12.4,
+                "zoneName": "Badlands"
+              },
+              {
+                "mapID": 1418,
+                "x": 36.6,
+                "y": 13.6,
+                "zoneName": "Badlands"
+              },
+              {
+                "mapID": 1418,
+                "x": 36.8,
+                "y": 14.8,
+                "zoneName": "Badlands"
+              },
+              {
+                "mapID": 1418,
+                "x": 36.8,
+                "y": 15.8,
+                "zoneName": "Badlands"
+              },
+              {
+                "mapID": 1418,
+                "x": 37,
+                "y": 11.6,
+                "zoneName": "Badlands"
+              },
+              {
+                "mapID": 1418,
+                "x": 38.2,
+                "y": 11.8,
+                "zoneName": "Badlands"
+              },
+              {
+                "mapID": 1418,
+                "x": 38.2,
+                "y": 15,
+                "zoneName": "Badlands"
+              },
+              {
+                "mapID": 1418,
+                "x": 39,
+                "y": 16.4,
+                "zoneName": "Badlands"
+              },
+              {
+                "mapID": 1418,
+                "x": 39.4,
+                "y": 19.8,
+                "zoneName": "Badlands"
+              },
+              {
+                "mapID": 1418,
+                "x": 39.6,
+                "y": 12.4,
+                "zoneName": "Badlands"
+              },
+              {
+                "mapID": 1418,
+                "x": 39.6,
+                "y": 13.4,
+                "zoneName": "Badlands"
+              },
+              {
+                "mapID": 1418,
+                "x": 40,
+                "y": 10.8,
+                "zoneName": "Badlands"
+              },
+              {
+                "mapID": 1418,
+                "x": 40.2,
+                "y": 15.4,
+                "zoneName": "Badlands"
+              },
+              {
+                "mapID": 1418,
+                "x": 41,
+                "y": 12.2,
+                "zoneName": "Badlands"
+              },
+              {
+                "mapID": 1418,
+                "x": 42.4,
+                "y": 11.2,
+                "zoneName": "Badlands"
+              },
+              {
+                "mapID": 1418,
+                "x": 43.4,
+                "y": 11.2,
+                "zoneName": "Badlands"
+              },
+              {
+                "mapID": 1418,
+                "x": 43.4,
+                "y": 11.8,
+                "zoneName": "Badlands"
+              },
+              {
+                "mapID": 1418,
+                "x": 44.4,
+                "y": 12.4,
+                "zoneName": "Badlands"
+              },
+              {
+                "mapID": 1418,
+                "x": 44.6,
+                "y": 12.4,
+                "zoneName": "Badlands"
+              },
+              {
+                "mapID": 1418,
+                "x": 45,
+                "y": 11,
+                "zoneName": "Badlands"
+              },
+              {
+                "mapID": 1418,
+                "x": 45.2,
+                "y": 12.8,
+                "zoneName": "Badlands"
+              },
+              {
+                "mapID": 1418,
+                "x": 45.4,
+                "y": 10.2,
+                "zoneName": "Badlands"
+              },
+              {
+                "mapID": 1418,
+                "x": 45.6,
+                "y": 11.4,
+                "zoneName": "Badlands"
+              },
+              {
+                "mapID": 1418,
+                "x": 45.6,
+                "y": 12.8,
+                "zoneName": "Badlands"
+              },
+              {
+                "mapID": 1418,
+                "x": 46.4,
+                "y": 12.2,
+                "zoneName": "Badlands"
+              },
+              {
+                "mapID": 1418,
+                "x": 46.4,
+                "y": 13.6,
+                "zoneName": "Badlands"
+              },
+              {
+                "mapID": 1418,
+                "x": 46.8,
+                "y": 13.4,
+                "zoneName": "Badlands"
+              },
+              {
+                "mapID": 1418,
+                "x": 47.2,
+                "y": 12,
+                "zoneName": "Badlands"
+              },
+              {
+                "mapID": 1418,
+                "x": 47.4,
+                "y": 10.8,
+                "zoneName": "Badlands"
+              },
+              {
+                "mapID": 1418,
+                "x": 47.4,
+                "y": 13.6,
+                "zoneName": "Badlands"
+              },
+              {
+                "mapID": 1418,
+                "x": 47.6,
+                "y": 13.8,
+                "zoneName": "Badlands"
+              },
+              {
+                "mapID": 1418,
+                "x": 47.8,
+                "y": 13,
+                "zoneName": "Badlands"
+              },
+              {
+                "mapID": 1418,
+                "x": 48,
+                "y": 9,
+                "zoneName": "Badlands"
+              },
+              {
+                "mapID": 1418,
+                "x": 48,
+                "y": 10.8,
+                "zoneName": "Badlands"
+              },
+              {
+                "mapID": 1418,
+                "x": 48,
+                "y": 12.4,
+                "zoneName": "Badlands"
+              },
+              {
+                "mapID": 1418,
+                "x": 48.2,
+                "y": 35.8,
+                "zoneName": "Badlands"
+              },
+              {
+                "mapID": 1418,
+                "x": 48.8,
+                "y": 13.8,
+                "zoneName": "Badlands"
+              },
+              {
+                "mapID": 1418,
+                "x": 49,
+                "y": 12.4,
+                "zoneName": "Badlands"
+              },
+              {
+                "mapID": 1418,
+                "x": 49.2,
+                "y": 13,
+                "zoneName": "Badlands"
+              },
+              {
+                "mapID": 1418,
+                "x": 49.4,
+                "y": 10.2,
+                "zoneName": "Badlands"
+              },
+              {
+                "mapID": 1418,
+                "x": 49.8,
+                "y": 12.4,
+                "zoneName": "Badlands"
+              },
+              {
+                "mapID": 1418,
+                "x": 50,
+                "y": 9.8,
+                "zoneName": "Badlands"
+              },
+              {
+                "mapID": 1418,
+                "x": 50,
+                "y": 12.8,
+                "zoneName": "Badlands"
+              },
+              {
+                "mapID": 1418,
+                "x": 50.2,
+                "y": 33.4,
+                "zoneName": "Badlands"
+              },
+              {
+                "mapID": 1418,
+                "x": 50.4,
+                "y": 15,
+                "zoneName": "Badlands"
+              },
+              {
+                "mapID": 1418,
+                "x": 50.6,
+                "y": 14.8,
+                "zoneName": "Badlands"
+              },
+              {
+                "mapID": 1418,
+                "x": 50.8,
+                "y": 13.2,
+                "zoneName": "Badlands"
+              },
+              {
+                "mapID": 1418,
+                "x": 51.2,
+                "y": 12.4,
+                "zoneName": "Badlands"
+              },
+              {
+                "mapID": 1418,
+                "x": 51.2,
+                "y": 14.2,
+                "zoneName": "Badlands"
+              },
+              {
+                "mapID": 1418,
+                "x": 51.2,
+                "y": 27.2,
+                "zoneName": "Badlands"
+              },
+              {
+                "mapID": 1418,
+                "x": 51.6,
+                "y": 15.4,
+                "zoneName": "Badlands"
+              },
+              {
+                "mapID": 1418,
+                "x": 51.8,
+                "y": 18.8,
+                "zoneName": "Badlands"
+              },
+              {
+                "mapID": 1418,
+                "x": 52.2,
+                "y": 27.6,
+                "zoneName": "Badlands"
+              },
+              {
+                "mapID": 1418,
+                "x": 52.4,
+                "y": 21.6,
+                "zoneName": "Badlands"
+              },
+              {
+                "mapID": 1418,
+                "x": 52.4,
+                "y": 26.6,
+                "zoneName": "Badlands"
+              },
+              {
+                "mapID": 1418,
+                "x": 52.6,
+                "y": 15.6,
+                "zoneName": "Badlands"
+              },
+              {
+                "mapID": 1418,
+                "x": 52.8,
+                "y": 18.8,
+                "zoneName": "Badlands"
+              },
+              {
+                "mapID": 1418,
+                "x": 53.2,
+                "y": 18.2,
+                "zoneName": "Badlands"
+              },
+              {
+                "mapID": 1418,
+                "x": 54.4,
+                "y": 21.2,
+                "zoneName": "Badlands"
+              },
+              {
+                "mapID": 1418,
+                "x": 55,
+                "y": 17,
+                "zoneName": "Badlands"
+              }
+            ]
           },
           {
             "npcID": 4846,
@@ -16214,11 +16605,13 @@
       "minLevel": 57,
       "start": {
         "npcID": 10299,
-        "name": "Scarshield Infiltrator"
+        "name": "Scarshield Infiltrator",
+        "zoneName": "Blackrock Spire"
       },
       "finish": {
         "npcID": 10299,
-        "name": "Scarshield Infiltrator"
+        "name": "Scarshield Infiltrator",
+        "zoneName": "Blackrock Spire"
       },
       "requirementsKnown": false,
       "factions": [
@@ -20193,11 +20586,13 @@
       "source": "https://www.wowhead.com/forever/quest=4743/seal-of-ascension",
       "finish": {
         "npcID": 10299,
-        "name": "Scarshield Infiltrator"
+        "name": "Scarshield Infiltrator",
+        "zoneName": "Blackrock Spire"
       },
       "start": {
         "npcID": 10299,
-        "name": "Scarshield Infiltrator"
+        "name": "Scarshield Infiltrator",
+        "zoneName": "Blackrock Spire"
       },
       "storyline": [
         4742,
