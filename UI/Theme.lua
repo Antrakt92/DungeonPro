@@ -833,7 +833,6 @@ function Theme.Apply(ui)
         decoration = {}
         windows[frame] = decoration
         decoration.header = strip(frame, 1, "TOPLEFT", "TOPRIGHT", -54, palette.amber)
-        decoration.footer = strip(frame, 1, "BOTTOMLEFT", "BOTTOMRIGHT", 46, palette.faint)
     end
     if not decoration.panels then
         decoration.panels = {}
@@ -846,7 +845,7 @@ function Theme.Apply(ui)
     for _, scroll in pairs({ catalogScroll, cleanObject(ui.questScroll), cleanObject(ui.detailScroll) }) do Theme.StyleScrollBar(scroll) end
     textColor(ui.title, palette.heading); textColor(ui.subtitle, palette.muted)
     textColor(ui.heading, palette.text); textColor(ui.summary, palette.muted)
-    textColor(ui.coverage, palette.quiet); textColor(ui.footer, palette.quiet)
+    textColor(ui.coverage, palette.quiet)
     textColor(ui.capacityStatus, palette.muted); textColor(ui.searchPlaceholder, palette.quiet)
     if cleanObject(ui.searchBox) then Theme.StyleSearch(ui.searchBox, ui.clearSearch) end
     for _, key in ipairs({ "back", "rangeButton", "preparationButton", "characterButton", "language", "map", "guide", "source", "giver" }) do

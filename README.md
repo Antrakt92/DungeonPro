@@ -100,6 +100,8 @@ Level ranges are provisional recommendations.
   Level and character filters are icons beside the dungeon heading. Hover for
   the current mode and click to switch; the active highlight shows filtering.
   The message and heart icons offer issue-report and project-support links for copying.
+  Quest-log occupancy sits in the top bar; giver and Wowhead actions sit above
+  the detail pane, leaving the full bottom area for scrolling content.
   Select a quest to expand its related steps in place, then select any step to
   read its details without losing the opened list. Completed steps remain visible.
   Indented branches connect to their target; inside an expanded branch, a map

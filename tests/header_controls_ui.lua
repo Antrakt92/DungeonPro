@@ -55,7 +55,27 @@ for locale in pairs(addon.locales) do
     assert(ui.characterButton.filterSelected and not ui.rangeButton.filterSelected)
 end
 local level, character = ui.range, ui.includeUnavailable
+assert(ui.footer == nil, "development notice does not reserve a bottom band")
+assert(ui.capacityStatus.point[2] >= ui.title.point[2] + ui.title:GetWidth(), "capacity follows the app title")
+assert(ui.capacityStatus.point[2] + ui.capacityStatus:GetWidth() < ui.frame:GetWidth() + ui.searchBox.point[2] - ui.searchBox:GetWidth(),
+    "capacity stays left of the search field")
+assert(ui.heading.point[2] + ui.heading:GetWidth() < ui.rangeButton.point[2])
+assert(ui.characterButton.point[2] + ui.characterButton:GetWidth() < ui.detailScroll.point[2], "filters remain beside the quest heading")
+for _, control in ipairs({ ui.giver, ui.source }) do
+    assert(control.point[1] == "TOPLEFT" and control.point[2] >= ui.detailScroll.point[2])
+    assert(-control.point[3] + control:GetHeight() <= -ui.detailScroll.point[3], "actions sit above detail scrolling content")
+end
+for _, scroll in ipairs({ ui.catalogScroll, ui.questScroll, ui.detailScroll }) do
+    assert(-scroll.point[3] + scroll:GetHeight() == 688, "content reclaims the former bottom band")
+end
+local measure = ui.heading.GetStringHeight
+ui.heading.GetStringHeight = function() return 72 end
+ui:RefreshQuests()
+for _, scroll in ipairs({ ui.questScroll, ui.detailScroll }) do
+    assert(scroll.point[3] == -146 and scroll:GetHeight() == 542, "wrapped headings preserve the reclaimed bottom edge")
+end
+ui.heading.GetStringHeight = measure; ui:RefreshQuests()
 ui.frame:Hide()
 ui.rangeButton.scripts.OnClick(); ui.characterButton.scripts.OnClick()
 assert(ui.range == level and ui.includeUnavailable == character, "retained callbacks cannot change a closed planner")
-print("Actual header controls: PASS (right search, icon filters, saved modes, debounce, clear, locale refresh)")
+print("Actual header controls: PASS (right search, filters, capacity, detail actions, reclaimed footer, wrapped heading, saved modes, debounce, locales)")

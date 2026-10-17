@@ -1962,14 +1962,14 @@ check("Missing or invalid carried-count data is omitted and recycled material ro
     addon.CarriedItemCount, issecretvalue = oldCount, oldSecret
     showDetail(2)
 end)
-check("Quest log capacity is informational and preserves the development notice", function()
+check("Quest log capacity stays informational without a development footer", function()
     local producer, navigation = addon.QuestLogCapacity, addon.Navigation
     local count, capacity, reads, visits = 0, 20, 0, 0
     addon.QuestLogCapacity = function() reads = reads + 1; return { count = count, capacity = capacity } end
     addon.Navigation = { Start = function() visits = visits + 1 end, Map = function() visits = visits + 1 end }
     showDetail(2); ui:Refresh()
     assert(ui.capacityStatus.shown and ui.capacityStatus.text == addon.L("QUEST_LOG_CAPACITY", 0, 20))
-    assert(ui.footer.text == addon.L("DEVELOPMENT"))
+    assert(ui.footer == nil)
     local status, action, quest = ui.engine:State(2).status, ui.action and ui.action.kind, ui.quest
     count = 23; ui:Refresh()
     assert(ui.capacityStatus.text == addon.L("QUEST_LOG_CAPACITY", 23, 20))
@@ -1979,7 +1979,7 @@ check("Quest log capacity is informational and preserves the development notice"
     ui.frame:Hide(); count = 8
     ui:Toggle()
     ui.frame.scripts.OnShow(ui.frame)
-    assert(ui.capacityStatus.text == addon.L("QUEST_LOG_CAPACITY", 8, 20) and ui.footer.text == addon.L("DEVELOPMENT"))
+    assert(ui.capacityStatus.text == addon.L("QUEST_LOG_CAPACITY", 8, 20) and ui.footer == nil)
     addon.QuestLogCapacity, addon.Navigation = producer, navigation
     ui:Refresh()
 end)
@@ -1989,7 +1989,7 @@ check("Missing invalid or restricted capacity clears the reused status instead o
     assert(ui.capacityStatus.shown)
     local function omitted()
         ui:Refresh()
-        assert(not ui.capacityStatus.shown and ui.capacityStatus.text == "" and ui.footer.text == addon.L("DEVELOPMENT"))
+        assert(not ui.capacityStatus.shown and ui.capacityStatus.text == "" and ui.footer == nil)
     end
     addon.QuestLogCapacity = nil; omitted()
     addon.QuestLogCapacity = function() return nil end; omitted()
@@ -2004,7 +2004,7 @@ check("Missing invalid or restricted capacity clears the reused status instead o
     issecretvalue = checker
     addon.QuestLogCapacity = producer; ui:Refresh()
 end)
-check("Capacity formats safely in all locales without changing the base footer", function()
+check("Capacity formats safely in all locales without restoring a footer", function()
     local producer, locale = addon.QuestLogCapacity, addon.db.locale
     addon.QuestLogCapacity = function() return { count = 1e20, capacity = 20 } end
     local dictionaries = 0
@@ -2012,7 +2012,7 @@ check("Capacity formats safely in all locales without changing the base footer",
         addon.db.locale = code; ui:Refresh()
         assert(ui.capacityStatus.shown and ui.capacityStatus.text == string.format(strings.QUEST_LOG_CAPACITY, 1e20, 20))
         assert(ui.capacityStatus.text:find("100000000000000000000", 1, true))
-        assert(ui.footer.text == strings.DEVELOPMENT)
+        assert(ui.footer == nil)
         dictionaries = dictionaries + 1
     end
     assert(dictionaries == 10)
@@ -3875,7 +3875,7 @@ check("Noto and probed CJK assets retain actual sizes and unscaled reusable rows
     assert(ui.searchBox.fontSize==14 and not ui.searchBox.scaledText and ui.searchBox.SetFontHeight==false)
     assert(ui.copy and ui.copy.fontSize==14 and ui.copy.SetFontHeight==false)
     assert(ui.title.fontSize==22 and ui.heading.fontSize==26 and ui.summary==nil and ui.coverage==nil)
-    assert(ui.footer.fontSize==13 and ui.capacityStatus.fontSize==13 and ui.searchPlaceholder.fontSize==13)
+    assert(ui.footer==nil and ui.capacityStatus.fontSize==12 and ui.searchPlaceholder.fontSize==13)
     ChatFontNormal={unchanged=true}
     for code in pairs(addon.locales)do
         addon.db.locale=code;showDetail(1)
@@ -3897,9 +3897,9 @@ check("Heading reflow aligns both taller viewports without aggregate counter lab
     ui.questScroll:SetVerticalScroll(30);ui:RefreshQuests()
     assert(ui.summary==nil and ui.coverage==nil)
     assert(ui.questScroll.point[3]==-(66+68+8)and ui.detailScroll.point[3]==ui.questScroll.point[3])
-    assert(ui.questScroll.height==643+ui.questScroll.point[3]and ui.detailScroll.height==ui.questScroll.height and ui.questScroll.verticalScroll==30)
+    assert(ui.questScroll.height==688+ui.questScroll.point[3]and ui.detailScroll.height==ui.questScroll.height and ui.questScroll.verticalScroll==30)
     assert(ui.dungeon==selected and ui.quest==quest)
-    measurement=nil;ui:RefreshQuests();assert(ui.questScroll.point[3]==-100 and ui.questScroll.height==543)
+    measurement=nil;ui:RefreshQuests();assert(ui.questScroll.point[3]==-100 and ui.questScroll.height==588)
 end)
 local function questListReentryFixture()
     local saved={context=addon.Context,quest=ui.quest,dungeon=ui.dungeon,preparation=ui.preparation,all=ui.includeUnavailable,
@@ -7531,7 +7531,7 @@ check("existing header catalogue detail and input roles update on UI language fo
     local row=ui:MakeRow(ui.questList,{},1,59)
     for _,code in ipairs({"enUS","ruRU","zhCN","enUS"})do
         addon.db.locale=code;ui:Refresh()
-        for _,fs in ipairs({ui.title,ui.heading,ui.footer,ui.searchPlaceholder,row.title,row.note})do
+        for _,fs in ipairs({ui.title,ui.heading,ui.capacityStatus,ui.searchPlaceholder,row.title,row.note})do
             if code=="zhCN"then assert(fs.fontPath=="Fonts\\ARKai_T.ttf" and fs.fontFamily==nil)
             else assert(fs.fontPath and fs.fontPath:find("NotoSans-Regular.ttf",1,true))end
         end
@@ -7609,7 +7609,7 @@ check("reading profile enlarges body and row text while measured spacing and hea
         local body=0
         for _,fs in ipairs(ui.details)do if fs.shown and fs.detailStyle=="body"then body=body+1;assert(fs.fontSize==15)end end
         assert(body>0 and ui.title.fontSize==22 and ui.heading.fontSize==26 and ui.searchBox.fontSize==14)
-        assert(ui.footer.fontSize==13 and ui.summary==nil and ui.coverage==nil)
+        assert(ui.footer==nil and ui.summary==nil and ui.coverage==nil)
     end
     row:Hide();addon.db.locale,ui.quest,ui.dungeon=locale,quest,dungeon;ui:Refresh()
 end)
@@ -8451,7 +8451,7 @@ check("Normal browsing ignores a saved preparation mode and exposes no Back or m
     assert(#visibleRows()==3)
     for _,row in ipairs(visibleRows())do assert(not row.heading and (row.questID==31001 or row.questID==31002))end
     ui.preparation=true;ui:Refresh();assert(not ui.preparation and #visibleRows()==3 and addon.char.filters.preparation==true)
-    assert(ui.characterButton.point[2]==1038 and ui.entrance==nil and ui.language.width==64 and not ui.languageChevron)
+    assert(ui.characterButton.point[2]==622 and ui.entrance==nil and ui.language.width==64 and not ui.languageChevron)
     addon.char.filters=filters;f:finish()
 end)
 check("Blocked level navigation explicitly routes to a known giver without claiming the quest available",function()
@@ -8531,13 +8531,13 @@ check("Real language hover previews the existing window and restores its labels 
     assert(not language.session and addon.db.locale=="enUS")
     addon.Language=previous;addon.db.locale=locale;ui.quest,ui.dungeon=quest,dungeon;ui.frame:Show();ui:Refresh()
 end)
-check("Footer quest-giver and Wowhead controls retain actions in equal compact icon-only slots",function()
+check("Detail header quest-giver and Wowhead controls retain actions in equal compact icon-only slots",function()
     local quest,locale,navigation=ui.quest,addon.db.locale,addon.Navigation
     local called;addon.Navigation={Start=function(action)called=action;return true end}
     showCompactDetail(3,{level=20,completed=function()return false end,active=function()return false end});local giver,source=ui.giver,ui.source
     local giverIcon,sourceIcon=giver.footerIcon,source.footerIcon
-    assert(giver.width==36 and giver.height==36 and source.width==36 and source.height==36)
-    assert(giver.point[1]=="BOTTOMRIGHT"and giver.point[2]==-87 and source.point[1]=="BOTTOMRIGHT"and source.point[2]==-43)
+    assert(giver.width==32 and giver.height==32 and source.width==32 and source.height==32)
+    assert(giver.point[1]=="TOPLEFT"and giver.point[2]==1002 and giver.point[3]==-66 and source.point[1]=="TOPLEFT"and source.point[2]==1038 and source.point[3]==-66)
     assert(giver.text==""and source.text==""and giverIcon.width==24 and sourceIcon.height==24)
     assert(giverIcon.texture=="Interface\\GossipFrame\\AvailableQuestIcon")
     assert(sourceIcon.texture=="Interface\\AddOns\\DungeonPro\\Media\\Icons\\Wowhead")
@@ -9175,7 +9175,7 @@ check("Default detail prioritizes narrative objectives rewards and one named giv
     addon.CachedQuestRewards=function()return{source="cache",items={{name="Selected reward",count=1}},choices={}}end
     f:anchor(43000).scripts.OnClick()
     assert(ui.summary==nil and ui.coverage==nil and type(ui.currentPlan.counts)=="table")
-    assert(ui.questScroll.point[3]==-100 and ui.detailScroll.point[3]==-100 and ui.questScroll.height==543 and ui.detailScroll.height==543)
+    assert(ui.questScroll.point[3]==-100 and ui.detailScroll.point[3]==-100 and ui.questScroll.height==588 and ui.detailScroll.height==588)
     assert(not ui.detailReferencesExpanded and not(ui.storyToggle and ui.storyToggle.shown))
     assert(detailHas("Selected quest narrative"),"default narrative")
     assert(detailIncludes("Selected live objective"),"default progress")
@@ -9218,14 +9218,14 @@ check("Right header search reserves input and clear space while icon filters sit
     local locale=addon.db.locale
     for code in pairs(addon.locales)do
         addon.db.locale=code;ui:Refresh()
-        assert(ui.subtitle==nil and ui.title.fontSize==22 and ui.heading.width==710)
+        assert(ui.subtitle==nil and ui.title.fontSize==22 and ui.heading.width==296)
         assert(ui.searchBox.point[1]=="TOPRIGHT" and ui.searchBox.point[2]==-190 and ui.searchBox.point[3]==-14)
         assert(ui.searchBox.width==330 and ui.searchBox.height==26)
         assert(ui.searchBox.textInsets[1]==28 and ui.searchBox.textInsets[2]==30)
         assert(ui.searchPlaceholder.point[2]==28 and ui.searchPlaceholder.width==ui.searchBox.width-62)
         assert(ui.clearSearch.point[1]=="RIGHT" and ui.clearSearch.point[2]==ui.searchBox and ui.clearSearch.point[4]==-3)
         assert(ui.heading.point[2]+ui.heading.width<ui.rangeButton.point[2])
-        assert(ui.rangeButton.point[2]==1002 and ui.characterButton.point[2]==1038)
+        assert(ui.rangeButton.point[2]==586 and ui.characterButton.point[2]==622)
         for _,control in ipairs({ui.rangeButton,ui.characterButton})do assert(control.point[3]==-66 and control.height==26)end
         assert(ui.catalogScroll.point[2]+ui.catalogScroll.width+23<=ui.questScroll.point[2]-2)
         assert(ui.questScroll.point[2]+ui.questScroll.width+23<=ui.detailScroll.point[2]-2)

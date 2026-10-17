@@ -67,7 +67,7 @@ test("repeated application uses bounded decoration", function()
     local controls = #ui.back.textures
     for _ = 1, 100 do assert(addon.Theme.Apply(ui)) end
     assert(#ui.frame.textures == count and #ui.back.textures == controls)
-    assert(count == 8 and controls == 6)
+    assert(count == 7 and controls == 6)
 end)
 
 test("compact header divider stays above the raised catalogue and dungeon heading", function()
@@ -202,10 +202,32 @@ test("composite template textures stay quiet while native font states survive", 
     r.Left.texture = "native-pushed"
     assert(r.Left.alpha == 0)
 end)
+test("expanded pane decoration follows scroll bounds without a footer band", function()
+    local ui = { frame = region(), catalogScroll = region(), questScroll = region(), detailScroll = region(), footer = region() }
+    for _, scroll in ipairs({ ui.catalogScroll, ui.questScroll, ui.detailScroll }) do
+        scroll:SetHeight(590)
+    end
+    assert(addon.Theme.Apply(ui))
+    assert(not ui.footer.textColor, "retired footer text is not part of the theme")
+    local bottomEdges = 0
+    for _, part in ipairs(ui.frame.textures) do
+        for _, point in ipairs(part.points or {}) do
+            assert(not (point[1] == "BOTTOMLEFT" and point[2] == ui.frame and point[5] == 46), "no reserved footer divider")
+            if point[1] == "BOTTOMRIGHT" and point[2] ~= ui.frame then
+                assert(point[3] == "BOTTOMRIGHT" and (point[5] == -11 or point[5] == -7))
+                bottomEdges = bottomEdges + 1
+            end
+        end
+    end
+    assert(bottomEdges == 6, "both panel layers follow each expanded scroll bottom")
+    ui.detailScroll:SetHeight(610)
+    assert(addon.Theme.Apply(ui) and ui.detailScroll.height == 610)
+end)
+
 test("viewport depth follows existing geometry without click frames or polling", function()
     local ui = {frame=region(),catalogScroll=region(),questScroll=region(),detailScroll=region()}
     assert(addon.Theme.Apply(ui))
-    assert(#ui.frame.textures == 17)
+    assert(#ui.frame.textures == 16)
     local count = #ui.frame.textures
     for _=1,100 do assert(addon.Theme.Apply(ui)) end
     assert(#ui.frame.textures == count)

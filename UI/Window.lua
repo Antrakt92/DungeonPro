@@ -1863,9 +1863,9 @@ function UI:RefreshQuests()
     if not current() then return end
     local listY = 66 + headingHeight + 8
     if not write(self.questScroll, "ClearAllPoints") or not write(self.questScroll, "SetPoint", "TOPLEFT", 278, -listY) or
-        not write(self.questScroll, "SetHeight", math.max(80, 643 - listY)) or
+        not write(self.questScroll, "SetHeight", math.max(80, 688 - listY)) or
         not write(self.detailScroll, "ClearAllPoints") or not write(self.detailScroll, "SetPoint", "TOPLEFT", 674, -listY) or
-        not write(self.detailScroll, "SetHeight", math.max(80, 643 - listY)) then return end
+        not write(self.detailScroll, "SetHeight", math.max(80, 688 - listY)) then return end
     for index = n + 1, #self.rows do
         local row = self.rows[index]
         if not write(row, "Hide") then return end
@@ -4283,7 +4283,6 @@ function UI:Refresh(languageOnly)
     if not self:RefreshLanguageLabel() then return end
     self:RefreshFilterControls()
     self:SetFooterLabel(self.source, "SOURCE")
-    self.footer:SetText(addon.L("DEVELOPMENT"))
     local log = addon.Read(addon.QuestLogCapacity, "table")
     local count = log and addon.Clean(log.count, "number")
     local capacity = log and addon.Clean(log.capacity, "number")
@@ -4384,14 +4383,14 @@ function UI:Create()
         self.range = not self.range; self:SaveFilters(); self:Refresh()
     end)
     self.rangeButton = rangeControl
-    self.rangeButton:SetPoint("TOPLEFT", 1002, -66)
+    self.rangeButton:SetPoint("TOPLEFT", 586, -66)
     local characterControl
     characterControl = button(frame, "", 26, function()
         if not filterCurrent(characterControl, "characterButton") then return end
         self.includeUnavailable = not self.includeUnavailable; self:SaveFilters(); self:Refresh()
     end)
     self.characterButton = characterControl
-    self.characterButton:SetPoint("TOPLEFT", 1038, -66)
+    self.characterButton:SetPoint("TOPLEFT", 622, -66)
     for _, entry in ipairs({ { self.rangeButton, "LEVEL_FILTER", "Interface\\Icons\\XP_Icon" },
         { self.characterButton, "CHARACTER_FILTER" } }) do
         local control = entry[1]
@@ -4431,22 +4430,22 @@ function UI:Create()
         control:SetScript("OnLeave", function() if type(icon.SetAlpha) == "function" then icon:SetAlpha(.76) end; self:HideNavigationHint() end)
         if type(icon.SetAlpha) == "function" then icon:SetAlpha(.76) end
     end
-    self.heading = label(frame, "", 278, -66, 710, 26)
-    self.catalog, self.catalogScroll = scrolling(frame, 12, -66, 238, 577)
+    self.heading = label(frame, "", 278, -66, 296, 26)
+    self.catalog, self.catalogScroll = scrolling(frame, 12, -66, 238, 622)
     self.searchHint = label(self.catalog, "", 4, 0, 202, 13)
     self.catalogNotice = label(self.catalog, "", 4, 0, 202, 13)
-    self.questList, self.questScroll = scrolling(frame, 278, -100, 370, 543)
-    self.detail, self.detailScroll = scrolling(frame, 674, -100, 400, 543)
-    self.source = button(frame, "", 36, function() if self.quest then self:CopyLink(self.quest) end end)
-    self.source:SetPoint("BOTTOMRIGHT", -43, 19)
-    self.giver = button(frame, "", 36, function()
+    self.questList, self.questScroll = scrolling(frame, 278, -100, 370, 588)
+    self.detail, self.detailScroll = scrolling(frame, 674, -100, 400, 588)
+    self.source = button(frame, "", 32, function() if self.quest then self:CopyLink(self.quest) end end)
+    self.source:SetPoint("TOPLEFT", 1038, -66)
+    self.giver = button(frame, "", 32, function()
         if self.giverAction then
             self:DispatchDetail(self.giverAction, not self.giverHasCoordinates, true)
         end
     end)
-    self.giver:SetPoint("BOTTOMRIGHT", -87, 19)
+    self.giver:SetPoint("TOPLEFT", 1002, -66)
     for _, control in ipairs({ self.giver, self.source }) do
-        control:SetHeight(36)
+        control:SetHeight(32)
         if type(control.SetMotionScriptsWhileDisabled) == "function" then pcall(control.SetMotionScriptsWhileDisabled, control, true) end
         local icon = control:CreateTexture(nil, "ARTWORK"); control.footerIcon = icon
         icon:SetSize(24, 24); icon:SetPoint("CENTER", control, "CENTER", 0, 0)
@@ -4503,9 +4502,8 @@ function UI:Create()
     end
     navigationHint(self.giver, function() local action = self:NavigationDestination(false); return action and action.place end)
     navigationHint(self.source, nil, "COPY")
-    self.capacityStatus = label(frame, "", 22, -646, 640, 13)
+    self.capacityStatus = label(frame, "", 178, -18, 330, 12)
     self.capacityStatus:Hide()
-    self.footer = label(frame, "", 22, -668, 640, 13)
     self.frame, self.cards, self.rows, self.details, self.chainButtons, self.branchButtons = frame, {}, {}, {}, {}, {}
     self.materialButtons, self.catalogInspectButtons = {}, {}
     self.requirementButtons, self.branchInspectButtons = {}, {}
