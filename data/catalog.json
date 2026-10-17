@@ -4568,7 +4568,13 @@
         "y": 19
       },
       "startsInside": true,
-      "requirementsKnown": false
+      "requirementsKnown": false,
+      "objectiveItems": [
+        {
+          "itemID": 5538,
+          "name": "Vorrel's Wedding Ring"
+        }
+      ]
     },
     {
       "id": 1048,
@@ -9874,6 +9880,12 @@
             3801
           ]
         }
+      ],
+      "objectiveItems": [
+        {
+          "itemID": 10999,
+          "name": "Ironfel"
+        }
       ]
     },
     {
@@ -10016,6 +10028,12 @@
       "storyline": [
         3906,
         3907
+      ],
+      "objectiveItems": [
+        {
+          "itemID": 11126,
+          "name": "Tablet of Kurniya"
+        }
       ]
     },
     {
@@ -10477,6 +10495,17 @@
         4061,
         4062,
         4063
+      ],
+      "objectiveItems": [
+        {
+          "itemID": 11268,
+          "name": "Head of Argelmach"
+        },
+        {
+          "itemID": 11269,
+          "name": "Intact Elemental Core",
+          "quantity": 10
+        }
       ]
     },
     {
@@ -10709,7 +10738,13 @@
         "mapID": 1428,
         "x": 65.2,
         "y": 23.8
-      }
+      },
+      "objectiveItems": [
+        {
+          "itemID": 11309,
+          "name": "The Heart of the Mountain"
+        }
+      ]
     },
     {
       "id": 4126,
@@ -10768,6 +10803,12 @@
       "storyline": [
         4128,
         4126
+      ],
+      "objectiveItems": [
+        {
+          "itemID": 11312,
+          "name": "Lost Thunderbrew Recipe"
+        }
       ]
     },
     {
@@ -10934,6 +10975,12 @@
       "storyline": [
         4133,
         4134
+      ],
+      "objectiveItems": [
+        {
+          "itemID": 11312,
+          "name": "Lost Thunderbrew Recipe"
+        }
       ]
     },
     {
@@ -10966,6 +11013,12 @@
       "storyline": [
         4324,
         4136
+      ],
+      "objectiveItems": [
+        {
+          "itemID": 11313,
+          "name": "Ribbly's Head"
+        }
       ]
     },
     {
@@ -11547,6 +11600,16 @@
       "storyline": [
         4264,
         4282
+      ],
+      "objectiveItems": [
+        {
+          "itemID": 11464,
+          "name": "Marshal Windsor's Lost Information"
+        },
+        {
+          "itemID": 11465,
+          "name": "Marshal Windsor's Lost Information"
+        }
       ]
     },
     {
@@ -14080,6 +14143,24 @@
       "storyline": [
         5343,
         5344
+      ],
+      "objectiveItems": [
+        {
+          "itemID": 13471,
+          "name": "The Deed to Brill"
+        },
+        {
+          "itemID": 13448,
+          "name": "The Deed to Caer Darrow"
+        },
+        {
+          "itemID": 13450,
+          "name": "The Deed to Southshore"
+        },
+        {
+          "itemID": 13451,
+          "name": "The Deed to Tarren Mill"
+        }
       ]
     },
     {
@@ -14113,6 +14194,12 @@
         5382,
         5515,
         5384
+      ],
+      "objectiveItems": [
+        {
+          "itemID": 13725,
+          "name": "Krastinov's Bag of Horrors"
+        }
       ]
     },
     {
@@ -14233,6 +14320,24 @@
       "storyline": [
         5341,
         5342
+      ],
+      "objectiveItems": [
+        {
+          "itemID": 13471,
+          "name": "The Deed to Brill"
+        },
+        {
+          "itemID": 13448,
+          "name": "The Deed to Caer Darrow"
+        },
+        {
+          "itemID": 13450,
+          "name": "The Deed to Southshore"
+        },
+        {
+          "itemID": 13451,
+          "name": "The Deed to Tarren Mill"
+        }
       ]
     },
     {
@@ -14313,6 +14418,12 @@
         [
           8970
         ]
+      ],
+      "objectiveItems": [
+        {
+          "itemID": 21984,
+          "name": "Left Piece of Lord Valthalak's Amulet"
+        }
       ]
     },
     {
@@ -21327,7 +21438,13 @@
         "mapID": 1428,
         "x": 26.4,
         "y": 24.6
-      }
+      },
+      "objectiveItems": [
+        {
+          "itemID": 18412,
+          "name": "Core Fragment"
+        }
+      ]
     },
     {
       "id": 1949,
