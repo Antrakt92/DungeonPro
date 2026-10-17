@@ -40,6 +40,11 @@ local generation, query, scrollWrites = ui.catalogGeneration, ui.catalogQueryKey
 local cards = {}
 for index, row in ipairs(ui.cards) do
     catalogArt[row.art] = true
+    local titleSetter = row.title.SetText
+    row.title.SetText = function(self, value)
+        if value == self.text then counts.unchangedTitleWrites = (counts.unchangedTitleWrites or 0) + 1 end
+        return titleSetter(self, value)
+    end
     cards[index] = { row = row, click = row.scripts.OnClick, title = row.title.text,
         artwork = row.art.texture, match = row.matchQuestID, note = row.note.text }
 end
@@ -57,6 +62,7 @@ local function retained()
     end
 end
 local function bounded()
+    check(count("unchangedTitleWrites") == 0, "hover does not repeat native writes for unchanged catalogue titles")
     check(count("catalogArt") == 0 and count("PaintDungeonArt") <= 1 and count("DungeonArt") <= 1,
         "hover retains catalogue artwork with at most the active pane artwork pass")
     check(count("SearchFold") == 0 and count("QuestSourceSearchTerms") == 0, "hover does not rescan catalogue search sources")
@@ -246,6 +252,45 @@ check(heightRow.height == nestedHeight and followingRow.point[5] == nestedAnchor
 check(addon.L("NEXT") == addon.locales.enUS.NEXT, "reentrant layout retains the newer language selection")
 addon.Language:Cancel(ui)
 
+-- A getter may synchronously select another preview. A no-op text optimization
+-- must revalidate the paint after readback before treating the old value as safe.
+ui.language.scripts.OnEnter()
+session = assert(addon.Language.session)
+local titleGetter = ui.cards[1].title.GetText
+local getterEntered = false
+ui.cards[1].title.GetText = function(self)
+    local previous = titleGetter(self)
+    if not getterEntered then getterEntered = true; session.rows[2].scripts.OnEnter() end
+    return previous
+end
+session.rows[3].scripts.OnEnter()
+ui.cards[1].title.GetText = titleGetter
+check(getterEntered and addon.L("NEXT") == addon.locales.enUS.NEXT,
+    "native text getter reentry keeps the newer English preview")
+check(ui.cards[1].note.text:find(addon.L("CATALOG_LEVELS", addon.dungeons[1].minLevel, addon.dungeons[1].maxLevel), 1, true) ~= nil,
+    "superseded getter cannot leave older-language catalogue notes")
+addon.Language:Cancel(ui)
+
+-- The newer English paint can be a native text no-op because the old Russian
+-- setter has not written yet. It must still own a binding that repairs that late write.
+ui.language.scripts.OnEnter()
+session = assert(addon.Language.session)
+local noOpNote = ui.cards[1].note
+local noOpSetter, englishNote, noteEntered = noOpNote.SetText, noOpNote.text, false
+noOpNote.SetText = function(self, value)
+    if not noteEntered and value ~= englishNote then
+        noteEntered = true
+        check(self.text == englishNote, "newer English paint starts with matching native text")
+        session.rows[2].scripts.OnEnter()
+    end
+    return noOpSetter(self, value)
+end
+session.rows[3].scripts.OnEnter()
+noOpNote.SetText = noOpSetter
+check(noteEntered and addon.L("NEXT") == addon.locales.enUS.NEXT and noOpNote.text == englishNote,
+    "newer no-op English binding repairs a late older Russian native write")
+addon.Language:Cancel(ui)
+
 -- A callback from an old picker cannot repaint a replacement database or frame.
 ui.language.scripts.OnEnter()
 session = assert(addon.Language.session)
@@ -256,4 +301,80 @@ reset(); oldRow()
 check(next(counts) == nil and addon.db.locale == "enUS", "foreign database invalidates stale hover without model/API work")
 addon.db = savedDB
 addon.Language:Cancel(ui)
+
+-- The native-shaped fixture normally ignores SetFont. Give a separate actual
+-- TOC instance truthful font setters/readback and count warm direct/owned paths.
+for _, ownedFonts in ipairs({ false, true }) do
+    local fontFixture = assert(loadfile("tests/client_ui.lua"))("fixture")
+    local fontAddon, fontMethods = fontFixture.addon, fontFixture.methods
+    local nativeCalls, regionCalls = 0, {}
+    local function native(region, method)
+        nativeCalls = nativeCalls + 1
+        local calls = regionCalls[region] or {}; regionCalls[region] = calls
+        calls[method] = (calls[method] or 0) + 1
+    end
+    function fontMethods:SetFont(path, height, flags)
+        native(self, "SetFont")
+        self.fontPath, self.fontHeight, self.fontFlags = path, height, flags
+        if self.kind ~= "FontObject" then return true end
+    end
+    function fontMethods:GetFont()
+        if self.fontPath then return self.fontPath, self.fontHeight, self.fontFlags end
+        if self.fontObject then
+            local path, height, flags = self.fontObject:GetFont()
+            return path, self.fontHeight or height, flags
+        end
+    end
+    function fontMethods:SetFontObject(value)
+        native(self, "SetFontObject")
+        self.fontObject, self.fontPath, self.fontHeight, self.fontFlags = value, nil, nil, nil
+    end
+    function fontMethods:GetFontObject() return self.fontObject end
+    function fontMethods:SetFontHeight(value) native(self, "SetFontHeight"); self.fontHeight = value end
+    function fontMethods:GetFontString()
+        self.nativeLabel = self.nativeLabel or self:CreateFontString()
+        return self.nativeLabel
+    end
+    local oldCreator, oldFamily, oldHighlight = CreateFont, ChatFontNormal, GameFontHighlight
+    local function makeFont()
+        return setmetatable({ kind = "FontObject", fontPath = "Fonts\\ARIALN.TTF", fontHeight = 14, fontFlags = "" },
+            { __index = fontMethods })
+    end
+    ChatFontNormal, GameFontHighlight = makeFont(), nil
+    CreateFont = ownedFonts and function() return makeFont() end or nil
+    fontFixture.eventFrame.scripts.OnEvent(fontFixture.eventFrame, "ADDON_LOADED", "DungeonPro")
+    SlashCmdList.DUNGEONPRO("")
+    local fontUI = fontAddon.UI
+    fontAddon.db.locale = "enUS"
+    for _, sourceDungeon in ipairs(fontAddon.dungeons) do if sourceDungeon.key == "dm" then fontUI.dungeon = sourceDungeon end end
+    fontUI:Refresh(); fontUI:InspectQuest(166)
+    fontUI.language.scripts.OnEnter()
+    local fontSession = assert(fontAddon.Language.session)
+    fontSession.rows[10].scripts.OnEnter()
+    fontSession.rows[9].scripts.OnEnter()
+    nativeCalls, regionCalls = 0, {}
+    fontSession.rows[10].scripts.OnEnter()
+    local warmChanges = nativeCalls
+    check(warmChanges > 0 and fontUI.heading:GetFont() == "Fonts\\ARKai_T.ttf",
+        "warm Chinese hover changes actual native fonts and renders the selected script")
+    local duplicateWrites = 0
+    for region, methodsForRegion in pairs(regionCalls) do
+        if region.kind == "FontString" then
+            for _, calls in pairs(methodsForRegion) do if calls > 1 then duplicateWrites = duplicateWrites + calls - 1 end end
+        end
+    end
+    check(duplicateWrites == 0, "warm CJK preview does not repeat a native font setter on the same text region")
+    nativeCalls, regionCalls = 0, {}
+    fontSession.rows[10].scripts.OnEnter()
+    check(nativeCalls == 0, "repeated same CJK row performs no native font mutations")
+    fontAddon.Theme.RefreshFonts()
+    fontUI:RefreshLanguagePreview()
+    check(nativeCalls == 0, "warm same-source font refresh and pooled detail repaint avoid redundant native font setters")
+    check(fontUI.heading:GetFont() == "Fonts\\ARKai_T.ttf" and fontAddon.db.locale == "enUS",
+        "font optimization retains Chinese rendering without saving preview selection")
+    fontAddon.Language:Cancel(fontUI)
+    check(fontUI.heading:GetFont() == "Interface\\AddOns\\DungeonPro\\Media\\Fonts\\NotoSans-Regular.ttf",
+        "CJK cancel restores the committed Latin/Cyrillic font")
+    CreateFont, ChatFontNormal, GameFontHighlight = oldCreator, oldFamily, oldHighlight
+end
 print("Dungeon Pro language hover: PASS (" .. total .. " checks)")

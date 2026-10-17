@@ -306,7 +306,13 @@ local function notoFixture(allowCJK)
                 if not allowCJK and not path:find("NotoSans-Regular.ttf",1,true) and path ~= "Fonts\\ARIALN.TTF" then return false end
                 self.path,self.height,self.flags=path,size,flags;self.family=nil
             end,
-            GetFont=function(self)return self.path,self.height,self.flags end,
+            GetFont=function(self)
+                if self.family and self.family.GetFont then
+                    local path,height,flags=self.family:GetFont();return path,self.height or height,self.flags or flags
+                end
+                return self.path,self.height,self.flags
+            end,
+            GetFontObject=function(self)return self.family end,
             SetFontObject=function(self,value)self.family=value;self.path=nil end,
             SetFontHeight=function(self,value)self.height=value end,
             SetShadowOffset=function()end,SetTextColor=function(self,...)self.color={...}end}
@@ -625,4 +631,100 @@ test("Window base is opaque so lower windows cannot read through the planner",fu
     end
     assert(found)
 end)
+test("warm CJK refresh followed by row repaint writes each changed text font only once", function()
+    local f = notoFixture(true)
+    local text, input = f.font(), f.font()
+    local textSet, inputSet = text.SetFontObject, input.SetFontObject
+    local textWrites, inputWrites = 0, 0
+    text.SetFontObject = function(self, value) textWrites = textWrites + 1; return textSet(self, value) end
+    input.SetFontObject = function(self, value) inputWrites = inputWrites + 1; return inputSet(self, value) end
+    assert(addon.Theme.ApplyFont(text, 16) and addon.Theme.ApplyInputFont(input))
+    for _, locale in ipairs({ "zhCN", "zhTW", "koKR", "ruRU", "enUS" }) do
+        local beforeText, beforeInput = textWrites, inputWrites
+        addon.db.locale = locale
+        addon.Theme.RefreshFonts()
+        local refreshedText, refreshedInput = textWrites, inputWrites
+        for _ = 1, 20 do
+            assert(addon.Theme.ApplyFont(text, 16) and addon.Theme.ApplyInputFont(input))
+        end
+        assert(textWrites == refreshedText and inputWrites == refreshedInput, locale .. ": repaint does not bind the font again")
+        local changed = locale ~= "enUS"
+        assert(textWrites - beforeText == (changed and 1 or 0) and inputWrites - beforeInput == (changed and 1 or 0))
+    end
+    assert(not f.family.path and not f.family.height)
+    f.finish()
+end)
+
+test("warm font dedup requires clean effective readback and repairs detached overrides", function()
+    for _, mode in ipairs({ "path", "height", "flags", "secret-path", "secret-height", "secret-flags", "throw", "missing" }) do
+        local f = notoFixture(true); addon.db.locale = "zhCN"
+        local text = f.font(); local originalSet = text.SetFontObject; local writes = 0
+        text.SetFontObject = function(self, value) writes = writes + 1; return originalSet(self, value) end
+        assert(addon.Theme.ApplyFont(text, 16)); local before = writes
+        local read = text.GetFont
+        text.GetFont = function(self)
+            if mode == "throw" then error("font unavailable") end
+            local path, size, flags = read(self)
+            if mode == "path" then path = "Fonts\\Other.ttf" end
+            if mode == "height" then size = 99 end
+            if mode == "flags" then flags = "OUTLINE" end
+            if mode == "secret-path" then path = secret end
+            if mode == "secret-height" then size = secret end
+            if mode == "secret-flags" then flags = secret end
+            return path, size, flags
+        end
+        if mode == "missing" then text.GetFont = false end
+        assert(addon.Theme.ApplyFont(text, 16) and writes == before + 1, mode .. ": uncertain readback retries application")
+        text.GetFont = read
+        assert(addon.Theme.ApplyFont(text, 16) and writes == before + 1)
+        f.finish()
+    end
+end)
+
+test("shared font sources retain independent main-window and fixed-language button contexts", function()
+    local f = notoFixture(true)
+    local uiButton, languageButton = f.button, {}
+    for _, role in ipairs({ "Normal", "Highlight", "Disabled" }) do
+        languageButton[role] = f.font()
+        languageButton["Get" .. role .. "FontObject"] = uiButton["Get" .. role .. "FontObject"]
+        languageButton["Set" .. role .. "FontObject"] = uiButton["Set" .. role .. "FontObject"]
+    end
+    assert(addon.Theme.StyleButtonFonts(uiButton) and addon.Theme.StyleLanguageRow(languageButton, "ruRU"))
+    assert(uiButton.Normal == languageButton.Normal, "identical Noto roles share a cache")
+    local fixed = languageButton.Normal
+    for _, locale in ipairs({ "zhCN", "zhTW", "koKR", "enUS", "zhCN" }) do
+        addon.db.locale = locale; addon.Theme.RefreshFonts()
+        assert(languageButton.Normal == fixed and resolvedPath(languageButton.Normal):find("NotoSans-Regular.ttf", 1, true))
+        local expected = ({ zhCN = "Fonts\\ARKai_T.ttf", zhTW = "Fonts\\bHEI00M.ttf", koKR = "Fonts\\2002.ttf" })[locale]
+            or "Interface\\AddOns\\DungeonPro\\Media\\Fonts\\NotoSans-Regular.ttf"
+        for _, role in ipairs({ "Normal", "Highlight", "Disabled" }) do assert(resolvedPath(uiButton[role]) == expected) end
+    end
+    local original = uiButton.Normal
+    uiButton.Normal = f.font()
+    assert(addon.Theme.StyleButtonFonts(uiButton) and uiButton.Normal == original, "detached native role is rebound")
+    f.finish()
+end)
+
+test("warm readback cannot commit an expired locale or native creator context", function()
+    for _, mode in ipairs({ "locale", "family", "creator" }) do
+        local f = notoFixture(true); local text = f.font()
+        assert(addon.Theme.ApplyFont(text, 16))
+        local read = text.GetFont; local armed = true; local oldCreator = CreateFont
+        text.GetFont = function(self)
+            local path, height, flags = read(self)
+            if armed then
+                armed = false
+                if mode == "locale" then addon.db.locale = "zhCN"
+                elseif mode == "family" then ChatFontNormal = {}
+                else CreateFont = function(...) return oldCreator(...) end end
+            end
+            return path, height, flags
+        end
+        assert(not addon.Theme.ApplyFont(text, 16), mode .. ": readback loses its old context")
+        text.GetFont = read
+        assert(addon.Theme.ApplyFont(text, 16), mode .. ": fresh context can retry")
+        f.finish()
+    end
+end)
+
 print("theme: " .. total .. " scenarios passed")

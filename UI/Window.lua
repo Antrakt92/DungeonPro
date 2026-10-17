@@ -732,7 +732,7 @@ function UI:RefreshCatalogLanguage()
         return false, (self.catalogLanguageView ~= view or self.catalogLanguagePaint ~= paint) and "superseded" or nil
     end
     local function write(object, method, ...)
-        return view.write(current, object, method, ...)
+        return view.write(current, true, object, method, ...)
     end
     if not write(self.searchPlaceholder, "SetText", addon.L("SEARCH")) or
         not write(self.searchHint, "SetText", addon.L("SEARCH_HELP")) then return failed() end
@@ -815,7 +815,7 @@ function UI:RefreshDungeons()
         end)
         return ok and valid == true
     end
-    local function ownedWrite(ownerCurrent, object, method, ...)
+    local function ownedWrite(ownerCurrent, skipUnchangedText, object, method, ...)
         if not ownerCurrent() then return false end
         local bindings = object.catalogWrites or {}
         object.catalogWrites = bindings
@@ -824,6 +824,14 @@ function UI:RefreshDungeons()
         local args, count = { ... }, select("#", ...)
         local binding = { current = ownerCurrent, args = args, count = count, method = method }
         bindings[key] = binding
+        -- Keep the new ownership record even when native text already matches:
+        -- an older reentrant setter may still finish and need this value restored.
+        if skipUnchangedText and method == "SetText" then
+            local desired = addon.Clean(args[1], "string")
+            local existing = addon.Read(object.GetText, "string", object)
+            if not ownerCurrent() then return false end
+            if desired and existing == desired then return true end
+        end
         local ok = pcall(object[method], object, unpack(args, 1, count))
         local fresh = ownerCurrent()
         if not fresh then
@@ -844,8 +852,8 @@ function UI:RefreshDungeons()
         sourceReady = false
         for _, controls in ipairs({ self.cards, self.catalogInspectButtons }) do
             for _, control in ipairs(controls) do
-                if not ownedWrite(baseCurrent, control, "Hide") or
-                    not ownedWrite(baseCurrent, control, "SetScript", "OnClick", nil) then return false end
+                if not ownedWrite(baseCurrent, false, control, "Hide") or
+                    not ownedWrite(baseCurrent, false, control, "SetScript", "OnClick", nil) then return false end
             end
         end
         return false
@@ -1006,7 +1014,7 @@ function UI:RefreshDungeons()
     end
     if not proveSources() then return end
     local function write(object, method, ...)
-        return ownedWrite(current, object, method, ...)
+        return ownedWrite(current, false, object, method, ...)
     end
     for _, control in ipairs(self.catalogInspectButtons) do
         if not write(control, "Hide") or not write(control, "SetEnabled", false) or
