@@ -7265,4 +7265,44 @@ check("level localization replacing a quest cannot write the old metadata over a
     addon.L=L;addon.quests[99001]=old;f:finish()
 end)
 
+
+check("language control shows native names and aliases without rewriting stored preferences",function()
+    local old=addon.db.locale
+    local names={enUS="English",ruRU="Русский",deDE="Deutsch",frFR="Français",esES="Español",itIT="Italiano",ptBR="Português",koKR="한국어",zhCN="简体中文",zhTW="繁體中文",enGB="English",esMX="Español",unsupported="English",[""]="English"}
+    for code,name in pairs(names)do
+        addon.db.locale=code;ui:Refresh()
+        assert(ui.language.text==name and addon.db.locale==code and ui.language.width==100)
+    end
+    addon.db.locale=old;ui:Refresh()
+end)
+check("automatic language uses short localized labels without changing the menu label",function()
+    local old,locale,getter=addon.db.locale,addon.L,GetLocale
+    local menuLabel={}
+    for code,dict in pairs(addon.locales)do if dict.LANGUAGE_AUTO_SHORT then
+        GetLocale=function()return code end;addon.db.locale="auto";ui:Refresh()
+        assert(ui.language.text==dict.LANGUAGE_AUTO_SHORT and addon.db.locale=="auto" and ui.language.width==100)
+        menuLabel[code]=dict.LANGUAGE_AUTO
+    end end
+    for code,value in pairs(menuLabel)do assert(addon.locales[code].LANGUAGE_AUTO==value)end
+    GetLocale=getter;addon.db.locale=old;ui:Refresh()
+end)
+check("language aliases retain the original radio choices and fallback cycle",function()
+    local old,menu=addon.db.locale,MenuUtil
+    for _,code in ipairs({"enGB","esMX","unsupported"})do
+        addon.db.locale=code;MenuUtil=nil;ui:OpenLanguageMenu()
+        assert(addon.db.locale=="enUS" and ui.language.text=="English")
+    end
+    MenuUtil=menu;addon.db.locale=old;ui:Refresh()
+end)
+check("short automatic label localization cannot overwrite a newer preference label",function()
+    local old,localize=addon.db.locale,addon.L;local armed=true
+    addon.db.locale="auto"
+    addon.L=function(key,...)
+        if key=="LANGUAGE_AUTO_SHORT"and armed then armed=false;addon.db.locale="ruRU";ui:Refresh()end
+        return localize(key,...)
+    end
+    ui:Refresh();assert(addon.db.locale=="ruRU"and ui.language.text=="Русский")
+    addon.L=localize;addon.db.locale=old;ui:Refresh()
+end)
+
 print("Preparation UI modeled checks passed: " .. total .. " (no native layout validation)")

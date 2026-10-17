@@ -27,10 +27,36 @@ function UI:CurrentDetailAction()
         action.place == place and action.id == id and action.kind == kind then return action end
 end
 
-function UI:OpenLanguageMenu()
-    local choices = { { "auto" }, { "enUS", "English" }, { "ruRU", "Русский" }, { "deDE", "Deutsch" },
+local LANGUAGE_CHOICES = { { "auto" }, { "enUS", "English" }, { "ruRU", "Русский" }, { "deDE", "Deutsch" },
         { "frFR", "Français" }, { "esES", "Español" }, { "itIT", "Italiano" }, { "ptBR", "Português" },
         { "koKR", "한국어" }, { "zhCN", "简体中文" }, { "zhTW", "繁體中文" } }
+
+function UI:RefreshLanguageLabel()
+    local database, owner, frame, checker = addon.Clean(addon.db, "table"), self.language, self.frame, issecretvalue
+    if not database or not owner then return false end
+    local locale, localize = addon.Clean(rawget(database, "locale"), "string"), addon.Clean(addon.L, "function")
+    if not locale or not localize then return false end
+    local revision = {}
+    self.languageLabelRevision = revision
+    local code = locale == "enGB" and "enUS" or locale == "esMX" and "esES" or locale
+    local name = "English"
+    if code == "auto" then
+        name = addon.Read(localize, "string", "LANGUAGE_AUTO_SHORT")
+        if not name or not name:find("%S") then name = "Auto" end
+    else
+        for _, choice in ipairs(LANGUAGE_CHOICES) do if choice[1] == code then name = choice[2]; break end end
+    end
+    local ok, current = pcall(function()
+        return self.languageLabelRevision == revision and self.language == owner and self.frame == frame and
+            addon.db == database and rawget(database, "locale") == locale and addon.L == localize and issecretvalue == checker
+    end)
+    if not ok or current ~= true then return false end
+    owner:SetText(name)
+    return true
+end
+
+function UI:OpenLanguageMenu()
+    local choices = LANGUAGE_CHOICES
     local database, owner, checker = addon.Clean(addon.db, "table"), self.language, issecretvalue
     if not database then return false end
     local previous = addon.Clean(database.locale, "string")
@@ -2914,7 +2940,7 @@ function UI:Refresh()
     if not self.frame or not self.frame:IsShown() then return end
     self.subtitle:SetText(addon.L("SUBTITLE"))
     self.back:SetText(addon.L("DETAIL_BACK"))
-    self.language:SetText(addon.db.locale == "auto" and "Auto" or addon.db.locale)
+    if not self:RefreshLanguageLabel() then return end
     self.rangeButton:SetText(addon.L(self.range and "RANGE" or "ALL"))
     self.preparationButton:SetText(addon.L(self.preparation and "QUESTS" or "NEXT"))
     self.characterButton:SetText(addon.L(self.includeUnavailable and "ALL_CHARACTERS" or "MY_CHARACTER"))
