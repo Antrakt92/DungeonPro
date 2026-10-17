@@ -927,9 +927,9 @@ check("Native minimap arrival initializes the launcher and commands persist only
     button.scripts.OnClick(button, "LeftButton"); assert(addon.UI.frame:IsShown() == dragged)
     button.scripts.OnMouseDown(button, "LeftButton"); button.scripts.OnClick(button, "LeftButton")
     assert(addon.UI.frame:IsShown() ~= dragged)
-    SlashCmdList.DUNGEONPRO("minimap"); assert(not button:IsShown() and addon.db.minimap.hide == true)
+    SlashCmdList.DUNGEONPRO("  MiNiMaP  "); assert(not button:IsShown() and addon.db.minimap.hide == true)
     SlashCmdList.DUNGEONPRO("minimap"); assert(button:IsShown() and addon.db.minimap.hide == false)
-    SlashCmdList.DUNGEONPRO("minimap reset")
+    SlashCmdList.DUNGEONPRO(" MINIMAP\t RESET ")
     assert(button:IsShown() and addon.db.minimap.angle == 225 and addon.db.minimap.hide == false)
     assert(#waypoints == pins and addon.char.selectedDungeon == saved.selectedDungeon)
     Minimap, GetCursorPosition, addon.db.minimap = native, cursor, prefs

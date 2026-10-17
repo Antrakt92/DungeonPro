@@ -47,6 +47,7 @@ events:SetScript("OnEvent", function(_, event, arg1, arg2)
             if reload then reload() end
         end
         SlashCmdList.DUNGEONPRO = function(msg)
+            msg = (addon.Clean(msg, "string") or ""):match("^%s*(.-)%s*$"):lower():gsub("%s+", " ")
             if msg == "clear" then addon.Navigation.Stop()
             elseif msg == "probe" then addon.ProbeClient()
             elseif msg == "minimap" and addon.Minimap then addon.Minimap:ToggleVisibility()
