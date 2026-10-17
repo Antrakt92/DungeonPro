@@ -31459,6 +31459,14 @@
     },
     {
       "key": "thanes",
+      "instanceID": 3065,
+      "entrance": {
+        "gameMapID": 3065,
+        "mapID": 1455,
+        "x": 27.5,
+        "y": 48,
+        "source": "https://phylactery.io/instance/3065"
+      },
       "name": "The Hall of Thanes",
       "minLevel": 13,
       "maxLevel": 18,
@@ -31485,6 +31493,7 @@
     },
     {
       "key": "lordaeron",
+      "instanceID": 2999,
       "name": "Ruins of Lordaeron",
       "minLevel": 15,
       "maxLevel": 20,
@@ -31519,6 +31528,7 @@
     },
     {
       "key": "excavation",
+      "instanceID": 2998,
       "name": "Excavation Site: Wetlands",
       "minLevel": 26,
       "maxLevel": 31,
@@ -31554,6 +31564,7 @@
     },
     {
       "key": "dalaran",
+      "instanceID": 2959,
       "name": "City of Dalaran",
       "minLevel": 28,
       "maxLevel": 33,

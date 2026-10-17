@@ -96,7 +96,7 @@ local function indexMap(c, mapID)
     return result
 end
 
-function E.Get(dungeon)
+local function nativeEntrance(dungeon)
     dungeon = addon.Clean(dungeon, "table")
     local c = dungeon and context()
     local gameMap = dungeon and identity(rawget(dungeon, "instanceID"))
@@ -136,4 +136,43 @@ function E.Get(dungeon)
             if row.journal == journal then c.results[dungeon] = { place = row.place, gameMap = gameMap }; return row.place, valid end
         end
     end
+end
+
+local function recordedEntrance(dungeon)
+    dungeon = addon.Clean(dungeon, "table")
+    local dungeons = addon.Clean(addon.dungeons, "table")
+    local entry = dungeon and addon.Clean(rawget(dungeon, "entrance"), "table")
+    local gameMap = dungeon and identity(rawget(dungeon, "instanceID"))
+    local mapID = entry and identity(rawget(entry, "mapID"))
+    local x = entry and addon.Clean(rawget(entry, "x"), "number")
+    local y = entry and addon.Clean(rawget(entry, "y"), "number")
+    local source = entry and addon.Clean(rawget(entry, "source"), "string")
+    local name = dungeon and addon.Clean(rawget(dungeon, "name"), "string")
+    if not entry or not dungeons or not gameMap or not mapID or not x or not y or x < 0 or x > 100 or y < 0 or y > 100 or
+        identity(rawget(entry, "gameMapID")) ~= gameMap or source ~= "https://phylactery.io/instance/" .. gameMap or
+        not name or #name == 0 or #name > 500 or rawget(dungeon, "wing") ~= nil then return end
+    local point = { mapID = mapID, x = x, y = y, name = name, origin = "recorded", source = source }
+    local function valid()
+        if addon.Entrances ~= E or addon.dungeons ~= dungeons or rawget(dungeon, "entrance") ~= entry or
+            identity(rawget(dungeon, "instanceID")) ~= gameMap or rawget(dungeon, "wing") ~= nil or
+            addon.Clean(rawget(dungeon, "name"), "string") ~= name or
+            identity(rawget(entry, "gameMapID")) ~= gameMap or identity(rawget(entry, "mapID")) ~= mapID or
+            addon.Clean(rawget(entry, "x"), "number") ~= x or addon.Clean(rawget(entry, "y"), "number") ~= y or
+            addon.Clean(rawget(entry, "source"), "string") ~= source or identity(point.mapID) ~= mapID or
+            addon.Clean(point.x, "number") ~= x or addon.Clean(point.y, "number") ~= y then return false end
+        local found, shared = false, 0
+        for index = 1, math.min(#dungeons, 100) do
+            local member = addon.Clean(rawget(dungeons, index), "table")
+            if member == dungeon then found = true end
+            if member and identity(rawget(member, "instanceID")) == gameMap then shared = shared + 1 end
+        end
+        return found and shared == 1 and addon.Entrances == E and addon.dungeons == dungeons
+    end
+    if valid() then return point, valid end
+end
+
+function E.Get(dungeon)
+    local point, valid = nativeEntrance(dungeon)
+    if point then return point, valid end
+    return recordedEntrance(dungeon)
 end

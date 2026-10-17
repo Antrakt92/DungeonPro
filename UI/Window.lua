@@ -3543,7 +3543,10 @@ function UI:RefreshDetail()
             local name = addon.Read(addon.DungeonName, "string", renderDungeon)
             if self.quest ~= renderQuest or self.dungeon ~= renderDungeon or self.rewardGeneration ~= rewardGeneration then return end
             line(name or addon.Clean(renderDungeon.name, "string") or addon.L("UNKNOWN_PLACE"), "title")
-            if not self.entranceBinding then line(addon.L("DUNGEON_ENTRANCE_UNKNOWN")) end
+            if not self.entranceBinding then line(addon.L("DUNGEON_ENTRANCE_UNKNOWN"))
+            elseif addon.Clean(self.entranceBinding.point.origin, "string") == "recorded" then
+                line(addon.L("DUNGEON_ENTRANCE_RECORDED"))
+            end
             if not self.overviewArt then
                 self.overviewArt = self.detail:CreateTexture(nil, "ARTWORK")
             end
@@ -3797,6 +3800,9 @@ function UI:Create()
             local x, y = point and addon.Clean(point.x, "number"), point and addon.Clean(point.y, "number")
             if text and zone and zone:find("%S") then text = text .. " — " .. zone end
             if text and x and y and x >= 0 and x <= 100 and y >= 0 and y <= 100 then text = text .. string.format(" (%.1f, %.1f)", x, y) end
+            if text and point and addon.Clean(point.origin, "string") == "recorded" then
+                text = text .. "\n" .. addon.L("DUNGEON_ENTRANCE_RECORDED")
+            end
             local title = control.footerLabelKey and addon.L(control.footerLabelKey) or addon.Read(control.GetText, "string", control)
             if not text or not title or not current() then return end
             local held = { tip = tip, button = control }; self.navigationTooltip = held

@@ -99,6 +99,7 @@ Level ranges are provisional recommendations.
   It may mark a route point, an entrance or a turn-in. Quest-giver locations
   and preparation steps remain separate.
 - A separate quest-giver button opens a known zone or guides to a known location.
+  Known coordinates appear as a Dungeon Pro marker on the map, even without native waypoint support.
   The compact quest icon visits the giver; the Wowhead icon offers the quest link
   for copying. Hover over either icon for its action description.
   Visiting a giver does not confirm that the quest is available to pick up.
@@ -106,8 +107,9 @@ Level ranges are provisional recommendations.
   A low-level character can still visit a known giver without treating the quest
   as available. The planner stays open; move it if it covers the map.
   Viewing a location or expanding its choices does not start a guide.
-- A separate dungeon entrance button uses matching portal points supplied by the
-  client. Unavailable or ambiguous entrance data stays explicitly unavailable.
+- A separate dungeon entrance button prefers matching portal points supplied by the
+  client, with sourced player-recorded locations as a fallback where available.
+  Recorded locations are labelled; missing or ambiguous destinations stay unavailable.
 - Expand reported positions when a giver has several sourced points, then choose
   a point to visit. Movement and quest phases may affect which position is current.
 - Original quest text is saved when you open its quest offer, including

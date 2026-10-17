@@ -1040,6 +1040,94 @@ class CatalogTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "dungeon wing"):
             catalog.validate(data)
 
+    def test_recorded_entrance_is_optional_and_preserves_percent_units_and_quest_facts(self):
+        data = self.minimal_catalog()
+        dungeon = data["dungeons"][0]
+        dungeon["instanceID"] = 3065
+        baseline = catalog.generate(data)
+        before = copy.deepcopy(data)
+        entrance = {"gameMapID": 3065, "mapID": 1455, "x": 27.5, "y": 48,
+                    "source": "https://phylactery.io/instance/3065"}
+        dungeon["entrance"] = entrance
+        expected = copy.deepcopy(data)
+        generated = catalog.generate(data)
+        self.assertEqual(data, expected)
+        self.assertEqual(data["quests"], before["quests"])
+        self.assertIn('["entrance"] = { ["gameMapID"] = 3065, ["mapID"] = 1455', generated)
+        self.assertIn('["x"] = 27.5, ["y"] = 48', generated)
+        self.assertNotIn('["x"] = 0.275', generated)
+        self.assertNotIn('["origin"]', generated)
+        del dungeon["entrance"]
+        self.assertEqual(catalog.generate(data), baseline)
+
+    def test_recorded_entrance_requires_the_complete_exact_dto_without_unreviewed_fields(self):
+        valid = {"gameMapID": 3065, "mapID": 1455, "x": 27.5, "y": 48,
+                 "source": "https://phylactery.io/instance/3065"}
+        invalid = [None, False, True, 1, "entrance", [], {}, *[{k: v for k, v in valid.items() if k != field}
+                    for field in valid], *[{**valid, key: 1} for key in
+                    ("origin", "name", "zoneName", "instanceID", "ejInstanceID", "xNormalized", "confidence")]]
+        for value in invalid:
+            data = self.minimal_catalog()
+            data["dungeons"][0].update(instanceID=3065, entrance=value)
+            with self.subTest(value=value), self.assertRaisesRegex(ValueError, "dungeon entrance"):
+                catalog.validate(data)
+
+    def test_recorded_entrance_rejects_identity_aliases_mismatches_and_unbounded_lua_ids(self):
+        valid = {"gameMapID": 3065, "mapID": 1455, "x": 27.5, "y": 48,
+                 "source": "https://phylactery.io/instance/3065"}
+        for field in ("gameMapID", "mapID"):
+            for value in (None, False, True, 0, -1, 1.0, 1.5, "1455", {}, [], float("nan"), float("inf"), 2 ** 53):
+                data = self.minimal_catalog()
+                data["dungeons"][0].update(instanceID=3065, entrance={**valid, field: value})
+                with self.subTest(field=field, value=repr(value)), self.assertRaisesRegex(ValueError, "dungeon entrance"):
+                    catalog.validate(data)
+        for instance in (None, 1455, 3066):
+            data = self.minimal_catalog()
+            data["dungeons"][0]["entrance"] = valid
+            if instance is not None:
+                data["dungeons"][0]["instanceID"] = instance
+            with self.subTest(instance=instance), self.assertRaisesRegex(ValueError, "dungeon entrance"):
+                catalog.validate(data)
+        data = self.minimal_catalog()
+        data["dungeons"][0].update(instanceID=3065, entrance={**valid, "gameMapID": 1455, "mapID": 3065})
+        with self.assertRaisesRegex(ValueError, "dungeon entrance"):
+            catalog.validate(data)
+
+    def test_recorded_entrance_accepts_literal_percent_boundaries_and_rejects_nonfinite_or_boolean_coordinates(self):
+        valid = {"gameMapID": 3065, "mapID": 1455, "x": 27.5, "y": 48,
+                 "source": "https://phylactery.io/instance/3065"}
+        for field in ("x", "y"):
+            for value in (None, False, True, "27.5", {}, [], -.01, 100.01, float("nan"), float("inf"), -float("inf"), 10 ** 1000):
+                data = self.minimal_catalog()
+                data["dungeons"][0].update(instanceID=3065, entrance={**valid, field: value})
+                with self.subTest(field=field, value=repr(value)), self.assertRaisesRegex(ValueError, "entrance coordinate"):
+                    catalog.validate(data)
+            for value in (0, .5, 27.5, 48, 100):
+                data = self.minimal_catalog()
+                data["dungeons"][0].update(instanceID=3065, entrance={**valid, field: value})
+                before = copy.deepcopy(data)
+                with self.subTest(field=field, value=value):
+                    catalog.validate(data)
+                    self.assertEqual(data, before)
+
+    def test_recorded_entrance_binds_exact_primary_source_and_rejects_shared_wing_ambiguity(self):
+        valid = {"gameMapID": 3065, "mapID": 1455, "x": 27.5, "y": 48,
+                 "source": "https://phylactery.io/instance/3065"}
+        for source in (None, False, 1, {}, [], "", "https://phylactery.io/instance/1455",
+                       "http://phylactery.io/instance/3065", "https://www.phylactery.io/instance/3065",
+                       "https://phylactery.io/instance/03065", "https://phylactery.io/instance/3065/",
+                       "https://phylactery.io/instance/3065?x=27.5", "https://phylactery.io/instance/3065#entrance",
+                       "https://phylactery.io.evil.invalid/instance/3065", " https://phylactery.io/instance/3065"):
+            data = self.minimal_catalog()
+            data["dungeons"][0].update(instanceID=3065, entrance={**valid, "source": source})
+            with self.subTest(source=source), self.assertRaisesRegex(ValueError, "dungeon entrance"):
+                catalog.validate(data)
+        for wing in ("lower", "upper"):
+            data = self.minimal_catalog()
+            data["dungeons"][0].update(instanceID=3065, wing=wing, entrance=valid)
+            with self.subTest(wing=wing), self.assertRaisesRegex(ValueError, "dungeon entrance"):
+                catalog.validate(data)
+
     def test_shared_instance_names_need_distinct_explicit_wings(self):
         for lower, upper in ((None, None), (None, "upper"), ("lower", "lower")):
             data = self.minimal_catalog()

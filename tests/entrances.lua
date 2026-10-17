@@ -111,5 +111,73 @@ check("Actual catalogue map candidates remain separate from native acceptance", 
     C_EncounterJournal.GetInstanceForGameMap = function(id) assert(id == 36); return 77 end
     local p = assert(e.Get(dm)); assert(p.mapID == 1436 and p.x == 42 and p.y == 75)
 end)
+check("Reviewed new dungeon game-map identities reach the native join before portal lookup", function()
+    for key, expected in pairs({ thanes = 3065, lordaeron = 2999, excavation = 2998, dalaran = 2959 }) do
+        local e = reset(); assert(loadfile("Database/Catalog.lua"))("DungeonPro", addon)
+        local selected
+        for _, d in ipairs(addon.dungeons) do if d.key == key then selected = d end end
+        assert(selected and selected.instanceID == expected, key .. ": exact game-map identity is present")
+        local seen
+        C_EncounterJournal.GetInstanceForGameMap = function(id) seen = id; assert(id == expected); return 77 end
+        -- Modeled portal data exercises the join; these coordinates are not real destinations.
+        rows = { [1455] = { row(77, .25, .5) } }
+        local place, current = e.Get(selected)
+        assert(seen == expected and place and current() and place.mapID == 1455 and place.x == 25 and place.y == 50)
+        addon.dungeons = {}
+        assert(not current(), "replaced catalogue expires the new dungeon destination")
+    end
+end)
+check("Recorded portal works with absent services and the human-observed nil journal", function()
+    for _, unavailable in ipairs({ "missing", "nil-journal", "empty-portals" }) do
+        local e = reset()
+        dungeon.entrance = { gameMapID = 36, mapID = 1455, x = 27.5, y = 48, source = "https://phylactery.io/instance/36" }
+        if unavailable == "missing" then C_EncounterJournal = nil
+        elseif unavailable == "nil-journal" then C_EncounterJournal.GetInstanceForGameMap = function() return nil end
+        else rows = {} end
+        local point, current = e.Get(dungeon)
+        assert(point and current() and point.origin == "recorded" and point.mapID == 1455 and point.x == 27.5 and point.y == 48)
+        dungeon.entrance.x = 28
+        assert(not current(), "changed recorded source expires the destination")
+    end
+end)
+check("An exact native portal takes priority over a recorded fallback", function()
+    local e = reset()
+    dungeon.entrance = { gameMapID = 36, mapID = 1455, x = 27.5, y = 48, source = "https://phylactery.io/instance/36" }
+    local point = assert(e.Get(dungeon))
+    assert(point.mapID == 1436 and point.x == 42 and point.y == 75 and point.origin ~= "recorded")
+end)
+check("Recorded portals reject malformed coordinates source identities and shared wings", function()
+    for _, value in ipairs({ secret, false, "27.5", -1, 101, math.huge }) do
+        local e = reset(); C_EncounterJournal = nil
+        dungeon.entrance = { gameMapID = 36, mapID = 1455, x = value, y = 48, source = "https://phylactery.io/instance/36" }
+        assert(e.Get(dungeon) == nil)
+    end
+    for _, fieldName in ipairs({ "source", "gameMapID", "mapID" }) do
+        local e = reset(); C_EncounterJournal = nil
+        dungeon.entrance = { gameMapID = 36, mapID = 1455, x = 27.5, y = 48, source = "https://phylactery.io/instance/36" }
+        dungeon.entrance[fieldName] = fieldName == "source" and "https://phylactery.io/instance/3065" or 0
+        assert(e.Get(dungeon) == nil)
+    end
+    local e = reset(); C_EncounterJournal = nil
+    dungeon.entrance = { gameMapID = 36, mapID = 1455, x = 27.5, y = 48, source = "https://phylactery.io/instance/36" }
+    local _, current = e.Get(dungeon)
+    addon.dungeons[2] = { instanceID = 36 }
+    assert(not current() and e.Get(dungeon) == nil)
+    addon.dungeons[2] = nil; dungeon.wing = "lower"
+    assert(e.Get(dungeon) == nil)
+end)
+check("Actual Thanes recorded entrance survives the missing native join without becoming a quest giver", function()
+    local e = reset(); assert(loadfile("Database/Catalog.lua"))("DungeonPro", addon)
+    C_EncounterJournal.GetInstanceForGameMap = function() return nil end
+    rows = {}
+    local thanes
+    for _, d in ipairs(addon.dungeons) do if d.key == "thanes" then thanes = d end end
+    local point, current = e.Get(thanes)
+    assert(point and current() and point.origin == "recorded" and point.source == "https://phylactery.io/instance/3065")
+    assert(point.mapID == 1455 and point.x == 27.5 and point.y == 48)
+    local giver = addon.quests[96394].start
+    assert(point ~= giver and (point.x ~= giver.x or point.y ~= giver.y))
+    thanes.entrance = {}; assert(not current())
+end)
 issecretvalue = nil
 print("Entrance modeled checks passed: " .. total .. " (native coverage unverified)")

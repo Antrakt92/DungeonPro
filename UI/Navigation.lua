@@ -6,6 +6,8 @@ local tomtomOwner, tomtomUID, nativePoint
 local navigationGeneration = {}
 local presentation, contextElapsed = nil, 0
 local presentationWrite
+local mapMarker, mapMarkerState, mapMarkerTicker
+local markerGeneration, markerElapsed, markerWrites = {}, 0, setmetatable({}, { __mode = "k" })
 
 local function actionTitle(action)
     if action.kind == "entrance" then
@@ -37,14 +39,177 @@ function N.Valid(point)
     return mapID ~= nil and x ~= nil and y ~= nil and x >= 0 and x <= 100 and y >= 0 and y <= 100
 end
 
+local function markerObject(value)
+    return addon.Clean(value, "table") or addon.Clean(value, "userdata")
+end
+
+local function markerMethod(owner, key)
+    return owner and addon.Read(function() return owner[key] end, "function")
+end
+
+local function markerWrite(owner, method, current, ...)
+    if not current() then return false end
+    local setter = markerMethod(owner, method)
+    if not setter or not current() then return false end
+    local writes = markerWrites[owner] or {}; markerWrites[owner] = writes
+    local key = (method == "Show" or method == "Hide") and "visibility"
+        or ((method == "SetPoint" or method == "ClearAllPoints") and "anchor" or method)
+    local binding = { current = current, setter = setter, args = { ... }, count = select("#", ...) }
+    writes[key] = binding
+    local ok = pcall(setter, owner, ...)
+    local fresh = current()
+    if not fresh then
+        local newer = writes[key]
+        if newer and newer ~= binding and not newer.repairing then
+            newer.repairing = true
+            if newer.current() and writes[key] == newer then pcall(newer.setter, owner, unpack(newer.args, 1, newer.count)) end
+            newer.repairing = nil
+        end
+    end
+    return ok and fresh
+end
+
+local function clearMapMarker()
+    local generation = {}; markerGeneration, mapMarkerState = generation, nil
+    local function current() return markerGeneration == generation and mapMarkerState == nil end
+    if mapMarker then markerWrite(mapMarker, "Hide", current) end
+    if mapMarkerTicker and current() then markerWrite(mapMarkerTicker, "Hide", current) end
+    return generation
+end
+
+local function refreshMapMarker()
+    local state = mapMarkerState
+    if not state then return end
+    local function current()
+        if markerGeneration ~= state.generation or mapMarkerState ~= state or addon.Navigation ~= N then return false end
+        local mapID = mapIdentity(addon.Read(function() return state.point.mapID end, "number"))
+        local x = addon.Read(function() return state.point.x end, "number")
+        local y = addon.Read(function() return state.point.y end, "number")
+        return markerGeneration == state.generation and mapMarkerState == state and addon.Navigation == N
+            and mapID == state.mapID and x == state.x and y == state.y
+    end
+    if not current() then if mapMarkerState == state then clearMapMarker() end; return end
+    local map = markerObject(WorldMapFrame)
+    local shownGetter, mapGetter, canvasGetter = markerMethod(map, "IsShown"), markerMethod(map, "GetMapID"), markerMethod(map, "GetCanvas")
+    local shown = shownGetter and addon.Read(shownGetter, "boolean", map)
+    local mapID = mapGetter and mapIdentity(addon.Read(mapGetter, "number", map))
+    local canvasOK, rawCanvas = pcall(function() return canvasGetter and canvasGetter(map) end)
+    local canvas = canvasOK and markerObject(rawCanvas)
+    local function owned()
+        if not current() or WorldMapFrame ~= map or markerMethod(map, "IsShown") ~= shownGetter
+            or markerMethod(map, "GetMapID") ~= mapGetter or markerMethod(map, "GetCanvas") ~= canvasGetter then return false end
+        local displayed = mapGetter and mapIdentity(addon.Read(mapGetter, "number", map))
+        local visible = shownGetter and addon.Read(shownGetter, "boolean", map)
+        local canvasRead, latestCanvas = pcall(function() return canvasGetter and canvasGetter(map) end)
+        return canvasRead and markerObject(latestCanvas) == canvas and displayed == mapID and visible == shown and current() and WorldMapFrame == map
+            and markerMethod(map, "IsShown") == shownGetter and markerMethod(map, "GetMapID") == mapGetter
+            and markerMethod(map, "GetCanvas") == canvasGetter and current()
+    end
+    if not owned() then
+        if mapMarker then markerWrite(mapMarker, "Hide", current) end
+        state.geometry = nil
+        return
+    end
+    if not map or not canvas or shown ~= true or mapID ~= state.mapID then
+        if mapMarker then markerWrite(mapMarker, "Hide", owned) end
+        state.geometry = nil
+        return
+    end
+    local width = addon.Read(markerMethod(canvas, "GetWidth"), "number", canvas)
+    local height = addon.Read(markerMethod(canvas, "GetHeight"), "number", canvas)
+    local scaleGetter = markerMethod(map, "GetCanvasScale")
+    local zoom
+    if scaleGetter then zoom = addon.Read(scaleGetter, "number", map) end
+    if not width or not height or not zoom or width <= 0 or height <= 0 or zoom <= 0 or not owned() then
+        if mapMarker then markerWrite(mapMarker, "Hide", current) end
+        state.geometry = nil
+        return
+    end
+    if not mapMarker then
+        local ok, created = pcall(CreateFrame, "Frame", nil, canvas)
+        if not owned() then return end
+        mapMarker = ok and markerObject(created) or nil
+        if not mapMarker then return end
+        markerWrite(mapMarker, "Hide", owned)
+        markerWrite(mapMarker, "EnableMouse", owned, false)
+    end
+    if not mapMarker.icon and (state.iconAttempts or 0) < 3 then
+        state.iconAttempts = (state.iconAttempts or 0) + 1
+        local createTexture = markerMethod(mapMarker, "CreateTexture")
+        local made, icon = pcall(function() return createTexture and createTexture(mapMarker, nil, "OVERLAY") end)
+        if not owned() then return end
+        icon = made and markerObject(icon)
+        if not icon then return end
+        mapMarker.icon = icon
+        markerWrite(icon, "SetAllPoints", owned, mapMarker)
+        -- The waypoint atlas is shipped by the client's own map provider. The
+        -- standard map icon remains visible when that optional atlas is unavailable.
+        markerWrite(icon, "SetTexture", owned, "Interface\\Icons\\INV_Misc_Map_01")
+        local atlas = markerMethod(icon, "SetAtlas")
+        if atlas and owned() then
+            local accepted, result = pcall(atlas, icon, "Waypoint-MapPin-Untracked")
+            local actual = addon.Read(markerMethod(icon, "GetAtlas"), "string", icon)
+            if not accepted or addon.Clean(result, "boolean") == false or actual ~= "Waypoint-MapPin-Untracked" then
+                markerWrite(icon, "SetTexture", owned, "Interface\\Icons\\INV_Misc_Map_01")
+            end
+        end
+    end
+    if not mapMarker.icon or not owned() then return end
+    local geometry = state.geometry
+    if geometry and geometry.map == map and geometry.canvas == canvas and geometry.width == width
+        and geometry.height == height and geometry.zoom == zoom then return end
+    -- MapCanvas positions normalized points in its scrolling child, divided by
+    -- the pin scale. Inverse canvas scale keeps this owned marker a constant size.
+    local scale = 1 / zoom
+    local anchorX = addon.Clean(width * (state.x / 100) / scale, "number")
+    local anchorY = addon.Clean(-height * (state.y / 100) / scale, "number")
+    if not addon.Clean(scale, "number") or not anchorX or not anchorY then
+        markerWrite(mapMarker, "Hide", current); state.geometry = nil; return
+    end
+    if not markerWrite(mapMarker, "SetParent", owned, canvas)
+        or not markerWrite(mapMarker, "SetSize", owned, 30, 30)
+        or not markerWrite(mapMarker, "SetScale", owned, scale)
+        or not markerWrite(mapMarker, "ClearAllPoints", owned)
+        or not markerWrite(mapMarker, "SetPoint", owned, "CENTER", canvas, "TOPLEFT", anchorX, anchorY)
+        or not markerWrite(mapMarker, "Show", owned) then return end
+    state.geometry = { map = map, canvas = canvas, width = width, height = height, zoom = zoom }
+end
+
 function N.Map(point)
     local mapID = type(point) == "table" and mapIdentity(point.mapID)
     if not mapID then return false end
-    if C_Map and type(C_Map.OpenWorldMap) == "function" then
-        return pcall(C_Map.OpenWorldMap, mapID)
+    local generation = clearMapMarker()
+    local x = addon.Read(function() return point.x end, "number")
+    local y = addon.Read(function() return point.y end, "number")
+    local opened = false
+    if C_Map and type(C_Map.OpenWorldMap) == "function" then opened = pcall(C_Map.OpenWorldMap, mapID)
+    elseif type(OpenWorldMap) == "function" then opened = pcall(OpenWorldMap, mapID) end
+    if not opened or markerGeneration ~= generation then return opened end
+    local map = markerObject(WorldMapFrame)
+    if x and y and x >= 0 and x <= 100 and y >= 0 and y <= 100 and map
+        and markerMethod(map, "GetCanvas") and markerMethod(map, "GetMapID") and markerMethod(map, "IsShown") then
+        mapMarkerState = { generation = generation, point = point, mapID = mapID, x = x, y = y }
+        if not mapMarkerTicker then
+            local ok, created = pcall(CreateFrame, "Frame", nil, UIParent)
+            if markerGeneration ~= generation then return opened end
+            mapMarkerTicker = ok and markerObject(created) or nil
+            if mapMarkerTicker then
+                mapMarkerTicker:SetScript("OnUpdate", function(_, delta)
+                    delta = addon.Clean(delta, "number")
+                    if not delta or delta < 0 then return end
+                    markerElapsed = markerElapsed + delta
+                    if markerElapsed < 0.1 then return end
+                    markerElapsed = 0
+                    refreshMapMarker()
+                end)
+            end
+        end
+        if mapMarkerTicker then
+            markerWrite(mapMarkerTicker, "Show", function() return markerGeneration == generation and mapMarkerState ~= nil end)
+        end
+        refreshMapMarker()
     end
-    if type(OpenWorldMap) == "function" then return pcall(OpenWorldMap, mapID) end
-    return false
+    return opened
 end
 
 function N.ProbeGeometry()
@@ -221,6 +386,7 @@ function N.Stop()
     -- Release ownership before third-party cleanup can invoke callbacks.
     tomtomOwner, tomtomUID, nativePoint, target = nil, nil, nil, nil
     presentation, contextElapsed = nil, 0
+    clearMapMarker()
     if frame then setVisible(false, nil, generation) end
     if uid and owner and type(owner.RemoveWaypoint) == "function" and
         not (rawequal(tomtomOwner, owner) and rawequal(tomtomUID, uid)) then

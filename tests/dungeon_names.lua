@@ -137,7 +137,7 @@ check("Restriction checker drift and unreadable locale never authorize a stale l
         assert(addon.DungeonName(ordinary)==ordinary.name)
     end
 end)
-check("Four reviewed art-only dungeon maps can supply client labels without becoming instance identities", function()
+check("Reviewed instance identities and legacy art-only maps supply labels without mutating source facts", function()
     local catalog={}
     assert(loadfile("Database/Catalog.lua"))("DungeonPro",catalog)
     local expected={thanes=3065,lordaeron=2999,excavation=2998,dalaran=2959}
@@ -145,10 +145,13 @@ check("Four reviewed art-only dungeon maps can supply client labels without beco
     for _,dungeon in ipairs(catalog.dungeons) do
         if expected[dungeon.key] then
             local source,art=dungeon.name,dungeon.art
-            assert(dungeon.instanceID==nil and art.gameMapID==expected[dungeon.key])
+            assert(dungeon.instanceID==expected[dungeon.key] and art.gameMapID==expected[dungeon.key])
             GetRealZoneText=function(id,...) assert(id==expected[dungeon.key] and select("#",...)==0);return "Native label "..id end
             assert(addon.DungeonName(dungeon)=="Native label "..expected[dungeon.key])
-            assert(dungeon.name==source and dungeon.instanceID==nil and dungeon.art==art)
+            assert(dungeon.name==source and dungeon.instanceID==expected[dungeon.key] and dungeon.art==art)
+            local legacy={name=source,art=art}
+            assert(addon.DungeonName(legacy)=="Native label "..expected[dungeon.key])
+            assert(legacy.name==source and legacy.instanceID==nil and legacy.art==art)
             count=count+1
         end
     end

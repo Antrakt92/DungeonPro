@@ -337,6 +337,18 @@ def validate(data):
             raise ValueError("Invalid dungeon identity/levels")
         if "wing" in d and (type(d["wing"]) is not str or d["wing"] not in ("lower", "upper") or "instanceID" not in d):
             raise ValueError("Invalid dungeon wing")
+        if "entrance" in d:
+            entrance = d["entrance"]
+            if (type(entrance) is not dict or set(entrance) != {"gameMapID", "mapID", "x", "y", "source"} or
+                    "wing" in d or not integer(d.get("instanceID")) or
+                    any(not integer(entrance.get(field)) or entrance[field] > 2 ** 53 - 1
+                        for field in ("gameMapID", "mapID")) or entrance["gameMapID"] != d["instanceID"] or
+                    entrance["source"] != f"https://phylactery.io/instance/{entrance['gameMapID']}"):
+                raise ValueError("Invalid dungeon entrance identity/source")
+            for field in ("x", "y"):
+                value = entrance[field]
+                if type(value) not in (int, float) or not 0 <= value <= 100 or not math.isfinite(value):
+                    raise ValueError("Invalid dungeon entrance coordinate")
         if "art" in d:
             art = d["art"]
             identity_fields = {"fileID", "gameMapID", "loadingScreenID", "source"}
