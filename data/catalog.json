@@ -2960,7 +2960,103 @@
           {
             "npcID": 216661,
             "name": "Blackfathom Tide Priestess",
-            "locationName": "Ashenvale"
+            "locationName": "Ashenvale",
+            "zoneName": "Ashenvale",
+            "mapID": 1440,
+            "x": 12.8,
+            "y": 10,
+            "reportedLocations": [
+              {
+                "mapID": 1440,
+                "x": 12.8,
+                "y": 10,
+                "zoneName": "Ashenvale"
+              },
+              {
+                "mapID": 1440,
+                "x": 13.4,
+                "y": 9.4,
+                "zoneName": "Ashenvale"
+              },
+              {
+                "mapID": 1440,
+                "x": 13.4,
+                "y": 12.2,
+                "zoneName": "Ashenvale"
+              },
+              {
+                "mapID": 1440,
+                "x": 13.4,
+                "y": 13.2,
+                "zoneName": "Ashenvale"
+              },
+              {
+                "mapID": 1440,
+                "x": 13.6,
+                "y": 11.8,
+                "zoneName": "Ashenvale"
+              },
+              {
+                "mapID": 1440,
+                "x": 13.6,
+                "y": 13.4,
+                "zoneName": "Ashenvale"
+              },
+              {
+                "mapID": 1440,
+                "x": 13.8,
+                "y": 9.2,
+                "zoneName": "Ashenvale"
+              },
+              {
+                "mapID": 1440,
+                "x": 13.8,
+                "y": 10,
+                "zoneName": "Ashenvale"
+              },
+              {
+                "mapID": 1440,
+                "x": 13.8,
+                "y": 11.2,
+                "zoneName": "Ashenvale"
+              },
+              {
+                "mapID": 1440,
+                "x": 14.6,
+                "y": 10,
+                "zoneName": "Ashenvale"
+              },
+              {
+                "mapID": 1440,
+                "x": 15,
+                "y": 10.6,
+                "zoneName": "Ashenvale"
+              },
+              {
+                "mapID": 1440,
+                "x": 15.8,
+                "y": 11.4,
+                "zoneName": "Ashenvale"
+              },
+              {
+                "mapID": 1440,
+                "x": 16.4,
+                "y": 11.6,
+                "zoneName": "Ashenvale"
+              },
+              {
+                "mapID": 1440,
+                "x": 17,
+                "y": 11.2,
+                "zoneName": "Ashenvale"
+              },
+              {
+                "mapID": 1440,
+                "x": 17.6,
+                "y": 11,
+                "zoneName": "Ashenvale"
+              }
+            ]
           }
         ]
       },
