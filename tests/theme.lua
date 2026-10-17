@@ -192,4 +192,94 @@ test("EditBox uses an owned native-family font clone without a nonexistent direc
     assert(addon.Theme.ApplyInputFont(input)==ChatFontNormal and input.font==ChatFontNormal)
     ChatFontNormal,CreateFont=chat,creator
 end)
+function methods:GetAlpha()return self.alpha or 1 end
+function methods:SetRotation(value)self.rotation=value end
+function methods:IsEnabled()return self.enabled~=false end
+function methods:HookScript(name,callback)
+    if self.hookFailure==name then return false end
+    if self.hookThrow==name then error("unsupported")end
+    self.hooks=self.hooks or {};self.hooks[name]=self.hooks[name]or{};table.insert(self.hooks[name],callback);return true
+end
+local function nativeEvent(object,name,...)
+    if object.scripts[name]then object.scripts[name](object,...)end
+    for _,fn in ipairs(object.hooks and object.hooks[name]or{})do fn(object,...)end
+end
+local function scrollFixture()
+    local scroll,bar=region(),region();scroll.ScrollBar=bar
+    bar.ThumbTexture=region();bar.ThumbTexture.width,bar.ThumbTexture.height=18,24
+    bar.ScrollUpButton,bar.ScrollDownButton=region(),region()
+    for _,button in ipairs({bar.ScrollUpButton,bar.ScrollDownButton})do
+        button.width,button.height=18,16
+        for _,key in ipairs({"Normal","Pushed","Disabled","Highlight"})do button[key]=region()end
+        button.scripts.OnClick=function(self)self.clicked=(self.clicked or 0)+1 end
+        button.scripts.OnEnter=function(self)self.entered=(self.entered or 0)+1 end
+    end
+    bar.scripts.OnValueChanged=function(self,n)self.value=n end
+    scroll.scripts.OnMouseWheel=function(self,n)self.wheel=n end
+    return scroll,bar
+end
+test("all three native scrollbars receive bounded quiet cosmetics while native geometry and handlers stay intact",function()
+    local ui={frame=region()}
+    ui.catalogScroll=scrollFixture();ui.questScroll=scrollFixture();ui.detailScroll=scrollFixture()
+    local totalTextures=0
+    for _,scroll in ipairs({ui.catalogScroll,ui.questScroll,ui.detailScroll})do
+        local bar=scroll.ScrollBar;bar.shown=false;bar.ThumbTexture.shown=false
+        local click=bar.ScrollUpButton.scripts.OnClick;local value=bar.scripts.OnValueChanged
+        assert(addon.Theme.Apply(ui))
+        assert(not bar.shown and not bar.ThumbTexture.shown and not bar.points)
+        assert(bar.ThumbTexture.width==18 and bar.ThumbTexture.height==24 and not bar.ThumbTexture.points)
+        assert(bar.ThumbTexture.color[2]>bar.ThumbTexture.color[1])
+        assert(#bar.textures==1 and bar.textures[1].width==3)
+        assert(bar.ScrollUpButton.width==18 and bar.ScrollUpButton.height==16 and not bar.ScrollUpButton.points)
+        assert(bar.ScrollUpButton.scripts.OnClick==click and bar.scripts.OnValueChanged==value)
+        assert(not bar.scripts.OnUpdate and not scroll.scripts.OnUpdate)
+        nativeEvent(bar.ScrollUpButton,"OnClick");nativeEvent(bar,"OnValueChanged",30);nativeEvent(scroll,"OnMouseWheel",1)
+        assert(bar.ScrollUpButton.clicked==1 and bar.value==30 and scroll.wheel==1)
+        local a,b=bar.ScrollUpButton,bar.ScrollDownButton
+        assert(#a.textures==2 and #b.textures==2 and a.textures[1].rotation==-b.textures[1].rotation)
+        assert(a.Normal.alpha==0 and a.Pushed.alpha==0 and a.Disabled.alpha==0 and a.Highlight.alpha==0)
+        totalTextures=totalTextures+#bar.textures+#a.textures+#b.textures
+    end
+    for n=1,100 do assert(addon.Theme.Apply(ui))end
+    local after=0
+    for _,scroll in ipairs({ui.catalogScroll,ui.questScroll,ui.detailScroll})do
+        local bar=scroll.ScrollBar;after=after+#bar.textures+#bar.ScrollUpButton.textures+#bar.ScrollDownButton.textures
+        for _,button in ipairs({bar.ScrollUpButton,bar.ScrollDownButton})do
+            for _,list in pairs(button.hooks)do assert(#list==1)end
+        end
+    end
+    assert(totalTextures==15 and after==totalTextures)
+end)
+test("native arrow enable hover and disable events update only owned chevrons",function()
+    local scroll,bar=scrollFixture();bar.ScrollUpButton.enabled=false
+    assert(addon.Theme.StyleScrollBar(scroll))
+    local button=bar.ScrollUpButton;local stroke=button.textures[1]
+    assert(stroke.alpha==.38 and not button.enabled)
+    button.enabled=true;nativeEvent(button,"OnEnable");assert(stroke.alpha==1)
+    local normal=stroke.color[2];nativeEvent(button,"OnEnter")
+    assert(button.entered==1 and stroke.color[2]~=normal and stroke.color[2]>stroke.color[1])
+    nativeEvent(button,"OnLeave");assert(stroke.color[2]==normal)
+    button.enabled=false;nativeEvent(button,"OnDisable");assert(stroke.alpha==.38 and not button.enabled)
+    bar:Hide();assert(not bar.shown and not bar.ThumbTexture.shown)
+    bar:Show();assert(bar.shown and not bar.ThumbTexture.shown)
+end)
+test("missing rotation hook capabilities and partial hook failures preserve original arrow art without repeated hooks",function()
+    for _,failure in ipairs({"rotation","missinghook","falsehook","throwhook","secondtexture","alpha"})do
+        local scroll,bar=scrollFixture();local button=bar.ScrollUpButton
+        if failure=="rotation"then button.CreateTexture=function(self,...)local t=methods.CreateTexture(self,...);t.SetRotation=false;return t end end
+        if failure=="missinghook"then button.HookScript=false end
+        if failure=="falsehook"then button.hookFailure="OnEnable"end
+        if failure=="throwhook"then button.hookThrow="OnEnable"end
+        if failure=="secondtexture"then button.CreateTexture=function(self,...)if #self.textures==1 then error("cold")end;return methods.CreateTexture(self,...)end end
+        if failure=="alpha"then button.Normal.SetAlpha=function()error("unavailable")end end
+        addon.Theme.StyleScrollBar(scroll)
+        assert(button.Normal.alpha==nil and button.Pushed.alpha~=0 and button.Disabled.alpha~=0 and button.Highlight.alpha~=0)
+        for _,part in ipairs(button.textures)do assert(not part.shown)end
+        local count=#button.textures;local hooks=button.hooks and #(button.hooks.OnEnter or{})or 0
+        for n=1,20 do addon.Theme.StyleScrollBar(scroll)end
+        assert(#button.textures==count and (button.hooks and #(button.hooks.OnEnter or{})or 0)==hooks)
+        nativeEvent(button,"OnClick");assert(button.clicked==1)
+    end
+    assert(not addon.Theme.StyleScrollBar({}))
+end)
 print("theme: " .. total .. " scenarios passed")

@@ -185,6 +185,89 @@ function Theme.StyleRow(row, options)
     return true
 end
 
+local scrollbars, scrollArrows = setmetatable({}, { __mode = "k" }), setmetatable({}, { __mode = "k" })
+
+local function styleScrollArrow(button, down)
+    button = cleanObject(button)
+    if not button then return false end
+    local state = scrollArrows[button]
+    if state then return state.active == true end
+    state = {}; scrollArrows[button] = state
+    local hook = addon.Read(function() return button.HookScript end, "function")
+    local enabled = addon.Read(function() return button:IsEnabled() end, "boolean")
+    local originals, originalAlphas = {}, {}
+    for _, key in ipairs({ "Normal", "Pushed", "Disabled", "Highlight" }) do
+        originals[key] = cleanObject(button[key]) or objectResult(button, "Get" .. key .. "Texture")
+        if not originals[key] or not addon.Read(function() return originals[key].SetAlpha end, "function") then return false end
+        originalAlphas[key] = addon.Read(function() return originals[key]:GetAlpha() end, "number")
+        if originalAlphas[key] == nil then return false end
+    end
+    if not hook or enabled == nil then return false end
+    local left, right = texture(button, "OVERLAY"), texture(button, "OVERLAY")
+    if left then invoke(left, "Hide") end
+    if right then invoke(right, "Hide") end
+    if not left or not right then return false end
+    state.parts = { left, right }
+    for index, part in ipairs(state.parts) do
+        invoke(part, "Hide")
+        if not invoke(part, "SetWidth", 6) or not invoke(part, "SetHeight", 2) or
+            not invoke(part, "SetPoint", "CENTER", button, "CENTER", index == 1 and -2 or 2, 0) or
+            not invoke(part, "SetRotation", (index == 1 and 1 or -1) * (down and -1 or 1) * math.pi / 4) or
+            not color(part, palette.muted) then return false end
+    end
+    local function refresh()
+        if not state.active then return end
+        local on = addon.Read(function() return button:IsEnabled() end, "boolean")
+        local tint = on == true and (state.hover and palette.teal or palette.muted) or palette.quiet
+        for _, part in ipairs(state.parts) do
+            color(part, tint); invoke(part, "SetAlpha", on == true and 1 or 0.38)
+        end
+    end
+    for _, entry in ipairs({ { "OnEnter", true }, { "OnLeave", false }, { "OnEnable" }, { "OnDisable" } }) do
+        local name, hover = entry[1], entry[2]
+        local ok, installed = pcall(hook, button, name, function()
+            if name == "OnEnter" or name == "OnLeave" then state.hover = hover end
+            if name == "OnDisable" then state.hover = false end
+            refresh()
+        end)
+        if not ok or addon.Clean(installed, "boolean") ~= true then return false end
+    end
+    for key, original in pairs(originals) do
+        if not invoke(original, "SetAlpha", 0) then
+            for field, previous in pairs(originals) do invoke(previous, "SetAlpha", originalAlphas[field]) end
+            return false
+        end
+    end
+    state.active = true
+    for _, part in ipairs(state.parts) do invoke(part, "Show") end
+    refresh()
+    return true
+end
+
+function Theme.StyleScrollBar(scroll)
+    scroll = cleanObject(scroll)
+    local bar = scroll and cleanObject(scroll.ScrollBar)
+    if not bar then return false end
+    local state = scrollbars[bar]
+    if not state then
+        state = {}; scrollbars[bar] = state
+        local thumb = cleanObject(bar.ThumbTexture) or objectResult(bar, "GetThumbTexture")
+        local rail = texture(bar, "BACKGROUND", -1)
+        if rail then
+            invoke(rail, "Hide")
+            if invoke(rail, "SetWidth", 3) and invoke(rail, "SetPoint", "TOP", bar, "TOP", 0, 0) and
+                invoke(rail, "SetPoint", "BOTTOM", bar, "BOTTOM", 0, 0) and color(rail, palette.faint) then
+                invoke(rail, "Show"); state.rail = rail
+            end
+        end
+        -- Native thumb dimensions and anchors remain the slider's drag target.
+        state.thumb = thumb and color(thumb, palette.teal) and thumb or nil
+    end
+    styleScrollArrow(bar.ScrollUpButton, false)
+    styleScrollArrow(bar.ScrollDownButton, true)
+    return state.rail ~= nil and state.thumb ~= nil
+end
+
 local function panel(frame, target)
     if not target then return nil end
     local parts = { texture(frame, "BACKGROUND", -5), texture(frame, "BACKGROUND", -4), texture(frame, "BACKGROUND", -3) }
@@ -233,6 +316,8 @@ function Theme.Apply(ui)
             decoration.panels[key] = panel(frame, target)
         end
     end
+    local catalogScroll = cleanObject(ui.catalogScroll) or (cleanObject(ui.catalog) and objectResult(ui.catalog, "GetParent"))
+    for _, scroll in pairs({ catalogScroll, cleanObject(ui.questScroll), cleanObject(ui.detailScroll) }) do Theme.StyleScrollBar(scroll) end
     textColor(ui.title, palette.heading); textColor(ui.subtitle, palette.muted)
     textColor(ui.heading, palette.text); textColor(ui.summary, palette.muted)
     textColor(ui.coverage, palette.quiet); textColor(ui.footer, palette.quiet)
