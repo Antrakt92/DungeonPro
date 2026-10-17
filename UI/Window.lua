@@ -365,14 +365,15 @@ function UI:LayoutRow(row, minimum, offset, ownerCurrent)
         return current()
     end
     if not current() then return nil end
-    local left = row.art and 58 or 8
+    local noteLeft = row.art and 58 or 8
+    local titleLeft = noteLeft + (not row.art and row.statusInset or 0)
     local titleHeight = measuredHeight(row.title, 18)
     if not current() then return nil end
     local noteHeight = row.heading and 0 or measuredHeight(row.note, 18)
     if not current() then return nil end
     local height = math.max(minimum, 7 + titleHeight + (row.heading and 0 or 4) + noteHeight + 7)
-    if not write(row.title, "ClearAllPoints") or not write(row.title, "SetPoint", "TOPLEFT", left, -7) or
-        not write(row.note, "ClearAllPoints") or not write(row.note, "SetPoint", "TOPLEFT", left, -(7 + titleHeight + 4)) or
+    if not write(row.title, "ClearAllPoints") or not write(row.title, "SetPoint", "TOPLEFT", titleLeft, -7) or
+        not write(row.note, "ClearAllPoints") or not write(row.note, "SetPoint", "TOPLEFT", noteLeft, -(7 + titleHeight + 4)) or
         not write(row, "SetHeight", height) or not write(row, "ClearAllPoints") or
         not write(row, "SetPoint", "TOPLEFT", 0, -offset) then return nil end
     return offset + height + 4
@@ -632,6 +633,75 @@ function UI:RefreshDungeons()
     write(self.catalog, "SetHeight", math.max(1, offset))
 end
 
+function UI:PaintQuestRowStatus(row, entry, engine, ownerCurrent)
+    local painter, checker, token = addon.PaintQuestStatus, issecretvalue, {}
+    local id, state, heading = entry.id, entry.state, entry.heading
+    local status = state and state.status
+    local definition = id and addon.quests[id]
+    local widthGetter, widthSetter = row.title.GetWidth, row.title.SetWidth
+    local eligible = not heading and (status == "ACTIVE" or status == "READY")
+    row.statusGeneration = token
+    local function current()
+        if not ownerCurrent() then return false end
+        local fresh = not eligible or not engine.Current or addon.Read(engine.Current, "boolean", engine) == true
+        local ok, same = pcall(function()
+            return fresh and ownerCurrent() and row.statusGeneration == token and row.questID == id and row.heading == heading and
+                entry.id == id and entry.state == state and (not state or state.status == status) and
+                (not id or addon.quests[id] == definition) and addon.PaintQuestStatus == painter and issecretvalue == checker and
+                row.title.GetWidth == widthGetter and row.title.SetWidth == widthSetter
+        end)
+        return ok and same == true
+    end
+    if not current() then return false end
+    local width = row.statusBaseWidth or addon.Read(widthGetter, "number", row.title)
+    if not current() then return false end
+    if not width or width <= 20 then
+        row.statusInset = 0
+        if row.statusIcon then pcall(row.statusIcon.Hide, row.statusIcon) end
+        return current()
+    end
+    row.statusBaseWidth = width
+    local usable = addon.Clean(painter, "function")
+    if not current() then return false end
+    local painted = false
+    if eligible and usable then
+        local texture = row.statusIcon
+        if not texture then
+            local ok, value = pcall(row.CreateTexture, row, nil, "ARTWORK")
+            texture = ok and (addon.Clean(value, "table") or addon.Clean(value, "userdata"))
+            if not current() then return false end
+            if texture then row.statusIcon = texture end
+        end
+        if texture then
+            local function configure(method, ...)
+                if not current() then return false end
+                local ok = pcall(texture[method], texture, ...)
+                return ok and current()
+            end
+            if configure("SetSize", 16, 16) and configure("ClearAllPoints") and configure("SetPoint", "TOPLEFT", 8, -8) then
+                painted = addon.Read(usable, "boolean", texture, status, current) == true
+            end
+            if not current() then return false end
+        end
+    end
+    if not painted and row.statusIcon then
+        pcall(row.statusIcon.Hide, row.statusIcon)
+        if not current() then return false end
+    end
+    row.statusInset = painted and 20 or 0
+    local binding = { current = current, width = width - row.statusInset }
+    row.statusWidth = binding
+    row.title:SetWidth(binding.width)
+    if current() then return true end
+    local newer = row.statusWidth
+    if newer ~= binding and newer and newer.current() and not row.statusWidthRepair then
+        row.statusWidthRepair = true
+        if row.statusWidth == newer and newer.current() then pcall(row.title.SetWidth, row.title, newer.width) end
+        row.statusWidthRepair = nil
+    end
+    return false
+end
+
 function UI:RefreshQuests()
     local d, character, previousGeneration = self.dungeon, addon.char, self.questListGeneration
     local preparation, includeUnavailable = self.preparation, self.includeUnavailable
@@ -730,6 +800,7 @@ function UI:RefreshQuests()
             local row = self:MakeRow(self.questList, self.rows, n, 59)
             if not current() then return end
             row.heading, row.questID = entry.heading, id
+            if not self:PaintQuestRowStatus(row, entry, engine, current) then return end
             if not writeText(row.title, title) or not writeText(row.note, note) or
                 not write(row, "SetEnabled", not entry.heading) then return end
             if entry.heading then

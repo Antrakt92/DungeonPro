@@ -6014,4 +6014,141 @@ check("A title setter closing and reopening the same window preserves the new se
     row.scripts.OnClick();assert(ui.quest==24001)
     addon.Context=context;restore()
 end)
+local function statusGlyphFixture()
+    local f={context=addon.Context,dungeon=ui.dungeon,quest=ui.quest,history=ui.detailHistory,all=ui.includeUnavailable,preparation=ui.preparation,
+        painter=addon.PaintQuestStatus,namespace=C_Texture,atlas=methods.SetAtlas,name=addon.QuestName,calls={},active={[32001]=true,[32002]=true},ready={[32002]=true}}
+    methods.SetAtlas=function(self,atlas,useAtlasSize,filterMode,resetTexCoords)
+        assert((atlas=="Quest-In-Progress-Icon-yellow"or atlas=="UI-QuestIcon-TurnIn-Normal")and useAtlasSize==false and filterMode==nil and resetTexCoords==true)
+        self.atlas=atlas
+    end
+    C_Texture={GetAtlasInfo=function(atlas)f.calls[#f.calls+1]=atlas;return{}end}
+    assert(loadfile("UI/QuestStatus.lua"))("DungeonPro",addon)
+    addon.Context=function()return{level=60,faction="Alliance",completed=function(id)return id==32006 end,
+        active=function(id)return f.active[id]==true end,ready=function(id)return f.ready[id]==true end}end
+    for id=32001,32006 do addon.quests[id]={id=id,minLevel=1,requirementsKnown=id~=32004}end
+    addon.quests[32005].factions={"Horde"}
+    ui.includeUnavailable=true;ui.preparation=false;ui.detailHistory={};ui.quest=nil
+    ui.dungeon={key="status-glyph",name="Status glyph",coverage="partial",quests={32001,32002,32003,32004,32005,32006}}
+    ui:RefreshQuests()
+    function f:finish()
+        addon.Context,addon.PaintQuestStatus,C_Texture,methods.SetAtlas,addon.QuestName=self.context,self.painter,self.namespace,self.atlas,self.name
+        for id=32001,32006 do addon.quests[id]=nil end
+        ui.dungeon,ui.quest,ui.detailHistory,ui.includeUnavailable,ui.preparation=self.dungeon,self.quest,self.history,self.all,self.preparation
+        ui:Refresh()
+    end
+    return f
+end
+check("Native ACTIVE and READY glyphs decorate only quest titles while original status notes and real inspection remain",function()
+    local f=statusGlyphFixture()
+    for index,expected in ipairs({"Quest-In-Progress-Icon-yellow","UI-QuestIcon-TurnIn-Normal"})do
+        local row=ui.rows[index]
+        assert(row.statusIcon and row.statusIcon.shown and row.statusIcon.atlas==expected and not row.art)
+        assert(row.statusIcon.width==16 and row.statusIcon.height==16 and row.statusInset==20)
+        assert(row.title.point[2]==28 and row.note.point[2]==8 and row.title.width==row.statusBaseWidth-20)
+        assert(row.title.fontSize==16 and row.note.fontSize==13)
+        assert(row.note.text:find(addon.L(index==1 and "ACTIVE"or"READY"),1,true))
+    end
+    for index=3,6 do local row=ui.rows[index];assert(not(row.statusIcon and row.statusIcon.shown)and row.statusInset==0 and row.title.point[2]==8 and row.title.width==row.statusBaseWidth)end
+    assert(#f.calls==2)
+    ui.rows[2].scripts.OnClick(ui.rows[2],"LeftButton",false);assert(ui.quest==32002 and ui.engine:State(32002).status=="READY")
+    f:finish()
+end)
+check("Quest glyphs clear on state and heading recycling and never indent note text or dungeon artwork",function()
+    local f=statusGlyphFixture();local row=ui.rows[1];local width=row.statusBaseWidth
+    f.active[32001]=false;ui:RefreshQuests()
+    assert(row.questID==32001 and not row.statusIcon.shown and row.statusInset==0 and row.title.width==width and row.title.point[2]==8 and row.note.point[2]==8)
+    ui.preparation=true;ui:RefreshQuests();assert(ui.rows[1].heading and not ui.rows[1].statusIcon.shown and ui.rows[1].title.width==width)
+    ui.preparation=false;f.active[32001]=true;ui:RefreshQuests();assert(row.statusIcon.shown and row.title.width==width-20)
+    ui:RefreshDungeons();for _,card in ipairs(ui.cards)do if card.shown then assert(card.title.point[2]==58 and card.note.point[2]==58)end end
+    f:finish()
+end)
+check("Optional glyph painter failures and missing capabilities preserve textual original-width quest rows",function()
+    local f=statusGlyphFixture();local row=ui.rows[1];local actual=addon.PaintQuestStatus
+    for _,painter in ipairs({false,function()return false end,function(texture)texture:Show();error("native failed")end,function()return{}end})do
+        addon.PaintQuestStatus=painter;ui:RefreshQuests()
+        assert(row.questID==32001 and row.enabled and row.statusInset==0 and row.title.width==row.statusBaseWidth and row.title.point[2]==8 and not row.statusIcon.shown)
+        row.scripts.OnClick();assert(ui.quest==32001)
+    end
+    addon.PaintQuestStatus=nil;ui:RefreshQuests();assert(row.statusInset==0 and not row.statusIcon.shown)
+    addon.PaintQuestStatus=actual;C_Texture.GetAtlasInfo=function()return nil end;ui:RefreshQuests();assert(row.statusInset==0 and not row.statusIcon.shown)
+    C_Texture.GetAtlasInfo=function()return{}end;ui:RefreshQuests();assert(row.statusInset==20 and row.statusIcon.shown)
+    f:finish()
+end)
+check("Status title width is reduced before natural measurement and long localized titles grow without shrinking fonts",function()
+    local f=statusGlyphFixture();local locale=addon.db.locale;local widths={}
+    addon.QuestName=function(id)if id==32001 then return string.rep("Длинное задание ",12)end;return f.name(id)end
+    measurement=function(fs)
+        if fs.text and fs.text:find("Длинное задание",1,true)then widths[#widths+1]=fs.width;return fs.width==ui.rows[1].statusBaseWidth-20 and 72 or 18 end
+        return 18
+    end
+    for code in pairs(addon.locales)do
+        addon.db.locale=code;ui:RefreshQuests();local row=ui.rows[1]
+        assert(row.height==108 and row.title.fontSize==16 and row.note.fontSize==13)
+        assert(-ui.rows[2].point[3]>=-row.point[3]+row.height and row.note.point[2]==8)
+    end
+    assert(#widths>=10);measurement=nil;addon.db.locale=locale;addon.QuestName=f.name;ui:RefreshQuests();assert(ui.rows[1].height==59)
+    f:finish()
+end)
+check("Glyph atlas getter and native setter reentry preserve newer pooled status rows and fresh callbacks",function()
+    for _,mode in ipairs({"getter","setter","width"})do
+        local f=statusGlyphFixture();local row=ui.rows[1];local armed=true;local original,object,method
+        if mode=="getter"then object,method=C_Texture,"GetAtlasInfo"
+        elseif mode=="setter"then object,method=row.statusIcon,"SetAtlas"
+        else object,method=row.title,"SetWidth"end
+        original=object[method]
+        object[method]=function(self,...)
+            local value
+            if mode=="getter"then value=original(self,...)else value=original(self,...)end
+            if armed then
+                armed=false;ui.dungeon={key="new-glyph-list",name="New list",coverage="partial",quests={32002}};ui:RefreshQuests()
+            end
+            return value
+        end
+        ui:RefreshQuests();object[method]=original
+        assert(not armed and row.questID==32002 and row.statusIcon.shown and row.statusIcon.atlas=="UI-QuestIcon-TurnIn-Normal")
+        assert(row.statusInset==20 and row.title.width==row.statusBaseWidth-20 and row.title.point[2]==28 and row.note.point[2]==8)
+        row.scripts.OnClick();assert(ui.quest==32002)
+        f:finish()
+    end
+end)
+check("Glyph caller rejects changed producer checker engine and source ownership and recovers only on fresh redraw",function()
+    for _,mode in ipairs({"helper","checker","source","engine"})do
+        local f=statusGlyphFixture();local painter=addon.PaintQuestStatus;local checker=issecretvalue;local armed=true
+        addon.PaintQuestStatus=function(texture,status,current)
+            local result=painter(texture,status,current)
+            if armed then
+                armed=false
+                if mode=="helper"then addon.PaintQuestStatus=painter
+                elseif mode=="checker"then issecretvalue=function()return false end
+                elseif mode=="source"then local old=addon.quests[32001];local new={};for k,v in pairs(old)do new[k]=v end;addon.quests[32001]=new
+                else ui.engine=addon.Planner.New(addon.quests,addon.Context())end
+            end
+            return result
+        end
+        ui:RefreshQuests();assert(not armed)
+        local callback=ui.rows[1].scripts.OnClick;assert(callback==nil or not ui.rows[1].enabled)
+        addon.PaintQuestStatus=painter;issecretvalue=checker;ui:RefreshQuests()
+        assert(ui.rows[1].statusIcon.shown and ui.rows[1].title.point[2]==28)
+        ui.rows[1].scripts.OnClick();assert(ui.quest==32001)
+        f:finish()
+    end
+end)
+check("Status width getter and before-original width setters cannot leave a newer ordinary row with glyph indentation",function()
+    for _,mode in ipairs({"getter","setterBefore"})do
+        local f=statusGlyphFixture();local row=ui.rows[1];local width=row.statusBaseWidth;local armed=true
+        local object,method=row.title,mode=="getter"and"GetWidth"or"SetWidth";local original=object[method]
+        if mode=="getter"then row.title:SetWidth(width);row.statusBaseWidth=nil end
+        object[method]=function(self,...)
+            local value
+            if mode=="getter"then value=original(self,...)end
+            if armed then armed=false;ui.dungeon={key="ordinary-after-glyph",name="Ordinary",coverage="partial",quests={32003}};ui:RefreshQuests()end
+            if mode~="getter"then value=original(self,...)end
+            return value
+        end
+        ui:RefreshQuests();object[method]=original
+        assert(not armed and row.questID==32003 and row.title.width==width and row.statusInset==0 and not row.statusIcon.shown)
+        assert(row.title.point[2]==8 and row.note.point[2]==8);row.scripts.OnClick();assert(ui.quest==32003)
+        f:finish()
+    end
+end)
 print("Preparation UI modeled checks passed: " .. total .. " (no native layout validation)")
