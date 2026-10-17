@@ -8419,7 +8419,25 @@
         "npcID": 269127,
         "name": "Image of Archmage Modera",
         "creatureDisplayID": 130165,
-        "portraitSource": "https://www.wowhead.com/forever/npc=269127"
+        "portraitSource": "https://www.wowhead.com/forever/npc=269127",
+        "zoneName": "Silverpine Forest",
+        "mapID": 1421,
+        "x": 68.4,
+        "y": 45.2,
+        "reportedLocations": [
+          {
+            "zoneName": "Silverpine Forest",
+            "mapID": 1421,
+            "x": 68.4,
+            "y": 45.2
+          },
+          {
+            "zoneName": "Silverpine Forest",
+            "mapID": 1421,
+            "x": 68.6,
+            "y": 45.2
+          }
+        ]
       },
       "finish": {
         "npcID": 2410,
@@ -8469,13 +8487,49 @@
         "npcID": 269127,
         "name": "Image of Archmage Modera",
         "creatureDisplayID": 130165,
-        "portraitSource": "https://www.wowhead.com/forever/npc=269127"
+        "portraitSource": "https://www.wowhead.com/forever/npc=269127",
+        "zoneName": "Silverpine Forest",
+        "mapID": 1421,
+        "x": 68.4,
+        "y": 45.2,
+        "reportedLocations": [
+          {
+            "zoneName": "Silverpine Forest",
+            "mapID": 1421,
+            "x": 68.4,
+            "y": 45.2
+          },
+          {
+            "zoneName": "Silverpine Forest",
+            "mapID": 1421,
+            "x": 68.6,
+            "y": 45.2
+          }
+        ]
       },
       "finish": {
         "npcID": 269127,
         "name": "Image of Archmage Modera",
         "creatureDisplayID": 130165,
-        "portraitSource": "https://www.wowhead.com/forever/npc=269127"
+        "portraitSource": "https://www.wowhead.com/forever/npc=269127",
+        "zoneName": "Silverpine Forest",
+        "mapID": 1421,
+        "x": 68.4,
+        "y": 45.2,
+        "reportedLocations": [
+          {
+            "zoneName": "Silverpine Forest",
+            "mapID": 1421,
+            "x": 68.4,
+            "y": 45.2
+          },
+          {
+            "zoneName": "Silverpine Forest",
+            "mapID": 1421,
+            "x": 68.6,
+            "y": 45.2
+          }
+        ]
       },
       "storyline": [
         92432,
@@ -8497,13 +8551,49 @@
         "npcID": 269127,
         "name": "Image of Archmage Modera",
         "creatureDisplayID": 130165,
-        "portraitSource": "https://www.wowhead.com/forever/npc=269127"
+        "portraitSource": "https://www.wowhead.com/forever/npc=269127",
+        "zoneName": "Silverpine Forest",
+        "mapID": 1421,
+        "x": 68.4,
+        "y": 45.2,
+        "reportedLocations": [
+          {
+            "zoneName": "Silverpine Forest",
+            "mapID": 1421,
+            "x": 68.4,
+            "y": 45.2
+          },
+          {
+            "zoneName": "Silverpine Forest",
+            "mapID": 1421,
+            "x": 68.6,
+            "y": 45.2
+          }
+        ]
       },
       "finish": {
         "npcID": 269127,
         "name": "Image of Archmage Modera",
         "creatureDisplayID": 130165,
-        "portraitSource": "https://www.wowhead.com/forever/npc=269127"
+        "portraitSource": "https://www.wowhead.com/forever/npc=269127",
+        "zoneName": "Silverpine Forest",
+        "mapID": 1421,
+        "x": 68.4,
+        "y": 45.2,
+        "reportedLocations": [
+          {
+            "zoneName": "Silverpine Forest",
+            "mapID": 1421,
+            "x": 68.4,
+            "y": 45.2
+          },
+          {
+            "zoneName": "Silverpine Forest",
+            "mapID": 1421,
+            "x": 68.6,
+            "y": 45.2
+          }
+        ]
       }
     },
     {
@@ -8899,7 +8989,25 @@
         "npcID": 269127,
         "name": "Image of Archmage Modera",
         "creatureDisplayID": 130165,
-        "portraitSource": "https://www.wowhead.com/forever/npc=269127"
+        "portraitSource": "https://www.wowhead.com/forever/npc=269127",
+        "zoneName": "Silverpine Forest",
+        "mapID": 1421,
+        "x": 68.4,
+        "y": 45.2,
+        "reportedLocations": [
+          {
+            "zoneName": "Silverpine Forest",
+            "mapID": 1421,
+            "x": 68.4,
+            "y": 45.2
+          },
+          {
+            "zoneName": "Silverpine Forest",
+            "mapID": 1421,
+            "x": 68.6,
+            "y": 45.2
+          }
+        ]
       },
       "storyline": [
         92434,
@@ -8949,7 +9057,11 @@
         "npcID": 252085,
         "name": "Archmage Celindra",
         "creatureDisplayID": 130163,
-        "portraitSource": "https://www.wowhead.com/forever/npc=252085"
+        "portraitSource": "https://www.wowhead.com/forever/npc=252085",
+        "zoneName": "Alterac Mountains",
+        "mapID": 1416,
+        "x": 14.2,
+        "y": 60
       },
       "storyline": [
         92434,
@@ -8969,13 +9081,35 @@
       "source": "https://www.wowhead.com/forever/quest=92432/an-alarming-request",
       "start": {
         "npcID": 247264,
-        "name": "Emissary Jacques"
+        "name": "Emissary Jacques",
+        "zoneName": "Hillsbrad Foothills",
+        "mapID": 1424,
+        "x": 48.3,
+        "y": 60.1
       },
       "finish": {
         "npcID": 269127,
         "name": "Image of Archmage Modera",
         "creatureDisplayID": 130165,
-        "portraitSource": "https://www.wowhead.com/forever/npc=269127"
+        "portraitSource": "https://www.wowhead.com/forever/npc=269127",
+        "zoneName": "Silverpine Forest",
+        "mapID": 1421,
+        "x": 68.4,
+        "y": 45.2,
+        "reportedLocations": [
+          {
+            "zoneName": "Silverpine Forest",
+            "mapID": 1421,
+            "x": 68.4,
+            "y": 45.2
+          },
+          {
+            "zoneName": "Silverpine Forest",
+            "mapID": 1421,
+            "x": 68.6,
+            "y": 45.2
+          }
+        ]
       },
       "storyline": [
         92432,
@@ -8997,13 +9131,35 @@
         "npcID": 269127,
         "name": "Image of Archmage Modera",
         "creatureDisplayID": 130165,
-        "portraitSource": "https://www.wowhead.com/forever/npc=269127"
+        "portraitSource": "https://www.wowhead.com/forever/npc=269127",
+        "zoneName": "Silverpine Forest",
+        "mapID": 1421,
+        "x": 68.4,
+        "y": 45.2,
+        "reportedLocations": [
+          {
+            "zoneName": "Silverpine Forest",
+            "mapID": 1421,
+            "x": 68.4,
+            "y": 45.2
+          },
+          {
+            "zoneName": "Silverpine Forest",
+            "mapID": 1421,
+            "x": 68.6,
+            "y": 45.2
+          }
+        ]
       },
       "finish": {
         "npcID": 252085,
         "name": "Archmage Celindra",
         "creatureDisplayID": 130163,
-        "portraitSource": "https://www.wowhead.com/forever/npc=252085"
+        "portraitSource": "https://www.wowhead.com/forever/npc=252085",
+        "zoneName": "Alterac Mountains",
+        "mapID": 1416,
+        "x": 14.2,
+        "y": 60
       },
       "storyline": [
         92432,
@@ -10662,7 +10818,25 @@
       },
       "finish": {
         "npcID": 259118,
-        "name": "Muln Earthfury"
+        "name": "Muln Earthfury",
+        "zoneName": "Mulgore",
+        "mapID": 1412,
+        "x": 33.4,
+        "y": 22.4,
+        "reportedLocations": [
+          {
+            "zoneName": "Mulgore",
+            "mapID": 1412,
+            "x": 33.4,
+            "y": 22.4
+          },
+          {
+            "zoneName": "Mulgore",
+            "mapID": 1412,
+            "x": 33.4,
+            "y": 22.6
+          }
+        ]
       },
       "requirementsKnown": false,
       "factions": [
@@ -15583,7 +15757,31 @@
         "npcID": 264074,
         "name": "Mazu'kon",
         "creatureDisplayID": 143984,
-        "portraitSource": "https://www.wowhead.com/forever/npc=264074"
+        "portraitSource": "https://www.wowhead.com/forever/npc=264074",
+        "zoneName": "Mulgore",
+        "mapID": 1412,
+        "x": 32.4,
+        "y": 20.6,
+        "reportedLocations": [
+          {
+            "zoneName": "Mulgore",
+            "mapID": 1412,
+            "x": 32.4,
+            "y": 20.6
+          },
+          {
+            "zoneName": "Mulgore",
+            "mapID": 1412,
+            "x": 32.6,
+            "y": 20.4
+          },
+          {
+            "zoneName": "Mulgore",
+            "mapID": 1412,
+            "x": 32.6,
+            "y": 20.6
+          }
+        ]
       },
       "requirementsKnown": false,
       "factions": [
@@ -15651,7 +15849,31 @@
         "npcID": 271613,
         "name": "Unfinished Abomination",
         "creatureDisplayID": 146706,
-        "portraitSource": "https://www.wowhead.com/forever/npc=271613"
+        "portraitSource": "https://www.wowhead.com/forever/npc=271613",
+        "zoneName": "Undercity",
+        "mapID": 1458,
+        "x": 45.8,
+        "y": 61.4,
+        "reportedLocations": [
+          {
+            "zoneName": "Undercity",
+            "mapID": 1458,
+            "x": 45.8,
+            "y": 61.4
+          },
+          {
+            "zoneName": "Undercity",
+            "mapID": 1458,
+            "x": 46.0,
+            "y": 62.2
+          },
+          {
+            "zoneName": "Undercity",
+            "mapID": 1458,
+            "x": 46.2,
+            "y": 63.0
+          }
+        ]
       },
       "requirementsKnown": false,
       "factions": [
@@ -15675,7 +15897,31 @@
         "npcID": 271613,
         "name": "Unfinished Abomination",
         "creatureDisplayID": 146706,
-        "portraitSource": "https://www.wowhead.com/forever/npc=271613"
+        "portraitSource": "https://www.wowhead.com/forever/npc=271613",
+        "zoneName": "Undercity",
+        "mapID": 1458,
+        "x": 45.8,
+        "y": 61.4,
+        "reportedLocations": [
+          {
+            "zoneName": "Undercity",
+            "mapID": 1458,
+            "x": 45.8,
+            "y": 61.4
+          },
+          {
+            "zoneName": "Undercity",
+            "mapID": 1458,
+            "x": 46.0,
+            "y": 62.2
+          },
+          {
+            "zoneName": "Undercity",
+            "mapID": 1458,
+            "x": 46.2,
+            "y": 63.0
+          }
+        ]
       },
       "finish": {
         "npcID": 2055,
