@@ -1842,7 +1842,8 @@
       },
       "finish": {
         "npcID": 4444,
-        "name": "Deathstalker Vincent"
+        "name": "Deathstalker Vincent",
+        "zoneName": "Shadowfang Keep"
       },
       "requirementsKnown": false
     },
@@ -9423,7 +9424,37 @@
         "npcID": 6169,
         "name": "Klockmort Spannerspan",
         "creatureDisplayID": 4999,
-        "portraitSource": "https://www.wowhead.com/forever/npc=6169"
+        "portraitSource": "https://www.wowhead.com/forever/npc=6169",
+        "zoneName": "Ironforge",
+        "mapID": 1455,
+        "x": 68,
+        "y": 46.8,
+        "reportedLocations": [
+          {
+            "zoneName": "Ironforge",
+            "mapID": 1455,
+            "x": 68,
+            "y": 46.8
+          },
+          {
+            "zoneName": "Ironforge",
+            "mapID": 1455,
+            "x": 68.2,
+            "y": 46.2
+          },
+          {
+            "zoneName": "Ironforge",
+            "mapID": 1455,
+            "x": 68.6,
+            "y": 46.4
+          },
+          {
+            "zoneName": "Ironforge",
+            "mapID": 1455,
+            "x": 69,
+            "y": 46.8
+          }
+        ]
       },
       "finish": {
         "npcID": 4453,
@@ -12208,11 +12239,47 @@
       "source": "https://www.wowhead.com/forever/quest=4061/the-rise-of-the-machines",
       "start": {
         "npcID": 9079,
-        "name": "Hierophant Theodora Mulvadania"
+        "name": "Hierophant Theodora Mulvadania",
+        "zoneName": "Badlands",
+        "mapID": 1418,
+        "x": 3,
+        "y": 47.4,
+        "reportedLocations": [
+          {
+            "zoneName": "Badlands",
+            "mapID": 1418,
+            "x": 3,
+            "y": 47.4
+          },
+          {
+            "zoneName": "Badlands",
+            "mapID": 1418,
+            "x": 3,
+            "y": 47.8
+          }
+        ]
       },
       "finish": {
         "npcID": 9079,
-        "name": "Hierophant Theodora Mulvadania"
+        "name": "Hierophant Theodora Mulvadania",
+        "zoneName": "Badlands",
+        "mapID": 1418,
+        "x": 3,
+        "y": 47.4,
+        "reportedLocations": [
+          {
+            "zoneName": "Badlands",
+            "mapID": 1418,
+            "x": 3,
+            "y": 47.4
+          },
+          {
+            "zoneName": "Badlands",
+            "mapID": 1418,
+            "x": 3,
+            "y": 47.8
+          }
+        ]
       },
       "storyline": [
         4061,
@@ -12232,7 +12299,25 @@
       "source": "https://www.wowhead.com/forever/quest=4062/the-rise-of-the-machines",
       "start": {
         "npcID": 9079,
-        "name": "Hierophant Theodora Mulvadania"
+        "name": "Hierophant Theodora Mulvadania",
+        "zoneName": "Badlands",
+        "mapID": 1418,
+        "x": 3,
+        "y": 47.4,
+        "reportedLocations": [
+          {
+            "zoneName": "Badlands",
+            "mapID": 1418,
+            "x": 3,
+            "y": 47.4
+          },
+          {
+            "zoneName": "Badlands",
+            "mapID": 1418,
+            "x": 3,
+            "y": 47.8
+          }
+        ]
       },
       "finish": {
         "npcID": 2921,
@@ -24933,6 +25018,13 @@
         {
           "itemID": 11319,
           "name": "Unloaded Zapper"
+        }
+      ],
+      "objectiveItems": [
+        {
+          "itemID": 11318,
+          "quantity": 5,
+          "name": "Atal'ai Haze"
         }
       ]
     },
