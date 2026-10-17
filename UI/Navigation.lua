@@ -57,6 +57,32 @@ local function releaseNativePoint(pin, generation)
     end
 end
 
+local visibilityWrite
+local function setVisible(value, action, generation)
+    if not frame then return true end
+    local owner = frame
+    local binding = { owner = owner, value = value }
+    local function current()
+        return frame == owner and navigationGeneration == generation and rawequal(target, action) and visibilityWrite == binding
+    end
+    binding.current = current
+    visibilityWrite = binding
+    local ok = pcall(value and owner.Show or owner.Hide, owner)
+    local fresh = current()
+    if not fresh then
+        local newer = visibilityWrite
+        if newer and newer ~= binding and not newer.repairing then
+            newer.repairing = true
+            local repairCurrent = newer.current()
+            if repairCurrent and visibilityWrite == newer then
+                pcall(newer.value and newer.owner.Show or newer.owner.Hide, newer.owner)
+            end
+            newer.repairing = nil
+        end
+    end
+    return ok and fresh
+end
+
 function N.Stop()
     local generation = {}
     navigationGeneration = generation
@@ -64,8 +90,9 @@ function N.Stop()
     -- Release ownership before third-party cleanup can invoke callbacks.
     tomtomOwner, tomtomUID, nativePoint, target = nil, nil, nil, nil
     presentation, contextElapsed = nil, 0
-    if frame then frame:Hide() end
-    if uid and owner and type(owner.RemoveWaypoint) == "function" then
+    if frame then setVisible(false, nil, generation) end
+    if uid and owner and type(owner.RemoveWaypoint) == "function" and
+        not (rawequal(tomtomOwner, owner) and rawequal(tomtomUID, uid)) then
         pcall(owner.RemoveWaypoint, owner, uid)
     end
     releaseNativePoint(pin, generation)
@@ -356,7 +383,7 @@ function N.Start(action)
         frame:SetScript("OnUpdate", update)
     end
     if not current() then return false end
-    frame:Show()
+    if not setVisible(true, action, generation) then return false end
     if not current() then return false end
     elapsed = 0.1; update(frame, 0)
     if not current() then return false end

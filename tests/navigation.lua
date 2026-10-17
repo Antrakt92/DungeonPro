@@ -847,4 +847,89 @@ check("Old waypoint cleanup cannot authorize a newly invalid destination", funct
     assert(not nav.Start({ id = 2, kind = "visit", place = nextPoint }))
     assert(added == 1 and nativeCalls == 0)
 end)
+check("Show cancellation cannot resurrect a stopped navigation HUD", function()
+    assert(nav.Start(action))
+    local card = hud()
+    nav.Stop()
+    local original, armed = card.Show, true
+    card.Show = function(self)
+        if armed then armed = false; nav.Stop() end
+        return original(self)
+    end
+    local before = clears
+    local started = nav.Start(action)
+    card.Show = original
+    assert(not started and not card.shown)
+    assert(current == nil and clears == before + 1)
+end)
+check("Old Show cannot overwrite a replacement guide", function()
+    assert(nav.Start(action))
+    local card = hud()
+    nav.Stop()
+    local original, armed = card.Show, true
+    card.Show = function(self)
+        if armed then armed = false; assert(nav.Start({ id = 2, place = point })) end
+        return original(self)
+    end
+    assert(not nav.Start(action))
+    card.Show = original
+    assert(card.shown)
+    local before = clears
+    nav.QuestChanged(1)
+    assert(clears == before and card.shown)
+    nav.QuestChanged(2)
+    assert(not card.shown)
+end)
+check("Old Hide cannot suppress a replacement started by its wrapper", function()
+    assert(nav.Start(action))
+    local card = hud()
+    local original, armed = card.Hide, true
+    card.Hide = function(self)
+        if armed then armed = false; assert(nav.Start({ id = 2, place = point })) end
+        return original(self)
+    end
+    nav.Stop()
+    card.Hide = original
+    assert(card.shown)
+    nav.QuestChanged(1)
+    assert(card.shown)
+    nav.QuestChanged(2)
+    assert(not card.shown)
+end)
+check("A replaced guide retaining a TomTom identity survives Hide cleanup", function()
+    local removed = 0
+    TomTom = { AddWaypoint = function() return "same" end,
+        RemoveWaypoint = function() removed = removed + 1 end }
+    assert(nav.Start(action))
+    local card = hud()
+    local original, armed = card.Hide, true
+    card.Hide = function(self)
+        if armed then armed = false; assert(nav.Start({ id = 2, place = point })) end
+        return original(self)
+    end
+    nav.Stop()
+    card.Hide = original
+    assert(card.shown and removed == 0)
+    nav.QuestChanged(2)
+    assert(removed == 1 and not card.shown)
+end)
+check("Hide replacement releases only the old distinct TomTom identity", function()
+    local nextUID, removed = 0, {}
+    TomTom = { AddWaypoint = function() nextUID = nextUID + 1; return nextUID end,
+        RemoveWaypoint = function(_, uid) removed[#removed + 1] = uid end }
+    assert(nav.Start(action))
+    local card = hud()
+    local original, armed = card.Hide, true
+    card.Hide = function(self)
+        if armed then armed = false; assert(nav.Start({ id = 2, place = point })) end
+        return original(self)
+    end
+    nav.Stop()
+    card.Hide = original
+    assert(card.shown and #removed == 1 and removed[1] == 1)
+    nav.QuestChanged(1)
+    assert(#removed == 1 and card.shown)
+    nav.QuestChanged(2)
+    assert(#removed == 2 and removed[2] == 2 and not card.shown)
+end)
 print("Navigation modeled checks passed: " .. total .. " (no native map validation)")
