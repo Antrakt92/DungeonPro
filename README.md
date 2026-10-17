@@ -59,6 +59,12 @@ Level ranges are provisional recommendations.
 - Sourced objective items show confirmed quantities; an unverified amount is
   labeled explicitly. Current carried counts appear separately from these
   reference objectives and do not replace quest-log progress.
+- Sourced creature objectives show the listed targets and any verified counts
+  before pickup, separately from live quest-log progress.
+- Items supplied by a quest have their own section. They may already have been
+  used or consumed, so an empty bag count does not mean preparation has failed.
+  Starter, collection and supplied items can show native icons and hover tooltips;
+  unavailable images leave their names and quantities visible.
 - The window shows current quest-log occupancy and the client-provided standard
   quest limit when available, separately from dungeon preparation status.
 - Explicitly sourced repeatable quests have their own label.
