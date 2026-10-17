@@ -98,5 +98,41 @@ check("Fresh localized portrait names do not mutate or reuse earlier snapshots",
     assert(fresh.displayID == 54321 and fresh.name == "Портрет из журнала")
     fresh.name = "Changed"; assert(addon.QuestPortrait(95036).name == "Портрет из журнала")
 end)
+check("A replaced quest-log namespace cannot publish the previous selection portrait", function()
+    C_QuestLog.GetQuestLogPortraitGiver = function(logIndex)
+        assert(logIndex == 7)
+        C_QuestLog = { GetSelectedQuest = function() return 95042 end,
+            GetLogIndexForQuestID = function() return 8 end }
+        return 12345, "", "Previous portrait"
+    end
+    assert(addon.QuestPortrait(95036) == nil)
+end)
+check("Portrait hydration rejects same-ID getter locale character and checker changes", function()
+    local character, localeGetter = addon.char, GetLocale
+    for _, mutation in ipairs({ "getter", "selectedGetter", "indexGetter", "locale", "localeGetter", "character", "checker" }) do
+        reset()
+        local locale = "enUS"
+        GetLocale = function() return locale end
+        addon.char = {}
+        C_QuestLog.GetQuestLogPortraitGiver = function()
+            if mutation == "getter" then C_QuestLog.GetQuestLogPortraitGiver = function() return 54321 end
+            elseif mutation == "selectedGetter" then C_QuestLog.GetSelectedQuest = function() return 95036 end
+            elseif mutation == "indexGetter" then C_QuestLog.GetLogIndexForQuestID = function() return 7 end
+            elseif mutation == "locale" then locale = "ruRU"
+            elseif mutation == "localeGetter" then GetLocale = function() return "enUS" end
+            elseif mutation == "character" then addon.char = {}
+            else issecretvalue = function(value) return value == secret end end
+            return 12345, "", "Old ownership"
+        end
+        assert(addon.QuestPortrait(95036) == nil, mutation)
+    end
+    addon.char, GetLocale = character, localeGetter
+end)
+check("Malformed portrait namespaces never reach a selected reader", function()
+    for _, namespace in ipairs({ false, true, 1, "namespace", secret }) do
+        C_QuestLog = namespace
+        assert(addon.QuestPortrait(95036) == nil and calls == 0)
+    end
+end)
 issecretvalue = nil
 print("Quest portrait adapter modeled checks passed: " .. total .. " (native client unverified)")

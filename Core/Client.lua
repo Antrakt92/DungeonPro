@@ -814,7 +814,7 @@ local function selectedLogReadScope(id)
         return selectedID == id and currentIndex == index and currentLocale == locale and unchanged()
     end
     if not current() then return nil end
-    return current, locale
+    return current, locale, index
 end
 
 function addon.Description(id)
@@ -1013,26 +1013,26 @@ function addon.CachedQuestRewards(id)
 end
 
 function addon.QuestPortrait(id)
-    local function positiveInteger(value)
-        value = addon.Clean(value, "number")
-        if value and value > 0 and value % 1 == 0 then return value end
-    end
-    id = positiveInteger(id)
+    id = dialogueInteger(id, 1)
     if not id then return nil end
-    local quest = C_QuestLog or {}
-    if addon.Read(quest.GetSelectedQuest, "number") ~= id then return nil end
-    local index = positiveInteger(addon.Read(quest.GetLogIndexForQuestID, "number", id))
-    if not index or type(quest.GetQuestLogPortraitGiver) ~= "function" then return nil end
+    local quest = addon.Clean(C_QuestLog, "table")
+    local getter = quest and addon.Clean(rawget(quest, "GetQuestLogPortraitGiver"), "function")
+    if not getter then return nil end
+    local scope, _, index = selectedLogReadScope(id)
+    local function owned()
+        return addon.Clean(C_QuestLog, "table") == quest and
+            addon.Clean(rawget(quest, "GetQuestLogPortraitGiver"), "function") == getter
+    end
+    local function current() return owned() and scope and scope() and owned() end
+    if not current() then return nil end
     -- The optional argument is a log index, and the portrait is not an NPC ID.
-    local ok, displayID, _, name = pcall(quest.GetQuestLogPortraitGiver, index)
-    displayID = positiveInteger(displayID)
+    local ok, displayID, _, name = pcall(getter, index)
+    displayID = dialogueInteger(displayID, 1)
     if not ok or not displayID then return nil end
-    if addon.Read(quest.GetSelectedQuest, "number") ~= id or
-        positiveInteger(addon.Read(quest.GetLogIndexForQuestID, "number", id)) ~= index then return nil end
     local result = { displayID = displayID }
     name = addon.Clean(name, "string")
     if name and name ~= "" and #name <= 1024 then result.name = name end
-    return result
+    if current() then return result end
 end
 
 function addon.CaptureQuestText()
