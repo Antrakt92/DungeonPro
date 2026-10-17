@@ -273,8 +273,11 @@ check("Locked target with an unavailable prerequisite stays visible", function()
     ids[#ids] = nil; addon.quests[200], addon.quests[201] = nil, nil
     addon.Context = oldContext; ui.preparation = false; ui.quest = nil; ui:Refresh()
 end)
+local function audienceText(value)
+    return (value:gsub("|A:[^|]+|a ", ""))
+end
 local function detailHas(value)
-    for _, fs in ipairs(ui.details) do if fs.shown and fs.text == value then return true end end
+    for _, fs in ipairs(ui.details) do if fs.shown and audienceText(fs.text) == value then return true end end
     return false
 end
 local function showCompactDetail(id, context)
@@ -1365,7 +1368,7 @@ check("Held quests with past completion show history consistently without implyi
     showDetail(2)
 end)
 local function detailIncludes(value)
-    for _, fs in ipairs(ui.details) do if fs.shown and fs.text:find(value, 1, true) then return true end end
+    for _, fs in ipairs(ui.details) do if fs.shown and audienceText(fs.text):find(value, 1, true) then return true end end
     return false
 end
 check("Current NPC names refresh start finish and preparation without changing places or catalogue", function()
@@ -2627,11 +2630,58 @@ do
             ui:Refresh()
         end
     end
+    check("Faction and class icons accompany readable audience text in quest rows compact metadata and starter limits", function()
+        local restore = audienceFixture()
+        local alliance = "|A:UI-HUD-UnitFrame-Player-PVP-AllianceIcon:14:14|a "
+        local paladin = "|A:classicon-paladin:14:14|a "
+        assert(ui.rows[3].note.text:find(alliance .. addon.L("FACTION_Alliance"), 1, true))
+        assert(ui.rows[3].note.text:find(paladin .. "Paladin", 1, true))
+        local q = addon.quests[13003]
+        q.start = { itemID = 123, itemClasses = { "PALADIN" } }
+        local localized = LOCALIZED_CLASS_NAMES_MALE; LOCALIZED_CLASS_NAMES_MALE = { PALADIN = "Paladin" }
+        for code in pairs(addon.locales) do
+            addon.db.locale = code; ui:RefreshQuests()
+            assert(ui.rows[3].note.text:find(alliance .. addon.L("FACTION_Alliance"), 1, true))
+            showCompactDetail(13003)
+            local found = false
+            for _, fs in ipairs(ui.details) do if fs.shown and fs.text:find(alliance, 1, true) and fs.text:find(paladin, 1, true) then found = true end end
+            assert(found and ui.engine:State(13003).status == "UNAVAILABLE" and not ui.action)
+            expandDetail(); found = false
+            local expected = addon.L("ITEM_CLASSES", paladin .. "Paladin")
+            for _, fs in ipairs(ui.details) do if fs.shown and fs.text == expected then found = true end end
+            assert(found)
+            ui.detailReferencesExpanded = false; ui:RefreshDetail()
+        end
+        LOCALIZED_CLASS_NAMES_MALE = localized; restore()
+    end)
+    check("Audience icons remain distinct deduplicate clean tokens and leave neutral custom and race labels as text", function()
+        local restore = audienceFixture()
+        local q = addon.quests[13003]
+        q.factions = { "Alliance", "Horde", "Neutral", "Alliance" }
+        q.classes = { "PALADIN", "MAGE", "CUSTOM", "PALADIN" }
+        addon.ClassName = function(token) return token end
+        showCompactDetail(13003)
+        local metadata
+        for _, fs in ipairs(ui.details) do
+            if fs.shown and fs.text:find("classicon-paladin", 1, true) then metadata = fs.text end
+        end
+        assert(metadata)
+        local _, paladins = metadata:gsub("classicon%-paladin", "")
+        assert(paladins == 1 and metadata:find("classicon-mage:14:14|a MAGE", 1, true))
+        assert(metadata:find("PVP-HordeIcon:14:14|a " .. addon.L("FACTION_Horde"), 1, true))
+        assert(metadata:find("PVP-AllianceIcon:14:14|a " .. addon.L("FACTION_Alliance"), 1, true))
+        assert(metadata:find(", CUSTOM", 1, true) and not metadata:find("classicon-custom", 1, true))
+        assert(metadata:find(addon.L("FACTION_Neutral"), 1, true) and not metadata:find("NeutralIcon", 1, true))
+        assert(metadata:find("Human, New race", 1, true) and not metadata:find("raceicon", 1, true))
+        q.factions, q.classes = nil, { "CUSTOM" }; ui:RefreshDetail()
+        for _, fs in ipairs(ui.details) do if fs.shown then assert(not fs.text:find("|A:", 1, true)) end end
+        restore()
+    end)
     check("Unavailable quest rows show recorded faction class and race audiences without changing other statuses", function()
         local restore = audienceFixture()
         assert(ui.rows[1].note.text:find(addon.L("FACTION_Alliance"), 1, true))
         assert(ui.rows[2].note.text:find("Paladin", 1, true) and not ui.rows[2].note.text:find(addon.L("UNAVAILABLE"), 1, true))
-        assert(ui.rows[3].note.text:find(addon.L("FACTION_Alliance") .. " · Paladin · Human, New race", 1, true))
+        assert(audienceText(ui.rows[3].note.text):find(addon.L("FACTION_Alliance") .. " · Paladin · Human, New race", 1, true))
         assert(ui.rows[4].note.text:find(addon.L("UNKNOWN_REQUIREMENTS"), 1, true))
         assert(ui.rows[5].note.text:find(addon.L("ACTIVE"), 1, true) and not ui.rows[5].note.text:find(addon.L("FACTION_Alliance"), 1, true))
         assert(ui.rows[6].note.text:find(addon.L("COMPLETED"), 1, true) and not ui.rows[6].note.text:find("Paladin", 1, true))
@@ -2653,7 +2703,7 @@ do
         for code, strings in pairs(addon.locales) do
             addon.db.locale = code; ui:RefreshQuests()
             assert(type(strings.FACTION_Alliance) == "string" and type(strings.FACTION_Horde) == "string" and type(strings.FACTION_Neutral) == "string")
-            assert(ui.rows[3].note.text:find(addon.L("FACTION_Alliance") .. " · PALADIN · " .. addon.L("RACE_ID", 1) .. ", " .. addon.L("RACE_ID", 95), 1, true))
+            assert(audienceText(ui.rows[3].note.text):find(addon.L("FACTION_Alliance") .. " · PALADIN · " .. addon.L("RACE_ID", 1) .. ", " .. addon.L("RACE_ID", 95), 1, true))
         end
         issecretvalue = checker
         local long = string.rep("Long localized paladin ", 12)

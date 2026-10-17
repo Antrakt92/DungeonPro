@@ -213,6 +213,20 @@ local function statusLabel(state, value)
     return label
 end
 
+local AUDIENCE_ICONS = {
+    factions = { Alliance = "UI-HUD-UnitFrame-Player-PVP-AllianceIcon", Horde = "UI-HUD-UnitFrame-Player-PVP-HordeIcon" },
+    classes = { WARRIOR = "warrior", MAGE = "mage", ROGUE = "rogue", DRUID = "druid", HUNTER = "hunter",
+        SHAMAN = "shaman", PRIEST = "priest", WARLOCK = "warlock", PALADIN = "paladin", DEATHKNIGHT = "deathknight",
+        MONK = "monk", DEMONHUNTER = "demonhunter", EVOKER = "evoker" },
+}
+local function audienceName(group, value, name)
+    local icons = AUDIENCE_ICONS[group]
+    local icon = icons and icons[value]
+    if not icon then return name end
+    if group == "classes" then icon = "classicon-" .. icon end
+    return "|A:" .. icon .. ":14:14|a " .. name
+end
+
 local function audienceLabel(q, current)
     q = addon.Clean(q, "table")
     if not q then return nil end
@@ -237,7 +251,7 @@ local function audienceLabel(q, current)
                         name = rule[1] == "races" and addon.L("RACE_ID", value) or value
                     end
                 end
-                names[#names + 1] = name
+                names[#names + 1] = audienceName(rule[1], value, name)
             end
         end
         if #names > 0 then groups[#groups + 1] = table.concat(names, ", ") end
@@ -1697,7 +1711,7 @@ function UI:RefreshDetail()
                     if not name or #name > 500 or not name:find("%S") then
                         name = rule[2] == "number" and addon.L("RACE_ID", value) or value
                     end
-                    names[#names + 1] = name
+                    names[#names + 1] = audienceName(rule[1], value, name)
                 end
             end
             if #names > 0 then metadataParts[#metadataParts + 1] = addon.L(rule[3], table.concat(names, ", ")) end
@@ -3158,7 +3172,7 @@ function UI:RefreshDetail()
                     if token and #token > 0 and #token <= 100 and not seen[token] then
                         seen[token] = true
                         local name = localized and addon.Read(function() return localized[token] end, "string")
-                        names[#names + 1] = name and name ~= "" and #name <= 500 and name or token
+                        names[#names + 1] = audienceName("classes", token, name and name ~= "" and #name <= 500 and name or token)
                     end
                 end
                 if #names > 0 then line(addon.L("ITEM_CLASSES", table.concat(names, ", "))); shown = true end
