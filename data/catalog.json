@@ -3443,7 +3443,9 @@
       "start": {
         "npcID": 7850,
         "name": "Kernobee",
-        "zoneName": "Gnomeregan"
+        "zoneName": "Gnomeregan",
+        "creatureDisplayID": 7132,
+        "portraitSource": "https://www.wowhead.com/forever/npc=7850"
       },
       "finish": {
         "npcID": 7853,
@@ -4641,12 +4643,16 @@
       "start": {
         "npcID": 4508,
         "name": "Willix the Importer",
-        "zoneName": "Razorfen Kraul"
+        "zoneName": "Razorfen Kraul",
+        "creatureDisplayID": 7155,
+        "portraitSource": "https://www.wowhead.com/forever/npc=4508"
       },
       "finish": {
         "npcID": 4508,
         "name": "Willix the Importer",
-        "zoneName": "Razorfen Kraul"
+        "zoneName": "Razorfen Kraul",
+        "creatureDisplayID": 7155,
+        "portraitSource": "https://www.wowhead.com/forever/npc=4508"
       },
       "startsInside": true
     },
@@ -5167,7 +5173,9 @@
       "start": {
         "npcID": 8516,
         "name": "Belnistrasz",
-        "zoneName": "Razorfen Downs"
+        "zoneName": "Razorfen Downs",
+        "creatureDisplayID": 7851,
+        "portraitSource": "https://www.wowhead.com/forever/npc=8516"
       },
       "finish": {
         "objectID": 152097,
@@ -5229,7 +5237,9 @@
             "y": 27.6,
             "zoneName": "Stormwind City"
           }
-        ]
+        ],
+        "creatureDisplayID": 5072,
+        "portraitSource": "https://www.wowhead.com/forever/npc=1284"
       },
       "finish": {
         "npcID": 1284,
@@ -5263,7 +5273,9 @@
             "y": 27.6,
             "zoneName": "Stormwind City"
           }
-        ]
+        ],
+        "creatureDisplayID": 5072,
+        "portraitSource": "https://www.wowhead.com/forever/npc=1284"
       },
       "requirementsKnown": false,
       "objectiveKills": [
@@ -5289,7 +5301,9 @@
         "zoneName": "The Barrens",
         "mapID": 1413,
         "x": 49,
-        "y": 94.8
+        "y": 94.8,
+        "creatureDisplayID": 12964,
+        "portraitSource": "https://www.wowhead.com/forever/npc=12866"
       },
       "finish": {
         "npcID": 12866,
@@ -5297,7 +5311,9 @@
         "zoneName": "The Barrens",
         "mapID": 1413,
         "x": 49,
-        "y": 94.8
+        "y": 94.8,
+        "creatureDisplayID": 12964,
+        "portraitSource": "https://www.wowhead.com/forever/npc=12866"
       },
       "requirementsKnown": false,
       "objectiveKills": [
@@ -5331,12 +5347,16 @@
       "start": {
         "npcID": 8516,
         "name": "Belnistrasz",
-        "zoneName": "Razorfen Downs"
+        "zoneName": "Razorfen Downs",
+        "creatureDisplayID": 7851,
+        "portraitSource": "https://www.wowhead.com/forever/npc=8516"
       },
       "finish": {
         "npcID": 8516,
         "name": "Belnistrasz",
-        "zoneName": "Razorfen Downs"
+        "zoneName": "Razorfen Downs",
+        "creatureDisplayID": 7851,
+        "portraitSource": "https://www.wowhead.com/forever/npc=8516"
       },
       "startsInside": true,
       "requirementsKnown": false,
@@ -5490,7 +5510,9 @@
       "start": {
         "npcID": 3981,
         "name": "Vorrel Sengutz",
-        "zoneName": "Scarlet Monastery"
+        "zoneName": "Scarlet Monastery",
+        "creatureDisplayID": 2046,
+        "portraitSource": "https://www.wowhead.com/forever/npc=3981"
       },
       "finish": {
         "npcID": 3982,
@@ -5673,7 +5695,9 @@
         "mapID": 1424,
         "x": 51.4,
         "y": 58.4,
-        "zoneName": "Hillsbrad Foothills"
+        "zoneName": "Hillsbrad Foothills",
+        "creatureDisplayID": 2048,
+        "portraitSource": "https://www.wowhead.com/forever/npc=3980"
       },
       "finish": {
         "npcID": 3980,
@@ -5681,7 +5705,9 @@
         "mapID": 1424,
         "x": 51.4,
         "y": 58.4,
-        "zoneName": "Hillsbrad Foothills"
+        "zoneName": "Hillsbrad Foothills",
+        "creatureDisplayID": 2048,
+        "portraitSource": "https://www.wowhead.com/forever/npc=3980"
       },
       "requirementsKnown": false,
       "requires": [
@@ -6299,7 +6325,9 @@
         "mapID": 1424,
         "x": 51.4,
         "y": 58.4,
-        "zoneName": "Hillsbrad Foothills"
+        "zoneName": "Hillsbrad Foothills",
+        "creatureDisplayID": 2048,
+        "portraitSource": "https://www.wowhead.com/forever/npc=3980"
       },
       "requirementsKnown": false,
       "storyline": [
