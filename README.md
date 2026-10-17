@@ -52,6 +52,8 @@ Level ranges are provisional recommendations.
   objects or item-drop sources stay visible separately; a location visit does
   not confirm that your character can accept the quest there.
   Known item containers have separate location rows, including reported points.
+  Mapped drop creatures also have explicit visit choices; expand their reported
+  positions to choose a point without treating a drop source as the quest giver.
 - Related quests for completion materials appear separately from acceptance
   requirements. Their completion does not confirm you still hold the item.
 - Starter and material items show a current carried count when the client
@@ -67,6 +69,8 @@ Level ranges are provisional recommendations.
   unavailable images leave their names and quantities visible.
 - The window shows current quest-log occupancy and the client-provided standard
   quest limit when available, separately from dungeon preparation status.
+  A held quest can be opened in the native quest log from its detail card when
+  the client provides the action. Opening it changes the selected native quest.
 - Explicitly sourced repeatable quests have their own label.
 - Where prerequisites have alternatives, choose a branch or restore automatic
   planning. Choosing a route does not bypass requirements or confirm availability.
