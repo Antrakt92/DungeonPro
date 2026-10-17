@@ -4474,4 +4474,98 @@ check("Final starter source proof rejects item replacement during restriction cl
     button.icon.SetTexture=setter;issecretvalue=checker;ui:RefreshDetail();assert(button.shown and button.objectiveBinding.id==802)
     f:finish()
 end)
+check("Real starter catalogue records show separate known acquisition routes or explicit unknown without inferred sources",function()
+    local f,q=starterPresentationFixture();local real={}
+    assert(loadfile("Database/Catalog.lua"))("DungeonPro",real)
+    local dungeons,names=addon.dungeons,addon.ItemName
+    addon.dungeons=real.dungeons;addon.ItemName=function()return nil end
+    for _,qid in ipairs({4903,1100,6522,7761})do
+        q.start=real.quests[qid].start;ui:RefreshDetail()
+        assert(detailHas(addon.L("ITEM_ACQUISITION")))
+        assert(detailHas(addon.L("ITEM_ACQUISITION_UNKNOWN"))==(qid==4903))
+        assert(detailHas(addon.L("START")..": "..addon.L("ITEM_STARTER",q.start.name)))
+        assert(ui.engine:State(9970).status=="UNKNOWN" and not ui.action)
+        if qid==1100 then
+            assert(detailHas(addon.L("CONTAINER_SOURCE")) and ui.containerButtons[1].shown)
+            assert(ui.containerButtons[1].title.text==q.start.containerSource.name)
+        elseif qid==7761 then
+            assert(detailHas(addon.L("ITEM_DROP_SOURCE",q.start.dropName,addon.L("UNKNOWN_PLACE"))))
+        elseif qid==6522 then
+            local rfk;for _,d in ipairs(real.dungeons)do if d.key=="rfk"then rfk=d end end
+            assert(detailHas(addon.L("ITEM_DROP_SOURCE",q.start.dropName,addon.DungeonName(rfk))))
+        end
+    end
+    addon.dungeons,addon.ItemName=dungeons,names;f:finish()
+end)
+check("Acquisition sections translate recycle and reject empty source placeholders without labelling NPC starters",function()
+    local f,q=starterPresentationFixture();local locale=addon.db.locale
+    for code in pairs(addon.locales)do
+        addon.db.locale=code;q.start={itemID=801,name="Starter",dropSources={}}
+        ui:RefreshDetail();assert(detailHas(addon.L("ITEM_ACQUISITION")) and detailHas(addon.L("ITEM_ACQUISITION_UNKNOWN")))
+        q.start.dropSources={{name="No identity",locationName="Zone"},{npcID=1,name=" ",locationName="Zone"}}
+        ui:RefreshDetail();assert(detailHas(addon.L("ITEM_ACQUISITION_UNKNOWN")))
+        q.start.dropSources={{npcID=1,name="Source",locationName="Known zone"},{npcID=2,name="Other source",locationName="Other zone"}}
+        ui:RefreshDetail();assert(not detailHas(addon.L("ITEM_ACQUISITION_UNKNOWN")))
+        assert(detailHas(addon.L("ITEM_DROP_SOURCE","Source","Known zone")) and detailHas(addon.L("ITEM_DROP_SOURCE","Other source","Other zone")))
+        q.start={npcID=1,name="Giver"};ui:RefreshDetail()
+        assert(not detailHas(addon.L("ITEM_ACQUISITION")) and not detailHas(addon.L("ITEM_ACQUISITION_UNKNOWN")))
+    end
+    addon.db.locale=locale;f:finish()
+end)
+check("Acquisition container visits and reported points reject changed source destinations before redraw",function()
+    local f,q=starterPresentationFixture();local nav=addon.Navigation;local visits,maps={},{}
+    addon.Navigation={Start=function(a)visits[#visits+1]=a end,Map=function(p)maps[#maps+1]=p end}
+    local container={objectID=19861,name="Journal",mapID=1441,x=30.7,y=24.4,
+        reportedLocations={{mapID=1441,x=30.7,y=24.4},{mapID=1441,x=30.7,y=24.5}}}
+    q.start.containerSource=container;ui:RefreshDetail()
+    local click=ui.containerButtons[1].scripts.OnClick;click();assert(#visits==1 and visits[1].place==container)
+    reportToggle("container:1").scripts.OnClick();local pointClick=reportRows()[2].scripts.OnClick
+    pointClick();assert(#visits==2 and visits[2].place.y==24.5)
+    container.reportedLocations[2].y=25;pointClick();assert(#visits==2)
+    ui:RefreshDetail();click=ui.containerButtons[1].scripts.OnClick
+    container.x=31;click();assert(#visits==2)
+    container.x=nil;container.y=nil;container.reportedLocations=nil;ui:RefreshDetail()
+    click=ui.containerButtons[1].scripts.OnClick;click();assert(#maps==1 and maps[1]==container and not maps[1].place)
+    q.start.containerSource={objectID=19861,name="Replacement",mapID=1441};click();assert(#maps==1)
+    ui:RefreshDetail();assert(ui.containerButtons[1].shown)
+    q.start.containerSource=nil;ui:RefreshDetail()
+    assert(not ui.containerButtons[1].shown and detailHas(addon.L("ITEM_ACQUISITION_UNKNOWN")))
+    addon.Navigation=nav;f:finish()
+end)
+check("Acquisition label hydration cannot append old routes to a replacement card or same-card generation",function()
+    local f,q=starterPresentationFixture();local names=addon.GiverName
+    for _,same in ipairs({false,true})do
+        q.start={itemID=801,name="Old starter",dropSources={{npcID=3,name="Old drop",locationName="Old zone"}}}
+        local armed=true;local nestedHeight
+        addon.GiverName=function(place)
+            if armed and place.npcID==3 then
+                armed=false
+                if same then q.start={itemID=802,name="New starter"};ui:RefreshDetail()else showDetail(9971)end
+                nestedHeight=ui.detail.height
+            end
+            return nil
+        end
+        showDetail(9970)
+        assert(not armed and ui.detail.height==nestedHeight and not detailHas(addon.L("ITEM_DROP_SOURCE","Old drop","Old zone")))
+        if same then assert(detailHas(addon.L("ITEM_ACQUISITION_UNKNOWN")))else assert(not detailHas(addon.L("ITEM_ACQUISITION")))end
+    end
+    addon.GiverName=names;f:finish()
+end)
+check("Acquisition source-list growth during hydration rejects the older staged route and stale point callbacks",function()
+    local f,q=starterPresentationFixture();local names=addon.GiverName
+    q.start={itemID=801,name="Starter",dropSources={{npcID=3,name="Old drop",locationName="Zone"}}}
+    local armed=true
+    addon.GiverName=function(place)
+        if armed and place.npcID==3 then armed=false;q.start.dropSources[2]={npcID=4,name="Added drop",locationName="Zone"}end
+    end
+    ui:RefreshDetail();assert(not armed and not detailHas(addon.L("ITEM_DROP_SOURCE","Old drop","Zone")))
+    addon.GiverName=names
+    local container={objectID=5,name="Container",mapID=1,x=1,y=2,
+        reportedLocations={{mapID=1,x=1,y=2},{mapID=1,x=1,y=3}}}
+    q.start={itemID=801,name="Starter",containerSource=container};ui:RefreshDetail()
+    local click=ui.containerButtons[1].scripts.OnClick;local nav,calls=addon.Navigation,0
+    addon.Navigation={Start=function()calls=calls+1 end}
+    container.reportedLocations[3]={mapID=1,x=1,y=4};click();assert(calls==0)
+    addon.Navigation=nav;f:finish()
+end)
 print("Preparation UI modeled checks passed: " .. total .. " (no native layout validation)")

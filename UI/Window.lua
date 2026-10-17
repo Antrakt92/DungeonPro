@@ -1037,12 +1037,13 @@ function UI:RefreshDetail()
             return self.quest == renderQuest and self.dungeon == renderDungeon and self.engine == renderEngine and
                 addon.char == renderCharacter and self.rewardGeneration == rewardGeneration and self.reportedGeneration == reportedGeneration
         end
-        local function reported(parent, key)
-            if not locationCurrent() then return false end
+        local function reported(parent, key, ownerCurrent)
+            local function current() return locationCurrent() and (not ownerCurrent or ownerCurrent()) end
+            if not current() then return false end
             local places = reportedPlaces(parent)
             if not places then return end
             local parentName = giverName(parent)
-            if not locationCurrent() then return false end
+            if not current() then return false end
             toggleIndex = toggleIndex + 1
             local toggle = self:MakeRow(self.detail, self.reportedToggles, toggleIndex, 40)
             toggle.locationKey, toggle.heading = key, true
@@ -1050,7 +1051,7 @@ function UI:RefreshDetail()
             toggle.title:SetText((expanded and "− " or "+ ") .. addon.L("REPORTED_POSITIONS", parentName, #places))
             toggle.note:SetText(""); toggle:SetEnabled(true)
             toggle:SetScript("OnClick", function()
-                if self.quest ~= id or self.reportedGeneration ~= reportedGeneration then return end
+                if not current() then return end
                 self.reportedExpanded[key] = not expanded
                 self:RefreshDetail()
             end)
@@ -1060,7 +1061,7 @@ function UI:RefreshDetail()
             for _, destination in ipairs(places) do
                 local point = destination
                 local zone = addon.Read(C_Map and C_Map.GetMapInfo, "table", point.mapID)
-                if not locationCurrent() then return false end
+                if not current() then return false end
                 reportIndex = reportIndex + 1
                 local row = self:MakeRow(self.detail, self.reportedRows, reportIndex, 59)
                 row.locationKey, row.destination, row.heading = key, point, nil
@@ -1068,7 +1069,7 @@ function UI:RefreshDetail()
                 row.title:SetText(zoneName .. string.format(" (%.1f, %.1f)", point.x, point.y))
                 row.note:SetText(addon.L("REPORTED_VISIT")); row:SetEnabled(true)
                 row:SetScript("OnClick", function()
-                    if self.quest == id and self.reportedGeneration == reportedGeneration then
+                    if current() then
                         addon.Navigation.Start({ id = id, kind = "visit", place = point })
                     end
                 end)
@@ -1095,16 +1096,18 @@ function UI:RefreshDetail()
             return name .. (zoneName and (" — " .. zoneName) or "") ..
                 (p.x and string.format(" (%.1f, %.1f)", p.x, p.y) or "")
         end
-        local function alternativePlaces(places, buttons, heading, slot)
+        local function alternativePlaces(places, buttons, heading, slot, ownerCurrent)
+            local function current() return locationCurrent() and (not ownerCurrent or ownerCurrent()) end
+            if not current() then return false end
             line(addon.L(heading), "section")
             for index, possible in ipairs(places) do
                 local destination = possible
                 local title = giverName(destination)
-                if not locationCurrent() then return false end
+                if not current() then return false end
                 local mapID = addon.Clean(destination.mapID, "number")
                 local validMap = mapID ~= nil and mapID > 0 and mapID % 1 == 0
                 local zone = validMap and addon.Read(C_Map and C_Map.GetMapInfo, "table", mapID)
-                if not locationCurrent() then return false end
+                if not current() then return false end
                 local row = self:MakeRow(self.detail, buttons, index, 59)
                 row.title:SetText(title)
                 local x, py = addon.Clean(destination.x, "number"), addon.Clean(destination.y, "number")
@@ -1114,13 +1117,13 @@ function UI:RefreshDetail()
                     (coordinates and string.format(" (%.1f, %.1f)", x, py) or ""))
                 row:SetEnabled(validMap)
                 row:SetScript("OnClick", validMap and function()
-                    if self.quest ~= id or self.reportedGeneration ~= reportedGeneration then return end
+                    if not current() then return end
                     local visit = { id = id, kind = "visit", place = destination }
                     if coordinates then addon.Navigation.Start(visit)
                     else addon.Navigation.Map(destination) end
                 end or nil)
                 y = self:LayoutRow(row, 59, y)
-                if reported(destination, slot .. index) == false or not locationCurrent() then return false end
+                if reported(destination, slot .. index, ownerCurrent) == false or not current() then return false end
             end
         end
         local starterSource = addon.Clean(q.start, "table")
@@ -1201,20 +1204,90 @@ function UI:RefreshDetail()
                 line(addon.L("ITEM_MIN_LEVEL", minimum)); shown = true
             end
             if shown then line(addon.L("ITEM_REQUIREMENTS_NOTICE")) end
-            local container = addon.Clean(start.containerSource, "table")
-            if container then
-                if alternativePlaces({ container }, self.containerButtons, "CONTAINER_SOURCE", "container:") == false then return end
-            end
         end
-        if start and start.itemID and start.dropNPCID then
-            local dungeonName = addon.L("UNKNOWN_PLACE")
-            for _, dungeon in ipairs(addon.dungeons) do
-                if dungeon.key == start.dungeonKey then dungeonName = addon.DungeonName(dungeon); break end
+        if typedStarter then
+            -- Route facts remain separate from the item that starts the quest.
+            local routes, snapshots = {}, {}
+            local function capture(object, fields, list)
+                local values = {}
+                for _, field in ipairs(fields) do values[field] = rawget(object, field) end
+                snapshots[#snapshots + 1] = { object = object, values = values, fields = fields, length = list and #object or nil }
             end
-            line(addon.L("ITEM_DROP_SOURCE", giverName({ npcID = start.dropNPCID, name = start.dropName or ("#" .. start.dropNPCID) }), dungeonName))
-        end
-        for _, drop in ipairs(start and start.dropSources or {}) do
-            line(addon.L("ITEM_DROP_SOURCE", giverName(drop), drop.locationName))
+            capture(starterSource, { "containerSource", "dropNPCID", "dropName", "dungeonKey", "dropSources" })
+            local function acquisitionCurrent()
+                if not starterCurrent() then return false end
+                local ok, same = pcall(function()
+                    for _, snapshot in ipairs(snapshots) do
+                        if snapshot.length and #snapshot.object ~= snapshot.length then return false end
+                        for _, field in ipairs(snapshot.fields) do
+                            if rawget(snapshot.object, field) ~= snapshot.values[field] then return false end
+                        end
+                    end
+                    return true
+                end)
+                return ok and same == true
+            end
+            local function positive(value)
+                value = addon.Clean(value, "number")
+                return value and value > 0 and value <= 9007199254740991 and value % 1 == 0 and value
+            end
+            local container = addon.Clean(rawget(starterSource, "containerSource"), "table")
+            local containerName = container and addon.Clean(rawget(container, "name"), "string")
+            local containerTyped, containerIsObject = pcall(function()
+                return container and rawget(container, "npcID") == nil and rawget(container, "itemID") == nil and true or false
+            end)
+            if container and positive(rawget(container, "objectID")) and containerName and containerName:find("%S") and
+                containerTyped and containerIsObject == true then
+                capture(container, { "objectID", "name", "zoneName", "mapID", "x", "y", "reportedLocations" })
+                local points = addon.Clean(rawget(container, "reportedLocations"), "table")
+                if points then
+                    capture(points, {}, true)
+                    local length = #points
+                    for index = 1, math.min(length, 100) do
+                        local point = addon.Clean(rawget(points, index), "table")
+                        capture(points, { index })
+                        if point then capture(point, { "mapID", "x", "y", "zoneName" }) end
+                    end
+                end
+                routes[#routes + 1] = { container = container }
+            end
+            local dropID = positive(rawget(starterSource, "dropNPCID"))
+            if dropID then
+                local dungeonName = addon.L("UNKNOWN_PLACE")
+                for _, dungeon in ipairs(addon.dungeons) do
+                    if dungeon.key == starterSource.dungeonKey then dungeonName = addon.DungeonName(dungeon); break end
+                end
+                if not acquisitionCurrent() then return end
+                local name = giverName({ npcID = dropID, name = addon.Clean(starterSource.dropName, "string") or ("#" .. dropID) })
+                if not acquisitionCurrent() then return end
+                routes[#routes + 1] = { text = addon.L("ITEM_DROP_SOURCE", name, dungeonName) }
+            end
+            local drops = addon.Clean(rawget(starterSource, "dropSources"), "table")
+            if drops then
+                capture(drops, {}, true)
+                for index = 1, math.min(#drops, 100) do
+                    capture(drops, { index })
+                    local drop = addon.Clean(rawget(drops, index), "table")
+                    if drop then
+                        capture(drop, { "npcID", "name", "locationName" })
+                        local name, location = addon.Clean(drop.name, "string"), addon.Clean(drop.locationName, "string")
+                        if positive(drop.npcID) and name and name:find("%S") and location and location:find("%S") then
+                            name = giverName(drop)
+                            if not acquisitionCurrent() then return end
+                            routes[#routes + 1] = { text = addon.L("ITEM_DROP_SOURCE", name, location) }
+                        end
+                    end
+                end
+            end
+            if not acquisitionCurrent() then return end
+            line(addon.L("ITEM_ACQUISITION"), "section")
+            if #routes == 0 then line(addon.L("ITEM_ACQUISITION_UNKNOWN")) end
+            for _, route in ipairs(routes) do
+                if route.container then
+                    if alternativePlaces({ route.container }, self.containerButtons, "CONTAINER_SOURCE", "container:", acquisitionCurrent) == false then return end
+                else line(route.text) end
+                if not acquisitionCurrent() then return end
+            end
         end
         local map = start and addon.Clean(start.mapID, "number")
         if map and map > 0 then
