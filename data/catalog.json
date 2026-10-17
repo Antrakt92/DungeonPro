@@ -1390,7 +1390,19 @@
         "y": 48.6,
         "npcID": 264943,
         "zoneName": "Ironforge"
-      }
+      },
+      "objectiveKills": [
+        {
+          "npcID": 263389,
+          "name": "Enraged Apparition",
+          "quantity": 15
+        },
+        {
+          "npcID": 263390,
+          "name": "Tormented Soul",
+          "quantity": 10
+        }
+      ]
     },
     {
       "id": 96395,
@@ -1404,7 +1416,13 @@
         "npcID": 265002,
         "zoneName": "Hall of Thanes"
       },
-      "startsInside": true
+      "startsInside": true,
+      "objectiveKills": [
+        {
+          "npcID": 261306,
+          "name": "Faldrim Anvilmar"
+        }
+      ]
     },
     {
       "id": 96403,
