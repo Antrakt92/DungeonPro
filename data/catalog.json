@@ -23656,7 +23656,12 @@
         "fileID": 7963781,
         "gameMapID": 3065,
         "loadingScreenID": 693,
-        "source": "https://wago.tools/db2/LoadingScreens?build=1.60.1.70425&filter%5BID%5D=exact%3A693"
+        "source": "https://wago.tools/db2/LoadingScreens?build=1.60.1.70425&filter%5BID%5D=exact%3A693",
+        "previewWidth": 2992,
+        "previewHeight": 1684,
+        "previewSource": "https://wago.tools/files?search=7963781",
+        "previewVersion": "1.60.1.69876",
+        "previewContentHash": "33f782f04c00ea1c93c01280b09963f8"
       }
     },
     {
@@ -23685,7 +23690,12 @@
         "fileID": 7963782,
         "gameMapID": 2999,
         "loadingScreenID": 650,
-        "source": "https://wago.tools/db2/LoadingScreens?build=1.60.1.70425&filter%5BID%5D=exact%3A650"
+        "source": "https://wago.tools/db2/LoadingScreens?build=1.60.1.70425&filter%5BID%5D=exact%3A650",
+        "previewWidth": 2992,
+        "previewHeight": 1684,
+        "previewSource": "https://wago.tools/files?search=7963782",
+        "previewVersion": "1.60.1.69876",
+        "previewContentHash": "71ee539ba9a9b36e6be0f3b55f10fff4"
       }
     },
     {
@@ -23715,7 +23725,12 @@
         "fileID": 7963777,
         "gameMapID": 2998,
         "loadingScreenID": 691,
-        "source": "https://wago.tools/db2/LoadingScreens?build=1.60.1.70425&filter%5BID%5D=exact%3A691"
+        "source": "https://wago.tools/db2/LoadingScreens?build=1.60.1.70425&filter%5BID%5D=exact%3A691",
+        "previewWidth": 2992,
+        "previewHeight": 1684,
+        "previewSource": "https://wago.tools/files?search=7963777",
+        "previewVersion": "1.60.1.69876",
+        "previewContentHash": "b2f90cda58ef31d0e1b4e3ac06205d00"
       }
     },
     {
@@ -23739,7 +23754,12 @@
         "fileID": 7963775,
         "gameMapID": 2959,
         "loadingScreenID": 647,
-        "source": "https://wago.tools/db2/LoadingScreens?build=1.60.1.70425&filter%5BID%5D=exact%3A647"
+        "source": "https://wago.tools/db2/LoadingScreens?build=1.60.1.70425&filter%5BID%5D=exact%3A647",
+        "previewWidth": 2992,
+        "previewHeight": 1684,
+        "previewSource": "https://wago.tools/files?search=7963775",
+        "previewVersion": "1.60.1.69876",
+        "previewContentHash": "f36b57346fbf8dfc64b0f93fb75d2c60"
       }
     },
     {

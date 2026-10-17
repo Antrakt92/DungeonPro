@@ -749,6 +749,36 @@ class CatalogTests(unittest.TestCase):
             with self.subTest(value=value), self.assertRaisesRegex(ValueError, "artwork"):
                 catalog.validate(invalid)
 
+    def test_art_preview_dimensions_require_bound_provenance(self):
+        data = self.minimal_catalog()
+        art = {"fileID": 7963781, "gameMapID": 2891, "loadingScreenID": 1,
+               "source": "https://wago.tools/db2/LoadingScreens?build=1.60.1.70425&filter%5BID%5D=exact%3A1",
+               "previewWidth": 2992, "previewHeight": 1684,
+               "previewSource": "https://wago.tools/files?search=7963781",
+               "previewVersion": "1.60.1.69876",
+               "previewContentHash": "33f782f04c00ea1c93c01280b09963f8"}
+        data["dungeons"][0]["art"] = art
+        before = copy.deepcopy(data)
+        catalog.validate(data)
+        self.assertEqual(data, before)
+        self.assertIn('["previewWidth"] = 2992', catalog.generate(data))
+        fields = ("previewWidth", "previewHeight", "previewSource", "previewVersion", "previewContentHash")
+        for field in fields:
+            invalid = copy.deepcopy(data)
+            del invalid["dungeons"][0]["art"][field]
+            with self.subTest(missing=field), self.assertRaisesRegex(ValueError, "artwork preview"):
+                catalog.validate(invalid)
+        for field, values in (("previewWidth", (True, 0, -1, 1.5, "2992", 16385)),
+                              ("previewHeight", (None, False, 0, float("inf"), 16385)),
+                              ("previewSource", ("https://example.com", "https://wago.tools/files?search=7963782")),
+                              ("previewVersion", (None, "", "1.60.1", "1.60.1.69876\n")),
+                              ("previewContentHash", (None, "a" * 31, "z" * 32, "a" * 32 + "\n"))):
+            for value in values:
+                invalid = copy.deepcopy(data)
+                invalid["dungeons"][0]["art"][field] = value
+                with self.subTest(field=field, value=value), self.assertRaisesRegex(ValueError, "artwork preview"):
+                    catalog.validate(invalid)
+
     def test_invalid_objective_items_are_rejected(self):
         invalid = [None, False, {}, [], [None], [False], [1], [[]], [{}],
                    [{"quantity": 1}],

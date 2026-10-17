@@ -615,30 +615,83 @@ local dungeonArtPaints = setmetatable({}, { __mode = "k" })
 function addon.PaintDungeonArt(texture, dungeon)
     local token = {}
     dungeonArtPaints[texture] = token
+    local checker = issecretvalue
+    dungeon = addon.Clean(dungeon, "table") or {}
+    local art = addon.Clean(dungeon.art, "table")
+    local fileID, mapID = art and artInteger(art.fileID), artInteger(dungeon.instanceID)
+    local artMap = art and artInteger(art.gameMapID)
+    local previewWidth = art and artInteger(art.previewWidth)
+    local previewHeight = art and artInteger(art.previewHeight)
+    if previewWidth and previewWidth > 16384 then previewWidth = nil end
+    if previewHeight and previewHeight > 16384 then previewHeight = nil end
     local image = addon.DungeonArt(dungeon)
-    local function current() return dungeonArtPaints[texture] == token end
-    if not current() then return false end
+    local function owned() return dungeonArtPaints[texture] == token end
+    local function current()
+        local width = art and artInteger(art.previewWidth)
+        local height = art and artInteger(art.previewHeight)
+        if width and width > 16384 then width = nil end
+        if height and height > 16384 then height = nil end
+        return owned() and issecretvalue == checker and addon.Clean(dungeon.art, "table") == art and
+            artInteger(dungeon.instanceID) == mapID and (not art or
+                (artInteger(art.fileID) == fileID and artInteger(art.gameMapID) == artMap and
+                    width == previewWidth and height == previewHeight))
+    end
+    local function abandon()
+        if owned() then
+            pcall(texture.SetTexture, texture, nil)
+            if owned() then pcall(texture.Hide, texture) end
+        end
+        return false
+    end
+    if not current() then return abandon() end
     local function paint(value)
         local ok, accepted = pcall(texture.SetTexture, texture, value)
         return ok and addon.Clean(accepted, "boolean") == true
     end
     local accepted = paint(image)
-    if not current() then return false end
+    if not current() then return abandon() end
     local generic = "Interface\\Icons\\INV_Misc_Map_01"
     if not accepted and image ~= generic then
         accepted = paint(generic)
         image = generic
-        if not current() then return false end
+        if not current() then return abandon() end
     end
     if not accepted then
-        pcall(texture.SetTexture, texture, nil)
-        if current() then texture:Hide() end
-        return false
+        return abandon()
     end
-    if type(texture.SetTexCoord) == "function" then
+    local coordinates = addon.Clean(texture.SetTexCoord, "function")
+    if coordinates then
         local inset = type(image) == "number" and 0.18 or 0
-        pcall(texture.SetTexCoord, texture, inset, 1 - inset, inset, 1 - inset)
-        if not current() then return false end
+        local left, right, top, bottom = inset, 1 - inset, inset, 1 - inset
+        if image == fileID and artMap and (not mapID or mapID == artMap) and previewWidth and previewHeight then
+            local widthGetter = addon.Clean(texture.GetWidth, "function")
+            local heightGetter = addon.Clean(texture.GetHeight, "function")
+            if widthGetter and heightGetter then
+                local function geometryCurrent()
+                    return current() and addon.Clean(texture.GetWidth, "function") == widthGetter and
+                        addon.Clean(texture.GetHeight, "function") == heightGetter
+                end
+                local width = addon.Read(widthGetter, "number", texture)
+                if not geometryCurrent() then return abandon() end
+                local height = addon.Read(heightGetter, "number", texture)
+                if not geometryCurrent() then return abandon() end
+                local ratio = width and height and width > 0 and height > 0 and addon.Clean(width / height, "number")
+                if ratio and ratio > 0 then
+                    local sourceRatio = previewWidth / previewHeight
+                    if sourceRatio > ratio then
+                        local span = (1 - 2 * inset) * ratio / sourceRatio
+                        local first, last = (1 - span) / 2, (1 + span) / 2
+                        if last > first then left, right = first, last end
+                    elseif sourceRatio < ratio then
+                        local span = (1 - 2 * inset) * sourceRatio / ratio
+                        local first, last = (1 - span) / 2, (1 + span) / 2
+                        if last > first then top, bottom = first, last end
+                    end
+                end
+            end
+        end
+        pcall(coordinates, texture, left, right, top, bottom)
+        if not current() then return abandon() end
     end
     texture:Show()
     return current()

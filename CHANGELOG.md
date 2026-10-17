@@ -8,6 +8,7 @@
 - Restored quest selection when preparation section headings are present.
 - Explained faction, class and race restrictions directly in quest rows.
 - Added native dungeon artwork for 24 catalogue entries and safer image fallback.
+- Adjusted four new dungeon images for their recorded wide preview proportions.
 - Refined the window, controls and selected rows with a cohesive dark theme.
 - Added a dungeon overview before selecting a quest, with artwork and coverage notes.
 - Let Back return from the first quest to its dungeon overview.

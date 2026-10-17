@@ -211,6 +211,90 @@ local function canvas()
     end, SetTexCoord = function(self, ...) self.coords = { ... } end,
     Show = function(self) self.shown = true end, Hide = function(self) self.shown = false end }
 end
+check("Reviewed wide preview artwork preserves its ratio within the existing content crop", function()
+    local icon = canvas()
+    icon.GetWidth,icon.GetHeight = function() return 44 end,function() return 44 end
+    local dungeon = {instanceID=3065,art={fileID=7963781,gameMapID=3065,previewWidth=2992,previewHeight=1684}}
+    assert(addon.PaintDungeonArt(icon,dungeon))
+    local xspan,yspan=icon.coords[2]-icon.coords[1],icon.coords[4]-icon.coords[3]
+    assert(math.abs(xspan-.64/(2992/1684))<1e-12 and math.abs(yspan-.64)<1e-12)
+    assert(math.abs(icon.coords[1]+icon.coords[2]-1)<1e-12 and icon.shown)
+end)
+check("Preview crops adapt to portrait and landscape targets and preserve the content inset", function()
+    local function spans(sw,sh,tw,th)
+        local icon=canvas(); icon.GetWidth=function() return tw end; icon.GetHeight=function() return th end
+        assert(addon.PaintDungeonArt(icon,{art={fileID=7963781,gameMapID=3065,previewWidth=sw,previewHeight=sh}}))
+        return icon.coords[2]-icon.coords[1],icon.coords[4]-icon.coords[3]
+    end
+    local x,y=spans(2992,1684,148,148)
+    assert(math.abs(x-.64/(2992/1684))<1e-12 and math.abs(y-.64)<1e-12)
+    x,y=spans(2992,1684,300,150)
+    assert(math.abs(x-.64)<1e-12 and math.abs(y-.64*(2992/1684)/2)<1e-12)
+    x,y=spans(500,1000,44,44)
+    assert(math.abs(x-.64)<1e-12 and math.abs(y-.32)<1e-12)
+    x,y=spans(2048,2048,44,44)
+    assert(math.abs(x-.64)<1e-12 and math.abs(y-.64)<1e-12)
+end)
+check("Incomplete malformed restricted preview dimensions and target geometry retain the old crop", function()
+    local function unchanged(width,height,targetWidth,targetHeight)
+        local icon=canvas()
+        icon.GetWidth=function() return targetWidth end; icon.GetHeight=function() return targetHeight end
+        assert(addon.PaintDungeonArt(icon,{art={fileID=7963781,gameMapID=3065,previewWidth=width,previewHeight=height}}))
+        assert(icon.coords[1]==.18 and icon.coords[2]==1-.18 and icon.coords[3]==.18 and icon.coords[4]==1-.18)
+    end
+    for _,bad in ipairs({secret,false,0,-1,1.5,16385,"2992",0/0,math.huge}) do
+        unchanged(bad,1684,44,44); unchanged(2992,bad,44,44)
+    end
+    unchanged(nil,1684,44,44); unchanged(2992,nil,44,44)
+    for _,bad in ipairs({secret,false,0,-1,"44",0/0,math.huge}) do
+        unchanged(2992,1684,bad,44); unchanged(2992,1684,44,bad)
+    end
+    unchanged(2992,1684,nil,44); unchanged(2992,1684,44,nil)
+    unchanged(2992,1684,1e-300,1e300); unchanged(2992,1684,1e300,1e-300)
+    local icon=canvas(); icon.GetWidth=function() error("unavailable") end; icon.GetHeight=function() return 44 end
+    assert(addon.PaintDungeonArt(icon,{art={fileID=7963781,gameMapID=3065,previewWidth=2992,previewHeight=1684}}))
+    assert(icon.coords[1]==.18 and icon.coords[3]==.18)
+end)
+check("Preview dimensions never apply to another file or a mismatched map or generic fallback", function()
+    local icon=canvas(); icon.GetWidth=function() error("must not inspect unrelated geometry") end
+    icon.GetHeight=icon.GetWidth
+    C_EncounterJournal={GetInstanceForGameMap=function() return 99 end}
+    EJ_GetInstanceInfo=function() return nil,nil,nil,nil,111,333 end
+    local dungeon={instanceID=36,art={fileID=7963781,gameMapID=43,previewWidth=2992,previewHeight=1684}}
+    assert(addon.PaintDungeonArt(icon,dungeon) and icon.texture==333 and icon.coords[1]==.18)
+    EJ_GetInstanceInfo=function() return nil,nil,nil,nil,111,7963781 end
+    assert(addon.PaintDungeonArt(icon,dungeon) and icon.texture==7963781 and icon.coords[1]==.18)
+    local native=icon.SetTexture
+    icon.SetTexture=function(self,value) if value==7963781 then return false end; return native(self,value) end
+    dungeon.instanceID=43
+    assert(addon.PaintDungeonArt(icon,dungeon) and icon.texture==generic and icon.coords[1]==0 and icon.coords[2]==1)
+end)
+check("Geometry getter reentry cannot overwrite or hide a newer paint", function()
+    for _,hook in ipairs({"GetWidth","GetHeight"}) do
+        local icon=canvas(); local entered=false
+        icon.GetWidth=function() return 44 end; icon.GetHeight=function() return 44 end
+        icon[hook]=function(self)
+            if not entered then entered=true; assert(addon.PaintDungeonArt(self,{})) end
+            return 44
+        end
+        assert(not addon.PaintDungeonArt(icon,{art={fileID=7963781,gameMapID=3065,previewWidth=2992,previewHeight=1684}}))
+        assert(entered and icon.texture==generic and icon.shown and icon.coords[1]==0 and icon.coords[2]==1)
+    end
+end)
+check("Metadata or getter identity drift during geometry reads abandons only the owned image", function()
+    for _,hook in ipairs({"GetWidth","GetHeight"}) do
+        local icon=canvas(); local dungeon={art={fileID=7963781,gameMapID=3065,previewWidth=2992,previewHeight=1684}}
+        icon.GetWidth=function() return 44 end; icon.GetHeight=function() return 44 end
+        icon[hook]=function() dungeon.art.previewWidth=1000; return 44 end
+        assert(not addon.PaintDungeonArt(icon,dungeon))
+        assert(icon.texture==nil and not icon.shown and not icon.coords)
+    end
+    local icon=canvas(); local heightCalls=0
+    icon.GetHeight=function() heightCalls=heightCalls+1; return 44 end
+    icon.GetWidth=function(self) self.GetHeight=function() heightCalls=heightCalls+1; return 148 end; return 44 end
+    assert(not addon.PaintDungeonArt(icon,{art={fileID=7963781,gameMapID=3065,previewWidth=2992,previewHeight=1684}}))
+    assert(heightCalls==0 and icon.texture==nil and not icon.shown)
+end)
 check("Art painting crops loading artwork and resets coordinates on recycled fallback", function()
     local icon = canvas()
     assert(addon.PaintDungeonArt(icon, { art = { fileID = 131833, gameMapID = 36 } }))
@@ -301,7 +385,7 @@ end)
 check("Every reviewed catalogue image matches its sourced game-map identity", function()
     assert(loadfile("Database/Catalog.lua"))("DungeonPro", addon)
     GetLFDChoiceOrder, GetLFGDungeonInfo, C_EncounterJournal = nil, nil, nil
-    local count, seen, maps = 0, {}, {}
+    local count, seen, maps, previews = 0, {}, {}, {}
     for _, dungeon in ipairs(addon.dungeons) do
         if dungeon.art then
             count = count + 1
@@ -309,11 +393,21 @@ check("Every reviewed catalogue image matches its sourced game-map identity", fu
             assert(not dungeon.instanceID or dungeon.art.gameMapID == dungeon.instanceID)
             seen[dungeon.key] = dungeon.art.fileID
             maps[dungeon.art.gameMapID] = true
+            if dungeon.art.previewWidth then
+                local icon = canvas()
+                icon.GetWidth, icon.GetHeight = function() return 44 end, function() return 44 end
+                assert(addon.PaintDungeonArt(icon, dungeon))
+                local ratio = dungeon.art.previewWidth / dungeon.art.previewHeight
+                assert(math.abs((icon.coords[2] - icon.coords[1]) * ratio - (icon.coords[4] - icon.coords[3])) < 1e-10)
+                previews[dungeon.key] = true
+            end
         else assert(addon.DungeonArt(dungeon) == generic) end
     end
     local mapCount = 0; for _ in pairs(maps) do mapCount = mapCount + 1 end
     assert(count == 24 and mapCount == 23)
     assert(seen.dm == 131833 and seen.thanes == 7963781 and seen.lordaeron == 7963782)
     assert(seen.lbrs == seen.ubrs and not seen.drowned and not seen.kroldok)
+    local previewCount = 0; for _ in pairs(previews) do previewCount = previewCount + 1 end
+    assert(previewCount == 4 and previews.thanes and previews.lordaeron and previews.excavation and previews.dalaran)
 end)
 print("Dungeon art checks passed: " .. total)

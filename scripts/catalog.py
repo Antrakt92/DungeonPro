@@ -263,12 +263,24 @@ def validate(data):
             raise ValueError("Invalid dungeon wing")
         if "art" in d:
             art = d["art"]
-            if (type(art) is not dict or set(art) != {"fileID", "gameMapID", "loadingScreenID", "source"} or
+            identity_fields = {"fileID", "gameMapID", "loadingScreenID", "source"}
+            preview_fields = {"previewWidth", "previewHeight", "previewSource", "previewVersion", "previewContentHash"}
+            if (type(art) is not dict or not identity_fields <= set(art) or set(art) - identity_fields - preview_fields or
                     any(not integer(art.get(field)) or art[field] > 4294967295
                         for field in ("fileID", "gameMapID", "loadingScreenID")) or
                     art.get("source") != "https://wago.tools/db2/LoadingScreens?build=1.60.1.70425&filter%5BID%5D=exact%3A" + str(art.get("loadingScreenID")) or
                     ("instanceID" in d and d["instanceID"] != art["gameMapID"])):
                 raise ValueError("Invalid dungeon artwork identity/source")
+            if set(art) & preview_fields:
+                if (not preview_fields <= set(art) or
+                        any(not integer(art.get(field)) or art[field] > 16384
+                            for field in ("previewWidth", "previewHeight")) or
+                        art.get("previewSource") != "https://wago.tools/files?search=" + str(art["fileID"]) or
+                        type(art.get("previewVersion")) is not str or
+                        re.fullmatch(r"[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+", art["previewVersion"]) is None or
+                        type(art.get("previewContentHash")) is not str or
+                        re.fullmatch(r"[0-9a-f]{32}", art["previewContentHash"]) is None):
+                    raise ValueError("Invalid dungeon artwork preview provenance")
         if "instanceID" in d:
             wings = instance_wings.setdefault(d["instanceID"], set())
             wing = d.get("wing")
