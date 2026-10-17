@@ -17,7 +17,9 @@
         "mapID": 1436,
         "x": 56.3,
         "y": 47.5,
-        "npcID": 234
+        "npcID": 234,
+        "creatureDisplayID": 1690,
+        "portraitSource": "https://www.wowhead.com/forever/npc=234"
       },
       "finish": {
         "name": "Wiley the Black",
@@ -49,7 +51,9 @@
         "mapID": 1436,
         "x": 56.3,
         "y": 47.5,
-        "npcID": 234
+        "npcID": 234,
+        "creatureDisplayID": 1690,
+        "portraitSource": "https://www.wowhead.com/forever/npc=234"
       },
       "requires": [
         {
@@ -74,7 +78,9 @@
         "mapID": 1436,
         "x": 56.3,
         "y": 47.5,
-        "npcID": 234
+        "npcID": 234,
+        "creatureDisplayID": 1690,
+        "portraitSource": "https://www.wowhead.com/forever/npc=234"
       },
       "finish": {
         "name": "Master Mathias Shaw",
@@ -113,7 +119,9 @@
         "mapID": 1436,
         "x": 56.3,
         "y": 47.5,
-        "npcID": 234
+        "npcID": 234,
+        "creatureDisplayID": 1690,
+        "portraitSource": "https://www.wowhead.com/forever/npc=234"
       },
       "requires": [
         {
@@ -138,14 +146,18 @@
         "mapID": 1436,
         "x": 56.3,
         "y": 47.5,
-        "npcID": 234
+        "npcID": 234,
+        "creatureDisplayID": 1690,
+        "portraitSource": "https://www.wowhead.com/forever/npc=234"
       },
       "finish": {
         "name": "Gryan Stoutmantle",
         "mapID": 1436,
         "x": 56.3,
         "y": 47.5,
-        "npcID": 234
+        "npcID": 234,
+        "creatureDisplayID": 1690,
+        "portraitSource": "https://www.wowhead.com/forever/npc=234"
       },
       "requires": [
         {
@@ -177,7 +189,9 @@
         "mapID": 1436,
         "x": 56.3,
         "y": 47.5,
-        "npcID": 234
+        "npcID": 234,
+        "creatureDisplayID": 1690,
+        "portraitSource": "https://www.wowhead.com/forever/npc=234"
       },
       "requires": [
         {
@@ -202,14 +216,18 @@
         "mapID": 1436,
         "x": 56.3,
         "y": 47.5,
-        "npcID": 234
+        "npcID": 234,
+        "creatureDisplayID": 1690,
+        "portraitSource": "https://www.wowhead.com/forever/npc=234"
       },
       "finish": {
         "name": "Gryan Stoutmantle",
         "mapID": 1436,
         "x": 56.3,
         "y": 47.5,
-        "npcID": 234
+        "npcID": 234,
+        "creatureDisplayID": 1690,
+        "portraitSource": "https://www.wowhead.com/forever/npc=234"
       },
       "requires": [
         {
@@ -310,7 +328,9 @@
         "mapID": 1436,
         "x": 56.3,
         "y": 47.5,
-        "npcID": 234
+        "npcID": 234,
+        "creatureDisplayID": 1690,
+        "portraitSource": "https://www.wowhead.com/forever/npc=234"
       },
       "requires": [
         {
@@ -342,7 +362,9 @@
         "mapID": 1453,
         "x": 55.4,
         "y": 12.4,
-        "npcID": 6579
+        "npcID": 6579,
+        "creatureDisplayID": 5378,
+        "portraitSource": "https://www.wowhead.com/forever/npc=6579"
       },
       "objectiveItems": [
         {
@@ -785,7 +807,9 @@
         "x": 32,
         "y": 37.8,
         "npcID": 4949,
-        "zoneName": "Orgrimmar"
+        "zoneName": "Orgrimmar",
+        "creatureDisplayID": 4527,
+        "portraitSource": "https://www.wowhead.com/forever/npc=4949"
       },
       "finish": {
         "name": "Thrall",
@@ -793,7 +817,9 @@
         "x": 32,
         "y": 37.8,
         "npcID": 4949,
-        "zoneName": "Orgrimmar"
+        "zoneName": "Orgrimmar",
+        "creatureDisplayID": 4527,
+        "portraitSource": "https://www.wowhead.com/forever/npc=4949"
       }
     },
     {
@@ -812,7 +838,9 @@
         "x": 32,
         "y": 37.8,
         "npcID": 4949,
-        "zoneName": "Orgrimmar"
+        "zoneName": "Orgrimmar",
+        "creatureDisplayID": 4527,
+        "portraitSource": "https://www.wowhead.com/forever/npc=4949"
       },
       "finish": {
         "name": "Thrall",
@@ -820,7 +848,9 @@
         "x": 32,
         "y": 37.8,
         "npcID": 4949,
-        "zoneName": "Orgrimmar"
+        "zoneName": "Orgrimmar",
+        "creatureDisplayID": 4527,
+        "portraitSource": "https://www.wowhead.com/forever/npc=4949"
       },
       "requires": [
         {
@@ -846,7 +876,9 @@
         "x": 32,
         "y": 37.8,
         "npcID": 4949,
-        "zoneName": "Orgrimmar"
+        "zoneName": "Orgrimmar",
+        "creatureDisplayID": 4527,
+        "portraitSource": "https://www.wowhead.com/forever/npc=4949"
       },
       "finish": {
         "name": "Thrall",
@@ -854,7 +886,9 @@
         "x": 32,
         "y": 37.8,
         "npcID": 4949,
-        "zoneName": "Orgrimmar"
+        "zoneName": "Orgrimmar",
+        "creatureDisplayID": 4527,
+        "portraitSource": "https://www.wowhead.com/forever/npc=4949"
       },
       "requires": [
         {
@@ -880,7 +914,9 @@
         "x": 32,
         "y": 37.8,
         "npcID": 4949,
-        "zoneName": "Orgrimmar"
+        "zoneName": "Orgrimmar",
+        "creatureDisplayID": 4527,
+        "portraitSource": "https://www.wowhead.com/forever/npc=4949"
       },
       "finish": {
         "name": "Thrall",
@@ -888,7 +924,9 @@
         "x": 32,
         "y": 37.8,
         "npcID": 4949,
-        "zoneName": "Orgrimmar"
+        "zoneName": "Orgrimmar",
+        "creatureDisplayID": 4527,
+        "portraitSource": "https://www.wowhead.com/forever/npc=4949"
       },
       "requires": [
         {
@@ -952,7 +990,9 @@
             "y": 51.6,
             "zoneName": "Orgrimmar"
           }
-        ]
+        ],
+        "creatureDisplayID": 3754,
+        "portraitSource": "https://www.wowhead.com/forever/npc=3216"
       },
       "finish": {
         "name": "Thrall",
@@ -960,7 +1000,9 @@
         "x": 32,
         "y": 37.8,
         "npcID": 4949,
-        "zoneName": "Orgrimmar"
+        "zoneName": "Orgrimmar",
+        "creatureDisplayID": 4527,
+        "portraitSource": "https://www.wowhead.com/forever/npc=4949"
       },
       "requires": [
         {
@@ -1115,7 +1157,9 @@
             "x": 56.6,
             "y": 93.6
           }
-        ]
+        ],
+        "creatureDisplayID": 11658,
+        "portraitSource": "https://www.wowhead.com/forever/npc=2425"
       },
       "objectiveItems": [
         {
@@ -1182,7 +1226,9 @@
             "y": 51.6,
             "zoneName": "Orgrimmar"
           }
-        ]
+        ],
+        "creatureDisplayID": 3754,
+        "portraitSource": "https://www.wowhead.com/forever/npc=3216"
       },
       "objectiveItems": [
         {
@@ -1378,7 +1424,9 @@
         "zoneName": "The Barrens",
         "mapID": 1413,
         "x": 48.2,
-        "y": 32.8
+        "y": 32.8,
+        "creatureDisplayID": 7870,
+        "portraitSource": "https://www.wowhead.com/forever/npc=8418"
       },
       "start": {
         "itemID": 10441,
@@ -1405,14 +1453,18 @@
         "name": "Mebok Mizzyrix",
         "mapID": 1413,
         "x": 62.4,
-        "y": 37.6
+        "y": 37.6,
+        "creatureDisplayID": 7034,
+        "portraitSource": "https://www.wowhead.com/forever/npc=3446"
       },
       "finish": {
         "npcID": 3446,
         "name": "Mebok Mizzyrix",
         "mapID": 1413,
         "x": 62.4,
-        "y": 37.6
+        "y": 37.6,
+        "creatureDisplayID": 7034,
+        "portraitSource": "https://www.wowhead.com/forever/npc=3446"
       },
       "requires": [
         {
@@ -1472,7 +1524,9 @@
             "y": 28.6,
             "zoneName": "Thunder Bluff"
           }
-        ]
+        ],
+        "creatureDisplayID": 4519,
+        "portraitSource": "https://www.wowhead.com/forever/npc=5769"
       },
       "storyline": [
         1489,
@@ -1500,11 +1554,15 @@
       "source": "https://www.wowhead.com/forever/quest=1487/deviate-eradication",
       "start": {
         "npcID": 5768,
-        "name": "Ebru"
+        "name": "Ebru",
+        "creatureDisplayID": 4290,
+        "portraitSource": "https://www.wowhead.com/forever/npc=5768"
       },
       "finish": {
         "npcID": 5768,
-        "name": "Ebru"
+        "name": "Ebru",
+        "creatureDisplayID": 4290,
+        "portraitSource": "https://www.wowhead.com/forever/npc=5768"
       }
     },
     {
@@ -1546,11 +1604,15 @@
       "source": "https://www.wowhead.com/forever/quest=1486/deviate-hides",
       "start": {
         "npcID": 5767,
-        "name": "Nalpak"
+        "name": "Nalpak",
+        "creatureDisplayID": 4289,
+        "portraitSource": "https://www.wowhead.com/forever/npc=5767"
       },
       "finish": {
         "npcID": 5767,
-        "name": "Nalpak"
+        "name": "Nalpak",
+        "creatureDisplayID": 4289,
+        "portraitSource": "https://www.wowhead.com/forever/npc=5767"
       },
       "objectiveItems": [
         {
@@ -1634,7 +1696,9 @@
             "y": 28.6,
             "zoneName": "Thunder Bluff"
           }
-        ]
+        ],
+        "creatureDisplayID": 4519,
+        "portraitSource": "https://www.wowhead.com/forever/npc=5769"
       },
       "finish": {
         "npcID": 5770,
@@ -1951,7 +2015,9 @@
             "y": 24.6,
             "zoneName": "Darnassus"
           }
-        ]
+        ],
+        "creatureDisplayID": 5226,
+        "portraitSource": "https://www.wowhead.com/forever/npc=4783"
       },
       "requirementsKnown": false,
       "storyline": [
@@ -2001,7 +2067,9 @@
             "x": 55.6,
             "y": 24.6
           }
-        ]
+        ],
+        "creatureDisplayID": 5225,
+        "portraitSource": "https://www.wowhead.com/forever/npc=4786"
       },
       "finish": {
         "npcID": 4787,
@@ -2328,7 +2396,9 @@
             "y": 36.8,
             "zoneName": "Dun Morogh"
           }
-        ]
+        ],
+        "creatureDisplayID": 4893,
+        "portraitSource": "https://www.wowhead.com/forever/npc=6181"
       },
       "finish": {
         "npcID": 6181,
@@ -2350,7 +2420,9 @@
             "y": 36.8,
             "zoneName": "Dun Morogh"
           }
-        ]
+        ],
+        "creatureDisplayID": 4893,
+        "portraitSource": "https://www.wowhead.com/forever/npc=6181"
       },
       "requirementsKnown": false,
       "completionQuests": [
@@ -2735,7 +2807,9 @@
         "zoneName": "Darkshore",
         "mapID": 1439,
         "x": 37.4,
-        "y": 40.2
+        "y": 40.2,
+        "creatureDisplayID": 1770,
+        "portraitSource": "https://www.wowhead.com/forever/npc=3649"
       },
       "finish": {
         "npcID": 3649,
@@ -2743,7 +2817,9 @@
         "zoneName": "Darkshore",
         "mapID": 1439,
         "x": 37.4,
-        "y": 40.2
+        "y": 40.2,
+        "creatureDisplayID": 1770,
+        "portraitSource": "https://www.wowhead.com/forever/npc=3649"
       },
       "requirementsKnown": false,
       "objectiveItems": [
@@ -2960,14 +3036,18 @@
         "name": "Shoni the Shilent",
         "mapID": 1453,
         "x": 55.4,
-        "y": 12.4
+        "y": 12.4,
+        "creatureDisplayID": 5378,
+        "portraitSource": "https://www.wowhead.com/forever/npc=6579"
       },
       "finish": {
         "npcID": 6579,
         "name": "Shoni the Shilent",
         "mapID": 1453,
         "x": 55.4,
-        "y": 12.4
+        "y": 12.4,
+        "creatureDisplayID": 5378,
+        "portraitSource": "https://www.wowhead.com/forever/npc=6579"
       },
       "objectiveItems": [
         {
@@ -3857,14 +3937,18 @@
         "name": "Master Apothecary Faranell",
         "mapID": 1458,
         "x": 48.6,
-        "y": 69.4
+        "y": 69.4,
+        "creatureDisplayID": 1680,
+        "portraitSource": "https://www.wowhead.com/forever/npc=2055"
       },
       "finish": {
         "npcID": 2055,
         "name": "Master Apothecary Faranell",
         "mapID": 1458,
         "x": 48.6,
-        "y": 69.4
+        "y": 69.4,
+        "creatureDisplayID": 1680,
+        "portraitSource": "https://www.wowhead.com/forever/npc=2055"
       },
       "storyline": [
         1109,
@@ -3917,14 +4001,18 @@
         "name": "Mebok Mizzyrix",
         "mapID": 1413,
         "x": 62.4,
-        "y": 37.6
+        "y": 37.6,
+        "creatureDisplayID": 7034,
+        "portraitSource": "https://www.wowhead.com/forever/npc=3446"
       },
       "finish": {
         "npcID": 3446,
         "name": "Mebok Mizzyrix",
         "mapID": 1413,
         "x": 62.4,
-        "y": 37.6
+        "y": 37.6,
+        "creatureDisplayID": 7034,
+        "portraitSource": "https://www.wowhead.com/forever/npc=3446"
       }
     },
     {
@@ -3947,7 +4035,9 @@
         "name": "Treshala Fallowbrook",
         "mapID": 1457,
         "x": 69.4,
-        "y": 67.4
+        "y": 67.4,
+        "creatureDisplayID": 9055,
+        "portraitSource": "https://www.wowhead.com/forever/npc=4521"
       },
       "objectiveItems": [
         {
@@ -4042,14 +4132,18 @@
         "name": "Master Apothecary Faranell",
         "mapID": 1458,
         "x": 48.6,
-        "y": 69.4
+        "y": 69.4,
+        "creatureDisplayID": 1680,
+        "portraitSource": "https://www.wowhead.com/forever/npc=2055"
       },
       "finish": {
         "npcID": 2055,
         "name": "Master Apothecary Faranell",
         "mapID": 1458,
         "x": 48.6,
-        "y": 69.4
+        "y": 69.4,
+        "creatureDisplayID": 1680,
+        "portraitSource": "https://www.wowhead.com/forever/npc=2055"
       },
       "storyline": [
         1109,
@@ -4135,7 +4229,9 @@
             "x": 56.6,
             "y": 93.6
           }
-        ]
+        ],
+        "creatureDisplayID": 11658,
+        "portraitSource": "https://www.wowhead.com/forever/npc=2425"
       },
       "finish": {
         "npcID": 2425,
@@ -4193,7 +4289,9 @@
             "x": 56.6,
             "y": 93.6
           }
-        ]
+        ],
+        "creatureDisplayID": 11658,
+        "portraitSource": "https://www.wowhead.com/forever/npc=2425"
       },
       "requirementsKnown": false,
       "storyline": [
@@ -4281,7 +4379,9 @@
             "x": 56.6,
             "y": 93.6
           }
-        ]
+        ],
+        "creatureDisplayID": 11658,
+        "portraitSource": "https://www.wowhead.com/forever/npc=2425"
       },
       "requirementsKnown": false,
       "storyline": [
@@ -4743,7 +4843,9 @@
             "x": 56.6,
             "y": 93.6
           }
-        ]
+        ],
+        "creatureDisplayID": 11658,
+        "portraitSource": "https://www.wowhead.com/forever/npc=2425"
       },
       "finish": {
         "npcID": 2425,
@@ -4801,7 +4903,9 @@
             "x": 56.6,
             "y": 93.6
           }
-        ]
+        ],
+        "creatureDisplayID": 11658,
+        "portraitSource": "https://www.wowhead.com/forever/npc=2425"
       },
       "requirementsKnown": false
     },
@@ -11227,7 +11331,9 @@
         "zoneName": "Orgrimmar",
         "mapID": 1454,
         "x": 32,
-        "y": 37.8
+        "y": 37.8,
+        "creatureDisplayID": 4527,
+        "portraitSource": "https://www.wowhead.com/forever/npc=4949"
       },
       "storyline": [
         3981,
@@ -11254,7 +11360,9 @@
         "zoneName": "Orgrimmar",
         "mapID": 1454,
         "x": 32,
-        "y": 37.8
+        "y": 37.8,
+        "creatureDisplayID": 4527,
+        "portraitSource": "https://www.wowhead.com/forever/npc=4949"
       },
       "finish": {
         "npcID": 4949,
@@ -11262,7 +11370,9 @@
         "zoneName": "Orgrimmar",
         "mapID": 1454,
         "x": 32,
-        "y": 37.8
+        "y": 37.8,
+        "creatureDisplayID": 4527,
+        "portraitSource": "https://www.wowhead.com/forever/npc=4949"
       },
       "storyline": [
         3981,
@@ -11290,7 +11400,9 @@
         "zoneName": "Orgrimmar",
         "mapID": 1454,
         "x": 32,
-        "y": 37.8
+        "y": 37.8,
+        "creatureDisplayID": 4527,
+        "portraitSource": "https://www.wowhead.com/forever/npc=4949"
       },
       "finish": {
         "npcID": 8929,
@@ -11328,7 +11440,9 @@
         "zoneName": "Orgrimmar",
         "mapID": 1454,
         "x": 32,
-        "y": 37.8
+        "y": 37.8,
+        "creatureDisplayID": 4527,
+        "portraitSource": "https://www.wowhead.com/forever/npc=4949"
       },
       "storyline": [
         3981,
@@ -12232,7 +12346,9 @@
             "y": 68.6,
             "zoneName": "Undercity"
           }
-        ]
+        ],
+        "creatureDisplayID": 4056,
+        "portraitSource": "https://www.wowhead.com/forever/npc=5204"
       },
       "finish": {
         "npcID": 9078,
@@ -14489,7 +14605,9 @@
         "zoneName": "Undercity",
         "mapID": 1458,
         "x": 48.4,
-        "y": 69.4
+        "y": 69.4,
+        "creatureDisplayID": 1680,
+        "portraitSource": "https://www.wowhead.com/forever/npc=2055"
       },
       "requirementsKnown": false,
       "factions": [
@@ -14528,7 +14646,9 @@
         "zoneName": "Undercity",
         "mapID": 1458,
         "x": 48.4,
-        "y": 69.4
+        "y": 69.4,
+        "creatureDisplayID": 1680,
+        "portraitSource": "https://www.wowhead.com/forever/npc=2055"
       },
       "finish": {
         "npcID": 271613,
@@ -14562,7 +14682,9 @@
         "zoneName": "Undercity",
         "mapID": 1458,
         "x": 48.4,
-        "y": 69.4
+        "y": 69.4,
+        "creatureDisplayID": 1680,
+        "portraitSource": "https://www.wowhead.com/forever/npc=2055"
       },
       "requirementsKnown": false,
       "factions": [
@@ -14588,7 +14710,9 @@
         "zoneName": "Undercity",
         "mapID": 1458,
         "x": 48.4,
-        "y": 69.4
+        "y": 69.4,
+        "creatureDisplayID": 1680,
+        "portraitSource": "https://www.wowhead.com/forever/npc=2055"
       },
       "finish": {
         "npcID": 2055,
@@ -14596,7 +14720,9 @@
         "zoneName": "Undercity",
         "mapID": 1458,
         "x": 48.4,
-        "y": 69.4
+        "y": 69.4,
+        "creatureDisplayID": 1680,
+        "portraitSource": "https://www.wowhead.com/forever/npc=2055"
       },
       "requirementsKnown": false,
       "factions": [
@@ -14622,7 +14748,9 @@
         "zoneName": "Undercity",
         "mapID": 1458,
         "x": 48.4,
-        "y": 69.4
+        "y": 69.4,
+        "creatureDisplayID": 1680,
+        "portraitSource": "https://www.wowhead.com/forever/npc=2055"
       },
       "finish": {
         "npcID": 2055,
@@ -14630,7 +14758,9 @@
         "zoneName": "Undercity",
         "mapID": 1458,
         "x": 48.4,
-        "y": 69.4
+        "y": 69.4,
+        "creatureDisplayID": 1680,
+        "portraitSource": "https://www.wowhead.com/forever/npc=2055"
       },
       "requirementsKnown": false,
       "factions": [
@@ -15062,7 +15192,9 @@
         "zoneName": "Orgrimmar",
         "mapID": 1454,
         "x": 32,
-        "y": 37.8
+        "y": 37.8,
+        "creatureDisplayID": 4527,
+        "portraitSource": "https://www.wowhead.com/forever/npc=4949"
       },
       "finish": {
         "npcID": 4949,
@@ -15070,7 +15202,9 @@
         "zoneName": "Orgrimmar",
         "mapID": 1454,
         "x": 32,
-        "y": 37.8
+        "y": 37.8,
+        "creatureDisplayID": 4527,
+        "portraitSource": "https://www.wowhead.com/forever/npc=4949"
       },
       "requirementsKnown": false,
       "factions": [
@@ -17943,7 +18077,9 @@
         "mapID": 1413,
         "x": 62.4,
         "y": 37.6,
-        "zoneName": "The Barrens"
+        "zoneName": "The Barrens",
+        "creatureDisplayID": 7034,
+        "portraitSource": "https://www.wowhead.com/forever/npc=3446"
       },
       "finish": {
         "npcID": 3446,
@@ -17951,7 +18087,9 @@
         "mapID": 1413,
         "x": 62.4,
         "y": 37.6,
-        "zoneName": "The Barrens"
+        "zoneName": "The Barrens",
+        "creatureDisplayID": 7034,
+        "portraitSource": "https://www.wowhead.com/forever/npc=3446"
       },
       "requirementsKnown": false,
       "source": "https://www.wowhead.com/forever/quest=865"
@@ -18376,7 +18514,9 @@
             "y": 68.6,
             "zoneName": "Undercity"
           }
-        ]
+        ],
+        "creatureDisplayID": 4056,
+        "portraitSource": "https://www.wowhead.com/forever/npc=5204"
       },
       "storyline": [
         4769,
@@ -18603,7 +18743,9 @@
             "y": 38.6,
             "zoneName": "Winterspring"
           }
-        ]
+        ],
+        "creatureDisplayID": 10655,
+        "portraitSource": "https://www.wowhead.com/forever/npc=10468"
       },
       "storyline": [
         4907,
@@ -18764,7 +18906,9 @@
         "zoneName": "Orgrimmar",
         "mapID": 1454,
         "x": 32,
-        "y": 37.8
+        "y": 37.8,
+        "creatureDisplayID": 4527,
+        "portraitSource": "https://www.wowhead.com/forever/npc=4949"
       },
       "finish": {
         "npcID": 4949,
@@ -18772,7 +18916,9 @@
         "zoneName": "Orgrimmar",
         "mapID": 1454,
         "x": 32,
-        "y": 37.8
+        "y": 37.8,
+        "creatureDisplayID": 4527,
+        "portraitSource": "https://www.wowhead.com/forever/npc=4949"
       },
       "storyline": [
         6566,
@@ -18798,7 +18944,9 @@
         "zoneName": "Orgrimmar",
         "mapID": 1454,
         "x": 32,
-        "y": 37.8
+        "y": 37.8,
+        "creatureDisplayID": 4527,
+        "portraitSource": "https://www.wowhead.com/forever/npc=4949"
       },
       "finish": {
         "npcID": 10182,
@@ -18942,7 +19090,9 @@
         "zoneName": "Orgrimmar",
         "mapID": 1454,
         "x": 32,
-        "y": 37.8
+        "y": 37.8,
+        "creatureDisplayID": 4527,
+        "portraitSource": "https://www.wowhead.com/forever/npc=4949"
       },
       "storyline": [
         4903,
