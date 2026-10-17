@@ -2950,7 +2950,19 @@
       "start": {
         "itemID": 16790,
         "name": "Damp Note",
-        "itemMinLevel": 17
+        "itemMinLevel": 17,
+        "dropSources": [
+          {
+            "npcID": 4802,
+            "name": "Blackfathom Tide Priestess",
+            "locationName": "Ashenvale, Kalimdor"
+          },
+          {
+            "npcID": 216661,
+            "name": "Blackfathom Tide Priestess",
+            "locationName": "Ashenvale"
+          }
+        ]
       },
       "providedItems": [
         {
