@@ -8122,4 +8122,94 @@ check("Accepted primary navigation cannot hide a newer card engine owner or help
     end
 end)
 
+local function manualLocationHandoffFixture(route)
+    local f=primaryHandoffFixture();local finish=f.finish
+    if route=="waypoint"then f.waypoint=clientWaypointFixture()end
+    f.calls=0;f.accepted=true
+    addon.Navigation={Start=function(action)
+        f.calls=f.calls+1;f.visited=action
+        if f.request then return f.request(action)end;return f.accepted
+    end,Map=function(place)
+        f.calls=f.calls+1;f.mapped=place
+        if f.request then return f.request(place)end;return f.accepted
+    end}
+    if route=="waypoint"then
+        showDetail(9970,f.waypoint.context);f.control=ui.clientWaypointButton
+    else
+        local q=addon.quests[35001]
+        if route=="reported"then
+            q.start.npcID=101
+            q.start.reportedLocations={{mapID=1436,x=56.3,y=47.5},{mapID=1436,x=57,y=48}}
+            showDetail(35001);reportToggle("start").scripts.OnClick();f.control=reportRows()[2]
+        else
+            q.startAlternatives={{npcID=101,name="Explicit alternative",mapID=1436}}
+            if route~="alternative-map"then q.startAlternatives[1].x=56.3;q.startAlternatives[1].y=47.5 end
+            showDetail(35001);f.control=ui.startButtons[1]
+        end
+    end
+    assert(f.control and f.control.shown and f.control.scripts.OnClick and f.calls==0)
+    function f:finish()
+        if self.waypoint then self.waypoint:finish()end
+        finish(self)
+    end
+    return f
+end
+check("Explicit reported alternative and game-waypoint visits hand off only after acceptance and reopen without navigating again",function()
+    for _,route in ipairs({"reported","alternative","alternative-map","waypoint"})do
+        local f=manualLocationHandoffFixture(route)
+        local dungeon,quest,action=ui.dungeon,ui.quest,ui.action
+        f.control.scripts.OnClick()
+        assert(f.calls==1 and f.hidden==1 and not ui.frame.shown)
+        assert(ui.quest==quest and ui.dungeon==dungeon and ui.action==action and ui.search=="retained navigation query")
+        if route=="alternative-map"then assert(f.mapped and not f.visited)
+        else assert(f.visited and f.visited.kind=="visit"and f.visited.id==quest)end
+        ui.frame:Show();ui.frame.scripts.OnShow(ui.frame)
+        assert(ui.quest==quest and ui.dungeon==dungeon and ui.search=="retained navigation query"and f.calls==1)
+        f:finish()
+    end
+end)
+check("Rejected or throwing manual location requests leave the preparation view open",function()
+    for _,route in ipairs({"reported","alternative","alternative-map","waypoint"})do
+        for _,mode in ipairs({"false","throw"})do
+            local f=manualLocationHandoffFixture(route)
+            f.request=function()if mode=="throw"then error("request rejected")end;return false end
+            f.control.scripts.OnClick()
+            assert(f.calls==1 and f.hidden==0 and ui.frame.shown)
+            f:finish()
+        end
+    end
+end)
+check("Manual location acceptance cannot hide a refreshed card expired source owner or replacement navigation helper",function()
+    for _,route in ipairs({"reported","alternative","alternative-map","waypoint"})do
+        for _,mode in ipairs({"card","source","helper"})do
+            local f=manualLocationHandoffFixture(route)
+            f.request=function()
+                if mode=="card"then ui:RefreshDetail()
+                elseif mode=="source"then
+                    if route=="waypoint"then f.waypoint.dto.text="A newer waypoint instruction"
+                    else ui.reportedGeneration={}end
+                else addon.Navigation[route=="alternative-map"and"Map"or"Start"]=function()return true end end
+                return true
+            end
+            f.control.scripts.OnClick()
+            assert(f.calls==1 and f.hidden==0 and ui.frame.shown)
+            f:finish()
+        end
+    end
+end)
+check("A supplied invalid or expired transient navigation predicate cannot fall back to a primary action slot",function()
+    for _,predicate in ipairs({false,{},function()return nil end,function()error("expired")end})do
+        local f=primaryHandoffFixture();local calls=0
+        addon.Navigation={Start=function()calls=calls+1;return true end}
+        ui:NavigateDetail(ui.action,false,nil,predicate)
+        assert(calls==0 and f.hidden==0 and ui.frame.shown)
+        f:finish()
+    end
+    local f=primaryHandoffFixture();local owned=true;local calls=0
+    addon.Navigation={Start=function()calls=calls+1;owned=false;return true end}
+    ui:NavigateDetail({id=35001,kind="visit",place=addon.quests[35001].start},false,nil,function()return owned end)
+    assert(calls==1 and f.hidden==0 and ui.frame.shown)
+    f:finish()
+end)
+
 print("Preparation UI modeled checks passed: " .. total .. " (no native layout validation)")

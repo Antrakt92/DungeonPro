@@ -27,7 +27,7 @@ function UI:CurrentDetailAction()
         action.place == place and action.id == id and action.kind == kind then return action end
 end
 
-function UI:NavigatePrimary(action, mapOnly, giver)
+function UI:NavigateDetail(action, mapOnly, giver, ownerCurrent)
     if not action then return false end
     local frame, quest, dungeon, engine, character, generation = self.frame, self.quest, self.dungeon, self.engine, addon.char, self.rewardGeneration
     local navigation = addon.Clean(addon.Navigation, "table")
@@ -39,11 +39,12 @@ function UI:NavigatePrimary(action, mapOnly, giver)
     local slot = giver and "giverAction" or "action"
     local function current()
         local fresh = not getter or addon.Read(getter, "boolean", engine) == true
-        return fresh and addon.UI == self and self.frame == frame and self.quest == quest and self.dungeon == dungeon and
+        local owned = ownerCurrent == nil or addon.Read(ownerCurrent, "boolean") == true
+        return fresh and owned and addon.UI == self and self.frame == frame and self.quest == quest and self.dungeon == dungeon and
             self.engine == engine and addon.char == character and self.rewardGeneration == generation and
             addon.Navigation == navigation and navigation[mapOnly and "Map" or "Start"] == method and
             frame.Hide == hide and frame.IsShown == shown and (not engine or engine.Current == getter) and
-            self[slot] == action and action.place == place and action.id == id and action.kind == kind and
+            (ownerCurrent ~= nil or self[slot] == action) and action.place == place and action.id == id and action.kind == kind and
             (not giver or self.giverHasCoordinates == coordinates) and issecretvalue == checker
     end
     if not current() or addon.Read(shown, "boolean", frame) ~= true or not current() then return false end
@@ -1966,7 +1967,7 @@ function UI:RefreshDetail()
                     not locationWrite(current, row, "SetEnabled", true) then return false end
                 if not locationWrite(current, row, "SetScript", "OnClick", function()
                     if current() then
-                        addon.Navigation.Start({ id = id, kind = "visit", place = point })
+                        self:NavigateDetail({ id = id, kind = "visit", place = point }, false, nil, current)
                     end
                 end) then return false end
                 local nextY = self:LayoutRow(row, 59, y, current)
@@ -2025,8 +2026,8 @@ function UI:RefreshDetail()
                 if not write(row, "SetScript", "OnClick", validMap and function()
                     if not current() or (clickCurrent and not clickCurrent()) then return end
                     local visit = { id = id, kind = "visit", place = destination }
-                    if coordinates then addon.Navigation.Start(visit)
-                    else addon.Navigation.Map(destination) end
+                    local function visitCurrent() return current() and (not clickCurrent or clickCurrent()) end
+                    self:NavigateDetail(visit, not coordinates, nil, visitCurrent)
                 end or nil) then return false end
                 local nextY = self:LayoutRow(row, 59, y, current)
                 if not nextY then return false end
@@ -2313,7 +2314,8 @@ function UI:RefreshDetail()
                                 if not fresh or self.clientWaypointBinding ~= binding or not snapshotCurrent(fresh) then return end
                                 local place = { mapID = fresh.map, x = fresh.x * 100, y = fresh.y * 100, name = fresh.text }
                                 if self.clientWaypointBinding == binding and snapshotCurrent(fresh) then
-                                    pcall(start, { id = id, kind = "visit", place = place })
+                                    self:NavigateDetail({ id = id, kind = "visit", place = place }, false, nil,
+                                        function() return self.clientWaypointBinding == binding and snapshotCurrent(fresh) end)
                                 end
                             end) or not write(control, "Show") then return end
                         self.clientWaypointBinding = binding
@@ -3454,19 +3456,19 @@ function UI:Create()
     self.detail, self.detailScroll = scrolling(frame, 690, -218, 350, 425)
     self.map = button(frame, "", 160, function()
         local action = self:CurrentDetailAction()
-        if action then self:NavigatePrimary(action, true) end
+        if action then self:NavigateDetail(action, true) end
     end)
     self.map:SetPoint("TOPLEFT", 690, -84)
     self.guide = button(frame, "", 172, function()
         local action = self:CurrentDetailAction()
-        if action then self:NavigatePrimary(action, false) end
+        if action then self:NavigateDetail(action, false) end
     end)
     self.guide:SetPoint("TOPLEFT", 856, -84)
     self.source = button(frame, "", 160, function() if self.quest then self:CopyLink(self.quest) end end)
     self.source:SetPoint("BOTTOMRIGHT", -43, 19)
     self.giver = button(frame, "", 195, function()
         if self.giverAction then
-            self:NavigatePrimary(self.giverAction, not self.giverHasCoordinates, true)
+            self:NavigateDetail(self.giverAction, not self.giverHasCoordinates, true)
         end
     end)
     self.giver:SetPoint("BOTTOMLEFT", 690, 19)

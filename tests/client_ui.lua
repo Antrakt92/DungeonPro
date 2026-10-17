@@ -313,6 +313,8 @@ check("Alternative map-only starters pass a direct place to the actual navigatio
     assert(ui.startButtons[1].enabled and not ui.startButtons[2].enabled)
     ui.startButtons[1].scripts.OnClick()
     assert(mapCalls == before + 1)
+    assert(not ui.frame:IsShown(), "accepted alternative map request must hand off the planner")
+    ui:Toggle(); assert(ui.frame:IsShown() and ui.quest == 166 and mapCalls == before + 1)
     q.start, q.startAlternatives = start, alternatives; ui:Refresh()
 end)
 check("Alternative turn-in rows reach actual map and waypoint adapters without changing preparation", function()
@@ -326,10 +328,14 @@ check("Alternative turn-in rows reach actual map and waypoint adapters without c
     local action, status = ui.action, ui.engine:State(166).status
     ui.finishButtons[1].scripts.OnClick()
     assert(mapCalls == beforeMaps + 1 and ui.action == action and ui.engine:State(166).status == status)
+    assert(not ui.frame:IsShown(), "accepted map-only turn-in visit must hand off the planner")
+    ui:Toggle(); assert(ui.frame:IsShown() and ui.quest == 166 and mapCalls == beforeMaps + 1)
     ui.finishButtons[2].scripts.OnClick()
     assert(#waypoints == beforePins + 1 and waypoints[#waypoints].mapID == 1)
     assert(waypoints[#waypoints].x == 0.1 and waypoints[#waypoints].y == 0.2)
     assert(ui.action == action and ui.engine:State(166).status == status)
+    assert(not ui.frame:IsShown(), "accepted located turn-in visit must hand off the planner")
+    ui:Toggle(); assert(ui.frame:IsShown() and ui.quest == 166 and #waypoints == beforePins + 1)
     addon.Navigation.Stop()
     q.finish, q.finishAlternatives = finish, alternatives; ui:Refresh()
 end)
@@ -690,6 +696,8 @@ check("Reported giver clicks route the chosen sourced point through native navig
     local actual = waypoints[#waypoints]
     assert(actual.mapID == point.mapID and actual.x == point.x / 100 and actual.y == point.y / 100)
     assert(q.start.x == primaryX and ui.giverAction.place == q.start)
+    assert(not ui.frame:IsShown(), "accepted reported visit must hand off the planner")
+    ui:Toggle(); assert(ui.frame:IsShown() and ui.quest == q.id and #waypoints == before + 1)
     eventFrame.scripts.OnEvent(eventFrame, "QUEST_LOG_UPDATE")
     stale(); assert(#waypoints == before + 1, "old refresh callback cannot restart navigation")
     addon.Navigation.Stop(); assert(clears == 1 and pin == nil)
@@ -697,6 +705,8 @@ check("Reported giver clicks route the chosen sourced point through native navig
     local manual = pin
     ui.reportedRows[3].scripts.OnClick()
     assert(pin == manual and #waypoints == before + 1, "manual native pin survives candidate visit")
+    assert(not ui.frame:IsShown(), "manual-pin preservation still allows the guide handoff")
+    ui:Toggle(); assert(ui.frame:IsShown() and ui.quest == q.id and pin == manual and #waypoints == before + 1)
     addon.Navigation.Stop(); assert(pin == manual and clears == 1)
     C_Map.GetUserWaypoint, C_Map.ClearUserWaypoint, C_Map.SetUserWaypoint, TomTom = get, clear, set, oldTomTom
     ui.quest, ui.detailHistory = previous, history; ui:Refresh()
@@ -717,6 +727,8 @@ check("The sourced journal container guides independently of the item-started qu
     local actual = waypoints[#waypoints]
     assert(actual.mapID == 1441 and actual.x == 0.307 and actual.y == 0.244)
     assert(q.start.itemID == 5791 and q.start.mapID == nil and ui.engine:State(1100).status == status)
+    assert(not ui.frame:IsShown(), "accepted container visit must hand off the planner")
+    ui:Toggle(); assert(ui.frame:IsShown() and ui.quest == 1100 and #waypoints == before + 1)
     addon.Navigation.Stop()
     ui.quest, ui.detailHistory = previous, history; ui:Refresh()
 end)
