@@ -1423,7 +1423,56 @@ function UI:RefreshDetail()
             if not title then return end
             line(title)
         else line(addon.L(state.status == "COMPLETED" and "COMPLETED" or "UNKNOWN")) end
-        if uncertain then line(addon.L("UNKNOWN")) end
+        if uncertain and (action or state.status == "COMPLETED") then line(addon.L("UNKNOWN")) end
+        do
+            local destination = #actions == 1 and action and addon.Clean(action.place, "table")
+            if destination then
+                local actionID, kind = action.id, action.kind
+                local source = addon.quests[actionID]
+                local endpoint = kind == "turnin" and "finish" or "start"
+                local fields = { npcID = "number", objectID = "number", itemID = "number", name = "string",
+                    zoneName = "string", mapID = "number", x = "number", y = "number" }
+                local values, readable, destinationChecker = {}, true, issecretvalue
+                local mapRoot = C_Map
+                local mapLibrary = addon.Clean(mapRoot, "table")
+                local mapGetter = mapLibrary and rawget(mapLibrary, "GetMapInfo")
+                local nameGetter, itemGetter = addon.GiverName, addon.ItemName
+                for field, expected in pairs(fields) do
+                    local value = rawget(destination, field)
+                    if type(destinationChecker) == "function" and addon.Read(destinationChecker, "boolean", value) ~= false then readable = false; break end
+                    if value ~= nil then
+                        local clean = addon.Clean(value, expected)
+                        if clean == nil then readable = false; break end
+                        values[field] = clean
+                    end
+                end
+                local function destinationCurrent()
+                    if not current() then return false end
+                    local ok, same = pcall(function()
+                        if self.quest ~= renderQuest or self.dungeon ~= renderDungeon or self.engine ~= engine or
+                            addon.char ~= character or self.rewardGeneration ~= rewardGeneration or issecretvalue ~= destinationChecker or
+                            action.id ~= actionID or action.kind ~= kind or action.place ~= destination or
+                            addon.quests[actionID] ~= source or not source or source[endpoint] ~= destination or
+                            addon.GiverName ~= nameGetter or addon.ItemName ~= itemGetter or C_Map ~= mapRoot or
+                            (mapLibrary and mapLibrary.GetMapInfo ~= mapGetter) then return false end
+                        for field in pairs(fields) do if rawget(destination, field) ~= values[field] then return false end end
+                        return true
+                    end)
+                    return ok and same == true
+                end
+                if not current() then return end
+                if readable then
+                    if not destinationCurrent() then return end
+                    local description = addon.Read(place, "string", destination)
+                    local unknown = addon.L("UNKNOWN_PLACE")
+                    if not destinationCurrent() then return end
+                    if description and description ~= unknown then
+                        line(description)
+                        if not destinationCurrent() then return end
+                    end
+                end
+            end
+        end
         pendingAction = action
         if #actions > 1 then
             local inspectIndex = 0

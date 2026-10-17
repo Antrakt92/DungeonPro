@@ -5647,4 +5647,142 @@ check("Long promoted action text reflows before references while later giver hyd
     for _,row in ipairs(ui.actionButtons)do assert(not row.shown)end
     measurement=nil;addon.QuestName=getter;C_Map=maps;restore()
 end)
+local function singleDestinationFixture()
+    local f=rewardPresentationFixture();local real={};assert(loadfile("Database/Catalog.lua"))("DungeonPro",real)
+    local saved={quests=addon.quests,name=addon.QuestName,maps=C_Map,nav=addon.Navigation}
+    local copy={};for id,q in pairs(real.quests)do copy[id]=q end
+    for _,id in ipairs({65,132,135,141,142,155,166})do
+        local q={};for key,value in pairs(real.quests[id])do q[key]=value end;q.requirementsKnown=true;copy[id]=q
+    end
+    addon.quests=copy;addon.QuestName=function(id)return copy[id]and copy[id].name or saved.name(id)end
+    C_Map={GetMapInfo=function(id)return{name=id==1433 and "Redridge Mountains" or "Westfall"}end}
+    f.visits={};addon.Navigation={Start=function(a)f.visits[#f.visits+1]=a end,Map=function(p)f.visits[#f.visits+1]=p end}
+    showDetail(166,{level=60,faction="Alliance",class="WARRIOR",race=1,completed=function()return false end,
+        active=function(id)return id==65 end,ready=function(id)return id==65 end})
+    function f:restore()
+        addon.quests,addon.QuestName,C_Map,addon.Navigation=saved.quests,saved.name,saved.maps,saved.nav
+        self:finish()
+    end
+    return f,copy
+end
+local function destinationLine(prefix)
+    for _,fs in ipairs(ui.details)do if fs.shown and fs.text:find(prefix,1,true)==1 then return fs end end
+end
+check("A single real ancestor turn-in names Wiley in Redridge separately from inspected quest166 giver Gryan",function()
+    local f,quests=singleDestinationFixture()
+    assert(ui.action.id==65 and ui.action.kind=="turnin" and ui.action.place==quests[65].finish and #f.visits==0)
+    local target=destinationLine("Wiley the Black — Redridge Mountains")
+    assert(target and -target.point[3]>detailSectionY(addon.L("NEXT")))
+    assert(destinationLine(addon.L("START")..": Gryan Stoutmantle — Westfall"))
+    assert(-target.point[3]<-destinationLine(addon.L("START")..": Gryan Stoutmantle").point[3])
+    ui.guide.scripts.OnClick();ui.map.scripts.OnClick()
+    assert(f.visits[1].id==65 and f.visits[1].place==quests[65].finish and f.visits[2]==quests[65].finish)
+    assert(ui.engine:State(166).status=="LOCKED")
+    f:restore()
+end)
+check("Single-action destination translates wraps and recycles without duplicating existing multi-action location notes",function()
+    local f,quests=singleDestinationFixture();local locale=addon.db.locale
+    local long=string.rep("Long Wiley destination ",15);local old=quests[65].finish.name;quests[65].finish.name=long
+    measurement=function(fs)if fs.text and fs.text:find(long,1,true)then return 88 end;return 18 end
+    for code in pairs(addon.locales)do
+        addon.db.locale=code;ui:RefreshDetail();local line=destinationLine(long.." — Redridge Mountains")
+        assert(line and line.fontSize==14)
+        local start=destinationLine(addon.L("START")..": Gryan Stoutmantle");assert(-start.point[3]>=-line.point[3]+88)
+    end
+    measurement=nil;quests[65].finish.name=old;addon.db.locale=locale;f:restore()
+    local restore=multiActionFixture();local standalone=0
+    for _,fs in ipairs(ui.details)do if fs.shown and fs.text:find("Giver 20002",1,true)==1 then standalone=standalone+1 end end
+    assert(standalone==0 and ui.actionButtons[1].note.text:find("Giver 20002",1,true))
+    restore()
+end)
+check("Single pickup map-only and zone-only names remain informational while nil level and completion places add no placeholder",function()
+    local f=rewardPresentationFixture();local q=addon.quests[9970];local maps=C_Map
+    q.requirementsKnown=true;q.start={npcID=1,name="Pickup giver",mapID=8,zoneName="Source zone"};C_Map=nil
+    showDetail(9970,{level=60,completed=function()return false end,active=function()return false end})
+    assert(destinationLine("Pickup giver — Source zone") and ui.map.enabled and not ui.guide.enabled)
+    q.start.mapID=nil;ui:RefreshDetail();assert(destinationLine("Pickup giver — Source zone") and not ui.map.enabled)
+    q.start={};ui:RefreshDetail();assert(not detailHas(addon.L("UNKNOWN_PLACE")),"bare unknown destination is not an extra body line")
+    q.start=nil;q.minLevel=80;showDetail(9970,{level=60,completed=function()return false end,active=function()return false end});assert(ui.action.kind=="level" and not detailHas(addon.L("UNKNOWN_PLACE")))
+    q.minLevel=1;showDetail(9970,{level=60,completed=function()return false end,active=function()return true end,ready=function()return false end})
+    assert(ui.action.kind=="complete" and not ui.action.place and not detailHas(addon.L("UNKNOWN_PLACE")))
+    showDetail(9970,{level=60,completed=function()return true end,active=function()return false end})
+    assert(not ui.action and not detailHas(addon.L("UNKNOWN_PLACE")))
+    C_Map=maps;f:finish()
+end)
+check("Single destination map and name hydration reject changed endpoints helpers and source fields before publication",function()
+    for _,mode in ipairs({"map","name","endpoint","coordinates","helper"})do
+        local f,quests=singleDestinationFixture();local getter=C_Map.GetMapInfo;local names=addon.GiverName;local armed=true
+        if mode=="name"then
+            addon.GiverName=function(p)
+                if armed and p==quests[65].finish then armed=false;ui:InspectQuest(65)end
+                return nil
+            end
+        else
+            C_Map.GetMapInfo=function(id)
+                if armed and id==1433 then
+                    armed=false
+                    if mode=="map"then ui:InspectQuest(65)
+                    elseif mode=="endpoint"then local old=quests[65].finish;local fresh={};for k,v in pairs(old)do fresh[k]=v end;fresh.name="Fresh turn-in";quests[65].finish=fresh
+                    elseif mode=="coordinates"then quests[65].finish.x=27
+                    else addon.GiverName=function()return "Changed helper"end end
+                end
+                return getter(id)
+            end
+        end
+        ui:RefreshDetail();assert(not armed)
+        if mode=="map"or mode=="name"then assert(ui.quest==65 and ui.action.id==65)
+        else assert(not ui.action and not ui.map.enabled and not ui.guide.enabled)end
+        C_Map.GetMapInfo=getter;addon.GiverName=names;ui:RefreshDetail()
+        assert(ui.action and ui.action.id==65)
+        f:restore()
+    end
+end)
+check("Single destination hydration preserves newer same-card and replacement-card narratives and raw source ownership",function()
+    for _,sameCard in ipairs({false,true})do
+        local f,quests=singleDestinationFixture();local getter=C_Map.GetMapInfo;local armed=true
+        C_Map.GetMapInfo=function(id)
+            if armed and id==1433 then
+                armed=false
+                if sameCard then local old=quests[65].finish;local fresh={};for k,v in pairs(old)do fresh[k]=v end;fresh.name="Current destination";quests[65].finish=fresh;ui:RefreshDetail()
+                else ui:InspectQuest(132)end
+            end
+            return getter(id)
+        end
+        ui:RefreshDetail()
+        assert(ui.quest==(sameCard and 166 or 132) and ui.action.id==65)
+        if sameCard then assert(destinationLine("Current destination — Redridge Mountains") and not destinationLine("Wiley the Black — Redridge Mountains"))end
+        C_Map.GetMapInfo=getter;f:restore()
+    end
+end)
+check("Consecutive unknown action placeholders collapse to one while explicit uncertainty beside a real action stays",function()
+    local f=rewardPresentationFixture();local q=addon.quests[9970]
+    ui:RefreshDetail();local repeated=0;local previous
+    for _,fs in ipairs(ui.details)do if fs.shown then
+        if previous==addon.L("UNKNOWN")and fs.text==previous then repeated=repeated+1 end
+        previous=fs.text
+    end end
+    assert(repeated==0 and ui.engine:State(9970).status=="UNKNOWN")
+    local restore=multiActionFixture();addon.quests[20003].requirementsKnown=false;ui:Refresh()
+    assert(ui.action.id==20002 and detailHas(addon.L("UNKNOWN")))
+    restore();f:finish()
+end)
+check("Single starter-item destination hydration preserves new and same-card source identity without fabricating item actions",function()
+    for _,sameCard in ipairs({false,true})do
+        local f=rewardPresentationFixture();local q=addon.quests[9970];local names=addon.ItemName;local armed=true
+        q.requirementsKnown=true;q.start={itemID=801,name="Old starter"}
+        addon.ItemName=function()
+            if armed then
+                armed=false
+                if sameCard then q.start={itemID=802,name="Fresh starter"};ui:RefreshDetail()else ui:InspectQuest(9971)end
+            end
+            return nil
+        end
+        showDetail(9970,{level=60,completed=function()return false end,active=function()return false end})
+        assert(not armed and ui.quest==(sameCard and 9970 or 9971))
+        assert(not destinationLine(addon.L("ITEM_STARTER","Old starter")))
+        if sameCard then assert(destinationLine(addon.L("ITEM_STARTER","Fresh starter")) and ui.action.place==q.start)
+        else assert(not ui.action)end
+        addon.ItemName=names;f:finish()
+    end
+end)
 print("Preparation UI modeled checks passed: " .. total .. " (no native layout validation)")
