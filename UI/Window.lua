@@ -1725,6 +1725,60 @@ function UI:RefreshDetail()
                 line(quantityUnknown and addon.L("OBJECTIVE_ITEM_UNKNOWN", name) or addon.L("OBJECTIVE_ITEM", name, quantity))
             end
         end
+        do
+            local objects, objectChecker = addon.Clean(rawget(q, "objectiveObjects"), "table"), issecretvalue
+            local length = objects and #objects or 0
+            local function objectsCurrent()
+                return portraitCardCurrent() and addon.quests[id] == definition and issecretvalue == objectChecker and
+                    (not objects or (rawget(q, "objectiveObjects") == objects and #objects == length))
+            end
+            if not objectsCurrent() then return end
+            local shown, seen = false, {}
+            if length >= 1 and length <= 100 then
+                for index = 1, length do
+                    local entry = addon.Clean(rawget(objects, index), "table")
+                    local objectID = entry and addon.Clean(rawget(entry, "objectID"), "number")
+                    local name = entry and addon.Clean(rawget(entry, "name"), "string")
+                    local rawQuantity = entry and rawget(entry, "quantity")
+                    local quantityReadable = true
+                    if type(objectChecker) == "function" then
+                        local ok, restricted = pcall(objectChecker, rawQuantity)
+                        quantityReadable = ok and addon.Clean(restricted, "boolean") == false
+                    end
+                    local unknown = quantityReadable and rawQuantity == nil
+                    local quantity = quantityReadable and addon.Clean(rawQuantity, "number")
+                    if not objectsCurrent() then return end
+                    if objectID and objectID > 0 and objectID <= 4294967295 and objectID % 1 == 0 and
+                        name and #name <= 500 and name:find("%S") and not seen[objectID] and
+                        (unknown or (quantity and quantity > 0 and quantity <= 9007199254740991 and quantity % 1 == 0)) then
+                        local function entryCurrent()
+                            if not objectsCurrent() then return false end
+                            local ok, same = pcall(function()
+                                return portraitCardCurrent() and addon.quests[id] == definition and issecretvalue == objectChecker and
+                                    rawget(q, "objectiveObjects") == objects and #objects == length and rawget(objects, index) == entry and
+                                    rawget(entry, "objectID") == objectID and rawget(entry, "name") == name and
+                                    rawget(entry, "quantity") == rawQuantity and rawget(entry, "itemID") == nil and rawget(entry, "npcID") == nil
+                            end)
+                            return ok and same == true
+                        end
+                        if entryCurrent() then
+                            local heading, notice = addon.L("OBJECTIVE_OBJECTS"), addon.L("OBJECTIVE_OBJECTS_NOTICE")
+                            local text = unknown and addon.L("OBJECTIVE_ITEM_UNKNOWN", name) or addon.L("OBJECTIVE_ITEM", name, quantity)
+                            if not entryCurrent() then return end
+                            seen[objectID] = true
+                            if not shown then
+                                line(heading, "section")
+                                if not entryCurrent() then return end
+                                line(notice); shown = true
+                                if not entryCurrent() then return end
+                            end
+                            line(text)
+                            if not entryCurrent() then return end
+                        elseif not objectsCurrent() then return end
+                    end
+                end
+            end
+        end
         for _, source in ipairs({ { "objective", "objectiveItems", "OBJECTIVE_ITEMS", "OBJECTIVE_ITEMS_NOTICE", 9007199254740991 },
             { "provided", "providedItems", "PROVIDED_ITEMS", "PROVIDED_ITEMS_NOTICE", 4294967295 } }) do
             local sourceRole, sourceField, heading, notice, maximumID = unpack(source)

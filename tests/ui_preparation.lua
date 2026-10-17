@@ -5148,4 +5148,115 @@ check("Explicit quest-log click rechecks live capability ownership and dispatch 
     control.scripts.OnClick();assert(control.shown and ui.quest==9970 and ui.detail.height==height and #f.opens==0)
     addon.OpenQuestLogQuest=open;f:finish()
 end)
+local function objectObjectivesFixture()
+    local f=rewardPresentationFixture();local q=addon.quests[9970]
+    local old={name=addon.ItemName,icon=addon.ItemIcon,count=addon.CarriedItemCount,objectives=addon.QuestObjectives,navigation=addon.Navigation}
+    f.api={name=0,icon=0,count=0,navigation=0}
+    addon.ItemName=function(id)f.api.name=f.api.name+1;return"Native item "..id end
+    addon.ItemIcon=function(id)f.api.icon=f.api.icon+1;return id+1000 end
+    addon.CarriedItemCount=function()f.api.count=f.api.count+1;return 0 end
+    addon.QuestObjectives=function()return{{text="Native objective 0/1",finished=false}}end
+    addon.Navigation={Start=function()f.api.navigation=f.api.navigation+1 end,Map=function()f.api.navigation=f.api.navigation+1 end}
+    q.objectiveObjects={{objectID=176544,name="Remains of Eva Sarkhoff Burned"},{objectID=176545,name="Remains of Lucien Sarkhoff Burned"}}
+    local finish=f.finish
+    function f:finish()
+        addon.ItemName,addon.ItemIcon,addon.CarriedItemCount,addon.QuestObjectives,addon.Navigation=old.name,old.icon,old.count,old.objectives,old.navigation
+        finish(self)
+    end
+    ui:RefreshDetail();return f,q
+end
+check("Recorded object tasks keep unknown and known amounts separate from native progress and quest readiness",function()
+    local f,q=objectObjectivesFixture()
+    q.objectiveObjects[3]={objectID=11,name="Recorded object task",quantity=2};ui:RefreshDetail()
+    assert(detailHas(addon.L("OBJECTIVE_OBJECTS")) and detailHas(addon.L("OBJECTIVE_OBJECTS_NOTICE")))
+    assert(detailHas(addon.L("OBJECTIVE_ITEM_UNKNOWN","Remains of Eva Sarkhoff Burned")))
+    assert(detailHas(addon.L("OBJECTIVE_ITEM_UNKNOWN","Remains of Lucien Sarkhoff Burned")))
+    assert(detailHas(addon.L("OBJECTIVE_ITEM","Recorded object task",2)))
+    assert(detailHas(addon.L("OBJECTIVE_PROGRESS")) and detailHas("|cff88bfffNative objective 0/1|r"))
+    assert(not detailHas(addon.L("OBJECTIVE_ITEM","Remains of Eva Sarkhoff Burned",1)))
+    assert(q.objectiveObjects[1].quantity==nil and f.api.name==0 and f.api.icon==0 and f.api.count==0 and f.api.navigation==0)
+    assert(ui.engine:State(9970).status=="UNKNOWN" and not ui.action and not ui.giverAction)
+    f:finish()
+end)
+check("Object tasks translate recycle and distinguish absent quantities from known amounts without empty sections",function()
+    local f,q=objectObjectivesFixture();local locale=addon.db.locale
+    for code in pairs(addon.locales)do
+        addon.db.locale=code;q.objectiveObjects={{objectID=1,name="Burned archive",quantity=2}};ui:RefreshDetail()
+        assert(detailHas(addon.L("OBJECTIVE_OBJECTS")) and detailHas(addon.L("OBJECTIVE_ITEM","Burned archive",2)))
+        q.objectiveObjects[1].quantity=nil;ui:RefreshDetail()
+        assert(detailHas(addon.L("OBJECTIVE_ITEM_UNKNOWN","Burned archive")) and not detailHas(addon.L("OBJECTIVE_ITEM","Burned archive",2)))
+        q.objectiveObjects=nil;ui:RefreshDetail();assert(not detailHas(addon.L("OBJECTIVE_OBJECTS")))
+        assert(detailHas("|cff88bfffNative objective 0/1|r"))
+    end
+    q.objectiveObjects={{objectID=1,name="Old object"}};ui:RefreshDetail();showDetail(9971)
+    assert(not detailHas(addon.L("OBJECTIVE_OBJECTS")) and not detailHas(addon.L("OBJECTIVE_ITEM_UNKNOWN","Old object")))
+    addon.db.locale=locale;f:finish()
+end)
+check("Malformed object tasks and present invalid quantities cannot become unknown collection goals",function()
+    local f,q=objectObjectivesFixture();local checker=issecretvalue;local secret={}
+    issecretvalue=function(v)return v==secret end
+    for _,entry in ipairs({{npcID=1,name="Wrong role"},{itemID=1,name="Wrong role"},
+        {objectID=1,npcID=1,name="Mixed role"},{objectID=1,itemID=1,name="Mixed role"},
+        {objectID=0,name="Bad ID"},{objectID=-1,name="Bad ID"},{objectID=1.5,name="Bad ID"},
+        {objectID=4294967296,name="Bad ID"},{objectID="1",name="Bad ID"},{objectID=secret,name="Secret ID"},
+        {objectID=1},{objectID=1,name=" "},{objectID=1,name=secret}})do
+        q.objectiveObjects={entry};ui:RefreshDetail();assert(not detailHas(addon.L("OBJECTIVE_OBJECTS")))
+    end
+    for _,quantity in ipairs({false,true,0,-1,1.5,"2",{},secret,math.huge,0/0,9007199254740992})do
+        q.objectiveObjects={{objectID=1,name="Invalid amount",quantity=quantity}};ui:RefreshDetail()
+        assert(not detailHas(addon.L("OBJECTIVE_OBJECTS")) and not detailHas(addon.L("OBJECTIVE_ITEM_UNKNOWN","Invalid amount")))
+    end
+    for _,list in ipairs({false,"invalid",{}, {false}})do q.objectiveObjects=list;ui:RefreshDetail();assert(not detailHas(addon.L("OBJECTIVE_OBJECTS")))end
+    q.objectiveObjects={};for index=1,101 do q.objectiveObjects[index]={objectID=index,name="Over bound"}end
+    ui:RefreshDetail();assert(not detailHas(addon.L("OBJECTIVE_OBJECTS")))
+    issecretvalue=checker;f:finish()
+end)
+check("Object task names retain the 500 UTF-8 byte budget and identities deduplicate within their own role",function()
+    local f,q=objectObjectivesFixture()
+    for _,sample in ipairs({{string.rep("界",166),true},{string.rep("界",167),false},{string.rep("a",500),true},{string.rep("a",501),false}})do
+        q.objectiveObjects={{objectID=4294967295,name=sample[1],quantity=9007199254740991}};ui:RefreshDetail()
+        assert(detailHas(addon.L("OBJECTIVE_OBJECTS"))==sample[2])
+        assert(detailHas(addon.L("OBJECTIVE_ITEM",sample[1],9007199254740991))==sample[2])
+    end
+    q.objectiveObjects={{objectID=1,name="First task"},{objectID=1,name="Duplicate task"}};ui:RefreshDetail()
+    assert(detailHas(addon.L("OBJECTIVE_ITEM_UNKNOWN","First task")) and not detailHas(addon.L("OBJECTIVE_ITEM_UNKNOWN","Duplicate task")))
+    f:finish()
+end)
+check("Object sanitization cannot publish an older card or newer same-card source generation",function()
+    local f,q=objectObjectivesFixture();local checker=issecretvalue
+    for _,same in ipairs({false,true})do
+        q.objectiveObjects={{objectID=123456789,name="Old staged task",quantity=6}};local armed,nestedHeight=true
+        issecretvalue=function(v)
+            if armed and v==123456789 then
+                armed=false
+                if same then q.objectiveObjects={{objectID=8,name="Fresh task"}};ui:RefreshDetail()else showDetail(9971)end
+                nestedHeight=ui.detail.height
+            end
+            return false
+        end
+        showDetail(9970);assert(not armed and ui.detail.height==nestedHeight)
+        assert(not detailHas(addon.L("OBJECTIVE_ITEM","Old staged task",6)))
+        if same then assert(detailHas(addon.L("OBJECTIVE_ITEM_UNKNOWN","Fresh task")))else assert(not detailHas(addon.L("OBJECTIVE_OBJECTS")))end
+    end
+    issecretvalue=checker;f:finish()
+end)
+check("Final object entry proof rejects source replacement during quantity cleaning and never reads item APIs for object IDs",function()
+    local f,q=objectObjectivesFixture();local checker=issecretvalue
+    q.objectiveObjects={{objectID=7,name="Old entry",quantity=6}};local armed=true
+    issecretvalue=function(v)
+        if armed and v==6 then armed=false;q.objectiveObjects[1]={objectID=8,name="Replacement task"}end
+        return false
+    end
+    ui:RefreshDetail();assert(not armed and not detailHas(addon.L("OBJECTIVE_ITEM","Old entry",6)))
+    issecretvalue=checker;ui:RefreshDetail();assert(detailHas(addon.L("OBJECTIVE_ITEM_UNKNOWN","Replacement task")))
+    q.objectiveObjects={{objectID=777,name="Burn object"}}
+    q.objectiveKills={{npcID=777,name="Defeat NPC",quantity=2}}
+    q.objectiveItems={{itemID=777,name="Collect item",quantity=3}}
+    f.api.name,f.api.icon,f.api.count=0,0,0;ui:RefreshDetail()
+    assert(detailHas(addon.L("OBJECTIVE_ITEM_UNKNOWN","Burn object")) and detailHas(addon.L("OBJECTIVE_ITEM","Defeat NPC",2)))
+    assert(detailHas(addon.L("OBJECTIVE_ITEM","Native item 777",3)) and detailHas(addon.L("ITEM_CARRIED",0)))
+    assert(f.api.name==1 and f.api.icon==1 and f.api.count==1 and f.api.navigation==0)
+    assert(ui.engine:State(9970).status=="UNKNOWN" and q.objectiveObjects[1].quantity==nil)
+    f:finish()
+end)
 print("Preparation UI modeled checks passed: " .. total .. " (no native layout validation)")
