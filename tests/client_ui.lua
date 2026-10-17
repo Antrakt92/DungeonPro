@@ -1515,4 +1515,79 @@ check("Actual startup recovers a late minimap and its launcher opens the planner
     addon.Minimap:Initialize()
 end)
 
+check("Actual objective acquisition stays separate from client quest lifecycle and expires old event-bound clicks",function()
+    local ui=addon.UI
+    local saved={quest=ui.quest,dungeon=ui.dungeon,history=ui.detailHistory,search=ui.search,
+        shown=ui.frame:IsShown(),offset=ui.detailScroll.verticalScroll or 0,nav=addon.Navigation,
+        expanded=expandedReferenceFixture,level=UnitLevel,faction=UnitFactionGroup,class=UnitClass,race=UnitRace,
+        active=C_QuestLog.IsOnQuest,ready=C_QuestLog.ReadyForTurnIn,completed=C_QuestLog.IsQuestFlaggedCompleted,
+        objectives=C_QuestLog.GetQuestObjectives}
+    -- Earlier cases may leave a navigation mock; compose this case with the real module.
+    assert(loadfile("UI/Navigation.lua"))("DungeonPro",addon)
+    local navigation=addon.Navigation
+    local held,ready,fulfilled=false,false,0
+    UnitLevel=function()return 60 end;UnitFactionGroup=function()return"Alliance"end
+    UnitClass=function()return"Warrior","WARRIOR",1 end;UnitRace=function()return"Human","Human",1 end
+    C_QuestLog.IsOnQuest=function(id)return id==1221 and held end
+    C_QuestLog.ReadyForTurnIn=function(id)return id==1221 and ready end
+    C_QuestLog.IsQuestFlaggedCompleted=function()return false end
+    C_QuestLog.GetQuestObjectives=function(id)
+        -- This fixture explicitly models the native counter becoming unavailable on removal.
+        if id==1221 and held then return{{text="Native tubers "..fulfilled.."/6",type="item",
+            finished=fulfilled==6,numFulfilled=fulfilled,numRequired=6}}end
+    end
+    local q=addon.quests[1221];local items,sources=q.objectiveItems,q.objectiveItemSources
+    local points={sources[1].containerSources[1],sources[2].containerSources[1],sources[3].containerSources[1]}
+    local function rows()
+        local result={};for _,row in ipairs(ui.objectiveContainerButtons or{})do if row:IsShown()then result[#result+1]=row end end
+        return result
+    end
+    local function contains(value)
+        for _,line in ipairs(ui.details)do if line.shown and line.text:find(value,1,true)then return true end end
+        return false
+    end
+    local function roles()
+        assert(q.objectiveItems==items and q.objectiveItemSources==sources and #items==4 and #sources==3)
+        assert(items[1].itemID==5876 and items[1].quantity==6 and not q.providedItems and q.requirementsKnown==false)
+        for i,pair in ipairs({{5880,21277},{5897,21530},{6684,68865}})do
+            assert(items[i+1].itemID==pair[1] and items[i+1].quantity==nil and sources[i].itemID==pair[1])
+            assert(sources[i].containerSources[1]==points[i] and points[i].objectID==pair[2])
+        end
+    end
+    for _,dungeon in ipairs(addon.dungeons)do
+        for _,id in ipairs(dungeon.quests)do if id==1221 then ui.dungeon=dungeon end end
+    end
+    expandedReferenceFixture=true;ui.frame:Show();ui.quest=1221;ui.search="";ui:Refresh()
+    ui.detailScroll:SetVerticalScroll(77)
+    local pins=#waypoints
+    assert(#rows()==3 and ui.engine:State(1221).status=="UNKNOWN" and not ui.action);roles()
+    local stale=rows()[1].scripts.OnClick
+    held=true;eventFrame.scripts.OnEvent(eventFrame,"QUEST_ACCEPTED",1221)
+    assert(ui.quest==1221 and ui.frame:IsShown() and ui.engine:State(1221).status=="ACTIVE" and #rows()==3)
+    stale();assert(#waypoints==pins and contains("Native tubers 0/6") and ui.detailScroll.verticalScroll==77);roles()
+    stale=rows()[1].scripts.OnClick;fulfilled=6
+    eventFrame.scripts.OnEvent(eventFrame,"QUEST_LOG_UPDATE")
+    assert(ui.engine:State(1221).status=="ACTIVE" and contains("Native tubers 6/6"))
+    stale();assert(#waypoints==pins);roles()
+    stale=rows()[1].scripts.OnClick;ready=true
+    eventFrame.scripts.OnEvent(eventFrame,"QUEST_LOG_UPDATE")
+    assert(ui.engine:State(1221).status=="READY" and contains("Native tubers 6/6") and #rows()==3)
+    stale();assert(#waypoints==pins and ui.detailScroll.verticalScroll==77);roles()
+    stale=rows()[1].scripts.OnClick;held=false;ready=false
+    eventFrame.scripts.OnEvent(eventFrame,"QUEST_REMOVED",1221)
+    assert(ui.quest==1221 and ui.frame:IsShown() and ui.engine:State(1221).status=="UNKNOWN" and #rows()==3)
+    stale();assert(#waypoints==pins and not contains("Native tubers 6/6") and ui.detailScroll.verticalScroll==77);roles()
+    rows()[1].scripts.OnClick()
+    local pin=waypoints[#waypoints]
+    assert(#waypoints==pins+1 and pin.mapID==1413 and pin.x==.623 and pin.y==.376)
+    assert(ui.frame:IsShown() and ui.quest==1221 and ui.engine:State(1221).status=="UNKNOWN")
+    navigation.Stop();addon.Navigation=saved.nav
+    UnitLevel,UnitFactionGroup,UnitClass,UnitRace=saved.level,saved.faction,saved.class,saved.race
+    C_QuestLog.IsOnQuest,C_QuestLog.ReadyForTurnIn,C_QuestLog.IsQuestFlaggedCompleted,C_QuestLog.GetQuestObjectives=
+        saved.active,saved.ready,saved.completed,saved.objectives
+    expandedReferenceFixture=saved.expanded
+    ui.quest,ui.dungeon,ui.detailHistory,ui.search=saved.quest,saved.dungeon,saved.history,saved.search
+    ui:Refresh();ui.detailScroll:SetVerticalScroll(saved.offset)
+    if not saved.shown then ui.frame:Hide()end
+end)
 print("Client/UI modeled checks passed: " .. total .. " (no pixel or native-client validation)")
