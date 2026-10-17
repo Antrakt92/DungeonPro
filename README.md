@@ -160,6 +160,8 @@ This build has not yet passed native-client or visual acceptance.
 - `/DP probe nav`: print a visibility and geometry sample for the guide, browser
   and world map in chat, plus the shown map's stored ID. Coordinates use UI units;
   unavailable values show `unknown`.
+- `/DP probe minimap`: print whether the existing launcher and minimap are shown,
+  their geometry and the saved hide preference, without changing settings.
 - `/rl`: reload the interface, like `/reload`.
 
 Development aliases `/dprep` and `/dungeonprep` are also supported.

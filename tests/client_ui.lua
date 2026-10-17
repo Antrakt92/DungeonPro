@@ -309,6 +309,67 @@ check("Unavailable or failing navigation probes print unknown without opening th
     assert(toggles == 0 and addon.char.probe == saved and #output == 2)
     for _, line in ipairs(output) do assert(line:find("unknown", 1, true)) end
 end)
+check("Minimap probe reads existing visibility geometry and hide preference without creating or changing anything", function()
+    local manager, parent, database, outputPrint, toggle = addon.Minimap, Minimap, addon.db, print, addon.UI.Toggle
+    local output, actions = {}, 0
+    local button, map = create("Button"), create("Minimap")
+    for _, owner in ipairs({button, map}) do
+        owner.IsShown = function() return true end; owner.IsVisible = function() return false end
+        owner.GetFrameStrata = function() return "MEDIUM" end; owner.GetFrameLevel = function() return 12 end
+        owner.GetAlpha = function() return .5 end; owner.GetLeft = function() return 10 end; owner.GetBottom = function() return 20 end
+        owner.GetWidth = function() return 32 end; owner.GetHeight = function() return 32 end
+    end
+    local config = {hide = false}
+    addon.Minimap = {button = button, Initialize = function() actions = actions + 1 end}
+    Minimap = map; addon.db = {minimap = config}; addon.UI.Toggle = function() actions = actions + 1 end
+    local count, beforeMaps, beforePins = #objects, mapCalls, #waypoints
+    print = function(line) output[#output + 1] = line end
+    SlashCmdList.DUNGEONPRO("  PROBE  minimap  ")
+    addon.Minimap, Minimap, addon.db, print, addon.UI.Toggle = manager, parent, database, outputPrint, toggle
+    assert(actions == 0 and #objects == count and mapCalls == beforeMaps and #waypoints == beforePins and config.hide == false)
+    assert(#output == 3 and output[1]:find("created=true hide=false", 1, true))
+    assert(output[2]:find("shown=true visible=false", 1, true) and output[2]:find("alpha=0.50", 1, true))
+    assert(output[2]:find("uiUnit=(10.00,20.00,32.00,32.00)", 1, true))
+end)
+check("Minimap probe handles missing frames restricted values and out-of-range geometry quietly", function()
+    local manager, parent, database, outputPrint, checker = addon.Minimap, Minimap, addon.db, print, issecretvalue
+    local output, restricted = {}, {}
+    local button = create("Button")
+    button.IsShown = function() return restricted end; button.IsVisible = function() return false end
+    button.GetAlpha = function() return math.huge end; button.GetWidth = function() return -1 end
+    button.GetFrameStrata = function() return "DO_NOT_PRINT" end
+    issecretvalue = function(value) return rawequal(value, restricted) end
+    addon.Minimap, Minimap, addon.db = {button = button}, nil, {minimap = {hide = restricted}}
+    print = function(line) output[#output + 1] = line end
+    SlashCmdList.DUNGEONPRO("probe minimap")
+    addon.Minimap, Minimap, addon.db, print, issecretvalue = manager, parent, database, outputPrint, checker
+    assert(#output == 3 and output[1]:find("hide=unknown", 1, true) and output[2]:find("shown=unknown visible=false", 1, true))
+    for _, line in ipairs(output) do assert(#line <= 240 and not line:find("DO_NOT_PRINT", 1, true) and not line:find("inf", 1, true)) end
+end)
+check("Minimap probe discards a snapshot when a getter replaces its launcher", function()
+    local manager, parent, outputPrint = addon.Minimap, Minimap, print
+    local output, button = {}, create("Button")
+    local held = {button = button}; addon.Minimap = held; Minimap = nil
+    button.IsShown = function() held.button = nil; return true end
+    print = function(line) output[#output + 1] = line end
+    SlashCmdList.DUNGEONPRO("probe minimap")
+    addon.Minimap, Minimap, print = manager, parent, outputPrint
+    assert(#output == 1 and output[1] == "Dungeon Pro minimap: snapshot unknown")
+end)
+check("Minimap probe final checker cannot replace an earlier sampled visibility getter", function()
+    local manager, parent, database, outputPrint, checker = addon.Minimap, Minimap, addon.db, print, issecretvalue
+    local output, count, button = {}, 0, create("Button")
+    button.IsShown = function() return true end; button.IsVisible = function() return true end
+    addon.Minimap, Minimap, addon.db = {button = button}, nil, {minimap = {hide = false}}
+    issecretvalue = function(value)
+        if value == false then count = count + 1; if count == 2 then button.IsShown = function() return false end end end
+        return false
+    end
+    print = function(line) output[#output + 1] = line end
+    SlashCmdList.DUNGEONPRO("probe minimap")
+    addon.Minimap, Minimap, addon.db, print, issecretvalue = manager, parent, database, outputPrint, checker
+    assert(count == 2 and #output == 1 and output[1] == "Dungeon Pro minimap: snapshot unknown")
+end)
 check("Close and reopen preserve selection", function()
     SlashCmdList.DUNGEONPRO(""); assert(not addon.UI.frame:IsShown())
     SlashCmdList.DUNGEONPRO(""); assert(addon.UI.frame:IsShown() and addon.UI.quest == 166)

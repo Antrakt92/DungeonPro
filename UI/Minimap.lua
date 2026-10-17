@@ -136,8 +136,6 @@ function M:Place(value)
     local ok = pcall(function()
         button:ClearAllPoints()
         button:SetPoint("CENTER", parent, "CENTER", x, y)
-        local placed = method(button, "SetUserPlaced")
-        if placed then placed(button, true) end
     end)
     if not ok or not self:Current() or self.button ~= button or self.parent ~= parent then return false end
     self.angle = value

@@ -50,6 +50,76 @@ local function probeNavigation()
     for _, line in ipairs(lines) do print(line) end
 end
 
+local function probeMinimap()
+    local ok, lines = pcall(function()
+        local function object(value)
+            return addon.Clean(value, "table") or addon.Clean(value, "userdata")
+        end
+        local manager, parent, checker = addon.Clean(addon.Minimap, "table"), object(Minimap), issecretvalue
+        local button = manager and object(manager.button)
+        local database = addon.Clean(addon.db, "table")
+        local config = database and addon.Clean(database.minimap, "table")
+        local hidden = config and addon.Clean(config.hide, "boolean")
+        local rawButton = manager and rawget(manager, "button")
+        local rawConfig = database and rawget(database, "minimap")
+        local rawHidden = config and rawget(config, "hide")
+        local function flag(value)
+            if value == nil then return "unknown" end
+            return value and "true" or "false"
+        end
+        local output = { "Dungeon Pro minimap: created=" .. flag(button ~= nil) .. " hide=" .. flag(hidden) }
+        local strata = { BACKGROUND = true, LOW = true, MEDIUM = true, HIGH = true, DIALOG = true,
+            FULLSCREEN = true, FULLSCREEN_DIALOG = true, TOOLTIP = true }
+        local bindings = {}
+        for _, role in ipairs({ { "button", button }, { "parent", parent } }) do
+            local owner, getters, slots = role[2], {}, {}
+            local function read(key, kind)
+                if type(owner) == "table" then slots[key] = {value = rawget(owner, key)} end
+                local getter = owner and addon.Read(function() return owner[key] end, "function")
+                getters[key] = getter
+                return addon.Read(getter, kind, owner)
+            end
+            local shown, visible = read("IsShown", "boolean"), read("IsVisible", "boolean")
+            local layer = read("GetFrameStrata", "string")
+            layer = layer and strata[layer] and layer or "unknown"
+            local function number(key, minimum, maximum, integral)
+                local value = read(key, "number")
+                if not value or value < minimum or value > maximum or (integral and value % 1 ~= 0) then return "unknown" end
+                return string.format(integral and "%.0f" or "%.2f", value)
+            end
+            output[#output + 1] = "Dungeon Pro minimap/" .. role[1] .. ": shown=" .. flag(shown) ..
+                " visible=" .. flag(visible) .. " strata=" .. layer .. " level=" .. number("GetFrameLevel", 0, 100000, true) ..
+                " alpha=" .. number("GetAlpha", 0, 1) .. " uiUnit=(" .. number("GetLeft", -1000000, 1000000) ..
+                "," .. number("GetBottom", -1000000, 1000000) .. "," .. number("GetWidth", 0, 1000000) ..
+                "," .. number("GetHeight", 0, 1000000) .. ")"
+            bindings[#bindings + 1] = { owner = owner, getters = getters, slots = slots }
+        end
+        for _, binding in ipairs(bindings) do
+            for key, getter in pairs(binding.getters) do
+                if addon.Read(function() return binding.owner[key] end, "function") ~= getter then return end
+            end
+        end
+        if addon.Minimap ~= manager or object(Minimap) ~= parent or issecretvalue ~= checker or
+            (manager and object(manager.button) ~= button) or addon.db ~= database or
+            (database and addon.Clean(database.minimap, "table") ~= config) or
+            (config and addon.Clean(config.hide, "boolean") ~= hidden) then return end
+        -- Final raw checks call no getters or restriction checks that could replace an earlier binding.
+        if not rawequal(rawget(addon, "Minimap"), manager) or not rawequal(rawget(_G, "Minimap"), parent) or
+            not rawequal(rawget(_G, "issecretvalue"), checker) or not rawequal(rawget(addon, "db"), database) or
+            (manager and not rawequal(rawget(manager, "button"), rawButton)) or
+            (database and not rawequal(rawget(database, "minimap"), rawConfig)) or
+            (config and not rawequal(rawget(config, "hide"), rawHidden)) then return end
+        for _, binding in ipairs(bindings) do
+            for key, slot in pairs(binding.slots) do
+                if not rawequal(rawget(binding.owner, key), slot.value) then return end
+            end
+        end
+        return output
+    end)
+    if not ok or not lines then print("Dungeon Pro minimap: snapshot unknown"); return end
+    for _, line in ipairs(lines) do print(line) end
+end
+
 local function refresh()
     if pending or refreshing or not initialized then return end
     local token = {}
@@ -99,6 +169,7 @@ events:SetScript("OnEvent", function(_, event, arg1, arg2)
             if msg == "clear" then addon.Navigation.Stop()
             elseif msg == "probe" then addon.ProbeClient()
             elseif msg == "probe nav" then probeNavigation()
+            elseif msg == "probe minimap" then probeMinimap()
             elseif msg == "minimap" and addon.Minimap then addon.Minimap:ToggleVisibility()
             elseif msg == "minimap reset" and addon.Minimap then addon.Minimap:Reset()
             else addon.UI:Toggle() end

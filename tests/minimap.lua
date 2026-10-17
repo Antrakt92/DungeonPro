@@ -60,7 +60,7 @@ check("Missing native minimap omits launcher then idempotent initialization uses
     local m=reset(); local native=Minimap; Minimap=nil
     assert(m:Initialize()==false and created==0)
     Minimap=native; assert(m:Initialize() and m:Initialize() and created==1)
-    assert(m.button.parent==native and m.button.shown and m.button.userPlaced and m.button.scripts.OnUpdate==nil)
+    assert(m.button.parent==native and m.button.shown and m.button.scripts.OnUpdate==nil)
     assert(m.button.icon.texture=="Interface\\Icons\\INV_Misc_Map_01")
     assert(addon.db.minimap.angle==nil)
     near(m.angle,225)
@@ -276,6 +276,33 @@ check("Optional launcher styling failures keep controls usable and reentry canno
     assert(not m:Initialize() and not armed and b.shown)
     near(m.angle,90);near(b.point[4],0);near(b.point[5],108)
     assert(not b.scripts.OnUpdate)
+end)
+check("Native position persistence is unnecessary for placement drag reload and explicit hiding",function()
+    local config={hide=false,angle=19,launcherVersion=1};local m=reset(config)
+    local factory=CreateFrame;local calls=0
+    CreateFrame=function(...)
+        local b=factory(...)
+        b.SetUserPlaced=function()calls=calls+1;error("optional persistence unavailable")end
+        return b
+    end
+    assert(m:Initialize(),"optional persistence must not hide an anchored launcher")
+    assert(m.button.shown and m.button.point[1]=="CENTER" and config.angle==19 and config.hide==false)
+    m.button.scripts.OnClick(m.button,"LeftButton");assert(clicks==1)
+    m:StartDrag("LeftButton");m.button.scripts.OnUpdate();m:StopDrag(true)
+    near(config.angle,0);assert(m:Initialize() and m.button.shown);near(m.button.point[4],108)
+    assert(m:ToggleVisibility() and config.hide and not m.button.shown)
+    assert(m:Initialize() and config.hide and not m.button.shown)
+    assert(m:Reset() and m.button.shown and config.angle==225 and config.hide==false and calls==0)
+end)
+check("Failed essential native anchoring still hides the launcher without changing user preferences",function()
+    local config={hide=false,angle=19,launcherVersion=1};local m=reset(config)
+    local factory=CreateFrame
+    CreateFrame=function(...)
+        local b=factory(...);b.SetPoint=function()error("anchor unavailable")end;return b
+    end
+    assert(not m:Initialize() and not m.button.shown and config.hide==false and config.angle==19)
+    assert(not m:ToggleVisibility() and not m.button.shown and config.hide==false)
+    assert(not m:Reset() and not m.button.shown and config.angle==19)
 end)
 issecretvalue=nil
 print("Minimap modeled checks passed: "..total.." (native client unverified)")
