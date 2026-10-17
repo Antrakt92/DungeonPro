@@ -11595,7 +11595,11 @@
       "source": "https://www.wowhead.com/forever/quest=4324/yuka-screwspigot",
       "start": {
         "npcID": 9706,
-        "name": "Yorba Screwspigot"
+        "name": "Yorba Screwspigot",
+        "zoneName": "Tanaris",
+        "mapID": 1446,
+        "x": 67,
+        "y": 24
       },
       "finish": {
         "npcID": 9544,
@@ -13494,12 +13498,46 @@
       "start": {
         "npcID": 10929,
         "name": "Haleh",
-        "zoneName": "Winterspring"
+        "zoneName": "Winterspring",
+        "mapID": 1452,
+        "x": 54.4,
+        "y": 51.2,
+        "reportedLocations": [
+          {
+            "mapID": 1452,
+            "x": 54.4,
+            "y": 51.2,
+            "zoneName": "Winterspring"
+          },
+          {
+            "mapID": 1452,
+            "x": 54.6,
+            "y": 51.2,
+            "zoneName": "Winterspring"
+          }
+        ]
       },
       "finish": {
         "npcID": 10929,
         "name": "Haleh",
-        "zoneName": "Winterspring"
+        "zoneName": "Winterspring",
+        "mapID": 1452,
+        "x": 54.4,
+        "y": 51.2,
+        "reportedLocations": [
+          {
+            "mapID": 1452,
+            "x": 54.4,
+            "y": 51.2,
+            "zoneName": "Winterspring"
+          },
+          {
+            "mapID": 1452,
+            "x": 54.6,
+            "y": 51.2,
+            "zoneName": "Winterspring"
+          }
+        ]
       },
       "requirementsKnown": false,
       "factions": [
@@ -13547,7 +13585,24 @@
       "finish": {
         "npcID": 10929,
         "name": "Haleh",
-        "zoneName": "Winterspring"
+        "zoneName": "Winterspring",
+        "mapID": 1452,
+        "x": 54.4,
+        "y": 51.2,
+        "reportedLocations": [
+          {
+            "mapID": 1452,
+            "x": 54.4,
+            "y": 51.2,
+            "zoneName": "Winterspring"
+          },
+          {
+            "mapID": 1452,
+            "x": 54.6,
+            "y": 51.2,
+            "zoneName": "Winterspring"
+          }
+        ]
       },
       "requirementsKnown": false,
       "factions": [
@@ -13573,7 +13628,11 @@
       },
       "finish": {
         "npcID": 10637,
-        "name": "Malyfous Darkhammer"
+        "name": "Malyfous Darkhammer",
+        "zoneName": "Winterspring",
+        "mapID": 1452,
+        "x": 61,
+        "y": 38.6
       },
       "requirementsKnown": false,
       "factions": [
@@ -13618,12 +13677,46 @@
       "start": {
         "npcID": 13278,
         "name": "Duke Hydraxis",
-        "zoneName": "Azshara"
+        "zoneName": "Azshara",
+        "mapID": 1447,
+        "x": 79.2,
+        "y": 73.4,
+        "reportedLocations": [
+          {
+            "mapID": 1447,
+            "x": 79.2,
+            "y": 73.4,
+            "zoneName": "Azshara"
+          },
+          {
+            "mapID": 1447,
+            "x": 79.2,
+            "y": 73.6,
+            "zoneName": "Azshara"
+          }
+        ]
       },
       "finish": {
         "npcID": 13278,
         "name": "Duke Hydraxis",
-        "zoneName": "Azshara"
+        "zoneName": "Azshara",
+        "mapID": 1447,
+        "x": 79.2,
+        "y": 73.4,
+        "reportedLocations": [
+          {
+            "mapID": 1447,
+            "x": 79.2,
+            "y": 73.4,
+            "zoneName": "Azshara"
+          },
+          {
+            "mapID": 1447,
+            "x": 79.2,
+            "y": 73.6,
+            "zoneName": "Azshara"
+          }
+        ]
       },
       "requirementsKnown": false,
       "factions": [
@@ -13649,11 +13742,19 @@
       ],
       "start": {
         "npcID": 10918,
-        "name": "Lorax"
+        "name": "Lorax",
+        "zoneName": "Winterspring",
+        "mapID": 1452,
+        "x": 63.8,
+        "y": 73.8
       },
       "finish": {
         "npcID": 10918,
-        "name": "Lorax"
+        "name": "Lorax",
+        "zoneName": "Winterspring",
+        "mapID": 1452,
+        "x": 63.8,
+        "y": 73.8
       },
       "requirementsKnown": false,
       "factions": [
@@ -13808,11 +13909,71 @@
       "source": "https://www.wowhead.com/forever/quest=5343/barov-family-fortune",
       "start": {
         "npcID": 11023,
-        "name": "Weldon Barov"
+        "name": "Weldon Barov",
+        "zoneName": "Western Plaguelands",
+        "mapID": 1422,
+        "x": 43.4,
+        "y": 83.4,
+        "reportedLocations": [
+          {
+            "mapID": 1422,
+            "x": 43.4,
+            "y": 83.4,
+            "zoneName": "Western Plaguelands"
+          },
+          {
+            "mapID": 1422,
+            "x": 43.4,
+            "y": 83.6,
+            "zoneName": "Western Plaguelands"
+          },
+          {
+            "mapID": 1422,
+            "x": 43.6,
+            "y": 83.4,
+            "zoneName": "Western Plaguelands"
+          },
+          {
+            "mapID": 1422,
+            "x": 43.6,
+            "y": 83.6,
+            "zoneName": "Western Plaguelands"
+          }
+        ]
       },
       "finish": {
         "npcID": 11023,
-        "name": "Weldon Barov"
+        "name": "Weldon Barov",
+        "zoneName": "Western Plaguelands",
+        "mapID": 1422,
+        "x": 43.4,
+        "y": 83.4,
+        "reportedLocations": [
+          {
+            "mapID": 1422,
+            "x": 43.4,
+            "y": 83.4,
+            "zoneName": "Western Plaguelands"
+          },
+          {
+            "mapID": 1422,
+            "x": 43.4,
+            "y": 83.6,
+            "zoneName": "Western Plaguelands"
+          },
+          {
+            "mapID": 1422,
+            "x": 43.6,
+            "y": 83.4,
+            "zoneName": "Western Plaguelands"
+          },
+          {
+            "mapID": 1422,
+            "x": 43.6,
+            "y": 83.6,
+            "zoneName": "Western Plaguelands"
+          }
+        ]
       },
       "storyline": [
         5343,
@@ -13925,11 +14086,47 @@
       "source": "https://www.wowhead.com/forever/quest=5341/barov-family-fortune",
       "start": {
         "npcID": 11022,
-        "name": "Alexi Barov"
+        "name": "Alexi Barov",
+        "zoneName": "Tirisfal Glades",
+        "mapID": 1420,
+        "x": 83,
+        "y": 71.4,
+        "reportedLocations": [
+          {
+            "mapID": 1420,
+            "x": 83,
+            "y": 71.4,
+            "zoneName": "Tirisfal Glades"
+          },
+          {
+            "mapID": 1420,
+            "x": 83,
+            "y": 71.6,
+            "zoneName": "Tirisfal Glades"
+          }
+        ]
       },
       "finish": {
         "npcID": 11022,
-        "name": "Alexi Barov"
+        "name": "Alexi Barov",
+        "zoneName": "Tirisfal Glades",
+        "mapID": 1420,
+        "x": 83,
+        "y": 71.4,
+        "reportedLocations": [
+          {
+            "mapID": 1420,
+            "x": 83,
+            "y": 71.4,
+            "zoneName": "Tirisfal Glades"
+          },
+          {
+            "mapID": 1420,
+            "x": 83,
+            "y": 71.6,
+            "zoneName": "Tirisfal Glades"
+          }
+        ]
       },
       "storyline": [
         5341,
@@ -14266,11 +14463,71 @@
       "source": "https://www.wowhead.com/forever/quest=5344/the-last-barov",
       "start": {
         "npcID": 11023,
-        "name": "Weldon Barov"
+        "name": "Weldon Barov",
+        "zoneName": "Western Plaguelands",
+        "mapID": 1422,
+        "x": 43.4,
+        "y": 83.4,
+        "reportedLocations": [
+          {
+            "mapID": 1422,
+            "x": 43.4,
+            "y": 83.4,
+            "zoneName": "Western Plaguelands"
+          },
+          {
+            "mapID": 1422,
+            "x": 43.4,
+            "y": 83.6,
+            "zoneName": "Western Plaguelands"
+          },
+          {
+            "mapID": 1422,
+            "x": 43.6,
+            "y": 83.4,
+            "zoneName": "Western Plaguelands"
+          },
+          {
+            "mapID": 1422,
+            "x": 43.6,
+            "y": 83.6,
+            "zoneName": "Western Plaguelands"
+          }
+        ]
       },
       "finish": {
         "npcID": 11023,
-        "name": "Weldon Barov"
+        "name": "Weldon Barov",
+        "zoneName": "Western Plaguelands",
+        "mapID": 1422,
+        "x": 43.4,
+        "y": 83.4,
+        "reportedLocations": [
+          {
+            "mapID": 1422,
+            "x": 43.4,
+            "y": 83.4,
+            "zoneName": "Western Plaguelands"
+          },
+          {
+            "mapID": 1422,
+            "x": 43.4,
+            "y": 83.6,
+            "zoneName": "Western Plaguelands"
+          },
+          {
+            "mapID": 1422,
+            "x": 43.6,
+            "y": 83.4,
+            "zoneName": "Western Plaguelands"
+          },
+          {
+            "mapID": 1422,
+            "x": 43.6,
+            "y": 83.6,
+            "zoneName": "Western Plaguelands"
+          }
+        ]
       },
       "storyline": [
         5343,
@@ -14289,11 +14546,47 @@
       "source": "https://www.wowhead.com/forever/quest=5342/the-last-barov",
       "start": {
         "npcID": 11022,
-        "name": "Alexi Barov"
+        "name": "Alexi Barov",
+        "zoneName": "Tirisfal Glades",
+        "mapID": 1420,
+        "x": 83,
+        "y": 71.4,
+        "reportedLocations": [
+          {
+            "mapID": 1420,
+            "x": 83,
+            "y": 71.4,
+            "zoneName": "Tirisfal Glades"
+          },
+          {
+            "mapID": 1420,
+            "x": 83,
+            "y": 71.6,
+            "zoneName": "Tirisfal Glades"
+          }
+        ]
       },
       "finish": {
         "npcID": 11022,
-        "name": "Alexi Barov"
+        "name": "Alexi Barov",
+        "zoneName": "Tirisfal Glades",
+        "mapID": 1420,
+        "x": 83,
+        "y": 71.4,
+        "reportedLocations": [
+          {
+            "mapID": 1420,
+            "x": 83,
+            "y": 71.4,
+            "zoneName": "Tirisfal Glades"
+          },
+          {
+            "mapID": 1420,
+            "x": 83,
+            "y": 71.6,
+            "zoneName": "Tirisfal Glades"
+          }
+        ]
       },
       "storyline": [
         5341,
@@ -15385,12 +15678,58 @@
       "start": {
         "npcID": 11878,
         "name": "Nathanos Blightcaller",
-        "zoneName": "Eastern Plaguelands"
+        "zoneName": "Eastern Plaguelands",
+        "mapID": 1423,
+        "x": 26.4,
+        "y": 74.8,
+        "reportedLocations": [
+          {
+            "mapID": 1423,
+            "x": 26.4,
+            "y": 74.8,
+            "zoneName": "Eastern Plaguelands"
+          },
+          {
+            "mapID": 1423,
+            "x": 26.6,
+            "y": 74.4,
+            "zoneName": "Eastern Plaguelands"
+          },
+          {
+            "mapID": 1423,
+            "x": 26.6,
+            "y": 74.8,
+            "zoneName": "Eastern Plaguelands"
+          }
+        ]
       },
       "finish": {
         "npcID": 11878,
         "name": "Nathanos Blightcaller",
-        "zoneName": "Eastern Plaguelands"
+        "zoneName": "Eastern Plaguelands",
+        "mapID": 1423,
+        "x": 26.4,
+        "y": 74.8,
+        "reportedLocations": [
+          {
+            "mapID": 1423,
+            "x": 26.4,
+            "y": 74.8,
+            "zoneName": "Eastern Plaguelands"
+          },
+          {
+            "mapID": 1423,
+            "x": 26.6,
+            "y": 74.4,
+            "zoneName": "Eastern Plaguelands"
+          },
+          {
+            "mapID": 1423,
+            "x": 26.6,
+            "y": 74.8,
+            "zoneName": "Eastern Plaguelands"
+          }
+        ]
       }
     },
     {
@@ -16664,12 +17003,46 @@
       "start": {
         "npcID": 10929,
         "name": "Haleh",
-        "zoneName": "Winterspring"
+        "zoneName": "Winterspring",
+        "mapID": 1452,
+        "x": 54.4,
+        "y": 51.2,
+        "reportedLocations": [
+          {
+            "mapID": 1452,
+            "x": 54.4,
+            "y": 51.2,
+            "zoneName": "Winterspring"
+          },
+          {
+            "mapID": 1452,
+            "x": 54.6,
+            "y": 51.2,
+            "zoneName": "Winterspring"
+          }
+        ]
       },
       "finish": {
         "npcID": 10929,
         "name": "Haleh",
-        "zoneName": "Winterspring"
+        "zoneName": "Winterspring",
+        "mapID": 1452,
+        "x": 54.4,
+        "y": 51.2,
+        "reportedLocations": [
+          {
+            "mapID": 1452,
+            "x": 54.4,
+            "y": 51.2,
+            "zoneName": "Winterspring"
+          },
+          {
+            "mapID": 1452,
+            "x": 54.6,
+            "y": 51.2,
+            "zoneName": "Winterspring"
+          }
+        ]
       },
       "storyline": [
         5160,
@@ -16692,7 +17065,24 @@
       "start": {
         "npcID": 10929,
         "name": "Haleh",
-        "zoneName": "Winterspring"
+        "zoneName": "Winterspring",
+        "mapID": 1452,
+        "x": 54.4,
+        "y": 51.2,
+        "reportedLocations": [
+          {
+            "mapID": 1452,
+            "x": 54.4,
+            "y": 51.2,
+            "zoneName": "Winterspring"
+          },
+          {
+            "mapID": 1452,
+            "x": 54.6,
+            "y": 51.2,
+            "zoneName": "Winterspring"
+          }
+        ]
       },
       "finish": {
         "npcID": 10976,
@@ -16783,7 +17173,24 @@
       "finish": {
         "npcID": 10929,
         "name": "Haleh",
-        "zoneName": "Winterspring"
+        "zoneName": "Winterspring",
+        "mapID": 1452,
+        "x": 54.4,
+        "y": 51.2,
+        "reportedLocations": [
+          {
+            "mapID": 1452,
+            "x": 54.4,
+            "y": 51.2,
+            "zoneName": "Winterspring"
+          },
+          {
+            "mapID": 1452,
+            "x": 54.6,
+            "y": 51.2,
+            "zoneName": "Winterspring"
+          }
+        ]
       },
       "storyline": [
         6403,
@@ -16857,12 +17264,46 @@
       "start": {
         "npcID": 13278,
         "name": "Duke Hydraxis",
-        "zoneName": "Azshara"
+        "zoneName": "Azshara",
+        "mapID": 1447,
+        "x": 79.2,
+        "y": 73.4,
+        "reportedLocations": [
+          {
+            "mapID": 1447,
+            "x": 79.2,
+            "y": 73.4,
+            "zoneName": "Azshara"
+          },
+          {
+            "mapID": 1447,
+            "x": 79.2,
+            "y": 73.6,
+            "zoneName": "Azshara"
+          }
+        ]
       },
       "finish": {
         "npcID": 13278,
         "name": "Duke Hydraxis",
-        "zoneName": "Azshara"
+        "zoneName": "Azshara",
+        "mapID": 1447,
+        "x": 79.2,
+        "y": 73.4,
+        "reportedLocations": [
+          {
+            "mapID": 1447,
+            "x": 79.2,
+            "y": 73.4,
+            "zoneName": "Azshara"
+          },
+          {
+            "mapID": 1447,
+            "x": 79.2,
+            "y": 73.6,
+            "zoneName": "Azshara"
+          }
+        ]
       },
       "storyline": [
         6821,
@@ -16885,12 +17326,46 @@
       "start": {
         "npcID": 13278,
         "name": "Duke Hydraxis",
-        "zoneName": "Azshara"
+        "zoneName": "Azshara",
+        "mapID": 1447,
+        "x": 79.2,
+        "y": 73.4,
+        "reportedLocations": [
+          {
+            "mapID": 1447,
+            "x": 79.2,
+            "y": 73.4,
+            "zoneName": "Azshara"
+          },
+          {
+            "mapID": 1447,
+            "x": 79.2,
+            "y": 73.6,
+            "zoneName": "Azshara"
+          }
+        ]
       },
       "finish": {
         "npcID": 13278,
         "name": "Duke Hydraxis",
-        "zoneName": "Azshara"
+        "zoneName": "Azshara",
+        "mapID": 1447,
+        "x": 79.2,
+        "y": 73.4,
+        "reportedLocations": [
+          {
+            "mapID": 1447,
+            "x": 79.2,
+            "y": 73.4,
+            "zoneName": "Azshara"
+          },
+          {
+            "mapID": 1447,
+            "x": 79.2,
+            "y": 73.6,
+            "zoneName": "Azshara"
+          }
+        ]
       },
       "storyline": [
         6821,
@@ -16913,12 +17388,46 @@
       "start": {
         "npcID": 13278,
         "name": "Duke Hydraxis",
-        "zoneName": "Azshara"
+        "zoneName": "Azshara",
+        "mapID": 1447,
+        "x": 79.2,
+        "y": 73.4,
+        "reportedLocations": [
+          {
+            "mapID": 1447,
+            "x": 79.2,
+            "y": 73.4,
+            "zoneName": "Azshara"
+          },
+          {
+            "mapID": 1447,
+            "x": 79.2,
+            "y": 73.6,
+            "zoneName": "Azshara"
+          }
+        ]
       },
       "finish": {
         "npcID": 13278,
         "name": "Duke Hydraxis",
-        "zoneName": "Azshara"
+        "zoneName": "Azshara",
+        "mapID": 1447,
+        "x": 79.2,
+        "y": 73.4,
+        "reportedLocations": [
+          {
+            "mapID": 1447,
+            "x": 79.2,
+            "y": 73.4,
+            "zoneName": "Azshara"
+          },
+          {
+            "mapID": 1447,
+            "x": 79.2,
+            "y": 73.6,
+            "zoneName": "Azshara"
+          }
+        ]
       },
       "storyline": [
         6821,
