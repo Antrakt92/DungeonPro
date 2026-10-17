@@ -3697,4 +3697,87 @@ check("Larger heading and metadata reflow above the quest viewport while preserv
     measurement=nil;ui:RefreshQuests()
     assert(ui.questScroll.point[3]==-227 and ui.questScroll.height==416)
 end)
+local function questListReentryFixture()
+    local saved={context=addon.Context,quest=ui.quest,dungeon=ui.dungeon,preparation=ui.preparation,all=ui.includeUnavailable,
+        name=addon.QuestName,dungeonName=addon.DungeonName,giver=addon.GiverName,history=ui.detailHistory,character=addon.char}
+    addon.Context=function()return{level=60,completed=function()return false end,active=function()return false end}end
+    for id=24001,24002 do addon.quests[id]={id=id,minLevel=1,requirementsKnown=true,start={npcID=id,mapID=id-24000,x=20,y=30,name="Giver "..id}}end
+    local old={key="oldlist",name="Old list",quests={24001},coverage="reviewed"}
+    local new={key="newlist",name="New list",quests={24002},coverage="reviewed"}
+    ui.preparation,ui.includeUnavailable=false,false;ui.dungeon=old;ui.detailHistory={};ui.quest=nil;ui:RefreshQuests()
+    return old,new,function()
+        addon.Context,addon.QuestName,addon.DungeonName,addon.GiverName=saved.context,saved.name,saved.dungeonName,saved.giver
+        addon.char=saved.character
+        addon.quests[24001],addon.quests[24002]=nil,nil
+        ui.quest,ui.dungeon,ui.preparation,ui.includeUnavailable,ui.detailHistory=saved.quest,saved.dungeon,saved.preparation,saved.all,saved.history;ui:Refresh()
+    end
+end
+check("A title hydration callback cannot overwrite a newly selected dungeon list",function()
+    local old,new,restore=questListReentryFixture()
+    local getter,armed=addon.QuestName,true
+    addon.QuestName=function(id)
+        if armed and id==24001 then armed=false;ui.dungeon=new;ui:RefreshQuests()end
+        return getter(id)
+    end
+    ui:RefreshQuests()
+    assert(not armed and ui.dungeon==new and ui.rows[1].title.text=="Quest 24002" and ui.rows[1].questID==24002)
+    ui.rows[1].scripts.OnClick(ui.rows[1],"LeftButton",false);assert(ui.quest==24002)
+    restore()
+end)
+check("Preparation giver and dungeon-heading hydration preserve the newer list's titles notes and plan",function()
+    for _,mode in ipairs({"giver","heading"})do
+        local old,new,restore=questListReentryFixture()
+        local armed=true
+        if mode=="giver"then
+            ui.preparation=true
+            addon.GiverName=function(place)
+                if armed and place.npcID==24001 then armed=false;ui.dungeon=new;ui:RefreshQuests()end
+                return "Native giver "..place.npcID
+            end
+        else
+            addon.DungeonName=function(dungeon)
+                if armed and dungeon==old then armed=false;ui.dungeon=new;ui:RefreshQuests()end
+                return dungeon.name
+            end
+        end
+        ui:RefreshQuests();assert(not armed and ui.dungeon==new and ui.heading.text==new.name)
+        local found=false
+        for _,row in ipairs(ui.rows)do
+            if row.shown and row.questID then
+                assert(row.questID==24002 and row.title.text=="Quest 24002")
+                if mode=="giver"then assert(row.note.text:find("Native giver 24002",1,true))end
+                found=true
+            end
+        end
+        assert(found and ui.currentPlan.dungeon==new and ui.currentPlan.engine==ui.engine)
+        restore()
+    end
+end)
+check("A reentrant character-context read cannot replace the new list engine and captured clicks reject changed owners",function()
+    local old,new,restore=questListReentryFixture()
+    local getter,armed=addon.Context,true
+    addon.Context=function()
+        if armed then armed=false;ui.dungeon=new;ui:RefreshQuests()end
+        return getter()
+    end
+    ui:RefreshQuests()
+    assert(not armed and ui.dungeon==new and ui.rows[1].questID==24002 and ui.currentPlan.engine==ui.engine)
+    local oldClick=ui.rows[1].scripts.OnClick
+    ui:RefreshQuests();ui.quest=nil;oldClick();assert(ui.quest==nil)
+    local character=addon.char;local changedCharacter=ui.rows[1].scripts.OnClick
+    addon.char={};changedCharacter();assert(ui.quest==nil);addon.char=character
+    local changedDungeon=ui.rows[1].scripts.OnClick
+    ui.dungeon=old;changedDungeon();assert(ui.quest==nil)
+    restore()
+end)
+check("Stable unknown-character quest rows remain visible and inspectable without invented actions",function()
+    local old,new,restore=questListReentryFixture()
+    addon.Context=function()return{level=60,completed=function()return nil end,active=function()return nil end}end
+    ui:RefreshQuests()
+    local row=ui.rows[1]
+    assert(row.shown and row.enabled and row.questID==24001 and ui.engine:State(24001).status=="UNKNOWN")
+    row.scripts.OnClick(row,"LeftButton",false)
+    assert(ui.quest==24001 and ui.engine:State(24001).status=="UNKNOWN" and not ui.action)
+    restore()
+end)
 print("Preparation UI modeled checks passed: " .. total .. " (no native layout validation)")

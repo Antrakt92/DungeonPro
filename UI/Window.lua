@@ -494,16 +494,23 @@ function UI:RefreshDungeons()
 end
 
 function UI:RefreshQuests()
-    local d, engine = self.dungeon, addon.Planner.New(addon.quests, addon.Context(), addon.Clean(addon.char.choices, "table"))
+    local d, character, previousGeneration = self.dungeon, addon.char, self.questListGeneration
+    local preparation, includeUnavailable = self.preparation, self.includeUnavailable
+    local context = addon.Context()
+    if self.dungeon ~= d or addon.char ~= character or self.questListGeneration ~= previousGeneration then return end
+    local engine = addon.Planner.New(addon.quests, context, addon.Clean(character.choices, "table"))
     self.engine = engine
     self.currentPlan = nil
     local generation = {}
     self.questListGeneration = generation
     local function current()
-        return self.questListGeneration == generation and self.engine == engine and self.dungeon == d
+        return self.questListGeneration == generation and self.engine == engine and self.dungeon == d and addon.char == character and
+            self.preparation == preparation and self.includeUnavailable == includeUnavailable
     end
     for _, row in ipairs(self.rows) do row:SetEnabled(false); row:SetScript("OnClick", nil) end
-    self.heading:SetText(d and addon.DungeonName(d) or addon.L("QUESTS"))
+    local heading = d and addon.DungeonName(d) or addon.L("QUESTS")
+    if not current() then return end
+    self.heading:SetText(heading)
     local n, offset = 0, 0
     if d then
         local plan = engine:Dungeon(d, { includeUnavailable = self.includeUnavailable })
@@ -538,18 +545,12 @@ function UI:RefreshQuests()
             end
         end
         for _, entry in ipairs(entries) do
-            n = n + 1
-            local row, id, state = self:MakeRow(self.questList, self.rows, n, 59), entry.id, entry.state
-            row.heading, row.questID = entry.heading, id
-            row:SetEnabled(not entry.heading)
-            if entry.heading then
-                row.title:SetText(addon.L(entry.heading)); row.note:SetText("")
-                row.bg:SetColorTexture(0.20, 0.22, 0.26, 1)
-                row:SetScript("OnClick", nil)
+            local id, state = entry.id, entry.state
+            local title, note
+            if entry.heading then title, note = addon.L(entry.heading), ""
             else
-                row.bg:SetColorTexture(0.13, 0.16, 0.20, 1)
-                row.title:SetText(addon.QuestName(id))
-                local note
+                title = addon.QuestName(id)
+                if not current() then return end
                 if state.status == "UNAVAILABLE" then
                     note = audienceLabel(addon.quests[id], current)
                     if note == false then return end
@@ -560,11 +561,25 @@ function UI:RefreshQuests()
                 elseif state.reason == "level" then
                     note = addon.L("level") .. " " .. addon.quests[id].minLevel
                 end
-                row.note:SetText("|cff" .. COLOR[state.status] .. statusLabel(state, note) .. "|r")
-                row:SetScript("OnClick", function() self:InspectQuest(id) end)
+                if not current() then return end
+                note = "|cff" .. COLOR[state.status] .. statusLabel(state, note) .. "|r"
+            end
+            if not current() then return end
+            n = n + 1
+            local row = self:MakeRow(self.questList, self.rows, n, 59)
+            row.heading, row.questID = entry.heading, id
+            row.title:SetText(title); row.note:SetText(note)
+            row:SetEnabled(not entry.heading)
+            if entry.heading then
+                row.bg:SetColorTexture(0.20, 0.22, 0.26, 1)
+                row:SetScript("OnClick", nil)
+            else
+                row.bg:SetColorTexture(0.13, 0.16, 0.20, 1)
+                row:SetScript("OnClick", function() if current() then self:InspectQuest(id) end end)
             end
             styleRow(row, entry.heading and "section" or "quest", id == self.quest and not entry.heading)
             offset = self:LayoutRow(row, entry.heading and 32 or 59, offset)
+            if not current() then return end
         end
         if #plan.rows == 0 then
             self.coverage:SetText(addon.L(#d.quests > 0 and "NO_CHARACTER_QUESTS" or "EMPTY"))
