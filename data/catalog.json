@@ -3527,7 +3527,14 @@
       "finish": {
         "objectID": 142487,
         "name": "The Sparklematic 5200"
-      }
+      },
+      "objectiveItems": [
+        {
+          "itemID": 9308,
+          "name": "Grime-Encrusted Object"
+        }
+      ],
+      "requiredMoney": 300
     },
     {
       "id": 2924,
@@ -4081,7 +4088,14 @@
         "objectID": 142487,
         "name": "The Sparklematic 5200"
       },
-      "repeatable": true
+      "repeatable": true,
+      "objectiveItems": [
+        {
+          "itemID": 9308,
+          "name": "Grime-Encrusted Object"
+        }
+      ],
+      "requiredMoney": 300
     },
     {
       "id": 4605,
