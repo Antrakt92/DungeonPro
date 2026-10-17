@@ -18,6 +18,8 @@ class CatalogTests(unittest.TestCase):
 
     def test_objective_objects_preserve_typed_partial_tasks_and_unknown_quantities(self):
         quest = next(q for q in self.data["quests"] if q["id"] == 5382)
+        # Exercise the optional-absent input independently of current catalogue coverage.
+        quest.pop("objectiveObjects", None)
         original = copy.deepcopy(quest)
         quest["objectiveObjects"] = [
             {"objectID": 176544, "name": "Remains of Eva Sarkhoff Burned"},
