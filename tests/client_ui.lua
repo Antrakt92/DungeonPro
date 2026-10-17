@@ -1059,4 +1059,43 @@ check("Kill-row recovery revalidates raw newer-card ownership after its current-
     assert(visibleDetail(ui,addon.QuestName(96394))and ui.engine:State(96394).status=="UNKNOWN")
 end)
 
+
+check("Actual native title hydration after a completed replacement-card render cannot overwrite its title",function()
+    local ui=actualKillReentryFixture();local getter=C_QuestLog.GetTitleForQuestID;local armed=true
+    C_QuestLog.GetTitleForQuestID=function(id)
+        local name=getter(id)
+        if armed and id==96395 then armed=false;ui.quest=96403;ui:Refresh()end
+        return name
+    end
+    ui:RefreshDetail()
+    assert(not armed and ui.quest==96403)
+    assert(not visibleDetail(ui,addon.quests[96395].name)and visibleDetail(ui,addon.quests[96403].name))
+    assert(visibleDetail(ui,addon.L("OBJECTIVE_ITEM","Dwarven Heirloom",8)))
+end)
+check("Same-card native title reentry preserves the newer generation's title and unchanged source fallback",function()
+    local ui=actualKillReentryFixture();local armed=true;local fresh="Fresh native Hall title";local old="Old native Hall title"
+    C_QuestLog.GetTitleForQuestID=function(id)
+        if id~=96395 then return addon.quests[id]and addon.quests[id].name end
+        if armed then armed=false;ui:RefreshDetail();return old end
+        return fresh
+    end
+    ui:RefreshDetail()
+    assert(not armed and ui.quest==96395 and visibleDetail(ui,fresh)and not visibleDetail(ui,old))
+    C_QuestLog.GetTitleForQuestID=function()return nil end;ui:RefreshDetail()
+    assert(visibleDetail(ui,addon.quests[96395].name)and not visibleDetail(ui,fresh))
+end)
+check("Owned native title SetText before and after replacement reentry preserves the new card and content",function()
+    for _,before in ipairs({true,false})do
+        local ui=actualKillReentryFixture();local title=addon.quests[96395].name;local setter=methods.SetText;local armed=true
+        methods.SetText=function(self,value)
+            if not before then setter(self,value)end
+            if armed and value==title then armed=false;ui.quest=96403;ui:Refresh()end
+            if before then setter(self,value)end
+        end
+        ui:RefreshDetail();methods.SetText=setter
+        assert(not armed and ui.quest==96403 and not visibleDetail(ui,title)and visibleDetail(ui,addon.quests[96403].name))
+        assert(visibleDetail(ui,addon.L("OBJECTIVE_ITEM","Dwarven Heirloom",8)))
+    end
+end)
+
 print("Client/UI modeled checks passed: " .. total .. " (no pixel or native-client validation)")

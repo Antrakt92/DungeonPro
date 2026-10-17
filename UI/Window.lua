@@ -1276,7 +1276,19 @@ function UI:RefreshDetail()
     if id then
         local definition = addon.quests[id]
         local q = definition or {}
-        line(addon.QuestName(id), "title")
+        do
+            local titleGetter, titleChecker = addon.QuestName, issecretvalue
+            local function titleCurrent()
+                return portraitCardCurrent() and addon.quests[id] == definition and addon.QuestName == titleGetter and issecretvalue == titleChecker
+            end
+            local title = addon.Read(titleGetter, "string", id)
+            if not titleCurrent() then return end
+            if not title then
+                local sourceName = addon.Clean(q.name, "string")
+                title = sourceName and #sourceName <= 1024 and sourceName:find("%S") and sourceName or ("#" .. id)
+            end
+            if not titleCurrent() or line(title, "title", nil, nil, titleCurrent) == false then return end
+        end
         local state = engine:State(id)
         line("|cff" .. COLOR[state.status] .. statusLabel(state) .. "|r")
         local logCapability, logOpener = addon.CanOpenQuestLog, addon.OpenQuestLogQuest
