@@ -6244,7 +6244,7 @@ check("Quest glyphs clear on state and heading recycling and never indent note t
     local f=statusGlyphFixture();local row=ui.rows[1];local width=row.statusBaseWidth
     f.active[32001]=false;ui:RefreshQuests()
     assert(row.questID==32001 and row.statusIcon.shown and row.statusInset==20 and row.title.width==width-20 and row.title.point[2]==28 and not row.note.shown)
-    ui.preparation=true;ui:RefreshQuests();assert(ui.rows[1].heading and not ui.rows[1].statusIcon.shown and ui.rows[1].title.width==width)
+    ui.preparation=true;ui:RefreshQuests();assert(ui.rows[1].heading and not ui.rows[1].statusIcon.shown and ui.rows[1].title.width==ui.rows[1]:GetWidth()-22)
     ui.preparation=false;f.active[32001]=true;ui:RefreshQuests();assert(row.statusIcon.shown and row.title.width==width-20)
     ui:RefreshDungeons();for _,card in ipairs(ui.cards)do if card.shown then assert(card.title.point[2]==58 and card.note.point[2]==58)end end
     f:finish()
@@ -9118,7 +9118,7 @@ check("Inline OR and story context remain distinct and status reasons stay avail
     assert(required and story and required.questTreeRelation=="required"and story.questTreeRelation=="story")
     assert(required.note.text:find(addon.L("REQUIREMENT_NOTICE"),1,true)and story.note.text:find(addon.L("STORY_GROUP_NOTICE"),1,true))
     local headings={};for _,row in ipairs(ui.rows)do if row.shown and row.heading then headings[row.title.text]=true end end
-    assert(headings[addon.L("CHAIN")]and headings[addon.L("STORY")]and headings[addon.L("REQUIREMENT_COMPLETE")])
+    assert(next(headings)==nil and required.note.text:find(addon.L("REQUIREMENT_COMPLETE"),1,true))
     local previous=GameTooltip;local tip={}
     function tip:SetOwner(owner)self.owner=owner end;function tip:IsOwned(owner)return self.owner==owner end
     function tip:SetText(value)self.text=value end;function tip:AddLine(value)self.note=value end
@@ -9151,7 +9151,7 @@ check("Compact reward space is reserved before wrapped title measurement without
     addon.QuestListRewards={Paint=function()return 70 end,Clear=function()end}
     measurement=function(fs)
         for _,row in ipairs(ui.rows)do if fs==row.title and row.questID==43000 then
-            assert(fs.width==row:GetWidth()-22-70-(row.statusInset or 0));measured=measured+1;return 54
+            assert(fs.width==row:GetWidth()-22-70-(row.statusInset or 0)-(row.dungeonBadgeReserve or 0));measured=measured+1;return 54
         end end
         return 18
     end
@@ -9177,10 +9177,62 @@ check("Late expired-tree cleanup visibility and handlers cannot hide or disable 
             return getter(id)
         end
         ui:RefreshQuests();addon.QuestName=getter;parent[method]=original
-        local newer=f:row(43004,true)
+        local newer=f:row(43003,true)
         assert(not armed and newer==parent and newer.shown and type(newer.scripts.OnClick)=="function",method)
-        newer.scripts.OnClick();assert(ui.quest==43004 and ui.questTreeRoot==43000)
+        newer.scripts.OnClick();assert(ui.quest==43003 and ui.questTreeRoot==43000)
         f:finish()
     end
+end)
+check("Inline child surfaces attach to their root with rails and exact-ID dungeon badges without duplicate targets",function()
+    local f=inlineTreeFixture();local names=addon.QuestName
+    addon.QuestName=function(id)if id==43000 or id==43003 then return "Same visible title"end;return names(id)end
+    ui.dungeon.quests={43000,43003,43004};ui:RefreshQuests();f:row(43000,false).scripts.OnClick()
+    local seen={};for _,row in ipairs(ui.rows)do if row.shown then
+        assert(not row.heading,"inline branches must not add large caution headings")
+        assert(not seen[row.questID],"each exact quest ID appears once");seen[row.questID]=true
+        if row.questTreeNode then
+            assert(row.point[2]==24 and row.width+row.point[2]==ui.questList:GetWidth()-4)
+            assert(row.treeRail.shown and row.treeElbow.shown and row.height==30 and row.title.point[2]==28)
+        else assert(row.point[2]==0)end
+        local target=row.questID==43000 or row.questID==43003 or row.questID==43004
+        assert(row.dungeonTarget==target and (row.dungeonBadge and row.dungeonBadge.shown or false)==target)
+    end end
+    assert(seen[43000]and seen[43003]and not f:row(43003,false))
+    assert(f:row(43000,false).title.text==f:row(43003,true).title.text,"different IDs sharing a title remain visible")
+    local previous=GameTooltip;local tip={}
+    function tip:SetOwner(owner)self.owner=owner end;function tip:IsOwned(owner)return self.owner==owner end
+    function tip:SetText(value)self.text=value end;function tip:AddLine(value)self.line=value end
+    function tip:Show()self.shown=true end;function tip:Hide()self.shown=false end
+    GameTooltip=tip;f:row(43003,true).scripts.OnEnter()
+    assert(tip.line:find("Inline tree — "..addon.L("QUESTS"),1,true))
+    f:row(43003,true).scripts.OnLeave();GameTooltip=previous;addon.QuestName=names;f:finish()
+end)
+check("Quest-list rebuild masks reused content until all new titles and layout have been staged",function()
+    local f=inlineTreeFixture();local names=addon.QuestName
+    local first,second=f:row(43000,false),f:row(43004,false)
+    local setter,show=first.title.SetText,first.Show;local staged,published=false,false
+    addon.QuestName=function(id)return "Fresh title "..id end
+    first.title.SetText=function(self,value)
+        if value=="Fresh title 43000"then staged=true;assert(not first.shown and not second.shown)end
+        return setter(self,value)
+    end
+    first.Show=function(self)
+        published=true;assert(first.title.text=="Fresh title 43000"and second.title.text=="Fresh title 43004")
+        assert(first.point and second.point and first.height==30 and second.height==30)
+        return show(self)
+    end
+    ui:RefreshQuests();assert(staged and published and first.shown and second.shown)
+    first.title.SetText,first.Show=setter,show;addon.QuestName=names;f:finish()
+end)
+check("Dungeon membership changes during title hydration cannot publish stale target badges",function()
+    local f=inlineTreeFixture();local names,armed=addon.QuestName,true
+    addon.QuestName=function(id)
+        if armed and id==43000 then armed=false;ui.dungeon.quests[1]=43003 end
+        return names(id)
+    end
+    ui:RefreshQuests();assert(not armed)
+    for _,row in ipairs(ui.rows)do assert(not row.shown,"unproven membership cannot publish a staged badge")end
+    addon.QuestName=names;ui:RefreshQuests();assert(f:row(43003,false).dungeonTarget and f:row(43004,false).dungeonTarget)
+    f:finish()
 end)
 print("Preparation UI modeled checks passed: " .. total .. " (no native layout validation)")

@@ -188,6 +188,12 @@ function UI:QuestListHint(row)
     local title = addon.Read(row.title.GetText, "string", row.title)
     local note = addon.Read(row.note.GetText, "string", row.note)
     if not current() or not title or not note then return end
+    if row.dungeonTarget then
+        local dungeonName = addon.Clean(row.dungeonName, "string")
+        if not current() or not dungeonName then return end
+        note = note .. "\n" .. dungeonName .. " — " .. addon.L("QUESTS")
+    end
+    if not current() then return end
     local held = { tip = tip, button = row }; self.navigationTooltip = held
     for _, call in ipairs({ { "SetOwner", row, "ANCHOR_RIGHT" }, { "SetText", title }, { "AddLine", note, 1, 1, 1, true }, { "Show" } }) do
         if not current() or self.navigationTooltip ~= held then return end
@@ -625,7 +631,7 @@ function UI:QuestListWrite(object, method, ownerCurrent, ...)
     return ok and fresh
 end
 
-function UI:MakeRow(parent, pool, index, height, ownerCurrent)
+function UI:MakeRow(parent, pool, index, height, ownerCurrent, staged)
     local row = pool[index]
     if not row then
         row = CreateFrame("Button", nil, parent)
@@ -638,7 +644,7 @@ function UI:MakeRow(parent, pool, index, height, ownerCurrent)
         row.note = label(row, "", 8, -29, parent:GetWidth() - 22, 14)
         pool[index] = row
     end
-    if ownerCurrent then self:QuestListWrite(row, "Show", ownerCurrent) else row:Show() end
+    if ownerCurrent then self:QuestListWrite(row, staged and "Hide" or "Show", ownerCurrent) else row:Show() end
     styleRow(row, "quest", false)
     return row
 end
@@ -653,11 +659,11 @@ function UI:LayoutRow(row, minimum, offset, ownerCurrent, ownerWrite)
     end
     if not current() then return nil end
     if row.compact then
-        local left = 8 + (row.questTreeIndent or 0) + (row.statusInset or 0)
+        local left = 8 + (row.statusInset or 0)
         local height = math.max(minimum, 12 + measuredHeight(row.title, 18))
         if not current() or not write(row.note, "Hide") or not write(row.title, "ClearAllPoints") or
             not write(row.title, "SetPoint", "TOPLEFT", left, -6) or not write(row, "SetHeight", height) or
-            not write(row, "ClearAllPoints") or not write(row, "SetPoint", "TOPLEFT", 0, -offset) then return nil end
+            not write(row, "ClearAllPoints") or not write(row, "SetPoint", "TOPLEFT", row.questTreeInset or 0, -offset) then return nil end
         return offset + height + 2
     end
     if not write(row.note, "SetShown", not row.heading) then return nil end
@@ -1341,7 +1347,7 @@ function UI:PaintQuestRowStatus(row, entry, engine, ownerCurrent)
                 local ok = pcall(texture[method], texture, ...)
                 return ok and current()
             end
-            if configure("SetSize", 16, 16) and configure("ClearAllPoints") and configure("SetPoint", "TOPLEFT", 8 + (row.questTreeIndent or 0), row.compact and -7 or -8) then
+            if configure("SetSize", 16, 16) and configure("ClearAllPoints") and configure("SetPoint", "TOPLEFT", 8, row.compact and -7 or -8) then
                 if compactRole then painted = addon.Read(usable, "boolean", texture, status, state and state.reason, current) == true
                 else painted = addon.Read(usable, "boolean", texture, status, current, row.compact, state and state.reason) == true end
             end
@@ -1369,6 +1375,8 @@ end
 function UI:RefreshQuests()
     local d, character, previousGeneration = self.dungeon, addon.char, self.questListGeneration
     local preparation, includeUnavailable = self.preparation, self.includeUnavailable
+    local targets, targetIDs, targetSet = d and d.quests, {}, {}
+    for index, id in ipairs(targets or {}) do targetIDs[index] = id; targetSet[id] = true end
     local context = addon.Context()
     if self.dungeon ~= d or addon.char ~= character or self.questListGeneration ~= previousGeneration then return end
     local engine = addon.Planner.New(addon.quests, context, addon.Clean(character.choices, "table"))
@@ -1380,6 +1388,8 @@ function UI:RefreshQuests()
         local owned = self.questListGeneration == generation and self.engine == engine and self.dungeon == d and addon.char == character and
             self.preparation == preparation and self.includeUnavailable == includeUnavailable
         if not owned or treeFailed then return false end
+        if d and (d.quests ~= targets or #targets ~= #targetIDs) then return false end
+        for index, id in ipairs(targetIDs) do if targets[index] ~= id then return false end end
         if treeCurrent and addon.Read(treeCurrent, "boolean") ~= true then
             treeFailed = true
             -- Retire only this still-current hierarchy; callbacks may already
@@ -1415,7 +1425,7 @@ function UI:RefreshQuests()
         return false
     end
     for _, row in ipairs(self.rows) do
-        if not write(row, "SetEnabled", false) or not write(row, "SetScript", "OnClick", nil) then return end
+        if not write(row, "Hide") or not write(row, "SetEnabled", false) or not write(row, "SetScript", "OnClick", nil) then return end
     end
     local heading = d and addon.DungeonName(d) or addon.L("QUESTS")
     if not current() then return end
@@ -1465,24 +1475,23 @@ function UI:RefreshQuests()
             tree = build and addon.Read(build, "table", addon.quests, engine, self.questTreeRoot)
             if not current() then return end
             if tree then
-                local expanded = {}
+                local expanded, treeIDs, anchor = {}, {}, false
+                for _, entry in ipairs(entries) do if entry.id == self.questTreeRoot then anchor = true end end
+                if anchor then for _, node in ipairs(tree) do if not node.root then treeIDs[node.id] = true end end end
+                local seen = {}
                 for _, entry in ipairs(entries) do
-                    expanded[#expanded + 1] = entry
-                    if entry.id == self.questTreeRoot then
-                        local relation, option
-                        for _, node in ipairs(tree) do
-                            if not node.root then
-                                if node.relation ~= relation then
-                                    relation = node.relation
-                                    expanded[#expanded + 1] = { heading = relation == "story" and "STORY" or "CHAIN" }
+                    if entry.heading or (not treeIDs[entry.id] and not seen[entry.id]) then
+                        expanded[#expanded + 1] = entry
+                        if entry.id then seen[entry.id] = true end
+                        if entry.id == self.questTreeRoot then
+                            local last
+                            for _, node in ipairs(tree) do
+                                if not node.root and not seen[node.id] then
+                                    local branch = { id = node.id, state = node.state, tree = node, rootID = entry.id }
+                                    expanded[#expanded + 1] = branch; seen[node.id] = true; last = branch
                                 end
-                                local group = node.alternatives and node.alternatives > 1 and tostring(node.parentID) .. ":" .. tostring(node.group)
-                                if group and group ~= option then
-                                    option = group
-                                    expanded[#expanded + 1] = { heading = node.mode == "active" and "REQUIREMENT_ACTIVE" or "REQUIREMENT_COMPLETE" }
-                                end
-                                expanded[#expanded + 1] = { id = node.id, state = node.state, tree = node, rootID = entry.id }
                             end
+                            if last then last.treeLast = true end
                         end
                     end
                 end
@@ -1509,11 +1518,14 @@ function UI:RefreshQuests()
                 end
                 if not current() then return end
                 note = "|cff" .. COLOR[state.status] .. statusLabel(state, note) .. "|r"
-                if entry.tree then note = note .. "\n" .. addon.L(entry.tree.relation == "story" and "STORY_GROUP_NOTICE" or "REQUIREMENT_NOTICE") end
+                if entry.tree then
+                    note = note .. "\n" .. addon.L(entry.tree.relation == "story" and "STORY_GROUP_NOTICE" or "REQUIREMENT_NOTICE")
+                    if entry.tree.alternatives and entry.tree.alternatives > 1 then note = note .. "\n" .. addon.L(entry.tree.mode == "active" and "REQUIREMENT_ACTIVE" or "REQUIREMENT_COMPLETE") end
+                end
             end
             if not current() then return end
             n = n + 1
-            local row = self:MakeRow(self.questList, self.rows, n, entry.heading and 32 or 30, current)
+            local row = self:MakeRow(self.questList, self.rows, n, entry.heading and 32 or 30, current, true)
             if not current() then return end
             row.heading, row.questID, row.compact = entry.heading, id, not entry.heading and not preparation
             row.questCompleted = state and state.status == "COMPLETED"
@@ -1521,7 +1533,10 @@ function UI:RefreshQuests()
             row.questTreeRoot = entry.rootID or id
             row.questTreeRelation = entry.tree and entry.tree.relation
             row.questTreeDepth = entry.tree and entry.tree.depth or 0
-            row.questTreeIndent = entry.tree and math.min(3, math.max(1, row.questTreeDepth)) * 12 or 0
+            row.questTreeIndent, row.questTreeInset = 0, entry.tree and 24 or 0
+            row.dungeonTarget, row.dungeonName = targetSet[id] == true, heading
+            local width = addon.Read(self.questList.GetWidth, "number", self.questList)
+            if not current() or not width or width <= 28 or not write(row, "SetWidth", width - 4 - row.questTreeInset) then return end
             row.questListCurrent = current
             if not write(row, "SetScript", "OnEnter", function() if current() then self:QuestListHint(row) end end) or
                 not write(row, "SetScript", "OnLeave", function() self:HideNavigationHint() end) then return end
@@ -1532,7 +1547,22 @@ function UI:RefreshQuests()
             if not reserve or reserve < 0 or reserve > 100 then reserve = 0 end
             if entry.heading and rewards then addon.Read(rewards.Clear, "nil", row) end
             if not current() then return end
-            row.statusBaseWidth = math.max(24, row:GetWidth() - 22 - row.questTreeIndent - reserve)
+            local badge = row.dungeonBadge
+            if row.dungeonTarget and not badge then
+                local ok, texture = pcall(row.CreateTexture, row, nil, "ARTWORK")
+                if not current() then return end
+                if ok then row.dungeonBadge, badge = texture, texture end
+            end
+            if badge then
+                if not write(badge, "Hide") then return end
+                if row.dungeonTarget then
+                    if not write(badge, "SetTexture", "Interface\\Icons\\INV_Misc_Map_01") or not write(badge, "SetSize", 12, 12) or
+                        not write(badge, "ClearAllPoints") or not write(badge, "SetPoint", "TOPRIGHT", row, "TOPRIGHT", -6 - reserve, -9) or
+                        not write(badge, "Show") then return end
+                end
+            end
+            row.dungeonBadgeReserve = row.dungeonTarget and 18 or 0
+            row.statusBaseWidth = math.max(24, row:GetWidth() - 22 - reserve - row.dungeonBadgeReserve)
             if not current() then return end
             if not self:PaintQuestRowStatus(row, entry, engine, current) then return end
             if not writeText(row.title, title) or not writeText(row.note, note) or
@@ -1578,6 +1608,22 @@ function UI:RefreshQuests()
             end
             offset = self:LayoutRow(row, entry.heading and 32 or (preparation and 59 or 30), offset, current)
             if not offset then return end
+            if entry.tree and not row.treeRail then
+                local ok, rail, elbow = pcall(function() return row:CreateTexture(nil, "ARTWORK"), row:CreateTexture(nil, "ARTWORK") end)
+                if not current() then return end
+                if ok then row.treeRail, row.treeElbow = rail, elbow end
+            end
+            for _, connector in ipairs({ row.treeRail, row.treeElbow }) do if not write(connector, "Hide") then return end end
+            if entry.tree and row.treeRail and row.treeElbow then
+                for _, connector in ipairs({ row.treeRail, row.treeElbow }) do
+                    if not write(connector, "SetColorTexture", .32, .48, .57, .85) or not write(connector, "ClearAllPoints") then return end
+                end
+                local height = addon.Read(row.GetHeight, "number", row)
+                if not current() or not height or not write(row.treeRail, "SetSize", 1, entry.treeLast and 18 or height + 2) or
+                    not write(row.treeRail, "SetPoint", "TOPLEFT", row, "TOPLEFT", -12, 2) or
+                    not write(row.treeElbow, "SetSize", 12, 1) or not write(row.treeElbow, "SetPoint", "TOPLEFT", row, "TOPLEFT", -12, -15) or
+                    not write(row.treeRail, "Show") or not write(row.treeElbow, "Show") then return end
+            end
         end
         if #plan.rows == 0 then
             if not writeText(self.coverage, addon.L(#d.quests > 0 and "NO_CHARACTER_QUESTS" or "EMPTY")) then return end
@@ -1604,6 +1650,8 @@ function UI:RefreshQuests()
         if not current() then return end
     end
     if not write(self.questList, "SetHeight", math.max(1, offset)) then return end
+    -- Publish only after every reused row has its new text, geometry and owner.
+    for index = 1, n do if not write(self.rows[index], "Show") then return end end
     local identity = d and (addon.Clean(d.key, "string") or d)
     if not current() then return end
     if self.questListDungeon ~= identity then
@@ -2399,7 +2447,7 @@ function UI:RefreshDetail()
             return ok and storyCurrent()
         end
         if showChain then
-            line(addon.L((q.storyline or q.storylineGroups) and "STORY" or "CHAIN"), "section")
+            line(addon.L((q.storyline or q.storylineGroups) and "STORY_SHORT" or "CHAIN"), "section")
             local toggle = self.storyToggle
             if not toggle then
                 toggle = CreateFrame("Button", nil, self.detail)
