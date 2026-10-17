@@ -70,7 +70,7 @@ Level ranges are provisional recommendations.
   before pickup, separately from objectives reported by the game.
 - Other sourced tasks, including event and discovery objectives or burning
   remains, share a separate reference section. Event tasks are distinct from
-  kill objectives, and objectives reported by the game is shown separately.
+  kill objectives. Objectives reported by the game appear separately.
 - Items supplied by a quest have their own section. They may already have been
   used or consumed, so an empty bag count does not mean preparation has failed.
   Starter, collection and supplied items can show native icons and hover tooltips;
