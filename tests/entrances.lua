@@ -179,5 +179,140 @@ check("Actual Thanes recorded entrance survives the missing native join without 
     assert(point ~= giver and (point.x ~= giver.x or point.y ~= giver.y))
     thanes.entrance = {}; assert(not current())
 end)
+local reviewedSources = {
+    "https://wowhandbook.com/zones/dungeons/blackrock-spire/",
+    "https://www.warcrafttavern.com/forever/guides/dungeon-entrances/",
+    "https://warcrafttavern.com/forever/guides/dungeon-entrances/",
+    "https://www.wowhead.com/forever/zone=718",
+    "https://www.wowhead.com/forever/zone=718/wailing-caverns",
+    "https://www.wowhead.com/forever/guide/dungeons-overview-locations-details",
+}
+local function recordedFixture(source, known)
+    local e = reset(); C_EncounterJournal = nil
+    if not known then dungeon.instanceID = nil end
+    dungeon.entrance = { mapID = 1428, x = 33, y = 25.2, source = source }
+    if known then dungeon.entrance.gameMapID = dungeon.instanceID end
+    return e, dungeon.entrance
+end
+check("Reviewed source families preserve typed known identities and do not guess unknown GameMaps", function()
+    for _, source in ipairs(reviewedSources) do
+        for _, known in ipairs({ true, false }) do
+            local e, entry = recordedFixture(source, known)
+            local point, current = e.Get(dungeon)
+            assert(point and current() and point.origin == "recorded" and point.source == source)
+            assert(point.mapID == 1428 and point.x == 33 and point.y == 25.2)
+            assert((known and dungeon.instanceID == 36 and entry.gameMapID == 36) or
+                (not known and dungeon.instanceID == nil and entry.gameMapID == nil))
+            assert(joins == 0 and #calls == 0, "recorded fallback starts no unavailable native reads")
+        end
+    end
+end)
+check("Known GameMap bindings cannot be omitted changed or supplied by a different source identity", function()
+    for _, source in ipairs(reviewedSources) do
+        for _, value in ipairs({ false, true, 0, 37, "36", secret }) do
+            local e, entry = recordedFixture(source, true)
+            entry.gameMapID = value
+            assert(e.Get(dungeon) == nil)
+        end
+        local e, entry = recordedFixture(source, true)
+        entry.gameMapID = nil
+        assert(e.Get(dungeon) == nil)
+    end
+    local e, entry = recordedFixture("https://phylactery.io/instance/36", false)
+    assert(e.Get(dungeon) == nil)
+    entry.gameMapID = 36
+    assert(e.Get(dungeon) == nil, "a source URL cannot invent the dungeon GameMap")
+end)
+check("Explicit shared recorded approach supports both wings without changing native ambiguity", function()
+    local e, entry = recordedFixture(reviewedSources[1], true)
+    dungeon.instanceID, dungeon.wing, entry.gameMapID = 229, "lower", 229
+    local upper = { key = "upper", name = "Upper wing", instanceID = 229, wing = "upper", quests = {},
+        entrance = { gameMapID = 229, mapID = 1428, x = 33, y = 25.2, source = reviewedSources[1] } }
+    addon.dungeons[2] = upper
+    assert(e.Get(dungeon) == nil and e.Get(upper) == nil)
+    entry.scope, entry.kind = "shared", "approach"
+    upper.entrance.scope, upper.entrance.kind = "shared", "approach"
+    local point, current = e.Get(dungeon)
+    local other, otherCurrent = e.Get(upper)
+    assert(point and other and current() and otherCurrent())
+    assert(point.scope == "shared" and point.kind == "approach" and point.origin == "recorded")
+    assert(other.scope == "shared" and other.kind == "approach" and other.origin == "recorded")
+    assert(joins == 0 and #calls == 0 and point.x == other.x and point.y == other.y)
+    entry.scope = nil
+    assert(not current() and e.Get(dungeon) == nil and otherCurrent())
+end)
+check("Unknown-instance approach keeps its outer-route kind and never becomes a native portal", function()
+    local e, entry = recordedFixture(reviewedSources[6], false)
+    entry.kind = "approach"
+    local point, current = e.Get(dungeon)
+    assert(point and current() and point.kind == "approach" and point.origin == "recorded")
+    assert(point.gameMapID == nil and point.journalInstanceID == nil and joins == 0)
+    entry.kind = "portal"
+    assert(not current() and e.Get(dungeon) == nil)
+end)
+check("Runtime provenance guards match canonical client domains paths and positive zone IDs", function()
+    for _, source in ipairs({
+        "https://wowhandbook.com.evil.invalid/zones/dungeons/blackrock-spire/",
+        "http://wowhandbook.com/zones/dungeons/blackrock-spire/",
+        "https://wowhandbook.com/zones/dungeons/blackrock-spire/?x=33",
+        "https://wowhandbook.com/zones/dungeons/blackrock-spire/#entry",
+        "https://www.warcrafttavern.com/wow-classic/guides/dungeon-entrances/",
+        "https://www.wowhead.com/classic/zone=718/wailing-caverns",
+        "https://www.wowhead.com/forever/npc=718",
+        "https://www.wowhead.com/forever/zone=0",
+        "https://www.wowhead.com/forever/zone=000718",
+        "https://www.wowhead.com/forever/zone=718?x=33",
+        "https://www.wowhead.com/forever/guide/dungeons-overview-locations-details/",
+        " https://www.wowhead.com/forever/zone=718",
+    }) do
+        local e = recordedFixture(source, true)
+        assert(e.Get(dungeon) == nil, source)
+    end
+end)
+check("Absent optional identity and route fields cannot drift to invalid present aliases", function()
+    for _, fieldName in ipairs({ "instanceID", "wing", "gameMapID", "scope", "kind" }) do
+        for _, value in ipairs({ false, true, 0, "unsupported", secret }) do
+            local e, entry = recordedFixture(reviewedSources[1], false)
+            local point, current = e.Get(dungeon)
+            assert(point and current())
+            local owner = (fieldName == "instanceID" or fieldName == "wing") and dungeon or entry
+            owner[fieldName] = value
+            assert(not current(), "absent->invalid drift: " .. fieldName)
+            assert(e.Get(dungeon) == nil, "fresh read rejects invalid " .. fieldName)
+        end
+    end
+end)
+check("Recorded point owner source and output changes expire both known and unknown contexts", function()
+    for _, known in ipairs({ true, false }) do
+        for _, fieldName in ipairs({ "source", "mapID", "x", "y" }) do
+            local e, entry = recordedFixture(reviewedSources[1], known)
+            local point, current = e.Get(dungeon)
+            assert(point and current())
+            if fieldName == "source" then entry.source = reviewedSources[2]
+            else point[fieldName] = secret end
+            assert(not current(), "detached source/output: " .. fieldName)
+        end
+        local e = recordedFixture(reviewedSources[1], known)
+        local _, current = e.Get(dungeon)
+        addon.dungeons = { dungeon }
+        assert(not current(), "replacement catalogue must expire a retained route")
+    end
+end)
+check("Every sourced current catalogue entrance is usable without optional native services", function()
+    local e = reset(); assert(loadfile("Database/Catalog.lua"))("DungeonPro", addon)
+    C_EncounterJournal = nil
+    local present = false
+    for _, selected in ipairs(addon.dungeons) do
+        local point, current = e.Get(selected)
+        if selected.entrance then
+            local entry = selected.entrance
+            present = true
+            assert(point and current(), selected.key .. ": sourced route is usable")
+            assert(point.mapID == entry.mapID and point.x == entry.x and point.y == entry.y and point.source == entry.source)
+            assert(point.origin == "recorded" and point.kind == entry.kind and point.scope == entry.scope)
+        else assert(point == nil, selected.key .. ": no fabricated route for absent evidence") end
+    end
+    assert(present, "current catalogue includes reviewed source routes")
+end)
 issecretvalue = nil
 print("Entrance modeled checks passed: " .. total .. " (native coverage unverified)")

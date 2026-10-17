@@ -305,7 +305,7 @@ local function showDetail(id, context)
     local generation = showCompactDetail(id, context)
     if generation and ui.rewardGeneration == generation then expandDetail() end
 end
-check("Compact cards keep real next guidance and a short qualified chain before optional references", function()
+check("Quest cards show mandatory prerequisites before next guidance and keep references optional", function()
     local dungeon = ui.dungeon
     for _, id in ipairs({ 99220, 99221, 99222 }) do
         addon.quests[id] = { id = id, name = "Same title", minLevel = 1, requirementsKnown = true,
@@ -315,12 +315,12 @@ check("Compact cards keep real next guidance and a short qualified chain before 
     addon.quests[99221].requires = { { ids = { 99222 } } }
     ui.dungeon = { key = "compact", quests = { 99220 } }
     showCompactDetail(99220)
-    assert(not ui.detailReferencesExpanded and not ui.detailChainExpanded and ui.giver.enabled)
+    assert(not ui.detailReferencesExpanded and ui.detailChainExpanded and ui.giver.enabled)
     assert(ui.action.id == 99222 and ui.referenceToggle.shown and ui.storyToggle.shown)
     local rows = {}; for _, row in ipairs(ui.chainButtons) do if row.shown then rows[#rows + 1] = row end end
-    assert(#rows == 2)
-    assert(rows[1].label.text:find("(#99221)", 1, true) and rows[2].label.text:find("(#99220)", 1, true))
-    assert(-ui.referenceToggle.point[3] > -rows[2].point[3])
+    assert(#rows == 3)
+    assert(rows[1].label.text:find("Quest 99222", 1, true) and rows[3].label.text:find("Quest 99220", 1, true))
+    assert(-ui.referenceToggle.point[3] > -rows[3].point[3])
     assert(not detailHas(addon.L("START")))
     ui.storyToggle.scripts.OnClick()
     local count = 0; for _, row in ipairs(ui.chainButtons) do if row.shown then count = count + 1 end end
@@ -334,11 +334,12 @@ check("Compact OR context never selects an arbitrary mandatory predecessor and d
     addon.quests[99230].requires = { { ids = { 99231, 99232 } } }
     addon.quests[99230].start = { mapID = 1, x = 20, y = 30 }
     ui.dungeon = { key = "compact-or", quests = { 99230 } }; showCompactDetail(99230)
-    local count = 0; for _, row in ipairs(ui.chainButtons) do if row.shown then count = count + 1; assert(row.label.text:find("(#99230)", 1, true)) end end
-    assert(count == 1 and not ui.requirementButtons[1].shown)
+    local count = 0; for _, row in ipairs(ui.chainButtons) do if row.shown then count = count + 1 end end
+    assert(count == 3 and ui.branchButtons[1].shown and not ui.requirementButtons[1].shown)
     local action, status = ui.action, ui.engine:State(99230).status
     ui.referenceToggle.scripts.OnClick()
     assert(ui.detailReferencesExpanded and ui.giver.enabled and ui.action.id == action.id and ui.action.kind == action.kind and ui.engine:State(99230).status == status)
+    ui.storyToggle.scripts.OnClick(); assert(not ui.branchButtons[1].shown)
     ui.storyToggle.scripts.OnClick(); assert(ui.branchButtons[1].shown)
     ui.referenceToggle.scripts.OnClick(); assert(not ui.detailReferencesExpanded and ui.detailChainExpanded and ui.branchButtons[1].shown)
     for _, id in ipairs({ 99230, 99231, 99232 }) do addon.quests[id] = nil end
@@ -405,7 +406,8 @@ check("Quest-giver visits keep prerequisite guidance on its original action", fu
     ui.giver.scripts.OnClick()
     assert(started[1].id == 100 and started[1].kind == "visit" and ui.action == prerequisite)
     ui.guide.scripts.OnClick()
-    assert(started[2] == prerequisite and started[2].id == 2)
+    assert(started[2].id == 100 and started[2].kind == "visit" and ui.action == prerequisite)
+    assert(ui.map.text == addon.L("GIVER_MAP") and ui.guide.text == addon.L("VISIT_GIVER"))
     addon.quests[100].start = originalStart
 end)
 check("Map-only quest givers open their known zone and missing givers disable visits", function()
@@ -594,7 +596,7 @@ check("OR alternatives support explicit persisted choices, automatic reset and s
     local choices = addon.char.choices
     ui.dungeon = { name = "Branch fixture", coverage = "reviewed", quests = { 400 } }
     ui.preparation, ui.quest = false, 400; ui:Refresh()
-    ui.storyToggle.scripts.OnClick()
+    assert(ui.detailChainExpanded, "mandatory alternatives are visible on first open")
     local function option(parent)
         for _, b in ipairs(ui.branchButtons) do
             if b.shown and b.questID == 400 and b.groupIndex == 1 and b.parentID == parent then return b end
@@ -1758,7 +1760,7 @@ check("Partial requirement chains show held-parent work while keeping the target
         assert(#plan.actions == 1 and plan.actions[1].id == 9951)
         assert(plan.actions[1].kind == (turnin and "turnin" or "complete"))
         assert(ui.action and ui.action.id == 9951 and ui.action.kind == plan.actions[1].kind)
-        assert(ui.guide.enabled == turnin and ui.map.enabled == turnin)
+        assert(not ui.guide.enabled and not ui.map.enabled, "missing selected giver cannot navigate to a prerequisite instead")
         assert(detailIncludes("|cffb4aacd" .. addon.L("UNKNOWN_REQUIREMENTS") .. "|r"))
         local heldRow, targetRow
         for _, row in ipairs(visibleRows()) do
@@ -3470,13 +3472,15 @@ local function multiActionFixture()
         ui.quest,ui.dungeon,ui.detailHistory=saved.quest,saved.dungeon,saved.history;ui:Refresh()
     end
 end
-check("Every independent preparation action can control guidance without changing the inspected target",function()
+check("Independent prerequisite actions open their own giver before header navigation",function()
     local restore=multiActionFixture()
     local routed={};addon.Navigation={Start=function(action)routed[#routed+1]=action end,Map=function(point)routed[#routed+1]=point end}
     assert(ui.actionButtons and ui.actionButtons[1].shown and ui.actionButtons[2].shown)
     assert(ui.action.id==20002)
     ui.actionButtons[2].scripts.OnClick(ui.actionButtons[2],"LeftButton",false)
     assert(ui.quest==20001 and ui.action.id==20003 and #ui.detailHistory==0 and #routed==0)
+    ui.guide.scripts.OnClick();ui.map.scripts.OnClick();assert(#routed==0 and not ui.giverAction)
+    ui.actionInspectButtons[2].scripts.OnClick();assert(ui.quest==20003)
     ui.guide.scripts.OnClick(ui.guide,"LeftButton",false)
     assert(routed[1].id==20003 and routed[1].place==addon.quests[20003].start)
     ui.map.scripts.OnClick();assert(routed[2]==addon.quests[20003].start)
@@ -3605,6 +3609,7 @@ check("Guidance is published only after a current engine finishes later detail h
 end)
 check("Explicit map and guide clicks reject invalid throwing and reentered engine contexts",function()
     local restore=multiActionFixture()
+    addon.quests[20001].start={mapID=1,x=45,y=55,name="Selected giver"};ui:RefreshDetail()
     local calls=0;addon.Navigation={Map=function()calls=calls+1 end,Start=function()calls=calls+1 end}
     local current=ui.engine.Current
     for _,getter in ipairs({function()return false end,function()return nil end,function()error("expired")end})do
@@ -5746,7 +5751,8 @@ check("Next preparation appears before all twelve actual2933 starting references
     end end
     assert(starts==12 and nextY<ui.detailScroll:GetHeight() and ui.engine:State(9970).status=="UNKNOWN")
     assert(not ui.action and not ui.map.enabled and not ui.guide.enabled and calls==0)
-    assert(detailSectionY(addon.L("START_ALTERNATIVES"))>nextY)
+    assert(detailSectionY(addon.L("START_ALTERNATIVES"))<nextY and ui.giverButtons[1].shown and ui.giverButtons[2].shown)
+    assert(not ui.giverButtons[3] or not ui.giverButtons[3].shown, "giver preview remains bounded while references retain all twelve sources")
     assert(detailHas(addon.L("REWARD_ITEM","Fixed reward",2)))
     addon.Navigation=nav;f:finish()
 end)
@@ -5761,7 +5767,7 @@ check("Promoted multi-action selection and inspection precede reference location
     ui.actionButtons[2].scripts.OnClick(ui.actionButtons[2],"LeftButton",false)
     assert(ui.action.id==20003 and ui.quest==20001 and ui.engine:State(20001).status==status and #calls==0)
     ui.guide.scripts.OnClick();ui.map.scripts.OnClick()
-    assert(calls[1].id==20003 and calls[1].place==addon.quests[20003].start and calls[2]==addon.quests[20003].start)
+    assert(#calls==0, "selected target has alternatives, not the chosen prerequisite's giver")
     ui.actionInspectButtons[2].scripts.OnClick();assert(ui.quest==20003)
     assert(ui:BackQuest() and ui.quest==20001); expandDetail(); assert(ui.startButtons[12].shown)
     restore()
@@ -5847,7 +5853,7 @@ check("A single real ancestor turn-in names Wiley in Redridge separately from in
     assert(destinationLine(addon.L("START")..": Gryan Stoutmantle — Westfall"))
     assert(-target.point[3]<-destinationLine(addon.L("START")..": Gryan Stoutmantle").point[3])
     ui.guide.scripts.OnClick();ui.map.scripts.OnClick()
-    assert(f.visits[1].id==65 and f.visits[1].place==quests[65].finish and f.visits[2]==quests[65].finish)
+    assert(f.visits[1].id==166 and f.visits[1].kind=="visit" and f.visits[1].place==quests[166].start and f.visits[2]==quests[166].start)
     assert(ui.engine:State(166).status=="LOCKED")
     f:restore()
 end)
@@ -7038,7 +7044,7 @@ check("Reward context precedes all twelve actual2933 source references after cur
     local context={level=60,faction="Alliance",class="WARRIOR",race=1,completed=function()return false end,active=function()return false end}
     local progress=addon.QuestObjectives;addon.QuestObjectives=function()return{{text="Live objective retained",finished=false}}end
     for code in pairs(addon.locales)do addon.db.locale=code;showDetail(2933,context)
-        local rewardY=detailSectionY(addon.L("REWARD_ITEMS"));local referenceY=detailSectionY(addon.L("START_ALTERNATIVES"))
+        local rewardY=detailSectionY(addon.L("REWARD_ITEMS"));local referenceY=ui.startButtons[1].shown and -ui.startButtons[1].point[3]
         assert(rewardY and referenceY and detailSectionY(addon.L("NEXT"))<rewardY and detailSectionY(addon.L("OBJECTIVE_PROGRESS"))<rewardY)
         assert(rewardY<referenceY,"Available reward context is buried behind twelve source references")
         assert(detailOccurrences(addon.L("REWARD_ITEM","Fixed reward",2))==1 and detailOccurrences(addon.L("REWARD_ITEM","Choice reward",1))==1)
@@ -7055,7 +7061,7 @@ check("Reward priority retains hidden unknown empty and zero contexts while sour
         f.data=kind=="known"and{source="dialogue",items={{id=701,name="Fixed reward",count=2,texture=123}},choices={},xp=0,money=300}
             or kind=="empty"and{source="dialogue",items={},choices={},xp=0,money=0}
             or kind=="hidden"and{source="dialogue",hidden=true}or nil
-        ui:RefreshDetail();local reference=detailSectionY(addon.L("START_ALTERNATIVES"))
+        ui:RefreshDetail();local reference=-ui.startButtons[1].point[3]
         local key=kind=="known"and"REWARD_ITEMS"or kind=="empty"and"REWARD_NO_ITEMS"or kind=="hidden"and"REWARD_HIDDEN"or"REWARD_UNAVAILABLE"
         assert(detailSectionY(addon.L(key))<reference)
         assert(detailHas(addon.L("REWARD_XP",0))==(kind=="known"or kind=="empty"))
@@ -8231,7 +8237,7 @@ check("Accepted primary navigation keeps the movable planner open and only expli
         local history=ui.detailHistory;ui.detailOffsets={ [2]=70 };ui.detailOffsetsOwner=history
         local calls=0
         addon.Navigation={Start=function(value)
-            calls=calls+1;assert(value==(route=="guide"and action or giver));return true
+            calls=calls+1;assert(value==giver);return true
         end,Map=function(value)
             calls=calls+1;assert(value==(route=="map"and action.place or giver.place));return true,false
         end}
@@ -8857,4 +8863,94 @@ do
         end
     end)
 end
+check("Compact selected giver stays visible before the mandatory chain and never routes to its ancestor",function()
+    local quest,dungeon,navigation=ui.quest,ui.dungeon,addon.Navigation
+    local calls={};addon.Navigation={Map=function(point)calls[#calls+1]=point end,Start=function(action)calls[#calls+1]=action end}
+    for id=42000,42002 do
+        addon.quests[id]={id=id,minLevel=1,requirementsKnown=true,start={name="Giver "..id,mapID=1,x=20,y=30}}
+        if id<42002 then addon.quests[id].requires={{ids={id+1}}}end
+    end
+    ui.dungeon={key="visible-giver-chain",quests={42000}};showCompactDetail(42000)
+    assert(not ui.detailReferencesExpanded and ui.detailChainExpanded and ui.chainButtons[1].shown)
+    assert(detailSectionY(addon.L("QUEST_GIVER"))<detailSectionY(addon.L("CHAIN")))
+    assert(-ui.chainButtons[1].point[3]<detailSectionY(addon.L("NEXT")))
+    assert(destinationLine("Giver 42000") and ui.action.id==42002)
+    ui.map.scripts.OnClick();ui.guide.scripts.OnClick()
+    assert(calls[1]==addon.quests[42000].start and calls[2].id==42000 and calls[2].kind=="visit")
+    local source=addon.quests[42000].start
+    for field,value in pairs({npcID=99,objectID=88,itemID=77,name="Different giver",zoneName="Different area",x=45})do
+        local previous=source[field];source[field]=value
+        ui.map.scripts.OnClick();ui.guide.scripts.OnClick();ui.giver.scripts.OnClick()
+        assert(#calls==2,"giver identity or location changes expire all old navigation bindings: "..field)
+        source[field]=previous;ui:RefreshDetail()
+    end
+    for id=42000,42002 do addon.quests[id]=nil end
+    addon.Navigation=navigation;ui.quest,ui.dungeon=quest,dungeon;ui:Refresh()
+end)
+check("Level-only cards show concise level metadata and giver location without a promoted reach-level step",function()
+    local quest,dungeon,navigation=ui.quest,ui.dungeon,addon.Navigation
+    addon.quests[41000]={id=41000,minLevel=80,requirementsKnown=true,start={name="Level quest giver",mapID=1455}}
+    ui.dungeon={key="level-copy",quests={41000}};showCompactDetail(41000)
+    assert(ui.action.kind=="level" and detailHas(addon.L("QUEST_MIN_LEVEL",80)))
+    assert(not detailHas(addon.L("NEXT")) and not detailIncludes(addon.L("level")))
+    assert(detailHas(addon.L("QUEST_GIVER")) and destinationLine("Level quest giver"))
+    assert(detailHas(addon.L("GIVER_COORDINATES_UNKNOWN")) and ui.map.enabled and not ui.guide.enabled)
+    addon.quests[41000].start.mapID=nil;ui:RefreshDetail()
+    assert(detailHas(addon.L("GIVER_LOCATION_UNKNOWN")) and not ui.map.enabled and not ui.guide.enabled)
+    addon.quests[41000]=nil;addon.Navigation=navigation;ui.quest,ui.dungeon=quest,dungeon;ui:Refresh()
+end)
+check("Mapped alternative giver areas remain explicit compact choices and stale choice callbacks expire",function()
+    local actual={};assert(loadfile("Database/Catalog.lua"))("DungeonPro",actual)
+    local quest,dungeon,navigation=ui.quest,ui.dungeon,addon.Navigation
+    local first,second=addon.quests[7492],addon.quests[7494]
+    addon.quests[7492],addon.quests[7494]=actual.quests[7492],actual.quests[7494]
+    local mapped,started={},0
+    addon.Navigation={Map=function(point)mapped[#mapped+1]=point end,Start=function()started=started+1 end}
+    ui.dungeon={key="explicit-giver-choice",quests={7492,7494}};showCompactDetail(7492)
+    assert(not ui.detailReferencesExpanded and not ui.map.enabled and not ui.guide.enabled)
+    assert(ui.giverButtons[1].shown and ui.giverButtons[1].enabled and ui.giverButtons[2].shown and not ui.giverButtons[2].enabled)
+    local old=ui.giverButtons[1].scripts.OnClick;old()
+    assert(mapped[1]==actual.quests[7492].startAlternatives[1] and started==0)
+    showCompactDetail(7494);old();assert(#mapped==1)
+    ui.giverButtons[1].scripts.OnClick();assert(mapped[2]==actual.quests[7494].startAlternatives[1] and started==0)
+    addon.quests[7492],addon.quests[7494]=first,second;addon.Navigation=navigation;ui.quest,ui.dungeon=quest,dungeon;ui:Refresh()
+end)
+check("Long mandatory chains open as bounded visible prerequisite context with an explicit full expansion",function()
+    local quest,dungeon=ui.quest,ui.dungeon
+    for id=41001,41009 do
+        addon.quests[id]={id=id,minLevel=1,requirementsKnown=true,start={name="Chain giver",mapID=1,x=20,y=30}}
+        if id<41009 then addon.quests[id].requires={{ids={id+1}}}end
+    end
+    ui.dungeon={key="long-mandatory",quests={41001}};showCompactDetail(41001)
+    local shown,parentVisible=0,false
+    for _,row in ipairs(ui.chainButtons)do if row.shown then
+        shown=shown+1;if row.label.text:find("Quest 41002",1,true)then parentVisible=true end
+    end end
+    assert(not ui.detailChainExpanded and shown>1 and shown<=6 and parentVisible and detailHas(addon.L("REQUIREMENT_NOTICE")))
+    assert(detailSectionY(addon.L("QUEST_GIVER"))<detailSectionY(addon.L("CHAIN")))
+    ui.storyToggle.scripts.OnClick();shown=0;for _,row in ipairs(ui.chainButtons)do if row.shown then shown=shown+1 end end
+    assert(ui.detailChainExpanded and shown==9)
+    for id=41001,41009 do addon.quests[id]=nil end
+    ui.quest,ui.dungeon=quest,dungeon;ui:Refresh()
+end)
+check("Shared dungeon approaches use a short header and retain both notices with their actual source",function()
+    local quest,dungeon,provider,navigation,tooltip=ui.quest,ui.dungeon,addon.Entrances,addon.Navigation,GameTooltip
+    local point={mapID=1,x=20,y=30,name="Dungeon approach",origin="recorded",kind="approach",scope="shared",source="https://classicdb.ch/?zone=1584"}
+    addon.Entrances={Get=function()return point,function()return true end end}
+    addon.Navigation={StartEntrance=function()return true end}
+    ui.dungeon={key="shared-approach",name="Shared approach",quests={}};ui.quest=nil;ui:RefreshDetail()
+    assert(ui.entrance.enabled and ui.entrance.text==addon.L("ENTRANCE_APPROACH_ACTION"))
+    assert(detailHas(addon.L("DUNGEON_ENTRANCE_APPROACH")) and detailHas(addon.L("DUNGEON_ENTRANCE_SHARED")))
+    local tip={}
+    function tip:SetOwner(owner)self.owner=owner end
+    function tip:IsOwned(owner)return self.owner==owner end
+    function tip:SetText(text)self.text=text end
+    function tip:AddLine(text)self.line=text end
+    function tip:Show()self.shown=true end
+    function tip:Hide()self.shown=false end
+    GameTooltip=tip;ui.entrance.scripts.OnEnter()
+    assert(tip.shown and tip.line:find(point.source,1,true) and tip.line:find(addon.L("DUNGEON_ENTRANCE_APPROACH"),1,true)
+        and tip.line:find(addon.L("DUNGEON_ENTRANCE_SHARED"),1,true))
+    GameTooltip=tooltip;addon.Entrances,addon.Navigation=provider,navigation;ui.quest,ui.dungeon=quest,dungeon;ui:Refresh()
+end)
 print("Preparation UI modeled checks passed: " .. total .. " (no native layout validation)")

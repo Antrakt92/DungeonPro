@@ -866,7 +866,7 @@ check("Hidden Enemies starter visits Neeru while preserving the separate Thrall 
     addon.Navigation.Stop()
     ui.quest, ui.detailHistory = previous, history; ui:Refresh()
 end)
-check("Actual partial Defias chain keeps held prerequisite work without claiming the final pickup", function()
+check("Actual partial Defias chain keeps held prerequisite work while the header stays on the selected giver", function()
     local ui, previous, history = addon.UI, addon.UI.quest, addon.UI.detailHistory
     local active, ready = C_QuestLog.IsOnQuest, C_QuestLog.ReadyForTurnIn
     C_QuestLog.IsOnQuest = function(id) return id == 65 end
@@ -880,12 +880,12 @@ check("Actual partial Defias chain keeps held prerequisite work without claiming
     canTurnIn = true; eventFrame.scripts.OnEvent(eventFrame, "QUEST_LOG_UPDATE")
     assert(ui.action.id == 65 and ui.action.kind == "turnin" and ui.guide.enabled)
     assert(ui.engine:State(166).status == "UNKNOWN" and addon.quests[166].requirementsKnown == false)
-    local before, place = #waypoints, addon.quests[65].finish
+    local before, place = #waypoints, addon.quests[166].start
     ui.guide.scripts.OnClick()
     local actual = waypoints[#waypoints]
     assert(#waypoints == before + 1 and actual.mapID == place.mapID)
     assert(actual.x == place.x / 100 and actual.y == place.y / 100)
-    assert(ui.frame:IsShown() and ui.quest == 166 and #waypoints == before + 1, "prerequisite guidance leaves preparation open")
+    assert(ui.frame:IsShown() and ui.quest == 166 and #waypoints == before + 1, "selected giver guidance leaves prerequisite context open")
     addon.Navigation.Stop()
     C_QuestLog.IsOnQuest, C_QuestLog.ReadyForTurnIn = active, ready
     ui.quest, ui.detailHistory = previous, history; ui:Refresh()

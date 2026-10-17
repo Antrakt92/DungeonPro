@@ -1355,5 +1355,129 @@ class ObjectiveAcquisitionTests(unittest.TestCase):
         for x,y in [(0,100),(100,0),(62.3,37.6)]:
             data,_,_,place=self.fixture();place["x"],place["y"]=x,y;catalog.validate(data)
 
+class GeneralRecordedEntranceTests(unittest.TestCase):
+    SOURCES = (
+        "https://wowhandbook.com/zones/dungeons/blackrock-spire/",
+        "https://www.warcrafttavern.com/forever/guides/dungeon-entrances/",
+        "https://warcrafttavern.com/forever/guides/dungeon-entrances/",
+        "https://www.wowhead.com/forever/zone=718",
+        "https://www.wowhead.com/forever/zone=718/wailing-caverns",
+        "https://www.wowhead.com/forever/guide/dungeons-overview-locations-details",
+    )
+
+    def fixture(self, known=True):
+        data = CatalogTests.minimal_catalog()
+        dungeon = data["dungeons"][0]
+        entry = {"mapID": 1428, "x": 33, "y": 25.2, "source": self.SOURCES[0]}
+        if known:
+            dungeon["instanceID"] = 229
+            entry["gameMapID"] = 229
+        dungeon["entrance"] = entry
+        return data, dungeon, entry
+
+    def test_reviewed_source_families_work_with_known_and_unknown_game_maps_without_promoting_quest_facts(self):
+        for source in self.SOURCES:
+            for known in (False, True):
+                with self.subTest(source=source, known=known):
+                    data, dungeon, entry = self.fixture(known)
+                    entry["source"] = source
+                    before = copy.deepcopy(data)
+                    generated = catalog.generate(data)
+                    self.assertEqual(data, before)
+                    self.assertIn('["source"] = "' + source + '"', generated)
+                    if not known:
+                        self.assertNotIn("gameMapID", entry)
+                        self.assertNotIn("instanceID", dungeon)
+                    del dungeon["entrance"]
+                    self.assertEqual(data["quests"], before["quests"])
+                    catalog.validate(data)
+
+    def test_unknown_game_map_cannot_receive_a_guessed_source_map_or_phylactery_identity(self):
+        for value in (None, False, True, 0, 229, 3065, "229", 1.5, 2 ** 53):
+            data, _, entry = self.fixture(False)
+            entry["gameMapID"] = value
+            with self.subTest(value=value), self.assertRaisesRegex(ValueError, "entrance"):
+                catalog.validate(data)
+        data, _, entry = self.fixture(False)
+        entry["source"] = "https://phylactery.io/instance/229"
+        with self.assertRaisesRegex(ValueError, "entrance"):
+            catalog.validate(data)
+
+    def test_known_game_map_requires_its_exact_typed_id_for_every_source_family(self):
+        for source in self.SOURCES:
+            for value in (None, False, True, 0, 228, 230, "229", 229.0, 2 ** 53):
+                data, _, entry = self.fixture()
+                entry["source"] = source
+                if value is None:
+                    del entry["gameMapID"]
+                else:
+                    entry["gameMapID"] = value
+                with self.subTest(source=source, value=value), self.assertRaisesRegex(ValueError, "entrance"):
+                    catalog.validate(data)
+
+    def test_shared_recorded_outside_approach_is_explicit_for_both_wings(self):
+        data, lower, entry = self.fixture()
+        lower["wing"] = "lower"
+        upper = copy.deepcopy(lower)
+        upper.update(key="upper", name="Upper wing", wing="upper")
+        data["dungeons"].append(upper)
+        with self.assertRaisesRegex(ValueError, "entrance"):
+            catalog.validate(data)
+        for dungeon in data["dungeons"]:
+            dungeon["entrance"].update(scope="shared", kind="approach")
+        before = copy.deepcopy(data)
+        generated = catalog.generate(data)
+        self.assertEqual(data, before)
+        self.assertEqual(generated.count('["scope"] = "shared"'), 2)
+        self.assertEqual(generated.count('["kind"] = "approach"'), 2)
+
+    def test_optional_scope_and_kind_are_not_silent_aliases_for_unknown_or_portal(self):
+        for field, valid in (("scope", "shared"), ("kind", "approach")):
+            for value in (None, False, True, 0, 1, "", "SHARED", "portal", "inside", {}, []):
+                data, _, entry = self.fixture()
+                entry[field] = value
+                with self.subTest(field=field, value=value), self.assertRaisesRegex(ValueError, "entrance"):
+                    catalog.validate(data)
+            data, _, entry = self.fixture()
+            entry[field] = valid
+            catalog.validate(data)
+
+    def test_reviewed_urls_reject_other_client_paths_hosts_queries_and_noncanonical_zone_ids(self):
+        invalid = (
+            "https://wowhandbook.com.evil.invalid/zones/dungeons/blackrock-spire/",
+            "http://wowhandbook.com/zones/dungeons/blackrock-spire/",
+            "https://wowhandbook.com/zones/dungeons/blackrock-spire/?x=33",
+            "https://wowhandbook.com/zones/dungeons/blackrock-spire/#entry",
+            "https://www.warcrafttavern.com/wow-classic/guides/dungeon-entrances/",
+            "https://www.warcrafttavern.com/forever/guides/../dungeon-entrances/",
+            "https://www.wowhead.com/classic/zone=718/wailing-caverns",
+            "https://www.wowhead.com/forever/npc=718",
+            "https://www.wowhead.com/forever/zone=0",
+            "https://www.wowhead.com/forever/zone=000718",
+            "https://www.wowhead.com/forever/zone=718?x=33",
+            "https://www.wowhead.com/forever/guide/dungeons-overview-locations-details/",
+            " https://www.wowhead.com/forever/zone=718",
+        )
+        for source in invalid:
+            data, _, entry = self.fixture()
+            entry["source"] = source
+            with self.subTest(source=source), self.assertRaisesRegex(ValueError, "entrance"):
+                catalog.validate(data)
+
+    def test_reviewed_source_url_length_and_exact_dto_keys_are_bounded(self):
+        prefix = "https://wowhandbook.com/zones/dungeons/"
+        data, _, entry = self.fixture()
+        entry["source"] = prefix + "a" * (2048 - len(prefix) - 1) + "/"
+        catalog.validate(data)
+        entry["source"] = entry["source"][:-1] + "a/"
+        with self.assertRaisesRegex(ValueError, "entrance"):
+            catalog.validate(data)
+        for field in ("origin", "name", "npcID", "portal", "normalized", "confidence"):
+            data, _, entry = self.fixture()
+            entry[field] = "fixture"
+            with self.subTest(field=field), self.assertRaisesRegex(ValueError, "entrance"):
+                catalog.validate(data)
+
+
 if __name__ == "__main__":
     unittest.main()

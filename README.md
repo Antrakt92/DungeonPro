@@ -42,9 +42,9 @@ Level ranges are provisional recommendations.
   unverified chains remain available for inspection.
   View any alternative quest separately without changing your preferred branch.
   Known prerequisite work can still be shown while other conditions are unknown.
-- Each quest card shows its next preparation step and known prerequisite chain.
-  Choose a known step to view its location or follow the direction guide, and
-  inspect supporting quests without changing the dungeon target.
+- Each quest card shows its giver and known prerequisites before other details.
+  Inspect supporting quests without changing the dungeon target. Long related
+  story lists have a short preview and can be expanded separately.
 - Hover the language button (globe and language code) in the top corner to open the language menu.
   Hover a language to preview immediately, click to save, or move away to cancel.
 - Switch between quests for your character and all character restrictions.
@@ -103,13 +103,15 @@ Level ranges are provisional recommendations.
   The compact quest icon visits the giver; the Wowhead icon offers the quest link
   for copying. Hover over either icon for its action description.
   Visiting a giver does not confirm that the quest is available to pick up.
-  Map and guide buttons identify whether they use a preparation step or the giver.
+  The map and visit buttons always refer to the selected quest's giver.
+  Alternative givers have separate actions; missing coordinates are explained.
   A low-level character can still visit a known giver without treating the quest
   as available. The planner stays open; move it if it covers the map.
   Viewing a location or expanding its choices does not start a guide.
 - A separate dungeon entrance button prefers matching portal points supplied by the
   client, with sourced player-recorded locations as a fallback where available.
-  Recorded locations are labelled; missing or ambiguous destinations stay unavailable.
+  Recorded locations, shared entrances and outside approaches are labelled separately;
+  missing or ambiguous destinations stay unavailable.
 - Expand reported positions when a giver has several sourced points, then choose
   a point to visit. Movement and quest phases may affect which position is current.
 - Original quest text is saved when you open its quest offer, including

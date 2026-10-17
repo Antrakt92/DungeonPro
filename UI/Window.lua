@@ -42,13 +42,11 @@ function UI:NavigationDestination(coordinates)
         local x, y = addon.Clean(place.x, "number"), addon.Clean(place.y, "number")
         return x ~= nil and y ~= nil and x >= 0 and x <= 100 and y >= 0 and y <= 100
     end
-    local action = self:CurrentDetailAction()
-    if not current() then return end
-    local primary = usable(action)
-    if not current() then return end
-    if primary then return action, false end
-    local fallback = usable(giver)
-    if current() and fallback then return giver, true end
+    local binding = self.giverBinding
+    local fresh = not binding or addon.Read(binding.current, "boolean") == true
+    if not current() or not fresh or self.giverBinding ~= binding then return end
+    local available = usable(giver)
+    if current() and available then return giver, true end
 end
 
 function UI:DispatchDetail(action, mapOnly, giver, ownerCurrent)
@@ -60,11 +58,13 @@ function UI:DispatchDetail(action, mapOnly, giver, ownerCurrent)
     local shown, getter = frame.IsShown, engine and engine.Current
     local place, id, kind = action.place, action.id, action.kind
     local coordinates, checker = self.giverHasCoordinates, issecretvalue
+    local giverBinding = giver and self.giverBinding
     local slot = giver and "giverAction" or "action"
     local function current()
         local fresh = not getter or addon.Read(getter, "boolean", engine) == true
         local owned = ownerCurrent == nil or addon.Read(ownerCurrent, "boolean") == true
-        return fresh and owned and addon.UI == self and self.frame == frame and self.quest == quest and self.dungeon == dungeon and
+        local giverFresh = not giverBinding or addon.Read(giverBinding.current, "boolean") == true
+        return fresh and owned and giverFresh and (not giver or self.giverBinding == giverBinding) and addon.UI == self and self.frame == frame and self.quest == quest and self.dungeon == dungeon and
             self.engine == engine and addon.char == character and self.rewardGeneration == generation and
             addon.Navigation == navigation and navigation[mapOnly and "Map" or "Start"] == method and
             frame.IsShown == shown and (not engine or engine.Current == getter) and
@@ -100,6 +100,10 @@ function UI:RefreshEntrance()
     end
     if not current() then return false end
     self.entranceBinding = { current = current, dungeon = dungeon, point = point, navigation = navigation, start = start }
+    local scope, kind = addon.Clean(point.scope, "string"), addon.Clean(point.kind, "string")
+    if kind == "approach" then control:SetText(addon.L("ENTRANCE_APPROACH_ACTION"))
+    elseif scope == "shared" then control:SetText(addon.L("ENTRANCE_SHARED_ACTION")) end
+    if not current() then return false end
     control:SetEnabled(true)
     return current()
 end
@@ -1596,6 +1600,24 @@ function UI:RefreshDetail()
         self.engine ~= renderEngine or addon.char ~= renderCharacter then return end
     if self.detailReferenceQuest ~= renderQuest or self.detailReferenceDungeon ~= renderDungeon then
         self.detailReferencesExpanded, self.detailChainExpanded = false, false
+        local selected = renderQuest and addon.quests[renderQuest]
+        if selected and selected.requires and #selected.requires > 0
+            and not selected.storyline and not selected.storylineGroups then
+            local seen, count = {}, 0
+            local function countSteps(questID, depth)
+                if seen[questID] or count > 6 or depth > 50 then return end
+                seen[questID], count = true, count + 1
+                local source = addon.quests[questID]
+                for _, group in ipairs(source and source.requires or {}) do
+                    for _, parent in ipairs(group.ids) do
+                        countSteps(parent, depth + 1)
+                        if count > 6 then return end
+                    end
+                end
+            end
+            countSteps(renderQuest, 0)
+            self.detailChainExpanded = count <= 6
+        end
         self.detailReferenceQuest, self.detailReferenceDungeon = renderQuest, renderDungeon
     end
     local referencesExpanded, chainExpanded = self.detailReferencesExpanded == true, self.detailChainExpanded == true
@@ -1659,7 +1681,7 @@ function UI:RefreshDetail()
     if self.overviewArt then self.overviewArt:Hide() end
     self.action = nil
     self.map:SetEnabled(false); self.guide:SetEnabled(false)
-    self.giverAction, self.giverHasCoordinates = nil, false
+    self.giverAction, self.giverHasCoordinates, self.giverBinding = nil, false, nil
     self:SetFooterEnabled(self.giver, false)
     self:SetFooterLabel(self.giver, "VISIT_GIVER")
     local rewardIndex, objectiveIndex = 0, 0
@@ -1782,7 +1804,7 @@ function UI:RefreshDetail()
     for _, b in ipairs(self.branchInspectButtons) do b:Hide(); b:SetEnabled(false); b:SetScript("OnClick", nil) end
     for _, b in ipairs(self.requirementButtons) do b:Hide(); b:SetEnabled(false); b:SetScript("OnClick", nil) end
     for _, b in ipairs(self.materialButtons) do b:Hide(); b:SetEnabled(false); b:SetScript("OnClick", nil) end
-    for _, buttons in ipairs({ self.startButtons, self.finishButtons, self.containerButtons, self.dropButtons, self.objectiveContainerButtons }) do
+    for _, buttons in ipairs({ self.startButtons, self.finishButtons, self.containerButtons, self.dropButtons, self.objectiveContainerButtons, self.giverButtons }) do
         for _, b in ipairs(buttons) do
             b:Hide(); b:SetEnabled(false); b:SetScript("OnClick", nil)
         end
@@ -1914,6 +1936,20 @@ function UI:RefreshDetail()
             local x, gy = addon.Clean(start.x, "number"), addon.Clean(start.y, "number")
             pendingGiver = { action = { id = id, kind = "visit", place = start }, source = q, map = map, x = x, y = gy,
                 coordinates = x ~= nil and gy ~= nil and x >= 0 and x <= 100 and gy >= 0 and gy <= 100 }
+            local fields = { npcID = "number", objectID = "number", itemID = "number", name = "string", zoneName = "string" }
+            local values = {}
+            for field, kind in pairs(fields) do values[field] = addon.Clean(rawget(start, field), kind) end
+            pendingGiver.same = function()
+                local checker = issecretvalue
+                if not portraitCardCurrent() or addon.quests[id] ~= q or q.start ~= start then return false end
+                for field, kind in pairs(fields) do
+                    local value = rawget(start, field)
+                    if type(checker) == "function" and addon.Read(checker, "boolean", value) ~= false then return false end
+                    local clean = addon.Clean(value, kind)
+                    if value ~= nil and clean == nil or clean ~= values[field] then return false end
+                end
+                return portraitCardCurrent() and issecretvalue == checker
+            end
         end
         local function locationCurrent()
             return self.quest == renderQuest and self.dungeon == renderDungeon and self.engine == renderEngine and
@@ -1989,8 +2025,10 @@ function UI:RefreshDetail()
                 name = addon.L("ITEM_STARTER", addon.Read(addon.ItemName, "string", p.itemID) or name)
                 if not locationCurrent() then return nil end
             end
+            local x, py = addon.Clean(p.x, "number"), addon.Clean(p.y, "number")
+            local coordinates = x ~= nil and py ~= nil and x >= 0 and x <= 100 and py >= 0 and py <= 100
             return name .. (zoneName and (" — " .. zoneName) or "") ..
-                (p.x and string.format(" (%.1f, %.1f)", p.x, p.y) or "")
+                (coordinates and string.format(" (%.1f, %.1f)", x, py) or "")
         end
         local function alternativePlaces(places, buttons, heading, slot, ownerCurrent, offset, clickCurrent, rowWriter)
             local function current() return locationCurrent() and (not ownerCurrent or ownerCurrent()) end
@@ -2032,8 +2070,43 @@ function UI:RefreshDetail()
                 if reported(destination, slot .. index, ownerCurrent) == false or not current() then return false end
             end
         end
+        if line(addon.L("QUEST_GIVER"), "section", nil, nil, portraitCardCurrent) == false then return end
+        if start then
+            local giverFields = { "npcID", "objectID", "itemID", "name", "zoneName", "locationName", "mapID", "x", "y" }
+            local giverValues, nameGetter, itemGetter, mapRoot, checker = {}, addon.GiverName, addon.ItemName, C_Map, issecretvalue
+            for _, field in ipairs(giverFields) do giverValues[field] = rawget(start, field) end
+            local function giverCurrent()
+                local ok, same = pcall(function()
+                    if not portraitCardCurrent() or addon.quests[id] ~= definition or q.start ~= start
+                        or addon.GiverName ~= nameGetter or addon.ItemName ~= itemGetter or C_Map ~= mapRoot or issecretvalue ~= checker then return false end
+                    for _, field in ipairs(giverFields) do
+                        local value = rawget(start, field)
+                        if type(checker) == "function" and addon.Read(checker, "boolean", value) ~= false then return false end
+                        if value ~= giverValues[field] then return false end
+                    end
+                    return portraitCardCurrent()
+                end)
+                return ok and same == true
+            end
+            if not giverCurrent() then return end
+            local description = addon.Read(place, "string", start)
+            if not giverCurrent() then return end
+            if description and description ~= addon.L("UNKNOWN_PLACE") and line(description, nil, nil, nil, giverCurrent) == false then return end
+            if not pendingGiver or not pendingGiver.coordinates then
+                if line(addon.L(pendingGiver and "GIVER_COORDINATES_UNKNOWN" or "GIVER_LOCATION_UNKNOWN"), nil, nil, nil, giverCurrent) == false then return end
+            end
+        elseif q.startAlternatives then
+            local alternatives = q.startAlternatives
+            local count, preview = #alternatives, {}
+            for index = 1, math.min(count, 2) do preview[index] = alternatives[index] end
+            local function giverCurrent()
+                if not portraitCardCurrent() or addon.quests[id] ~= definition or q.startAlternatives ~= alternatives or #alternatives ~= count then return false end
+                for index, point in ipairs(preview) do if alternatives[index] ~= point then return false end end
+                return portraitCardCurrent()
+            end
+            if alternativePlaces(preview, self.giverButtons, "START_ALTERNATIVES", "giverAlternative:", giverCurrent) == false then return end
+        elseif line(addon.L("GIVER_LOCATION_UNKNOWN"), nil, nil, nil, portraitCardCurrent) == false then return end
         local actions, uncertain = engine:Next(id)
-        line(addon.L("NEXT"), "section")
         local action = actions[1]
         local character = addon.char
         local preferred = self.detailActionChoice
@@ -2056,134 +2129,6 @@ function UI:RefreshDetail()
             local title = addon.QuestName(candidate.id)
             if not current() then return nil end
             return addon.L(candidate.kind) .. ": " .. title .. (candidate.level and (" (" .. candidate.level .. ")") or "")
-        end
-        if action then
-            local title = actionText(action)
-            if not title then return end
-            line("|cff" .. COLOR[state.status] .. statusLabel(state) .. "|r · " .. title)
-        else line("|cff" .. COLOR[state.status] .. statusLabel(state) .. "|r") end
-        if uncertain and state.status ~= "UNKNOWN" and (action or state.status == "COMPLETED") then line(addon.L("UNKNOWN")) end
-        do
-            local destination = #actions == 1 and action and addon.Clean(action.place, "table")
-            if destination then
-                local actionID, kind = action.id, action.kind
-                local source = addon.quests[actionID]
-                local endpoint = kind == "turnin" and "finish" or "start"
-                local fields = { npcID = "number", objectID = "number", itemID = "number", name = "string",
-                    zoneName = "string", mapID = "number", x = "number", y = "number" }
-                local values, readable, destinationChecker = {}, true, issecretvalue
-                local mapRoot = C_Map
-                local mapLibrary = addon.Clean(mapRoot, "table")
-                local mapGetter = mapLibrary and rawget(mapLibrary, "GetMapInfo")
-                local nameGetter, itemGetter = addon.GiverName, addon.ItemName
-                for field, expected in pairs(fields) do
-                    local value = rawget(destination, field)
-                    if type(destinationChecker) == "function" and addon.Read(destinationChecker, "boolean", value) ~= false then readable = false; break end
-                    if value ~= nil then
-                        local clean = addon.Clean(value, expected)
-                        if clean == nil then readable = false; break end
-                        values[field] = clean
-                    end
-                end
-                local function destinationCurrent()
-                    if not current() then return false end
-                    local ok, same = pcall(function()
-                        if self.quest ~= renderQuest or self.dungeon ~= renderDungeon or self.engine ~= engine or
-                            addon.char ~= character or self.rewardGeneration ~= rewardGeneration or issecretvalue ~= destinationChecker or
-                            action.id ~= actionID or action.kind ~= kind or action.place ~= destination or
-                            addon.quests[actionID] ~= source or not source or source[endpoint] ~= destination or
-                            addon.GiverName ~= nameGetter or addon.ItemName ~= itemGetter or C_Map ~= mapRoot or
-                            (mapLibrary and mapLibrary.GetMapInfo ~= mapGetter) then return false end
-                        for field in pairs(fields) do if rawget(destination, field) ~= values[field] then return false end end
-                        return true
-                    end)
-                    return ok and same == true
-                end
-                if not current() then return end
-                if readable then
-                    if not destinationCurrent() then return end
-                    local description = addon.Read(place, "string", destination)
-                    local unknown = addon.L("UNKNOWN_PLACE")
-                    if not destinationCurrent() then return end
-                    if description and description ~= unknown then
-                        line(description)
-                        if not destinationCurrent() then return end
-                    end
-                end
-            end
-        end
-        pendingAction = action
-        if #actions > 1 then
-            local inspectIndex = 0
-            for index, candidate in ipairs(actions) do
-                local title = actionText(candidate)
-                if not title then return end
-                local description = candidate.place and place(candidate.place) or ""
-                if not current() then return end
-                local row = self:MakeRow(self.detail, self.actionButtons, index, 59)
-                row.actionID, row.actionKind = candidate.id, candidate.kind
-                row.title:SetText(candidate == action and addon.L("BRANCH_SELECTED", title) or title)
-                row.note:SetText(description); row:SetEnabled(true)
-                styleRow(row, "quest", candidate == action)
-                local actionID, kind = candidate.id, candidate.kind
-                row:SetScript("OnClick", function()
-                    if not current() then return end
-                    self.detailActionChoice = { quest = id, id = actionID, kind = kind, dungeon = renderDungeon, character = addon.char }
-                    self:RefreshDetail()
-                end)
-                y = self:LayoutRow(row, 59, y)
-                if actionID ~= id then
-                    inspectIndex = inspectIndex + 1
-                    local inspect = self.actionInspectButtons[inspectIndex]
-                    if not inspect then
-                        inspect = CreateFrame("Button", nil, self.detail)
-                        inspect:SetWidth(316); inspect.label = label(inspect, "", 7, -5, 302, 14)
-                        inspect:SetHighlightTexture("Interface\\QuestFrame\\UI-QuestTitleHighlight")
-                        self.actionInspectButtons[inspectIndex] = inspect
-                    end
-                    inspect.actionID = actionID; inspect.label:SetText(addon.L("BRANCH_INSPECT"))
-                    local height = math.max(28, measuredHeight(inspect.label, 18) + 10)
-                    inspect:SetHeight(height); inspect:ClearAllPoints(); inspect:SetPoint("TOPLEFT", 16, -y)
-                    inspect:SetEnabled(true); styleRow(inspect, "control", false)
-                    inspect:SetScript("OnClick", function() if current() then self:InspectQuest(actionID) end end)
-                    inspect:Show(); y = y + height + 6
-                end
-            end
-        end
-        local plan = self.currentPlan
-        if plan and plan.engine == engine and plan.dungeon == renderDungeon then
-            local related, seen = {}, {}
-            for index = 1, math.min(#plan.rows, 100) do
-                local entry = plan.rows[index]
-                local targetID = addon.Clean(entry.id, "number")
-                if targetID and targetID > 0 and targetID % 1 == 0 and targetID ~= id and not seen[targetID] then
-                    seen[targetID] = true
-                    local nextActions = engine:Next(targetID)
-                    if not current() or self.currentPlan ~= plan then return end
-                    for _, nextAction in ipairs(nextActions) do
-                        if nextAction.id == id then related[#related + 1] = targetID; break end
-                    end
-                end
-            end
-            if #related > 0 then
-                line(addon.L("PREPARATION_FOR"), "section")
-                line(addon.L("PREPARATION_FOR_NOTICE"))
-                for index, targetID in ipairs(related) do
-                    local targetName = addon.QuestName(targetID)
-                    local targetState = engine:State(targetID)
-                    if not current() or self.currentPlan ~= plan then return end
-                    local row = self:MakeRow(self.detail, self.preparationForButtons, index, 59)
-                    row.questID = targetID
-                    row.title:SetText(targetName)
-                    row.note:SetText("|cff" .. COLOR[targetState.status] .. statusLabel(targetState) .. "|r")
-                    row:SetEnabled(true); styleRow(row, "quest", false)
-                    local other = targetID
-                    row:SetScript("OnClick", function()
-                        if current() and self.currentPlan == plan then self:InspectQuest(other) end
-                    end)
-                    y = self:LayoutRow(row, 59, y)
-                end
-            end
         end
         do
         local source = self:SourceStory(id, q, portraitCardCurrent)
@@ -2318,6 +2263,19 @@ function UI:RefreshDetail()
         end
         end
         local seen, chainIndex = {}, 0
+        local nearby, pending = { [id] = true }, { id }
+        local nextIndex = 1
+        while nextIndex <= #pending and #pending < 3 do
+            local definition = addon.quests[pending[nextIndex]]
+            for _, group in ipairs(definition and definition.requires or {}) do
+                for _, parent in ipairs(group.ids) do
+                    if not nearby[parent] then nearby[parent] = true; pending[#pending + 1] = parent end
+                    if #pending >= 3 then break end
+                end
+                if #pending >= 3 then break end
+            end
+            nextIndex = nextIndex + 1
+        end
         local function visit(qid, depth, grouped)
             if not storyCurrent() or seen[qid] or depth > 50 then return end
             seen[qid] = true
@@ -2328,6 +2286,7 @@ function UI:RefreshDetail()
                 end
             end
             if not storyCurrent() then return end
+            if not chainExpanded and chainIndex >= 3 and not nearby[qid] then return end
             chainIndex = chainIndex + 1
             local b = self.chainButtons[chainIndex]
             if not b then
@@ -2359,6 +2318,7 @@ function UI:RefreshDetail()
             for _, stepID in ipairs(q.storyline) do visit(stepID, 0) end
         else visit(id, 0) end
         elseif showChain then
+            if q.requires and #q.requires > 0 then line(addon.L("REQUIREMENT_NOTICE")) end
             local previous
             if q.storyline then
                 for index, stepID in ipairs(q.storyline) do if stepID == id then previous = q.storyline[index - 1]; break end end
@@ -2367,10 +2327,144 @@ function UI:RefreshDetail()
                     if #group.ids == 1 then previous = addon.Clean(group.ids[1], "number"); break end
                 end
             end
-            if previous and previous ~= id then visit(previous, 0, true) end
-            visit(id, 0, true)
+            if not q.storyline and not q.storylineGroups and q.requires and #q.requires > 0 then
+                line(addon.L("CHAIN_PREVIEW_NOTICE"))
+                visit(id, 0)
+            else
+                if previous and previous ~= id then visit(previous, 0, true) end
+                visit(id, 0, true)
+            end
         end
         if not storyCurrent() then return end
+        end
+        if not action or action.kind ~= "level" then line(addon.L("NEXT"), "section") end
+        if action and action.kind ~= "level" then
+            local title = actionText(action)
+            if not title then return end
+            line("|cff" .. COLOR[state.status] .. statusLabel(state) .. "|r · " .. title)
+        elseif not action then line("|cff" .. COLOR[state.status] .. statusLabel(state) .. "|r") end
+        if uncertain and state.status ~= "UNKNOWN" and (action or state.status == "COMPLETED") then line(addon.L("UNKNOWN")) end
+        do
+            local destination = #actions == 1 and action and addon.Clean(action.place, "table")
+            if destination then
+                local actionID, kind = action.id, action.kind
+                local source = addon.quests[actionID]
+                local endpoint = kind == "turnin" and "finish" or "start"
+                local fields = { npcID = "number", objectID = "number", itemID = "number", name = "string",
+                    zoneName = "string", mapID = "number", x = "number", y = "number" }
+                local values, readable, destinationChecker = {}, true, issecretvalue
+                local mapRoot = C_Map
+                local mapLibrary = addon.Clean(mapRoot, "table")
+                local mapGetter = mapLibrary and rawget(mapLibrary, "GetMapInfo")
+                local nameGetter, itemGetter = addon.GiverName, addon.ItemName
+                for field, expected in pairs(fields) do
+                    local value = rawget(destination, field)
+                    if type(destinationChecker) == "function" and addon.Read(destinationChecker, "boolean", value) ~= false then readable = false; break end
+                    if value ~= nil then
+                        local clean = addon.Clean(value, expected)
+                        if clean == nil then readable = false; break end
+                        values[field] = clean
+                    end
+                end
+                local function destinationCurrent()
+                    if not current() then return false end
+                    local ok, same = pcall(function()
+                        if self.quest ~= renderQuest or self.dungeon ~= renderDungeon or self.engine ~= engine or
+                            addon.char ~= character or self.rewardGeneration ~= rewardGeneration or issecretvalue ~= destinationChecker or
+                            action.id ~= actionID or action.kind ~= kind or action.place ~= destination or
+                            addon.quests[actionID] ~= source or not source or source[endpoint] ~= destination or
+                            addon.GiverName ~= nameGetter or addon.ItemName ~= itemGetter or C_Map ~= mapRoot or
+                            (mapLibrary and mapLibrary.GetMapInfo ~= mapGetter) then return false end
+                        for field in pairs(fields) do if rawget(destination, field) ~= values[field] then return false end end
+                        return true
+                    end)
+                    return ok and same == true
+                end
+                if not current() then return end
+                if readable then
+                    if not destinationCurrent() then return end
+                    local description = addon.Read(place, "string", destination)
+                    local unknown = addon.L("UNKNOWN_PLACE")
+                    if not destinationCurrent() then return end
+                    if description and description ~= unknown then
+                        line(description)
+                        if not destinationCurrent() then return end
+                    end
+                end
+            end
+        end
+        pendingAction = action
+        if #actions > 1 then
+            local inspectIndex = 0
+            for index, candidate in ipairs(actions) do
+                local title = actionText(candidate)
+                if not title then return end
+                local description = candidate.place and place(candidate.place) or ""
+                if not current() then return end
+                local row = self:MakeRow(self.detail, self.actionButtons, index, 59)
+                row.actionID, row.actionKind = candidate.id, candidate.kind
+                row.title:SetText(candidate == action and addon.L("BRANCH_SELECTED", title) or title)
+                row.note:SetText(description); row:SetEnabled(true)
+                styleRow(row, "quest", candidate == action)
+                local actionID, kind = candidate.id, candidate.kind
+                row:SetScript("OnClick", function()
+                    if not current() then return end
+                    self.detailActionChoice = { quest = id, id = actionID, kind = kind, dungeon = renderDungeon, character = addon.char }
+                    self:RefreshDetail()
+                end)
+                y = self:LayoutRow(row, 59, y)
+                if actionID ~= id then
+                    inspectIndex = inspectIndex + 1
+                    local inspect = self.actionInspectButtons[inspectIndex]
+                    if not inspect then
+                        inspect = CreateFrame("Button", nil, self.detail)
+                        inspect:SetWidth(316); inspect.label = label(inspect, "", 7, -5, 302, 14)
+                        inspect:SetHighlightTexture("Interface\\QuestFrame\\UI-QuestTitleHighlight")
+                        self.actionInspectButtons[inspectIndex] = inspect
+                    end
+                    inspect.actionID = actionID; inspect.label:SetText(addon.L("BRANCH_INSPECT"))
+                    local height = math.max(28, measuredHeight(inspect.label, 18) + 10)
+                    inspect:SetHeight(height); inspect:ClearAllPoints(); inspect:SetPoint("TOPLEFT", 16, -y)
+                    inspect:SetEnabled(true); styleRow(inspect, "control", false)
+                    inspect:SetScript("OnClick", function() if current() then self:InspectQuest(actionID) end end)
+                    inspect:Show(); y = y + height + 6
+                end
+            end
+        end
+        local plan = self.currentPlan
+        if plan and plan.engine == engine and plan.dungeon == renderDungeon then
+            local related, seen = {}, {}
+            for index = 1, math.min(#plan.rows, 100) do
+                local entry = plan.rows[index]
+                local targetID = addon.Clean(entry.id, "number")
+                if targetID and targetID > 0 and targetID % 1 == 0 and targetID ~= id and not seen[targetID] then
+                    seen[targetID] = true
+                    local nextActions = engine:Next(targetID)
+                    if not current() or self.currentPlan ~= plan then return end
+                    for _, nextAction in ipairs(nextActions) do
+                        if nextAction.id == id then related[#related + 1] = targetID; break end
+                    end
+                end
+            end
+            if #related > 0 then
+                line(addon.L("PREPARATION_FOR"), "section")
+                line(addon.L("PREPARATION_FOR_NOTICE"))
+                for index, targetID in ipairs(related) do
+                    local targetName = addon.QuestName(targetID)
+                    local targetState = engine:State(targetID)
+                    if not current() or self.currentPlan ~= plan then return end
+                    local row = self:MakeRow(self.detail, self.preparationForButtons, index, 59)
+                    row.questID = targetID
+                    row.title:SetText(targetName)
+                    row.note:SetText("|cff" .. COLOR[targetState.status] .. statusLabel(targetState) .. "|r")
+                    row:SetEnabled(true); styleRow(row, "quest", false)
+                    local other = targetID
+                    row:SetScript("OnClick", function()
+                        if current() and self.currentPlan == plan then self:InspectQuest(other) end
+                    end)
+                    y = self:LayoutRow(row, 59, y)
+                end
+            end
         end
         do
             local toggle = self.referenceToggle
@@ -3547,6 +3641,13 @@ function UI:RefreshDetail()
             elseif addon.Clean(self.entranceBinding.point.origin, "string") == "recorded" then
                 line(addon.L("DUNGEON_ENTRANCE_RECORDED"))
             end
+            local entrancePoint = self.entranceBinding and self.entranceBinding.point
+            if entrancePoint and addon.Clean(entrancePoint.kind, "string") == "approach" then
+                line(addon.L("DUNGEON_ENTRANCE_APPROACH"))
+            end
+            if entrancePoint and addon.Clean(entrancePoint.scope, "string") == "shared" then
+                line(addon.L("DUNGEON_ENTRANCE_SHARED"))
+            end
             if not self.overviewArt then
                 self.overviewArt = self.detail:CreateTexture(nil, "ARTWORK")
             end
@@ -3609,18 +3710,27 @@ function UI:RefreshDetail()
         self.engine ~= renderEngine or addon.char ~= renderCharacter then return end
     self.action = pendingAction
     local giverPlace = pendingGiver and pendingGiver.action.place
-    if giverPlace and addon.quests[renderQuest] == pendingGiver.source and pendingGiver.source.start == giverPlace and
+    if giverPlace and pendingGiver.same() and addon.quests[renderQuest] == pendingGiver.source and pendingGiver.source.start == giverPlace and
         addon.Clean(giverPlace.mapID, "number") == pendingGiver.map and addon.Clean(giverPlace.x, "number") == pendingGiver.x and
         addon.Clean(giverPlace.y, "number") == pendingGiver.y then
         self.giverAction, self.giverHasCoordinates = pendingGiver.action, pendingGiver.coordinates
+        local binding = { action = pendingGiver.action }
+        binding.current = function()
+            local fresh = not renderEngine.Current or addon.Read(renderEngine.Current, "boolean", renderEngine) == true
+            return fresh and portraitCardCurrent() and pendingGiver.same() and addon.UI == self and self.giverBinding == binding
+                and self.giverAction == binding.action and addon.quests[renderQuest] == pendingGiver.source
+                and pendingGiver.source.start == giverPlace and addon.Clean(giverPlace.mapID, "number") == pendingGiver.map
+                and addon.Clean(giverPlace.x, "number") == pendingGiver.x and addon.Clean(giverPlace.y, "number") == pendingGiver.y
+        end
+        self.giverBinding = binding
         self:SetFooterLabel(self.giver, pendingGiver.coordinates and "VISIT_GIVER" or "GIVER_MAP")
         self:SetFooterEnabled(self.giver, true)
     end
-    local mapAction, mapGiver = self:NavigationDestination(false)
-    local guideAction, guideGiver = self:NavigationDestination(true)
+    local mapAction = self:NavigationDestination(false)
+    local guideAction = self:NavigationDestination(true)
     if not portraitCardCurrent() then return end
-    self.map:SetText(addon.L(mapGiver and "GIVER_MAP" or "STEP_MAP")); self.map:SetEnabled(mapAction ~= nil)
-    self.guide:SetText(addon.L(guideGiver and "VISIT_GIVER" or "STEP_GUIDE")); self.guide:SetEnabled(guideAction ~= nil)
+    self.map:SetText(addon.L("GIVER_MAP")); self.map:SetEnabled(mapAction ~= nil)
+    self.guide:SetText(addon.L("VISIT_GIVER")); self.guide:SetEnabled(guideAction ~= nil)
     self:FitHeaderControls()
     return portraitCardCurrent() and rewardGeneration or nil
 end
@@ -3802,6 +3912,14 @@ function UI:Create()
             if text and x and y and x >= 0 and x <= 100 and y >= 0 and y <= 100 then text = text .. string.format(" (%.1f, %.1f)", x, y) end
             if text and point and addon.Clean(point.origin, "string") == "recorded" then
                 text = text .. "\n" .. addon.L("DUNGEON_ENTRANCE_RECORDED")
+                local source = addon.Clean(point.source, "string")
+                if source and #source <= 2048 and source:match("^https://") then text = text .. "\n" .. source end
+            end
+            if text and point and addon.Clean(point.kind, "string") == "approach" then
+                text = text .. "\n" .. addon.L("DUNGEON_ENTRANCE_APPROACH")
+            end
+            if text and point and addon.Clean(point.scope, "string") == "shared" then
+                text = text .. "\n" .. addon.L("DUNGEON_ENTRANCE_SHARED")
             end
             local title = control.footerLabelKey and addon.L(control.footerLabelKey) or addon.Read(control.GetText, "string", control)
             if not text or not title or not current() then return end
@@ -3833,7 +3951,7 @@ function UI:Create()
     self.materialButtons, self.catalogInspectButtons = {}, {}
     self.requirementButtons, self.branchInspectButtons = {}, {}
     self.actionButtons, self.actionInspectButtons, self.preparationForButtons = {}, {}, {}
-    self.startButtons, self.finishButtons, self.containerButtons, self.dropButtons = {}, {}, {}, {}
+    self.startButtons, self.finishButtons, self.containerButtons, self.dropButtons, self.giverButtons = {}, {}, {}, {}, {}
     self.objectiveContainerButtons = {}
     UISpecialFrames[#UISpecialFrames + 1] = "DungeonProWindow"
     for _, d in ipairs(addon.dungeons) do if d.key == addon.char.selectedDungeon then self.dungeon = d end end

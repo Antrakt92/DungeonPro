@@ -34,4 +34,30 @@ ui:InspectQuest(96394)
 assert(ui.map.enabled)
 ui.map.scripts.OnClick()
 assert(WorldMapFrame.mapID == 1455 and markerAt(32.8, 48.6))
+local expected = {}
+for _, key in ipairs({ "rfc", "wc", "dm", "sfk", "bfd", "stocks", "gnom", "rfk", "sm", "rfd", "ulda", "zf",
+    "mara", "st", "brd", "lbrs", "ubrs", "dire", "scholo", "strat", "thanes", "lordaeron", "excavation", "dalaran" }) do
+    expected[key] = true
+end
+local routes, unknown = 0, 0
+for _, dungeon in ipairs(addon.dungeons) do
+    addon.Navigation.Stop()
+    ui.dungeon, ui.quest = dungeon, nil
+    ui:Refresh()
+    if expected[dungeon.key] then
+        routes = routes + 1
+        local entry = assert(dungeon.entrance)
+        assert(ui.entrance.enabled and ui.entranceBinding.dungeon == dungeon, dungeon.key .. ": entrance action belongs to selected dungeon")
+        local title = entry.kind == "approach" and "ENTRANCE_APPROACH_ACTION" or
+            entry.scope == "shared" and "ENTRANCE_SHARED_ACTION" or "DUNGEON_ENTRANCE"
+        assert(ui.entrance.text == addon.L(title), dungeon.key .. ": route kind is explicit in the action label")
+        ui.entrance.scripts.OnClick()
+        assert(WorldMapFrame.mapID == entry.mapID and markerAt(entry.x, entry.y), dungeon.key .. ": click renders its own recorded point")
+    else
+        unknown = unknown + 1
+        assert(not ui.entrance.enabled and not ui.entranceBinding, "unknown entrance cannot reuse the previous dungeon's destination")
+    end
+end
+assert(routes == 24 and unknown == 5)
+print("Actual catalogue entrance clicks: PASS (24 recorded routes, 5 unknown)")
 print("Actual entrance and quest-giver click composition: PASS")

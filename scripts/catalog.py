@@ -339,11 +339,27 @@ def validate(data):
             raise ValueError("Invalid dungeon wing")
         if "entrance" in d:
             entrance = d["entrance"]
-            if (type(entrance) is not dict or set(entrance) != {"gameMapID", "mapID", "x", "y", "source"} or
-                    "wing" in d or not integer(d.get("instanceID")) or
-                    any(not integer(entrance.get(field)) or entrance[field] > 2 ** 53 - 1
-                        for field in ("gameMapID", "mapID")) or entrance["gameMapID"] != d["instanceID"] or
-                    entrance["source"] != f"https://phylactery.io/instance/{entrance['gameMapID']}"):
+            required = {"mapID", "x", "y", "source"}
+            if (type(entrance) is not dict or not required <= set(entrance) or
+                    set(entrance) - required - {"gameMapID", "scope", "kind"} or
+                    not integer(entrance.get("mapID")) or entrance["mapID"] > 2 ** 53 - 1 or
+                    ("scope" in entrance and entrance["scope"] != "shared") or
+                    ("kind" in entrance and entrance["kind"] != "approach") or
+                    ("wing" in d and entrance.get("scope") != "shared") or
+                    ("instanceID" in d and entrance.get("gameMapID") != d["instanceID"]) or
+                    ("gameMapID" in entrance and (not integer(entrance["gameMapID"]) or
+                     entrance["gameMapID"] > 2 ** 53 - 1 or entrance["gameMapID"] != d.get("instanceID")))):
+                raise ValueError("Invalid dungeon entrance identity/source")
+            source = entrance["source"]
+            if type(source) is not str or len(source) > 2048:
+                raise ValueError("Invalid dungeon entrance identity/source")
+            instance_source = ("gameMapID" in entrance and
+                             source == f"https://phylactery.io/instance/{entrance['gameMapID']}")
+            reviewed_source = type(source) is str and re.fullmatch(
+                r"https://(?:wowhandbook\.com/zones/dungeons/[a-z0-9-]+/|"
+                r"(?:www\.)?warcrafttavern\.com/forever/guides/[a-z0-9-]+/|"
+                r"www\.wowhead\.com/forever/(?:zone=[1-9][0-9]*(?:/[a-z0-9-]+)?|guide/[a-z0-9-]+))", source)
+            if not instance_source and not reviewed_source:
                 raise ValueError("Invalid dungeon entrance identity/source")
             for field in ("x", "y"):
                 value = entrance[field]
