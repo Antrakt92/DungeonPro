@@ -6465,7 +6465,9 @@
             "y": 76.6,
             "zoneName": "Badlands"
           }
-        ]
+        ],
+        "creatureDisplayID": 4903,
+        "portraitSource": "https://www.wowhead.com/forever/npc=2785"
       },
       "finish": {
         "npcID": 2785,
@@ -6499,7 +6501,9 @@
             "y": 76.6,
             "zoneName": "Badlands"
           }
-        ]
+        ],
+        "creatureDisplayID": 4903,
+        "portraitSource": "https://www.wowhead.com/forever/npc=2785"
       },
       "objectiveItems": [
         {
