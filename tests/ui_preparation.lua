@@ -3780,4 +3780,31 @@ check("Stable unknown-character quest rows remain visible and inspectable withou
     assert(ui.quest==24001 and ui.engine:State(24001).status=="UNKNOWN" and not ui.action)
     restore()
 end)
+check("All-character detail records the actual faction requirement without changing eligibility or guidance",function()
+    local context,quest,dungeon,all=addon.Context,ui.quest,ui.dungeon,ui.includeUnavailable
+    addon.Context=function()return{level=60,faction="Alliance",class="WARRIOR",race=1,completed=function()return false end,active=function()return false end}end
+    addon.quests[25001]={id=25001,minLevel=1,requirementsKnown=true,factions={"Horde"},classes={"PALADIN"}}
+    ui.dungeon={key="faction-detail",name="Faction detail",quests={25001},coverage="reviewed"}
+    ui.includeUnavailable=true;ui.quest=25001;ui:Refresh()
+    assert(ui.engine:State(25001).status=="UNAVAILABLE" and ui.engine:State(25001).reason=="faction")
+    assert(detailHas(addon.L("QUEST_FACTIONS",addon.L("FACTION_Horde"))))
+    assert(detailHas(addon.L("QUEST_CLASSES","PALADIN")) and not ui.action and not ui.map.enabled and not ui.guide.enabled)
+    addon.quests[25001]=nil;addon.Context=context
+    ui.quest,ui.dungeon,ui.includeUnavailable=quest,dungeon,all;ui:Refresh()
+end)
+check("Faction detail labels localize deduplicated recorded audiences and clear on an unrestricted card",function()
+    local quest,dungeon,locale=ui.quest,ui.dungeon,addon.db.locale
+    addon.quests[25002]={id=25002,minLevel=1,requirementsKnown=true,factions={"Alliance","Horde","Neutral","Alliance"}}
+    addon.quests[25003]={id=25003,minLevel=1,requirementsKnown=true}
+    local context={level=60,faction="Alliance",class="WARRIOR",race=1,completed=function()return false end,active=function()return false end}
+    for code in pairs(addon.locales)do
+        addon.db.locale=code;showDetail(25002,context)
+        local expected=addon.L("QUEST_FACTIONS",table.concat({addon.L("FACTION_Alliance"),addon.L("FACTION_Horde"),addon.L("FACTION_Neutral")},", "))
+        assert(detailHas(expected) and ui.engine:State(25002).status=="AVAILABLE")
+        showDetail(25003,context)
+        assert(not detailHas(expected) and ui.engine:State(25003).status=="AVAILABLE")
+    end
+    addon.db.locale=locale;addon.quests[25002],addon.quests[25003]=nil,nil
+    ui.quest,ui.dungeon=quest,dungeon;ui:Refresh()
+end)
 print("Preparation UI modeled checks passed: " .. total .. " (no native layout validation)")

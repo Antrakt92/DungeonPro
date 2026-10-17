@@ -806,6 +806,11 @@ function UI:RefreshDetail()
         line("|cff" .. COLOR[state.status] .. statusLabel(state) .. "|r")
         local minimum = addon.Clean(q.minLevel, "number")
         if minimum and minimum > 0 and minimum % 1 == 0 then line(addon.L("QUEST_MIN_LEVEL", minimum)) end
+        local factions = audienceLabel({ factions = q.factions }, function()
+            return self.quest == renderQuest and self.dungeon == renderDungeon and self.rewardGeneration == rewardGeneration and addon.char == renderCharacter
+        end)
+        if factions == false then return end
+        if factions then line(addon.L("QUEST_FACTIONS", factions)) end
         for _, rule in ipairs({ { "classes", "string", "QUEST_CLASSES", addon.ClassName },
             { "races", "number", "QUEST_RACES", addon.RaceName } }) do
             local entries = addon.Clean(q[rule[1]], "table")
