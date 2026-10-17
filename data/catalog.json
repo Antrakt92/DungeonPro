@@ -836,7 +836,9 @@
             "x": 38.6,
             "y": 83.6
           }
-        ]
+        ],
+        "creatureDisplayID": 137727,
+        "portraitSource": "https://www.wowhead.com/forever/npc=253279"
       }
     },
     {
@@ -1132,7 +1134,9 @@
       "finish": {
         "name": "Maur Grimtotem",
         "npcID": 11834,
-        "zoneName": "Ragefire Chasm"
+        "zoneName": "Ragefire Chasm",
+        "creatureDisplayID": 11755,
+        "portraitSource": "https://www.wowhead.com/forever/npc=11834"
       }
     },
     {
@@ -1189,7 +1193,9 @@
       "start": {
         "name": "Maur Grimtotem",
         "npcID": 11834,
-        "zoneName": "Ragefire Chasm"
+        "zoneName": "Ragefire Chasm",
+        "creatureDisplayID": 11755,
+        "portraitSource": "https://www.wowhead.com/forever/npc=11834"
       },
       "finish": {
         "name": "Rahauro",
@@ -2074,14 +2080,18 @@
         "name": "Keeper Bel'dugur",
         "mapID": 1458,
         "x": 53.6,
-        "y": 54.0
+        "y": 54.0,
+        "creatureDisplayID": 5751,
+        "portraitSource": "https://www.wowhead.com/forever/npc=2934"
       },
       "finish": {
         "npcID": 2934,
         "name": "Keeper Bel'dugur",
         "mapID": 1458,
         "x": 53.6,
-        "y": 54.0
+        "y": 54.0,
+        "creatureDisplayID": 5751,
+        "portraitSource": "https://www.wowhead.com/forever/npc=2934"
       },
       "requirementsKnown": false,
       "objectiveItems": [
@@ -2105,14 +2115,18 @@
         "name": "Dalar Dawnweaver",
         "mapID": 1421,
         "x": 44.2,
-        "y": 39.8
+        "y": 39.8,
+        "creatureDisplayID": 1278,
+        "portraitSource": "https://www.wowhead.com/forever/npc=1938"
       },
       "finish": {
         "npcID": 1938,
         "name": "Dalar Dawnweaver",
         "mapID": 1421,
         "x": 44.2,
-        "y": 39.8
+        "y": 39.8,
+        "creatureDisplayID": 1278,
+        "portraitSource": "https://www.wowhead.com/forever/npc=1938"
       },
       "requirementsKnown": false,
       "objectiveItems": [
@@ -2277,7 +2291,9 @@
             "y": 33.8,
             "zoneName": "Thunder Bluff"
           }
-        ]
+        ],
+        "creatureDisplayID": 8356,
+        "portraitSource": "https://www.wowhead.com/forever/npc=9087"
       },
       "requirementsKnown": false,
       "startsInside": true,
@@ -2669,7 +2685,9 @@
         "zoneName": "Darkshore",
         "mapID": 1439,
         "x": 38.4,
-        "y": 43
+        "y": 43,
+        "creatureDisplayID": 8229,
+        "portraitSource": "https://www.wowhead.com/forever/npc=8997"
       },
       "finish": {
         "npcID": 8997,
@@ -2677,7 +2695,9 @@
         "zoneName": "Darkshore",
         "mapID": 1439,
         "x": 38.4,
-        "y": 43
+        "y": 43,
+        "creatureDisplayID": 8229,
+        "portraitSource": "https://www.wowhead.com/forever/npc=8997"
       },
       "requirementsKnown": false,
       "objectiveItems": [
@@ -12041,7 +12061,9 @@
             "y": 33.8,
             "zoneName": "Thunder Bluff"
           }
-        ]
+        ],
+        "creatureDisplayID": 8356,
+        "portraitSource": "https://www.wowhead.com/forever/npc=9087"
       },
       "finish": {
         "npcID": 259118,
@@ -12130,7 +12152,9 @@
             "y": 33.8,
             "zoneName": "Thunder Bluff"
           }
-        ]
+        ],
+        "creatureDisplayID": 8356,
+        "portraitSource": "https://www.wowhead.com/forever/npc=9087"
       },
       "requirementsKnown": false,
       "factions": [
@@ -17830,6 +17854,12 @@
       "storyline": [
         4769,
         4768
+      ],
+      "objectiveItems": [
+        {
+          "itemID": 12358,
+          "name": "Darkstone Tablet"
+        }
       ]
     },
     {
@@ -17940,6 +17970,12 @@
         4766,
         4764,
         4765
+      ],
+      "objectiveItems": [
+        {
+          "itemID": 12352,
+          "name": "Doomrigger's Clasp"
+        }
       ]
     },
     {
@@ -18045,6 +18081,12 @@
         6403,
         6501,
         6502
+      ],
+      "objectiveItems": [
+        {
+          "itemID": 16663,
+          "name": "Blood of the Black Dragon Champion"
+        }
       ]
     },
     {
@@ -22909,7 +22951,13 @@
         "dungeonKey": "dire",
         "creatureDisplayID": 14407,
         "portraitSource": "https://www.wowhead.com/forever/npc=14368"
-      }
+      },
+      "providedItems": [
+        {
+          "itemID": 18401,
+          "name": "Nostro's Compendium of Dragon Slaying"
+        }
+      ]
     },
     {
       "id": 8949,
@@ -29881,7 +29929,19 @@
         7646,
         7647
       ],
-      "storylineEvidence": "https://www.wowhead.com/forever/quest=7646/the-divination-scryer"
+      "storylineEvidence": "https://www.wowhead.com/forever/quest=7646/the-divination-scryer",
+      "providedItems": [
+        {
+          "itemID": 18753,
+          "name": "Arcanite Barding"
+        }
+      ],
+      "objectiveItems": [
+        {
+          "itemID": 18775,
+          "name": "Manna-Enriched Horse Feed"
+        }
+      ]
     },
     {
       "id": 7644,
@@ -30428,7 +30488,13 @@
         "name": "Dreadsteed Spirit",
         "zoneName": "Dire Maul"
       },
-      "requirementsKnown": false
+      "requirementsKnown": false,
+      "providedItems": [
+        {
+          "itemID": 18818,
+          "name": "Mor'zul's Instructions"
+        }
+      ]
     }
   ],
   "dungeons": [
