@@ -16,6 +16,7 @@ local function fixture()
     function methods:CreateFontString() return frame() end
     function methods:GetFontString() self.label=self.label or frame();return self.label end
     function methods:SetFrameStrata(value) self.strata = value end
+    function methods:SetClampedToScreen(value) self.clamped = value end
     function methods:Show() self.shown = true end
     function methods:Hide()
         local shown = self.shown; self.shown = false
@@ -212,7 +213,7 @@ check("Cancelling from a hidden planner restores the actual tracked HUD font con
     local database = addon.db
     ui.language.scripts.OnEnter(); local state = addon.Language.session
     state.rows[10].scripts.OnEnter()
-    assert(addon.Language:GetSelection() == "zhCN" and not path(hud) and addon.db == database and database.locale == "enUS")
+    assert(addon.Language:GetSelection() == "zhCN" and path(hud) == "Fonts\\ARKai_T.ttf" and addon.db == database and database.locale == "enUS")
     ui.frame:Hide(); addon.Language:Cancel(ui)
     local restored = path(hud)
     assert(not addon.Language:GetSelection() and restored and restored:find("NotoSans", 1, true) and
@@ -241,8 +242,8 @@ check("Flag-only launcher and polished rows retain native names selection and re
     local row,flag,mark=state.rows[3],state.rows[3].languageFlag,state.rows[3].languageMark
     local renders=ui.renders;row.scripts.OnEnter()
     assert(ui.renders==renders+1 and not state.popup.scripts.OnUpdate and ui.language.languageFlag==icon)
-    assert(icon.texture=="Interface\\AddOns\\DungeonPro\\Media\\Flags\\ruRU" and row.languageSelected and row.languageMark.shown)
-    assert(not state.rows[2].languageMark.shown and state.rows[1].text==addon.locales.ruRU.LANGUAGE_AUTO)
+    assert(icon.texture=="Interface\\AddOns\\DungeonPro\\Media\\Flags\\ruRU" and row.languagePreview and not row.languageSelected and not row.languageMark.shown)
+    assert(state.rows[2].languageMark.shown and state.rows[1].text==addon.locales.ruRU.LANGUAGE_AUTO)
     for _=1,10 do addon.Language:Cancel(ui);ui.language.scripts.OnEnter()end
     assert(addon.Language.session.rows[3]==row and row.languageFlag==flag and row.languageMark==mark)
     assert(#row.textures==2 and #ui.language.textures==1 and addon.db.locale=="enUS")
@@ -283,4 +284,49 @@ check("Failed popup visibility expires all preview and commit callbacks without 
     row.scripts.OnEnter();row.scripts.OnClick()
     assert(addon.db.locale=="enUS" and ui.renders==renders and not addon.Language:GetSelection())
 end)
+check("Hover preserves the committed check and only a click changes it on reopening", function()
+    local addon, ui = fixture(); ui.language.scripts.OnEnter()
+    local state = addon.Language.session
+    for i = 3, 11 do
+        state.rows[i].scripts.OnEnter()
+        assert(state.rows[2].languageMark.shown and state.rows[2].languageSelected)
+        assert(not state.rows[i].languageMark.shown and state.rows[i].languagePreview)
+        assert(addon.db.locale == "enUS")
+    end
+    state.rows[3].scripts.OnClick(); ui.language.scripts.OnEnter()
+    state = addon.Language.session
+    assert(state.rows[3].languageMark.shown and not state.rows[2].languageMark.shown)
+end)
+
+check("Explicit false render failure rolls back preview just like a thrown failure", function()
+    local addon, ui = fixture(); local refresh = ui.Refresh
+    ui.Refresh = function(self)
+        if addon.Language:GetSelection() == "ruRU" then return false end
+        return refresh(self)
+    end
+    ui.language.scripts.OnEnter(); local state = addon.Language.session
+    assert(not addon.Language:Preview(state, "ruRU"))
+    assert(addon.Language:GetSelection() == nil and addon.db.locale == "enUS")
+    assert(ui.language.languageLocale == "enUS")
+end)
+
+check("Popup requests screen clamping and each row keeps its own script across previews", function()
+    local addon, ui = fixture()
+    addon.Theme = { StyleLanguageRow = function(row, locale)
+        row.fontLocale = locale
+        return locale ~= "koKR" and locale ~= "zhCN" and locale ~= "zhTW"
+    end }
+    ui.language.scripts.OnEnter(); local state = addon.Language.session
+    assert(state.popup.clamped == true)
+    state.rows[3].scripts.OnEnter()
+    assert(state.rows[1].fontLocale == "ruRU" and state.rows[2].fontLocale == "enUS")
+    assert(state.rows[3].fontLocale == "ruRU" and state.rows[4].fontLocale == "deDE")
+    assert(state.rows[9].text == "Korean" and state.rows[10].text == "Chinese (Simplified)" and
+        state.rows[11].text == "Chinese (Traditional)")
+    state.rows[4].scripts.OnEnter()
+    assert(state.rows[1].fontLocale == "deDE" and state.rows[3].fontLocale == "ruRU")
+    state.rows[10].scripts.OnClick()
+    assert(addon.db.locale == "zhCN", "readable fallback must retain the real language choice")
+end)
+
 print("Language preview modeled checks passed: " .. total .. " (native pointer and font acceptance pending)")

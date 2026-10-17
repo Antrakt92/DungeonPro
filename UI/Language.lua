@@ -3,7 +3,7 @@ local Language = {}
 addon.Language = Language
 local choices = { { "auto" }, { "enUS", "English" }, { "ruRU", "Русский" }, { "deDE", "Deutsch" },
     { "frFR", "Français" }, { "esES", "Español" }, { "itIT", "Italiano" }, { "ptBR", "Português" },
-    { "koKR", "한국어" }, { "zhCN", "简体中文" }, { "zhTW", "繁體中文" } }
+    { "koKR", "한국어", "Korean" }, { "zhCN", "简体中文", "Chinese (Simplified)" }, { "zhTW", "繁體中文", "Chinese (Traditional)" } }
 
 local function code(value)
     value = addon.Clean(value, "string")
@@ -128,19 +128,31 @@ function Language:RefreshRows(state)
     for i, choice in ipairs(choices) do
         local row = state.rows[i]
         if row then
-            local selected = selection == choice[1]
+            local selected = (code(state.committed) or "auto") == choice[1]
+            local preview = selection == choice[1]
             local label = choice[2] or addon.L("LANGUAGE_AUTO")
             if not same() then return false end
+            local theme = addon.Clean(addon.Theme, "table")
+            local font = theme and addon.Clean(theme.StyleLanguageRow, "function")
+            if font then
+                local locale = choice[1] == "auto" and resolved(selection) or choice[1]
+                local supported = addon.Read(font, "boolean", row, locale)
+                if not same() then return false end
+                if supported ~= true and choice[3] then
+                    label = choice[3]
+                    addon.Read(font, "boolean", row, "enUS")
+                    if not same() then return false end
+                end
+            end
             invoke(row, "SetText", label)
             if not same() then return false end
-            local theme = addon.Clean(addon.Theme, "table")
-            if theme then addon.Read(theme.StyleRow, "boolean", row, { selected = selected }) end
+            if theme then addon.Read(theme.StyleRow, "boolean", row, { selected = preview }) end
             if not same() then return false end
             if row.languageMark then
                 invoke(row.languageMark, selected and "Show" or "Hide")
                 if not same() then return false end
             end
-            row.languageSelected = selected
+            row.languageSelected, row.languagePreview = selected, preview
         end
     end
     return same()
@@ -170,7 +182,8 @@ function Language:Preview(state, value)
     if state.preview == value then return true end
     local previous = state.preview
     state.preview = value
-    local ok = pcall(state.refresh, state.ui)
+    local ok, result = pcall(state.refresh, state.ui)
+    ok = ok and result ~= false
     if not ok and owned(state) then
         state.preview = previous
         pcall(state.refresh, state.ui)
@@ -237,6 +250,7 @@ function Language:Open(ui)
     invoke(popup, "SetPoint", "TOPRIGHT", button, "BOTTOMRIGHT", 0, 0)
     invoke(popup, "SetFrameStrata", "TOOLTIP")
     invoke(popup, "EnableMouse", true)
+    invoke(popup, "SetClampedToScreen", true)
     local theme = addon.Clean(addon.Theme, "table")
     if theme then addon.Read(theme.Apply, "boolean", { frame = popup }) end
     for i, choice in ipairs(choices) do
@@ -285,7 +299,7 @@ function Language:Open(ui)
         invoke(row, "SetScript", "OnEnter", function() self:Preview(state, value) end)
         invoke(row, "SetScript", "OnLeave", function() self:Leave(state) end)
         invoke(row, "SetScript", "OnClick", function() self:Commit(state, value) end)
-        -- Native template fonts retain script fallback for every language name.
+        -- Row fonts follow their own language, independently of the hovered preview.
         invoke(row, "Show")
     end
     invoke(popup, "SetScript", "OnLeave", function() self:Leave(state) end)

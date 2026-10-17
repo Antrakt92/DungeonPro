@@ -296,13 +296,16 @@ test("missing rotation hook capabilities and partial hook failures preserve orig
     assert(not addon.Theme.StyleScrollBar({}))
 end)
 
-local function notoFixture()
+local function notoFixture(allowCJK)
     local previous={game=GetLocale,db=addon.db,chat=ChatFontNormal,creator=CreateFont}
     local family={shared=true};ChatFontNormal=family;addon.db={locale="enUS"};GetLocale=function()return"enUS"end
     local made=0
     local function font()
         return{
-            SetFont=function(self,path,size,flags)self.path,self.height,self.flags=path,size,flags;self.family=nil end,
+            SetFont=function(self,path,size,flags)
+                if not allowCJK and not path:find("NotoSans-Regular.ttf",1,true) and path ~= "Fonts\\ARIALN.TTF" then return false end
+                self.path,self.height,self.flags=path,size,flags;self.family=nil
+            end,
             GetFont=function(self)return self.path,self.height,self.flags end,
             SetFontObject=function(self,value)self.family=value;self.path=nil end,
             SetFontHeight=function(self,value)self.height=value end,
@@ -424,7 +427,7 @@ test("void SimpleFont setters are verified by current clean font path and height
 end)
 
 
-test("repeated locale selections allocate only two actual source caches while preserving family and creator identity",function()
+test("repeated locale selections keep bounded per-script source caches while preserving family and creator identity",function()
     local f=notoFixture();local r=f.font();local input={SetFontObject=function(self,font)self.font=font end}
     local function paint()
         addon.Theme.ApplyFont(r,14);addon.Theme.ApplyInputFont(input);addon.Theme.StyleButtonFonts(f.button)
@@ -432,14 +435,16 @@ test("repeated locale selections allocate only two actual source caches while pr
     paint();local noto=input.font;local original=f.made()
     addon.db.locale="zhCN";paint();local native=input.font
     assert(native~=noto)
+    local sources={zhCN=native}
+    for _,locale in ipairs({"zhTW","koKR"})do addon.db.locale=locale;paint();sources[locale]=input.font end
     local warmed=f.made()
     for i=1,20 do
         for _,locale in ipairs({"ruRU","enGB","zhTW","koKR","zhCN","enUS"})do
             addon.db.locale=locale;paint()
-            assert(input.font==((locale=="ruRU"or locale=="enGB"or locale=="enUS")and noto or native))
+            assert(input.font==((locale=="ruRU"or locale=="enGB"or locale=="enUS")and noto or sources[locale]))
         end
     end
-    assert(f.made()==warmed and warmed==original*2)
+    assert(f.made()==warmed and warmed==original*4)
     ChatFontNormal={newFamily=true};paint();assert(input.font~=noto and f.made()>warmed)
     local last=input.font;local maker=CreateFont;CreateFont=function(name)return maker(name)end
     paint();assert(input.font~=last)
@@ -548,6 +553,66 @@ test("transient language preview switches existing font roles without changing t
     selection = secret; addon.Theme.RefreshFonts()
     assert(resolvedPath(text) and addon.db.locale == "enUS")
     addon.Language = previous; f.finish()
+end)
+
+test("cross-client CJK UI text inputs and controls keep distinct compatible scripts then restore Noto", function()
+    local f = notoFixture(true)
+    local text, input = f.font(), { SetFontObject = function(self, value) self.font = value end }
+    local paths = { zhCN = "Fonts\\ARKai_T.ttf", zhTW = "Fonts\\bHEI00M.ttf", koKR = "Fonts\\2002.ttf" }
+    local sources = {}
+    for _, locale in ipairs({ "ruRU", "zhCN", "koKR", "zhTW", "enUS" }) do
+        addon.db.locale = locale
+        assert(addon.Theme.ApplyFont(text, 16) and addon.Theme.ApplyInputFont(input) and addon.Theme.StyleButtonFonts(f.button))
+        local expected = paths[locale] or "Interface\\AddOns\\DungeonPro\\Media\\Fonts\\NotoSans-Regular.ttf"
+        assert(resolvedPath(text) == expected and input.font.path == expected and f.button.Highlight.path == expected)
+        sources[locale] = input.font
+    end
+    assert(sources.zhCN ~= sources.zhTW and sources.zhCN ~= sources.koKR and sources.ruRU == sources.enUS)
+    local made = f.made()
+    for _ = 1, 20 do
+        for locale in pairs(paths) do addon.db.locale = locale; addon.Theme.RefreshFonts(); assert(input.font == sources[locale]) end
+    end
+    assert(f.made() == made and not f.family.path and not f.family.height)
+    f.finish()
+end)
+
+test("language row labels and all button states retain their own script during another language preview", function()
+    local f = notoFixture(true)
+    local text = f.font()
+    assert(addon.Theme.ApplyLanguageFont(text, "zhCN", 14) and addon.Theme.StyleLanguageRow(f.button, "koKR"))
+    local rowFont, labelFont = f.button.Normal, text.family
+    addon.db.locale = "zhTW"; addon.Theme.RefreshFonts()
+    assert(text.family == labelFont and resolvedPath(text) == "Fonts\\ARKai_T.ttf")
+    for _, role in ipairs({ "Normal", "Highlight", "Disabled" }) do assert(f.button[role].path == "Fonts\\2002.ttf") end
+    assert(f.button.Normal == rowFont)
+    assert(addon.Theme.ApplyLanguageFont(text, "ruRU", 14) and resolvedPath(text):find("NotoSans-Regular.ttf", 1, true))
+    assert(not addon.Theme.ApplyLanguageFont(text, secret, 14) and not addon.Theme.StyleLanguageRow(f.button, secret))
+    f.finish()
+end)
+
+test("CJK probing skips failed candidates and reports unavailable scripts without losing native fallback", function()
+    for _, mode in ipairs({ "false", "throw", "second" }) do
+        local f = notoFixture(true); local creator = CreateFont
+        CreateFont = function(name)
+            local font = creator(name); local setter = font.SetFont
+            font.SetFont = function(self, path, size, flags)
+                if mode == "second" and path == "Fonts\\ARHei.TTF" then return setter(self, path, size, flags) end
+                if mode == "throw" then error("unavailable font") end
+                return false
+            end
+            return font
+        end
+        local text = f.font()
+        local result = addon.Theme.ApplyLanguageFont(text, "zhCN", 14)
+        local rowResult = addon.Theme.StyleLanguageRow(f.button, "zhCN")
+        if mode == "second" then
+            assert(result and rowResult and resolvedPath(text) == "Fonts\\ARHei.TTF" and f.button.Disabled.path == "Fonts\\ARHei.TTF")
+        else
+            assert(not result and not rowResult and resolvedFamily(text, f.family) and resolvedFamily(f.button.Normal, f.family))
+        end
+        assert(not f.family.path and not f.family.height)
+        f.finish()
+    end
 end)
 
 test("Window base is opaque so lower windows cannot read through the planner",function()

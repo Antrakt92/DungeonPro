@@ -3834,7 +3834,7 @@ check("Same-card location redraw and character loss preserve only the newly owne
         addon.char=character;restore()
     end
 end)
-check("Noto and native CJK families retain actual sizes and unscaled reusable rows",function()
+check("Noto and probed CJK assets retain actual sizes and unscaled reusable rows",function()
     local old,locale=ChatFontNormal,addon.db.locale
     assert(ui.searchBox.fontSize==14 and not ui.searchBox.scaledText and ui.searchBox.SetFontHeight==false)
     assert(ui.copy and ui.copy.fontSize==14 and ui.copy.SetFontHeight==false)
@@ -3844,7 +3844,8 @@ check("Noto and native CJK families retain actual sizes and unscaled reusable ro
     for code in pairs(addon.locales)do
         addon.db.locale=code;showDetail(1)
         local title=ui.details[1]
-        if code=="koKR"or code=="zhCN"or code=="zhTW"then assert(title.fontFamily==ChatFontNormal)
+        local cjk={koKR="Fonts\\2002.ttf",zhCN="Fonts\\ARKai_T.ttf",zhTW="Fonts\\bHEI00M.ttf"}
+        if cjk[code]then assert(title.fontPath==cjk[code] and title.fontFamily==nil)
         else assert(title.fontPath:find("NotoSans-Regular.ttf",1,true) and title.fontFamily==nil)end
         assert(title.fontSize==26 and not title.scaledText and title.shadow[1]==0 and title.shadow[2]==0)
     end
@@ -7584,11 +7585,11 @@ check("existing header catalogue detail and input roles update on UI language fo
     for _,code in ipairs({"enUS","ruRU","zhCN","enUS"})do
         addon.db.locale=code;ui:Refresh()
         for _,fs in ipairs({ui.title,ui.heading,ui.footer,ui.searchPlaceholder,row.title,row.note})do
-            if code=="zhCN"then assert(fs.fontFamily==ChatFontNormal)
+            if code=="zhCN"then assert(fs.fontPath=="Fonts\\ARKai_T.ttf" and fs.fontFamily==nil)
             else assert(fs.fontPath and fs.fontPath:find("NotoSans-Regular.ttf",1,true))end
         end
         local font=ui.searchBox.fontFamily
-        if code=="zhCN"then assert(font.family==ChatFontNormal and not font.fontPath)
+        if code=="zhCN"then assert(font.fontPath=="Fonts\\ARKai_T.ttf" and font.family==nil)
         else assert(font.fontPath:find("NotoSans-Regular.ttf",1,true))end
         assert(ui.searchBox.fontSize==14 and row.title.fontSize==17 and row.note.fontSize==14)
     end
@@ -7639,7 +7640,7 @@ check("from-creation owned text fonts avoid a sticky direct Noto override across
         addon.db.locale=code;ui:Refresh()
         assert(direct==atCreation,"ordinary FontStrings must inherit owned fonts instead of setting a local asset")
         assert(ui.title.text==addon.L("TITLE")and row.title.fontSize==17 and row.note.fontSize==14)
-        if code=="zhCN"then assert(row.title.fontFamily==ChatFontNormal and not row.title.fontPath)
+        if code=="zhCN"then assert(row.title.fontPath=="Fonts\\ARKai_T.ttf" and row.title.fontFamily==nil)
         else assert(row.title.fontPath and row.title.fontPath:find("NotoSans-Regular.ttf",1,true))end
     end
     row:Hide();methods.SetFont,methods.SetFontObject=asset,inherit
@@ -8581,7 +8582,8 @@ check("Real language hover previews the existing window and restores its labels 
         assert(ui.language.text=="" and ui.language.languageLocale==code and ui.language.width==36)
         assert(ui.language.languageFlag.texture=="Interface\\AddOns\\DungeonPro\\Media\\Flags\\"..code)
         assert(ui.rangeButton.text==addon.locales[code][ui.range and "RANGE"or"ALL"])
-        assert(session.rows[1].text==addon.locales[code].LANGUAGE_AUTO and row.languageSelected)
+        assert(session.rows[1].text==addon.locales[code].LANGUAGE_AUTO and row.languagePreview)
+        assert(session.rows[2].languageSelected and row.languageSelected==(code=="enUS"),"checkmark follows committed English while hover previews another locale")
         assert(detailHas(addon.locales[code].NEXT))
     end
     session.rows[4].scripts.OnClick();assert(addon.db.locale=="deDE" and not language.session)

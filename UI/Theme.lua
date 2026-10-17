@@ -46,7 +46,12 @@ local fontRegions, inputRegions = setmetatable({}, { __mode = "k" }), setmetatab
 local NOTO_FONT = "Interface\\AddOns\\DungeonPro\\Media\\Fonts\\NotoSans-Regular.ttf"
 local FONT_LOCALES = { enUS = true, enGB = true, ruRU = true, deDE = true, frFR = true,
     esES = true, esMX = true, itIT = true, ptBR = true, koKR = true, zhCN = true, zhTW = true }
-local function fontContext()
+local CJK_FONTS = {
+    zhCN = { "Fonts\\ARKai_T.ttf", "Fonts\\ARHei.TTF", "Fonts\\ARKai_C.ttf" },
+    zhTW = { "Fonts\\bHEI00M.ttf", "Fonts\\ARKai_T.ttf", "Fonts\\ARHei.TTF" },
+    koKR = { "Fonts\\2002.ttf", "Fonts\\K_Pagetext.TTF", "Fonts\\K_Damage.TTF" },
+}
+local function fontContext(explicitLocale)
     local family = cleanObject(ChatFontNormal) or cleanObject(GameFontHighlight)
     local game = addon.Read(GetLocale, "string")
     local database = addon.Clean(addon.db, "table")
@@ -54,18 +59,22 @@ local function fontContext()
     local language = addon.Clean(addon.Language, "table")
     local preview = language and addon.Read(language.GetSelection, "string", language)
     if preview then selection = preview end
+    if explicitLocale and explicitLocale ~= "auto" then selection = explicitLocale end
     if not selection or #selection > 32 then selection = "auto" end
     local locale = selection == "auto" and game or selection
     if locale == "enGB" then locale = "enUS" elseif locale == "esMX" then locale = "esES" end
     if not FONT_LOCALES[locale or ""] then locale = "enUS" end
     local cjk = { koKR = true, zhCN = true, zhTW = true }
     local path = game and FONT_LOCALES[game] and not cjk[game] and not cjk[locale] and NOTO_FONT or nil
-    return { family = family, path = path, key = (path or "native") .. ":" .. selection .. ":" .. (game or "?") }
+    local candidates = CJK_FONTS[locale]
+    return { family = family, path = path, candidates = candidates,
+        source = (candidates and locale or path or "native") .. (explicitLocale and ":" .. explicitLocale or ""),
+        key = (path or locale) .. ":" .. selection .. ":" .. (game or "?") }
 end
 
 local function setFontAsset(region, path, size, fontObject)
     local ok, result = invoke(region, "SetFont", path, size, "")
-    if not ok then return nil end
+    if not ok or addon.Clean(result, "boolean") == false then return nil end
     if not fontObject then return addon.Clean(result, "boolean") == true and path or nil end
     -- Font objects have a void SetFont setter; verify the resulting asset and size.
     local inspected, currentPath, height = invoke(region, "GetFont")
@@ -75,6 +84,11 @@ local function setFontAsset(region, path, size, fontObject)
 end
 
 local function applyFontSource(region, size, context, fontObject)
+    if context.candidates then
+        for _, path in ipairs(context.candidates) do
+            if setFontAsset(region, path, size, fontObject) then return path end
+        end
+    end
     if context.path and setFontAsset(region, context.path, size, fontObject) then return context.path end
     if context.family and invoke(region, "SetFontObject", context.family) and invoke(region, "SetFontHeight", size) then
         return context.family
@@ -84,23 +98,29 @@ local function applyFontSource(region, size, context, fontObject)
     return setFontAsset(region, path, size, fontObject)
 end
 
+local function compatibleSource(context, source)
+    if not context.candidates then return true end
+    for _, path in ipairs(context.candidates) do if source == path then return true end end
+    return false
+end
+
 local fontCaches, cacheFamily, cacheCreator
 local function sourceCache(context, creator)
     if not fontCaches or cacheFamily ~= context.family or cacheCreator ~= creator then
         fontCaches, cacheFamily, cacheCreator = {}, context.family, creator
     end
-    local mode = context.path and "bundled" or "native"
+    local mode = context.source
     local cache = fontCaches[mode]
     if not cache then cache = { text = {} }; fontCaches[mode] = cache end
     return cache
 end
 
 -- Keep asset overrides on owned font objects when switching back to native families.
-function Theme.ApplyFont(region, size)
+local function applyTextFont(region, size, locale)
     region, size = cleanObject(region), addon.Clean(size, "number")
     if not region or not size or size < 1 or size > 72 then return nil end
-    local context, creator = fontContext(), addon.Clean(CreateFont, "function")
-    local applied
+    local context, creator = fontContext(locale), addon.Clean(CreateFont, "function")
+    local applied, compatible
     if creator then
         local fonts = sourceCache(context, creator).text
         local font = fonts[size]
@@ -108,19 +128,36 @@ function Theme.ApplyFont(region, size)
             fontSerial = fontSerial + 1
             local ok, value = pcall(creator, "DungeonProTextFont" .. fontSerial)
             font = ok and cleanObject(value) or nil
-            if font and applyFontSource(font, size, context, true) then
+            local source = font and applyFontSource(font, size, context, true)
+            if source then
                 invoke(font, "SetShadowOffset", 0, 0)
                 fonts[size] = font
+                fonts["compatible" .. size] = compatibleSource(context, source)
             else font = nil end
         end
-        if font and invoke(region, "SetFontObject", font) then applied = font end
+        if font and invoke(region, "SetFontObject", font) then applied, compatible = font, fonts["compatible" .. size] end
     end
-    if not applied then applied = applyFontSource(region, size, context) end
+    if not applied then
+        applied = applyFontSource(region, size, context)
+        compatible = compatibleSource(context, applied)
+    end
     if applied then
         invoke(region, "SetShadowOffset", 0, 0)
-        fontRegions[region] = { size = size, key = context.key, family = context.family, creator = creator }
-        return applied
+        fontRegions[region] = { size = size, locale = locale, key = context.key, family = context.family, creator = creator }
+        return applied, compatible
     end
+end
+
+function Theme.ApplyFont(region, size)
+    return applyTextFont(region, size)
+end
+
+-- Each language label retains its own script while the rest of the UI previews another locale.
+function Theme.ApplyLanguageFont(region, locale, size)
+    locale = addon.Clean(locale, "string")
+    if locale ~= "auto" and not FONT_LOCALES[locale or ""] then return nil end
+    local font, compatible = applyTextFont(region, size, locale)
+    if compatible then return font end
 end
 
 local inputFont
@@ -152,9 +189,9 @@ function Theme.ApplyInputFont(region)
     end
 end
 
-function Theme.StyleButtonFonts(button)
+local function styleButtonFonts(button, locale)
     button = cleanObject(button)
-    local context, creator = fontContext(), addon.Clean(CreateFont, "function")
+    local context, creator = fontContext(locale), addon.Clean(CreateFont, "function")
     local family = context.family
     if not button or not family or not creator then return false end
     local roles = { { "Normal", palette.text }, { "Highlight", palette.heading }, { "Disabled", palette.quiet } }
@@ -167,22 +204,24 @@ function Theme.StyleButtonFonts(button)
     local cache = sourceCache(context, creator)
     controlFonts = cache.controls
     if not controlFonts then
-        controlFonts = { family = family, creator = creator, failed = true }
+        controlFonts = { family = family, creator = creator, failed = true, compatible = true }
         cache.controls = controlFonts
         for _, role in ipairs(roles) do
             fontSerial = fontSerial + 1
             local ok, value = pcall(creator, "DungeonProControlFont" .. fontSerial)
             local font = ok and cleanObject(value) or nil
-            if not font or not applyFontSource(font, 14, context, true) or
+            local source = font and applyFontSource(font, 14, context, true)
+            if not font or not source or
                 not invoke(font, "SetTextColor", unpack(role[2])) then return false end
             invoke(font, "SetShadowOffset", 0, 0)
             controlFonts[role[1]] = font
+            if not compatibleSource(context, source) then controlFonts.compatible = false end
         end
         controlFonts.failed = nil
     end
-    controlFonts.key = context.key
+    controlFonts.key, controlFonts.locale = context.key, locale
     if controlFonts.failed then return false end
-    if styledButtons[button] == controlFonts then return true end
+    if styledButtons[button] == controlFonts then return true, controlFonts.compatible end
     for _, role in ipairs(roles) do
         if not invoke(button, "Set" .. role[1] .. "FontObject", controlFonts[role[1]]) then
             for _, restore in ipairs(roles) do invoke(button, "Set" .. restore[1] .. "FontObject", previous[restore[1]]) end
@@ -190,7 +229,18 @@ function Theme.StyleButtonFonts(button)
         end
     end
     styledButtons[button] = controlFonts
-    return true
+    return true, controlFonts.compatible
+end
+
+function Theme.StyleButtonFonts(button)
+    return styleButtonFonts(button)
+end
+
+function Theme.StyleLanguageRow(button, locale)
+    locale = addon.Clean(locale, "string")
+    if locale ~= "auto" and not FONT_LOCALES[locale or ""] then return false end
+    local applied, compatible = styleButtonFonts(button, locale)
+    return applied and compatible or false
 end
 
 local closeButtons = setmetatable({}, { __mode = "k" })
@@ -260,13 +310,15 @@ end
 function Theme.RefreshFonts()
     local context, creator = fontContext(), addon.Clean(CreateFont, "function")
     for region, previous in pairs(fontRegions) do
-        if previous.key ~= context.key or previous.family ~= context.family or previous.creator ~= creator then Theme.ApplyFont(region, previous.size) end
+        local target = previous.locale and fontContext(previous.locale) or context
+        if previous.key ~= target.key or previous.family ~= target.family or previous.creator ~= creator then applyTextFont(region, previous.size, previous.locale) end
     end
     for region, previous in pairs(inputRegions) do
         if previous.key ~= context.key or previous.family ~= context.family or previous.creator ~= creator then Theme.ApplyInputFont(region) end
     end
     for button, previous in pairs(styledButtons) do
-        if previous.key ~= context.key or previous.family ~= context.family or previous.creator ~= creator then Theme.StyleButtonFonts(button) end
+        local target = previous.locale and fontContext(previous.locale) or context
+        if previous.key ~= target.key or previous.family ~= target.family or previous.creator ~= creator then styleButtonFonts(button, previous.locale) end
     end
     for _, state in pairs(closeButtons) do
         if state.active then invoke(state.glyph, "SetText", "×"); state.refresh() end

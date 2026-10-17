@@ -2,6 +2,8 @@
 
 ## 0.1.0 - 16-Oct-2026 — Development preview
 
+- Improved language-menu fonts and Chinese/Korean font selection. Hover previews keep the saved language checked, cancel cleanly, and stay within the screen.
+
 - Fixed copying a quest link unexpectedly scrolling a different quest after the selection changes.
 
 - Improved cleanup of guide-created map pins when a navigation destination changes.
