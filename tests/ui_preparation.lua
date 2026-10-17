@@ -4076,4 +4076,163 @@ check("An old CurrentOffer result cannot label a newer quest or same-card genera
     end
     addon.CurrentOffer=getter;showDetail(2)
 end)
+local function objectivePresentationFixture()
+    local icon,name,count=addon.ItemIcon,addon.ItemName,addon.CarriedItemCount
+    local f=rewardPresentationFixture()
+    addon.quests[9970].objectiveItems={{itemID=801,name="Source objective",quantity=6},{itemID=802,name="Unknown amount"}}
+    addon.ItemIcon=function(id)return id+1000 end
+    addon.ItemName=function(id)return"Objective "..id end
+    addon.CarriedItemCount=function()return 0 end
+    local finish=f.finish
+    function f:finish()
+        addon.ItemIcon,addon.ItemName,addon.CarriedItemCount=icon,name,count
+        finish(self)
+    end
+    ui:RefreshDetail();return f
+end
+local function objectiveText(value)
+    for _,fs in ipairs(ui.details)do if fs.shown and fs.text==value then return fs end end
+end
+check("Optional objective icons retain exact collection text unknown amounts carried zero and source-only tooltips",function()
+    local f=objectivePresentationFixture()
+    local first,second=ui.objectiveButtons[1],ui.objectiveButtons[2]
+    local line=objectiveText(addon.L("OBJECTIVE_ITEM","Objective 801",6))
+    assert(first.shown and first.width==24 and first.height==24 and first.icon.texture==1801 and second.icon.texture==1802)
+    assert(line.width==304 and line.point[2]==34 and detailHas(addon.L("OBJECTIVE_ITEM_UNKNOWN","Objective 802")))
+    assert(detailHas(addon.L("ITEM_CARRIED",0)) and ui.engine:State(9970).status=="UNKNOWN" and not ui.action)
+    local reads=0;addon.DialogueRewards=function()reads=reads+1;return{source="dialogue",hidden=true}end
+    ui:RefreshDetail();assert(first.shown and detailHas(addon.L("REWARD_HIDDEN")))
+    local before=reads;first.scripts.OnEnter();assert(reads==before and f.tip.owner==first and f.tip.items[#f.tip.items]==801)
+    first.scripts.OnLeave();assert(not f.tip.shown and not ui.objectiveTooltip)
+    f:finish()
+end)
+check("Missing cold malformed or failing objective icons leave ordinary text and recycle the original width",function()
+    local f=objectivePresentationFixture();local first=ui.objectiveButtons[1]
+    local value=addon.L("OBJECTIVE_ITEM","Objective 801",6)
+    for _,icon in ipairs({false,function()return nil end,function()return"Interface/Icons/no"end,function()return 0 end,
+        function()return 4294967296 end,function()error("cold")end})do
+        addon.ItemIcon=icon or nil;ui:RefreshDetail()
+        local text=objectiveText(value);assert(text and text.width==334 and text.point[2]==4 and not first.shown and not first.objectiveBinding)
+    end
+    addon.ItemIcon=function()return 1801 end
+    local setter=first.icon.SetTexture
+    for _,failure in ipairs({"false","throw"})do
+        first.icon.SetTexture=function(self,texture)if texture then if failure=="throw"then error("no texture")end;return false end;return setter(self,texture)end
+        ui:RefreshDetail();assert(not first.shown and objectiveText(value).width==334 and not ui.rewardTextureBusy)
+    end
+    first.icon.SetTexture=setter;ui:RefreshDetail();assert(first.shown)
+    local before=#ui.objectiveButtons;for n=1,20 do ui:RefreshDetail()end;assert(#ui.objectiveButtons==before)
+    f:finish()
+end)
+check("Objective tooltip cold data source edits and recycled bindings never show or target stale items",function()
+    local f=objectivePresentationFixture();local first=ui.objectiveButtons[1]
+    f.tip.cold=true;first.scripts.OnEnter();assert(not f.tip.shown and not ui.objectiveTooltip)
+    f.tip.cold=false;first.scripts.OnEnter();local oldEnter,oldLeave=first.scripts.OnEnter,first.scripts.OnLeave
+    ui:RefreshDetail();first.scripts.OnEnter();local hides=f.tip.hides
+    oldLeave();assert(ui.objectiveTooltip and f.tip.hides==hides)
+    local count=#f.tip.items;oldEnter();assert(#f.tip.items==count)
+    addon.quests[9970].objectiveItems[1].quantity=nil
+    first.scripts.OnEnter();assert(#f.tip.items==count and not ui.objectiveTooltip)
+    ui:RefreshDetail();first.scripts.OnEnter();assert(ui.objectiveTooltip)
+    addon.quests[9970].objectiveItems={};first.scripts.OnEnter();assert(not ui.objectiveTooltip)
+    f:finish()
+end)
+check("Objective reward and foreign tooltip owners survive unrelated old leaves and resets",function()
+    local f=objectivePresentationFixture();local objective,reward=ui.objectiveButtons[1],ui.rewardButtons[1]
+    objective.scripts.OnEnter();local objectiveLeave=objective.scripts.OnLeave
+    reward.scripts.OnEnter();local hides=f.tip.hides;objectiveLeave();assert(f.tip.hides==hides and f.tip.owner==reward and ui.rewardTooltip)
+    local rewardLeave=reward.scripts.OnLeave;objective.scripts.OnEnter();hides=f.tip.hides;rewardLeave()
+    assert(f.tip.hides==hides and f.tip.owner==objective and ui.objectiveTooltip)
+    f.tip.owner={foreign=true};f.tip.shown=true;ui:RefreshDetail()
+    assert(f.tip.hides==hides and f.tip.shown and not ui.objectiveTooltip)
+    objective.scripts.OnEnter();ui.frame:Hide();ui.frame.scripts.OnHide(ui.frame)
+    assert(not f.tip.shown and not objective.shown and not ui.objectiveTooltip)
+    ui.frame:Show();f:finish()
+end)
+check("Objective icon producer and texture reentry cannot publish old artwork or destroy a newer card",function()
+    local f=objectivePresentationFixture();local first=ui.objectiveButtons[1]
+    for _,boundary in ipairs({"producer","texture"})do
+        for _,sameQuest in ipairs({false,true})do
+            local armed=true;local nestedHeight
+            addon.ItemIcon=function()
+                if boundary=="producer"and armed then armed=false;if sameQuest then ui:RefreshDetail()else showDetail(9971)end;nestedHeight=ui.detail.height end
+                return 1801
+            end
+            local setter=first.icon.SetTexture
+            if boundary=="texture"then first.icon.SetTexture=function(self,value)
+                if value and armed then armed=false;if sameQuest then ui:RefreshDetail()else showDetail(9971)end;nestedHeight=ui.detail.height end
+                return setter(self,value)
+            end end
+            showDetail(9970);assert(not armed and ui.detail.height==nestedHeight and not ui.rewardTextureBusy)
+            if not sameQuest then assert(ui.quest==9971 and not first.shown)
+            elseif boundary=="texture"then assert(not first.shown)end
+            first.icon.SetTexture=setter;addon.ItemIcon=function(id)return id+1000 end
+            showDetail(9970);assert(first.shown and first.icon.texture==1801)
+        end
+    end
+    f:finish()
+end)
+check("Reentrant objective tooltip owner item and hide calls preserve the newer source binding",function()
+    local f=objectivePresentationFixture();local first,second=ui.objectiveButtons[1],ui.objectiveButtons[2]
+    for _,boundary in ipairs({"owner","item","hide"})do
+        ui:RefreshDetail()
+        if boundary=="hide"then first.scripts.OnEnter()end
+        local function supersede()
+            f.ownerHook,f.itemHook,f.hideHook=nil,nil,nil
+            second.scripts.OnEnter()
+        end
+        if boundary=="owner"then f.ownerHook=supersede
+        elseif boundary=="item"then f.itemHook=supersede
+        else f.hideHook=supersede end
+        if boundary=="hide"then first.scripts.OnLeave()else first.scripts.OnEnter()end
+        assert(ui.objectiveTooltip and ui.objectiveTooltip.button==second and f.tip.owner==second and f.tip.shown)
+    end
+    f:finish()
+end)
+check("Objective icons reject restricted file IDs and keep Lua-safe oversized source item IDs as truthful text only",function()
+    local f=objectivePresentationFixture();local restricted={};local checker=issecretvalue
+    issecretvalue=function(value)return value==restricted end
+    addon.ItemIcon=function()return restricted end;ui:RefreshDetail()
+    assert(not ui.objectiveButtons[1].shown and objectiveText(addon.L("OBJECTIVE_ITEM","Objective 801",6)).width==334)
+    issecretvalue=checker
+    local calls=0;addon.ItemIcon=function()calls=calls+1;return 1801 end
+    addon.quests[9970].objectiveItems={{itemID=9007199254740991,name="Oversized source ID"}}
+    ui:RefreshDetail()
+    assert(calls==0 and not ui.objectiveButtons[1].shown and detailHas(addon.L("OBJECTIVE_ITEM_UNKNOWN","Objective "..tostring(9007199254740991))))
+    f:finish()
+end)
+check("Cross-kind tooltip cleanup never consumes a newer reentrant objective or reward hover",function()
+    local f=objectivePresentationFixture()
+    local objective,secondObjective=ui.objectiveButtons[1],ui.objectiveButtons[2]
+    local reward,secondReward=ui.rewardButtons[1],ui.rewardButtons[2]
+    objective.scripts.OnEnter()
+    f.hideHook=function()f.hideHook=nil;secondObjective.scripts.OnEnter()end
+    reward.scripts.OnEnter()
+    assert(ui.objectiveTooltip and ui.objectiveTooltip.button==secondObjective and f.tip.owner==secondObjective and not ui.rewardTooltip)
+    ui:RefreshDetail();reward.scripts.OnEnter()
+    f.hideHook=function()f.hideHook=nil;secondReward.scripts.OnEnter()end
+    objective.scripts.OnEnter()
+    assert(ui.rewardTooltip and ui.rewardTooltip.button==secondReward and f.tip.owner==secondReward and not ui.objectiveTooltip)
+    f:finish()
+end)
+check("Final objective binding validation rejects entry or quantity replacement during restriction cleaning",function()
+    local f=objectivePresentationFixture();local first=ui.objectiveButtons[1]
+    local setter,checker=first.icon.SetTexture,issecretvalue
+    for _,change in ipairs({"entry","quantity"})do
+        addon.quests[9970].objectiveItems={{itemID=801,name="Original",quantity=6}};local armed=false
+        first.icon.SetTexture=function(self,value)if value then armed=true end;return setter(self,value)end
+        issecretvalue=function(value)
+            if armed and value==6 then
+                armed=false
+                if change=="entry"then addon.quests[9970].objectiveItems[1]={itemID=999,name="Replacement",quantity=6}
+                else addon.quests[9970].objectiveItems[1].quantity=7 end
+            end
+            return false
+        end
+        ui:RefreshDetail();assert(not first.shown and not first.objectiveBinding)
+        first.icon.SetTexture=setter;issecretvalue=checker;ui:RefreshDetail()
+        assert(first.shown and first.objectiveBinding.id==(change=="entry"and 999 or 801))
+    end
+    first.icon.SetTexture=setter;issecretvalue=checker;f:finish()
+end)
 print("Preparation UI modeled checks passed: " .. total .. " (no native layout validation)")

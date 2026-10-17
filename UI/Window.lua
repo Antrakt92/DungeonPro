@@ -641,9 +641,18 @@ function UI:ResetRewardPresentation()
     self.rewardGeneration = generation
     self:ReleaseRewardTooltip()
     if self.rewardGeneration ~= generation then return nil end
+    self:ReleaseObjectiveTooltip()
+    if self.rewardGeneration ~= generation then return nil end
     self.rewardButtons = self.rewardButtons or {}
     for _, button in ipairs(self.rewardButtons) do
         button.rewardBinding = nil
+        button:SetScript("OnEnter", nil); button:SetScript("OnLeave", nil); button:SetScript("OnHide", nil)
+        button:Hide(); button.icon:Hide(); self:SetRewardTexture(button.icon, nil)
+        if self.rewardGeneration ~= generation then return nil end
+    end
+    self.objectiveButtons = self.objectiveButtons or {}
+    for _, button in ipairs(self.objectiveButtons) do
+        button.objectiveBinding = nil
         button:SetScript("OnEnter", nil); button:SetScript("OnLeave", nil); button:SetScript("OnHide", nil)
         button:Hide(); button.icon:Hide(); self:SetRewardTexture(button.icon, nil)
         if self.rewardGeneration ~= generation then return nil end
@@ -679,8 +688,11 @@ function UI:EnterReward(button, binding)
         setOwner = tooltipMethod(tooltip, "SetOwner"), setItem = tooltipMethod(tooltip, "SetItemByID"),
         isOwned = tooltipMethod(tooltip, "IsOwned"), hide = tooltipMethod(tooltip, "Hide") }
     if not held.setOwner or not held.setItem or not held.isOwned or not held.hide then return end
-    self:ReleaseRewardTooltip()
-    if self.rewardTooltip or not self:RewardBindingCurrent(button, binding) then return end
+    local priorObjective, priorReward = self.objectiveTooltip, self.rewardTooltip
+    self:ReleaseObjectiveTooltip(priorObjective)
+    if self.rewardTooltip ~= priorReward or self.objectiveTooltip then return end
+    self:ReleaseRewardTooltip(priorReward)
+    if self.rewardTooltip or self.objectiveTooltip or not self:RewardBindingCurrent(button, binding) then return end
     self.rewardTooltip = held
     local function current()
         return self.rewardTooltip == held and GameTooltip == tooltip and
@@ -701,6 +713,59 @@ function UI:EnterReward(button, binding)
     if not ok or shown ~= true or not current() then self:ReleaseRewardTooltip(held); return end
     owned = addon.Read(held.isOwned, "boolean", tooltip, button)
     if owned ~= true or not current() then self:ReleaseRewardTooltip(held) end
+end
+
+function UI:ReleaseObjectiveTooltip(expected)
+    local held = self.objectiveTooltip
+    if not held or (expected and held ~= expected) then return end
+    local owned = addon.Read(held.isOwned, "boolean", held.tooltip, held.button)
+    if self.objectiveTooltip ~= held then return end
+    self.objectiveTooltip = nil
+    if owned == true and tooltipMethod(held.tooltip, "Hide") == held.hide then pcall(held.hide, held.tooltip) end
+end
+
+function UI:ObjectiveBindingCurrent(button, binding)
+    if not binding.current() or button.objectiveBinding ~= binding or self.rewardGeneration ~= binding.generation then return false end
+    return addon.Read(self.frame.IsShown, "boolean", self.frame) == true and
+        addon.Read(button.IsShown, "boolean", button) == true and binding.current() and button.objectiveBinding == binding
+end
+
+function UI:EnterObjective(button, binding)
+    if not self:ObjectiveBindingCurrent(button, binding) then
+        local held = self.objectiveTooltip
+        if held and held.binding == binding then self:ReleaseObjectiveTooltip(held) end
+        return
+    end
+    local tooltip = addon.Clean(GameTooltip, "table") or addon.Clean(GameTooltip, "userdata")
+    if not tooltip then return end
+    local held = { tooltip = tooltip, button = button, binding = binding,
+        setOwner = tooltipMethod(tooltip, "SetOwner"), setItem = tooltipMethod(tooltip, "SetItemByID"),
+        isOwned = tooltipMethod(tooltip, "IsOwned"), hide = tooltipMethod(tooltip, "Hide") }
+    if not held.setOwner or not held.setItem or not held.isOwned or not held.hide then return end
+    local priorReward, priorObjective = self.rewardTooltip, self.objectiveTooltip
+    self:ReleaseRewardTooltip(priorReward)
+    if self.objectiveTooltip ~= priorObjective or self.rewardTooltip then return end
+    self:ReleaseObjectiveTooltip(priorObjective)
+    if self.objectiveTooltip or self.rewardTooltip or not self:ObjectiveBindingCurrent(button, binding) then return end
+    self.objectiveTooltip = held
+    local function current()
+        return self.objectiveTooltip == held and GameTooltip == tooltip and
+            tooltipMethod(tooltip, "SetOwner") == held.setOwner and tooltipMethod(tooltip, "SetItemByID") == held.setItem and
+            tooltipMethod(tooltip, "IsOwned") == held.isOwned and tooltipMethod(tooltip, "Hide") == held.hide and
+            self:ObjectiveBindingCurrent(button, binding) and self.objectiveTooltip == held
+    end
+    button:SetScript("OnLeave", function()
+        if self.rewardGeneration == binding.generation and button.objectiveBinding == binding then self:ReleaseObjectiveTooltip(held) end
+    end)
+    local ok = pcall(held.setOwner, tooltip, button, "ANCHOR_RIGHT")
+    if not ok or not current() then self:ReleaseObjectiveTooltip(held); return end
+    local owned = addon.Read(held.isOwned, "boolean", tooltip, button)
+    if owned ~= true or not current() then self:ReleaseObjectiveTooltip(held); return end
+    local shown
+    ok, shown = pcall(held.setItem, tooltip, binding.id)
+    if not ok or addon.Clean(shown, "boolean") ~= true or not current() then self:ReleaseObjectiveTooltip(held); return end
+    owned = addon.Read(held.isOwned, "boolean", tooltip, button)
+    if owned ~= true or not current() then self:ReleaseObjectiveTooltip(held) end
 end
 
 function UI:RefreshDetail()
@@ -749,8 +814,8 @@ function UI:RefreshDetail()
     self.giverAction, self.giverHasCoordinates = nil, false
     self.giver:SetEnabled(false)
     self.giver:SetText(addon.L("VISIT_GIVER"))
-    local rewardIndex = 0
-    local function line(value, style, reward)
+    local rewardIndex, objectiveIndex = 0, 0
+    local function line(value, style, reward, objective)
         style = DETAIL_STYLES[style] and style or "body"
         local format = DETAIL_STYLES[style]
         local height = format.minimum
@@ -794,6 +859,31 @@ function UI:RefreshDetail()
             else
                 b.icon:Hide(); self:SetRewardTexture(b.icon, nil)
                 if self.rewardGeneration ~= rewardGeneration or self.quest ~= renderQuest then return false end
+            end
+        end
+        if objective and not self.rewardTextureBusy then
+            objectiveIndex = objectiveIndex + 1
+            local button = self.objectiveButtons[objectiveIndex]
+            if not button then
+                button = CreateFrame("Button", nil, self.detail); button:SetSize(24, 24)
+                button.icon = button:CreateTexture(nil, "ARTWORK"); button.icon:SetAllPoints()
+                self.objectiveButtons[objectiveIndex] = button
+            end
+            local rendered = self:SetRewardTexture(button.icon, objective.texture)
+            if self.rewardGeneration ~= rewardGeneration or self.quest ~= renderQuest or not objective.current() then return false end
+            if rendered then
+                objective.generation = rewardGeneration; button.objectiveBinding = objective
+                button:ClearAllPoints(); button:SetPoint("TOPLEFT", 4, -y); button.icon:Show(); button:Show()
+                button:SetScript("OnEnter", function() self:EnterObjective(button, objective) end)
+                button:SetScript("OnHide", function()
+                    local held = self.objectiveTooltip
+                    if held and held.binding == objective and button.objectiveBinding == objective then self:ReleaseObjectiveTooltip(held) end
+                end)
+                fs:SetWidth(304); fs:ClearAllPoints(); fs:SetPoint("TOPLEFT", 34, -y)
+                height = math.max(height or 18, 24)
+            else
+                button.icon:Hide(); self:SetRewardTexture(button.icon, nil)
+                if self.rewardGeneration ~= rewardGeneration or self.quest ~= renderQuest or not objective.current() then return false end
             end
         end
         local measured = measuredHeight(fs, height or 18)
@@ -1372,6 +1462,10 @@ function UI:RefreshDetail()
             end
         end
         local objectiveItems = addon.Clean(q.objectiveItems, "table")
+        local objectiveChecker = issecretvalue
+        local function objectiveCurrent()
+            return portraitCardCurrent() and addon.quests[id] == definition and q.objectiveItems == objectiveItems and issecretvalue == objectiveChecker
+        end
         local shownObjectives, seenItems = false, {}
         for index = 1, math.min(objectiveItems and #objectiveItems or 0, 100) do
             local entry = addon.Clean(objectiveItems[index], "table")
@@ -1388,17 +1482,45 @@ function UI:RefreshDetail()
                 (quantityUnknown or (quantity and quantity > 0 and quantity <= 9007199254740991 and quantity % 1 == 0)) and not seenItems[itemID] then
                 seenItems[itemID] = true
                 local name = addon.Read(addon.ItemName, "string", itemID)
-                if self.quest ~= renderQuest or self.rewardGeneration ~= rewardGeneration then return end
+                if not objectiveCurrent() then return end
                 if not name or #name > 1024 or not name:find("%S") then
                     name = addon.Clean(entry.name, "string")
                     if not name or #name > 2000 or not name:find("%S") then name = string.format("#%.0f", itemID) end
                 end
                 local count = carried(itemID)
-                if self.quest ~= renderQuest or self.rewardGeneration ~= rewardGeneration then return end
+                if not objectiveCurrent() then return end
+                local iconGetter = addon.ItemIcon
+                local icon = itemID <= 4294967295 and addon.Read(iconGetter, "number", itemID) or nil
+                if not objectiveCurrent() then return end
+                local binding
+                if icon and icon > 0 and icon <= 4294967295 and icon % 1 == 0 then
+                    binding = { id = itemID, texture = icon }
+                    binding.current = function()
+                        if not objectiveCurrent() or addon.ItemIcon ~= iconGetter or objectiveItems[index] ~= entry or
+                            addon.Clean(rawget(entry, "itemID"), "number") ~= itemID then return false end
+                        if not objectiveCurrent() then return false end
+                        local raw = rawget(entry, "quantity")
+                        if type(objectiveChecker) == "function" and addon.Read(objectiveChecker, "boolean", raw) ~= false then return false end
+                        if not objectiveCurrent() then return false end
+                        local unknown = raw == nil
+                        local amount = addon.Clean(raw, "number")
+                        if unknown ~= quantityUnknown or (not unknown and amount ~= quantity) or not objectiveCurrent() then return false end
+                        local ok, same = pcall(function()
+                            return self.quest == renderQuest and self.dungeon == renderDungeon and self.engine == renderEngine and
+                                addon.char == renderCharacter and self.rewardGeneration == rewardGeneration and
+                                addon.quests[id] == definition and q.objectiveItems == objectiveItems and
+                                rawget(objectiveItems, index) == entry and rawget(entry, "itemID") == itemID and
+                                rawget(entry, "quantity") == raw and addon.ItemIcon == iconGetter and
+                                issecretvalue == objectiveChecker and true or false
+                        end)
+                        return ok and same == true
+                    end
+                    if not binding.current() then return end
+                end
                 if not shownObjectives then
                     line(addon.L("OBJECTIVE_ITEMS"), "section"); line(addon.L("OBJECTIVE_ITEMS_NOTICE")); shownObjectives = true
                 end
-                line(quantityUnknown and addon.L("OBJECTIVE_ITEM_UNKNOWN", name) or addon.L("OBJECTIVE_ITEM", name, quantity))
+                if line(quantityUnknown and addon.L("OBJECTIVE_ITEM_UNKNOWN", name) or addon.L("OBJECTIVE_ITEM", name, quantity), nil, nil, binding) == false then return end
                 if count then line(count) end
             end
         end

@@ -563,6 +563,27 @@ function addon.CarriedItemCount(id)
     return count
 end
 
+function addon.ItemIcon(id)
+    local checker = issecretvalue
+    id = dialogueInteger(id, 1, 4294967295)
+    local item = addon.Clean(C_Item, "table")
+    local getter = item and addon.Clean(rawget(item, "GetItemIconByID"), "function")
+    if not id or not item or not getter or issecretvalue ~= checker then return nil end
+    local function current()
+        if issecretvalue ~= checker or addon.Clean(C_Item, "table") ~= item or
+            addon.Clean(rawget(item, "GetItemIconByID"), "function") ~= getter then return false end
+        -- Sanitization can reenter; finish with identities that invoke no helpers.
+        local ok, same = pcall(function()
+            if C_Item ~= item or rawget(item, "GetItemIconByID") ~= getter or issecretvalue ~= checker then return false end
+            return true
+        end)
+        return ok and same == true
+    end
+    if not current() then return nil end
+    local icon = dialogueInteger(addon.Read(getter, "number", id), 1, 4294967295)
+    if current() then return icon end
+end
+
 function addon.ItemName(id)
     id = addon.Clean(id, "number")
     if not id or id < 1 or id % 1 ~= 0 then return nil end

@@ -196,5 +196,78 @@ check("A reentrant cache read keeps the inner pending request and its single wat
     assert(notices == 1)
     assert(addon.ItemName(7083) == nil and requests == 2 and #timers == 1)
 end)
+check("Item icon reads the exact numeric native identity without name hydration or locale requirements", function()
+    local calls = 0
+    C_Item.GetItemIconByID = function(id, ...)
+        assert(id == 7083 and select("#", ...) == 0); calls = calls + 1; return 134400
+    end
+    GetLocale = nil
+    assert(addon.ItemIcon(7083) == 134400 and calls == 1)
+    assert(requests == 0 and notices == 0 and #timers == 0 and addon.db == nil and addon.char == nil)
+end)
+check("Item icons reject malformed restricted and out-of-range IDs before native reads", function()
+    local calls = 0
+    C_Item.GetItemIconByID = function() calls = calls + 1; return 134400 end
+    for _, id in ipairs({ false, 0, -1, 1.5, math.huge, 0 / 0, "7083", secret, 4294967296 }) do
+        assert(addon.ItemIcon(id) == nil)
+    end
+    assert(addon.ItemIcon(nil) == nil and calls == 0 and requests == 0)
+    assert(addon.ItemIcon(4294967295) == 134400 and calls == 1)
+end)
+check("Item icons preserve cold missing and invalid native results as absence", function()
+    for _, value in ipairs({ false, 0, -1, 1.5, math.huge, 0 / 0, "134400", secret, 4294967296 }) do
+        C_Item.GetItemIconByID = function() return value end
+        assert(addon.ItemIcon(7083) == nil)
+    end
+    C_Item.GetItemIconByID = function() return nil end
+    assert(addon.ItemIcon(7083) == nil)
+    C_Item.GetItemIconByID = function() error("cold icon") end
+    assert(addon.ItemIcon(7083) == nil)
+    C_Item.GetItemIconByID = nil; assert(addon.ItemIcon(7083) == nil)
+    C_Item = nil; assert(addon.ItemIcon(7083) == nil)
+    assert(requests == 0 and notices == 0 and #timers == 0)
+end)
+check("Native icon getter namespace and checker replacement discard an old result", function()
+    for mode = 1, 3 do
+        reset()
+        C_Item.GetItemIconByID = function()
+            if mode == 1 then C_Item = { GetItemIconByID = function() return 123 end }
+            elseif mode == 2 then C_Item.GetItemIconByID = function() return 123 end
+            else issecretvalue = function() return false end end
+            return 134400
+        end
+        assert(addon.ItemIcon(7083) == nil and requests == 0 and #timers == 0)
+    end
+end)
+check("Icon result sanitization cannot authorize a replaced native getter", function()
+    C_Item.GetItemIconByID = function() return 134400 end
+    issecretvalue = function(value)
+        if value == 134400 then C_Item.GetItemIconByID = function() return 123 end end
+        return false
+    end
+    assert(addon.ItemIcon(7083) == nil and requests == 0 and #timers == 0)
+end)
+check("Final icon getter sanitization cannot replace the namespace or getter after its earlier check", function()
+    for mode = 1, 2 do
+        reset()
+        local read = false
+        local getter = function() read = true; return 134400 end
+        C_Item.GetItemIconByID = getter
+        issecretvalue = function(value)
+            if read and value == getter then
+                if mode == 1 then C_Item = { GetItemIconByID = function() return 123 end }
+                else C_Item.GetItemIconByID = function() return 123 end end
+            end
+            return false
+        end
+        assert(addon.ItemIcon(7083) == nil and requests == 0 and #timers == 0)
+    end
+end)
+check("An unreadable icon restriction checker fails closed without native calls", function()
+    local calls = 0
+    C_Item.GetItemIconByID = function() calls = calls + 1; return 134400 end
+    issecretvalue = function() error("restricted") end
+    assert(addon.ItemIcon(7083) == nil and calls == 0 and requests == 0)
+end)
 issecretvalue = nil
-print("Item name adapter modeled checks passed: " .. total .. " (native client unverified)")
+print("Item display adapters modeled checks passed: " .. total .. " (native client unverified)")
