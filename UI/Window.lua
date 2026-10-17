@@ -582,6 +582,12 @@ function UI:RefreshDungeons()
         local ok = pcall(object[method], object, ...)
         return ok and current()
     end
+    for _, control in ipairs(self.catalogInspectButtons) do
+        if not write(control, "Hide") or not write(control, "SetEnabled", false) or
+            not write(control, "SetScript", "OnClick", nil) then return end
+        control.questID = nil
+    end
+    local inspectIndex = 0
     local offset = 0
     if not write(self.searchPlaceholder, "SetText", addon.L("SEARCH")) or
         not write(self.searchPlaceholder, "SetShown", search == "") or
@@ -617,6 +623,56 @@ function UI:RefreshDungeons()
         end) then return end
         offset = self:LayoutRow(row, 64, offset, current)
         if not offset then return end
+        if result.questID then
+            local questID, definition = result.questID, definitions[result.questID]
+            local localeGetter, nativeRoot, guidGetter = GetLocale, C_QuestLog, UnitGUID
+            local native = addon.Clean(nativeRoot, "table")
+            local titleGetter = native and rawget(native, "GetTitleForQuestID")
+            local gameLocale = addon.Read(localeGetter, "string")
+            local function inspectCurrent()
+                local language = addon.Read(localeGetter, "string")
+                if not current() then return false end
+                return GetLocale == localeGetter and language == gameLocale and C_QuestLog == nativeRoot and
+                    UnitGUID == guidGetter and (not native or rawget(native, "GetTitleForQuestID") == titleGetter) and
+                    definitions[questID] == definition and definition and rawget(definition, "id") == questID
+            end
+            if not inspectCurrent() then return end
+            inspectIndex = inspectIndex + 1
+            local inspect = self.catalogInspectButtons[inspectIndex]
+            if not inspect then
+                inspect = CreateFrame("Button", nil, self.catalog)
+                inspect:SetWidth(218); inspect.label = label(inspect, "", 7, -5, 204, 14)
+                inspect.title = inspect.label
+                inspect:SetHighlightTexture("Interface\\QuestFrame\\UI-QuestTitleHighlight")
+                self.catalogInspectButtons[inspectIndex] = inspect
+            end
+            if not inspectCurrent() then return end
+            inspect.questID = questID
+            if not write(inspect.label, "SetText", addon.L("BRANCH_INSPECT")) then return end
+            local height = math.max(28, measuredHeight(inspect.label, 18) + 10)
+            if not inspectCurrent() or not write(inspect, "SetHeight", height) or
+                not write(inspect, "ClearAllPoints") or not write(inspect, "SetPoint", "TOPLEFT", 8, -offset) or
+                not write(inspect, "SetEnabled", true) then return end
+            styleRow(inspect, "control", false)
+            if not inspectCurrent() or not write(inspect, "SetScript", "OnClick", function()
+                local shown = addon.Read(self.frame.IsShown, "boolean", self.frame)
+                if shown ~= true or not inspectCurrent() then return end
+                local source = addon.Clean(rawget(definition, "name"), "string")
+                local matches = source and searchText(source):find(needle, 1, true)
+                if not inspectCurrent() then return end
+                if not matches then
+                    local cached = addon.Read(getter, "string", questID)
+                    if not inspectCurrent() then return end
+                    matches = cached and searchText(cached):find(needle, 1, true)
+                end
+                if not matches or not inspectCurrent() then return end
+                self:ResetHistoryReading(); self.detailHistory = {}
+                self.dungeon, self.quest = dungeon, questID
+                character.selectedDungeon = dungeon.key
+                self:Refresh()
+            end) or not write(inspect, "Show") then return end
+            offset = offset + height + 6
+        end
     end
     for index = #results + 1, #self.cards do
         local row = self.cards[index]
@@ -2781,7 +2837,7 @@ function UI:Create()
     self.capacityStatus:Hide()
     self.footer = label(frame, "", 22, -668, 640, 13)
     self.frame, self.cards, self.rows, self.details, self.chainButtons, self.branchButtons = frame, {}, {}, {}, {}, {}
-    self.materialButtons = {}
+    self.materialButtons, self.catalogInspectButtons = {}, {}
     self.requirementButtons, self.branchInspectButtons = {}, {}
     self.actionButtons, self.actionInspectButtons, self.preparationForButtons = {}, {}, {}
     self.startButtons, self.finishButtons, self.containerButtons, self.dropButtons = {}, {}, {}, {}

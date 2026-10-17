@@ -6912,4 +6912,69 @@ check("Reward promotion preserves narrative content and current quest reading po
     assert(detailOccurrences("Narrative paragraph retained after references.")==1)
     addon.Description=description;f:finish()
 end)
+check("ActualBRD7848 target search explicitly opens its quest while ordinary dungeon click keeps the overview",function()
+    local f=targetSearchFixture();local actual={};assert(loadfile("Database/Catalog.lua"))("DungeonPro",actual)
+    addon.dungeons,addon.quests=actual.dungeons,actual.quests
+    addon.QuestName=function(id)return addon.quests[id]and addon.quests[id].name or("#"..id)end
+    f:search("Attunement to the Core")
+    local row;for _,card in ipairs(f:cards())do if card.matchQuestID==7848 then row=card end end
+    assert(row);row.scripts.OnClick(row,"LeftButton",false)
+    assert(ui.dungeon.key=="brd"and#ui.dungeon.quests==42 and ui.quest==nil)
+    local inspect;for _,control in ipairs(ui.catalogInspectButtons)do if control.shown and control.questID==7848 then inspect=control end end
+    assert(inspect and inspect.label.text==addon.L("BRANCH_INSPECT"))
+    inspect.scripts.OnClick(inspect,"LeftButton",false)
+    assert(ui.dungeon.key=="brd"and ui.quest==7848 and addon.char.selectedDungeon=="brd")
+    assert(ui.engine:State(7848).status=="UNKNOWN"and not ui.action and not ui.map.enabled and not ui.guide.enabled)
+    f:finish()
+end)
+check("Cached localized target inspection checks the fresh literal match without promoting support or changing filters",function()
+    local f=targetSearchFixture();f.cachedNames[31001]="Задание в копях"
+    addon.QuestName=function(id)return addon.quests[id]and addon.quests[id].name end
+    f:search("ЗАДАНИЕ В КОПЯХ");local control=ui.catalogInspectButtons[2]
+    assert(control.shown and control.questID==31001)
+    local callback=control.scripts.OnClick;local dungeon,quest=ui.dungeon,ui.quest
+    f.cachedNames[31001]="Different fresh title";callback();assert(ui.dungeon==dungeon and ui.quest==quest)
+    f.cachedNames[31001]="Задание в копях";ui.range=true;ui:RefreshDungeons();control=ui.catalogInspectButtons[2]
+    control.scripts.OnClick();assert(ui.dungeon.key=="target-b"and ui.quest==31001 and ui.range==true)
+    f:search("Support only");for _,button in ipairs(ui.catalogInspectButtons)do assert(not button.shown and not button.scripts.OnClick)end
+    f:finish()
+end)
+check("Target inspection controls clear on empty and dungeon-only queries and stale results never inspect recycled matches",function()
+    local f=targetSearchFixture();f:search("Source target")
+    local control=ui.catalogInspectButtons[1];local callback=control.scripts.OnClick;local dungeon,quest=ui.dungeon,ui.quest
+    for _,query in ipairs({"Alpha","","No target matches"})do
+        f:search(query);callback();assert(ui.dungeon==dungeon and ui.quest==quest)
+        for _,button in ipairs(ui.catalogInspectButtons)do assert(not button.shown and not button.scripts.OnClick and button.questID==nil)end
+    end
+    f:search("Source target");callback=ui.catalogInspectButtons[1].scripts.OnClick
+    addon.dungeons[1].quests={31002};callback();assert(ui.dungeon==dungeon and ui.quest==quest)
+    f:finish()
+end)
+check("Target inspection preserves current character locale native capability and query ownership before effects",function()
+    for _,kind in ipairs({"character","locale","native","getter","query","hidden"})do
+        local f=targetSearchFixture();f:search("Source target")
+        local callback=ui.catalogInspectButtons[1].scripts.OnClick;local character,native,locale=addon.char,C_QuestLog,addon.db.locale
+        local getter=addon.CachedQuestName;local dungeon,quest=ui.dungeon,ui.quest;local shown=ui.frame.shown
+        if kind=="character"then addon.char={}
+        elseif kind=="locale"then addon.db.locale=locale=="ruRU"and"enUS"or"ruRU"
+        elseif kind=="native"then C_QuestLog={}
+        elseif kind=="getter"then addon.CachedQuestName=function()error("Old inspection must not call a replacement")end
+        elseif kind=="hidden"then ui.frame.shown=false
+        else ui.search="Other source"end
+        callback();assert(ui.dungeon==dungeon and ui.quest==quest)
+        ui.frame.shown=shown;addon.char,C_QuestLog,addon.db.locale,addon.CachedQuestName=character,native,locale,getter;f:finish()
+    end
+end)
+check("Localized inspection labels wrap below their catalogue card without shrinking text or overlapping the next result",function()
+    local f=targetSearchFixture()
+    measurement=function(fs)if fs.text==addon.L("BRANCH_INSPECT")then return 62 end;return 18 end
+    for code in pairs(addon.locales)do addon.db.locale=code;f:search("Source target")
+        local cards=f:cards();local first,second=ui.catalogInspectButtons[1],ui.catalogInspectButtons[2]
+        assert(first.shown and second.shown and first.label.fontSize==14 and first.height==72)
+        assert(-first.point[3]>=-cards[1].point[3]+cards[1].height)
+        assert(-cards[2].point[3]>=-first.point[3]+first.height)
+    end
+    measurement=nil;f:search("Source target");assert(ui.catalogInspectButtons[1].height==28)
+    f:finish()
+end)
 print("Preparation UI modeled checks passed: " .. total .. " (no native layout validation)")
