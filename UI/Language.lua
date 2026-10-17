@@ -25,6 +25,39 @@ local function invoke(owner, key, ...)
     return false
 end
 
+local function resolved(value)
+    value = code(value) or "auto"
+    if value == "auto" then
+        local native = code(addon.Read(GetLocale, "string"))
+        value = native and native ~= "auto" and native or "enUS"
+    end
+    return value
+end
+
+local function flag(owner, value, row, check)
+    if not check() then return false end
+    local texture = owner.languageFlag
+    if not texture then
+        local create = method(owner, "CreateTexture")
+        local ok, made = pcall(function() return create and create(owner, nil, "ARTWORK") end)
+        texture = ok and object(made)
+        if not check() then return false end
+        if not texture then return false end
+        owner.languageFlag = texture
+    end
+    if not invoke(texture, "Hide") or not check() then return false end
+    if not invoke(texture, "SetSize", 24, 16) or not check() then return false end
+    if not invoke(texture, "ClearAllPoints") or not check() then return false end
+    local ok
+    if row then ok = invoke(texture, "SetPoint", "LEFT", owner, "LEFT", 12, 0)
+    else ok = invoke(texture, "SetPoint", "CENTER", owner, "CENTER", 0, 0) end
+    if not ok or not check() then return false end
+    local accepted = addon.Read(method(texture, "SetTexture"), "boolean", texture,
+        "Interface\\AddOns\\DungeonPro\\Media\\Flags\\" .. value)
+    if accepted ~= true or not check() then return false end
+    return invoke(texture, "Show") and check()
+end
+
 local function owned(state)
     local ok, same = pcall(function()
         return addon.Language == Language and Language.session == state and addon.UI == state.ui and
@@ -48,8 +81,7 @@ function Language:GetSelection()
 end
 
 function Language:Caption(selection)
-    selection = code(selection) or "auto"
-    if selection == "auto" then selection = code(addon.Read(GetLocale, "string")) or "enUS" end
+    selection = resolved(selection)
     for _, choice in ipairs(choices) do if choice[1] == selection then return choice[2] or "English" end end
     return "English"
 end
@@ -60,6 +92,7 @@ function Language:Refresh(ui)
     local committed, getter, checker = rawget(database, "locale"), GetLocale, issecretvalue
     local selection = self:GetSelection() or code(committed) or "auto"
     local name = self:Caption(selection)
+    local locale = resolved(selection)
     local revision = {}; ui.languageLabelRevision = revision
     local function same()
         local ok, value = pcall(function()
@@ -70,8 +103,14 @@ function Language:Refresh(ui)
         return ok and value == true
     end
     if not same() then return false end
-    local binding = { current = same, value = name }; button.languageLabelText = binding
-    local ok = invoke(button, "SetText", name)
+    local painted = flag(button, locale, false, same)
+    if not same() then return false end
+    button.languageCaption, button.languageLocale = name, locale
+    local text = painted and "" or locale:sub(1, 2):upper()
+    local binding = { current = same, value = text }; button.languageLabelText = binding
+    local ok = invoke(button, "SetText", text)
+    local state = self.session
+    if ok and same() and state and state.ui == ui and current(state) then self:RefreshRows(state) end
     if ok and same() then return true end
     local newer = button.languageLabelText
     if newer ~= binding and newer and newer.current() and not button.languageLabelRepair then
@@ -80,6 +119,31 @@ function Language:Refresh(ui)
         button.languageLabelRepair = nil
     end
     return false
+end
+
+function Language:RefreshRows(state)
+    if not current(state) then return false end
+    local selection = state.preview or code(state.committed) or "auto"
+    local function same() return current(state) and (state.preview or code(state.committed) or "auto") == selection end
+    for i, choice in ipairs(choices) do
+        local row = state.rows[i]
+        if row then
+            local selected = selection == choice[1]
+            local label = choice[2] or addon.L("LANGUAGE_AUTO")
+            if not same() then return false end
+            invoke(row, "SetText", label)
+            if not same() then return false end
+            local theme = addon.Clean(addon.Theme, "table")
+            if theme then addon.Read(theme.StyleRow, "boolean", row, { selected = selected }) end
+            if not same() then return false end
+            if row.languageMark then
+                invoke(row.languageMark, selected and "Show" or "Hide")
+                if not same() then return false end
+            end
+            row.languageSelected = selected
+        end
+    end
+    return same()
 end
 
 function Language:Cancel(ui, expected)
@@ -128,22 +192,24 @@ end
 
 function Language:Leave(state)
     if not current(state) then return end
-    local elapsed, token = 0, {}; state.leave = token
+    local token = {}; state.leave = token
     local function stop()
         if self.session == state and state.leave == token then
             state.leave = nil; invoke(state.popup, "SetScript", "OnUpdate", nil)
         end
     end
-    invoke(state.popup, "SetScript", "OnUpdate", function(_, delta)
+    invoke(state.popup, "SetScript", "OnUpdate", function()
         if state.leave ~= token or self.session ~= state then return end
-        delta = addon.Clean(delta, "number")
-        if not delta or delta < 0 or not current(state) then stop(); return end
-        elapsed = elapsed + math.min(delta, 1)
-        if elapsed < 0.1 then return end
+        if not current(state) then stop(); return end
         stop()
         local buttonOver = addon.Read(method(state.button, "IsMouseOver"), "boolean", state.button)
         local popupOver = addon.Read(method(state.popup, "IsMouseOver"), "boolean", state.popup)
-        if current(state) and buttonOver ~= true and popupOver ~= true then self:Cancel(state.ui) end
+        local rowOver = false
+        for _, row in ipairs(state.rows) do
+            if addon.Read(method(row, "IsMouseOver"), "boolean", row) == true then rowOver = true end
+            if not current(state) then return end
+        end
+        if current(state) and buttonOver ~= true and popupOver ~= true and not rowOver then self:Cancel(state.ui) end
     end)
 end
 
@@ -166,8 +232,9 @@ function Language:Open(ui)
     end
     if not popup or not current(state) then if self.session == state then self.session = nil end; return false end
     state.popup, state.rows = popup, self.rows
-    invoke(popup, "SetSize", 194, #choices * 27 + 12)
-    invoke(popup, "SetPoint", "TOPRIGHT", button, "BOTTOMRIGHT", 0, -2)
+    invoke(popup, "SetSize", 224, #choices * 32 + 14)
+    invoke(popup, "ClearAllPoints")
+    invoke(popup, "SetPoint", "TOPRIGHT", button, "BOTTOMRIGHT", 0, 0)
     invoke(popup, "SetFrameStrata", "TOOLTIP")
     invoke(popup, "EnableMouse", true)
     local theme = addon.Clean(addon.Theme, "table")
@@ -183,8 +250,38 @@ function Language:Open(ui)
         if not row then self:Cancel(ui, state); return false end
         state.rows[i] = row
         local value = choice[1]
-        invoke(row, "SetSize", 182, 25); invoke(row, "SetPoint", "TOPLEFT", 6, -6 - (i - 1) * 27)
+        invoke(row, "SetSize", 212, 30); invoke(row, "ClearAllPoints")
+        invoke(row, "SetPoint", "TOPLEFT", 6, -7 - (i - 1) * 32)
+        for _, key in ipairs({ "GetNormalTexture", "GetPushedTexture", "GetDisabledTexture" }) do
+            local original = object(addon.Read(method(row, key), "table", row))
+            if original then invoke(original, "SetAlpha", 0) end
+            if not current(state) then return false end
+        end
+        for _, key in ipairs({ "Left", "Middle", "Right" }) do
+            local original = object(row[key])
+            if original then invoke(original, "SetAlpha", 0) end
+            if not current(state) then return false end
+        end
         invoke(row, "SetText", choice[2] or addon.L("LANGUAGE_AUTO"))
+        flag(row, resolved(value), true, function() return current(state) end)
+        if not current(state) then return false end
+        local text = addon.Read(method(row, "GetFontString"), "table", row)
+        if text then
+            invoke(text, "ClearAllPoints"); invoke(text, "SetPoint", "LEFT", row, "LEFT", 46, 0)
+            invoke(text, "SetWidth", 142); invoke(text, "SetJustifyH", "LEFT")
+        end
+        if not row.languageMark then
+            local create = method(row, "CreateTexture")
+            local made, marker = pcall(function() return create and create(row, nil, "OVERLAY") end)
+            if current(state) and made then row.languageMark = object(marker) end
+        end
+        if not current(state) then return false end
+        if row.languageMark then
+            invoke(row.languageMark, "SetPoint", "RIGHT", row, "RIGHT", -8, 0)
+            invoke(row.languageMark, "SetSize", 18, 18)
+            invoke(row.languageMark, "SetTexture", "Interface\\Buttons\\UI-CheckBox-Check")
+            invoke(row.languageMark, "SetAlpha", .8)
+        end
         invoke(row, "SetScript", "OnEnter", function() self:Preview(state, value) end)
         invoke(row, "SetScript", "OnLeave", function() self:Leave(state) end)
         invoke(row, "SetScript", "OnClick", function() self:Commit(state, value) end)
@@ -195,7 +292,9 @@ function Language:Open(ui)
     invoke(popup, "SetScript", "OnEnter", function() if current(state) then state.leave = nil; invoke(popup, "SetScript", "OnUpdate", nil) end end)
     invoke(popup, "SetScript", "OnHide", function() if self.session == state then self:Cancel(ui, state) end end)
     if not current(state) then self:Cancel(ui, state); return false end
-    return invoke(popup, "Show") and current(state)
+    if not self:RefreshRows(state) then self:Cancel(ui, state); return false end
+    if not invoke(popup, "Show") or not current(state) then self:Cancel(ui, state); return false end
+    return true
 end
 
 function Language:Attach(button, ui)

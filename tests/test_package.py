@@ -46,6 +46,11 @@ class PackageTests(unittest.TestCase):
             icons.mkdir()
             for name in ("Wowhead.tga", "NOTICE.txt"):
                 (icons / name).write_bytes(b"fixture")
+            flags = root / "Media" / "Flags"
+            flags.mkdir()
+            for locale in ("enUS", "ruRU", "deDE", "frFR", "esES", "itIT", "ptBR", "koKR", "zhCN", "zhTW"):
+                (flags / (locale + ".tga")).write_bytes(b"fixture")
+            (flags / "NOTICE.txt").write_text("fixture\n", encoding="utf-8")
             path, _ = packager.package(root=root)
             self.assertEqual(path, root / "dist" / "DungeonPro-1.2.3-Forever-dev.zip")
             with zipfile.ZipFile(path) as archive:

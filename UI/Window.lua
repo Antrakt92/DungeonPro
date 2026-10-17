@@ -786,7 +786,8 @@ function UI:RefreshDungeons()
         return ok and valid == true
     end
     local function current(sourceOnly)
-        if not sourceReady or not baseCurrent(sourceOnly) then return false end
+        -- Full member validation follows callbacks; keep the entry guard cheap.
+        if not sourceReady or not baseCurrent(true) then return false end
         if contextCurrent and addon.Read(contextCurrent, "boolean") ~= true then return false end
         for _, cached in ipairs(sourceMatches) do
             if addon.Read(cached.current, "boolean") ~= true then return expireSources() end
@@ -3631,10 +3632,9 @@ function UI:Create()
     self.entrance = button(frame, "", 160, function() self:VisitEntrance() end)
     self.entrance:SetPoint("TOPLEFT", 520, -84)
     styleRow(self.entrance, "control", false)
-    local language = button(frame, "Auto", 126, function() self:OpenLanguageMenu() end)
+    local language = button(frame, "", 36, function() self:OpenLanguageMenu() end)
     self.language = language
     language:SetPoint("TOPRIGHT", -44, -45)
-    self.languageChevron = label(language, "v", 111, -6, 10, 10)
     local languageModule = addon.Clean(addon.Language, "table")
     if languageModule then addon.Read(languageModule.Attach, "boolean", languageModule, language, self) end
     self.heading = label(frame, "", 288, -125, 730, 26)

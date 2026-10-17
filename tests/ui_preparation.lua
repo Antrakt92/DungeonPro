@@ -7437,7 +7437,7 @@ check("language control shows native names and aliases without rewriting stored 
     local names={enUS="English",ruRU="Русский",deDE="Deutsch",frFR="Français",esES="Español",itIT="Italiano",ptBR="Português",koKR="한국어",zhCN="简体中文",zhTW="繁體中文",enGB="English",esMX="Español",unsupported="English",[""]="English"}
     for code,name in pairs(names)do
         addon.db.locale=code;ui:Refresh()
-        assert(ui.language.text==name and addon.db.locale==code and ui.language.width==126)
+        assert(ui.language.text==name and addon.db.locale==code and ui.language.width==36)
     end
     addon.db.locale=old;ui:Refresh()
 end)
@@ -7446,7 +7446,7 @@ check("automatic language uses short localized labels without changing the menu 
     local menuLabel={}
     for code,dict in pairs(addon.locales)do if dict.LANGUAGE_AUTO_SHORT then
         GetLocale=function()return code end;addon.db.locale="auto";ui:Refresh()
-        assert(ui.language.text==dict.LANGUAGE_AUTO_SHORT and addon.db.locale=="auto" and ui.language.width==126)
+        assert(ui.language.text==dict.LANGUAGE_AUTO_SHORT and addon.db.locale=="auto" and ui.language.width==36)
         menuLabel[code]=dict.LANGUAGE_AUTO
     end end
     for code,value in pairs(menuLabel)do assert(addon.locales[code].LANGUAGE_AUTO==value)end
@@ -8501,7 +8501,7 @@ check("Normal browsing ignores a saved preparation mode and exposes no Back or m
     assert(#visibleRows()==3)
     for _,row in ipairs(visibleRows())do assert(not row.heading and (row.questID==31001 or row.questID==31002))end
     ui.preparation=true;ui:Refresh();assert(not ui.preparation and #visibleRows()==3 and addon.char.filters.preparation==true)
-    assert(ui.characterButton.point[2]==390 and ui.entrance.point[2]==520 and ui.languageChevron.text=="v")
+    assert(ui.characterButton.point[2]==390 and ui.entrance.point[2]==520 and ui.language.width==36 and not ui.languageChevron)
     addon.char.filters=filters;f:finish()
 end)
 check("Blocked level navigation explicitly routes to a known giver without claiming the quest available",function()
@@ -8566,11 +8566,24 @@ check("Real language hover previews the existing window and restores its labels 
     assert(language:Attach(ui.language,ui));ui.language.scripts.OnEnter()
     assert(language.session and #language.session.rows==11)
     language.session.rows[3].scripts.OnEnter()
-    assert(addon.db.locale=="enUS" and ui.language.text=="Русский")
+    assert(addon.db.locale=="enUS" and ui.language.languageCaption=="Русский" and ui.language.text=="")
     assert(ui.rangeButton.text==addon.L(ui.range and "RANGE"or"ALL")and ui.rangeButton.text~=range)
     assert(ui.rows[1].note.text~=note)
     assert(detailHas(addon.locales.ruRU.NEXT) and ui.back==nil and ui.preparationButton==nil)
     assert(language:Cancel(ui)and addon.db.locale=="enUS"and ui.rangeButton.text==range and ui.heading.text==heading)
+    local selections={"enUS","ruRU","deDE","frFR","esES","itIT","ptBR","koKR","zhCN","zhTW"}
+    ui.language.scripts.OnEnter();local session=language.session
+    for index,code in ipairs(selections)do
+        local row=session.rows[index+1];row.scripts.OnEnter()
+        assert(language:GetSelection()==code and addon.db.locale=="enUS")
+        assert(ui.language.text=="" and ui.language.languageLocale==code and ui.language.width==36)
+        assert(ui.language.languageFlag.texture=="Interface\\AddOns\\DungeonPro\\Media\\Flags\\"..code)
+        assert(ui.rangeButton.text==addon.locales[code][ui.range and "RANGE"or"ALL"])
+        assert(session.rows[1].text==addon.locales[code].LANGUAGE_AUTO and row.languageSelected)
+        assert(detailHas(addon.locales[code].NEXT))
+    end
+    session.rows[4].scripts.OnClick();assert(addon.db.locale=="deDE" and not language.session)
+    addon.db.locale="enUS";ui:Refresh()
     ui.language.scripts.OnEnter();language.session.rows[3].scripts.OnEnter();ui.frame:Hide();ui.frame.scripts.OnHide()
     assert(not language.session and addon.db.locale=="enUS")
     addon.Language=previous;addon.db.locale=locale;ui.quest,ui.dungeon=quest,dungeon;ui.frame:Show();ui:Refresh()

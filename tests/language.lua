@@ -8,6 +8,13 @@ local function fixture()
     end
     function methods:SetScript(event, fn) self.scripts[event] = fn end
     function methods:SetText(text) self.text = text end
+    function methods:SetTexture(value) self.texture = value; return true end
+    function methods:SetAlpha(value) self.alpha = value end
+    function methods:SetSize(width, height) self.width, self.height = width, height end
+    function methods:SetPoint(...) self.point = { ... } end
+    function methods:CreateTexture() self.textures = self.textures or {};local region=frame();self.textures[#self.textures+1]=region;return region end
+    function methods:CreateFontString() return frame() end
+    function methods:GetFontString() self.label=self.label or frame();return self.label end
     function methods:SetFrameStrata(value) self.strata = value end
     function methods:Show() self.shown = true end
     function methods:Hide()
@@ -16,7 +23,7 @@ local function fixture()
     end
     function methods:IsShown() return self.shown end
     function methods:IsMouseOver() return self.over end
-    for _, key in ipairs({ "SetSize", "SetPoint", "EnableMouse" }) do methods[key] = function() end end
+    for _, key in ipairs({ "ClearAllPoints", "SetWidth", "SetJustifyH", "SetTextColor", "EnableMouse" }) do methods[key] = function() end end
     CreateFrame = function() return frame() end
     assert(loadfile("Core/Namespace.lua"))("DungeonPro", addon)
     assert(loadfile("Locales/Strings.lua"))("DungeonPro", addon)
@@ -45,7 +52,7 @@ check("Hover opens all language choices and previews labels without writing sett
     local state = assert(addon.Language.session)
     assert(state.popup:IsShown() and #state.rows == 11 and state.popup.strata == "TOOLTIP")
     state.rows[3].scripts.OnEnter()
-    assert(addon.L("NEXT") == addon.locales.ruRU.NEXT and ui.language.text == "Русский")
+    assert(addon.L("NEXT") == addon.locales.ruRU.NEXT and ui.language.languageCaption == "Русский" and ui.language.text == "")
     assert(ui.samples[#ui.samples].next == addon.locales.ruRU.NEXT)
     assert(addon.db == database and addon.db.locale == "enUS" and addon.db.preserved == preserved)
     local renders = ui.renders; state.rows[3].scripts.OnEnter(); assert(ui.renders == renders)
@@ -56,10 +63,9 @@ check("Leaving both owner and popup restores the committed language and clears t
     local state = addon.Language.session; state.rows[3].scripts.OnEnter()
     ui.language.scripts.OnLeave()
     local tick = assert(state.popup.scripts.OnUpdate)
-    tick(state.popup, .05); assert(addon.Language:GetSelection() == "ruRU")
-    tick(state.popup, .06)
+    tick(state.popup, .001)
     assert(not addon.Language.session and not state.popup:IsShown() and not state.popup.scripts.OnUpdate)
-    assert(addon.L("NEXT") == addon.locales.enUS.NEXT and addon.db.locale == "enUS" and ui.language.text == "English")
+    assert(addon.L("NEXT") == addon.locales.enUS.NEXT and addon.db.locale == "enUS" and ui.language.languageCaption == "English")
 end)
 
 check("Moving from trigger to popup keeps the preview and moving away later cancels it", function()
@@ -76,17 +82,17 @@ check("Only an explicit language click commits and a delayed old leave cannot un
     local state = addon.Language.session; state.rows[3].scripts.OnEnter(); ui.language.scripts.OnLeave()
     local oldTick = state.popup.scripts.OnUpdate
     state.rows[4].scripts.OnClick()
-    assert(addon.db.locale == "deDE" and not addon.Language.session and ui.language.text == "Deutsch")
+    assert(addon.db.locale == "deDE" and not addon.Language.session and ui.language.languageCaption == "Deutsch")
     oldTick(state.popup, .2)
     assert(addon.db.locale == "deDE" and addon.L("NEXT") == addon.locales.deDE.NEXT)
 end)
 
 check("Automatic selection displays the actual language and aliases retain native captions", function()
     local addon, ui = fixture(); addon.db.locale = "auto"; GetLocale = function() return "ruRU" end
-    assert(addon.Language:Refresh(ui) and ui.language.text == "Русский")
+    assert(addon.Language:Refresh(ui) and ui.language.languageCaption == "Русский" and ui.language.text == "")
     assert(addon.Language:Caption("enGB") == "English" and addon.Language:Caption("esMX") == "Español")
     GetLocale = function() return "unknown" end
-    assert(addon.Language:Refresh(ui) and ui.language.text == "English")
+    assert(addon.Language:Refresh(ui) and ui.language.languageCaption == "English")
 end)
 
 check("Old callbacks cannot preview or commit after UI settings or helper ownership changes", function()
@@ -214,4 +220,67 @@ check("Cancelling from a hidden planner restores the actual tracked HUD font con
     ChatFontNormal, CreateFont = chat, creator
 end)
 
+check("Flag-only launcher and polished rows retain native names selection and reusable regions", function()
+    local addon, ui = fixture()
+    local styled=0
+    addon.Theme={StyleRow=function(row,options)styled=styled+1;row.selected=options.selected;return true end}
+    assert(addon.Language:Refresh(ui))
+    local icon=ui.language.languageFlag
+    assert(ui.language.text=="" and ui.language.languageCaption=="English" and ui.language.languageLocale=="enUS")
+    assert(icon.shown and icon.width==24 and icon.height==16 and icon.texture=="Interface\\AddOns\\DungeonPro\\Media\\Flags\\enUS")
+    ui.language.scripts.OnEnter();local state=addon.Language.session
+    assert(state.popup.width==224 and state.popup.height==366 and state.popup.point[5]==0)
+    local locales={"enUS","enUS","ruRU","deDE","frFR","esES","itIT","ptBR","koKR","zhCN","zhTW"}
+    for i,row in ipairs(state.rows)do
+        assert(row.width==212 and row.height==30 and row.languageFlag.width==24 and row.languageFlag.height==16)
+        assert(row.languageFlag.shown and row.languageFlag.texture=="Interface\\AddOns\\DungeonPro\\Media\\Flags\\"..locales[i])
+        assert(row.languageMark.texture=="Interface\\Buttons\\UI-CheckBox-Check" and row.languageMark.shown==(i==2))
+        assert(row.label.point[1]=="LEFT" and row.label.point[4]==46)
+    end
+    assert(styled==11 and state.rows[9].text=="한국어" and state.rows[10].text=="简体中文" and state.rows[11].text=="繁體中文")
+    local row,flag,mark=state.rows[3],state.rows[3].languageFlag,state.rows[3].languageMark
+    local renders=ui.renders;row.scripts.OnEnter()
+    assert(ui.renders==renders+1 and not state.popup.scripts.OnUpdate and ui.language.languageFlag==icon)
+    assert(icon.texture=="Interface\\AddOns\\DungeonPro\\Media\\Flags\\ruRU" and row.languageSelected and row.languageMark.shown)
+    assert(not state.rows[2].languageMark.shown and state.rows[1].text==addon.locales.ruRU.LANGUAGE_AUTO)
+    for _=1,10 do addon.Language:Cancel(ui);ui.language.scripts.OnEnter()end
+    assert(addon.Language.session.rows[3]==row and row.languageFlag==flag and row.languageMark==mark)
+    assert(#row.textures==2 and #ui.language.textures==1 and addon.db.locale=="enUS")
+end)
+
+check("Pointer transition uses the next frame without a time threshold and includes hovered rows",function()
+    local addon,ui=fixture();ui.language.scripts.OnEnter();local state=addon.Language.session
+    state.rows[3].scripts.OnEnter();state.rows[3].over=true;state.rows[3].scripts.OnLeave()
+    state.popup.scripts.OnUpdate(state.popup,0)
+    assert(addon.Language.session==state and addon.Language:GetSelection()=="ruRU" and not state.popup.scripts.OnUpdate)
+    state.rows[3].over=false;state.rows[3].scripts.OnLeave();state.popup.scripts.OnUpdate(state.popup,0)
+    assert(not addon.Language.session and addon.db.locale=="enUS" and not state.popup.scripts.OnUpdate)
+end)
+
+check("Missing or rejected flag rendering retains an accessible short launcher caption",function()
+    for _,failure in ipairs({"missing","false","throw"})do
+        local addon,ui,frame=fixture()
+        if failure=="missing"then ui.language.CreateTexture=false
+        else ui.language.CreateTexture=function()
+            local icon=frame();icon.SetTexture=function()if failure=="throw"then error("missing texture")end;return false end
+            return icon
+        end end
+        assert(addon.Language:Refresh(ui) and ui.language.text=="EN" and ui.language.languageCaption=="English")
+        assert(not ui.language.languageFlag or not ui.language.languageFlag.shown)
+        ui.language.scripts.OnEnter();assert(addon.Language.session.popup.shown)
+    end
+end)
+
+check("Failed popup visibility expires all preview and commit callbacks without touching settings",function()
+    local addon,ui=fixture();local create=CreateFrame
+    CreateFrame=function(kind,...)
+        local widget=create(kind,...)
+        if kind=="Frame"then widget.Show=function()error("popup unavailable")end end
+        return widget
+    end
+    assert(not addon.Language:Open(ui) and not addon.Language.session)
+    local renders=ui.renders;local row=addon.Language.rows[3]
+    row.scripts.OnEnter();row.scripts.OnClick()
+    assert(addon.db.locale=="enUS" and ui.renders==renders and not addon.Language:GetSelection())
+end)
 print("Language preview modeled checks passed: " .. total .. " (native pointer and font acceptance pending)")

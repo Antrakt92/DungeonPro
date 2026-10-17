@@ -2,6 +2,8 @@
 
 ## 0.1.0 - 16-Oct-2026 — Development preview
 
+- Redesigned the language picker with flags, immediate hover previews and a compact flag button.
+
 - Removed race-based quest exclusions and race lists from quest cards; faction, class and preparation requirements still apply.
 - Improved minimap button placement reliability and added read-only minimap diagnostics.
 - Replaced the quest-giver and Wowhead footer labels with compact icons and hover hints.
