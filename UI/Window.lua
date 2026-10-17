@@ -46,13 +46,25 @@ function UI:RefreshLanguageLabel()
     else
         for _, choice in ipairs(LANGUAGE_CHOICES) do if choice[1] == code then name = choice[2]; break end end
     end
-    local ok, current = pcall(function()
-        return self.languageLabelRevision == revision and self.language == owner and self.frame == frame and
-            addon.db == database and rawget(database, "locale") == locale and addon.L == localize and issecretvalue == checker
-    end)
-    if not ok or current ~= true then return false end
+    local function current()
+        local ok, value = pcall(function()
+            return self.languageLabelRevision == revision and self.language == owner and self.frame == frame and
+                addon.db == database and rawget(database, "locale") == locale and addon.L == localize and issecretvalue == checker
+        end)
+        return ok and value == true
+    end
+    if not current() then return false end
+    local binding = { current = current, value = name }
+    owner.languageLabelText = binding
     owner:SetText(name)
-    return true
+    if current() then return true end
+    local newer = owner.languageLabelText
+    if newer ~= binding and newer and newer.current() and not owner.languageLabelRepair then
+        owner.languageLabelRepair = true
+        if owner.languageLabelText == newer and newer.current() then pcall(owner.SetText, owner, newer.value) end
+        owner.languageLabelRepair = nil
+    end
+    return false
 end
 
 function UI:OpenLanguageMenu()

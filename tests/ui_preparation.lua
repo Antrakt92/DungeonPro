@@ -7362,4 +7362,41 @@ check("Enter releases search focus without changing query browsing or selection"
     ui.search=oldSearch;ui.searchBox:SetText(oldText);ui:Refresh()
 end)
 
+
+check("language setter reentry preserves the newer locale label",function()
+    local locale=addon.db.locale;local setter=ui.language.SetText;local armed=true
+    addon.db.locale="enUS"
+    ui.language.SetText=function(owner,value)
+        if armed then armed=false;addon.db.locale="ruRU";ui:Refresh()end
+        return setter(owner,value)
+    end
+    ui:RefreshLanguageLabel()
+    assert(not armed and addon.db.locale=="ruRU" and ui.language.text=="Русский","stale English setter overwrote newer Russian label")
+    ui.language.SetText=setter;addon.db.locale=locale;ui:Refresh()
+end)
+
+
+check("language setter recovery follows replacement setters profiles and owners",function()
+    local database,owner=addon.db,ui.language;local setter,locale=owner.SetText,addon.db.locale
+    for _,mode in ipairs({"setter","profile","owner"})do
+        addon.db=database;ui.language=owner;owner.SetText=setter;database.locale="enUS"
+        local armed,calls=true,0
+        owner.SetText=function(control,value)
+            if armed then
+                armed=false
+                if mode=="setter"then
+                    owner.SetText=function(target,label)calls=calls+1;return setter(target,label)end
+                elseif mode=="profile"then addon.db={locale="ruRU",window=database.window}
+                else ui.language=object("Button");ui.language:SetText("new owner")end
+                addon.db.locale="ruRU";ui:RefreshLanguageLabel()
+            end
+            return setter(control,value)
+        end
+        assert(ui:RefreshLanguageLabel()==false)
+        assert(ui.language.text=="Русский" and addon.db.locale=="ruRU" and owner.languageLabelRepair==nil)
+        if mode=="setter"then assert(calls==2)end
+    end
+    addon.db=database;ui.language=owner;owner.SetText=setter;database.locale=locale;ui:Refresh()
+end)
+
 print("Preparation UI modeled checks passed: " .. total .. " (no native layout validation)")
