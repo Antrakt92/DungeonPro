@@ -18,18 +18,25 @@ local function nativeWaypointEmpty(getter)
     return point == nil
 end
 
+local function mapIdentity(value)
+    value = addon.Clean(value, "number")
+    if value and value > 0 and value <= 9007199254740991 and value % 1 == 0 then return value end
+end
+
 function N.Valid(point)
-    return type(point) == "table" and addon.Clean(point.mapID, "number") and
-        addon.Clean(point.x, "number") and addon.Clean(point.y, "number") and
-        point.mapID > 0 and point.x >= 0 and point.x <= 100 and point.y >= 0 and point.y <= 100
+    if type(point) ~= "table" then return false end
+    local mapID = mapIdentity(point.mapID)
+    local x, y = addon.Clean(point.x, "number"), addon.Clean(point.y, "number")
+    return mapID ~= nil and x ~= nil and y ~= nil and x >= 0 and x <= 100 and y >= 0 and y <= 100
 end
 
 function N.Map(point)
-    if type(point) ~= "table" or not addon.Clean(point.mapID, "number") or point.mapID <= 0 then return false end
+    local mapID = type(point) == "table" and mapIdentity(point.mapID)
+    if not mapID then return false end
     if C_Map and type(C_Map.OpenWorldMap) == "function" then
-        return pcall(C_Map.OpenWorldMap, point.mapID)
+        return pcall(C_Map.OpenWorldMap, mapID)
     end
-    if type(OpenWorldMap) == "function" then return pcall(OpenWorldMap, point.mapID) end
+    if type(OpenWorldMap) == "function" then return pcall(OpenWorldMap, mapID) end
     return false
 end
 
@@ -251,7 +258,7 @@ end
 function N.Start(action)
     if not action or not N.Valid(action.place) then return false end
     local generation = N.Stop()
-    if target or navigationGeneration ~= generation then return false end
+    if not N.Valid(action.place) or target or navigationGeneration ~= generation then return false end
     target = action
     local function current()
         return navigationGeneration == generation and rawequal(target, action)

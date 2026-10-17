@@ -818,4 +818,33 @@ check("A nested tick of the same guide owns its newer status and measurement",fu
     card.title.SetText=nil;card.title.measured=nil
     assert(snapshot and snapshot[1]=="NO_POSITION" and card.label.text==snapshot[1] and card.height==snapshot[2])
 end)
+check("Map identities must be exact positive integers before native or guide dispatch", function()
+    local opened = {}
+    C_Map.OpenWorldMap = function(id) opened[#opened + 1] = id end
+    for _, id in ipairs({ 1.5, 0, -1, 9007199254740992, math.huge, -math.huge, 0 / 0 }) do
+        local invalid = { mapID = id, x = 20, y = 30 }
+        assert(not nav.Valid(invalid) and not nav.Map(invalid) and not nav.Start({ id = 1, place = invalid }))
+    end
+    assert(#opened == 0 and nativeCalls == 0)
+    for _, xy in ipairs({ 0, 100 }) do
+        assert(nav.Valid({ mapID = 1, x = xy, y = xy }))
+    end
+    assert(nav.Map({ mapID = 1 }) and opened[1] == 1)
+end)
+check("Map dispatch uses the validated map identity snapshot", function()
+    local reads, opened = 0
+    local changing = setmetatable({}, { __index = function(_, key)
+        if key == "mapID" then reads = reads + 1; return reads == 1 and 1 or 1.5 end
+    end })
+    C_Map.OpenWorldMap = function(id) opened = id end
+    assert(nav.Map(changing) and opened == 1 and reads == 1)
+end)
+check("Old waypoint cleanup cannot authorize a newly invalid destination", function()
+    local nextPoint, added = { mapID = 1, x = 20, y = 30 }, 0
+    TomTom = { AddWaypoint = function() added = added + 1; return "owned" end,
+        RemoveWaypoint = function() nextPoint.mapID = 1.5 end }
+    assert(nav.Start(action) and added == 1)
+    assert(not nav.Start({ id = 2, kind = "visit", place = nextPoint }))
+    assert(added == 1 and nativeCalls == 0)
+end)
 print("Navigation modeled checks passed: " .. total .. " (no native map validation)")
