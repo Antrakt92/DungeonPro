@@ -16,6 +16,74 @@ class CatalogTests(unittest.TestCase):
     def setUp(self):
         self.data = json.loads((ROOT / "data/catalog.json").read_text(encoding="utf-8"))
 
+    def test_objective_objects_preserve_typed_partial_tasks_and_unknown_quantities(self):
+        quest = next(q for q in self.data["quests"] if q["id"] == 5382)
+        original = copy.deepcopy(quest)
+        quest["objectiveObjects"] = [
+            {"objectID": 176544, "name": "Remains of Eva Sarkhoff Burned"},
+            {"objectID": 176545, "name": "Remains of Lucien Sarkhoff Burned"},
+        ]
+        # Equal numeric IDs in other roles are distinct identities, not duplicate objects.
+        quest["objectiveItems"] = [{"itemID": 176544, "name": "Separate item", "quantity": 2}]
+        before = copy.deepcopy(self.data)
+        generated = catalog.generate(self.data)
+        self.assertEqual(self.data, before)
+        self.assertIn('["objectiveObjects"]', generated)
+        self.assertTrue(all("quantity" not in row for row in quest["objectiveObjects"]))
+        self.assertEqual(quest["objectiveKills"], original["objectiveKills"])
+        for field in ("requires", "requirementsKnown", "start", "finish", "source"):
+            self.assertEqual(quest.get(field), original.get(field))
+        del quest["objectiveObjects"]
+        del quest["objectiveItems"]
+        self.assertEqual(quest, original)
+
+    def test_objective_objects_reject_nonobject_roles_and_invalid_lists(self):
+        valid = {"objectID": 176544, "name": "Remains burned"}
+        for rows in (None, {}, [], [None], [False], [1], ["Object"], [valid] * 101,
+                     [{"npcID": 176544, "name": "NPC"}], [{"itemID": 176544, "name": "Item"}],
+                     [{**valid, "npcID": 1}], [{**valid, "mapID": 1}],
+                     [{**valid, "action": "click"}], [{**valid, "required": True}],
+                     [{**valid, "creatureDisplayID": 1}]):
+            with self.subTest(rows=rows):
+                self.data["quests"][0]["objectiveObjects"] = rows
+                with self.assertRaisesRegex(ValueError, "objective object"):
+                    catalog.validate(self.data)
+        self.data["quests"][0]["objectiveObjects"] = [
+            {"objectID": i + 1, "name": "Object task"} for i in range(100)]
+        catalog.validate(self.data)
+
+    def test_objective_objects_reject_invalid_ids_and_present_unknown_quantities(self):
+        for field, values in (("objectID", (None, False, True, 0, -1, 1.0, 1.5, "1",
+                                           float("nan"), float("inf"), 2 ** 32)),
+                              ("quantity", (None, False, True, 0, -1, 1.0, 1.5, "1",
+                                            float("nan"), float("inf"), 2 ** 53))):
+            for value in values:
+                with self.subTest(field=field, value=repr(value)):
+                    self.data["quests"][0]["objectiveObjects"] = [
+                        {"objectID": 1, "name": "Object task", field: value}]
+                    with self.assertRaisesRegex(ValueError, "objective object"):
+                        catalog.validate(self.data)
+        self.data["quests"][0]["objectiveObjects"] = [
+            {"objectID": 2 ** 32 - 1, "name": "Object task", "quantity": 2 ** 53 - 1}]
+        catalog.validate(self.data)
+
+    def test_objective_objects_require_unique_identity_and_utf8_bounded_labels(self):
+        for name in (None, False, 1, "", " \t\n", "x" * 501, "中" * 167, "😀" * 126, "\ud800"):
+            with self.subTest(name=repr(name)):
+                self.data["quests"][0]["objectiveObjects"] = [{"objectID": 1, "name": name}]
+                with self.assertRaisesRegex(ValueError, "objective object name"):
+                    catalog.validate(self.data)
+        self.data["quests"][0]["objectiveObjects"] = [{"objectID": 1}]
+        with self.assertRaisesRegex(ValueError, "objective object name"):
+            catalog.validate(self.data)
+        for name in ("x" * 500, "中" * 166, "Ж" * 250, "😀" * 125):
+            self.data["quests"][0]["objectiveObjects"] = [{"objectID": 1, "name": name}]
+            catalog.validate(self.data)
+        self.data["quests"][0]["objectiveObjects"] = [
+            {"objectID": 1, "name": "First label"}, {"objectID": 1, "name": "Second label"}]
+        with self.assertRaisesRegex(ValueError, "Duplicate objective object"):
+            catalog.validate(self.data)
+
     def test_generated_data_matches(self):
         self.assertEqual(catalog.generate(self.data), (ROOT / "Database/Catalog.lua").read_text(encoding="utf-8"))
 
