@@ -7795,4 +7795,25 @@ check("Main close styling is optional and preserves native close tooltip geometr
     end
 end)
 
+check("Compact overview uses explicit painter classification without shrinking actual or legacy art",function()
+    local paint,quest,dungeon,engine=addon.PaintDungeonArt,ui.quest,ui.dungeon,ui.engine
+    local data={};assert(loadfile("Database/Catalog.lua"))("DungeonPro",data)
+    local keys={drowned=true,kroldok=true,alcaz=true,blackmaw=true,shapers=true}
+    local genericCount=0
+    for _,d in ipairs(data.dungeons)do if keys[d.key]then
+        genericCount=genericCount+1;ui.quest=nil;ui.dungeon=d
+        addon.PaintDungeonArt=function(t)t:SetTexture("generic");t:Show();return true,"generic"end
+        ui:RefreshDetail();assert(ui.overviewArt.width==48 and ui.overviewArt.height==48 and ui.overviewArt.point[2]==147)
+        local compactHeight=ui.detail.height
+        addon.PaintDungeonArt=function(t)t:SetTexture(123);t:Show();return true,"art"end
+        ui:RefreshDetail();assert(ui.overviewArt.width==148 and ui.overviewArt.height==148 and ui.detail.height==compactHeight+100)
+        addon.PaintDungeonArt=function(t)t:SetTexture("legacy");t:Show();return true end
+        ui:RefreshDetail();assert(ui.overviewArt.width==148 and ui.detail.height==compactHeight+100)
+        addon.PaintDungeonArt=function(t)t:Hide();return false end
+        ui:RefreshDetail();assert(not ui.overviewArt.shown and ui.detail.height==compactHeight-56)
+    end end
+    assert(genericCount==5)
+    addon.PaintDungeonArt=paint;ui.quest,ui.dungeon,ui.engine=quest,dungeon,engine
+end)
+
 print("Preparation UI modeled checks passed: " .. total .. " (no native layout validation)")

@@ -3200,9 +3200,19 @@ function UI:RefreshDetail()
                 self.overviewArt:SetSize(148, 148)
             end
             self.overviewArt:ClearAllPoints(); self.overviewArt:SetPoint("TOPLEFT", 97, -y)
-            local painted = addon.Read(addon.PaintDungeonArt, "boolean", self.overviewArt, renderDungeon)
-            if self.quest ~= renderQuest or self.dungeon ~= renderDungeon or self.rewardGeneration ~= rewardGeneration then return end
-            if painted == true then y = y + 156 end
+            local painter = addon.Clean(addon.PaintDungeonArt, "function")
+            local ok, painted, kind
+            if painter then ok, painted, kind = pcall(painter, self.overviewArt, renderDungeon) end
+            painted, kind = ok and addon.Clean(painted, "boolean"), ok and addon.Clean(kind, "string")
+            if not portraitCardCurrent() or addon.PaintDungeonArt ~= painter then return end
+            if painted == true then
+                local compact = kind == "generic"
+                self.overviewArt:SetSize(compact and 48 or 148, compact and 48 or 148)
+                if not portraitCardCurrent() then return end
+                self.overviewArt:ClearAllPoints(); self.overviewArt:SetPoint("TOPLEFT", compact and 147 or 97, -y)
+                if not portraitCardCurrent() then return end
+                y = y + (compact and 56 or 156)
+            end
             local minimum, maximum = addon.Clean(renderDungeon.minLevel, "number"), addon.Clean(renderDungeon.maxLevel, "number")
             if minimum and maximum and minimum > 0 and maximum >= minimum and minimum % 1 == 0 and maximum % 1 == 0 then
                 line(addon.L("CATALOG_LEVELS", minimum, maximum))

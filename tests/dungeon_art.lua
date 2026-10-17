@@ -410,4 +410,42 @@ check("Every reviewed catalogue image matches its sourced game-map identity", fu
     local previewCount = 0; for _ in pairs(previews) do previewCount = previewCount + 1 end
     assert(previewCount == 4 and previews.thanes and previews.lordaeron and previews.excavation and previews.dalaran)
 end)
+check("Paint kind identifies accepted generic and artwork paths including actual rejected-art fallback",function()
+    local icon=canvas();local success,kind=addon.PaintDungeonArt(icon,{})
+    assert(success==true and kind=="generic"and icon.texture==generic)
+    icon=canvas();success,kind=addon.PaintDungeonArt(icon,{art={fileID=131833,gameMapID=36}})
+    assert(success==true and kind=="art"and icon.texture==131833)
+    icon=canvas();success,kind=addon.PaintDungeonArt(icon,{instanceID=36})
+    assert(success==true and kind=="art"and icon.texture=="native/deadmines")
+    for _,result in ipairs({false,secret,"true","throw"})do
+        icon=canvas();local original=icon.SetTexture
+        icon.SetTexture=function(self,value)
+            if value==131833 then if result=="throw"then error("unavailable")end;return result end
+            return original(self,value)
+        end
+        success,kind=addon.PaintDungeonArt(icon,{art={fileID=131833,gameMapID=36}})
+        assert(success==true and kind=="generic"and icon.texture==generic)
+    end
+end)
+check("Failed or superseded paints never report a positive kind",function()
+    local icon=canvas();icon.SetTexture=function()return false end
+    local success,kind=addon.PaintDungeonArt(icon,{})
+    assert(success==false and kind==nil)
+    icon=canvas();local original=icon.SetTexture;local armed=true
+    icon.SetTexture=function(self,value)
+        original(self,value)
+        if armed then
+            armed=false;local newer,newerKind=addon.PaintDungeonArt(self,{})
+            assert(newer==true and newerKind=="generic")
+        end
+        return true
+    end
+    success,kind=addon.PaintDungeonArt(icon,{art={fileID=131833,gameMapID=36}})
+    assert(success==false and kind==nil and icon.texture==generic)
+    local dungeon={art={fileID=131833,gameMapID=36}}
+    icon=canvas();icon.Show=function(self)self.shown=true;dungeon.art.fileID=7963781 end
+    success,kind=addon.PaintDungeonArt(icon,dungeon)
+    assert(success==false and kind==nil)
+end)
+
 print("Dungeon art checks passed: " .. total)

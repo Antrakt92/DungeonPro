@@ -883,7 +883,11 @@ function addon.PaintDungeonArt(texture, dungeon)
     local previewHeight = art and artInteger(art.previewHeight)
     if previewWidth and previewWidth > 16384 then previewWidth = nil end
     if previewHeight and previewHeight > 16384 then previewHeight = nil end
+    local generic = "Interface\\Icons\\INV_Misc_Map_01"
     local image = addon.DungeonArt(dungeon)
+    local resolved = artInteger(image) or addon.Clean(image, "string")
+    if type(resolved) == "string" and (resolved == "" or #resolved > 1024) then resolved = nil end
+    local kind = resolved and (resolved == generic and "generic" or "art")
     local function owned() return dungeonArtPaints[texture] == token end
     local function current()
         local width = art and artInteger(art.previewWidth)
@@ -909,10 +913,9 @@ function addon.PaintDungeonArt(texture, dungeon)
     end
     local accepted = paint(image)
     if not current() then return abandon() end
-    local generic = "Interface\\Icons\\INV_Misc_Map_01"
     if not accepted and image ~= generic then
         accepted = paint(generic)
-        image = generic
+        image, kind = generic, "generic"
         if not current() then return abandon() end
     end
     if not accepted then
@@ -953,7 +956,8 @@ function addon.PaintDungeonArt(texture, dungeon)
         if not current() then return abandon() end
     end
     texture:Show()
-    return current()
+    local success = current()
+    return success, success and kind or nil
 end
 
 local function selectedLogReadScope(id)
