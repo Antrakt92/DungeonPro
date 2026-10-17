@@ -6397,7 +6397,67 @@
           {
             "npcID": 4856,
             "name": "Stonevault Cave Hunter",
-            "locationName": "Badlands, Eastern Kingdoms"
+            "locationName": "Badlands, Eastern Kingdoms",
+            "mapID": 1418,
+            "zoneName": "Badlands",
+            "x": 32.4,
+            "y": 15.2,
+            "reportedLocations": [
+              {
+                "mapID": 1418,
+                "zoneName": "Badlands",
+                "x": 32.4,
+                "y": 15.2
+              },
+              {
+                "mapID": 1418,
+                "zoneName": "Badlands",
+                "x": 33.2,
+                "y": 17.1
+              },
+              {
+                "mapID": 1418,
+                "zoneName": "Badlands",
+                "x": 33.4,
+                "y": 14.6
+              },
+              {
+                "mapID": 1418,
+                "zoneName": "Badlands",
+                "x": 34.0,
+                "y": 17.1
+              },
+              {
+                "mapID": 1418,
+                "zoneName": "Badlands",
+                "x": 35.4,
+                "y": 19.6
+              },
+              {
+                "mapID": 1418,
+                "zoneName": "Badlands",
+                "x": 35.6,
+                "y": 18.7
+              },
+              {
+                "mapID": 1418,
+                "zoneName": "Badlands",
+                "x": 36.6,
+                "y": 16.9
+              },
+              {
+                "mapID": 1418,
+                "zoneName": "Badlands",
+                "x": 37.4,
+                "y": 18.4
+              },
+              {
+                "mapID": 1418,
+                "zoneName": "Badlands",
+                "x": 37.8,
+                "y": 17.3
+              }
+            ]
           },
           {
             "npcID": 4845,
@@ -6797,7 +6857,265 @@
           {
             "npcID": 4846,
             "name": "Shadowforge Digger",
-            "locationName": "Badlands, Loch Modan"
+            "locationName": "Badlands, Loch Modan",
+            "mapID": 1418,
+            "zoneName": "Badlands",
+            "x": 44.4,
+            "y": 9.4,
+            "reportedLocations": [
+              {
+                "mapID": 1418,
+                "zoneName": "Badlands",
+                "x": 44.4,
+                "y": 9.4
+              },
+              {
+                "mapID": 1418,
+                "zoneName": "Badlands",
+                "x": 44.4,
+                "y": 9.8
+              },
+              {
+                "mapID": 1418,
+                "zoneName": "Badlands",
+                "x": 44.6,
+                "y": 12.2
+              },
+              {
+                "mapID": 1418,
+                "zoneName": "Badlands",
+                "x": 45.0,
+                "y": 10.4
+              },
+              {
+                "mapID": 1418,
+                "zoneName": "Badlands",
+                "x": 45.0,
+                "y": 11.0
+              },
+              {
+                "mapID": 1418,
+                "zoneName": "Badlands",
+                "x": 45.0,
+                "y": 12.6
+              },
+              {
+                "mapID": 1418,
+                "zoneName": "Badlands",
+                "x": 45.2,
+                "y": 8.8
+              },
+              {
+                "mapID": 1418,
+                "zoneName": "Badlands",
+                "x": 45.6,
+                "y": 8.6
+              },
+              {
+                "mapID": 1418,
+                "zoneName": "Badlands",
+                "x": 46.2,
+                "y": 8.4
+              },
+              {
+                "mapID": 1418,
+                "zoneName": "Badlands",
+                "x": 46.4,
+                "y": 10.2
+              },
+              {
+                "mapID": 1418,
+                "zoneName": "Badlands",
+                "x": 46.4,
+                "y": 11.2
+              },
+              {
+                "mapID": 1418,
+                "zoneName": "Badlands",
+                "x": 46.4,
+                "y": 12.0
+              },
+              {
+                "mapID": 1418,
+                "zoneName": "Badlands",
+                "x": 46.4,
+                "y": 12.6
+              },
+              {
+                "mapID": 1418,
+                "zoneName": "Badlands",
+                "x": 46.6,
+                "y": 8.2
+              },
+              {
+                "mapID": 1418,
+                "zoneName": "Badlands",
+                "x": 46.6,
+                "y": 11.2
+              },
+              {
+                "mapID": 1418,
+                "zoneName": "Badlands",
+                "x": 46.6,
+                "y": 12.0
+              },
+              {
+                "mapID": 1418,
+                "zoneName": "Badlands",
+                "x": 46.6,
+                "y": 12.6
+              },
+              {
+                "mapID": 1418,
+                "zoneName": "Badlands",
+                "x": 46.8,
+                "y": 9.8
+              },
+              {
+                "mapID": 1418,
+                "zoneName": "Badlands",
+                "x": 47.2,
+                "y": 9.4
+              },
+              {
+                "mapID": 1418,
+                "zoneName": "Badlands",
+                "x": 47.6,
+                "y": 7.8
+              },
+              {
+                "mapID": 1418,
+                "zoneName": "Badlands",
+                "x": 47.6,
+                "y": 9.8
+              },
+              {
+                "mapID": 1418,
+                "zoneName": "Badlands",
+                "x": 47.6,
+                "y": 12.0
+              },
+              {
+                "mapID": 1418,
+                "zoneName": "Badlands",
+                "x": 47.6,
+                "y": 12.6
+              },
+              {
+                "mapID": 1418,
+                "zoneName": "Badlands",
+                "x": 47.8,
+                "y": 9.4
+              },
+              {
+                "mapID": 1418,
+                "zoneName": "Badlands",
+                "x": 48.4,
+                "y": 11.4
+              },
+              {
+                "mapID": 1418,
+                "zoneName": "Badlands",
+                "x": 48.6,
+                "y": 9.4
+              },
+              {
+                "mapID": 1418,
+                "zoneName": "Badlands",
+                "x": 48.6,
+                "y": 9.6
+              },
+              {
+                "mapID": 1418,
+                "zoneName": "Badlands",
+                "x": 48.6,
+                "y": 11.0
+              },
+              {
+                "mapID": 1418,
+                "zoneName": "Badlands",
+                "x": 48.6,
+                "y": 11.6
+              },
+              {
+                "mapID": 1418,
+                "zoneName": "Badlands",
+                "x": 48.6,
+                "y": 12.6
+              },
+              {
+                "mapID": 1432,
+                "zoneName": "Loch Modan",
+                "x": 46.4,
+                "y": 76.6
+              },
+              {
+                "mapID": 1432,
+                "zoneName": "Loch Modan",
+                "x": 47.0,
+                "y": 77.4
+              },
+              {
+                "mapID": 1432,
+                "zoneName": "Loch Modan",
+                "x": 47.0,
+                "y": 77.6
+              },
+              {
+                "mapID": 1432,
+                "zoneName": "Loch Modan",
+                "x": 47.0,
+                "y": 78.8
+              },
+              {
+                "mapID": 1432,
+                "zoneName": "Loch Modan",
+                "x": 47.0,
+                "y": 80.2
+              },
+              {
+                "mapID": 1432,
+                "zoneName": "Loch Modan",
+                "x": 47.2,
+                "y": 82.0
+              },
+              {
+                "mapID": 1432,
+                "zoneName": "Loch Modan",
+                "x": 47.4,
+                "y": 72.6
+              },
+              {
+                "mapID": 1432,
+                "zoneName": "Loch Modan",
+                "x": 47.4,
+                "y": 75.2
+              },
+              {
+                "mapID": 1432,
+                "zoneName": "Loch Modan",
+                "x": 47.4,
+                "y": 81.0
+              },
+              {
+                "mapID": 1432,
+                "zoneName": "Loch Modan",
+                "x": 47.6,
+                "y": 80.6
+              },
+              {
+                "mapID": 1432,
+                "zoneName": "Loch Modan",
+                "x": 47.6,
+                "y": 82.0
+              },
+              {
+                "mapID": 1432,
+                "zoneName": "Loch Modan",
+                "x": 51.2,
+                "y": 75.2
+              }
+            ]
           },
           {
             "npcID": 4844,
