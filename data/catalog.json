@@ -9868,7 +9868,8 @@
       ],
       "finish": {
         "objectID": 164689,
-        "name": "Monument of Franclorn Forgewright"
+        "name": "Monument of Franclorn Forgewright",
+        "zoneName": "Blackrock Depths"
       },
       "storyline": [
         3801,
@@ -10522,7 +10523,25 @@
       "source": "https://www.wowhead.com/forever/quest=4081/kill-on-sight-dark-iron-dwarves",
       "start": {
         "objectID": 164867,
-        "name": "WANTED"
+        "name": "WANTED",
+        "zoneName": "Badlands",
+        "mapID": 1418,
+        "x": 3.8,
+        "y": 47.5,
+        "reportedLocations": [
+          {
+            "mapID": 1418,
+            "x": 3.8,
+            "y": 47.5,
+            "zoneName": "Badlands"
+          },
+          {
+            "mapID": 1418,
+            "x": 3.9,
+            "y": 47.4,
+            "zoneName": "Badlands"
+          }
+        ]
       },
       "finish": {
         "npcID": 9077,
@@ -10565,7 +10584,11 @@
       "source": "https://www.wowhead.com/forever/quest=4082/kill-on-sight-high-ranking-dark-iron-officials",
       "start": {
         "objectID": 164868,
-        "name": "KILL ON SIGHT"
+        "name": "KILL ON SIGHT",
+        "zoneName": "Badlands",
+        "mapID": 1418,
+        "x": 4,
+        "y": 46.8
       },
       "finish": {
         "npcID": 9077,
@@ -10616,11 +10639,13 @@
       "source": "https://www.wowhead.com/forever/quest=4083/the-spectral-chalice",
       "start": {
         "objectID": 164869,
-        "name": "Spectral Chalice"
+        "name": "Spectral Chalice",
+        "zoneName": "Blackrock Depths"
       },
       "finish": {
         "objectID": 164869,
-        "name": "Spectral Chalice"
+        "name": "Spectral Chalice",
+        "zoneName": "Blackrock Depths"
       },
       "objectiveItems": [
         {
@@ -14741,7 +14766,8 @@
       },
       "finish": {
         "objectID": 176631,
-        "name": "Menethil's Gift"
+        "name": "Menethil's Gift",
+        "zoneName": "Stratholme"
       },
       "storyline": [
         5461,
@@ -14765,7 +14791,8 @@
       "source": "https://www.wowhead.com/forever/quest=5464/menethils-gift",
       "start": {
         "objectID": 176631,
-        "name": "Menethil's Gift"
+        "name": "Menethil's Gift",
+        "zoneName": "Stratholme"
       },
       "finish": {
         "npcID": 11036,
@@ -19016,11 +19043,13 @@
       ],
       "start": {
         "objectID": 179485,
-        "name": "Broken Trap"
+        "name": "Broken Trap",
+        "zoneName": "Dire Maul"
       },
       "finish": {
         "objectID": 179485,
-        "name": "Broken Trap"
+        "name": "Broken Trap",
+        "zoneName": "Dire Maul"
       },
       "repeatable": true,
       "requirementsKnown": false,
@@ -19515,7 +19544,8 @@
       },
       "finish": {
         "objectID": 179517,
-        "name": "Treasure of the Shen'dralar"
+        "name": "Treasure of the Shen'dralar",
+        "zoneName": "Dire Maul"
       },
       "requirementsKnown": false,
       "source": "https://www.wowhead.com/forever/quest=7877/the-treasure-of-the-shendralar",
