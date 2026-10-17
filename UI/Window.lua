@@ -6,7 +6,7 @@ local COLOR = { COMPLETED = "66dd99", READY = "ffe066", ACTIVE = "88bfff", AVAIL
     LOCKED = "f0b080", UNKNOWN = "b4aacd", UNAVAILABLE = "999999" }
 local FONT
 local DETAIL_STYLES = {
-    body = { size = 14, minimum = 20, color = { 0.92, 0.91, 0.87 } },
+    body = { size = 15, minimum = 20, color = { 0.92, 0.91, 0.87 } },
     title = { size = 26, minimum = 34, color = { 0.96, 0.83, 0.59 } },
     section = { size = 20, minimum = 26, before = 8, color = { 0.76, 0.86, 0.85 } },
 }
@@ -390,8 +390,8 @@ function UI:MakeRow(parent, pool, index, height)
         row.bg:SetAllPoints()
         row.bg:SetColorTexture(0.13, 0.16, 0.20, 1)
         row:SetHighlightTexture("Interface\\QuestFrame\\UI-QuestTitleHighlight")
-        row.title = label(row, "", 8, -7, parent:GetWidth() - 22, 16)
-        row.note = label(row, "", 8, -29, parent:GetWidth() - 22, 13)
+        row.title = label(row, "", 8, -7, parent:GetWidth() - 22, 17)
+        row.note = label(row, "", 8, -29, parent:GetWidth() - 22, 14)
         pool[index] = row
     end
     row:Show()

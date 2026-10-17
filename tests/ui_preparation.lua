@@ -2808,16 +2808,16 @@ check("Detail typography uses explicit title section and body styles and resets 
     local heading, body, reward
     for _, fs in ipairs(ui.details) do
         if fs.shown and fs.text == addon.L("NEXT") then
-            if fs.fontSize == 20 then heading = fs elseif fs.fontSize == 14 then body = fs end
+            if fs.fontSize == 20 then heading = fs elseif fs.fontSize == 15 then body = fs end
         elseif fs.shown and fs.text == addon.L("REWARD_ITEM", "Body reward", 1) then reward = fs end
     end
     assert(heading and body and heading.fontResetBeforeText and body.fontResetBeforeText, "native prose matching a heading stays body text")
-    assert(reward and reward.fontSize == 14 and reward.fontResetBeforeText and reward.width == 304)
+    assert(reward and reward.fontSize == 15 and reward.fontResetBeforeText and reward.width == 304)
     assert(title.fontPath:find("NotoSans-Regular.ttf",1,true) and heading.fontPath==title.fontPath and body.fontPath==title.fontPath)
     local titleColor = title.textColor[1]
     title.measuredHeight = 90; measurement = function() error("cold measurement after style change") end
     ui.quest, ui.dungeon = nil, nil; ui:RefreshDetail()
-    assert(ui.details[1] == title and title.text == addon.L("PICK") and title.fontSize == 14 and title.fontSizeAtText == 14 and title.fontResetBeforeText)
+    assert(ui.details[1] == title and title.text == addon.L("PICK") and title.fontSize == 15 and title.fontSizeAtText == 15 and title.fontResetBeforeText)
     assert(title.textColor[1] ~= titleColor and ui.detail.height < 90, "body recycling resets color and old title measurement")
     measurement = nil
     addon.Description, addon.QuestRewards = description, rewards
@@ -3204,8 +3204,8 @@ check("Native font families retain alphabet fallback while detail sizes and pool
     GetLocale=function()return "koKR"end
     ChatFontNormal = family
     local row = ui:MakeRow(ui.questList, {}, 1, 59)
-    assert(row.title.fontFamily == family and row.title.fontSize == 16)
-    assert(row.note.fontFamily == family and row.note.fontSize == 13)
+    assert(row.title.fontFamily == family and row.title.fontSize == 17)
+    assert(row.note.fontFamily == family and row.note.fontSize == 14)
     showDetail(1)
     local title = ui.details[1]
     assert(title.fontFamily == family and title.fontSize == 26 and title.fontSizeAtText == 26)
@@ -3231,8 +3231,8 @@ check("Missing restricted and failing optional family setters retain the working
         elseif mode == 5 then methods.SetFontObject = function() error("font object unavailable") end
         else methods.SetFontHeight = function() error("font sizing unavailable") end end
         local row = ui:MakeRow(ui.questList, {}, 1, 59)
-        assert(row.title.fontPath and row.title.fontFamily == nil and row.title.fontSize == 16)
-        assert(row.note.fontPath and row.note.fontFamily == nil and row.note.fontSize == 13)
+        assert(row.title.fontPath and row.title.fontFamily == nil and row.title.fontSize == 17)
+        assert(row.note.fontPath and row.note.fontFamily == nil and row.note.fontSize == 14)
         row:Hide()
     end
     ChatFontNormal, methods.SetFontObject, methods.SetFontHeight, issecretvalue = previous, objectSetter, heightSetter, checker
@@ -3689,7 +3689,7 @@ check("Noto and native CJK families retain actual sizes and unscaled reusable ro
     end
     addon.db.locale="enUS"
     local row=ui:MakeRow(ui.questList,{},1,59)
-    assert(row.title.fontPath:find("NotoSans-Regular.ttf",1,true) and row.title.fontSize==16 and row.note.fontSize==13)
+    assert(row.title.fontPath:find("NotoSans-Regular.ttf",1,true) and row.title.fontSize==17 and row.note.fontSize==14)
     assert(not row.title.scaledText and not row.note.scaledText and not ChatFontNormal.fontSize and ChatFontNormal.unchanged)
     row:Hide();ChatFontNormal,addon.db.locale=old,locale;ui:Refresh()
 end)
@@ -4983,7 +4983,7 @@ check("Actual quest narrative has a separate readable heading while missing-text
     for code in pairs(addon.locales)do
         addon.db.locale=code;addon.Description=function()return"Actual narrative paragraph"end;ui:RefreshDetail()
         assert(detailHas(addon.L("QUEST_TEXT")) and detailHas("Actual narrative paragraph"))
-        assert(objectiveText(addon.L("QUEST_TEXT")).fontSize==20 and objectiveText("Actual narrative paragraph").fontSize==14)
+        assert(objectiveText(addon.L("QUEST_TEXT")).fontSize==20 and objectiveText("Actual narrative paragraph").fontSize==15)
         addon.Description=function()return addon.L("NO_TEXT")end;ui:RefreshDetail()
         assert(detailHas(addon.L("NO_TEXT")) and not detailHas(addon.L("QUEST_TEXT")) and not detailHas("Actual narrative paragraph"))
     end
@@ -5693,7 +5693,7 @@ check("Single-action destination translates wraps and recycles without duplicati
     measurement=function(fs)if fs.text and fs.text:find(long,1,true)then return 88 end;return 18 end
     for code in pairs(addon.locales)do
         addon.db.locale=code;ui:RefreshDetail();local line=destinationLine(long.." — Redridge Mountains")
-        assert(line and line.fontSize==14)
+        assert(line and line.fontSize==15)
         local start=destinationLine(addon.L("START")..": Gryan Stoutmantle");assert(-start.point[3]>=-line.point[3]+88)
     end
     measurement=nil;quests[65].finish.name=old;addon.db.locale=locale;f:restore()
@@ -6052,7 +6052,7 @@ check("Native ACTIVE and READY glyphs decorate only quest titles while original 
         assert(row.statusIcon and row.statusIcon.shown and row.statusIcon.atlas==expected and not row.art)
         assert(row.statusIcon.width==16 and row.statusIcon.height==16 and row.statusInset==20)
         assert(row.title.point[2]==28 and row.note.point[2]==8 and row.title.width==row.statusBaseWidth-20)
-        assert(row.title.fontSize==16 and row.note.fontSize==13)
+        assert(row.title.fontSize==17 and row.note.fontSize==14)
         assert(row.note.text:find(addon.L(index==1 and "ACTIVE"or"READY"),1,true))
     end
     for index=3,6 do local row=ui.rows[index];assert(not(row.statusIcon and row.statusIcon.shown)and row.statusInset==0 and row.title.point[2]==8 and row.title.width==row.statusBaseWidth)end
@@ -6090,7 +6090,7 @@ check("Status title width is reduced before natural measurement and long localiz
     end
     for code in pairs(addon.locales)do
         addon.db.locale=code;ui:RefreshQuests();local row=ui.rows[1]
-        assert(row.height==108 and row.title.fontSize==16 and row.note.fontSize==13)
+        assert(row.height==108 and row.title.fontSize==17 and row.note.fontSize==14)
         assert(-ui.rows[2].point[3]>=-row.point[3]+row.height and row.note.point[2]==8)
     end
     assert(#widths>=10);measurement=nil;addon.db.locale=locale;addon.QuestName=f.name;ui:RefreshQuests();assert(ui.rows[1].height==59)
@@ -7027,7 +7027,7 @@ check("current dialogue wraps long prose and ten language headings without shrin
     measurement=function(fs)return fs.text==f.text and 900 or 18 end
     for code in pairs(addon.locales)do addon.db.locale=code;ui:RefreshDetail()
         assert(detailHas(addon.L("DIALOGUE_PROGRESS_TEXT")))
-        for _,fs in ipairs(ui.details)do if fs.shown and fs.text==f.text then assert(fs.fontSize==14 and fs.measuredHeight==900)end end
+        for _,fs in ipairs(ui.details)do if fs.shown and fs.text==f.text then assert(fs.fontSize==15 and fs.measuredHeight==900)end end
     end
     measurement=nil;f:finish()
 end)
@@ -7145,7 +7145,7 @@ check("finish captions wrap in ten languages while one64pixel reference slot rec
     for code in pairs(addon.locales)do addon.db.locale=code;f:refresh()
         assert(ui.giverPortrait==texture and texture.width==64 and texture.height==64)
         local caption=addon.L("TURNIN_REFERENCE_PORTRAIT","Finish Three");assert(detailHas(caption))
-        for _,fs in ipairs(ui.details)do if fs.shown and fs.text==caption then assert(fs.fontSize==14 and fs.measuredHeight==64)end end
+        for _,fs in ipairs(ui.details)do if fs.shown and fs.text==caption then assert(fs.fontSize==15 and fs.measuredHeight==64)end end
     end
     f.mode=1;f:refresh();assert(texture.texture=="display:5001"and not detailHas(addon.L("TURNIN_REFERENCE_PORTRAIT","Finish Three")))
     f:finish()
@@ -7251,7 +7251,7 @@ check("recorded level and minimum wrap in ten locales at the existing readable b
     measurement=function(fs)return fs.text:find(" · ",1,true)and 54 or 18 end
     for code in pairs(addon.locales)do addon.db.locale=code;f:refresh()
         local value=addon.L("QUEST_LEVEL",16).." · "..addon.L("QUEST_MIN_LEVEL",9);local found=false
-        for _,fs in ipairs(ui.details)do if fs.shown and fs.text==value then found=true;assert(fs.fontSize==14 and fs.measuredHeight==54)end end
+        for _,fs in ipairs(ui.details)do if fs.shown and fs.text==value then found=true;assert(fs.fontSize==15 and fs.measuredHeight==54)end end
         assert(found)
     end
     q.level=nil;f:refresh();assert(not detailHas(addon.L("QUEST_LEVEL",16)))
@@ -7427,7 +7427,7 @@ check("existing header catalogue detail and input roles update on UI language fo
         local font=ui.searchBox.fontFamily
         if code=="zhCN"then assert(font.family==ChatFontNormal and not font.fontPath)
         else assert(font.fontPath:find("NotoSans-Regular.ttf",1,true))end
-        assert(ui.searchBox.fontSize==14 and row.title.fontSize==16 and row.note.fontSize==13)
+        assert(ui.searchBox.fontSize==14 and row.title.fontSize==17 and row.note.fontSize==14)
     end
     local before=made;ui:Refresh();assert(made==before)
     row:Hide();addon.db.locale,GetLocale,CreateFont=locale,getter,creator;ui:Refresh()
@@ -7475,12 +7475,80 @@ check("from-creation owned text fonts avoid a sticky direct Noto override across
     for _,code in ipairs({"zhCN","ruRU","enUS"})do
         addon.db.locale=code;ui:Refresh()
         assert(direct==atCreation,"ordinary FontStrings must inherit owned fonts instead of setting a local asset")
-        assert(ui.title.text==addon.L("TITLE")and row.title.fontSize==16 and row.note.fontSize==13)
+        assert(ui.title.text==addon.L("TITLE")and row.title.fontSize==17 and row.note.fontSize==14)
         if code=="zhCN"then assert(row.title.fontFamily==ChatFontNormal and not row.title.fontPath)
         else assert(row.title.fontPath and row.title.fontPath:find("NotoSans-Regular.ttf",1,true))end
     end
     row:Hide();methods.SetFont,methods.SetFontObject=asset,inherit
     addon.db.locale,GetLocale,CreateFont=locale,getter,creator;ui:Refresh()
+end)
+
+
+check("reading profile enlarges body and row text while measured spacing and header controls retain their geometry",function()
+    local locale,quest,dungeon=addon.db.locale,ui.quest,ui.dungeon
+    local row=ui:MakeRow(ui.questList,{},1,59)
+    assert(row.title.fontSize==17 and row.note.fontSize==14)
+    row.title:SetText("Measured wrapped title");row.note:SetText("Measured wrapped note")
+    measurement=function(fs)if fs==row.title then return 36 elseif fs==row.note then return 42 end;return 18 end
+    local bottom=ui:LayoutRow(row,59,0)
+    assert(row.note.point[3]==-(7+36+4) and row.height==96 and bottom==100)
+    measurement=nil
+    for _,code in ipairs({"enUS","ruRU","zhCN","zhTW","koKR"})do
+        addon.db.locale=code;showDetail(2)
+        local body=0
+        for _,fs in ipairs(ui.details)do if fs.shown and fs.detailStyle=="body"then body=body+1;assert(fs.fontSize==15)end end
+        assert(body>0 and ui.title.fontSize==26 and ui.heading.fontSize==26 and ui.searchBox.fontSize==14)
+        assert(ui.footer.fontSize==13 and ui.summary.fontSize==14 and ui.coverage.fontSize==14)
+    end
+    row:Hide();addon.db.locale,ui.quest,ui.dungeon=locale,quest,dungeon;ui:Refresh()
+end)
+
+check("reading profile preserves ten locale wrapping and short viewport scroll boundaries",function()
+    local locale,description,definition,quest,dungeon=addon.db.locale,addon.Description,addon.quests[2],ui.quest,ui.dungeon
+    local width,height,viewport,creator=screenWidth,screenHeight,ui.detailScroll:GetHeight(),CreateFont
+    CreateFont=function()
+        return{SetFont=function(self,path,size)self.fontPath,self.fontSize,self.family=path,size,nil end,
+            GetFont=function(self)return self.fontPath,self.fontSize,""end,
+            SetFontObject=function(self,family)self.family=family;self.fontPath=nil end,
+            SetFontHeight=function(self,size)self.fontSize=size end,
+            SetTextColor=function()end,SetShadowOffset=function()end}
+    end
+    addon.quests[2]={id=2,minLevel=1,requirementsKnown=true}
+    local prose="Long measured quest narrative"
+    local row=ui:MakeRow(ui.questList,{},1,59)
+    row.title:SetText("Long wrapped title");row.note:SetText("Long wrapped supporting note")
+    local titleHeight,noteHeight=72,90
+    measurement=function(fs)
+        if fs==row.title then return titleHeight elseif fs==row.note then return noteHeight
+        elseif fs.text==prose then return 1200 end
+        return 18
+    end
+    local count=0
+    for code in pairs(addon.locales)do
+        count=count+1;addon.db.locale=code
+        local cjk=code=="zhCN"or code=="zhTW"or code=="koKR"
+        titleHeight,noteHeight=cjk and 84 or 72,cjk and 96 or 90
+        local bottom=ui:LayoutRow(row,59,0)
+        local expected=7+titleHeight+4+noteHeight+7
+        assert(row.note.point[3]==-(7+titleHeight+4)and row.height==expected and bottom==expected+4)
+        addon.Description=function()return prose end;showDetail(2);ui.detailScroll:SetHeight(180)
+        assert(ui.detail.height>=1200 and ui.detailScroll.ScrollBar.shown and ui.detailScroll.ScrollBar.maximum>1000)
+        local found=false
+        for _,fs in ipairs(ui.details)do
+            if fs.shown and fs.text==prose then found=true;assert(fs.fontSize==15 and fs.measuredHeight==1200)end
+        end
+        assert(found)
+        ui.detailScroll:SetHeight(ui.detail.height);assert(not ui.detailScroll.ScrollBar.shown)
+        ui.detailScroll:SetHeight(ui.detail.height-1)
+        assert(ui.detailScroll.ScrollBar.shown and ui.detailScroll.ScrollBar.maximum==1)
+    end
+    assert(count==10)
+    screenWidth,screenHeight=640,360;ui:Fit()
+    assert(ui.frame.scale*700<=360*.92+.001 and ui.frame.scale*1100<=640*.92+.001)
+    row:Hide();measurement=nil
+    addon.db.locale,addon.Description,addon.quests[2],ui.quest,ui.dungeon=locale,description,definition,quest,dungeon
+    screenWidth,screenHeight,CreateFont=width,height,creator
+    ui.detailScroll:SetHeight(viewport);ui:Fit();ui:Refresh()
 end)
 
 print("Preparation UI modeled checks passed: " .. total .. " (no native layout validation)")
