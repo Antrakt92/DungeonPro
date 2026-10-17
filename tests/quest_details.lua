@@ -423,4 +423,82 @@ check("Description capability replacement preserves the prior verified same-loca
     end
     addon.char, GetLocale, issecretvalue = saved, oldLocale, oldChecker
 end)
+check("Objective progress cannot escape a replaced character root", function()
+    local character = addon.char
+    C_QuestLog.GetQuestObjectives = function(id)
+        assert(id == 166)
+        addon.char = { texts = {} }
+        return { { text = "Prior character credit", type = "monster", finished = true, numFulfilled = 1, numRequired = 1 } }
+    end
+    assert(addon.QuestObjectives(166) == nil)
+    addon.char = character
+end)
+check("Explicit-ID objectives do not depend on selection and work before character persistence", function()
+    local character = addon.char
+    addon.char = nil
+    C_QuestLog.GetSelectedQuest = function() error("explicit objective reads do not inspect selection") end
+    C_QuestLog.GetLogIndexForQuestID = function() error("no selected-log gate is introduced") end
+    C_QuestLog.SetSelectedQuest = function() error("selection writes are forbidden") end
+    C_QuestLog.GetQuestObjectives = function(id, ...) assert(id == 166 and select("#", ...) == 0); return { objective() } end
+    assert(addon.QuestObjectives(166)[1].numFulfilled == 2)
+    C_QuestLog.GetQuestObjectives = function() return {} end
+    assert(next(addon.QuestObjectives(166)) == nil)
+    addon.char = character
+end)
+check("Objective namespace and getter replacement discard detached rows and recover without caching", function()
+    for mode = 1, 2 do
+        local fresh = function() local row = objective(); row.numFulfilled = 3; return { row } end
+        C_QuestLog.GetQuestObjectives = function()
+            if mode == 1 then C_QuestLog = { GetQuestObjectives = fresh }
+            else C_QuestLog.GetQuestObjectives = fresh end
+            return { objective() }
+        end
+        assert(addon.QuestObjectives(166) == nil)
+        assert(addon.QuestObjectives(166)[1].numFulfilled == 3)
+    end
+end)
+check("Objective locale and restriction-checker changes cannot publish mixed progress", function()
+    local localeGetter, checker = GetLocale, issecretvalue
+    for mode = 1, 3 do
+        local currentLocale = "ruRU"
+        GetLocale = function() return currentLocale end
+        issecretvalue = checker
+        C_QuestLog.GetQuestObjectives = function()
+            if mode == 1 then currentLocale = "enUS"
+            elseif mode == 2 then GetLocale = function() return "ruRU" end
+            else issecretvalue = function() return false end end
+            return { objective() }
+        end
+        assert(addon.QuestObjectives(166) == nil)
+    end
+    GetLocale, issecretvalue = localeGetter, checker
+end)
+check("Objective ownership is checked after detached rows finish sanitizing", function()
+    local character = addon.char
+    local row = objective(); row.text = nil
+    setmetatable(row, { __index = function(_, key)
+        if key == "text" then addon.char = { texts = {} }; return "Old character text" end
+    end })
+    C_QuestLog.GetQuestObjectives = function() return { row } end
+    assert(addon.QuestObjectives(166) == nil)
+    addon.char = character
+end)
+check("Malformed objective namespaces and unknown locale stay quiet before native row reads", function()
+    local localeGetter = GetLocale
+    GetLocale = function() error("missing objective capabilities must not inspect locale") end
+    for _, api in ipairs({ false, true, 1, "namespace", secret }) do
+        C_QuestLog = api
+        assert(addon.QuestObjectives(166) == nil)
+    end
+    local reads = 0
+    C_QuestLog = { GetQuestObjectives = function() reads = reads + 1; return {} end }
+    for _, getter in ipairs({ function() return secret end, function() return false end,
+        function() return "" end, function() error("locale unknown") end }) do
+        GetLocale = getter
+        assert(addon.QuestObjectives(166) == nil and reads == 0)
+    end
+    GetLocale = nil
+    assert(addon.QuestObjectives(166) == nil and reads == 0)
+    GetLocale = localeGetter
+end)
 print("Quest detail modeled checks passed: " .. total .. " (native client unverified)")

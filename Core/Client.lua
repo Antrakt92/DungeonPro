@@ -794,8 +794,17 @@ end
 function addon.QuestObjectives(id)
     id = addon.Clean(id, "number")
     if not id or id < 1 or id % 1 ~= 0 then return nil end
-    local objectives = addon.Read(C_QuestLog and C_QuestLog.GetQuestObjectives, "table", id)
-    if not objectives or #objectives > 100 then return nil end
+    local quest = addon.Clean(C_QuestLog, "table")
+    local getter = quest and addon.Clean(quest.GetQuestObjectives, "function")
+    if not getter then return nil end
+    local character, scope = addon.Clean(addon.char, "table"), restrictionNameScope()
+    local function current()
+        return scope and scope() and addon.Clean(C_QuestLog, "table") == quest and
+            addon.Clean(quest.GetQuestObjectives, "function") == getter and addon.Clean(addon.char, "table") == character
+    end
+    if not current() then return nil end
+    local objectives = addon.Read(getter, "table", id)
+    if not current() or not objectives or #objectives > 100 then return nil end
     local result = {}
     for i = 1, #objectives do
         local row = addon.Clean(objectives[i], "table")
@@ -811,7 +820,7 @@ function addon.QuestObjectives(id)
             numFulfilled = fulfilled, numRequired = required,
             objectiveType = addon.Clean(row.objectiveType, "number") }
     end
-    return result
+    return current() and result or nil
 end
 
 function addon.QuestRewards(id)
