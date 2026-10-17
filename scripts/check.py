@@ -41,6 +41,8 @@ def main():
     run(lua, "tests/theme.lua")
     run(lua, "tests/quest_status.lua")
     run(lua, "tests/quest_list_rewards.lua")
+    run(lua, "tests/reward_cache.lua")
+    run(lua, "tests/quest_rewards_ui.lua")
     run(lua, "tests/quest_payment.lua")
     run(lua, "tests/held_quest_payment.lua")
     run(lua, "tests/held_quest_waypoint.lua")

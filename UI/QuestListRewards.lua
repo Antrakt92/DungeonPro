@@ -102,8 +102,23 @@ local function enter(row, state, button, item)
         type(hide) ~= "function" or type(owned) ~= "function" then return end
     release()
     if held or not current(row, state) then return end
-    local label = addon.Read(addon.L, "string", item.choice and "REWARD_CHOICES" or "REWARD_ITEMS")
-    if not label or not current(row, state) then return end
+    local lines = {}
+    for _, group in ipairs({ { state.fixed, "REWARD_ITEMS" }, { state.choices, "REWARD_CHOICES" } }) do
+        if #group[1] > 0 then
+            local label = addon.Read(addon.L, "string", group[2])
+            if not label or not current(row, state) then return end
+            if #lines > 0 then lines[#lines + 1] = "" end
+            lines[#lines + 1] = label:gsub("|", "||")
+            for _, reward in ipairs(group[1]) do
+                local texture, icon = reward.texture, ""
+                if type(texture) == "number" or (type(texture) == "string" and not texture:find("[|:%c]")) then
+                    icon = "|T" .. texture .. ":18:18:0:0|t "
+                end
+                lines[#lines + 1] = icon .. reward.name:gsub("|", "||") .. (reward.count > 1 and (" ×" .. reward.count) or "")
+            end
+        end
+    end
+    if not current(row, state) or #lines == 0 then return end
     local value = { tooltip = tooltip, button = button, hide = hide, state = state,
         owner = owner, text = text, show = show, isOwned = owned }
     held = value
@@ -113,8 +128,9 @@ local function enter(row, state, button, item)
             tooltip.SetText == text and tooltip.Show == show and tooltip.Hide == hide and tooltip.IsOwned == owned
     end
     value.current = fresh
-    value.description = item.name .. (item.count > 1 and (" ×" .. item.count) or "") .. "\n" .. label
-    -- Cached names only: hovering never loads item data or queries quest rewards.
+    value.description = table.concat(lines, "\n")
+    -- The complete cached list preserves fixed rewards and choose-one options.
+    -- Hovering never loads item data or queries quest rewards.
     showTooltip(value)
 end
 
@@ -148,7 +164,44 @@ render = function(row, state)
                     not write(row, state, button, "SetScript", "OnHide", function()
                         if held and held.state == state and held.button == button then release(held) end
                     end) or not write(row, state, button, "Show") then return false end
+                local more = index == #state.items and state.total and state.total - #state.items or 0
+                local overflow = button.overflowLabel
+                if more > 0 and not overflow then
+                    local ok, value = pcall(button.CreateFontString, button, nil, "OVERLAY")
+                    overflow = ok and (addon.Clean(value, "table") or addon.Clean(value, "userdata"))
+                    if not current(row, state) then repair(row); return false end
+                    if not overflow then return false end
+                    button.overflowLabel = overflow
+                end
+                if overflow then
+                    if more > 0 then
+                        local theme = addon.Clean(addon.Theme, "table")
+                        local font = theme and addon.Clean(theme.ApplyFont, "function")
+                        local fontOK, fontResult
+                        if font then fontOK, fontResult = pcall(font, overflow, 10) end
+                        local applied = fontOK and (addon.Clean(fontResult, "string") or
+                            addon.Clean(fontResult, "table") or addon.Clean(fontResult, "userdata"))
+                        if not current(row, state) then repair(row); return false end
+                        for _, operation in ipairs({ { "SetTextColor", 1, 1, 1, 1 },
+                            { "SetShadowColor", 0, 0, 0, 1 }, { "SetShadowOffset", 1, -1 } }) do
+                            if addon.Clean(overflow[operation[1]], "function") and
+                                not write(row, state, overflow, operation[1], unpack(operation, 2)) then return false end
+                        end
+                        if not applied then
+                            local fallback = addon.Clean(GameFontNormalSmall, "table") or addon.Clean(GameFontNormalSmall, "userdata")
+                            if not fallback or not write(row, state, overflow, "SetFontObject", fallback) then return false end
+                        end
+                        if not current(row, state) then repair(row); return false end
+                        if not write(row, state, overflow, "ClearAllPoints") or
+                            not write(row, state, overflow, "SetPoint", "BOTTOMRIGHT", button, "BOTTOMRIGHT", 1, -1) or
+                            not write(row, state, overflow, "SetWidth", 28) or
+                            not write(row, state, overflow, "SetJustifyH", "RIGHT") or
+                            not write(row, state, overflow, "SetText", "+" .. more) or
+                            not write(row, state, overflow, "Show") then return false end
+                    elseif not write(row, state, overflow, "Hide") then return false end
+                end
             else
+                if button.overflowLabel and not write(row, state, button.overflowLabel, "Hide") then return false end
                 if not write(row, state, button, "SetScript", "OnEnter", nil) or
                     not write(row, state, button, "SetScript", "OnLeave", nil) or
                     not write(row, state, button, "SetScript", "OnHide", nil) or
@@ -164,16 +217,21 @@ end
 function Rewards.Clear(row)
     if not row then return end
     local prior = states[row]
-    local state = { clear = true, items = {}, buttons = prior and prior.buttons or {} }
+    local state = { clear = true, items = {}, fixed = {}, choices = {}, buttons = prior and prior.buttons or {} }
     states[row] = state
     if held and held.state == prior then release(held) end
     if states[row] == state then render(row, state) end
 end
 
+function Rewards.Pending(row)
+    local state = row and states[row]
+    if state and state.pending == true and current(row, state) then return state.id end
+end
+
 function Rewards.Paint(row, id, ownerCurrent)
     if not row then return 0 end
     local prior = states[row]
-    local state = { items = {}, buttons = prior and prior.buttons or {}, id = integer(id), owner = ownerCurrent,
+    local state = { items = {}, fixed = {}, choices = {}, total = 0, buttons = prior and prior.buttons or {}, id = integer(id), owner = ownerCurrent,
         provider = addon.CachedQuestRewards, character = addon.char, catalogue = addon.quests,
         localeGetter = GetLocale, checker = issecretvalue }
     state.quest = state.id and state.catalogue[state.id]
@@ -182,7 +240,18 @@ function Rewards.Paint(row, id, ownerCurrent)
     if not current(row, state) then return 0 end
     state.locale = addon.Read(state.localeGetter, "string")
     if not current(row, state) then return 0 end
-    local data = state.quest and addon.Read(state.provider, "table", state.id)
+    local data
+    local provider = state.quest and addon.Clean(state.provider, "function")
+    if not current(row, state) then return 0 end
+    if provider then
+        local ok, value = pcall(provider, state.id)
+        if not current(row, state) then return 0 end
+        local readable = type(state.checker) ~= "function" or addon.Read(state.checker, "boolean", value) == false
+        if ok and readable then
+            state.pending = value == nil
+            data = addon.Clean(value, "table")
+        end
+    end
     if not current(row, state) then return 0 end
     local hiddenReadable = not data or type(state.checker) ~= "function" or addon.Read(state.checker, "boolean", data.hidden) == false
     local hidden = data and addon.Clean(data.hidden, "boolean")
@@ -196,15 +265,15 @@ function Rewards.Paint(row, id, ownerCurrent)
                     local name = value and addon.Clean(value.name, "string")
                     local count = value and integer(value.count)
                     local texture = value and (integer(value.texture) or addon.Clean(value.texture, "string"))
-                    if itemID and name and #name <= 30000 and name:find("%S") and count and texture and
-                        (type(texture) ~= "string" or (#texture <= 1024 and texture:find("%S"))) then
-                        state.items[#state.items + 1] = { id = itemID, name = name, count = count,
-                            texture = texture, choice = kind == "choices" }
+                    if itemID and name and #name <= 30000 and name:find("%S") and count then
+                        if type(texture) == "string" and (#texture > 1024 or not texture:find("%S")) then texture = nil end
+                        local item = { id = itemID, name = name, count = count, texture = texture, choice = kind == "choices" }
+                        local group = kind == "choices" and state.choices or state.fixed
+                        group[#group + 1] = item; state.total = state.total + 1
+                        if texture and #state.items < 3 then state.items[#state.items + 1] = item end
                     end
-                    if #state.items >= 3 then break end
                 end
             end
-            if #state.items >= 3 then break end
         end
     end
     if not render(row, state) then

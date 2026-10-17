@@ -96,6 +96,8 @@ Level ranges are provisional recommendations.
 - World map, optional TomTom and a built-in direction arrow. The arrow points
   toward a coordinate; it does not find paths around terrain or plan transport.
 - Browse compact quest rows with status icons and cached item reward previews.
+  Hover over a reward icon to see all known item rewards, grouped into guaranteed
+  items and choices where you pick one. A +N mark indicates additional items.
   Search sits on the right of the header, beside the language selector.
   Level and character filters are icons beside the dungeon heading. Hover for
   the current mode and click to switch; the active highlight shows filtering.

@@ -3,6 +3,11 @@ assert(loadfile("Core/Namespace.lua"))("DungeonPro", addon)
 local function frame()
     local f = { shown = true, scripts = {} }
     function f:SetSize(w, h) self.width, self.height = w, h end
+    function f:SetWidth(value)self.width=value end
+    function f:SetText(value)self.text=value end
+    function f:SetJustifyH(value)self.justify=value end
+    function f:SetFontObject(value)self.font=value end
+    function f:CreateFontString()return frame()end
     function f:ClearAllPoints() self.point = nil end
     function f:SetPoint(...) self.point = { ... } end
     function f:SetAllPoints(value) self.allPoints = value end
@@ -20,6 +25,8 @@ local function reset()
     issecretvalue = function(v) return v == secret end
     GetLocale = function() return "enUS" end
     addon.char, addon.quests = {}, { [1] = {}, [2] = {} }
+    addon.Theme={ApplyFont=function(region,size)region.fontSize=size;return "Fonts\\FRIZQT__.TTF" end}
+    GameFontNormalSmall={}
     addon.L = function(key) return key == "REWARD_CHOICES" and "Choose one" or "Rewards" end
     payload = { source = "cache", items = { { id = 10, name = "Sword", count = 1, texture = 123 } }, choices = {} }
     addon.CachedQuestRewards = function(id) calls = calls + 1; assert(id == 1 or id == 2); return payload end
@@ -51,7 +58,7 @@ check("Only three actual cached textures paint with fixed-before-choice provenan
         { id = 13, name = "Boots", count = 1, texture = 456 }, { id = 14, name = "Ring", count = 1, texture = 789 } }
     assert(r.Paint(row, 1) == 70 and #buttons == 3)
     assert(buttons[2].icon.texture == "hat" and buttons[3].icon.texture == 456)
-    buttons[2].scripts.OnEnter(); assert(tooltip.text == "Hat ×2\nChoose one" and calls == 1)
+    buttons[2].scripts.OnEnter(); assert(tooltip.text:find("Choose one\n|That:18:18:0:0|t Hat ×2",1,true) and calls == 1)
 end)
 check("Missing hidden or foreign-origin rewards never invent an icon and clear recycled rows", function()
     for _, value in ipairs({ {}, { source = "cache", hidden = true }, { source = "dialogue" } }) do
@@ -126,7 +133,7 @@ check("Late native tooltip text restores the newer icon tooltip", function()
         end
         original(self, value)
     end
-    buttons[1].scripts.OnEnter(); assert(tooltip.text == "New sword\nRewards" and tooltip.shown)
+    buttons[1].scripts.OnEnter(); assert(tooltip.text=="Rewards\n|T123:18:18:0:0|t New sword" and tooltip.shown)
 end)
 check("Partial icon creation remains retryable without retaining a broken button", function()
     local r = reset(); local native, once = CreateFrame
@@ -149,7 +156,7 @@ check("Late tooltip hide restores the newer icon owner without querying rewards 
     end
     -- The held contract refuses replacement methods, so acquire the replacement first.
     buttons[1].scripts.OnEnter(); local leave = buttons[1].scripts.OnLeave
-    leave(); assert(tooltip.shown and tooltip.text == "Newest\nRewards")
+    leave(); assert(tooltip.shown and tooltip.text=="Rewards\n|T123:18:18:0:0|t Newest")
 end)
 check("A foreign tooltip takeover inside SetText cannot be shown or hidden by an old icon", function()
     local r = reset(); r.Paint(row, 1)
@@ -165,7 +172,7 @@ check("Hidden ancestor icons cannot open tooltips through retained callbacks", f
     row.IsVisible = nil
     local parent = frame(); parent:Hide(); row.GetParent = function() return parent end
     enter(); assert(tooltip.text == nil)
-    parent:Show(); enter(); assert(tooltip.text == "Sword\nRewards")
+    parent:Show(); enter(); assert(tooltip.text=="Rewards\n|T123:18:18:0:0|t Sword")
 end)
 check("A failed replacement texture hides recycled rewards instead of leaking the old quest icon", function()
     for _, fail in ipairs({ function() error("native texture failure") end, function() return false end }) do
@@ -174,6 +181,124 @@ check("A failed replacement texture hides recycled rewards instead of leaking th
         payload.items[1] = { id = 22, name = "New", count = 1, texture = 456 }
         assert(r.Paint(row, 2) == 0)
         assert(not button.shown and not button.icon.shown and button.scripts.OnEnter == nil)
+    end
+end)
+check("Every fixed reward and choose-one option remains in grouped hover preview beyond three icons",function()
+    local r=reset()
+    payload.items={{id=10,name="Fixed sword",count=1,texture=123},{id=11,name="Fixed ring",count=2,texture=124}}
+    payload.choices={}
+    for i=1,4 do payload.choices[i]={id=20+i,name="Choice "..i,count=i,texture=200+i}end
+    assert(r.Paint(row,1)==70 and #buttons==3 and buttons[3].overflowLabel.text=="+3"and buttons[3].overflowLabel.shown)
+    for _,button in ipairs(buttons)do
+        button.scripts.OnEnter()
+        assert(tooltip.text:find("Rewards\n|T123:18:18:0:0|t Fixed sword",1,true))
+        assert(tooltip.text:find("|T124:18:18:0:0|t Fixed ring ×2\n\nChoose one\n",1,true))
+        for i=1,4 do assert(tooltip.text:find("|T"..(200+i)..":18:18:0:0|t Choice "..i,1,true))end
+        assert(calls==1)
+    end
+    r.Clear(row);assert(not buttons[3].overflowLabel.shown)
+end)
+check("Three fixed previews never discard the complete separate choice group",function()
+    local r=reset();payload.items={};payload.choices={}
+    for i=1,3 do payload.items[i]={id=i,name="Fixed "..i,count=1,texture=100+i}end
+    payload.choices={{id=1,name="Also a choice",count=1,texture=101},{id=20,name="Other choice",count=1,texture=200}}
+    assert(r.Paint(row,1)==70 and buttons[3].overflowLabel.text=="+2")
+    buttons[1].scripts.OnEnter()
+    assert(tooltip.text:find("Rewards\n",1,true)==1 and tooltip.text:find("Choose one\n|T101:18:18:0:0|t Also a choice",1,true))
+    assert(tooltip.text:find("Other choice",1,true)and calls==1)
+end)
+check("Known choices without textures remain named in full hover preview and overflow count",function()
+    local r=reset();payload.choices={{id=20,name="No texture choice",count=1},{id=21,name="Textured choice",count=1,texture=222}}
+    assert(r.Paint(row,1)==48 and buttons[2].overflowLabel.text=="+1")
+    buttons[1].scripts.OnEnter()
+    assert(tooltip.text:find("Choose one\nNo texture choice\n|T222:18:18:0:0|t Textured choice",1,true)and calls==1)
+end)
+check("Both bounded hundred-item groups are retained with a truthful remaining count",function()
+    local r=reset();payload.items={};payload.choices={}
+    for i=1,100 do
+        payload.items[i]={id=i,name="Fixed "..i,count=1,texture=100+i}
+        payload.choices[i]={id=1000+i,name="Choice "..i,count=1,texture=1000+i}
+    end
+    assert(r.Paint(row,1)==70 and #buttons==3 and buttons[3].overflowLabel.text=="+197")
+    buttons[3].scripts.OnEnter()
+    for i=1,100 do assert(tooltip.text:find("|T"..(100+i)..":18:18:0:0|t Fixed "..i,1,true))
+        assert(tooltip.text:find("|T"..(1000+i)..":18:18:0:0|t Choice "..i,1,true))end
+    assert(calls==1)
+end)
+check("Full reward markup escapes names and permits inline icons only for safe cached paths or numeric IDs",function()
+    local r=reset()
+    payload.items[1].name="Sword |cffff0000|Hitem:fake|h"
+    payload.choices={{id=20,name="Unsafe path",count=1,texture="bad|T999:99|t"},
+        {id=21,name="Colon path",count=1,texture="bad:99"},
+        {id=22,name="Safe path",count=1,texture="Interface\\Icons\\Safe"}}
+    assert(r.Paint(row,1)==70)
+    buttons[1].scripts.OnEnter()
+    assert(tooltip.text:find("Sword ||cffff0000||Hitem:fake||h",1,true))
+    assert(tooltip.text:find("Choose one\nUnsafe path\nColon path\n|TInterface\\Icons\\Safe:18:18:0:0|t Safe path",1,true))
+    assert(not tooltip.text:find("\n|Tbad",1,true)and calls==1)
+end)
+check("Overflow labels use locale-aware fonts and reuse bounded labels while smaller rewards clear them",function()
+    local r=reset();payload.choices={}
+    for i=1,4 do payload.choices[i]={id=20+i,name="Choice "..i,count=1,texture=200+i}end
+    local paints=0;addon.Theme.ApplyFont=function(region,size)paints=paints+1;region.fontSize=size;region.language="koKR";return {family="Hangul"} end
+    r.Paint(row,1);local label=buttons[3].overflowLabel
+    assert(label.fontSize==10 and label.language=="koKR"and label.text=="+2")
+    for i=1,5 do assert(r.Paint(row,1)==70 and buttons[3].overflowLabel==label)end
+    assert(#buttons==3 and paints==6)
+    payload.choices={};assert(r.Paint(row,2)==26 and not label.shown)
+end)
+check("Late overflow setters cannot overwrite a newer count or resurrect a cleared reward row",function()
+    for _,clear in ipairs({false,true})do
+        local r=reset();payload.choices={}
+        for i=1,5 do payload.choices[i]={id=20+i,name="Choice "..i,count=1,texture=200+i}end
+        r.Paint(row,1);local label=buttons[3].overflowLabel;local original,once=label.SetText
+        label.SetText=function(self,value)
+            if not once then
+                once=true
+                if clear then r.Clear(row)
+                else payload.choices[5]=nil;payload.choices[4]=nil;r.Paint(row,2)end
+            end
+            return original(self,value)
+        end
+        assert(r.Paint(row,1)==0)
+        assert(clear and not label.shown or not clear and label.shown and label.text=="+1")
+    end
+end)
+check("Missing or failed theme fonts fall back safely without silently hiding overflow information",function()
+    local r=reset();payload.choices={}
+    for i=1,3 do payload.choices[i]={id=20+i,name="Choice "..i,count=1,texture=200+i}end
+    addon.Theme=nil;assert(r.Paint(row,1)==70 and buttons[3].overflowLabel.font==GameFontNormalSmall)
+    addon.Theme={ApplyFont=function()error("font unavailable")end};assert(r.Paint(row,1)==70)
+    GameFontNormalSmall=nil;assert(r.Paint(row,2)==0)
+    for _,button in ipairs(buttons)do assert(not button.shown)end
+end)
+check("Pending identifies only a current cold nil cache and clears on replacement invalid data or explicit cleanup",function()
+    local r=reset();payload=nil
+    assert(r.Paint(row,1)==0 and r.Pending(row)==1 and calls==1)
+    r.Clear(row);assert(r.Pending(row)==nil)
+    for _,data in ipairs({{},false,"invalid",secret,{source="cache",items={},choices={}}})do
+        payload=data;r.Paint(row,1);assert(r.Pending(row)==nil)
+    end
+    addon.CachedQuestRewards=function()error("unavailable provider")end
+    r.Paint(row,1);assert(r.Pending(row)==nil)
+    addon.CachedQuestRewards=function()return nil end;r.Paint(row,1,function()return true end);assert(r.Pending(row)==1)
+    addon.char={};assert(r.Pending(row)==nil)
+    r.Paint(row,1,function()return false end);assert(r.Pending(row)==nil)
+end)
+check("Successful real theme return shapes preserve the applied locale font without fallback",function()
+    local results={"Fonts\\2002.ttf",{family="Hangul"}}
+    if type(newproxy)=="function"then results[#results+1]=newproxy()end
+    for _,result in ipairs(results)do
+        local r=reset();payload.choices={}
+        for i=1,3 do payload.choices[i]={id=20+i,name="Choice "..i,count=1,texture=200+i}end
+        local styled=0
+        addon.Theme.ApplyFont=function(region,size)styled=styled+1;region.localeFont=result;return result end
+        GameFontNormalSmall=nil
+        assert(r.Paint(row,1)==70)
+        local label=buttons[3].overflowLabel
+        assert(styled==1 and label.shown and label.localeFont==result and label.font==nil and label.text=="+1")
+        label.SetFontObject=function()error("successful theme font must never be replaced")end
+        GameFontNormalSmall={};assert(r.Paint(row,2)==70 and styled==2 and label.localeFont==result)
     end
 end)
 print("Quest list reward checks passed: " .. total .. " (modeled, no native layout proof)")

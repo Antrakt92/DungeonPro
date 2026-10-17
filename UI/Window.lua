@@ -1882,6 +1882,24 @@ function UI:RefreshQuests()
         self.questListDungeon = identity
         write(self.questScroll, "SetVerticalScroll", 0)
     end
+    if not current() then return end
+    local rewards, cache = addon.Clean(addon.QuestListRewards, "table"), addon.Clean(addon.RewardCache, "table")
+    local pending = rewards and addon.Clean(rewards.Pending, "function")
+    if cache and pending then
+        local cold, frame = {}, self.frame
+        for index = 1, n do
+            local id = addon.Read(pending, "number", self.rows[index])
+            if not current() then return end
+            if id then cold[#cold + 1] = id end
+        end
+        local function visibleCurrent()
+            return addon.UI == self and self.frame == frame and current() and
+                addon.Read(frame.IsShown, "boolean", frame) == true and current()
+        end
+        addon.Read(cache.Watch, "nil", self, cold, visibleCurrent, function()
+            if visibleCurrent() then addon.Notify() end
+        end)
+    end
 end
 
 local function rewardData(id)

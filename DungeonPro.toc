@@ -26,6 +26,7 @@ UI\Theme.lua
 UI\Language.lua
 UI\QuestStatus.lua
 UI\QuestListRewards.lua
+UI\RewardCache.lua
 UI\Window.lua
 UI\Navigation.lua
 Core\Entrances.lua
