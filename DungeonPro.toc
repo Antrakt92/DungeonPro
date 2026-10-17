@@ -20,8 +20,10 @@ Core\QuestPayment.lua
 Core\HeldQuestPayment.lua
 Core\HeldQuestWaypoint.lua
 UI\Theme.lua
+UI\Language.lua
 UI\QuestStatus.lua
 UI\Window.lua
 UI\Navigation.lua
+Core\Entrances.lua
 UI\Minimap.lua
 Core\Events.lua

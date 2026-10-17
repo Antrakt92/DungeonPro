@@ -17,6 +17,9 @@ for locale, strings in pairs(addon.locales) do
         type(strings.DETAIL_LESS) == "string" and strings.DETAIL_LESS:find("%S") and
         strings.DETAIL_MORE ~= strings.DETAIL_LESS, locale .. " missing distinct detail disclosure labels")
     assert(type(strings.DETAIL_CHAIN) == "string" and strings.DETAIL_CHAIN:find("%S"), locale .. " missing known-chain disclosure label")
+    for _, key in ipairs({ "DUNGEON_ENTRANCE", "DUNGEON_ENTRANCE_UNKNOWN", "STEP_MAP", "STEP_GUIDE" }) do
+        assert(type(strings[key]) == "string" and strings[key]:find("%S"), locale .. " missing navigation label " .. key)
+    end
     addon.db = { locale = locale }
     local idMatch = addon.L("SEARCH_QUEST_MATCH", "Example quest (#166)")
     assert(idMatch:find("Example quest (#166)", 1, true), locale .. " exact quest ID cue lost")

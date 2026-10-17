@@ -2,6 +2,11 @@
 
 ## 0.1.0 - 16-Oct-2026 — Development preview
 
+- Simplified the toolbar by removing Back and the preparation-view switch.
+- Added language previews on hover, with click to save and leaving to cancel.
+- Clarified map and guide destinations, including visits to known quest givers
+  before the character reaches the quest's minimum level.
+- Added a separate dungeon entrance action using matching portal data from the client.
 - Added case-insensitive Unicode search for localized dungeon names.
 - Made quest titles and section headings easier to distinguish from body text.
 - Preserved native font families when sizing multilingual interface text.

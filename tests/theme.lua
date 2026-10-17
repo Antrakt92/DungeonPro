@@ -532,4 +532,22 @@ test("Close setup cannot paint visible optional regions when their initial Hide 
  end
 end)
 
+test("transient language preview switches existing font roles without changing the committed locale", function()
+    local f = notoFixture(); local previous = addon.Language; local selection
+    addon.Language = { GetSelection = function() return selection end }
+    local text, input = f.font(), { SetFontObject = function(self, value) self.font = value end }
+    assert(addon.Theme.ApplyFont(text, 16) and addon.Theme.ApplyInputFont(input) and addon.Theme.StyleButtonFonts(f.button))
+    assert(resolvedPath(text) and input.font.path and f.button.Normal.path)
+    selection = "zhCN"; addon.Theme.RefreshFonts()
+    assert(resolvedFamily(text, f.family) and resolvedFamily(input.font, f.family) and resolvedFamily(f.button.Normal, f.family))
+    assert(addon.db.locale == "enUS" and not f.family.path and not f.family.height)
+    selection = "ruRU"; addon.Theme.RefreshFonts()
+    assert(resolvedPath(text) and input.font.path and f.button.Normal.path and addon.db.locale == "enUS")
+    selection = nil; addon.Theme.RefreshFonts()
+    assert(resolvedPath(text) and addon.db.locale == "enUS")
+    selection = secret; addon.Theme.RefreshFonts()
+    assert(resolvedPath(text) and addon.db.locale == "enUS")
+    addon.Language = previous; f.finish()
+end)
+
 print("theme: " .. total .. " scenarios passed")

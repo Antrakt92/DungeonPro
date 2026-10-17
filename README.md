@@ -29,7 +29,7 @@ Level ranges are provisional recommendations.
   quieter controls and clearer text hierarchy. Visual refinement is ongoing.
 - Selecting a dungeon opens an illustrated overview with its level range, listed
   quest count and coverage notice before you choose an individual quest.
-  Back retraces supporting quests, then returns to the selected dungeon's overview.
+  Supporting quest cards link directly to the dungeon quest they prepare.
   Returning to a quest restores your reading position when it is still available.
 - Character-specific completed, active, ready-to-turn-in, available, locked and
   unknown quest states, with explanations for level gates, missing prerequisites,
@@ -41,14 +41,12 @@ Level ranges are provisional recommendations.
   unverified chains remain available for inspection.
   View any alternative quest separately without changing your preferred branch.
   Known prerequisite work can still be shown while other conditions are unknown.
-- A next-step view collects the dungeon's preparation actions, combines shared
-  prerequisites and groups pickups before entry, inside pickups, level gates,
-  quests in progress and unresolved requirements.
-  A quest card lets you choose which independent next step to show on the map or
-  follow with the guide, and inspect its quest without changing the target.
+- Each quest card shows its next preparation step and known prerequisite chain.
+  Choose a known step to view its location or follow the direction guide, and
+  inspect supporting quests without changing the dungeon target.
 - Switch between quests for your character and all character restrictions.
   Restricted quests stay available for inspection and do not add preparation
-  actions. Character, level and preparation filters are remembered per character.
+  actions. Character and level filters are remembered per character.
   Restricted rows identify the recorded faction, class and race instead of only
   saying that a quest is not for your character.
 - Initial paladin and warlock quests are also listed for their associated
@@ -88,7 +86,7 @@ Level ranges are provisional recommendations.
   quest limit when available, separately from dungeon preparation status.
   A held quest can be opened in the native quest log from its detail card when
   the client provides the action. Opening it changes the selected native quest.
-  The planner closes to make room for the quest log; `/DP` returns to your card.
+  The planner stays open; move its window if it covers the quest log.
 - Explicitly sourced repeatable quests have their own label.
 - Where prerequisites have alternatives, choose a branch or restore automatic
   planning. Choosing a route does not bypass requirements or confirm availability.
@@ -99,9 +97,12 @@ Level ranges are provisional recommendations.
   and preparation steps remain separate.
 - A separate quest-giver button opens a known zone or guides to a known location.
   Visiting a giver does not confirm that the quest is available to pick up.
-  Opening a map or starting a guide, including from a listed location, closes the
-  planner to leave room for the map and arrow. Reopen with `/DP` to
-  continue browsing. Viewing a location or expanding its choices does not start a guide.
+  Map and guide buttons identify whether they use a preparation step or the giver.
+  A low-level character can still visit a known giver without treating the quest
+  as available. The planner stays open; move it if it covers the map.
+  Viewing a location or expanding its choices does not start a guide.
+- A separate dungeon entrance button uses matching portal points supplied by the
+  client. Unavailable or ambiguous entrance data stays explicitly unavailable.
 - Expand reported positions when a giver has several sourced points, then choose
   a point to visit. Movement and quest phases may affect which position is current.
 - Original quest text is saved when you open its quest offer, including
@@ -163,9 +164,10 @@ Development aliases `/dprep` and `/dungeonprep` are also supported.
 Run `/DP minimap` again to restore a hidden button. `reset` only returns it to
 its default position and makes it visible.
 
-The language button opens a menu of interface languages, with an automatic option
-that follows the game language. If the client menu is unavailable, clicking the
-button cycles through the choices. Search checks localized and English dungeon
+The language button shows the current interface language. Hover over it to open
+its menu, then hover over a language to preview the interface. Click to save the
+choice; leaving the menu restores your saved language. The automatic option
+follows the game language. Search checks localized and English dungeon
 names, listed quests, and recorded NPCs and source places. Enter a quest ID such as
 `166` to find its listed dungeons without matching similarly numbered quests or
 supporting chain steps. It ignores letter case,

@@ -151,6 +151,12 @@ local function visibleRows()
     for _, row in ipairs(ui.rows) do if row.shown and not row.heading then result[#result + 1] = row end end
     return result
 end
+-- Exercise the retained planner grouping model directly; no mode widget is exposed.
+local function togglePreparationFixture()
+    ui.preparation = not ui.preparation
+    ui:RefreshQuests(); ui:RefreshDetail()
+end
+local function canGoBack() return #ui.detailHistory > 0 or ui:CanReturnToOverview() end
 ui:Create(); ui.frame:Show(); ui.dungeon = addon.dungeons[1]; ui:Refresh()
 check("Dungeon Pro uses the localized product title and its own escape-close frame", function()
     assert(ui.title.text == addon.L("TITLE") and ui.title.text == "Dungeon Pro")
@@ -177,7 +183,7 @@ check("Window fits a short screen and clamps a stale saved position", function()
 end)
 check("Quest view retains every eligible target", function() assert(#visibleRows() == 7) end)
 check("Preparation lists both independent prerequisites and deduplicates a shared step", function()
-    ui.preparationButton.scripts.OnClick()
+    togglePreparationFixture()
     local rows = visibleRows()
     assert(#rows == 6 and rows[1].title.text == "Quest 1" and rows[2].title.text == "Quest 2")
     assert(rows[1].note.text:find("Pick up", 1, true))
@@ -201,7 +207,7 @@ check("Inside pickup, level gates and active completion remain distinct", functi
 end)
 check("Active quests stay in progress regardless of their original pickup location", function()
     addon.quests[6].startsInside = true
-    ui:Refresh()
+    ui:RefreshQuests(); ui:RefreshDetail()
     local group, found
     for _, row in ipairs(ui.rows) do
         if row.shown then
@@ -220,10 +226,10 @@ check("Unknown quests remain visible without an invented action", function()
     local row = visibleRows()[6]
     assert(row.title.text == "Quest 3" and row.note.text:find(addon.L("UNKNOWN_REQUIREMENTS"), 1, true))
     row.scripts.OnClick()
-    assert(ui.quest == 3 and not ui.action and not ui.map.enabled and not ui.guide.enabled)
+    assert(ui.quest == 3 and not ui.action and ui.map.enabled and ui.guide.enabled and ui.guide.text==addon.L("VISIT_GIVER"))
 end)
 check("Quest progress removes a shared prerequisite from preparation", function()
-    done[1] = true; ui:Refresh()
+    done[1] = true; ui:RefreshQuests(); ui:RefreshDetail()
     assert(#visibleRows() == 6 and visibleRows()[1].title.text == "Quest 2")
     local unlocked = false
     for _, row in ipairs(visibleRows()) do
@@ -233,7 +239,7 @@ check("Quest progress removes a shared prerequisite from preparation", function(
     assert(unlocked)
 end)
 check("Returning to target view clears recycled preparation labels", function()
-    ui.preparationButton.scripts.OnClick()
+    togglePreparationFixture()
     assert(#visibleRows() == 7)
     assert(visibleRows()[1].title.text == "Quest 100")
     assert(visibleRows()[1].note.text:find("Preparation needed", 1, true))
@@ -242,7 +248,7 @@ end)
 check("Inside classification uses quest metadata instead of quest names", function()
     local original = addon.QuestName
     addon.QuestName = function() return "An outside-sounding name" end
-    ui.preparationButton.scripts.OnClick()
+    togglePreparationFixture()
     local group, insideRows = nil, 0
     for _, row in ipairs(ui.rows) do
         if row.shown then
@@ -255,7 +261,7 @@ check("Inside classification uses quest metadata instead of quest names", functi
     end
     assert(insideRows == 1)
     addon.QuestName = original
-    ui.preparationButton.scripts.OnClick()
+    togglePreparationFixture()
 end)
 check("Locked target with an unavailable prerequisite stays visible", function()
     local oldContext = addon.Context
@@ -264,7 +270,7 @@ check("Locked target with an unavailable prerequisite stays visible", function()
     addon.quests[201] = { id = 201, minLevel = 1, requirementsKnown = true, factions = { "Horde" } }
     local ids = ui.dungeon.quests
     ids[#ids + 1] = 200
-    ui.preparation = true; ui:Refresh()
+    ui.preparation = true; ui:RefreshQuests(); ui:RefreshDetail()
     local found = false
     for _, row in ipairs(visibleRows()) do
         if row.title.text == "Quest 200" then found = true; row.scripts.OnClick() end
@@ -375,7 +381,7 @@ check("Unknown quests allow an explicit location visit without claiming availabi
     addon.Navigation = { Start = function(action) started[#started + 1] = action end,
         Map = function(place) mapped[#mapped + 1] = place end }
     showDetail(3)
-    assert(ui.engine:State(3).status == "UNKNOWN" and not ui.action and not ui.guide.enabled)
+    assert(ui.engine:State(3).status == "UNKNOWN" and not ui.action and ui.guide.enabled)
     assert(ui.giver.enabled and detailHas(addon.L("LOCATION_ONLY")) and #started == 0 and #mapped == 0)
     ui.giver.scripts.OnClick()
     assert(#started == 1 and started[1].kind == "visit" and started[1].id == 3)
@@ -416,7 +422,7 @@ check("Detail distinguishes unfinished prerequisites from unverified requirement
     assert(ui.engine:State(100).status == "LOCKED" and detailHas(addon.L("REASON_requirements")))
     showDetail(3)
     assert(ui.engine:State(3).status == "UNKNOWN" and detailHas(addon.L("REASON_requirementsUnknown")))
-    assert(not detailHas(addon.L("REASON_requirements")) and not ui.action and not ui.guide.enabled)
+    assert(not detailHas(addon.L("REASON_requirements")) and not ui.action and ui.guide.enabled)
 end)
 check("Level reason shows required and current levels without inventing a missing level", function()
     showDetail(5)
@@ -480,28 +486,28 @@ check("All-character browsing preserves restricted quests for inspection without
         return false
     end
     assert(selectRestricted())
-    ui.preparationButton.scripts.OnClick()
+    togglePreparationFixture()
     local heading
     for _, row in ipairs(ui.rows) do
         if row.shown and row.heading == "PREP_unavailable" then heading = row end
     end
     assert(heading and not heading.enabled and not heading.scripts.OnClick and selectRestricted())
     ui:LoadFilters()
-    assert(ui.includeUnavailable and ui.preparation and addon.char.filters == filters and filters.other == "preserve")
+    assert(ui.includeUnavailable and not ui.preparation and addon.char.filters == filters and filters.other == "preserve")
     ui.characterButton.scripts.OnClick()
     for _, row in ipairs(visibleRows()) do assert(row.title.text ~= "Quest 300") end
-    ui.preparationButton.scripts.OnClick()
+    ui:Refresh()
     for _, row in ipairs(visibleRows()) do assert(row.enabled and not row.heading and row.scripts.OnClick) end
     ids[#ids] = nil; addon.quests[300] = nil
     addon.Context = originalContext; ui.quest = nil; ui:Refresh()
 end)
-check("Level and preparation toggles persist without replacing unrelated filters", function()
+check("Level and audience filters persist without reviving or rewriting the retired preparation preference", function()
     local filters = addon.char.filters
     ui.rangeButton.scripts.OnClick()
     assert(filters.range == true)
     ui.range = false; ui:LoadFilters(); assert(ui.range)
     ui.rangeButton.scripts.OnClick()
-    assert(filters.range == false and filters.preparation == false and filters.includeUnavailable == false)
+    assert(filters.range == false and filters.preparation == 1 and filters.includeUnavailable == false and not ui.preparation)
     assert(addon.char.filters == filters and filters.other == "preserve")
 end)
 check("Filtered-out quests are distinguished from missing dungeon data", function()
@@ -534,7 +540,7 @@ check("Wrapped catalogue, quest and giver text expands cumulative rows without o
     assert(first.height >= 108 and -first.note.point[3] >= 7 + 72)
     assert(-visibleRows()[2].point[3] >= first.height + 4)
     assert(ui.cards[1].height >= 108 and ui.catalog.height >= ui.cards[1].height)
-    ui.preparation = true; ui:Refresh()
+    ui.preparation = true; ui:RefreshQuests(); ui:RefreshDetail()
     local totalHeight, sawLongNote = 0, false
     for _, row in ipairs(ui.rows) do
         if row.shown then
@@ -598,7 +604,7 @@ check("OR alternatives support explicit persisted choices, automatic reset and s
     assert(addon.char.choices == choices and choices[999].retain and choices[400][2] == 777)
     ui:Refresh(); assert(ui.action.id == 402)
     option(404).scripts.OnClick()
-    assert(choices[400][1] == 404 and not ui.action and not ui.guide.enabled)
+    assert(choices[400][1] == 404 and not ui.action and ui.guide.enabled and ui.guide.text==addon.L("VISIT_GIVER"))
     option(nil).scripts.OnClick()
     assert(choices[400][1] == nil and ui.action.id == 401)
     option(402).scripts.OnClick()
@@ -620,7 +626,7 @@ check("Completed preparation keeps the prepared result instead of empty data war
         return value
     end
     for id in pairs(addon.quests) do done[id] = true end
-    ui.preparationButton.scripts.OnClick()
+    togglePreparationFixture()
     assert(#visibleRows() == 0 and ui.coverage.text == addon.L("PREPARED"))
     assert(ui.rows[1].shown and not ui.rows[1].enabled and not ui.rows[1].scripts.OnClick)
     assert(ui.rows[1].title.text == addon.L("PREPARATION_EMPTY", addon.L("QUESTS")))
@@ -629,7 +635,7 @@ check("Completed preparation keeps the prepared result instead of empty data war
 end)
 check("Completion history cannot hide the current held quest from preparation progress", function()
     assert(done[6] == true)
-    ui:Refresh()
+    ui:RefreshQuests(); ui:RefreshDetail()
     assert(ui.engine:State(6).status == "ACTIVE" and ui.engine:State(6).completedHistory == true)
     local rows = visibleRows()
     assert(#rows == 1 and rows[1].title.text == "Quest 6")
@@ -1250,14 +1256,14 @@ check("Explicit supporting-card inspection can go back without recording refresh
     local other = { key = "other", name = "Other dungeon", minLevel = 1, maxLevel = 30, quests = { 982 } }
     addon.dungeons, ui.dungeon, ui.quest, ui.preparation, ui.detailHistory = { dungeon, other }, dungeon, 980, false, {}
     ui:Refresh()
-    assert(ui.back.enabled and ui.back.text == addon.L("DETAIL_BACK"), "a root quest can now return to its selected dungeon overview")
+    assert(canGoBack() and ui.back == nil, "a root quest can now return to its selected dungeon overview")
     expandDetail()
     local singleton = ui.requirementButtons[1]
     singleton.scripts.OnClick()
-    assert(ui.quest == 981 and #ui.detailHistory == 1 and ui.detailHistory[1] == 980 and ui.back.enabled)
+    assert(ui.quest == 981 and #ui.detailHistory == 1 and ui.detailHistory[1] == 980 and canGoBack())
     assert(not singleton.shown and not singleton.scripts.OnClick)
-    ui.back.scripts.OnClick()
-    assert(ui.quest == 980 and #ui.detailHistory == 0 and ui.back.enabled, "history is exhausted; overview remains reachable")
+    ui:BackQuest()
+    assert(ui.quest == 980 and #ui.detailHistory == 0 and canGoBack(), "history is exhausted; overview remains reachable")
     ui.chainButtons[1].scripts.OnClick()
     assert(ui.quest == 981 and #ui.detailHistory == 1)
     ui:BackQuest()
@@ -1275,7 +1281,7 @@ check("Explicit supporting-card inspection can go back without recording refresh
     ui:InspectQuest(981)
     assert(#ui.detailHistory == 1)
     ui.cards[2].scripts.OnClick()
-    assert(ui.dungeon == other and ui.quest == nil and #ui.detailHistory == 0 and not ui.back.enabled)
+    assert(ui.dungeon == other and ui.quest == nil and #ui.detailHistory == 0 and not canGoBack())
     for _, row in ipairs(ui.rows) do if not row.shown then assert(not row.scripts.OnClick) end end
     assert(addon.char.detailHistory == nil and addon.db.detailHistory == nil)
     for _, id in ipairs({ 980, 981, 982, 983, 984 }) do addon.quests[id] = nil end
@@ -1293,8 +1299,8 @@ check("Back history caps clean IDs at twenty and supports unknown cards without 
     for _, id in ipairs({ 0, -1, 1.5, math.huge, "2026", false }) do assert(not ui:InspectQuest(id)) end
     assert(ui.quest == 2025 and #ui.detailHistory == 20)
     for expected = 2024, 2005, -1 do assert(ui:BackQuest() and ui.quest == expected) end
-    assert(#ui.detailHistory == 0 and ui.back.enabled)
-    assert(ui:BackQuest() and ui.quest == nil and not ui.back.enabled and not ui:BackQuest(), "one further Back reaches the overview without a history sentinel")
+    assert(#ui.detailHistory == 0 and canGoBack())
+    assert(ui:BackQuest() and ui.quest == nil and not canGoBack() and not ui:BackQuest(), "one further Back reaches the overview without a history sentinel")
     ui.quest, ui.detailHistory = quest, history
     ui:RefreshDetail()
 end)
@@ -1383,7 +1389,7 @@ check("Current NPC names refresh start finish and preparation without changing p
     showDetail(2)
     assert(detailIncludes(addon.L("START") .. ": Native 101") and detailIncludes("Catalog finish"))
     assert(ui.action.place == start and start.name == "Catalog start" and finish.name == "Catalog finish")
-    ui.preparation = true; ui:Refresh()
+    ui.preparation = true; ui:RefreshQuests(); ui:RefreshDetail()
     local marked = false
     for _, row in ipairs(visibleRows()) do if row.questID == 2 or row.title.text == "Quest 2" then
         marked = row.note.text:find("Native 101", 1, true) ~= nil
@@ -1671,11 +1677,11 @@ check("Unverified inactive quests identify missing requirements in rows and deta
     ui.quest, ui.preparation = 3, false; ui:Refresh()
     local expected = "|cffb4aacd" .. addon.L("UNKNOWN_REQUIREMENTS") .. "|r"
     assert(detailHas(expected) and ui.engine:State(3).status == "UNKNOWN")
-    assert(ui.engine:State(3).reason == "requirements" and not ui.action and not ui.guide.enabled and not ui.map.enabled)
+    assert(ui.engine:State(3).reason == "requirements" and not ui.action and ui.guide.enabled and ui.map.enabled)
     local found
     for _, row in ipairs(visibleRows()) do if row.title.text == "Quest 3" then found = row.note.text end end
     assert(found == expected)
-    ui.preparation = true; ui:Refresh()
+    ui.preparation = true; ui:RefreshQuests(); ui:RefreshDetail()
     for _, row in ipairs(visibleRows()) do
         if row.title.text == "Quest 3" then assert(row.note.text == expected) end
         if row.title.text == "Quest 1" then assert(row.note.text:find(addon.L("pickup"), 1, true)) end
@@ -1738,7 +1744,7 @@ check("Partial requirement chains show held-parent work while keeping the target
         ready = function(id) return ready and id == 9951 end } end
     ui.dungeon = { key = "partial-held", name = "Partial requirements", coverage = "reviewed", quests = { 9950 } }
     for _, turnin in ipairs({ false, true }) do
-        ready, ui.quest, ui.preparation = turnin, 9950, true; ui:Refresh()
+        ready, ui.quest, ui.preparation = turnin, 9950, true; ui:RefreshQuests(); ui:RefreshDetail()
         local state = ui.engine:State(9950)
         local plan = ui.engine:Dungeon(ui.dungeon)
         assert(state.status == "UNKNOWN" and state.reason == "requirements")
@@ -2744,7 +2750,7 @@ check("Preparation headings retain valid highlights and real row click arguments
     addon.dungeons = { { key = "click-fixture", name = "Click fixture", minLevel = 1, maxLevel = 60, quests = { 15001 } } }
     addon.Context = function() return { level = 60, active = function() return false end, completed = function() return false end } end
     ui.dungeon, ui.quest, ui.preparation, ui.detailHistory = addon.dungeons[1], nil, true, {}
-    ui:Refresh()
+    ui:RefreshDungeons(); ui:RefreshQuests(); ui:RefreshDetail()
     assert(detailHas(addon.L("OVERVIEW_PICK")) and not ui.source.enabled)
     local first, headings = nil, 0
     for _, row in ipairs(ui.rows) do
@@ -2769,7 +2775,7 @@ check("Preparation headings retain valid highlights and real row click arguments
     assert(row.enabled and row.title.text == "Quest 15001")
     row.scripts.OnClick(row, "LeftButton", false)
     assert(ui.quest == 15001 and detailHas(addon.QuestName(15001)) and ui.source.enabled)
-    ui.back.scripts.OnClick(ui.back, "LeftButton", false)
+    ui:BackQuest()
     assert(ui.quest == 15002 and ui.source.enabled)
     addon.quests, addon.dungeons, addon.Context = quests, dungeons, context
     ui.quest, ui.dungeon, ui.preparation, ui.detailHistory = quest, dungeon, preparation, history; ui:Refresh()
@@ -2787,16 +2793,16 @@ check("Optional theme styles the shell controls and recycled row selection witho
     }
     ui.quest, ui.preparation, ui.detailHistory = nil, false, {}; ui:Refresh()
     assert(calls > 0 and ui.cards[1].themeKind == "dungeon" and ui.cards[1].themeSelected)
-    for _, key in ipairs({ "rangeButton", "preparationButton", "characterButton" }) do assert(ui[key].themeKind == "control") end
+    for _, key in ipairs({ "rangeButton", "characterButton" }) do assert(ui[key].themeKind == "control") end
     local row = visibleRows()[1]; local note, callback, height = row.note.text, row.scripts.OnClick, row.height
     callback(row, "LeftButton", false)
     assert(row.themeSelected and row.note.text == note and row.scripts.OnClick == callback and row.height == height)
     assert(ui.quest == 100 and ui.source.enabled)
     local second = visibleRows()[2]; second.scripts.OnClick(second, "LeftButton", false)
     assert(second.themeSelected and not row.themeSelected)
-    ui.back.scripts.OnClick(ui.back, "LeftButton", false); assert(row.themeSelected and not second.themeSelected)
-    ui.preparation = true; ui:Refresh()
-    assert(ui.preparationButton.themeSelected)
+    ui:BackQuest(); assert(row.themeSelected and not second.themeSelected)
+    ui.preparation = true; ui:RefreshQuests(); ui:RefreshDetail()
+    assert(ui.preparationButton==nil)
     for _, current in ipairs(ui.rows) do if current.shown then assert(current.themeKind == (current.heading and "section" or "quest")) end end
     addon.Theme = { Apply = function() error("optional theme failed") end, StyleRow = function() error("optional theme failed") end }
     ui:Refresh(); assert(ui.quest == 100 and ui.source.enabled)
@@ -2842,14 +2848,14 @@ check("The real optional theme paints modern surfaces and removes native control
         end
     end
     local sourceAction, guideAction, quest = ui.source.scripts.OnClick, ui.guide.scripts.OnClick, ui.quest
-    for _, key in ipairs({ "back", "clearSearch", "rangeButton", "preparationButton", "characterButton", "language", "map", "guide", "source", "giver" }) do
+    for _, key in ipairs({ "clearSearch", "rangeButton", "characterButton", "language", "map", "guide", "source", "giver" }) do
         for _, part in ipairs({ "Left", "Middle", "Right" }) do ui[key][part] = ui[key][part] or object() end
     end
     assert(loadfile("UI/Theme.lua"))("DungeonPro", addon)
     ui:Refresh()
     assert(ui.title.themeTextColor and ui.frame:GetWidth() == 1100 and ui.frame:GetHeight() == 700)
     assert(ui.cards[1].bg.themeColor and ui.rows[1].bg.themeColor)
-    for _, key in ipairs({ "back", "clearSearch", "rangeButton", "preparationButton", "characterButton", "language", "map", "guide", "source", "giver" }) do
+    for _, key in ipairs({ "clearSearch", "rangeButton", "characterButton", "language", "map", "guide", "source", "giver" }) do
         assert(ui[key]:GetNormalTexture().alpha == 0 and ui[key]:GetPushedTexture().alpha == 0 and ui[key]:GetDisabledTexture().alpha == 0)
         assert(ui[key].Left.alpha == 0 and ui[key].Middle.alpha == 0 and ui[key].Right.alpha == 0)
     end
@@ -3016,13 +3022,13 @@ end)
 check("Back from the first quest returns to its dungeon overview and clears quest-only presentation", function()
     local quest, dungeon, history = ui.quest, ui.dungeon, ui.detailHistory
     ui.dungeon, ui.quest, ui.detailHistory = addon.dungeons[1], nil, {}; ui:Refresh()
-    assert(not ui.back.enabled and ui.overviewArt.shown)
+    assert(not canGoBack() and ui.overviewArt.shown)
     local listScroll = ui.questScroll.verticalScroll
     ui:InspectQuest(1); ui.source.scripts.OnClick(ui.source, "LeftButton", false)
-    assert(ui.back.enabled and #ui.detailHistory == 0 and not ui.overviewArt.shown and ui.copy.shown)
+    assert(canGoBack() and #ui.detailHistory == 0 and not ui.overviewArt.shown and ui.copy.shown)
     ui.detailScroll:SetVerticalScroll(150)
-    ui.back.scripts.OnClick(ui.back, "LeftButton", false)
-    assert(ui.quest == nil and ui.dungeon == addon.dungeons[1] and #ui.detailHistory == 0 and not ui.back.enabled)
+    ui:BackQuest()
+    assert(ui.quest == nil and ui.dungeon == addon.dungeons[1] and #ui.detailHistory == 0 and not canGoBack())
     assert(ui.overviewArt.shown and detailHas(addon.L("OVERVIEW_PICK")) and not ui.source.enabled and not ui.guide.enabled and not ui.map.enabled)
     assert(not ui.copy.shown and not ui.copy.focused and ui.copy.text == "" and ui.detailScroll.verticalScroll == 0)
     assert(ui.questScroll.verticalScroll == listScroll and not ui:BackQuest())
@@ -3033,11 +3039,11 @@ check("Back exhausts positive quest history before overview and never fabricates
     ui.dungeon, ui.quest, ui.detailHistory = addon.dungeons[1], nil, {}; ui:Refresh()
     ui:InspectQuest(1); ui:InspectQuest(2); ui:InspectQuest(3)
     assert(#ui.detailHistory == 2 and ui:BackQuest() and ui.quest == 2 and #ui.detailHistory == 1)
-    assert(ui:BackQuest() and ui.quest == 1 and #ui.detailHistory == 0 and ui.back.enabled)
-    assert(ui:BackQuest() and ui.quest == nil and #ui.detailHistory == 0 and not ui.back.enabled)
+    assert(ui:BackQuest() and ui.quest == 1 and #ui.detailHistory == 0 and canGoBack())
+    assert(ui:BackQuest() and ui.quest == nil and #ui.detailHistory == 0 and not canGoBack())
     ui.dungeon, ui.quest, ui.detailHistory = nil, nil, {}; ui:InspectQuest(2000)
-    assert(ui.quest == 2000 and not ui.back.enabled and not ui:BackQuest() and ui.quest == 2000)
-    ui:InspectQuest(2001); assert(ui:BackQuest() and ui.quest == 2000 and not ui.back.enabled)
+    assert(ui.quest == 2000 and not canGoBack() and not ui:BackQuest() and ui.quest == 2000)
+    ui:InspectQuest(2001); assert(ui:BackQuest() and ui.quest == 2000 and not canGoBack())
     assert(not ui:BackQuest() and addon.char.detailHistory == nil and addon.db.detailHistory == nil)
     ui.quest, ui.dungeon, ui.detailHistory = quest, dungeon, history; ui:Refresh()
 end)
@@ -3206,7 +3212,7 @@ do
         assert(row.questID == 18002 and row.enabled)
         row.scripts.OnClick(row, "LeftButton", false)
         assert(ui.quest == 18002 and ui.detailScroll.verticalScroll == 0 and ui.detailHistory[1] == 18001)
-        ui.back.scripts.OnClick(ui.back, "LeftButton", false)
+        ui:BackQuest()
         assert(ui.quest == 18001 and ui.detailScroll.verticalScroll == 480 and #ui.detailHistory == 0)
         restore()
     end)
@@ -3485,7 +3491,7 @@ check("Preparation action choice disappears with its step and never authorizes u
     ui.actionButtons[2].scripts.OnClick()
     assert(ui.quest==20001 and ui.action.kind=="level" and not ui.map.enabled and not ui.guide.enabled)
     ui.actionInspectButtons[2].scripts.OnClick()
-    assert(ui.quest==20003 and not ui.map.enabled and not ui.guide.enabled)
+    assert(ui.quest==20003 and ui.map.enabled and ui.guide.enabled and ui.action.kind=="level")
     restore()
 end)
 check("Action inspection returns to its reading section while stale and recycled action callbacks remain inert",function()
@@ -3629,7 +3635,7 @@ local function preparationForFixture()
 end
 check("A support card identifies only targets whose current preparation actions contain that quest",function()
     local restore=preparationForFixture()
-    ui.preparation=true;ui.quest=nil;ui:Refresh()
+    ui.preparation=true;ui.quest=nil;ui:RefreshQuests();ui:RefreshDetail()
     local clicked=false
     for _,row in ipairs(ui.rows)do
         if row.shown and row.questID==21003 then row.scripts.OnClick(row,"LeftButton",false);clicked=true;break end
@@ -4775,7 +4781,7 @@ check("Hidden browser ignores resize events and reopens using current geometry w
     screenWidth,screenHeight=width,height;ui:Fit();ui.frame:SetShown(shown)
 end)
 local function headerFitFixture()
-    local buttons={ui.rangeButton,ui.preparationButton,ui.characterButton}
+    local buttons={ui.rangeButton,ui.characterButton,ui.entrance,ui.map,ui.guide}
     local saved,fonts={},{}
     for index,b in ipairs(buttons)do
         saved[index]={getter=rawget(b,"GetFontString"),height=b.height}
@@ -4792,8 +4798,8 @@ local function headerFitFixture()
 end
 check("Filter controls wrap clean oversized native text measurements inside the existing header bounds",function()
     local buttons,fonts,finish=headerFitFixture();local locale,all=addon.db.locale,ui.includeUnavailable
-    local click,point,font=ui.characterButton.scripts.OnClick,ui.characterButton.point,fonts[3].fontFamily
-    fonts[3].GetUnboundedStringWidth=function()return 132 end
+    local click,point,font=ui.characterButton.scripts.OnClick,ui.characterButton.point,fonts[2].fontFamily
+    fonts[2].GetUnboundedStringWidth=function()return 132 end
     addon.db.locale="frFR";ui.includeUnavailable=true;ui.frame:Show();ui:Refresh()
     assert(ui.characterButton.text==addon.locales.frFR.ALL_CHARACTERS)
     for i,b in ipairs(buttons)do
@@ -4802,15 +4808,15 @@ check("Filter controls wrap clean oversized native text measurements inside the 
         assert(-b.point[3]+b.height<=120) -- y=-84 plus36 ends before the next heading at-125.
     end
     assert(ui.characterButton.point==point and ui.characterButton.width==120 and ui.characterButton.scripts.OnClick==click)
-    assert(fonts[3].fontFamily==font and ui.map.point[2]==690 and ui.heading.point[2]==288)
-    fonts[3].GetUnboundedStringWidth=function()return 20 end;ui:FitHeaderControls()
+    assert(fonts[2].fontFamily==font and ui.map.point[2]==690 and ui.heading.point[2]==288)
+    fonts[2].GetUnboundedStringWidth=function()return 20 end;ui:FitHeaderControls()
     for i,b in ipairs(buttons)do assert(b.height==25 and fonts[i].height==21)end
     addon.db.locale,ui.includeUnavailable=locale,all;finish()
 end)
 check("Filter fit follows ten localized labels and toggle clicks without changing widths or native handlers",function()
     local buttons,fonts,finish=headerFitFixture();local locale=addon.db.locale
     local range,preparation,all=ui.range,ui.preparation,ui.includeUnavailable
-    local x={273,390,564};local widths={105,170,120};local handlers={}
+    local x={273,390,520,690,856};local widths={105,120,160,160,172};local handlers={}
     for i,b in ipairs(buttons)do handlers[i]=b.scripts.OnClick end
     for code in pairs(addon.locales)do
         addon.db.locale=code
@@ -4850,7 +4856,7 @@ check("An older filter measurement pass cannot overwrite a newer locale fit",fun
             armed=false;addon.db.locale="deDE"
             fonts[1].GetUnboundedStringWidth=function()return 20 end
             fonts[2].GetUnboundedStringWidth=function()return 20 end
-            fonts[3].GetUnboundedStringWidth=function()return 20 end
+            fonts[2].GetUnboundedStringWidth=function()return 20 end
             ui:Refresh()
         end
         return 132
@@ -6563,24 +6569,23 @@ local function emptyPreparationFixture()
         addon.db.locale=saved.locale;ui:Refresh()
     end
 end
-check("Actual completed Deadmines preparation gives an explicit route to its listed quests without a completeness claim",function()
+check("Actual completed Deadmines quests remain directly listed without a retired preparation-mode detour",function()
     local finish=emptyPreparationFixture()
-    assert(#ui.currentPlan.rows==6 and #visibleRows()==0 and ui.currentPlan.preparationEmpty)
+    assert(#ui.currentPlan.rows==6 and #visibleRows()==6 and not ui.currentPlan.preparationEmpty)
     local notice=addon.L("PREPARATION_EMPTY",addon.L("QUESTS"));local row=ui.rows[1]
-    assert(row.shown and row.title.text==notice and not row.enabled and not row.scripts.OnClick)
-    assert(detailHas(notice) and not detailHas(addon.L("OVERVIEW_PICK")) and ui.coverage.text==addon.L("PARTIAL"))
+    assert(row.shown and row.enabled and row.scripts.OnClick)
+    assert(not detailHas(notice) and detailHas(addon.L("OVERVIEW_PICK")) and ui.coverage.text==addon.L("PARTIAL"))
     assert(not detailHas(addon.L("PREPARED")) and not ui.action and ui.quest==nil and #ui.detailHistory==0)
-    ui.preparationButton.scripts.OnClick(ui.preparationButton,"LeftButton")
     assert(not ui.preparation and #visibleRows()==6 and not ui.currentPlan.preparationEmpty)
     assert(detailHas(addon.L("OVERVIEW_PICK")) and not detailHas(notice) and ui.rows[1].enabled)
     ui.rows[1].scripts.OnClick(ui.rows[1],"LeftButton");assert(ui.quest==ui.rows[1].questID)
     finish()
 end)
-check("Empty preparation guidance localizes and recycles without replacing genuinely empty or excluded-character notices",function()
+check("Direct quest browsing localizes and preserves genuinely empty or excluded-character notices",function()
     local finish=emptyPreparationFixture()
     for code in pairs(addon.locales)do
         addon.db.locale=code;ui:Refresh();local notice=addon.L("PREPARATION_EMPTY",addon.L("QUESTS"))
-        assert(ui.rows[1].title.text==notice and detailOccurrences(notice)==1 and not ui.rows[1].enabled)
+        assert(#visibleRows()==6 and detailOccurrences(notice)==0 and ui.rows[1].enabled and not ui.preparation)
     end
     ui.dungeon={key="empty-guidance",name="No target data",minLevel=1,maxLevel=60,coverage="partial",quests={}}
     ui:Refresh();assert(not ui.currentPlan.preparationEmpty and ui.coverage.text==addon.L("EMPTY") and not ui.rows[1].shown)
@@ -6589,7 +6594,7 @@ check("Empty preparation guidance localizes and recycles without replacing genui
     ui.dungeon={key="foreign-guidance",name="Foreign targets",minLevel=1,maxLevel=60,coverage="reviewed",quests={30001}}
     ui:Refresh();assert(#ui.currentPlan.rows==0 and not ui.currentPlan.preparationEmpty and ui.coverage.text==addon.L("NO_CHARACTER_QUESTS"))
     ui.characterButton.scripts.OnClick(ui.characterButton,"LeftButton")
-    assert(#ui.currentPlan.rows==1 and #visibleRows()==0 and ui.currentPlan.preparationEmpty,"completed foreign history is inspectable in all-character view")
+    assert(#ui.currentPlan.rows==1 and #visibleRows()==1 and not ui.currentPlan.preparationEmpty,"completed foreign history is directly inspectable in all-character view")
     finish()
 end)
 check("Empty preparation label reentry preserves a newer quest view and its actual clickable rows",function()
@@ -7078,7 +7083,7 @@ check("ActualBRD7848 target search explicitly opens its quest while ordinary dun
     assert(inspect and inspect.label.text==addon.L("BRANCH_INSPECT"))
     inspect.scripts.OnClick(inspect,"LeftButton",false)
     assert(ui.dungeon.key=="brd"and ui.quest==7848 and addon.char.selectedDungeon=="brd")
-    assert(ui.engine:State(7848).status=="UNKNOWN"and not ui.action and not ui.map.enabled and not ui.guide.enabled)
+    assert(ui.engine:State(7848).status=="UNKNOWN"and not ui.action and ui.map.enabled and ui.guide.enabled and ui.guide.text==addon.L("VISIT_GIVER"))
     f:finish()
 end)
 check("Cached localized target inspection checks the fresh literal match without promoting support or changing filters",function()
@@ -7426,7 +7431,7 @@ check("language control shows native names and aliases without rewriting stored 
     local names={enUS="English",ruRU="Русский",deDE="Deutsch",frFR="Français",esES="Español",itIT="Italiano",ptBR="Português",koKR="한국어",zhCN="简体中文",zhTW="繁體中文",enGB="English",esMX="Español",unsupported="English",[""]="English"}
     for code,name in pairs(names)do
         addon.db.locale=code;ui:Refresh()
-        assert(ui.language.text==name and addon.db.locale==code and ui.language.width==100)
+        assert(ui.language.text==name and addon.db.locale==code and ui.language.width==126)
     end
     addon.db.locale=old;ui:Refresh()
 end)
@@ -7435,7 +7440,7 @@ check("automatic language uses short localized labels without changing the menu 
     local menuLabel={}
     for code,dict in pairs(addon.locales)do if dict.LANGUAGE_AUTO_SHORT then
         GetLocale=function()return code end;addon.db.locale="auto";ui:Refresh()
-        assert(ui.language.text==dict.LANGUAGE_AUTO_SHORT and addon.db.locale=="auto" and ui.language.width==100)
+        assert(ui.language.text==dict.LANGUAGE_AUTO_SHORT and addon.db.locale=="auto" and ui.language.width==126)
         menuLabel[code]=dict.LANGUAGE_AUTO
     end end
     for code,value in pairs(menuLabel)do assert(addon.locales[code].LANGUAGE_AUTO==value)end
@@ -8482,4 +8487,86 @@ check("Superseded overview painting cannot resize a newer compact overview or ov
     addon.PaintDungeonArt=paint;ui.quest,ui.dungeon,ui.engine=quest,dungeon,engine;ui:Refresh()
 end)
 
+check("Normal browsing ignores a saved preparation mode and exposes no Back or mode widget",function()
+    local f=targetSearchFixture();local filters=addon.char.filters
+    addon.QuestName=f.questName
+    addon.char.filters={preparation=true,other="keep"};ui:LoadFilters();ui.quest=nil;ui.dungeon=addon.dungeons[1];ui:Refresh()
+    assert(ui.back==nil and ui.preparationButton==nil and not ui.preparation)
+    assert(#visibleRows()==3)
+    for _,row in ipairs(visibleRows())do assert(not row.heading and (row.questID==31001 or row.questID==31002))end
+    ui.preparation=true;ui:Refresh();assert(not ui.preparation and #visibleRows()==3 and addon.char.filters.preparation==true)
+    assert(ui.characterButton.point[2]==390 and ui.entrance.point[2]==520 and ui.languageChevron.text=="v")
+    addon.char.filters=filters;f:finish()
+end)
+check("Blocked level navigation explicitly routes to a known giver without claiming the quest available",function()
+    local quest,dungeon,nav=ui.quest,ui.dungeon,addon.Navigation
+    addon.quests[99250]={id=99250,minLevel=80,requirementsKnown=true,start={mapID=1,x=20,y=30,name="Known giver"}}
+    ui.dungeon={key="level-destination",quests={99250}};local calls={}
+    addon.Navigation={Map=function(point)calls[#calls+1]=point;return true end,Start=function(action)calls[#calls+1]=action;return true end}
+    showCompactDetail(99250)
+    assert(ui.action.kind=="level" and ui.engine:State(99250).status=="LOCKED")
+    assert(ui.map.enabled and ui.guide.enabled and ui.map.text==addon.L("GIVER_MAP")and ui.guide.text==addon.L("VISIT_GIVER"))
+    ui.map.scripts.OnClick();ui.guide.scripts.OnClick()
+    assert(calls[1]==addon.quests[99250].start and calls[2].kind=="visit" and calls[2].id==99250 and calls[2].place==calls[1])
+    assert(ui.action.kind=="level" and ui.engine:State(99250).status=="LOCKED" and ui.frame.shown)
+    addon.quests[99250]=nil;addon.Navigation=nav;ui.quest,ui.dungeon=quest,dungeon;ui:Refresh()
+end)
+check("Navigation tooltips name the destination and leave foreign tooltip ownership untouched",function()
+    local previous=GameTooltip;local hidden=0;local tip={}
+    function tip:SetOwner(owner,anchor)assert(anchor=="ANCHOR_RIGHT");self.owner=owner end
+    function tip:IsOwned(owner)return self.owner==owner end
+    function tip:SetText(value)self.text=value end
+    function tip:AddLine(value)self.line=value end
+    function tip:Show()self.shown=true end
+    function tip:Hide()hidden=hidden+1;self.shown=false end
+    GameTooltip=tip;showCompactDetail(2);ui.map.scripts.OnEnter()
+    assert(tip.shown and tip.owner==ui.map and tip.text==ui.map.text and tip.line:find("Giver 2",1,true))
+    tip.owner={};ui.map.scripts.OnLeave();assert(hidden==0 and tip.shown)
+    ui.map.scripts.OnEnter();ui.map.scripts.OnLeave();assert(hidden==1 and not tip.shown)
+    GameTooltip=previous
+end)
+check("Localized navigation labels wrap within all five fixed toolbar slots without shrinking shared fonts",function()
+    local buttons,fonts,finish=headerFitFixture();local locale=addon.db.locale
+    for i=3,5 do fonts[i].GetUnboundedStringWidth=function()return 420 end end
+    for code in pairs(addon.locales)do addon.db.locale=code;ui:Refresh()
+        for i,b in ipairs(buttons)do assert(b.height==36 and fonts[i].width==b.width-16 and fonts[i].maxLines==2 and -b.point[3]+b.height<=120)end
+    end
+    addon.db.locale=locale;finish();ui:Refresh()
+end)
+check("Dungeon entrance uses only a current explicit producer point and its separate navigation adapter",function()
+    local quest,dungeon,provider,nav=ui.quest,ui.dungeon,addon.Entrances,addon.Navigation
+    local selected={key="entrance-fixture",name="Selected dungeon",quests={}}
+    local point={mapID=1436,x=42.5,y=71.7,name="Entry hallway"};local valid=true;local calls=0
+    addon.Entrances={Get=function(d)assert(d==selected);return point,function()return valid end end}
+    addon.Navigation={StartEntrance=function(d,p)assert(d==selected and p==point);calls=calls+1;return true end}
+    ui.quest,ui.dungeon=nil,selected;ui:RefreshDetail()
+    assert(ui.entrance.enabled and ui.entrance.text==addon.L("DUNGEON_ENTRANCE")and calls==0)
+    ui.entrance.scripts.OnClick();assert(calls==1 and ui.quest==nil and ui.frame.shown)
+    valid=false;ui.entrance.scripts.OnClick();assert(calls==1)
+    valid=true;point.x=80;ui.entrance.scripts.OnClick();assert(calls==1,"a changed point invalidates an older entrance binding")
+    for _,bad in ipairs({false,{},function()return false end})do
+        addon.Entrances={Get=function()return point,bad end};ui:RefreshDetail();assert(not ui.entrance.enabled and not ui.entranceBinding)
+    end
+    addon.Entrances={Get=function()return point end};ui:RefreshDetail();assert(not ui.entrance.enabled)
+    addon.Entrances={Get=function()return nil end};ui:RefreshDetail();assert(not ui.entrance.enabled and not ui.entranceBinding)
+    assert(detailHas(addon.L("DUNGEON_ENTRANCE_UNKNOWN")))
+    addon.Entrances,addon.Navigation=provider,nav;ui.quest,ui.dungeon=quest,dungeon;ui:Refresh()
+end)
+check("Real language hover previews the existing window and restores its labels without changing saved selection",function()
+    local previous,locale,quest,dungeon=addon.Language,addon.db.locale,ui.quest,ui.dungeon
+    addon.db.locale="enUS";ui.quest=2;ui.frame:Show();ui:Refresh()
+    local range,heading,note=ui.rangeButton.text,ui.heading.text,ui.rows[1].note.text
+    assert(loadfile("UI/Language.lua"))("DungeonPro",addon);local language=addon.Language
+    assert(language:Attach(ui.language,ui));ui.language.scripts.OnEnter()
+    assert(language.session and #language.session.rows==11)
+    language.session.rows[3].scripts.OnEnter()
+    assert(addon.db.locale=="enUS" and ui.language.text=="Русский")
+    assert(ui.rangeButton.text==addon.L(ui.range and "RANGE"or"ALL")and ui.rangeButton.text~=range)
+    assert(ui.rows[1].note.text~=note)
+    assert(detailHas(addon.locales.ruRU.NEXT) and ui.back==nil and ui.preparationButton==nil)
+    assert(language:Cancel(ui)and addon.db.locale=="enUS"and ui.rangeButton.text==range and ui.heading.text==heading)
+    ui.language.scripts.OnEnter();language.session.rows[3].scripts.OnEnter();ui.frame:Hide();ui.frame.scripts.OnHide()
+    assert(not language.session and addon.db.locale=="enUS")
+    addon.Language=previous;addon.db.locale=locale;ui.quest,ui.dungeon=quest,dungeon;ui.frame:Show();ui:Refresh()
+end)
 print("Preparation UI modeled checks passed: " .. total .. " (no native layout validation)")

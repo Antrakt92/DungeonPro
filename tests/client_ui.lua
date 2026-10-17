@@ -119,6 +119,11 @@ local function withKnownDefias(fn)
     for _, id in ipairs(ids) do assert(actual[id].requirementsKnown == false) end
     assert(ok, err)
 end
+local function explicitGiverVisit(ui, id)
+    local destination, giver = ui:NavigationDestination(true)
+    assert(giver == true and destination == ui.giverAction and destination.id == id and destination.kind == "visit")
+    assert(destination.place == addon.quests[id].start and ui.guide.enabled and ui.guide.text == addon.L("VISIT_GIVER"))
+end
 local eventFrame = objects[#objects]
 check("Addon initializes on the matching Forever client", function()
     eventFrame.scripts.OnEvent(eventFrame, "ADDON_LOADED", "DungeonPro")
@@ -137,7 +142,8 @@ check("Actual Defias data stays uncertain even after every known parent is compl
     addon.UI.quest = 166; addon.UI:Refresh()
     expandKnownChain()
     assert(addon.quests[166].requirementsKnown == false)
-    assert(addon.UI.engine:State(166).status == "UNKNOWN" and not addon.UI.action and not addon.UI.guide.enabled)
+    assert(addon.UI.engine:State(166).status == "UNKNOWN" and not addon.UI.action)
+    explicitGiverVisit(addon.UI, 166)
     assert(#addon.UI.chainButtons == 7, "uncertain acceptance still retains source narrative")
     C_QuestLog.IsQuestFlaggedCompleted = completed; addon.UI:Refresh()
 end)
@@ -167,7 +173,8 @@ check("Known graph fixture guides to the initial Defias step", function()
 end)
 check("Storyline renders separately without inventing dependency readiness", function()
     addon.UI.quest = 92753; addon.UI:RefreshDetail()
-    assert(not addon.UI.action and not addon.UI.guide.enabled)
+    assert(not addon.UI.action)
+    explicitGiverVisit(addon.UI, 92753)
     local ui = addon.UI
     assert(ui.storyToggle and ui.storyToggle:IsShown())
     assert(ui.storyToggle.label.text == "+ " .. addon.L("STORY_SOURCE_QUESTS", 11))
@@ -177,7 +184,8 @@ check("Storyline renders separately without inventing dependency readiness", fun
     ui.storyToggle.scripts.OnClick()
     local visible = 0
     for _, row in ipairs(ui.chainButtons) do if row:IsShown() then visible = visible + 1 end end
-    assert(visible == 11 and not ui.action and not ui.guide.enabled)
+    assert(visible == 11 and not ui.action)
+    explicitGiverVisit(ui, 92753)
 end)
 check("Quest title hydration is requested only once per ID", function()
     local before = requests
@@ -657,7 +665,7 @@ check("Client hydration and quest events preserve scroll until the inspected que
     ui:InspectQuest(65)
     assert(scroll.verticalScroll == 0)
     scroll:SetVerticalScroll(120)
-    ui.back.scripts.OnClick()
+    ui:BackQuest()
     assert(ui.quest == 166 and scroll.verticalScroll == 0)
     ui.quest, ui.detailHistory = previous, history
     ui:Refresh()
@@ -685,13 +693,12 @@ check("Gossip refresh localizes only the actual matching NPC and closing restore
     guid = "Creature-npc-name-integration"; event("GOSSIP_SHOW")
     assert(shown(name) and not shown(addon.L("START") .. ": " .. originalName))
     assert(state == "UNKNOWN" and not ui.action)
-    -- A separate pickup-model scope verifies localized preparation rows without
+    -- A separate pickup-model scope verifies the localized current step without
     -- converting the real NPC's partial acceptance record into an available quest.
     withKnownDefias(function()
         ui:Refresh()
-        for _, row in ipairs(ui.rows) do
-            if row.shown and row.note.text:find(name, 1, true) then nativeNameInAction = true end
-        end
+        nativeNameInAction = ui.action and ui.action.id == 65 and ui.action.kind == "pickup" and
+            ui.action.place == addon.quests[65].start and shown(name)
         assert(nativeNameInAction and ui.engine:State(65).status == "AVAILABLE")
     end)
     assert(ui.engine:State(65).status == state and not ui.action)
@@ -791,7 +798,8 @@ check("Actual partial Defias chain keeps held prerequisite work without claiming
     ui:InspectQuest(166); ui:Refresh()
     local actions, unknown = ui.engine:Next(166)
     assert(ui.engine:State(166).status == "UNKNOWN" and unknown and #actions == 1)
-    assert(ui.action.id == 65 and ui.action.kind == "complete" and ui.action.place == nil and not ui.guide.enabled)
+    assert(ui.action.id == 65 and ui.action.kind == "complete" and ui.action.place == nil)
+    explicitGiverVisit(ui, 166)
     canTurnIn = true; eventFrame.scripts.OnEvent(eventFrame, "QUEST_LOG_UPDATE")
     assert(ui.action.id == 65 and ui.action.kind == "turnin" and ui.guide.enabled)
     assert(ui.engine:State(166).status == "UNKNOWN" and addon.quests[166].requirementsKnown == false)
@@ -1116,7 +1124,8 @@ check("Actual Hall kill label setter before and after reentry preserves the newe
         assert(not armed and ui.quest==96403 and ui.engine==currentEngine)
         assert(not visibleDetail(ui,goal)and visibleDetail(ui,addon.QuestName(96403)))
         assert(visibleDetail(ui,addon.L("OBJECTIVE_ITEM","Dwarven Heirloom",8)))
-        assert(ui.engine:State(96403).status=="UNKNOWN" and not ui.action and not ui.guide.enabled)
+        assert(ui.engine:State(96403).status=="UNKNOWN" and not ui.action)
+        explicitGiverVisit(ui, 96403)
     end
 end)
 check("Actual kill-row localization cannot publish old headings or labels over a newer Hall card",function()
@@ -1327,7 +1336,8 @@ check("Actual level-one Defias giver click couples source UI navigation and owne
     ui.frame:Show();ui.quest=166;ui:Refresh()
     local context=addon.Context()
     assert(context.level==1 and context.faction=="Alliance"and context.class=="MAGE"and context.race==3)
-    assert(ui.engine:State(166).status=="LOCKED"and not ui.guide.enabled and ui.giver.enabled and ui.giverHasCoordinates)
+    assert(ui.engine:State(166).status=="LOCKED"and ui.giver.enabled and ui.giverHasCoordinates)
+    explicitGiverVisit(ui, 166)
     assert(ui.giverAction.id==166 and ui.giverAction.kind=="visit"and ui.giverAction.place==q.start)
     assert(q.start.npcID==234 and q.start.mapID==1436 and q.start.x==56.3 and q.start.y==47.5)
     local start=addon.Navigation.Start;local started,result=0,nil

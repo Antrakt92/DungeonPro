@@ -27,6 +27,30 @@ function UI:CurrentDetailAction()
         action.place == place and action.id == id and action.kind == kind then return action end
 end
 
+function UI:NavigationDestination(coordinates)
+    local frame, quest, dungeon, engine, character, generation, giver = self.frame, self.quest, self.dungeon, self.engine,
+        addon.char, self.rewardGeneration, self.giverAction
+    local function current()
+        return addon.UI == self and self.frame == frame and self.quest == quest and self.dungeon == dungeon and
+            self.engine == engine and addon.char == character and self.rewardGeneration == generation and self.giverAction == giver
+    end
+    local function usable(action)
+        local place = action and addon.Clean(action.place, "table")
+        local map = place and addon.Clean(place.mapID, "number")
+        if not map or map <= 0 or map % 1 ~= 0 then return false end
+        if not coordinates then return true end
+        local x, y = addon.Clean(place.x, "number"), addon.Clean(place.y, "number")
+        return x ~= nil and y ~= nil and x >= 0 and x <= 100 and y >= 0 and y <= 100
+    end
+    local action = self:CurrentDetailAction()
+    if not current() then return end
+    local primary = usable(action)
+    if not current() then return end
+    if primary then return action, false end
+    local fallback = usable(giver)
+    if current() and fallback then return giver, true end
+end
+
 function UI:DispatchDetail(action, mapOnly, giver, ownerCurrent)
     if not action then return false end
     local frame, quest, dungeon, engine, character, generation = self.frame, self.quest, self.dungeon, self.engine, addon.char, self.rewardGeneration
@@ -51,11 +75,58 @@ function UI:DispatchDetail(action, mapOnly, giver, ownerCurrent)
     return pcall(method, mapOnly and place or action)
 end
 
+function UI:RefreshEntrance()
+    local control, frame, dungeon, quest, character, generation = self.entrance, self.frame, self.dungeon, self.quest, addon.char, self.rewardGeneration
+    if not control then return false end
+    self.entranceBinding = nil; control:SetEnabled(false); control:SetText(addon.L("DUNGEON_ENTRANCE"))
+    local provider = addon.Clean(addon.Entrances, "table")
+    local getter = provider and addon.Clean(provider.Get, "function")
+    local navigation = addon.Clean(addon.Navigation, "table")
+    local start = navigation and addon.Clean(navigation.StartEntrance, "function")
+    local function owned()
+        return addon.UI == self and self.entrance == control and self.frame == frame and self.dungeon == dungeon and self.quest == quest and
+            addon.char == character and self.rewardGeneration == generation and addon.Entrances == provider and
+            (not provider or provider.Get == getter) and addon.Navigation == navigation and (not navigation or navigation.StartEntrance == start)
+    end
+    if not owned() or not dungeon or not getter or not start then return false end
+    local ok, point, predicate = pcall(getter, dungeon)
+    point, predicate = ok and addon.Clean(point, "table"), ok and addon.Clean(predicate, "function")
+    if not owned() or not point or not predicate then return false end
+    local map, x, y = addon.Clean(point.mapID, "number"), addon.Clean(point.x, "number"), addon.Clean(point.y, "number")
+    if not owned() or not map or map <= 0 or map % 1 ~= 0 or not x or not y or x < 0 or x > 100 or y < 0 or y > 100 then return false end
+    local function current()
+        local valid = addon.Read(predicate, "boolean") == true
+        return valid and owned() and addon.Clean(point.mapID, "number") == map and addon.Clean(point.x, "number") == x and addon.Clean(point.y, "number") == y and owned()
+    end
+    if not current() then return false end
+    self.entranceBinding = { current = current, dungeon = dungeon, point = point, navigation = navigation, start = start }
+    control:SetEnabled(true)
+    return current()
+end
+
+function UI:VisitEntrance()
+    local binding, frame = self.entranceBinding, self.frame
+    if not binding or not frame or not binding.current() then return false end
+    local shown = addon.Read(frame.IsShown, "boolean", frame)
+    if shown ~= true or self.entranceBinding ~= binding or self.frame ~= frame or not binding.current() then return false end
+    return pcall(binding.start, binding.dungeon, binding.point)
+end
+
+function UI:HideNavigationHint()
+    local held = self.navigationTooltip
+    self.navigationTooltip = nil
+    if held and GameTooltip == held.tip and addon.Read(held.tip.IsOwned, "boolean", held.tip, held.button) == true then
+        pcall(held.tip.Hide, held.tip)
+    end
+end
+
 local LANGUAGE_CHOICES = { { "auto" }, { "enUS", "English" }, { "ruRU", "Русский" }, { "deDE", "Deutsch" },
         { "frFR", "Français" }, { "esES", "Español" }, { "itIT", "Italiano" }, { "ptBR", "Português" },
         { "koKR", "한국어" }, { "zhCN", "简体中文" }, { "zhTW", "繁體中文" } }
 
 function UI:RefreshLanguageLabel()
+    local language = addon.Clean(addon.Language, "table")
+    if language and type(language.Refresh) == "function" then return addon.Read(language.Refresh, "boolean", language, self) == true end
     local database, owner, frame, checker = addon.Clean(addon.db, "table"), self.language, self.frame, issecretvalue
     if not database or not owner then return false end
     local locale, localize = addon.Clean(rawget(database, "locale"), "string"), addon.Clean(addon.L, "function")
@@ -92,6 +163,8 @@ function UI:RefreshLanguageLabel()
 end
 
 function UI:OpenLanguageMenu()
+    local language = addon.Clean(addon.Language, "table")
+    if language and type(language.Open) == "function" then return addon.Read(language.Open, "boolean", language, self) == true end
     local choices = LANGUAGE_CHOICES
     local database, owner, checker = addon.Clean(addon.db, "table"), self.language, issecretvalue
     if not database then return false end
@@ -154,7 +227,7 @@ function UI:FitHeaderControls()
             (not database or database.locale == locale) and issecretvalue == checker
     end
     local controls, wrapped = {}, false
-    for _, button in ipairs({ self.rangeButton, self.preparationButton, self.characterButton }) do
+    for _, button in ipairs({ self.rangeButton, self.characterButton, self.entrance, self.map, self.guide }) do
         local getter = addon.Clean(button.GetFontString, "function")
         local ok, value
         if getter then ok, value = pcall(getter, button) end
@@ -192,8 +265,8 @@ function UI:ApplyTheme()
     local theme = addon.Clean(addon.Theme, "table")
     if theme then addon.Read(theme.Apply, "boolean", self) end
     styleRow(self.rangeButton, "control", self.range)
-    styleRow(self.preparationButton, "control", self.preparation)
     styleRow(self.characterButton, "control", self.includeUnavailable)
+    styleRow(self.entrance, "control", false)
     self:FitHeaderControls()
 end
 
@@ -465,14 +538,15 @@ end
 
 function UI:LoadFilters()
     local filters = addon.Clean(addon.char.filters, "table") or {}
-    for _, key in ipairs({ "range", "preparation", "includeUnavailable" }) do
+    for _, key in ipairs({ "range", "includeUnavailable" }) do
         self[key] = addon.Clean(filters[key], "boolean") == true
     end
+    self.preparation = false
 end
 
 function UI:SaveFilters()
     if not addon.Clean(addon.char.filters, "table") then addon.char.filters = {} end
-    for _, key in ipairs({ "range", "preparation", "includeUnavailable" }) do
+    for _, key in ipairs({ "range", "includeUnavailable" }) do
         addon.char.filters[key] = addon.Clean(self[key], "boolean") == true
     end
 end
@@ -1430,7 +1504,6 @@ function UI:RefreshDetail()
     for _, buttons in ipairs({ self.reportedToggles, self.reportedRows }) do
         for _, row in ipairs(buttons) do row:Hide(); row:SetEnabled(false); row:SetScript("OnClick", nil) end
     end
-    self.back:SetEnabled(#self.detailHistory > 0 or self:CanReturnToOverview())
     local function portraitCardCurrent()
         return self.quest == renderQuest and self.dungeon == renderDungeon and self.engine == renderEngine and
             addon.char == renderCharacter and self.rewardGeneration == rewardGeneration and
@@ -1602,6 +1675,8 @@ function UI:RefreshDetail()
         end
     end
     if not self:ResetQuestLogControl() or not portraitCardCurrent() then return end
+    self:RefreshEntrance()
+    if not portraitCardCurrent() then return end
     local id, engine = self.quest, self.engine
     if id then
         local definition = addon.quests[id]
@@ -3357,6 +3432,7 @@ function UI:RefreshDetail()
             local name = addon.Read(addon.DungeonName, "string", renderDungeon)
             if self.quest ~= renderQuest or self.dungeon ~= renderDungeon or self.rewardGeneration ~= rewardGeneration then return end
             line(name or addon.Clean(renderDungeon.name, "string") or addon.L("UNKNOWN_PLACE"), "title")
+            if not self.entranceBinding then line(addon.L("DUNGEON_ENTRANCE_UNKNOWN")) end
             if not self.overviewArt then
                 self.overviewArt = self.detail:CreateTexture(nil, "ARTWORK")
             end
@@ -3418,8 +3494,6 @@ function UI:RefreshDetail()
     if not fresh or self.quest ~= renderQuest or self.dungeon ~= renderDungeon or self.rewardGeneration ~= rewardGeneration or
         self.engine ~= renderEngine or addon.char ~= renderCharacter then return end
     self.action = pendingAction
-    self.map:SetEnabled(pendingAction ~= nil and pendingAction.place ~= nil and pendingAction.place.mapID ~= nil)
-    self.guide:SetEnabled(pendingAction ~= nil and pendingAction.place ~= nil and pendingAction.place.x ~= nil)
     local giverPlace = pendingGiver and pendingGiver.action.place
     if giverPlace and addon.quests[renderQuest] == pendingGiver.source and pendingGiver.source.start == giverPlace and
         addon.Clean(giverPlace.mapID, "number") == pendingGiver.map and addon.Clean(giverPlace.x, "number") == pendingGiver.x and
@@ -3428,20 +3502,25 @@ function UI:RefreshDetail()
         self.giver:SetText(addon.L(pendingGiver.coordinates and "VISIT_GIVER" or "GIVER_MAP"))
         self.giver:SetEnabled(true)
     end
+    local mapAction, mapGiver = self:NavigationDestination(false)
+    local guideAction, guideGiver = self:NavigationDestination(true)
+    if not portraitCardCurrent() then return end
+    self.map:SetText(addon.L(mapGiver and "GIVER_MAP" or "STEP_MAP")); self.map:SetEnabled(mapAction ~= nil)
+    self.guide:SetText(addon.L(guideGiver and "VISIT_GIVER" or "STEP_GUIDE")); self.guide:SetEnabled(guideAction ~= nil)
+    self:FitHeaderControls()
     return portraitCardCurrent() and rewardGeneration or nil
 end
 
 function UI:Refresh()
     if not self.frame or not self.frame:IsShown() then return end
+    self.preparation = false
     if addon.Theme and addon.Theme.RefreshFonts then addon.Theme.RefreshFonts() end
     self.title:SetText(addon.L("TITLE"))
     self.subtitle:SetText(addon.L("SUBTITLE"))
-    self.back:SetText(addon.L("DETAIL_BACK"))
     if not self:RefreshLanguageLabel() then return end
     self.rangeButton:SetText(addon.L(self.range and "RANGE" or "ALL"))
-    self.preparationButton:SetText(addon.L(self.preparation and "QUESTS" or "NEXT"))
     self.characterButton:SetText(addon.L(self.includeUnavailable and "ALL_CHARACTERS" or "MY_CHARACTER"))
-    self.map:SetText(addon.L("MAP")); self.guide:SetText(addon.L("GUIDE")); self.source:SetText(addon.L("SOURCE"))
+    self.source:SetText(addon.L("SOURCE"))
     self.footer:SetText(addon.L("DEVELOPMENT"))
     local log = addon.Read(addon.QuestLogCapacity, "table")
     local count = log and addon.Clean(log.count, "number")
@@ -3503,9 +3582,6 @@ function UI:Create()
     frame:SetBackdropBorderColor(0.7, 0.55, 0.27, 1)
     self.title = label(frame, addon.L("TITLE"), 22, -16, 360, 26)
     self.subtitle = label(frame, "", 22, -49, 500, 13)
-    self.back = button(frame, addon.L("DETAIL_BACK"), 120, function() self:BackQuest() end)
-    self.back:SetPoint("TOPLEFT", 560, -45)
-    self.back:SetEnabled(false)
     local close = CreateFrame("Button", nil, frame, "UIPanelCloseButton"); close:SetPoint("TOPRIGHT", -4, -4)
     local closeTheme = addon.Clean(addon.Theme, "table")
     if closeTheme then addon.Read(closeTheme.StyleCloseButton, "boolean", close) end
@@ -3528,17 +3604,19 @@ function UI:Create()
     self.clearSearch:SetPoint("TOPLEFT", 233, -84)
     self.rangeButton = button(frame, "", 105, function() self.range = not self.range; self:SaveFilters(); self:Refresh() end)
     self.rangeButton:SetPoint("TOPLEFT", 273, -84)
-    self.preparationButton = button(frame, "", 170, function()
-        self.preparation = not self.preparation; self:SaveFilters(); self:Refresh()
-    end)
-    self.preparationButton:SetPoint("TOPLEFT", 390, -84)
     self.characterButton = button(frame, "", 120, function()
         self.includeUnavailable = not self.includeUnavailable; self:SaveFilters(); self:Refresh()
     end)
-    self.characterButton:SetPoint("TOPLEFT", 564, -84)
-    local language = button(frame, "Auto", 100, function() self:OpenLanguageMenu() end)
+    self.characterButton:SetPoint("TOPLEFT", 390, -84)
+    self.entrance = button(frame, "", 160, function() self:VisitEntrance() end)
+    self.entrance:SetPoint("TOPLEFT", 520, -84)
+    styleRow(self.entrance, "control", false)
+    local language = button(frame, "Auto", 126, function() self:OpenLanguageMenu() end)
     self.language = language
     language:SetPoint("TOPRIGHT", -44, -45)
+    self.languageChevron = label(language, "v", 111, -6, 10, 10)
+    local languageModule = addon.Clean(addon.Language, "table")
+    if languageModule then addon.Read(languageModule.Attach, "boolean", languageModule, language, self) end
     self.heading = label(frame, "", 288, -125, 730, 26)
     self.summary = label(frame, "", 288, -163, 760, 14)
     self.coverage = label(frame, "", 288, -191, 760, 14)
@@ -3548,13 +3626,13 @@ function UI:Create()
     self.questList, self.questScroll = scrolling(frame, 288, -218, 355, 425)
     self.detail, self.detailScroll = scrolling(frame, 690, -218, 350, 425)
     self.map = button(frame, "", 160, function()
-        local action = self:CurrentDetailAction()
-        if action then self:DispatchDetail(action, true) end
+        local action, giver = self:NavigationDestination(false)
+        if action then self:DispatchDetail(action, true, giver) end
     end)
     self.map:SetPoint("TOPLEFT", 690, -84)
     self.guide = button(frame, "", 172, function()
-        local action = self:CurrentDetailAction()
-        if action then self:DispatchDetail(action, false) end
+        local action, giver = self:NavigationDestination(true)
+        if action then self:DispatchDetail(action, false, giver) end
     end)
     self.guide:SetPoint("TOPLEFT", 856, -84)
     self.source = button(frame, "", 160, function() if self.quest then self:CopyLink(self.quest) end end)
@@ -3565,6 +3643,40 @@ function UI:Create()
         end
     end)
     self.giver:SetPoint("BOTTOMLEFT", 690, 19)
+    local function navigationHint(control, destination)
+        control:SetScript("OnEnter", function()
+            self:HideNavigationHint()
+            local quest, dungeon, generation = self.quest, self.dungeon, self.rewardGeneration
+            local tip = addon.Clean(GameTooltip, "table") or addon.Clean(GameTooltip, "userdata")
+            local function current()
+                return addon.UI == self and self.frame == frame and self.quest == quest and self.dungeon == dungeon and
+                    self.rewardGeneration == generation and GameTooltip == tip and addon.Read(frame.IsShown, "boolean", frame) == true
+            end
+            local point = destination()
+            if not tip or not point or not current() then return end
+            local text = addon.Read(giverName, "string", point)
+            local zone = addon.Clean(point.zoneName, "string")
+            local x, y = addon.Clean(point.x, "number"), addon.Clean(point.y, "number")
+            if text and zone and zone:find("%S") then text = text .. " — " .. zone end
+            if text and x and y and x >= 0 and x <= 100 and y >= 0 and y <= 100 then text = text .. string.format(" (%.1f, %.1f)", x, y) end
+            local title = addon.Read(control.GetText, "string", control)
+            if not text or not title or not current() then return end
+            local held = { tip = tip, button = control }; self.navigationTooltip = held
+            for _, call in ipairs({ { "SetOwner", control, "ANCHOR_RIGHT" }, { "SetText", title }, { "AddLine", text, 1, 1, 1, true }, { "Show" } }) do
+                if not current() or self.navigationTooltip ~= held then return end
+                local fn = addon.Clean(tip[call[1]], "function")
+                if not fn or not pcall(fn, tip, unpack(call, 2)) then self:HideNavigationHint(); return end
+                if not current() or addon.Read(tip.IsOwned, "boolean", tip, control) ~= true or not current() then self:HideNavigationHint(); return end
+            end
+        end)
+        control:SetScript("OnLeave", function() self:HideNavigationHint() end)
+    end
+    navigationHint(self.entrance, function()
+        local binding = self.entranceBinding
+        return binding and binding.current() and binding.point or nil
+    end)
+    navigationHint(self.map, function() local action = self:NavigationDestination(false); return action and action.place end)
+    navigationHint(self.guide, function() local action = self:NavigationDestination(true); return action and action.place end)
     self.capacityStatus = label(frame, "", 22, -646, 640, 13)
     self.capacityStatus:Hide()
     self.footer = label(frame, "", 22, -668, 640, 13)
@@ -3583,7 +3695,7 @@ function UI:Create()
             addon.Read(f.IsShown, "boolean", f) == true then self:Fit() end
     end)
     frame:SetScript("OnShow", function() self:Fit(); self:Refresh() end)
-    frame:SetScript("OnHide", function() self.pendingSearch = nil; self.detailReferencesExpanded, self.detailChainExpanded = false, false; self.storyStates, self.storyOrder = nil, nil; if not self:ResetQuestLogControl() then return end; self.detailActionChoice = nil; self.languageMenuRevision = {}; self:ResetHistoryReading(); self:ResetRewardPresentation(); self:CloseCopyLink() end)
+    frame:SetScript("OnHide", function() self:HideNavigationHint(); local language = addon.Clean(addon.Language, "table"); if language then addon.Read(language.Cancel, "boolean", language, self) end; self.pendingSearch = nil; self.detailReferencesExpanded, self.detailChainExpanded = false, false; self.storyStates, self.storyOrder = nil, nil; if not self:ResetQuestLogControl() then return end; self.detailActionChoice = nil; self.languageMenuRevision = {}; self:ResetHistoryReading(); self:ResetRewardPresentation(); self:CloseCopyLink() end)
     self:ApplyTheme()
     frame:Hide()
 end

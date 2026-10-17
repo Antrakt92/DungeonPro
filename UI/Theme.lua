@@ -51,6 +51,9 @@ local function fontContext()
     local game = addon.Read(GetLocale, "string")
     local database = addon.Clean(addon.db, "table")
     local selection = database and addon.Clean(rawget(database, "locale"), "string") or "auto"
+    local language = addon.Clean(addon.Language, "table")
+    local preview = language and addon.Read(language.GetSelection, "string", language)
+    if preview then selection = preview end
     if not selection or #selection > 32 then selection = "auto" end
     local locale = selection == "auto" and game or selection
     if locale == "enGB" then locale = "enUS" elseif locale == "esMX" then locale = "esES" end

@@ -1232,4 +1232,58 @@ check("Displayed map ID binding expires after geometry or final-checker replacem
     end
 end)
 
+check("Entrance navigation uses dungeon title and survives unrelated quest changes", function()
+    local d = {key = "deadmines", name = "Deadmines"}
+    local previous = addon.DungeonName
+    addon.DungeonName = function(value) assert(value == d); return "Deadmines" end
+    local calls = 0
+    local oldQuestName = addon.QuestName
+    addon.QuestName = function() calls = calls + 1; error("entrance has no quest") end
+    local title
+    TomTom = { AddWaypoint = function(_, _, _, _, options) title = options.title; return "entry" end }
+    assert(nav.StartEntrance(d, point) and title == "Deadmines")
+    local hud
+    for _, f in ipairs(frames) do if f.shown and f.scripts.OnUpdate then hud = f end end
+    assert(hud and hud.title.text == "Deadmines" and calls == 0)
+    nav.QuestChanged(1); assert(hud.shown)
+    nav.Stop(); assert(not hud.shown)
+    addon.QuestName, addon.DungeonName = oldQuestName, previous
+end)
+check("Missing or invalid entrance does not cancel an existing quest guide", function()
+    assert(nav.Start(action))
+    local calls = nativeCalls
+    assert(not nav.StartEntrance({key = "unknown"}, {mapID = 1, x = -1, y = 50}))
+    assert(not nav.StartEntrance({}, point))
+    assert(nativeCalls == calls)
+    nav.QuestChanged(1)
+    for _, f in ipairs(frames) do if f.scripts.OnUpdate then assert(not f.shown) end end
+end)
+
+check("Entrance title callbacks cannot dispatch an obsolete guide after cancellation", function()
+    local old = addon.DungeonName
+    local calls = 0
+    TomTom = {AddWaypoint = function() calls = calls + 1; return "old" end}
+    addon.DungeonName = function() nav.Stop(); return "Old entrance" end
+    assert(not nav.StartEntrance({key = "old"}, point) and calls == 0 and nativeCalls == 0)
+    addon.DungeonName = old
+end)
+check("Entrance resolver supplies coordinates without a fabricated quest identity", function()
+    local previous, getter = addon.Entrances, addon.DungeonName
+    local dungeon = {key = "resolved"}
+    addon.DungeonName = function(value) assert(value == dungeon); return "Resolved dungeon" end
+    addon.Entrances = {Get = function(value) assert(value == dungeon); return point end}
+    assert(nav.StartEntrance(dungeon) and nativeCalls == 1)
+    addon.Entrances, addon.DungeonName = previous, getter
+end)
+
+check("Entrance title callback cannot send a destination it invalidated to TomTom", function()
+    local previous = addon.DungeonName
+    local mutable = {mapID = 1, x = 50, y = 60}
+    local calls = 0
+    addon.DungeonName = function() mutable.x = "invalid"; return "Entrance" end
+    TomTom = {AddWaypoint = function() calls = calls + 1; return "invalid" end}
+    assert(not nav.StartEntrance({key = "changed"}, mutable) and calls == 0)
+    addon.DungeonName = previous
+end)
+
 print("Navigation modeled checks passed: " .. total .. " (no native map validation)")

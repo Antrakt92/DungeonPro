@@ -7,6 +7,13 @@ local navigationGeneration = {}
 local presentation, contextElapsed = nil, 0
 local presentationWrite
 
+local function actionTitle(action)
+    if action.kind == "entrance" then
+        return addon.Read(addon.DungeonName, "string", action.dungeon) or ""
+    end
+    return addon.Read(addon.QuestName, "string", action.id) or ""
+end
+
 local function nativeWaypointEmpty(getter)
     if type(getter) ~= "function" then return false end
     local ok, point = pcall(getter)
@@ -282,6 +289,8 @@ end
 
 local function context(action, generation)
     local place, id = action.place, addon.Clean(action.id, "number")
+    local kind, dungeon = action.kind, action.dungeon
+    local dungeonGetter = addon.DungeonName
     local mapID, name = addon.Clean(place.mapID, "number"), addon.Clean(place.name, "string")
     local zone, npc = addon.Clean(place.zoneName, "string"), addon.Clean(place.npcID, "number")
     local x, y, objectID = addon.Clean(place.x, "number"), addon.Clean(place.y, "number"), addon.Clean(place.objectID, "number")
@@ -290,13 +299,19 @@ local function context(action, generation)
     local giverGetter, questGetter = addon.Clean(addon.GiverName, "function"), addon.Clean(addon.QuestName, "function")
     local database = addon.Clean(addon.db, "table")
     local choice = database and addon.Clean(database.locale, "string")
+    local languages = addon.Clean(addon.Language, "table")
+    local selectionGetter = languages and addon.Clean(languages.GetSelection, "function")
+    local selection = addon.Read(selectionGetter, "string", languages)
     local locale = addon.Read(localeGetter, "string")
     local function current()
         if GetLocale ~= localeGetter or issecretvalue ~= checker then return false end
         local liveLocale = addon.Read(localeGetter, "string")
         if liveLocale ~= locale or GetLocale ~= localeGetter or issecretvalue ~= checker then return false end
         return navigationGeneration == generation and rawequal(target, action) and addon.Clean(action.place, "table") == place and
-            addon.Clean(action.id, "number") == id and addon.Clean(place.mapID, "number") == mapID and
+            addon.Clean(action.id, "number") == id and action.kind == kind and action.dungeon == dungeon and
+            addon.DungeonName == dungeonGetter and addon.Language == languages and
+            (not languages or addon.Clean(languages.GetSelection, "function") == selectionGetter) and
+            addon.Read(selectionGetter, "string", languages) == selection and addon.Clean(place.mapID, "number") == mapID and
             addon.Clean(place.name, "string") == name and addon.Clean(place.zoneName, "string") == zone and
             addon.Clean(place.npcID, "number") == npc and addon.Clean(place.x, "number") == x and
             addon.Clean(place.y, "number") == y and addon.Clean(place.objectID, "number") == objectID and C_Map == library and issecretvalue == checker and
@@ -305,9 +320,9 @@ local function context(action, generation)
             addon.Clean(addon.db, "table") == database and (not database or addon.Clean(database.locale, "string") == choice)
     end
     if not current() then return nil end
-    local title = addon.Read(questGetter, "string", id)
+    local title = actionTitle(action)
     if not current() then return nil end
-    local giver = addon.Read(giverGetter, "string", place)
+    local giver = kind ~= "entrance" and addon.Read(giverGetter, "string", place) or name
     if not current() then return nil end
     local info = addon.Read(mapGetter, "table", mapID)
     if not current() then return nil end
@@ -415,9 +430,16 @@ function N.Start(action)
         return navigationGeneration == generation and rawequal(target, action)
     end
     local p, owner = action.place, TomTom
+    local title = actionTitle(action)
+    if not current() then return false end
+    if action.place ~= p or not N.Valid(p) then
+        if current() then N.Stop() end
+        return false
+    end
+    if not current() then return false end
     if owner and type(owner.AddWaypoint) == "function" then
         local ok, uid = pcall(owner.AddWaypoint, owner, p.mapID, p.x / 100, p.y / 100,
-            { title = addon.QuestName(action.id), persistent = false, minimap = true, world = true })
+            { title = title, persistent = false, minimap = true, world = true })
         local valid = addon.Clean(uid, "table") or addon.Clean(uid, "string") or addon.Clean(uid, "number")
         if type(valid) == "string" and valid == "" then valid = nil end
         if type(valid) == "number" and valid <= 0 then valid = nil end
@@ -542,4 +564,14 @@ function N.Start(action)
     if not current() then return false end
     N.Map(p)
     return current()
+end
+
+-- Entrances have dungeon identity; they are never represented as quest IDs.
+function N.StartEntrance(dungeon, place)
+    if type(dungeon) ~= "table" or type(dungeon.key) ~= "string" or dungeon.key == "" then return false end
+    if not place and addon.Entrances and type(addon.Entrances.Get) == "function" then
+        place = addon.Entrances.Get(dungeon)
+    end
+    if not N.Valid(place) then return false end
+    return N.Start({ kind = "entrance", dungeon = dungeon, place = place })
 end
