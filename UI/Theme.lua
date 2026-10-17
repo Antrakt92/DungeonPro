@@ -436,6 +436,139 @@ function Theme.StyleRow(row, options)
     return true
 end
 
+local searchStyles, filterStyles = setmetatable({}, { __mode = "k" }), setmetatable({}, { __mode = "k" })
+
+local function quietNativeArt(control)
+    for _, key in ipairs({ "Left", "Middle", "Right" }) do
+        local original = cleanObject(control[key])
+        if original then invoke(original, "SetAlpha", 0) end
+    end
+    for _, key in ipairs({ "GetNormalTexture", "GetPushedTexture", "GetDisabledTexture" }) do
+        local original = objectResult(control, key)
+        if original then invoke(original, "SetAlpha", 0) end
+    end
+end
+
+function Theme.StyleSearch(editBox, clearButton)
+    editBox = cleanObject(editBox)
+    if not editBox then return false end
+    local state = searchStyles[editBox]
+    if state and state.building then return false end
+    if not state then
+        state = { building = true }; searchStyles[editBox] = state
+        state.surface = surface(editBox)
+        if not state.surface then return false end
+        state.icon = texture(editBox, "ARTWORK")
+        if state.icon then
+            invoke(state.icon, "Hide")
+            local ok, accepted = invoke(state.icon, "SetAtlas", "common-search-magnifyingglass", false)
+            local atlas = addon.Read(function() return state.icon:GetAtlas() end, "string")
+            local ready = ok and addon.Clean(accepted, "boolean") ~= false and atlas == "common-search-magnifyingglass"
+            if not ready then
+                -- The legacy search-icon crop comes from the same native UI art.
+                ok, accepted = invoke(state.icon, "SetTexture", "Interface\\EncounterJournal\\UI-EncounterJournalTextures")
+                ready = ok and addon.Clean(accepted, "boolean") ~= false and
+                    invoke(state.icon, "SetTexCoord", .8984375, .97265625, .21386719, .25097656)
+            end
+            if ready and invoke(state.icon, "SetWidth", 12) and invoke(state.icon, "SetHeight", 12) and
+                invoke(state.icon, "SetPoint", "LEFT", editBox, "LEFT", 8, 0) then invoke(state.icon, "Show") end
+        end
+        state.focus = addon.Read(function() return editBox:HasFocus() end, "boolean") == true
+        local function refresh()
+            if addon.Theme ~= Theme or searchStyles[editBox] ~= state then return end
+            local revision = state.revision
+            color(state.surface.bg, palette.panel)
+            edges(state.surface, state.focus and palette.teal or (state.hover and palette.edge or palette.faint))
+            invoke(state.surface.accent, "Hide")
+            if state.icon then invoke(state.icon, "SetVertexColor", unpack(state.focus and palette.text or palette.muted)) end
+            if state.revision ~= revision and not state.repairing then
+                state.repairing = true; refresh(); state.repairing = nil
+            end
+        end
+        state.refresh = refresh
+        local hook = addon.Read(function() return editBox.HookScript end, "function")
+        if hook then
+            for _, entry in ipairs({ { "OnEditFocusGained", "focus", true }, { "OnEditFocusLost", "focus", false },
+                { "OnEnter", "hover", true }, { "OnLeave", "hover", false }, { "OnHide", "focus", false } }) do
+                local key, field, value = entry[1], entry[2], entry[3]
+                local ok, installed = pcall(hook, editBox, key, function()
+                    if addon.Theme ~= Theme or searchStyles[editBox] ~= state then return end
+                    state[field] = value
+                    state.revision = {}
+                    if key == "OnHide" then state.hover = false end
+                    refresh()
+                end)
+                if not ok or addon.Clean(installed, "boolean") ~= true then break end
+            end
+        end
+        state.building = nil
+    end
+    if not state.surface then return false end
+    state.revision = {}
+    quietNativeArt(editBox)
+    state.refresh()
+    clearButton = cleanObject(clearButton)
+    if clearButton then
+        Theme.StyleRow(clearButton, { kind = "control" })
+        local clearSurface = surfaces[clearButton]
+        if clearSurface then
+            color(clearSurface.bg, { 0, 0, 0, 0 }); edges(clearSurface, { 0, 0, 0, 0 })
+            invoke(clearSurface.accent, "Hide")
+        end
+    end
+    return true
+end
+
+function Theme.StyleFilter(button, active)
+    button = cleanObject(button)
+    if not button then return false end
+    active = addon.Clean(active, "boolean") == true
+    local state = filterStyles[button]
+    if state and state.building then return false end
+    if not state then
+        state = { building = true }; filterStyles[button] = state
+        state.surface = surface(button, button.bg)
+        if not state.surface then return false end
+        local function refresh()
+            if addon.Theme ~= Theme or filterStyles[button] ~= state then return end
+            local revision = state.revision
+            local enabled = addon.Read(function() return button:IsEnabled() end, "boolean") == true
+            color(state.surface.bg, state.active and palette.selected or palette.panel)
+            edges(state.surface, state.active and palette.amber or (state.hover and palette.edge or palette.faint))
+            invoke(state.surface.accent, "Hide")
+            local icon = cleanObject(button.filterIcon)
+            if icon then
+                invoke(icon, "SetVertexColor", unpack(enabled and (state.active and palette.amber or (state.hover and palette.text or palette.muted)) or palette.quiet))
+                invoke(icon, "SetAlpha", enabled and 1 or .4)
+            end
+            if state.revision ~= revision and not state.repairing then
+                state.repairing = true; refresh(); state.repairing = nil
+            end
+        end
+        state.refresh = refresh
+        local hook = addon.Read(function() return button.HookScript end, "function")
+        if hook then
+            for _, name in ipairs({ "OnEnter", "OnLeave", "OnEnable", "OnDisable" }) do
+                local event = name
+                local ok, installed = pcall(hook, button, event, function()
+                    if addon.Theme ~= Theme or filterStyles[button] ~= state then return end
+                    if event == "OnEnter" then state.hover = true
+                    elseif event == "OnLeave" or event == "OnDisable" then state.hover = false end
+                    state.revision = {}
+                    refresh()
+                end)
+                if not ok or addon.Clean(installed, "boolean") ~= true then break end
+            end
+        end
+        state.building = nil
+    end
+    if not state.surface then return false end
+    state.active, state.revision = active, {}
+    quietNativeArt(button)
+    state.refresh()
+    return true
+end
+
 local scrollbars, scrollArrows = setmetatable({}, { __mode = "k" }), setmetatable({}, { __mode = "k" })
 
 local function quietScrollBar(scroll, bar, state)
@@ -667,9 +800,13 @@ function Theme.Apply(ui)
     textColor(ui.heading, palette.text); textColor(ui.summary, palette.muted)
     textColor(ui.coverage, palette.quiet); textColor(ui.footer, palette.quiet)
     textColor(ui.capacityStatus, palette.muted); textColor(ui.searchPlaceholder, palette.quiet)
-    for _, key in ipairs({ "back", "clearSearch", "rangeButton", "preparationButton", "characterButton", "language", "map", "guide", "source", "giver" }) do
+    if cleanObject(ui.searchBox) then Theme.StyleSearch(ui.searchBox, ui.clearSearch) end
+    for _, key in ipairs({ "back", "rangeButton", "preparationButton", "characterButton", "language", "map", "guide", "source", "giver" }) do
         local button = cleanObject(ui[key])
-        if button then Theme.StyleRow(button, { kind = "control" }) end
+        if button then
+            if cleanObject(button.filterIcon) then Theme.StyleFilter(button, button.filterSelected)
+            else Theme.StyleRow(button, { kind = "control" }) end
+        end
     end
     return true
 end

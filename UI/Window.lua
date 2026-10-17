@@ -329,55 +329,24 @@ function UI:OpenLanguageMenu()
     return cycle()
 end
 
-function UI:FitHeaderControls()
-    local revision, frame, database, checker = {}, self.frame, addon.db, issecretvalue
-    self.headerFitGeneration = revision
-    local locale = database and database.locale
-    local function current()
-        return self.headerFitGeneration == revision and self.frame == frame and addon.db == database and
-            (not database or database.locale == locale) and issecretvalue == checker
-    end
-    local controls, wrapped = {}, false
-    for _, button in ipairs({ self.rangeButton, self.characterButton }) do
-        local getter = addon.Clean(button.GetFontString, "function")
-        local ok, value
-        if getter then ok, value = pcall(getter, button) end
-        local fs = ok and (addon.Clean(value, "table") or addon.Clean(value, "userdata"))
-        if not current() then return end
-        if not fs then return end
-        local measure = addon.Clean(fs.GetUnboundedStringWidth, "function")
-        local methods = {}
-        for _, name in ipairs({ "SetWidth", "SetHeight", "SetWordWrap", "SetNonSpaceWrap", "SetMaxLines" }) do
-            methods[name] = addon.Clean(fs[name], "function")
-            if not methods[name] then return end
-        end
-        local width = addon.Read(button.GetWidth, "number", button)
-        local natural = measure and addon.Read(measure, "number", fs)
-        if not current() or button.GetFontString ~= getter or fs.GetUnboundedStringWidth ~= measure then return end
-        if not width or width <= 16 or not natural or natural < 0 or natural > 100000 then return end
-        controls[#controls + 1] = { button = button, fs = fs, methods = methods, width = width - 16 }
-        wrapped = wrapped or natural > width - 16
-    end
-    local height = wrapped and 36 or 25
-    for _, control in ipairs(controls) do
-        if not current() then return end
-        local fs, methods = control.fs, control.methods
-        for _, operation in ipairs({ { "SetWordWrap", true }, { "SetNonSpaceWrap", true },
-            { "SetMaxLines", 2 }, { "SetWidth", control.width }, { "SetHeight", wrapped and 32 or 21 } }) do
-            local ok = pcall(methods[operation[1]], fs, operation[2])
-            if not ok or not current() then return end
-        end
-        local ok = pcall(control.button.SetHeight, control.button, height)
-        if not ok or not current() then return end
+function UI:RefreshFilterControls()
+    self.rangeButton.filterLabelKey = self.range and "RANGE" or "ALL"
+    self.rangeButton.filterTargetKey = self.range and "ALL" or "RANGE"
+    self.rangeButton.filterSelected = self.range
+    self.characterButton.filterLabelKey = self.includeUnavailable and "ALL_CHARACTERS" or "MY_CHARACTER"
+    self.characterButton.filterTargetKey = self.includeUnavailable and "MY_CHARACTER" or "ALL_CHARACTERS"
+    self.characterButton.filterSelected = not self.includeUnavailable
+    local theme = addon.Clean(addon.Theme, "table")
+    for _, control in ipairs({ self.rangeButton, self.characterButton }) do
+        if theme and addon.Clean(theme.StyleFilter, "function") then addon.Read(theme.StyleFilter, "boolean", control, control.filterSelected)
+        else styleRow(control, "control", control.filterSelected) end
     end
 end
 
 function UI:ApplyTheme()
     local theme = addon.Clean(addon.Theme, "table")
     if theme then addon.Read(theme.Apply, "boolean", self) end
-    styleRow(self.rangeButton, "control", self.range)
-    styleRow(self.characterButton, "control", self.includeUnavailable)
-    self:FitHeaderControls()
+    self:RefreshFilterControls()
 end
 
 function UI:RefreshQuestStyles()
@@ -563,6 +532,33 @@ function UI:DeveloperLinkHint(control, key)
         local method = addon.Clean(tip[call[1]], "function")
         if not method or not pcall(method, tip, unpack(call, 2)) or not current() or self.navigationTooltip ~= held or
             addon.Read(isOwned, "boolean", tip, control) ~= true or not current() or self.navigationTooltip ~= held then
+            if self.navigationTooltip == held then self:HideNavigationHint() end
+            return
+        end
+    end
+end
+
+function UI:FilterHint(control)
+    self:HideNavigationHint()
+    local frame, database, range, unavailable = self.frame, addon.db, self.range, self.includeUnavailable
+    local locale = database and database.locale
+    local tip = addon.Clean(GameTooltip, "table") or addon.Clean(GameTooltip, "userdata")
+    local owned = tip and addon.Clean(tip.IsOwned, "function")
+    local function current()
+        local shown = addon.Read(frame.IsShown, "boolean", frame)
+        return shown == true and addon.UI == self and self.frame == frame and addon.db == database and
+            (not database or database.locale == locale) and self.range == range and self.includeUnavailable == unavailable and
+            (control == self.rangeButton or control == self.characterButton) and GameTooltip == tip and tip.IsOwned == owned
+    end
+    if not tip or not owned or not current() then return end
+    local held = { tip = tip, button = control }; self.navigationTooltip = held
+    for _, call in ipairs({ { "SetOwner", control, "ANCHOR_RIGHT" }, { "SetText", addon.L(control.filterHeadingKey) },
+        { "AddLine", addon.L(control.filterLabelKey), 1, 1, 1, true },
+        { "AddLine", addon.L("FILTER_SWITCH", addon.L(control.filterTargetKey)), .8, .8, .8, true }, { "Show" } }) do
+        if not current() or self.navigationTooltip ~= held then return end
+        local method = addon.Clean(tip[call[1]], "function")
+        if not method or not pcall(method, tip, unpack(call, 2)) or not current() or self.navigationTooltip ~= held or
+            addon.Read(owned, "boolean", tip, control) ~= true or not current() or self.navigationTooltip ~= held then
             if self.navigationTooltip == held then self:HideNavigationHint() end
             return
         end
@@ -4134,7 +4130,6 @@ function UI:RefreshDetail()
         self:SetFooterEnabled(self.giver, true)
     end
     if not portraitCardCurrent() then return end
-    self:FitHeaderControls()
     return portraitCardCurrent() and rewardGeneration or nil
 end
 
@@ -4148,8 +4143,7 @@ function UI:Refresh(languageOnly)
     if addon.Theme and addon.Theme.RefreshFonts then addon.Theme.RefreshFonts() end
     self.title:SetText(addon.L("TITLE"))
     if not self:RefreshLanguageLabel() then return end
-    self.rangeButton:SetText(addon.L(self.range and "RANGE" or "ALL"))
-    self.characterButton:SetText(addon.L(self.includeUnavailable and "ALL_CHARACTERS" or "MY_CHARACTER"))
+    self:RefreshFilterControls()
     self:SetFooterLabel(self.source, "SOURCE")
     self.footer:SetText(addon.L("DEVELOPMENT"))
     local log = addon.Read(addon.QuestLogCapacity, "table")
@@ -4225,11 +4219,11 @@ function UI:Create()
     local closeTheme = addon.Clean(addon.Theme, "table")
     if closeTheme then addon.Read(closeTheme.StyleCloseButton, "boolean", close) end
     local search = CreateFrame("EditBox", nil, frame, "InputBoxTemplate")
-    search:SetSize(290, 25); search:SetPoint("TOPLEFT", 172, -14); search:SetAutoFocus(false)
+    search:SetSize(330, 26); search:SetPoint("TOPRIGHT", -190, -14); search:SetAutoFocus(false)
     self.searchBox = search
-    if type(search.SetTextInsets) == "function" then search:SetTextInsets(4, 30, 0, 0) end
+    if type(search.SetTextInsets) == "function" then search:SetTextInsets(28, 30, 0, 0) end
     setInputFont(search)
-    self.searchPlaceholder = label(search, "", 5, -5, 230, 13)
+    self.searchPlaceholder = label(search, "", 28, -6, 268, 13)
     search:SetScript("OnTextChanged", function(b, userInput)
         self.search = addon.Read(b.GetText, "string", b) or ""
         if self.searchPlaceholder then self.searchPlaceholder:SetShown(self.search == "") end
@@ -4241,13 +4235,40 @@ function UI:Create()
     self.clearSearch = button(frame, "×", 25, function()
         self.search = ""; self.searchBox:SetText(""); self:RefreshDungeons()
     end)
-    self.clearSearch:SetPoint("TOPLEFT", 437, -14)
-    self.rangeButton = button(frame, "", 105, function() self.range = not self.range; self:SaveFilters(); self:Refresh() end)
-    self.rangeButton:SetPoint("TOPLEFT", 480, -14)
-    self.characterButton = button(frame, "", 120, function()
+    self.clearSearch:SetSize(24, 24); self.clearSearch:SetPoint("RIGHT", search, "RIGHT", -3, 0)
+    local function filterCurrent(control, field)
+        local shown = addon.Read(frame.IsShown, "boolean", frame)
+        return shown == true and addon.UI == self and self.frame == frame and self[field] == control
+    end
+    local rangeControl
+    rangeControl = button(frame, "", 26, function()
+        if not filterCurrent(rangeControl, "rangeButton") then return end
+        self.range = not self.range; self:SaveFilters(); self:Refresh()
+    end)
+    self.rangeButton = rangeControl
+    self.rangeButton:SetPoint("TOPLEFT", 1002, -66)
+    local characterControl
+    characterControl = button(frame, "", 26, function()
+        if not filterCurrent(characterControl, "characterButton") then return end
         self.includeUnavailable = not self.includeUnavailable; self:SaveFilters(); self:Refresh()
     end)
-    self.characterButton:SetPoint("TOPLEFT", 596, -14)
+    self.characterButton = characterControl
+    self.characterButton:SetPoint("TOPLEFT", 1038, -66)
+    for _, entry in ipairs({ { self.rangeButton, "LEVEL_FILTER", "Interface\\Icons\\XP_Icon" },
+        { self.characterButton, "CHARACTER_FILTER" } }) do
+        local control = entry[1]
+        control:SetSize(26, 26); control.iconOnly = true; control.filterHeadingKey = entry[2]
+        local icon = control:CreateTexture(nil, "ARTWORK"); control.filterIcon = icon
+        icon:SetSize(20, 20); icon:SetPoint("CENTER", control, "CENTER", 0, 0)
+        if entry[3] then icon:SetTexture(entry[3])
+        else
+            if addon.Clean(icon.SetAtlas, "function") then pcall(icon.SetAtlas, icon, "GM-indicator-player") end
+            if addon.Clean(SetPortraitTexture, "function") then pcall(SetPortraitTexture, icon, "player") end
+        end
+        icon:Show()
+        control:SetScript("OnEnter", function() self:FilterHint(control) end)
+        control:SetScript("OnLeave", function() self:HideNavigationHint() end)
+    end
     local language = button(frame, "", 64, function() self:OpenLanguageMenu() end)
     self.language = language
     language:SetPoint("TOPRIGHT", -116, -14)
@@ -4272,7 +4293,7 @@ function UI:Create()
         control:SetScript("OnLeave", function() if type(icon.SetAlpha) == "function" then icon:SetAlpha(.76) end; self:HideNavigationHint() end)
         if type(icon.SetAlpha) == "function" then icon:SetAlpha(.76) end
     end
-    self.heading = label(frame, "", 278, -66, 790, 26)
+    self.heading = label(frame, "", 278, -66, 710, 26)
     self.catalog, self.catalogScroll = scrolling(frame, 12, -66, 238, 577)
     self.searchHint = label(self.catalog, "", 4, 0, 202, 13)
     self.catalogNotice = label(self.catalog, "", 4, 0, 202, 13)

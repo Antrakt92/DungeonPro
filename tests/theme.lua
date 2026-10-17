@@ -821,4 +821,78 @@ test("warm readback cannot commit an expired locale or native creator context", 
     end
 end)
 
+function methods:SetAtlas(value)self.atlas=value end
+function methods:GetAtlas()return self.atlas end
+function methods:SetTexture(value)self.texture=value;return true end
+function methods:SetTexCoord(...)self.texCoords={...}end
+function methods:SetVertexColor(...)self.vertex={...}end
+function methods:HasFocus()return self.focused==true end
+test("search skin keeps real input state and handlers with a bounded native magnifier",function()
+    local input,clear=region(),region();input.Left,input.Middle,input.Right=region(),region(),region()
+    input.font={original=true};input.insets={28,30,0,0};input.text="A long real search query";input.cursor=18
+    local changed=function()end;local enter=function()end;input.scripts.OnTextChanged=changed;input.scripts.OnEnterPressed=enter
+    local click=function()end;clear.scripts.OnClick=click
+    assert(addon.Theme.StyleSearch(input,clear))
+    assert(input.text=="A long real search query"and input.cursor==18 and input.insets[1]==28 and input.font.original)
+    assert(input.scripts.OnTextChanged==changed and input.scripts.OnEnterPressed==enter and clear.scripts.OnClick==click)
+    assert(input.Left.alpha==0 and input.Middle.alpha==0 and input.Right.alpha==0)
+    local icon=input.textures[7];assert(icon.atlas=="common-search-magnifyingglass"and icon.width==12 and icon.height==12 and icon.shown)
+    local count=#input.textures;for i=1,100 do addon.Theme.StyleSearch(input,clear)end
+    assert(#input.textures==count and #input.hooks.OnEditFocusGained==1 and #input.hooks.OnEditFocusLost==1)
+    assert(clear.textures[1].color[4]==0 and clear.textures[2].color[4]==0)
+end)
+test("search focus and hover change only owned decoration then reset on blur and hide",function()
+    local input=region();assert(addon.Theme.StyleSearch(input));local edge=input.textures[2]
+    local idle=edge.color[2];nativeEvent(input,"OnEnter");assert(edge.color[2]~=idle)
+    nativeEvent(input,"OnEditFocusGained");assert(edge.color[2]>edge.color[1])
+    nativeEvent(input,"OnLeave");assert(edge.color[2]>edge.color[1])
+    nativeEvent(input,"OnEditFocusLost");assert(edge.color[2]==idle)
+    nativeEvent(input,"OnEditFocusGained");nativeEvent(input,"OnHide");assert(edge.color[2]==idle and input.text=="kept")
+end)
+test("unavailable search atlas uses the verified native art crop without adding polling or frames",function()
+    local input=region();input.CreateTexture=function(self,...)
+        local t=methods.CreateTexture(self,...);t.SetAtlas=function()return false end;return t
+    end
+    assert(addon.Theme.StyleSearch(input));local icon=input.textures[7]
+    assert(icon.texture=="Interface\\EncounterJournal\\UI-EncounterJournalTextures"and icon.texCoords[1]==.8984375 and icon.shown)
+    assert(not input.scripts.OnUpdate and not input.hooks.OnUpdate)
+end)
+test("icon filters distinguish active state without touching glyph text tooltips clicks or native geometry",function()
+    local button=region();button.filterIcon=region();button.text="";button.width,button.height=26,26
+    local enter=function()end;local click=function()end;button.scripts.OnEnter=enter;button.scripts.OnClick=click
+    assert(addon.Theme.StyleFilter(button,false));local idle=button.filterIcon.vertex[1]
+    assert(addon.Theme.StyleFilter(button,true));assert(button.filterIcon.vertex[1]>idle and button.filterIcon.vertex[1]>button.filterIcon.vertex[2])
+    assert(button.width==26 and button.height==26 and button.text=="" and not button.points)
+    assert(button.scripts.OnClick==click and button.scripts.OnEnter==enter)
+    assert(addon.Theme.StyleFilter(button,false));assert(button.filterIcon.vertex[1]==idle)
+    for i=1,100 do addon.Theme.StyleFilter(button,false)end
+    assert(#button.textures==6 and #button.hooks.OnEnter==1 and #button.hooks.OnLeave==1)
+    button.enabled=false;nativeEvent(button,"OnDisable");assert(button.filterIcon.alpha==.4)
+    button.enabled=true;nativeEvent(button,"OnEnable");assert(button.filterIcon.alpha==1)
+end)
+test("theme application respects current icon-only filter selections rather than overriding them",function()
+    local ui={frame=region(),searchBox=region(),clearSearch=region(),rangeButton=region(),characterButton=region()}
+    ui.rangeButton.filterIcon,ui.characterButton.filterIcon=region(),region()
+    ui.rangeButton.filterSelected,ui.characterButton.filterSelected=false,true
+    assert(addon.Theme.Apply(ui))
+    assert(ui.characterButton.filterIcon.vertex[1]>ui.rangeButton.filterIcon.vertex[1])
+    ui.rangeButton.filterSelected,ui.characterButton.filterSelected=true,false;addon.Theme.Apply(ui)
+    assert(ui.rangeButton.filterIcon.vertex[1]>ui.characterButton.filterIcon.vertex[1])
+end)
+test("late native color setters preserve the newer focus and filter state",function()
+    local input=region();addon.Theme.StyleSearch(input);local edge=input.textures[2];local original,armed=edge.SetColorTexture,true
+    local idle=edge.color[2]
+    edge.SetColorTexture=function(self,...)
+        if armed then armed=false;nativeEvent(input,"OnEditFocusLost")end
+        original(self,...)
+    end
+    nativeEvent(input,"OnEditFocusGained");assert(edge.color[2]==idle)
+    local control=region();control.filterIcon=region();addon.Theme.StyleFilter(control,false)
+    local icon=control.filterIcon;local paint=icon.SetVertexColor;local once=true;local quiet=icon.vertex[1]
+    icon.SetVertexColor=function(self,...)
+        if once then once=false;addon.Theme.StyleFilter(control,false)end
+        paint(self,...)
+    end
+    addon.Theme.StyleFilter(control,true);assert(icon.vertex[1]==quiet)
+end)
 print("theme: " .. total .. " scenarios passed")

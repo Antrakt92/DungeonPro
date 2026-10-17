@@ -96,7 +96,9 @@ Level ranges are provisional recommendations.
 - World map, optional TomTom and a built-in direction arrow. The arrow points
   toward a coordinate; it does not find paths around terrain or plan transport.
 - Browse compact quest rows with status icons and cached item reward previews.
-  Search and level/character filters share the header with the language selector.
+  Search sits on the right of the header, beside the language selector.
+  Level and character filters are icons beside the dungeon heading. Hover for
+  the current mode and click to switch; the active highlight shows filtering.
   The message and heart icons offer issue-report and project-support links for copying.
   Select a quest to expand its related steps in place, then select any step to
   read its details without losing the opened list. Completed steps remain visible.

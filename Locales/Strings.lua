@@ -136,6 +136,8 @@ strings.enUS.STORY_SHORT = "Story"
 strings.ruRU.STORY_SHORT = "Сюжет"
 strings.enUS.REPORT_ISSUE, strings.enUS.SUPPORT_AUTHOR, strings.enUS.CLOSE = "Report an issue", "Support the project", "Close"
 strings.ruRU.REPORT_ISSUE, strings.ruRU.SUPPORT_AUTHOR, strings.ruRU.CLOSE = "Сообщить о проблеме", "Поддержать проект", "Закрыть"
+strings.enUS.LEVEL_FILTER, strings.enUS.CHARACTER_FILTER, strings.enUS.FILTER_SWITCH = "Level filter", "Character filter", "Click: %s"
+strings.ruRU.LEVEL_FILTER, strings.ruRU.CHARACTER_FILTER, strings.ruRU.FILTER_SWITCH = "Фильтр уровня", "Фильтр персонажа", "Нажатие: %s"
 function addon.L(key, ...)
     local locale = addon.db and addon.db.locale or "auto"
     local language = addon.Clean and addon.Clean(addon.Language, "table")

@@ -194,7 +194,7 @@ check("Dungeon Pro uses the localized product title and its own escape-close fra
 end)
 check("Character filters default safely and reject non-boolean saved values", function()
     assert(not ui.range and not ui.preparation and not ui.includeUnavailable)
-    assert(ui.characterButton.text == addon.L("MY_CHARACTER"))
+    assert(addon.L(ui.characterButton.filterLabelKey) == addon.L("MY_CHARACTER"))
     assert(addon.char.filters.includeUnavailable == "true" and addon.char.filters.other == "preserve")
 end)
 check("Window fits a short screen and clamps a stale saved position", function()
@@ -502,7 +502,7 @@ check("All-character browsing preserves restricted quests for inspection without
     assert(#visibleRows() == 7)
     ui.characterButton.scripts.OnClick()
     assert(ui.includeUnavailable and addon.char.filters.includeUnavailable == true)
-    assert(ui.characterButton.text == addon.L("ALL_CHARACTERS") and #visibleRows() == 8)
+    assert(addon.L(ui.characterButton.filterLabelKey) == addon.L("ALL_CHARACTERS") and #visibleRows() == 8)
     local function selectRestricted()
         for _, row in ipairs(visibleRows()) do
             if row.title.text == "Quest 300" then
@@ -4816,124 +4816,38 @@ check("Hidden browser ignores resize events and reopens using current geometry w
     GetScreenWidth,GetScreenHeight,ui.Refresh=getWidth,getHeight,refresh
     screenWidth,screenHeight=width,height;ui:Fit();ui.frame:SetShown(shown)
 end)
-local function headerFitFixture()
-    local buttons={ui.rangeButton,ui.characterButton}
-    local saved,fonts={},{}
-    for index,b in ipairs(buttons)do
-        saved[index]={getter=rawget(b,"GetFontString"),height=b.height}
-        local fs=object();fonts[index]=fs
-        fs.GetUnboundedStringWidth=function()return 20 end
-        fs.SetWordWrap=function(self,value)self.wordWrap=value end
-        fs.SetNonSpaceWrap=function(self,value)self.nonSpaceWrap=value end
-        fs.SetMaxLines=function(self,value)self.maxLines=value end
-        b.GetFontString=function()return fs end
-    end
-    return buttons,fonts,function()
-        for index,b in ipairs(buttons)do b.GetFontString=saved[index].getter;b.height=saved[index].height end
-    end
-end
-check("Filter controls wrap clean oversized native text measurements inside the existing header bounds",function()
-    local buttons,fonts,finish=headerFitFixture();local locale,all=addon.db.locale,ui.includeUnavailable
-    local click,point,font=ui.characterButton.scripts.OnClick,ui.characterButton.point,fonts[2].fontFamily
-    fonts[2].GetUnboundedStringWidth=function()return 132 end
-    addon.db.locale="frFR";ui.includeUnavailable=true;ui.frame:Show();ui:Refresh()
-    assert(ui.characterButton.text==addon.locales.frFR.ALL_CHARACTERS)
-    for i,b in ipairs(buttons)do
-        assert(b.height==36 and fonts[i].wordWrap and fonts[i].nonSpaceWrap and fonts[i].maxLines==2)
-        assert(fonts[i].width==b.width-16 and fonts[i].height==32)
-        assert(-b.point[3]+b.height<=60) -- Wrapped header controls stay above the catalogue at66.
-    end
-    assert(ui.characterButton.point==point and ui.characterButton.width==120 and ui.characterButton.scripts.OnClick==click)
-    assert(fonts[2].fontFamily==font and ui.map==nil and ui.guide==nil and ui.heading.point[2]==278)
-    fonts[2].GetUnboundedStringWidth=function()return 20 end;ui:FitHeaderControls()
-    for i,b in ipairs(buttons)do assert(b.height==25 and fonts[i].height==21)end
-    addon.db.locale,ui.includeUnavailable=locale,all;finish()
-end)
-check("Filter fit follows ten localized labels and toggle clicks without changing widths or native handlers",function()
-    local buttons,fonts,finish=headerFitFixture();local locale=addon.db.locale
-    local range,preparation,all=ui.range,ui.preparation,ui.includeUnavailable
-    local x={480,596};local widths={105,120};local handlers={}
-    for i,b in ipairs(buttons)do handlers[i]=b.scripts.OnClick end
+check("Icon filters preserve fixed geometry and localized state across every locale",function()
+    local locale,range,all=addon.db.locale,ui.range,ui.includeUnavailable
+    ui.frame:Show()
     for code in pairs(addon.locales)do
-        addon.db.locale=code
-        for i,fs in ipairs(fonts)do
-            local b=buttons[i]
-            fs.GetUnboundedStringWidth=function()return b.text==addon.L("ALL_CHARACTERS")and 150 or 20 end
+        addon.db.locale=code;ui.range=false;ui.includeUnavailable=true;ui:Refresh()
+        assert(ui.rangeButton.filterLabelKey=="ALL" and not ui.rangeButton.filterSelected)
+        assert(ui.characterButton.filterLabelKey=="ALL_CHARACTERS" and not ui.characterButton.filterSelected)
+        ui.rangeButton.scripts.OnClick(ui.rangeButton);ui.characterButton.scripts.OnClick(ui.characterButton)
+        assert(ui.range and not ui.includeUnavailable and addon.char.filters.range and not addon.char.filters.includeUnavailable)
+        assert(ui.rangeButton.filterLabelKey=="RANGE" and ui.rangeButton.filterSelected)
+        assert(ui.characterButton.filterLabelKey=="MY_CHARACTER" and ui.characterButton.filterSelected)
+        for _,control in ipairs({ui.rangeButton,ui.characterButton})do
+            assert(control.text=="" and control.iconOnly and control.width==26 and control.height==26)
+            assert(control.filterIcon.width==20 and control.filterIcon.height==20 and control.filterIcon.shown)
         end
-        ui.includeUnavailable=true;ui:Refresh()
-        assert(ui.characterButton.text==addon.L("ALL_CHARACTERS") and ui.characterButton.height==36)
-        ui.characterButton.scripts.OnClick(ui.characterButton,"LeftButton",false)
-        assert(not ui.includeUnavailable and ui.characterButton.text==addon.L("MY_CHARACTER") and ui.characterButton.height==25)
-        for i,b in ipairs(buttons)do assert(b.width==widths[i] and b.point[2]==x[i] and b.scripts.OnClick==handlers[i])end
     end
-    ui.range,ui.preparation,ui.includeUnavailable=range,preparation,all;ui:SaveFilters()
-    addon.db.locale=locale;finish()
+    addon.db.locale,ui.range,ui.includeUnavailable=locale,range,all;ui:SaveFilters();ui:Refresh()
 end)
-check("Missing restricted invalid or throwing filter measurements preserve functional original controls",function()
-    local buttons,fonts,finish=headerFitFixture();local fs=fonts[2]
-    local checker,secret=issecretvalue,{}
-    for _,getter in ipairs({false,function()return nil end,function()return -1 end,function()return 0/0 end,
-        function()return math.huge end,function()return "132"end,function()error("unavailable")end,function()return secret end})do
-        for _,b in ipairs(buttons)do b.height=25 end
-        fs.GetUnboundedStringWidth=getter or nil;issecretvalue=function(value)return value==secret end
-        ui:FitHeaderControls()
-        for _,b in ipairs(buttons)do assert(b.height==25 and b.scripts.OnClick)end
+check("Icon filters never query native text fitting capabilities",function()
+    local saved={}
+    for i,control in ipairs({ui.rangeButton,ui.characterButton})do
+        saved[i]=rawget(control,"GetFontString");control.GetFontString=function()error("icon controls must not measure labels")end
     end
-    issecretvalue=checker;fs.GetUnboundedStringWidth=function()return 200 end
-    local setter=fs.SetMaxLines;fs.SetMaxLines=false;ui:FitHeaderControls()
-    for _,b in ipairs(buttons)do assert(b.height==25)end
-    fs.SetMaxLines=setter;ui:FitHeaderControls();assert(buttons[1].height==36)
-    finish()
+    ui:Refresh();ui:ApplyTheme()
+    for i,control in ipairs({ui.rangeButton,ui.characterButton})do control.GetFontString=saved[i];assert(control.height==26)end
 end)
-check("An older filter measurement pass cannot overwrite a newer locale fit",function()
-    local buttons,fonts,finish=headerFitFixture();local locale=addon.db.locale;local armed=true
-    fonts[1].GetUnboundedStringWidth=function()
-        if armed then
-            armed=false;addon.db.locale="deDE"
-            fonts[1].GetUnboundedStringWidth=function()return 20 end
-            fonts[2].GetUnboundedStringWidth=function()return 20 end
-            fonts[2].GetUnboundedStringWidth=function()return 20 end
-            ui:Refresh()
-        end
-        return 132
-    end
-    addon.db.locale="frFR";ui:FitHeaderControls()
-    assert(not armed and ui.characterButton.text==addon.L(ui.includeUnavailable and"ALL_CHARACTERS"or"MY_CHARACTER"))
-    for _,b in ipairs(buttons)do assert(b.height==25)end
-    addon.db.locale=locale;finish()
-end)
-check("Missing or failed native filter FontString capabilities keep the existing buttons unchanged",function()
-    local buttons,fonts,finish=headerFitFixture();local getter=buttons[2].GetFontString
-    local checker,secret=issecretvalue,{}
-    for _,candidate in ipairs({false,function()return nil end,function()error("missing font string")end,function()return secret end})do
-        issecretvalue=function(value)return value==secret end
-        buttons[2].GetFontString=candidate or nil
-        ui:FitHeaderControls()
-        for _,b in ipairs(buttons)do assert(b.height==25 and b.scripts.OnClick)end
-    end
-    issecretvalue=checker;local reads=0
-    buttons[2].GetFontString=function(...)reads=reads+1;return getter(...)end
-    fonts[2].GetUnboundedStringWidth=function()return 200 end
-    ui:FitHeaderControls();assert(reads==1 and buttons[2].height==36)
-    finish()
-end)
-check("Every filter text setter preserves a newer compact fitting pass before the next old mutation",function()
-    for _,key in ipairs({"SetWordWrap","SetNonSpaceWrap","SetMaxLines","SetWidth","SetHeight"})do
-        local buttons,fonts,finish=headerFitFixture();local fs=fonts[1]
-        fs.GetUnboundedStringWidth=function()return 200 end
-        local setter,armed=fs[key],true
-        fs[key]=function(self,value)
-            setter(self,value)
-            if armed then
-                armed=false;fs.GetUnboundedStringWidth=function()return 20 end
-                ui:FitHeaderControls()
-            end
-        end
-        ui:FitHeaderControls()
-        assert(not armed and buttons[1].height==25 and fonts[1].height==21,key.." overwrote a newer compact pass")
-        for _,b in ipairs(buttons)do assert(b.height==25)end
-        finish()
-    end
+check("Saved filter callbacks cannot mutate a hidden or replaced planner",function()
+    local range,all,frame=ui.range,ui.includeUnavailable,ui.frame
+    frame:Hide();ui.rangeButton.scripts.OnClick(ui.rangeButton);ui.characterButton.scripts.OnClick(ui.characterButton)
+    assert(ui.range==range and ui.includeUnavailable==all)
+    frame:Show();local control=ui.rangeButton;ui.rangeButton={};control.scripts.OnClick(control);ui.rangeButton=control
+    assert(ui.range==range)
 end)
 local function mappedDropFixture()
     local f,q=starterPresentationFixture();local real={}
@@ -8535,7 +8449,7 @@ check("Normal browsing ignores a saved preparation mode and exposes no Back or m
     assert(#visibleRows()==3)
     for _,row in ipairs(visibleRows())do assert(not row.heading and (row.questID==31001 or row.questID==31002))end
     ui.preparation=true;ui:Refresh();assert(not ui.preparation and #visibleRows()==3 and addon.char.filters.preparation==true)
-    assert(ui.characterButton.point[2]==596 and ui.entrance==nil and ui.language.width==64 and not ui.languageChevron)
+    assert(ui.characterButton.point[2]==1038 and ui.entrance==nil and ui.language.width==64 and not ui.languageChevron)
     addon.char.filters=filters;f:finish()
 end)
 check("Blocked level navigation explicitly routes to a known giver without claiming the quest available",function()
@@ -8565,14 +8479,6 @@ check("Navigation tooltips name the destination and leave foreign tooltip owners
     ui.giver.scripts.OnEnter();ui.giver.scripts.OnLeave();assert(hidden==1 and not tip.shown)
     GameTooltip=previous
 end)
-check("Localized filter labels wrap within both fixed toolbar slots without shrinking shared fonts",function()
-    local buttons,fonts,finish=headerFitFixture();local locale=addon.db.locale
-    for i=1,2 do fonts[i].GetUnboundedStringWidth=function()return 420 end end
-    for code in pairs(addon.locales)do addon.db.locale=code;ui:Refresh()
-        for i,b in ipairs(buttons)do assert(b.height==36 and fonts[i].width==b.width-16 and fonts[i].maxLines==2 and -b.point[3]+b.height<=120)end
-    end
-    addon.db.locale=locale;finish();ui:Refresh()
-end)
 check("Dungeon entrance uses only a current explicit producer point and its separate navigation adapter",function()
     local quest,dungeon,provider,nav=ui.quest,ui.dungeon,addon.Entrances,addon.Navigation
     local selected={key="entrance-fixture",name="Selected dungeon",quests={}}
@@ -8595,16 +8501,16 @@ end)
 check("Real language hover previews the existing window and restores its labels without changing saved selection",function()
     local previous,locale,quest,dungeon=addon.Language,addon.db.locale,ui.quest,ui.dungeon
     addon.db.locale="enUS";ui.quest=2;ui.frame:Show();ui:Refresh()
-    local range,heading,note=ui.rangeButton.text,ui.heading.text,ui.rows[1].note.text
+    local range,heading,note=addon.L(ui.rangeButton.filterLabelKey),ui.heading.text,ui.rows[1].note.text
     assert(loadfile("UI/Language.lua"))("DungeonPro",addon);local language=addon.Language
     assert(language:Attach(ui.language,ui));ui.language.scripts.OnEnter()
     assert(language.session and #language.session.rows==11)
     language.session.rows[3].scripts.OnEnter()
     assert(addon.db.locale=="enUS" and ui.language.languageCaption=="Русский" and ui.language.text=="RU")
-    assert(ui.rangeButton.text==addon.L(ui.range and "RANGE"or"ALL")and ui.rangeButton.text~=range)
+    assert(addon.L(ui.rangeButton.filterLabelKey)==addon.L(ui.range and "RANGE"or"ALL")and addon.L(ui.rangeButton.filterLabelKey)~=range)
     assert(ui.rows[1].note.text~=note)
     assert(detailHas(addon.locales.ruRU.QUEST_GIVER) and ui.back==nil and ui.preparationButton==nil)
-    assert(language:Cancel(ui)and addon.db.locale=="enUS"and ui.rangeButton.text==range and ui.heading.text==heading)
+    assert(language:Cancel(ui)and addon.db.locale=="enUS"and addon.L(ui.rangeButton.filterLabelKey)==range and ui.heading.text==heading)
     local selections={"enUS","ruRU","deDE","frFR","esES","itIT","ptBR","koKR","zhCN","zhTW"}
     ui.language.scripts.OnEnter();local session=language.session
     for index,code in ipairs(selections)do
@@ -8612,7 +8518,7 @@ check("Real language hover previews the existing window and restores its labels 
         assert(language:GetSelection()==code and addon.db.locale=="enUS")
         assert(ui.language.text==code:sub(1,2):upper() and ui.language.languageLocale==code and ui.language.width==64)
         assert(ui.language.languageIcon.texture=="Interface\\AddOns\\DungeonPro\\Media\\Icons\\Language")
-        assert(ui.rangeButton.text==addon.locales[code][ui.range and "RANGE"or"ALL"])
+        assert(addon.L(ui.rangeButton.filterLabelKey)==addon.locales[code][ui.range and "RANGE"or"ALL"])
         assert(session.rows[1].text==addon.locales[code].LANGUAGE_AUTO and row.languagePreview)
         assert(session.rows[2].languageSelected and row.languageSelected==(code=="enUS"),"checkmark follows committed English while hover previews another locale")
         assert(detailHas(addon.locales[code].QUEST_GIVER))
@@ -9292,29 +9198,24 @@ check("No-dungeon PICK notice clears recycled quest decorations and reward owner
     assert(row.width==ui.questList:GetWidth()-4 and row.title.width==ui.questList:GetWidth()-22 and not row.scripts.OnClick)
     addon.QuestListRewards.Clear=clear;addon.Context=context;f:finish()
 end)
-check("Compact header keeps long localized filters beside search and preserves a wider raised reading area",function()
-    local buttons,fonts,finish=headerFitFixture();local locale=addon.db.locale
-    local quest,dungeon,history=ui.quest,ui.dungeon,ui.detailHistory
-    for _,font in ipairs(fonts)do font.GetUnboundedStringWidth=function()return 420 end end
+check("Right header search reserves input and clear space while icon filters sit beside the dungeon heading",function()
+    local locale=addon.db.locale
     for code in pairs(addon.locales)do
         addon.db.locale=code;ui:Refresh()
-        assert(ui.subtitle==nil and ui.title.fontSize==22 and ui.heading.fontSize==26)
-        assert(ui.title.point[2]+ui.title.width<ui.searchBox.point[2])
-        assert(ui.searchBox.point[2]+ui.searchBox.width<ui.rangeButton.point[2])
-        assert(ui.rangeButton.point[2]+ui.rangeButton.width<ui.characterButton.point[2])
-        assert(ui.characterButton.point[2]+ui.characterButton.width<1100+ui.language.point[2]-ui.language.width)
-        for _,button in ipairs(buttons)do assert(-button.point[3]+button.height<=50)end
-        assert(ui.searchBox.textInsets[2]>=30 and ui.searchPlaceholder.width<=230)
-        assert(ui.catalogScroll.point[2]==12 and ui.catalogScroll.point[3]==-66 and ui.catalogScroll.width==238)
-        assert(ui.questScroll.point[3]==-100 and ui.detailScroll.point[3]==-100 and ui.detailScroll.width==400 and ui.questScroll.width==370)
-        -- The native scrollbar and its thumb extend23px beyond the viewport.
+        assert(ui.subtitle==nil and ui.title.fontSize==22 and ui.heading.width==710)
+        assert(ui.searchBox.point[1]=="TOPRIGHT" and ui.searchBox.point[2]==-190 and ui.searchBox.point[3]==-14)
+        assert(ui.searchBox.width==330 and ui.searchBox.height==26)
+        assert(ui.searchBox.textInsets[1]==28 and ui.searchBox.textInsets[2]==30)
+        assert(ui.searchPlaceholder.point[2]==28 and ui.searchPlaceholder.width==ui.searchBox.width-62)
+        assert(ui.clearSearch.point[1]=="RIGHT" and ui.clearSearch.point[2]==ui.searchBox and ui.clearSearch.point[4]==-3)
+        assert(ui.heading.point[2]+ui.heading.width<ui.rangeButton.point[2])
+        assert(ui.rangeButton.point[2]==1002 and ui.characterButton.point[2]==1038)
+        for _,control in ipairs({ui.rangeButton,ui.characterButton})do assert(control.point[3]==-66 and control.height==26)end
         assert(ui.catalogScroll.point[2]+ui.catalogScroll.width+23<=ui.questScroll.point[2]-2)
         assert(ui.questScroll.point[2]+ui.questScroll.width+23<=ui.detailScroll.point[2]-2)
         assert(ui.detailScroll.point[2]+ui.detailScroll.width+23<=ui.frame:GetWidth()-2)
-        assert(ui.issueLink.width==24 and ui.supportLink.width==24 and ui.issueLink.icon.width==16 and ui.supportLink.icon.width==16)
-        assert(ui.quest==quest and ui.dungeon==dungeon and ui.detailHistory==history)
     end
-    addon.db.locale=locale;finish();ui:Refresh()
+    addon.db.locale=locale;ui:Refresh()
 end)
 local function developerPopupFixture()
     local f={dialogs=StaticPopupDialogs,show=StaticPopup_Show,hide=StaticPopup_Hide,shown=ui.frame.shown,calls=0}
@@ -9378,5 +9279,38 @@ check("Header link tooltip stops after a native setter transfers tooltip ownersh
     assert(tip.owner==foreign and not tip.shown and additions==0 and shows==0)
     ui.issueLink.scripts.OnLeave();assert(tip.owner==foreign and not tip.shown)
     GameTooltip=previous
+end)
+check("Filter tooltips identify current mode and next click action in all languages",function()
+    local previous,locale,range,all=GameTooltip,addon.db.locale,ui.range,ui.includeUnavailable
+    local tip={};function tip:SetOwner(owner)self.owner=owner;self.lines={}end
+    function tip:IsOwned(owner)return self.owner==owner end
+    function tip:SetText(value)self.text=value end
+    function tip:AddLine(value)self.lines[#self.lines+1]=value end
+    function tip:Show()self.shown=true end;function tip:Hide()self.shown=false end
+    GameTooltip=tip;ui.frame:Show()
+    for code in pairs(addon.locales)do
+        addon.db.locale=code
+        for _,value in ipairs({false,true})do
+            ui.range=value;ui.includeUnavailable=value;ui:Refresh()
+            for _,control in ipairs({ui.rangeButton,ui.characterButton})do
+                control.scripts.OnEnter()
+                assert(tip.shown and tip.owner==control and tip.text==addon.L(control.filterHeadingKey))
+                assert(tip.lines[1]==addon.L(control.filterLabelKey))
+                assert(tip.lines[2]==addon.L("FILTER_SWITCH",addon.L(control.filterTargetKey)))
+                control.scripts.OnLeave();assert(not tip.shown)
+            end
+        end
+    end
+    GameTooltip,addon.db.locale,ui.range,ui.includeUnavailable=previous,locale,range,all;ui:Refresh()
+end)
+check("Filter tooltip stops when native ownership transfers or planner closes",function()
+    local previous=GameTooltip;local tip={};local foreign={};local additions,shows=0,0
+    function tip:SetOwner(owner)self.owner=owner end;function tip:IsOwned(owner)return self.owner==owner end
+    function tip:SetText()self.owner=foreign end;function tip:AddLine()additions=additions+1 end
+    function tip:Show()shows=shows+1 end;function tip:Hide()end
+    GameTooltip=tip;ui.rangeButton.scripts.OnEnter()
+    assert(tip.owner==foreign and additions==0 and shows==0)
+    ui.frame:Hide();tip.owner=nil;ui.characterButton.scripts.OnEnter();assert(tip.owner==nil)
+    ui.frame:Show();GameTooltip=previous
 end)
 print("Preparation UI modeled checks passed: " .. total .. " (no native layout validation)")
