@@ -357,6 +357,7 @@ function N.Start(action)
         frame = CreateFrame("Frame", nil, UIParent)
         frame:SetSize(354, 104); frame:SetPoint("TOP", 0, -90)
         frame:SetMovable(true); frame:EnableMouse(true); frame:RegisterForDrag("LeftButton")
+        if frame.SetClampedToScreen then frame:SetClampedToScreen(true) end
         frame:SetScript("OnDragStart", frame.StartMoving)
         frame:SetScript("OnDragStop", frame.StopMovingOrSizing)
         frame.arrow = frame:CreateTexture(nil, "ARTWORK")

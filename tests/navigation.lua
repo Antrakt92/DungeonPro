@@ -1,5 +1,6 @@
 local frames, methods = {}, {}
 function methods:SetScript(event, fn) self.scripts[event] = fn end
+function methods:SetClampedToScreen(value) assert(type(value)=="boolean");self.clamped=value end
 function methods:Show() self.shown = true end
 function methods:Hide() self.shown = false end
 function methods:SetText(value) self.text = value end
@@ -931,5 +932,29 @@ check("Hide replacement releases only the old distinct TomTom identity", functio
     assert(#removed == 1 and card.shown)
     nav.QuestChanged(2)
     assert(#removed == 2 and removed[2] == 2 and not card.shown)
+end)
+check("Movable HUD requests screen clamping and retains it when the same guide frame is reused",function()
+    assert(nav.Start(action))
+    local card=hud()
+    assert(card.clamped==true,"movable guide must request native screen clamping")
+    assert(card.scripts.OnDragStart==card.StartMoving and card.scripts.OnDragStop==card.StopMovingOrSizing)
+    nav.Stop();assert(not card.shown)
+    assert(nav.Start(action) and hud()==card and card.clamped==true)
+end)
+check("Absent optional HUD clamp capability preserves existing guide and close behavior",function()
+    local first=#frames
+    local setter=methods.SetClampedToScreen
+    methods.SetClampedToScreen=nil
+    local fresh={};assert(loadfile("Core/Namespace.lua"))("DungeonPro",fresh)
+    fresh.L,fresh.QuestName,fresh.Theme=addon.L,addon.QuestName,addon.Theme
+    assert(loadfile("UI/Navigation.lua"))("DungeonPro",fresh)
+    assert(fresh.Navigation.Start(action))
+    local card
+    for index=first+1,#frames do if frames[index].scripts.OnUpdate then card=frames[index];break end end
+    assert(card and card.shown and card.clamped==nil)
+    local close
+    for index=first+1,#frames do if frames[index].scripts.OnClick==fresh.Navigation.Stop then close=frames[index]end end
+    assert(close);close.scripts.OnClick();assert(not card.shown)
+    methods.SetClampedToScreen=setter
 end)
 print("Navigation modeled checks passed: " .. total .. " (no native map validation)")
