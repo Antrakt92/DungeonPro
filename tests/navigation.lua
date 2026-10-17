@@ -722,4 +722,100 @@ check("Guide uses the shared readable family and real font height with a safe na
     fresh.Stop();addon.Navigation=nav;addon.Theme,ChatFontNormal=theme,chat
     methods.SetFontObject,methods.SetFontHeight,methods.SetShadowOffset,methods.SetTextHeight=nil,nil,nil,nil
 end)
+check("Presentation text setters preserve a replacement guide before and after their original write",function()
+    local questName=addon.QuestName
+    addon.QuestName=function(id)return "Quest "..id end
+    addon.GiverName=function(place)return place.name end
+    for _,part in ipairs({"title","note","label"})do
+        for _,phase in ipairs({"before","after"})do
+            local first={id=101,place={mapID=1,x=60,y=70,name="Old giver"}}
+            local nextAction={id=202,place={mapID=1,x=30,y=20,name="New giver"}}
+            assert(nav.Start(first));local card=hud()
+            local region,armed,snapshot=card[part],true
+            local original=region.SetText
+            region.SetText=function(self,value)
+                local function replace()
+                    if armed then
+                        armed=false;assert(nav.Start(nextAction))
+                        snapshot={card.title.text,card.note.text,card.label.text,card.height}
+                    end
+                end
+                if phase=="before"then replace()end
+                original(self,value)
+                if phase=="after"then replace()end
+            end
+            card.scripts.OnUpdate(card,0.2)
+            region.SetText=nil
+            assert(snapshot and card.title.text==snapshot[1] and card.note.text==snapshot[2] and
+                card.label.text==snapshot[3] and card.height==snapshot[4],part.." "..phase)
+            assert(card.title.text=="Quest 202" and card.note.text:find("New giver",1,true))
+        end
+    end
+    addon.QuestName=questName
+end)
+check("Presentation geometry setters cannot resume over a replacement guide layout",function()
+    for _,part in ipairs({"note","label","frame"})do
+        local setters=part=="frame"and {"SetHeight"}or {"ClearAllPoints","SetPoint"}
+        for _,setter in ipairs(setters)do
+            for _,phase in ipairs({"before","after"})do
+                assert(nav.Start(action));local card=hud()
+                local region=part=="frame"and card or card[part]
+                local original,armed,snapshot=region[setter],true
+                region[setter]=function(self,...)
+                    local function replace()
+                        if armed then
+                            armed=false;card.title.measured=80;card.note.measured=50;card.label.measured=30
+                            assert(nav.Start({id=202,place={mapID=1,x=30,y=20,name="New giver"}}))
+                            snapshot={card.note.point[3],card.label.point[3],card.height}
+                        end
+                    end
+                    if phase=="before"then replace()end
+                    original(self,...)
+                    if phase=="after"then replace()end
+                end
+                card.scripts.OnUpdate(card,0.2)
+                region[setter]=nil
+                assert(snapshot and card.note.point[3]==snapshot[1] and card.label.point[3]==snapshot[2] and
+                    card.height==snapshot[3],part.." "..setter.." "..phase)
+                card.title.measured,card.note.measured,card.label.measured=nil,nil,nil
+            end
+        end
+    end
+end)
+check("Presentation cancellation during text or measurement cannot publish later fields",function()
+    for _,stage in ipairs({"text","measurement"})do
+        assert(nav.Start(action));local card=hud()
+        local setter=stage=="text"and "SetText"or "GetStringHeight"
+        local original,armed,writes=card.title[setter],true,0
+        local noteSetter=card.note.SetText
+        card.note.SetText=function(self,value)writes=writes+1;noteSetter(self,value)end
+        card.title[setter]=function(self,...)
+            local result=original(self,...)
+            if armed then armed=false;nav.Stop()end
+            return result
+        end
+        card.scripts.OnUpdate(card,0.2)
+        card.title[setter],card.note.SetText=nil,nil
+        assert(not card.shown and writes==(stage=="text"and 0 or 1),stage)
+        local title,note,status=card.title.text,card.note.text,card.label.text
+        card.scripts.OnUpdate(card,0.2)
+        assert(not card.shown and title==card.title.text and note==card.note.text and status==card.label.text)
+    end
+end)
+check("A nested tick of the same guide owns its newer status and measurement",function()
+    assert(nav.Start(action));local card=hud()
+    local original,armed,snapshot=card.title.SetText,true
+    card.title.SetText=function(self,value)
+        if armed then
+            armed=false;card.title.measured=75
+            GetPlayerFacing=function()return nil end
+            card.scripts.OnUpdate(card,0.2)
+            snapshot={card.label.text,card.height}
+        end
+        original(self,value)
+    end
+    card.scripts.OnUpdate(card,0.2)
+    card.title.SetText=nil;card.title.measured=nil
+    assert(snapshot and snapshot[1]=="NO_POSITION" and card.label.text==snapshot[1] and card.height==snapshot[2])
+end)
 print("Navigation modeled checks passed: " .. total .. " (no native map validation)")

@@ -5,6 +5,7 @@ local target, frame, elapsed = nil, nil, 0
 local tomtomOwner, tomtomUID, nativePoint
 local navigationGeneration = {}
 local presentation, contextElapsed = nil, 0
+local presentationWrite
 
 local function nativeWaypointEmpty(getter)
     if type(getter) ~= "function" then return false end
@@ -169,20 +170,61 @@ local function present(action, generation, status)
         contextElapsed = 0
     end
     if navigationGeneration ~= generation or not rawequal(target, action) then return end
-    local shown = presentation
-    if not shown then
-        frame.title:SetText(""); frame.note:SetText(""); frame.label:SetText(status); return
+    local shown, writeGeneration = presentation, {}
+    presentationWrite = writeGeneration
+    local function current()
+        if navigationGeneration ~= generation or not rawequal(target, action) or
+            presentation ~= shown or presentationWrite ~= writeGeneration then return false end
+        if shown and not shown.current() then return false end
+        return navigationGeneration == generation and rawequal(target, action) and
+            presentation == shown and presentationWrite == writeGeneration
     end
-    frame.title:SetText(shown.title); frame.note:SetText(shown.destination); frame.label:SetText(status)
+    local function ownedWrite(object, key, value, apply)
+        if not current() then return false end
+        local binding = { current = current, value = value, apply = apply }
+        object[key] = binding
+        apply(object, value, current)
+        if current() then return true end
+        -- A setter wrapper may resume its old write after rendering a new guide.
+        -- Restore only that newer owned value, once, without rerender/navigation.
+        local newer = object[key]
+        if newer ~= binding and newer and newer.current() and not newer.repairing then
+            newer.repairing = true
+            if object[key] == newer and newer.current() then pcall(newer.apply, object, newer.value, newer.current) end
+            newer.repairing = nil
+        end
+        return false
+    end
+    local function text(region, value, isCurrent)
+        if not isCurrent() then return end
+        region:SetText(value)
+    end
+    local function anchor(region, y, isCurrent)
+        if not isCurrent() then return end
+        region:ClearAllPoints()
+        if not isCurrent() then return end
+        region:SetPoint("TOPLEFT", 66, y)
+    end
+    local function resize(region, value, isCurrent)
+        if isCurrent() then region:SetHeight(value) end
+    end
+    if not ownedWrite(frame.title, "guideText", shown and shown.title or "", text) or
+        not ownedWrite(frame.note, "guideText", shown and shown.destination or "", text) or
+        not ownedWrite(frame.label, "guideText", status, text) then return end
+    if not shown then return end
     local function height(region, fallback)
         local measured = addon.Read(region.GetStringHeight, "number", region)
         return measured and measured > 0 and measured <= 4096 and measured or fallback
     end
-    local titleHeight, noteHeight, statusHeight = height(frame.title, 22), height(frame.note, 18), height(frame.label, 18)
-    if not shown.current() or presentation ~= shown then return end
-    frame.note:ClearAllPoints(); frame.note:SetPoint("TOPLEFT", 66, -12 - titleHeight - 5)
-    frame.label:ClearAllPoints(); frame.label:SetPoint("TOPLEFT", 66, -12 - titleHeight - 5 - noteHeight - 5)
-    frame:SetHeight(math.max(82, 12 + titleHeight + 5 + noteHeight + 5 + statusHeight + 12))
+    local titleHeight = height(frame.title, 22)
+    if not current() then return end
+    local noteHeight = height(frame.note, 18)
+    if not current() then return end
+    local statusHeight = height(frame.label, 18)
+    if not current() then return end
+    if not ownedWrite(frame.note, "guideAnchor", -12 - titleHeight - 5, anchor) or
+        not ownedWrite(frame.label, "guideAnchor", -12 - titleHeight - 5 - noteHeight - 5, anchor) then return end
+    ownedWrite(frame, "guideHeight", math.max(82, 12 + titleHeight + 5 + noteHeight + 5 + statusHeight + 12), resize)
 end
 
 local function update(_, delta)
