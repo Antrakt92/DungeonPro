@@ -80,25 +80,33 @@ local function applyFontSource(region, size, context, fontObject)
     return setFontAsset(region, path, size, fontObject)
 end
 
+local fontCaches, cacheFamily, cacheCreator
+local function sourceCache(context, creator)
+    if not fontCaches or cacheFamily ~= context.family or cacheCreator ~= creator then
+        fontCaches, cacheFamily, cacheCreator = {}, context.family, creator
+    end
+    local mode = context.path and "bundled" or "native"
+    local cache = fontCaches[mode]
+    if not cache then cache = { text = {} }; fontCaches[mode] = cache end
+    return cache
+end
+
 -- Keep asset overrides on owned font objects when switching back to native families.
-local textFonts
 function Theme.ApplyFont(region, size)
     region, size = cleanObject(region), addon.Clean(size, "number")
     if not region or not size or size < 1 or size > 72 then return nil end
     local context, creator = fontContext(), addon.Clean(CreateFont, "function")
     local applied
     if creator then
-        if not textFonts or textFonts.key ~= context.key or textFonts.family ~= context.family or textFonts.creator ~= creator then
-            textFonts = { key = context.key, family = context.family, creator = creator, sizes = {} }
-        end
-        local font = textFonts.sizes[size]
+        local fonts = sourceCache(context, creator).text
+        local font = fonts[size]
         if not font then
             fontSerial = fontSerial + 1
             local ok, value = pcall(creator, "DungeonProTextFont" .. fontSerial)
             font = ok and cleanObject(value) or nil
             if font and applyFontSource(font, size, context, true) then
                 invoke(font, "SetShadowOffset", 0, 0)
-                textFonts.sizes[size] = font
+                fonts[size] = font
             else font = nil end
         end
         if font and invoke(region, "SetFontObject", font) then applied = font end
@@ -117,8 +125,11 @@ function Theme.ApplyInputFont(region)
     local context = fontContext()
     if not region or not context.family then return nil end
     local creator = addon.Clean(CreateFont, "function")
-    if not inputFont or inputFont.family ~= context.family or inputFont.creator ~= creator or inputFont.key ~= context.key then
-        inputFont = { family = context.family, creator = creator, key = context.key }
+    local cache = sourceCache(context, creator)
+    inputFont = cache.input
+    if not inputFont then
+        inputFont = { family = context.family, creator = creator }
+        cache.input = inputFont
         if creator then
             fontSerial = fontSerial + 1
             local ok, value = pcall(creator, "DungeonProInputFont" .. fontSerial)
@@ -149,8 +160,11 @@ function Theme.StyleButtonFonts(button)
         previous[role[1]] = objectResult(button, "Get" .. role[1] .. "FontObject")
         if not previous[role[1]] then return false end
     end
-    if not controlFonts or controlFonts.family ~= family or controlFonts.creator ~= creator or controlFonts.key ~= context.key then
-        controlFonts = { family = family, creator = creator, key = context.key, failed = true }
+    local cache = sourceCache(context, creator)
+    controlFonts = cache.controls
+    if not controlFonts then
+        controlFonts = { family = family, creator = creator, failed = true }
+        cache.controls = controlFonts
         for _, role in ipairs(roles) do
             fontSerial = fontSerial + 1
             local ok, value = pcall(creator, "DungeonProControlFont" .. fontSerial)
@@ -162,6 +176,7 @@ function Theme.StyleButtonFonts(button)
         end
         controlFonts.failed = nil
     end
+    controlFonts.key = context.key
     if controlFonts.failed then return false end
     if styledButtons[button] == controlFonts then return true end
     for _, role in ipairs(roles) do

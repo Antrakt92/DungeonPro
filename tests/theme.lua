@@ -354,7 +354,7 @@ test("existing FontStrings inputs and all button states switch font context with
     addon.db.locale="ruRU";addon.Theme.RefreshFonts()
     assert(resolvedPath(r) and input.font.path and f.button.Normal.path and resolvedHeight(r)==16 and input.font.height==14)
     local made=f.made();for i=1,20 do addon.Theme.RefreshFonts()end;assert(f.made()==made)
-    original=input.font;addon.db.locale="enGB";addon.Theme.RefreshFonts();assert(input.font~=original and input.font.path)
+    original=input.font;addon.db.locale="enGB";addon.Theme.RefreshFonts();assert(input.font==original and input.font.path)
     assert(f.family.shared and not f.family.height and not f.family.path);f.finish()
 end)
 
@@ -418,6 +418,29 @@ test("void SimpleFont setters are verified by current clean font path and height
         assert((resolvedPath(r)~=nil)==selected and (input.font.path~=nil)==selected and(f.button.Normal.path~=nil)==selected,mode..":"..tostring(resolvedPath(r))..":"..tostring(input.font.path)..":"..tostring(f.button.Normal.path))
         assert((f.button.Disabled.path~=nil)==selected)
     end
+    f.finish()
+end)
+
+
+test("repeated locale selections allocate only two actual source caches while preserving family and creator identity",function()
+    local f=notoFixture();local r=f.font();local input={SetFontObject=function(self,font)self.font=font end}
+    local function paint()
+        addon.Theme.ApplyFont(r,14);addon.Theme.ApplyInputFont(input);addon.Theme.StyleButtonFonts(f.button)
+    end
+    paint();local noto=input.font;local original=f.made()
+    addon.db.locale="zhCN";paint();local native=input.font
+    assert(native~=noto)
+    local warmed=f.made()
+    for i=1,20 do
+        for _,locale in ipairs({"ruRU","enGB","zhTW","koKR","zhCN","enUS"})do
+            addon.db.locale=locale;paint()
+            assert(input.font==((locale=="ruRU"or locale=="enGB"or locale=="enUS")and noto or native))
+        end
+    end
+    assert(f.made()==warmed and warmed==original*2)
+    ChatFontNormal={newFamily=true};paint();assert(input.font~=noto and f.made()>warmed)
+    local last=input.font;local maker=CreateFont;CreateFont=function(name)return maker(name)end
+    paint();assert(input.font~=last)
     f.finish()
 end)
 
