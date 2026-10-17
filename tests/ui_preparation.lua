@@ -1214,7 +1214,9 @@ check("Detail scroll resets on changed card identity but preserves same-card rea
     ui:InspectQuest(2)
     assert(scroll.verticalScroll == 0 and scroll.scrollWrites == writes + 1)
     scroll:SetVerticalScroll(90)
-    assert(ui:BackQuest() and ui.quest == 1 and scroll.verticalScroll == 0)
+    assert(ui:BackQuest() and ui.quest == 1)
+    assert(scroll.verticalScroll == math.min(170, scroll:GetVerticalScrollRange()),
+        "Back restores the saved reading offset within the fresh card range")
     scroll:SetVerticalScroll(125)
     ui.cards[1].scripts.OnClick()
     assert(ui.quest == nil and scroll.verticalScroll == 0)
@@ -2344,6 +2346,8 @@ check("Dungeon search and a shortened quest detail refresh inherited scrollbar s
     assert(ui.cards[1].shown and ui.cards[1].title.text == "Scroll dungeon 30" and not ui.cards[2].shown)
     assert(not catalogScroll.ScrollBar.shown and ui.catalog:GetHeight() <= catalogScroll:GetHeight())
     ui.clearSearch.scripts.OnClick(); assert(catalogScroll.ScrollBar.shown)
+    local definition = addon.quests[2]
+    addon.quests[2] = { id = 2, minLevel = 1, requirementsKnown = true }
     local long = "Long description for overflow"
     addon.Description = function() return long end
     measurement = function(fs) return fs.text == long and 700 or 18 end
@@ -2351,6 +2355,7 @@ check("Dungeon search and a shortened quest detail refresh inherited scrollbar s
     addon.Description = function() return "Short description" end
     ui:RefreshDetail()
     assert(ui.detail:GetHeight() <= ui.detailScroll:GetHeight() and not ui.detailScroll.ScrollBar.shown)
+    addon.quests[2] = definition
     addon.dungeons, ui.search, ui.range, addon.Description, ui.quest = dungeons, search, range, description, quest
     measurement = nil; ui.searchBox:SetText(search); ui:Refresh()
 end)
@@ -4945,5 +4950,74 @@ check("Reported source point publication and layout preserve the replacement sou
         assert(captured and captured.place.npcID==8 and captured.place.x==8 and captured.place.y==9,boundary.." retained a stale point click")
         addon.Navigation=nav;f:finish()
     end
+end)
+check("Description read reentry cannot publish an older narrative over a new quest or newer same-quest card",function()
+    local f,q=starterPresentationFixture();local getter=addon.Description
+    for _,same in ipairs({false,true})do
+        local armed,nestedHeight=true
+        addon.Description=function(id)
+            if armed and id==9970 then
+                armed=false
+                if same then ui:RefreshDetail()else showDetail(9971)end
+                nestedHeight=ui.detail.height
+                return"Old card narrative marker"
+            end
+            return"Fresh card narrative marker"
+        end
+        showDetail(9970)
+        assert(not armed and ui.quest==(same and 9970 or 9971) and ui.detail.height==nestedHeight)
+        assert(detailHas("Fresh card narrative marker") and not detailHas("Old card narrative marker"))
+        assert(detailHas(addon.L("QUEST_TEXT")))
+    end
+    addon.Description=getter;f:finish()
+end)
+check("Actual quest narrative has a separate readable heading while missing-text guidance never becomes acquired prose",function()
+    local f=starterPresentationFixture();local getter,locale=addon.Description,addon.db.locale
+    for code in pairs(addon.locales)do
+        addon.db.locale=code;addon.Description=function()return"Actual narrative paragraph"end;ui:RefreshDetail()
+        assert(detailHas(addon.L("QUEST_TEXT")) and detailHas("Actual narrative paragraph"))
+        assert(objectiveText(addon.L("QUEST_TEXT")).fontSize==20 and objectiveText("Actual narrative paragraph").fontSize==14)
+        addon.Description=function()return addon.L("NO_TEXT")end;ui:RefreshDetail()
+        assert(detailHas(addon.L("NO_TEXT")) and not detailHas(addon.L("QUEST_TEXT")) and not detailHas("Actual narrative paragraph"))
+    end
+    for _,missing in ipairs({false,function()return nil end,function()return" "end,function()return string.rep("x",30001)end,function()error("unavailable")end})do
+        addon.Description=missing or nil;ui:RefreshDetail()
+        assert(detailHas(addon.L("NO_TEXT")) and not detailHas(addon.L("QUEST_TEXT")))
+    end
+    addon.Description,addon.db.locale=getter,locale;f:finish()
+end)
+check("Narrative publication rejects changed helper character definition and restriction-checker ownership",function()
+    local f,q=starterPresentationFixture();local getter,character,checker=addon.Description,addon.char,issecretvalue
+    for _,change in ipairs({"helper","character","definition","checker"})do
+        addon.quests[9970]=q
+        addon.Description=function()
+            if change=="helper"then addon.Description=function()return"Replacement narrative"end
+            elseif change=="character"then addon.char={}
+            elseif change=="definition"then addon.quests[9970]={id=9970,minLevel=1,requirementsKnown=false}
+            else issecretvalue=function()return false end end
+            return"Unowned narrative marker"
+        end
+        showDetail(9970);assert(not detailHas("Unowned narrative marker"),change)
+        addon.char,issecretvalue,addon.quests[9970]=character,checker,q
+    end
+    addon.Description=getter;f:finish()
+end)
+check("Narrative heading does not merge dialogue objectives log counters or hidden reward state into quest text",function()
+    local f=starterPresentationFixture()
+    local getter,dialogue,objectives,rewards=addon.Description,addon.DialogueObjectiveText,addon.QuestObjectives,addon.DialogueRewards
+    addon.Description=function()return"Narrative only"end
+    addon.DialogueObjectiveText=function()return"Dialogue objective only"end
+    addon.QuestObjectives=function()return{{text="Live counter 2/6",finished=false}}end
+    addon.DialogueRewards=function()return{hidden=true,items={},choices={}}end
+    ui:RefreshDetail()
+    assert(detailHas(addon.L("QUEST_TEXT")) and detailHas("Narrative only"))
+    assert(detailHas(addon.L("OBJECTIVE_DIALOGUE")) and detailHas("Dialogue objective only"))
+    assert(detailHas(addon.L("OBJECTIVE_PROGRESS")) and detailHas("|cff88bfffLive counter 2/6|r"))
+    assert(detailHas(addon.L("REWARD_HIDDEN")))
+    addon.Description=function()return addon.L("NO_TEXT")end;ui:RefreshDetail()
+    assert(not detailHas(addon.L("QUEST_TEXT")) and detailHas(addon.L("NO_TEXT")))
+    assert(detailHas("Dialogue objective only") and detailHas("|cff88bfffLive counter 2/6|r"))
+    addon.Description,addon.DialogueObjectiveText,addon.QuestObjectives,addon.DialogueRewards=getter,dialogue,objectives,rewards
+    f:finish()
 end)
 print("Preparation UI modeled checks passed: " .. total .. " (no native layout validation)")

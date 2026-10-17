@@ -1749,7 +1749,21 @@ function UI:RefreshDetail()
                 end
             end
         end
-        line(addon.Description(id))
+        local descriptionGetter, descriptionChecker = addon.Description, issecretvalue
+        local description = addon.Read(descriptionGetter, "string", id)
+        local placeholder = addon.L("NO_TEXT")
+        local function narrativeCurrent()
+            return portraitCardCurrent() and addon.quests[id] == definition and
+                addon.Description == descriptionGetter and issecretvalue == descriptionChecker
+        end
+        if not narrativeCurrent() then return end
+        if not description or #description > 30000 or not description:find("%S") then description = placeholder end
+        if description ~= placeholder then
+            line(addon.L("QUEST_TEXT"), "section")
+            if not narrativeCurrent() then return end
+        end
+        line(description)
+        if not narrativeCurrent() then return end
         local dialogueObjective
         if type(addon.DialogueObjectiveText) == "function" then
             dialogueObjective = addon.Read(addon.DialogueObjectiveText, "string", id)
