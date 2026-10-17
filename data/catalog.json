@@ -2034,7 +2034,13 @@
         "x": 11.6,
         "y": 34.2
       },
-      "requirementsKnown": false
+      "requirementsKnown": false,
+      "objectiveItems": [
+        {
+          "itemID": 16762,
+          "name": "Fathom Core"
+        }
+      ]
     },
     {
       "id": 971,
@@ -2125,7 +2131,13 @@
           }
         ]
       },
-      "requirementsKnown": false
+      "requirementsKnown": false,
+      "objectiveItems": [
+        {
+          "itemID": 5359,
+          "name": "Lorgalis Manuscript"
+        }
+      ]
     },
     {
       "id": 1199,
@@ -2937,6 +2949,12 @@
       "storyline": [
         2923,
         2922
+      ],
+      "objectiveItems": [
+        {
+          "itemID": 9277,
+          "name": "Techbot's Memory Core"
+        }
       ]
     },
     {
@@ -3763,7 +3781,13 @@
         "mapID": 1457,
         "x": 69.4,
         "y": 67.4
-      }
+      },
+      "objectiveItems": [
+        {
+          "itemID": 5825,
+          "name": "Treshala's Pendant"
+        }
+      ]
     },
     {
       "id": 1100,
@@ -4447,7 +4471,13 @@
         "y": 47.2,
         "zoneName": "Thunder Bluff"
       },
-      "requirementsKnown": false
+      "requirementsKnown": false,
+      "objectiveItems": [
+        {
+          "itemID": 5535,
+          "name": "Compendium of the Fallen"
+        }
+      ]
     },
     {
       "id": 1051,
@@ -4679,6 +4709,12 @@
             1159
           ]
         }
+      ],
+      "objectiveItems": [
+        {
+          "itemID": 5861,
+          "name": "Beginnings of the Undead Threat"
+        }
       ]
     },
     {
@@ -4770,7 +4806,13 @@
           }
         ]
       },
-      "requirementsKnown": false
+      "requirementsKnown": false,
+      "objectiveItems": [
+        {
+          "itemID": 5536,
+          "name": "Mythology of the Titans"
+        }
+      ]
     },
     {
       "id": 1149,
@@ -19648,7 +19690,13 @@
         1950,
         1951
       ],
-      "storylineEvidence": "https://www.wowhead.com/forever/quest=1951/rituals-of-power"
+      "storylineEvidence": "https://www.wowhead.com/forever/quest=1951/rituals-of-power",
+      "objectiveItems": [
+        {
+          "itemID": 7274,
+          "name": "Rituals of Power"
+        }
+      ]
     },
     {
       "id": 1956,
