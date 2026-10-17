@@ -6151,4 +6151,145 @@ check("Status width getter and before-original width setters cannot leave a newe
         f:finish()
     end
 end)
+local function paymentFixture()
+    local f=rewardPresentationFixture();local q=addon.quests[9970]
+    local saved={helper=addon.QuestPayment,currency=C_CurrencyInfo,balance=GetMoney,alias=GetCoinTextureString}
+    f.price={amount=300};q.requiredMoney=300
+    addon.QuestPayment=function(id,current)assert(id==9970 or id==9971);assert(type(current)=="function");assert(current());return f.price end
+    GetMoney=function()error("Payment must not query balance")end
+    GetCoinTextureString=function()error("Payment must not use a global formatter alias")end
+    C_CurrencyInfo=nil
+    local finish=f.finish
+    function f:finish()
+        addon.QuestPayment,C_CurrencyInfo,GetMoney,GetCoinTextureString=saved.helper,saved.currency,saved.balance,saved.alias
+        finish(self)
+    end
+    ui:RefreshDetail();return f,q
+end
+check("Source-listed payment displays three hundred copper as reference cost separate from rewards without readiness or balance inference",function()
+    local f,q=paymentFixture();local price=addon.L("QUEST_PAYMENT",addon.L("MONEY_COPPER",300))
+    assert(detailHas(price) and detailHas(addon.L("QUEST_PAYMENT_NOTICE")))
+    assert(detailHas(addon.L("REWARD_ITEM","Fixed reward",2)) and not detailHas(addon.L("REWARD_MONEY",price)))
+    assert(detailSectionY(price)>detailSectionY(addon.L("NEXT")) and detailSectionY(price)<detailSectionY(addon.L("REWARD_ITEMS")))
+    assert(q.requiredMoney==300 and ui.engine:State(9970).status=="UNKNOWN" and not ui.action and not ui.map.enabled and not ui.guide.enabled)
+    f:finish()
+end)
+check("Payment localization fallback skips unknown absent zero invalid or malformed records and clears recycled cards",function()
+    local f,q=paymentFixture();local locale=addon.db.locale
+    for code in pairs(addon.locales)do
+        addon.db.locale=code;f.price={amount=300};ui:RefreshDetail()
+        assert(detailHas(addon.L("QUEST_PAYMENT",addon.L("MONEY_COPPER",300)))and detailHas(addon.L("QUEST_PAYMENT_NOTICE")))
+        for _,formatted in ipairs({false,""," ",{},string.rep("x",4097)})do
+            f.price={amount=300,formatted=formatted};ui:RefreshDetail();assert(detailHas(addon.L("QUEST_PAYMENT",addon.L("MONEY_COPPER",300))))
+        end
+    end
+    for _,record in ipairs({false,{}, {amount=0},{amount=-1},{amount=300.5},{amount="300"},{amount=301}})do
+        f.price=record;ui:RefreshDetail();assert(not detailHas(addon.L("QUEST_PAYMENT_NOTICE")) and detailHas(addon.L("REWARD_ITEM","Fixed reward",2)))
+    end
+    f.price=nil;ui:RefreshDetail();assert(not detailHas(addon.L("QUEST_PAYMENT_NOTICE")))
+    f.price={amount=300};q.requiredMoney=nil;ui:RefreshDetail();assert(not detailHas(addon.L("QUEST_PAYMENT_NOTICE")))
+    for _,value in ipairs({false,0,-1,1.5,"300",{},math.huge,0/0,9007199254740992})do q.requiredMoney=value;ui:RefreshDetail();assert(not detailHas(addon.L("QUEST_PAYMENT_NOTICE")))end
+    q.requiredMoney=300;ui:RefreshDetail();ui:InspectQuest(9971);assert(not detailHas(addon.L("QUEST_PAYMENT_NOTICE")))
+    addon.db.locale=locale;f:finish()
+end)
+check("Optional payment helper native formatting and secret or throwing failures retain truthful fallback or omit unknown data",function()
+    local f,q=paymentFixture();local helper=addon.QuestPayment;local checker=issecretvalue;local secret={}
+    issecretvalue=function(v)return v==secret end
+    f.price={amount=300,formatted="Native 3s"};ui:RefreshDetail();assert(detailHas(addon.L("QUEST_PAYMENT","Native 3s")))
+    f.price={amount=300,formatted=secret};ui:RefreshDetail();assert(detailHas(addon.L("QUEST_PAYMENT",addon.L("MONEY_COPPER",300))))
+    for _,getter in ipairs({false,function()error("Unavailable")end,function()return nil end,function()return secret end})do
+        addon.QuestPayment=getter;ui:RefreshDetail();assert(not detailHas(addon.L("QUEST_PAYMENT_NOTICE")))
+    end
+    addon.QuestPayment=helper;f.price={amount=secret};ui:RefreshDetail();assert(not detailHas(addon.L("QUEST_PAYMENT_NOTICE")))
+    f.price={amount=300};q.requiredMoney=secret;ui:RefreshDetail();assert(not detailHas(addon.L("QUEST_PAYMENT_NOTICE")))
+    issecretvalue=checker;f:finish()
+end)
+check("Payment helper and localized text hydration preserve a replacement card or fresh same-card source amount",function()
+    for _,mode in ipairs({"newCard","sameCard","localize","helper","source","character","formatter"})do
+        local f,q=paymentFixture();local getter,localize,char=addon.QuestPayment,addon.L,addon.char;local armed=true
+        f.price={amount=300,formatted="Stale pending price"}
+        local function mutate()
+            armed=false
+            if mode=="newCard"then ui:InspectQuest(9971)
+            elseif mode=="sameCard"or mode=="localize"then q.requiredMoney=500;f.price={amount=500};ui:RefreshDetail()
+            elseif mode=="helper"then addon.QuestPayment=function()return nil end
+            elseif mode=="source"then local fresh={};for k,v in pairs(q)do fresh[k]=v end;addon.quests[9970]=fresh
+            elseif mode=="character"then addon.char={}
+            else C_CurrencyInfo={GetCoinTextureString=function()return"Changed formatter"end}end
+        end
+        if mode=="localize"then addon.L=function(key,...)local text=localize(key,...);if armed and key=="QUEST_PAYMENT"then mutate()end;return text end
+        else addon.QuestPayment=function(...)local value=getter(...);if armed then mutate()end;return value end end
+        ui:RefreshDetail();assert(not armed)
+        assert(not detailHas(localize("QUEST_PAYMENT","Stale pending price")))
+        if mode=="sameCard"or mode=="localize"then assert(detailHas(localize("QUEST_PAYMENT",localize("MONEY_COPPER",500))))end
+        addon.L,addon.char,addon.QuestPayment=localize,char,getter;addon.quests[9970]=q;C_CurrencyInfo=nil;f.price={amount=q.requiredMoney};ui.quest=9970;ui:RefreshDetail()
+        assert(detailHas(addon.L("QUEST_PAYMENT",addon.L("MONEY_COPPER",q.requiredMoney))))
+        f:finish()
+    end
+end)
+check("Payment FontString publication cannot overwrite newer same-card amounts or replacement-card details",function()
+    for _,sameCard in ipairs({false,true})do
+        local f,q=paymentFixture();local old=addon.L("QUEST_PAYMENT",addon.L("MONEY_COPPER",300));local line=objectiveText(old)
+        assert(line);local setter=line.SetText;local armed=true
+        line.SetText=function(self,value)
+            setter(self,value)
+            if armed and value==old then armed=false
+                if sameCard then q.requiredMoney=500;f.price={amount=500};ui:RefreshDetail()else ui:InspectQuest(9971)end
+            end
+        end
+        ui:RefreshDetail();line.SetText=setter
+        assert(not armed and not detailHas(old))
+        if sameCard then assert(detailHas(addon.L("QUEST_PAYMENT",addon.L("MONEY_COPPER",500))))
+        else assert(ui.quest==9971 and not detailHas(addon.L("QUEST_PAYMENT_NOTICE")))end
+        f:finish()
+    end
+end)
+check("Actual Sparklematic quest payments use the frozen native producer copper amounts independently of reward and unknown-cost records",function()
+    local f,q=paymentFixture();local actual={};assert(loadfile("Database/Catalog.lua"))("DungeonPro",actual)
+    local saved=addon.quests;local calls=0;addon.quests=actual.quests
+    assert(loadfile("Core/QuestPayment.lua"))("DungeonPro",addon)
+    for _,mode in ipairs({"missing","native","throw","empty","secret"})do
+        local checker=issecretvalue;local secret={};issecretvalue=function(v)return v==secret end
+        if mode=="missing"then C_CurrencyInfo=nil
+        else C_CurrencyInfo={GetCoinTextureString=function(amount,height)
+            calls=calls+1;assert(amount==300 and height==14)
+            if mode=="throw"then error("cold")elseif mode=="empty"then return""elseif mode=="secret"then return secret end
+            return"Native 3 silver"
+        end}end
+        for _,id in ipairs({2945,2951,2953})do
+            assert(actual.quests[id].requiredMoney==300)
+            showDetail(id);local value=mode=="native"and"Native 3 silver"or addon.L("MONEY_COPPER",300)
+            assert(detailHas(addon.L("QUEST_PAYMENT",value))and detailHas(addon.L("QUEST_PAYMENT_NOTICE")))
+            assert(ui.engine:State(id).status=="UNKNOWN" and not ui.action)
+        end
+        showDetail(2952);assert(actual.quests[2952].requiredMoney==nil and not detailHas(addon.L("QUEST_PAYMENT_NOTICE")))
+        issecretvalue=checker
+    end
+    assert(calls>0)
+    addon.quests=saved;f:finish()
+end)
+check("Native payment formatter and locale changes cannot publish old formatted text or overwrite a new quest card",function()
+    for _,mode in ipairs({"newCard","sameCard","formatter","locale"})do
+        local f,q=paymentFixture();local locale=addon.db.locale;local nativeLocale=GetLocale;local armed=true
+        assert(loadfile("Core/QuestPayment.lua"))("DungeonPro",addon)
+        C_CurrencyInfo={GetCoinTextureString=function(amount,height)
+            if armed then
+                armed=false
+                if mode=="newCard"then ui:InspectQuest(9971)
+                elseif mode=="sameCard"then q.requiredMoney=500;ui:RefreshDetail()
+                elseif mode=="formatter"then C_CurrencyInfo.GetCoinTextureString=function()return"Fresh native fee"end
+                else addon.db.locale="ruRU";GetLocale=function()return"ruRU"end;ui:RefreshDetail()end
+            end
+            return"Native fee "..amount
+        end}
+        ui:RefreshDetail();assert(not armed)
+        if mode=="newCard"then assert(ui.quest==9971 and not detailHas(addon.L("QUEST_PAYMENT_NOTICE")))
+        elseif mode=="formatter"then assert(not detailHas(addon.L("QUEST_PAYMENT","Native fee 300")))
+        elseif mode=="sameCard"then assert(detailHas(addon.L("QUEST_PAYMENT","Native fee 500")))
+        else assert(detailHas(addon.L("QUEST_PAYMENT","Native fee 300")))end
+        C_CurrencyInfo=nil;GetLocale=nativeLocale;addon.db.locale=locale;ui.quest=9970;ui:RefreshDetail()
+        assert(detailHas(addon.L("QUEST_PAYMENT",addon.L("MONEY_COPPER",q.requiredMoney))))
+        f:finish()
+    end
+end)
 print("Preparation UI modeled checks passed: " .. total .. " (no native layout validation)")

@@ -1820,6 +1820,53 @@ function UI:RefreshDetail()
             line(addon.L("ENDING") .. ": " .. ending)
             if reported(q.finish, "finish") == false then return end
         end
+        do
+            local paymentGetter, paymentChecker, localize = addon.QuestPayment, issecretvalue, addon.L
+            local currencyRoot = C_CurrencyInfo
+            local currency = addon.Clean(currencyRoot, "table")
+            local formatter = currency and rawget(currency, "GetCoinTextureString")
+            local database, selectedLocale, localeGetter = addon.db, addon.db.locale, GetLocale
+            local gameLocale = addon.Read(localeGetter, "string")
+            local amount = addon.Clean(rawget(q, "requiredMoney"), "number")
+            local result, rawFormatted
+            local function paymentCurrent()
+                local language = addon.Read(localeGetter, "string")
+                local ok, same = pcall(function()
+                    return portraitCardCurrent() and addon.quests[id] == definition and rawget(q, "id") == id and
+                        rawget(q, "requiredMoney") == amount and addon.QuestPayment == paymentGetter and issecretvalue == paymentChecker and
+                        addon.L == localize and addon.db == database and database.locale == selectedLocale and
+                        GetLocale == localeGetter and language == gameLocale and C_CurrencyInfo == currencyRoot and
+                        (not currency or rawget(currency, "GetCoinTextureString") == formatter) and
+                        (not result or (rawget(result, "amount") == amount and rawget(result, "formatted") == rawFormatted))
+                end)
+                return ok and same == true
+            end
+            if not portraitCardCurrent() then return end
+            if amount and amount > 0 and amount <= 9007199254740991 and amount % 1 == 0 then
+                if not paymentCurrent() then return end
+                local candidate = addon.Read(paymentGetter, "table", id, paymentCurrent)
+                if not paymentCurrent() then return end
+                if candidate then
+                    local candidateFormatted = rawget(candidate, "formatted")
+                    local value = addon.Clean(rawget(candidate, "amount"), "number")
+                    local formatted = addon.Clean(candidateFormatted, "string")
+                    if not paymentCurrent() then return end
+                    if value == amount then
+                        result, rawFormatted = candidate, candidateFormatted
+                        if not paymentCurrent() then return end
+                        if not formatted or #formatted > 4096 or not formatted:find("%S") then formatted = addon.Read(localize, "string", "MONEY_COPPER", amount) end
+                        if not paymentCurrent() then return end
+                        local title = formatted and addon.Read(localize, "string", "QUEST_PAYMENT", formatted)
+                        local notice = addon.Read(localize, "string", "QUEST_PAYMENT_NOTICE")
+                        if not paymentCurrent() then return end
+                        if title and title:find("%S") and notice and notice:find("%S") then
+                            if line(title, nil, nil, nil, paymentCurrent) == false or
+                                line(notice, nil, nil, nil, paymentCurrent) == false then return end
+                        end
+                    end
+                elseif not paymentCurrent() then return end
+            end
+        end
         local plan = self.currentPlan
         if plan and plan.engine == engine and plan.dungeon == renderDungeon then
             local related, seen = {}, {}
