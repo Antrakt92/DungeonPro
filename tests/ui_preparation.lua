@@ -33,6 +33,7 @@ end
 function methods:GetStringHeight() if measurement then return measurement(self) end; return 18 end
 function methods:SetScale(value) self.scale = value end
 function methods:SetVerticalScroll(value) self.verticalScroll = value; self.scrollWrites = (self.scrollWrites or 0) + 1 end
+function methods:GetVerticalScroll() self.scrollReads = (self.scrollReads or 0) + 1; return self.verticalScroll or 0 end
 function methods:GetEffectiveScale() return self.scale or 1 end
 function methods:SetClampedToScreen(value) self.clamped = value end
 function methods:IsShown() return self.shown end
@@ -2915,5 +2916,104 @@ check("Source copy drawer clears cached URLs and focus on quest Back and window 
     assert(not ui.copy.shown and not ui.copyHint.shown and ui.copy.text == "" and not ui.source.enabled)
     assert(addon.char.copyQuest == nil and addon.db.copyQuest == nil)
     GameTooltip, ui.quest, ui.detailHistory = tooltip, quest, history; ui:Refresh()
+end)
+check("Escape restores the first pre-copy reading position without replacing it on repeated Source clicks", function()
+    local quest, history, description = ui.quest, ui.detailHistory, addon.Description
+    local long = "Long original reader paragraph"
+    addon.Description = function() return long end
+    measurement = function(fs) return fs.text == long and 900 or 18 end
+    ui.detailHistory = {}; showDetail(1); ui.detailScroll:SetVerticalScroll(95)
+    local reads = ui.detailScroll.scrollReads or 0
+    ui.source.scripts.OnClick(ui.source, "LeftButton", false)
+    assert(ui.detailScroll.verticalScroll > 95 and ui.detailScroll.scrollReads == reads + 1)
+    ui.source.scripts.OnClick(ui.source, "LeftButton", false); ui:RefreshDetail()
+    assert(ui.detailScroll.scrollReads == reads + 1)
+    ui.copy.scripts.OnEscapePressed(ui.copy)
+    assert(ui.quest == 1 and ui.detailScroll.verticalScroll == 95 and not ui.copy.shown and not ui.copy.focused)
+    ui.detailScroll:SetVerticalScroll(0); ui.source.scripts.OnClick(ui.source, "LeftButton", false)
+    ui.copy.scripts.OnEscapePressed(ui.copy); assert(ui.detailScroll.verticalScroll == 0, "top is a real reading position")
+    measurement = nil; addon.Description = description; ui.quest, ui.detailHistory = quest, history; ui:Refresh()
+end)
+check("Copy Escape clamps against fresh content and never restores another card or window session", function()
+    local quest, history, description = ui.quest, ui.detailHistory, addon.Description
+    local long, shortened = "Long changing reader paragraph", false
+    addon.Description = function() return shortened and "Short paragraph" or long end
+    measurement = function(fs) return fs.text == long and 900 or 18 end
+    ui.detailHistory = {}; showDetail(1); ui.detailScroll:SetVerticalScroll(95)
+    ui.source.scripts.OnClick(ui.source, "LeftButton", false); shortened = true
+    ui.copy.scripts.OnEscapePressed(ui.copy)
+    assert(ui.detailScroll.verticalScroll == math.min(95, math.max(0, ui.detail:GetHeight() - ui.detailScroll:GetHeight())))
+    shortened = false; ui:RefreshDetail(); ui.detailScroll:SetVerticalScroll(75)
+    ui.source.scripts.OnClick(ui.source, "LeftButton", false); ui:InspectQuest(2)
+    assert(ui.detailScroll.verticalScroll == 0 and not ui.copy.shown)
+    assert(ui:BackQuest() and ui.quest == 1 and ui.detailScroll.verticalScroll == 0)
+    ui.detailScroll:SetVerticalScroll(23); ui.source.scripts.OnClick(ui.source, "LeftButton", false)
+    ui.frame:Hide(); ui.frame.scripts.OnHide(ui.frame); ui.frame:Show(); ui.frame.scripts.OnShow(ui.frame)
+    ui.detailScroll:SetVerticalScroll(31); ui.source.scripts.OnClick(ui.source, "LeftButton", false)
+    ui.copy.scripts.OnEscapePressed(ui.copy); assert(ui.detailScroll.verticalScroll == 31)
+    assert(addon.char.copyReturn == nil and addon.db.copyReturn == nil)
+    measurement = nil; addon.Description = description; ui.quest, ui.detailHistory = quest, history; ui:Refresh()
+end)
+check("Unknown restricted and throwing scroll offsets never become restoration positions", function()
+    local getter, checker, quest = ui.detailScroll.GetVerticalScroll, issecretvalue, ui.quest
+    local restricted = {}; issecretvalue = function(value) return value == restricted end
+    for _, value in ipairs({ restricted, -1, math.huge, 0/0, "95", false }) do
+        showDetail(1); ui.detailScroll.GetVerticalScroll = function() return value end
+        assert(ui:CopyLink(1)); local writes = ui.detailScroll.scrollWrites
+        ui.copy.scripts.OnEscapePressed(ui.copy)
+        assert(ui.detailScroll.scrollWrites == writes and not ui.copy.shown)
+    end
+    ui.detailScroll.GetVerticalScroll = function() error("scroll offset unavailable") end
+    assert(ui:CopyLink(1)); local writes = ui.detailScroll.scrollWrites
+    ui.copy.scripts.OnEscapePressed(ui.copy); assert(ui.detailScroll.scrollWrites == writes)
+    ui.detailScroll.GetVerticalScroll, issecretvalue, ui.quest = getter, checker, quest; ui:Refresh()
+end)
+check("Reentrant offset and content reads cannot restore a prior quest's copy position", function()
+    local quest, history = ui.quest, ui.detailHistory
+    local offsetGetter, heightGetter = ui.detailScroll.GetVerticalScroll, ui.detail.GetHeight
+    ui.detailHistory = {}; showDetail(1)
+    local armed = true
+    ui.detailScroll.GetVerticalScroll = function()
+        if armed then armed = false; ui:InspectQuest(2) end
+        return 95
+    end
+    assert(not ui:CopyLink(1) and ui.quest == 2 and not ui.copy.shown and not ui.copy.focused)
+    ui.detailScroll.GetVerticalScroll = offsetGetter
+    showDetail(1); ui.detailScroll:SetVerticalScroll(95); assert(ui:CopyLink(1))
+    armed = true
+    ui.detail.GetHeight = function(region)
+        if armed then armed = false; ui:InspectQuest(2) end
+        return heightGetter(region)
+    end
+    ui.copy.scripts.OnEscapePressed(ui.copy)
+    assert(not armed and ui.quest == 2 and ui.detailScroll.verticalScroll == 0 and not ui.copy.shown)
+    ui.detail.GetHeight = heightGetter; ui.quest, ui.detailHistory = quest, history; ui:Refresh()
+end)
+check("A copy close during reentrant same-quest reopen invalidates the older Escape restoration", function()
+    local quest, history, description, heightGetter = ui.quest, ui.detailHistory, addon.Description, ui.detail.GetHeight
+    local long, armed = "Long copy lifecycle paragraph", false
+    addon.Description = function()
+        if armed then
+            armed = false
+            ui.frame:Hide(); ui.frame.scripts.OnHide(ui.frame)
+            ui.frame:Show(); ui.frame.scripts.OnShow(ui.frame)
+            ui.detailScroll:SetVerticalScroll(7)
+        end
+        return long
+    end
+    measurement = function(fs) return fs.text == long and 900 or 18 end
+    ui.detailHistory = {}; showDetail(1); ui.detailScroll:SetVerticalScroll(95); assert(ui:CopyLink(1))
+    armed = true; ui.copy.scripts.OnEscapePressed(ui.copy)
+    assert(not armed and ui.quest == 1 and ui.detailScroll.verticalScroll == 7, "old Escape must not overwrite the reopened window session")
+    ui.detailScroll:SetVerticalScroll(95); assert(ui:CopyLink(1))
+    armed = true
+    ui.detail.GetHeight = function(region)
+        if armed then armed = false; ui:CloseCopyLink(); ui.detailScroll:SetVerticalScroll(7) end
+        return heightGetter(region)
+    end
+    ui.copy.scripts.OnEscapePressed(ui.copy)
+    assert(not armed and ui.detailScroll.verticalScroll == 7, "a later close during geometry read also invalidates restoration")
+    measurement = nil; addon.Description, ui.detail.GetHeight = description, heightGetter
+    ui.quest, ui.detailHistory = quest, history; ui:Refresh()
 end)
 print("Preparation UI modeled checks passed: " .. total .. " (no native layout validation)")

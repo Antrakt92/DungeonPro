@@ -163,20 +163,44 @@ local function label(parent, value, x, y, width, size)
 end
 
 function UI:CloseCopyLink()
-    self.copyQuest = nil
+    self.copyRevision = {}
+    self.copyQuest, self.copyReturn = nil, nil
     if self.copy then self.copy:SetText(""); self.copy:Hide(); self.copy:ClearFocus() end
     if self.copyHint then self.copyHint:SetText(""); self.copyHint:Hide() end
+end
+
+function UI:EscapeCopyLink()
+    local saved = self.copyReturn
+    self:CloseCopyLink()
+    local revision = self.copyRevision
+    self:RefreshDetail()
+    if self.copyRevision ~= revision or not saved or self.quest ~= saved.quest or self.copyQuest ~= nil or
+        addon.Read(self.frame.IsShown, "boolean", self.frame) ~= true then return end
+    local generation, scroll, checker = self.rewardGeneration, self.detailScroll, issecretvalue
+    local content = addon.Read(self.detail.GetHeight, "number", self.detail)
+    local viewport = addon.Read(scroll.GetHeight, "number", scroll)
+    if self.copyRevision ~= revision or self.rewardGeneration ~= generation or self.quest ~= saved.quest or self.copyQuest ~= nil or issecretvalue ~= checker then return end
+    if content and viewport and content >= 0 and viewport > 0 then
+        scroll:SetVerticalScroll(math.min(saved.offset, math.max(0, content - viewport)))
+    end
 end
 
 function UI:CopyLink(id)
     id = addon.Clean(id, "number")
     if not id or id < 1 or id % 1 ~= 0 or id ~= self.quest or
         addon.Read(self.frame.IsShown, "boolean", self.frame) ~= true then return false end
+    if self.copyQuest ~= id then
+        local scroll, generation, checker = self.detailScroll, self.rewardGeneration, issecretvalue
+        local getter = scroll.GetVerticalScroll
+        local offset = addon.Read(getter, "number", scroll)
+        if self.quest ~= id or self.rewardGeneration ~= generation or self.detailScroll ~= scroll or scroll.GetVerticalScroll ~= getter or issecretvalue ~= checker then return false end
+        self.copyReturn = offset and offset >= 0 and { quest = id, offset = offset } or nil
+    end
     if not self.copy then
         local box = CreateFrame("EditBox", nil, self.detail, "InputBoxTemplate")
         box:SetSize(326, 26)
         box:SetAutoFocus(false)
-        box:SetScript("OnEscapePressed", function() self:CloseCopyLink(); self:RefreshDetail() end)
+        box:SetScript("OnEscapePressed", function() self:EscapeCopyLink() end)
         self.copy, self.copyHint = box, label(box, "", 0, -34, 326, 11)
     end
     self.copyQuest = id
