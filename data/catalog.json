@@ -12296,7 +12296,15 @@
       "minLevel": 24,
       "start": {
         "itemID": 270865,
-        "name": "Titan Relic"
+        "name": "Titan Relic",
+        "dropSources": [
+          {
+            "npcID": 260326,
+            "name": "Relic Guardian",
+            "locationName": "Excavation Site: Wetlands"
+          }
+        ],
+        "dungeonKey": "excavation"
       },
       "finish": {
         "npcID": 1077,
@@ -17010,7 +17018,11 @@
       ],
       "start": {
         "itemID": 268579,
-        "name": "Crest of Lordaeron"
+        "name": "Crest of Lordaeron",
+        "containerSource": {
+          "objectID": 614679,
+          "name": "Crest of Lordaeron"
+        }
       }
     },
     {
@@ -17182,7 +17194,11 @@
       ],
       "start": {
         "itemID": 275521,
-        "name": "Crest of Lordaeron"
+        "name": "Crest of Lordaeron",
+        "containerSource": {
+          "objectID": 614679,
+          "name": "Crest of Lordaeron"
+        }
       }
     },
     {
