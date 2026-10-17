@@ -1182,5 +1182,88 @@ class CatalogTests(unittest.TestCase):
                     catalog.validate(data)
 
 
+
+class ObjectiveAcquisitionTests(unittest.TestCase):
+    def fixture(self):
+        data=json.loads((ROOT/"data/catalog.json").read_text(encoding="utf-8"))
+        quest=next(q for q in data["quests"] if q["id"]==1221)
+        quest["objectiveItemSources"]=[{"itemID":5880,"containerSources":[{
+            "objectID":21277,"name":"Crate with Holes","source":"https://www.wowhead.com/forever/object=21277/crate-with-holes",
+            "zoneName":"The Barrens","mapID":1413,"x":62.3,"y":37.6}]}]
+        return data,quest,quest["objectiveItemSources"][0],quest["objectiveItemSources"][0]["containerSources"][0]
+
+    def test_acquisition_three_exact_sources_generate_and_reverse_without_role_changes(self):
+        baseline=json.loads((ROOT/"data/catalog.json").read_text(encoding="utf-8")); original=copy.deepcopy(baseline)
+        data,quest,_,_=self.fixture()
+        for item,obj,name in [(5897,21530,"Snufflenose Owner's Manual"),(6684,68865,"Snufflenose Command Sticks")]:
+            quest["objectiveItemSources"].append({"itemID":item,"containerSources":[{"objectID":obj,"name":name,
+              "source":f"https://www.wowhead.com/forever/object={obj}","mapID":1413,"x":62.3,"y":37.6}]})
+        saved=copy.deepcopy(data); generated=catalog.generate(data)
+        self.assertEqual(data,saved); self.assertIn('["objectiveItemSources"]',generated)
+        self.assertEqual(generated.count('["x"] = 62.3'),catalog.generate(baseline).count('["x"] = 62.3')+3)
+        self.assertEqual(next(q for q in data["quests"]if q["id"]==1221)["objectiveItems"],next(q for q in baseline["quests"]if q["id"]==1221)["objectiveItems"])
+        self.assertEqual(catalog.generate(data),generated)
+        del quest["objectiveItemSources"]
+        self.assertEqual(data,original);self.assertEqual(catalog.generate(data),catalog.generate(baseline))
+
+    def test_acquisition_optional_absence_and_identity_only_source(self):
+        data,quest,_,place=self.fixture()
+        for key in ["mapID","x","y","zoneName"]:del place[key]
+        catalog.validate(data)
+        del quest["objectiveItemSources"];catalog.validate(data)
+
+    def test_acquisition_rejects_bad_outer_lists(self):
+        for value in [None,True,{},[],"x",[{}]*101]:
+            with self.subTest(value=repr(value)):
+                data,q,_,_=self.fixture();q["objectiveItemSources"]=value
+                with self.assertRaises(ValueError):catalog.validate(data)
+
+    def test_acquisition_rejects_invalid_or_orphan_item_binding(self):
+        for value in [None,True,0,-1,1.5,"5880",[],{},2**53,999999]:
+            with self.subTest(value=repr(value)):
+                data,_,entry,_=self.fixture();entry["itemID"]=value
+                with self.assertRaises(ValueError):catalog.validate(data)
+        data,q,_,_=self.fixture();q.pop("objectiveItems")
+        with self.assertRaises(ValueError):catalog.validate(data)
+
+    def test_acquisition_rejects_duplicate_items_and_empty_containers(self):
+        data,q,entry,_=self.fixture();q["objectiveItemSources"].append(copy.deepcopy(entry))
+        with self.assertRaises(ValueError):catalog.validate(data)
+        for value in [None,{},[],False,[{}]*101]:
+            data,_,entry,_=self.fixture();entry["containerSources"]=value
+            with self.assertRaises(ValueError):catalog.validate(data)
+
+    def test_acquisition_rejects_unknown_role_or_quantity_keys(self):
+        for key in ["providedItems","quantity","npcID","creatureDisplayID","requires","requirementsKnown","itemID","reportedLocations"]:
+            data,_,_,place=self.fixture();place[key]=1
+            with self.subTest(key=key),self.assertRaises(ValueError):catalog.validate(data)
+        data,_,entry,_=self.fixture();entry["quantity"]=1
+        with self.assertRaises(ValueError):catalog.validate(data)
+
+    def test_acquisition_rejects_wrong_entity_link_and_invalid_names(self):
+        for value in [None,1,"https://www.wowhead.com/forever/npc=21277","https://www.wowhead.com/classic/object=21277","https://www.wowhead.com/forever/object=21278","https://www.wowhead.com/forever/object=21277#x","x"*2049]:
+            data,_,_,place=self.fixture();place["source"]=value
+            with self.subTest(value=repr(value)),self.assertRaises(ValueError):catalog.validate(data)
+        for value in [None,1,"","  ","a"*501,"\ud800"]:
+            data,_,_,place=self.fixture();place["name"]=value
+            with self.subTest(value=repr(value)),self.assertRaises(ValueError):catalog.validate(data)
+
+    def test_acquisition_rejects_bad_and_duplicate_object_ids(self):
+        for value in [None,True,0,-1,1.5,"21277",{},2**32]:
+            data,_,_,place=self.fixture();place["objectID"]=value
+            with self.subTest(value=repr(value)),self.assertRaises(ValueError):catalog.validate(data)
+        data,_,entry,place=self.fixture();entry["containerSources"].append(copy.deepcopy(place))
+        with self.assertRaises(ValueError):catalog.validate(data)
+
+    def test_acquisition_reuses_existing_paired_percent_place_validation(self):
+        for key,value in [("mapID",True),("mapID",0),("mapID",1.5),("x",float("nan")),("y",float("inf")),("x",False),("x",-1),("y",100.1),("zoneName",False)]:
+            data,_,_,place=self.fixture();place[key]=value
+            with self.subTest(key=key,value=repr(value)),self.assertRaises(ValueError):catalog.validate(data)
+        for key in ["mapID","x","y"]:
+            data,_,_,place=self.fixture();del place[key]
+            with self.subTest(missing=key),self.assertRaises(ValueError):catalog.validate(data)
+        for x,y in [(0,100),(100,0),(62.3,37.6)]:
+            data,_,_,place=self.fixture();place["x"],place["y"]=x,y;catalog.validate(data)
+
 if __name__ == "__main__":
     unittest.main()

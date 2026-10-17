@@ -57,6 +57,43 @@ def validate_named_facts(quest, field, identity, maximum, label, *, required_nam
         seen.add(row[identity])
 
 
+def objective_item_source_places(quest):
+    if "objectiveItemSources" not in quest:
+        return []
+    rows = quest["objectiveItemSources"]
+    if type(rows) is not list or not 1 <= len(rows) <= 100:
+        raise ValueError(f"Invalid objective item sources: {quest['id']}")
+    objective_ids = {row["itemID"] for row in quest.get("objectiveItems", [])}
+    seen_items, places = set(), []
+    for row in rows:
+        if (type(row) is not dict or set(row) != {"itemID", "containerSources"} or
+                not integer(row.get("itemID")) or row["itemID"] > 2 ** 53 - 1 or
+                row["itemID"] not in objective_ids or row["itemID"] in seen_items):
+            raise ValueError(f"Invalid objective item source binding: {quest['id']}")
+        seen_items.add(row["itemID"])
+        containers = row["containerSources"]
+        if type(containers) is not list or not 1 <= len(containers) <= 100:
+            raise ValueError(f"Invalid objective item containers: {quest['id']}")
+        seen_objects = set()
+        for place in containers:
+            if (type(place) is not dict or
+                    set(place) - {"objectID", "name", "source", "zoneName", "mapID", "x", "y"} or
+                    not integer(place.get("objectID")) or place["objectID"] > 2 ** 32 - 1 or
+                    place["objectID"] in seen_objects):
+                raise ValueError(f"Invalid objective item container identity: {quest['id']}")
+            seen_objects.add(place["objectID"])
+            try:
+                valid_name = nonempty_string(place.get("name")) and len(place["name"].encode("utf-8")) <= 500
+            except UnicodeEncodeError:
+                valid_name = False
+            source = place.get("source")
+            if (not valid_name or type(source) is not str or len(source) > 2048 or not re.fullmatch(
+                    rf"https://www\.wowhead\.com/forever/object={place['objectID']}(?:/[^\s/?#]+)?", source)):
+                raise ValueError(f"Invalid objective item container name/source: {quest['id']}")
+            places.append(("objectiveItemContainer", place))
+    return places
+
+
 def validate(data):
     if data.get("schema") != 1:
         raise ValueError("Unsupported catalogue schema")
@@ -104,6 +141,7 @@ def validate(data):
         ):
             raise ValueError(f"Missing or mismatched Forever source: {q['id']}")
         places = [(key, q.get(key)) for key in ("start", "finish")]
+        places.extend(objective_item_source_places(q))
         for single, key, kind in (("start", "startAlternatives", "starting"),
                                   ("finish", "finishAlternatives", "turn-in")):
             if key not in q:
