@@ -514,12 +514,28 @@ function addon.ItemName(id)
 end
 
 function addon.DungeonName(d)
-    if not d.instanceID then return d.name end
-    local name = addon.Read(GetRealZoneText, "string", d.instanceID)
-    if not name or name == "" then return d.name end
+    d = addon.Clean(d, "table") or {}
+    local function fallback() return addon.Clean(d.name, "string") or "" end
+    local mapID, source = dialogueInteger(d.instanceID, 1), addon.Clean(d.name, "string")
+    if not mapID then return fallback() end
     local wing = addon.Clean(d.wing, "string")
+    local getter, localize = addon.Clean(GetRealZoneText, "function"), addon.Clean(addon.L, "function")
+    local database = addon.Clean(addon.db, "table")
+    local choice = database and addon.Clean(database.locale, "string")
+    local scope = restrictionNameScope()
+    local function current()
+        return scope and scope() and addon.Clean(GetRealZoneText, "function") == getter and
+            dialogueInteger(d.instanceID, 1) == mapID and addon.Clean(d.name, "string") == source and
+            addon.Clean(d.wing, "string") == wing and addon.Clean(addon.L, "function") == localize and
+            addon.Clean(addon.db, "table") == database and
+            (not database or addon.Clean(database.locale, "string") == choice)
+    end
+    if not getter or not current() then return fallback() end
+    local name = addon.Read(getter, "string", mapID)
+    if not current() or not name or #name > 1024 or not name:find("%S") then return fallback() end
     if wing == "lower" or wing == "upper" then
-        return addon.L("DUNGEON_WING_" .. wing, name)
+        name = addon.Read(localize, "string", "DUNGEON_WING_" .. wing, name)
+        if not current() or not name then return fallback() end
     end
     return name
 end
