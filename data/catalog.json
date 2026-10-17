@@ -2057,7 +2057,9 @@
         "name": "High Executor Hadrec",
         "mapID": 1421,
         "x": 43.4,
-        "y": 40.8
+        "y": 40.8,
+        "creatureDisplayID": 3545,
+        "portraitSource": "https://www.wowhead.com/forever/npc=1952"
       },
       "finish": {
         "npcID": 4444,
@@ -2546,7 +2548,9 @@
             "x": 50.6,
             "y": 6.2
           }
-        ]
+        ],
+        "creatureDisplayID": 3599,
+        "portraitSource": "https://www.wowhead.com/forever/npc=2786"
       },
       "finish": {
         "npcID": 2786,
@@ -2586,7 +2590,9 @@
             "x": 50.6,
             "y": 6.2
           }
-        ]
+        ],
+        "creatureDisplayID": 3599,
+        "portraitSource": "https://www.wowhead.com/forever/npc=2786"
       },
       "requirementsKnown": false,
       "objectiveItems": [
@@ -2631,7 +2637,9 @@
             "x": 55.6,
             "y": 24.2
           }
-        ]
+        ],
+        "creatureDisplayID": 5084,
+        "portraitSource": "https://www.wowhead.com/forever/npc=4784"
       },
       "finish": {
         "npcID": 4784,
@@ -2659,7 +2667,9 @@
             "x": 55.6,
             "y": 24.2
           }
-        ]
+        ],
+        "creatureDisplayID": 5084,
+        "portraitSource": "https://www.wowhead.com/forever/npc=4784"
       },
       "requirementsKnown": false,
       "objectiveItems": [
@@ -3006,7 +3016,9 @@
         "zoneName": "Stonetalon Mountains",
         "mapID": 1442,
         "x": 47.2,
-        "y": 64.2
+        "y": 64.2,
+        "creatureDisplayID": 5562,
+        "portraitSource": "https://www.wowhead.com/forever/npc=11862"
       },
       "finish": {
         "npcID": 12736,
