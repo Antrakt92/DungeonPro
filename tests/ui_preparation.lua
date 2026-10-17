@@ -3556,4 +3556,103 @@ check("Unavailable targets never become preparation associations even when all c
     end
     restore()
 end)
+local function giverReentryFixture(mode)
+    local saved={context=addon.Context,map=C_Map,nav=addon.Navigation,quest=ui.quest,history=ui.detailHistory}
+    addon.Context=function()return{level=60,completed=function()return false end,active=function()return false end}end
+    for id=23001,23002 do
+        local place={npcID=id,mapID=id-23000,x=20,y=30,name="Giver "..id}
+        local q={id=id,minLevel=1,requirementsKnown=true}
+        if mode=="finish"then q.finishAlternatives={place}
+        elseif mode=="container"then place.npcID=nil;place.objectID=id;q.start={itemID=id,containerSource=place}
+        elseif mode=="reported"then place.reportedLocations={{mapID=id-23000,x=20,y=30},{mapID=id-23000,x=40,y=50}};q.start=place
+        else q.start=place end
+        addon.quests[id]=q
+    end
+    ui.detailHistory={};showDetail(23001)
+    return function()
+        addon.Context,C_Map,addon.Navigation=saved.context,saved.map,saved.nav
+        addon.quests[23001],addon.quests[23002]=nil,nil
+        ui.quest,ui.detailHistory=saved.quest,saved.history;ui:Refresh()
+    end
+end
+check("Giver location hydration cannot replace a newly inspected card's visit action",function()
+    local restore=giverReentryFixture("giver")
+    local armed=true
+    C_Map={GetMapInfo=function(id)
+        if armed and id==1 then armed=false;ui:InspectQuest(23002)end
+        return{name="Zone"..id}
+    end}
+    local routed;addon.Navigation={Start=function(action)routed=action end}
+    ui:RefreshDetail();assert(not armed and ui.quest==23002)
+    ui.giver.scripts.OnClick(ui.giver,"LeftButton",false)
+    assert(routed and routed.id==23002 and routed.place==addon.quests[23002].start)
+    restore()
+end)
+check("Alternative and container hydration cannot overwrite the replacement card's pooled visit controls",function()
+    for _,mode in ipairs({"finish","container"})do
+        local restore=giverReentryFixture(mode)
+        local armed=true
+        C_Map={GetMapInfo=function(id)
+            if armed and id==1 then armed=false;ui:InspectQuest(23002)end
+            return{name="Zone"..id}
+        end}
+        local routed;addon.Navigation={Start=function(action)routed=action end}
+        ui:RefreshDetail();assert(not armed and ui.quest==23002)
+        local row=(mode=="finish"and ui.finishButtons or ui.containerButtons)[1]
+        assert(row.shown and row.enabled and row.scripts.OnClick)
+        row.scripts.OnClick(row,"LeftButton",false)
+        assert(routed and routed.id==23002 and routed.place.mapID==2,mode)
+        restore()
+    end
+end)
+check("A replacement unknown map-only giver keeps informational navigation without inheriting old coordinate controls",function()
+    local restore=giverReentryFixture("giver")
+    addon.quests[23002].requirementsKnown=false
+    addon.quests[23002].start.x,addon.quests[23002].start.y=nil,nil
+    local armed=true
+    C_Map={GetMapInfo=function(id)
+        if armed and id==1 then armed=false;ui:InspectQuest(23002)end
+        return{name="Zone"..id}
+    end}
+    local mapped,started;addon.Navigation={Map=function(point)mapped=point end,Start=function()started=true end}
+    ui:RefreshDetail()
+    assert(ui.quest==23002 and ui.engine:State(23002).status=="UNKNOWN" and ui.giver.enabled and not ui.giverHasCoordinates)
+    assert(ui.giver.text==addon.L("GIVER_MAP") and detailHas(addon.L("LOCATION_ONLY")))
+    ui.giver.scripts.OnClick();assert(mapped==addon.quests[23002].start and not started)
+    restore()
+end)
+check("Reported position hydration cannot resurrect old expanded points over a new collapsed card",function()
+    local restore=giverReentryFixture("reported")
+    ui.reportedExpanded.start=true
+    local calls=0
+    C_Map={GetMapInfo=function(id)
+        if id==1 then calls=calls+1;if calls==2 then ui:InspectQuest(23002)end end
+        return{name="Zone"..id}
+    end}
+    local routed;addon.Navigation={Start=function(action)routed=action end}
+    ui:RefreshDetail();assert(ui.quest==23002 and not ui.reportedExpanded.start)
+    for _,row in ipairs(ui.reportedRows)do assert(not row.shown and not row.enabled and not row.scripts.OnClick)end
+    ui.giver.scripts.OnClick();assert(routed and routed.id==23002 and routed.place.mapID==2)
+    restore()
+end)
+check("Same-card location redraw and character loss preserve only the newly owned giver binding",function()
+    for _,mode in ipairs({"redraw","character"})do
+        local restore=giverReentryFixture("giver")
+        local character=addon.char
+        local armed=true
+        C_Map={GetMapInfo=function(id)
+            if armed and id==1 then
+                armed=false
+                if mode=="character"then addon.char={}
+                else addon.quests[23001].start={mapID=2,x=70,y=80,name="Replaced source"};ui:RefreshDetail()end
+            end
+            return{name="Zone"..id}
+        end}
+        local routed;addon.Navigation={Start=function(action)routed=action end}
+        ui:RefreshDetail();assert(not armed)
+        if mode=="character"then assert(not ui.giverAction and not ui.giver.enabled)
+        else ui.giver.scripts.OnClick();assert(routed and routed.place.mapID==2 and routed.place==addon.quests[23001].start)end
+        addon.char=character;restore()
+    end
+end)
 print("Preparation UI modeled checks passed: " .. total .. " (no native layout validation)")

@@ -675,7 +675,7 @@ end
 
 function UI:RefreshDetail()
     local renderQuest, renderDungeon = self.quest, self.dungeon
-    local renderEngine, renderCharacter, pendingAction = self.engine, addon.char, nil
+    local renderEngine, renderCharacter, pendingAction, pendingGiver = self.engine, addon.char, nil, nil
     local rewardGeneration = self:ResetRewardPresentation()
     if not rewardGeneration or self.quest ~= renderQuest then return end
     local overviewIdentity = not renderQuest and renderDungeon and (addon.Clean(renderDungeon.key, "string") or renderDungeon) or nil
@@ -831,14 +831,21 @@ function UI:RefreshDetail()
                 else line(addon.L("REASON_levelUnknown")) end
             else line(addon.L(reason)) end
         end
+        local function locationCurrent()
+            return self.quest == renderQuest and self.dungeon == renderDungeon and self.engine == renderEngine and
+                addon.char == renderCharacter and self.rewardGeneration == rewardGeneration and self.reportedGeneration == reportedGeneration
+        end
         local function reported(parent, key)
+            if not locationCurrent() then return false end
             local places = reportedPlaces(parent)
             if not places then return end
+            local parentName = giverName(parent)
+            if not locationCurrent() then return false end
             toggleIndex = toggleIndex + 1
             local toggle = self:MakeRow(self.detail, self.reportedToggles, toggleIndex, 40)
             toggle.locationKey, toggle.heading = key, true
             local expanded = self.reportedExpanded[key] == true
-            toggle.title:SetText((expanded and "− " or "+ ") .. addon.L("REPORTED_POSITIONS", giverName(parent), #places))
+            toggle.title:SetText((expanded and "− " or "+ ") .. addon.L("REPORTED_POSITIONS", parentName, #places))
             toggle.note:SetText(""); toggle:SetEnabled(true)
             toggle:SetScript("OnClick", function()
                 if self.quest ~= id or self.reportedGeneration ~= reportedGeneration then return end
@@ -850,10 +857,11 @@ function UI:RefreshDetail()
             line(addon.L("REPORTED_NOTICE"))
             for _, destination in ipairs(places) do
                 local point = destination
+                local zone = addon.Read(C_Map and C_Map.GetMapInfo, "table", point.mapID)
+                if not locationCurrent() then return false end
                 reportIndex = reportIndex + 1
                 local row = self:MakeRow(self.detail, self.reportedRows, reportIndex, 59)
                 row.locationKey, row.destination, row.heading = key, point, nil
-                local zone = addon.Read(C_Map and C_Map.GetMapInfo, "table", point.mapID)
                 local zoneName = (zone and addon.Clean(zone.name, "string")) or point.zoneName or addon.L("UNKNOWN_PLACE")
                 row.title:SetText(zoneName .. string.format(" (%.1f, %.1f)", point.x, point.y))
                 row.note:SetText(addon.L("REPORTED_VISIT")); row:SetEnabled(true)
@@ -874,10 +882,13 @@ function UI:RefreshDetail()
         local function place(p)
             if not p then return addon.L("UNKNOWN_PLACE") end
             local zone = p.mapID and addon.Read(C_Map and C_Map.GetMapInfo, "table", p.mapID)
+            if not locationCurrent() then return nil end
             local zoneName = (zone and addon.Clean(zone.name, "string")) or addon.Clean(p.zoneName, "string")
             local name = giverName(p)
+            if not locationCurrent() then return nil end
             if p.itemID then
                 name = addon.L("ITEM_STARTER", addon.Read(addon.ItemName, "string", p.itemID) or name)
+                if not locationCurrent() then return nil end
             end
             return name .. (zoneName and (" — " .. zoneName) or "") ..
                 (p.x and string.format(" (%.1f, %.1f)", p.x, p.y) or "")
@@ -886,11 +897,14 @@ function UI:RefreshDetail()
             line(addon.L(heading), "section")
             for index, possible in ipairs(places) do
                 local destination = possible
-                local row = self:MakeRow(self.detail, buttons, index, 59)
-                row.title:SetText(giverName(destination))
+                local title = giverName(destination)
+                if not locationCurrent() then return false end
                 local mapID = addon.Clean(destination.mapID, "number")
                 local validMap = mapID ~= nil and mapID > 0 and mapID % 1 == 0
                 local zone = validMap and addon.Read(C_Map and C_Map.GetMapInfo, "table", mapID)
+                if not locationCurrent() then return false end
+                local row = self:MakeRow(self.detail, buttons, index, 59)
+                row.title:SetText(title)
                 local x, py = addon.Clean(destination.x, "number"), addon.Clean(destination.y, "number")
                 local coordinates = validMap and x ~= nil and py ~= nil and x >= 0 and x <= 100 and py >= 0 and py <= 100
                 row.note:SetText(((zone and addon.Clean(zone.name, "string")) or
@@ -904,12 +918,17 @@ function UI:RefreshDetail()
                     else addon.Navigation.Map(destination) end
                 end or nil)
                 y = self:LayoutRow(row, 59, y)
-                reported(destination, slot .. index)
+                if reported(destination, slot .. index) == false or not locationCurrent() then return false end
             end
         end
         if q.startAlternatives then
-            alternativePlaces(q.startAlternatives, self.startButtons, "START_ALTERNATIVES", "startAlternative:")
-        else line(addon.L("START") .. ": " .. place(q.start)); reported(q.start, "start") end
+            if alternativePlaces(q.startAlternatives, self.startButtons, "START_ALTERNATIVES", "startAlternative:") == false then return end
+        else
+            local starting = place(q.start)
+            if not starting then return end
+            line(addon.L("START") .. ": " .. starting)
+            if reported(q.start, "start") == false then return end
+        end
         local start = q.start
         if start and start.itemID then
             local count = carried(start.itemID)
@@ -937,7 +956,7 @@ function UI:RefreshDetail()
             if shown then line(addon.L("ITEM_REQUIREMENTS_NOTICE")) end
             local container = addon.Clean(start.containerSource, "table")
             if container then
-                alternativePlaces({ container }, self.containerButtons, "CONTAINER_SOURCE", "container:")
+                if alternativePlaces({ container }, self.containerButtons, "CONTAINER_SOURCE", "container:") == false then return end
             end
         end
         if start and start.itemID and start.dropNPCID then
@@ -953,15 +972,18 @@ function UI:RefreshDetail()
         local map = start and addon.Clean(start.mapID, "number")
         if map and map > 0 then
             local x, gy = addon.Clean(start.x, "number"), addon.Clean(start.y, "number")
-            self.giverHasCoordinates = x ~= nil and gy ~= nil and x >= 0 and x <= 100 and gy >= 0 and gy <= 100
-            self.giverAction = { id = id, kind = "visit", place = start }
-            self.giver:SetEnabled(true)
-            self.giver:SetText(addon.L(self.giverHasCoordinates and "VISIT_GIVER" or "GIVER_MAP"))
+            pendingGiver = { action = { id = id, kind = "visit", place = start }, source = q, map = map, x = x, y = gy,
+                coordinates = x ~= nil and gy ~= nil and x >= 0 and x <= 100 and gy >= 0 and gy <= 100 }
             if state.status ~= "AVAILABLE" then line(addon.L("LOCATION_ONLY")) end
         end
         if q.finishAlternatives then
-            alternativePlaces(q.finishAlternatives, self.finishButtons, "POSSIBLE_TURNINS", "finishAlternative:")
-        else line(addon.L("ENDING") .. ": " .. place(q.finish)); reported(q.finish, "finish") end
+            if alternativePlaces(q.finishAlternatives, self.finishButtons, "POSSIBLE_TURNINS", "finishAlternative:") == false then return end
+        else
+            local ending = place(q.finish)
+            if not ending then return end
+            line(addon.L("ENDING") .. ": " .. ending)
+            if reported(q.finish, "finish") == false then return end
+        end
         local actions, uncertain = engine:Next(id)
         line(addon.L("NEXT"), "section")
         local action = actions[1]
@@ -1320,6 +1342,14 @@ function UI:RefreshDetail()
     self.action = pendingAction
     self.map:SetEnabled(pendingAction ~= nil and pendingAction.place ~= nil and pendingAction.place.mapID ~= nil)
     self.guide:SetEnabled(pendingAction ~= nil and pendingAction.place ~= nil and pendingAction.place.x ~= nil)
+    local giverPlace = pendingGiver and pendingGiver.action.place
+    if giverPlace and addon.quests[renderQuest] == pendingGiver.source and pendingGiver.source.start == giverPlace and
+        addon.Clean(giverPlace.mapID, "number") == pendingGiver.map and addon.Clean(giverPlace.x, "number") == pendingGiver.x and
+        addon.Clean(giverPlace.y, "number") == pendingGiver.y then
+        self.giverAction, self.giverHasCoordinates = pendingGiver.action, pendingGiver.coordinates
+        self.giver:SetText(addon.L(pendingGiver.coordinates and "VISIT_GIVER" or "GIVER_MAP"))
+        self.giver:SetEnabled(true)
+    end
 end
 
 function UI:Refresh()
