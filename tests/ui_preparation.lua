@@ -7145,4 +7145,64 @@ check("finish captions wrap in ten languages while one64pixel reference slot rec
     f.mode=1;f:refresh();assert(texture.texture=="display:5001"and not detailHas(addon.L("TURNIN_REFERENCE_PORTRAIT","Finish Three")))
     f:finish()
 end)
+
+check("completion portrait has explicit priority without borrowing finish identity or changing source reference",function()
+    local f,q=finishReferenceFixture();local previous=addon.DialogueTurnInPortrait;local reads=0;local valid=true
+    addon.DialoguePortrait=function()return{displayID=6001}end
+    addon.QuestPortrait=function()return{displayID=6002}end
+    addon.DialogueTurnInPortrait=function(id,owner)
+        reads=reads+1;assert(id==26001 and owner())
+        return{source="dialogue",stage="completion",displayID=7001,current=function()return valid end}
+    end
+    f:refresh();assert(reads==1 and ui.portrait.texture=="display:7001"and ui.giverPortrait.texture=="display:5003")
+    assert(ui.action.kind=="turnin"and ui.action.place==q.finish and detailHas(addon.L("QUEST_PORTRAIT")))
+    addon.DialogueTurnInPortrait=previous;f:finish()
+end)
+check("completion hidden suppresses only native fallback and nil retains existing offer then selected priority",function()
+    local f=finishReferenceFixture();local previous=addon.DialogueTurnInPortrait;local offerReads,selectedReads=0,0;local mode="hidden"
+    addon.DialoguePortrait=function()offerReads=offerReads+1;return{displayID=6001}end
+    addon.QuestPortrait=function()selectedReads=selectedReads+1;return{displayID=6002}end
+    addon.DialogueTurnInPortrait=function()
+        if mode=="hidden"then return{source="dialogue",stage="completion",hidden=true,current=function()return true end}end
+    end
+    f:refresh();assert(not ui.portrait.shown and ui.giverPortrait.shown and offerReads==0 and selectedReads==0)
+    mode="nil";f:refresh();assert(ui.portrait.texture=="display:6001"and offerReads==1 and selectedReads==0)
+    addon.DialoguePortrait=function()return nil end;f:refresh();assert(ui.portrait.texture=="display:6002"and selectedReads==1)
+    addon.DialogueTurnInPortrait=previous;f:finish()
+end)
+check("current completion portrait closes during caption localization without publishing old image",function()
+    local f=finishReferenceFixture();local previous=addon.DialogueTurnInPortrait;local L=addon.L;local live=true
+    addon.DialogueTurnInPortrait=function()return{source="dialogue",stage="completion",displayID=7001,current=function()return live end}end
+    addon.L=function(key,...)if key=="QUEST_PORTRAIT"then live=false end;return L(key,...)end
+    f:refresh();assert(not ui.portrait.shown)
+    addon.L=L;addon.DialogueTurnInPortrait=previous;f:finish()
+end)
+check("Completion portrait cannot show after its anchor write expires native dialogue proof",function()
+    local f=finishReferenceFixture();local previous=addon.DialogueTurnInPortrait;local live=true
+    addon.DialogueTurnInPortrait=function()return{source="dialogue",stage="completion",displayID=7001,current=function()return live end}end
+    f:refresh();local texture=assert(ui.portrait);local point=texture.SetPoint;local armed=true
+    texture.SetPoint=function(self,...)
+        point(self,...)
+        if armed then armed=false;live=false end
+    end
+    f:refresh();local shown=texture.shown
+    assert(not detailHas(addon.L("QUEST_PORTRAIT")),"Expired native caption remained visible")
+    texture.SetPoint=point;addon.DialogueTurnInPortrait=previous;f:finish()
+    print("COMPLETION_PORTRAIT_AFTER_ANCHOR_SCOPE_LOSS",shown)
+    assert(not shown,"Expired current completion image shown after anchor changed its proof")
+end)
+
+check("Completion portrait clearing its anchor preserves a newer card and its source image",function()
+    local f=finishReferenceFixture();local previous=addon.DialogueTurnInPortrait
+    addon.DialogueTurnInPortrait=function(id)if id==26001 then return{source="dialogue",stage="completion",displayID=7001,current=function()return true end}end end
+    f:refresh();local texture=ui.portrait;local clear=texture.ClearAllPoints;local armed=true
+    texture.ClearAllPoints=function(self,...)
+        clear(self,...)
+        if armed then armed=false;showDetail(26002,f.context)end
+    end
+    f:refresh();texture.ClearAllPoints=clear
+    assert(not armed and ui.quest==26002 and ui.giverPortrait.shown and ui.giverPortrait.texture=="display:5002")
+    assert(detailHas(addon.L("GIVER_REFERENCE_PORTRAIT","Reference Two")))
+    addon.DialogueTurnInPortrait=previous;f:finish()
+end)
 print("Preparation UI modeled checks passed: " .. total .. " (no native layout validation)")

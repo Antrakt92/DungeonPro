@@ -1,6 +1,6 @@
 local _, addon = ...
 local generation, observation = {}, nil
-local onEvent, dialogueText
+local onEvent, dialogueText, turnInPortrait
 local invalidates = {
     QUEST_FINISHED=true, QUEST_DETAIL=true, QUEST_GREETING=true, GOSSIP_SHOW=true,
     GOSSIP_CLOSED=true, GOSSIP_OPTIONS_REFRESHED=true, QUEST_ACCEPTED=true, QUEST_REMOVED=true,
@@ -19,14 +19,13 @@ local function method(value, key)
 end
 local function identities(s, pending)
     local ok, same = pcall(function()
-        return (pending or observation == s) and generation == s.generation and addon.DialogueText == dialogueText and
+        return (pending or observation == s) and generation == s.generation and
             addon.DialogueTextEvent == onEvent and addon.quests == s.catalog and rawget(s.catalog, s.id) == s.definition and
             rawget(s.definition, "id") == s.id and addon.char == s.character and issecretvalue == s.checker and
             addon.Clean == s.clean and addon.Read == s.read and GetQuestID == s.idGetter and
             UnitGUID == s.playerGetter and GetLocale == s.localeGetter and
             QuestFrame == s.frame and QuestFrameProgressPanel == s.progressPanel and QuestFrameRewardPanel == s.rewardPanel and
-            s.frame.IsShown == s.frameShown and s.progressPanel.IsShown == s.progressShown and s.rewardPanel.IsShown == s.rewardShown and
-            (s.stage == "progress" and GetProgressText == s.textGetter or s.stage == "completion" and GetRewardText == s.textGetter)
+            s.frame.IsShown == s.frameShown and s.progressPanel.IsShown == s.progressShown and s.rewardPanel.IsShown == s.rewardShown
     end)
     return ok and same == true
 end
@@ -51,7 +50,7 @@ onEvent = function(event)
     s.catalog, s.character = addon.Clean(addon.quests, "table"), addon.Clean(addon.char, "table")
     if not s.catalog or not s.character or not object(s.frame) or not object(s.progressPanel) or not object(s.rewardPanel) or
         not addon.Clean(s.idGetter, "function") or not addon.Clean(s.playerGetter, "function") or
-        not addon.Clean(s.localeGetter, "function") or not addon.Clean(s.textGetter, "function") then return end
+        not addon.Clean(s.localeGetter, "function") then return end
     s.frameShown, s.progressShown, s.rewardShown = method(s.frame, "IsShown"), method(s.progressPanel, "IsShown"), method(s.rewardPanel, "IsShown")
     if not s.frameShown or not s.progressShown or not s.rewardShown then return end
     s.id = integer(addon.Read(s.idGetter, "number"))
@@ -63,7 +62,7 @@ onEvent = function(event)
     observation = s
 end
 
-dialogueText = function(id, ownerCurrent)
+local function stageScope(id, ownerCurrent)
     local s = observation
     id = integer(id)
     if not s or id ~= s.id then return nil end
@@ -99,11 +98,62 @@ dialogueText = function(id, ownerCurrent)
         if not valid and reason ~= "owner" and (reason ~= "visibility" or s.observedVisible) then abandon(s) end
         return valid
     end
+    return s, current, readable
+end
+
+dialogueText = function(id, ownerCurrent)
+    local s, stageCurrent, readable = stageScope(id, ownerCurrent)
+    if not s then return nil end
+    local function capabilityCurrent()
+        local ok, same = pcall(function()
+            return not s.textInvalid and addon.DialogueText == dialogueText and
+                (s.stage == "progress" and GetProgressText == s.textGetter or
+                 s.stage == "completion" and GetRewardText == s.textGetter)
+        end)
+        return ok and same == true
+    end
+    local getter = addon.Clean(s.textGetter, "function")
+    local function current()
+        return stageCurrent() and capabilityCurrent()
+    end
+    if not capabilityCurrent() then s.textInvalid = true; return nil end
     if not readable() then return nil end
     s.observedVisible = true
-    local text = addon.Read(s.textGetter, "string")
+    if not capabilityCurrent() then s.textInvalid = true; return nil end
+    if not getter then return nil end
+    local text = addon.Read(getter, "string")
     if not readable() then return nil end
+    if not capabilityCurrent() then s.textInvalid = true; return nil end
     if not text or #text > 30000 or not text:find("%S") then return nil end
+    if not current() then return nil end
     return { source="dialogue", stage=s.stage, text=text, current=current }
 end
-addon.DialogueTextEvent, addon.DialogueText = onEvent, dialogueText
+
+turnInPortrait = function(id, ownerCurrent)
+    local s, stageCurrent, readable = stageScope(id, ownerCurrent)
+    if not s or s.stage ~= "completion" then return nil end
+    local getter = addon.Clean(GetQuestPortraitTurnIn, "function")
+    local function capabilityCurrent()
+        local ok, same = pcall(function()
+            return addon.DialogueTurnInPortrait == turnInPortrait and GetQuestPortraitTurnIn == getter
+        end)
+        return ok and same == true
+    end
+    local function current()
+        return stageCurrent() and capabilityCurrent()
+    end
+    if not readable() then return nil end
+    s.observedVisible = true
+    if not getter or not current() then return nil end
+    local ok, display, _, name = pcall(getter)
+    display = addon.Clean(display, "number")
+    name = addon.Clean(name, "string")
+    if not readable() or not current() then return nil end
+    if not ok or not display or display < 0 or display > 4294967295 or display % 1 ~= 0 then return nil end
+    local dto = { source="dialogue", stage="completion", current=current }
+    if display == 0 then dto.hidden = true else dto.displayID = display end
+    if name and #name <= 1024 and name:find("%S") then dto.name = name end
+    if not current() then return nil end
+    return dto
+end
+addon.DialogueTextEvent, addon.DialogueText, addon.DialogueTurnInPortrait = onEvent, dialogueText, turnInPortrait

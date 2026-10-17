@@ -13,6 +13,7 @@ local function setup()
     QuestFrame={IsShown=function(self)assert(self==QuestFrame);return f.shown end}
     QuestFrameProgressPanel={IsShown=function(self)assert(self==QuestFrameProgressPanel);return f.progress end}
     QuestFrameRewardPanel={IsShown=function(self)assert(self==QuestFrameRewardPanel);return f.completion end}
+    GetQuestPortraitTurnIn=function(...)assert(select("#",...)==0);f.portraitReads=(f.portraitReads or 0)+1;return f.display or 4321,"Ignored portrait prose",f.portraitName or "Native turn-in" end
     local function forbidden()error("No selection held NPC acceptance load timer or balance reads")end
     C_QuestLog={IsOnQuest=forbidden,GetSelectedQuest=forbidden,SetSelectedQuest=forbidden,RequestLoadQuestByID=forbidden}
     AcceptQuest,CompleteQuest,GetQuestReward,GetMoney=forbidden,forbidden,forbidden,forbidden
@@ -181,6 +182,103 @@ check("Pending visibility does not preserve terminal native identity loss",funct
         addon.char,GetProgressText,f.locale,f.id=char,getter,locale,65;f.shown,f.progress=true,true
         assert(addon.DialogueText(65)==nil,mode)
     end
+end)
+check("Completion portrait shares live stage without prose or selected-log reads",function()
+    assert(addon.DialogueTurnInPortrait(65)==nil);open("progress");assert(addon.DialogueTurnInPortrait(65)==nil and f.portraitReads==nil)
+    open("completion");local dto=assert(addon.DialogueTurnInPortrait(65));assert(dto.displayID==4321 and dto.name=="Native turn-in" and dto.source=="dialogue"and dto.stage=="completion"and dto.npcID==nil)
+    for i=1,8 do assert(dto.current()==true)end
+    assert(f.portraitReads==1 and f.progressReads==0 and f.rewardReads==0)
+    assert(addon.char.texts.enUS[65].description=="Saved offer")
+end)
+check("Missing failed or replaced prose capability does not erase valid turn-in portrait",function()
+    for _,mode in ipairs({"missing","throw","secret","replace"})do
+        setup()
+        if mode=="missing"then GetRewardText=nil elseif mode=="throw"then GetRewardText=function()error("Unavailable prose")end
+        elseif mode=="secret"then GetRewardText=function()return secret end
+        else GetRewardText=function()GetRewardText=function()return"Replacement"end;return"Old"end end
+        open("completion");assert(addon.DialogueText(65)==nil,mode)
+        local dto=assert(addon.DialogueTurnInPortrait(65),mode);assert(dto.displayID==4321 and dto.current(),mode)
+    end
+end)
+check("Missing failed or replaced portrait capability leaves stage prose independently usable",function()
+    for _,mode in ipairs({"missing","throw","secret","replace"})do
+        setup()
+        if mode=="missing"then GetQuestPortraitTurnIn=nil elseif mode=="throw"then GetQuestPortraitTurnIn=function()error("Unavailable art")end
+        elseif mode=="secret"then GetQuestPortraitTurnIn=function()return secret end
+        else GetQuestPortraitTurnIn=function()GetQuestPortraitTurnIn=function()return 5678 end;return 4321 end end
+        open("completion");assert(addon.DialogueTurnInPortrait(65)==nil,mode)
+        assert(addon.DialogueText(65).text==f.rewardText,mode)
+    end
+end)
+check("Zero is native hidden instruction while negative cold invalid and restricted displays are absent",function()
+    local function chooseNative()
+        local dto=addon.DialogueTurnInPortrait(65)
+        if dto then return dto end
+        f.fallbacks=(f.fallbacks or 0)+1;return{displayID=9876}
+    end
+    open("completion");f.display=0;local dto=chooseNative();assert(dto.hidden==true and dto.displayID==nil and f.fallbacks==nil)
+    for _,value in ipairs({-1,-2,1.5,4294967296,math.huge,0/0,"4321",secret,false})do
+        setup();open("completion");GetQuestPortraitTurnIn=function()return value end
+        assert(addon.DialogueTurnInPortrait(65)==nil);assert(chooseNative().displayID==9876 and f.fallbacks==1)
+    end
+    setup();open("completion");GetQuestPortraitTurnIn=function()end;assert(addon.DialogueTurnInPortrait(65)==nil)
+    setup();open("completion");f.display=4294967295;assert(addon.DialogueTurnInPortrait(65).displayID==4294967295)
+end)
+check("Portrait pending event-before-show survives while observed close cannot resurrect",function()
+    f.shown,f.progress,f.completion=false,false,false;addon.DialogueTextEvent("QUEST_COMPLETE")
+    assert(addon.DialogueTurnInPortrait(65)==nil and f.portraitReads==nil)
+    f.shown,f.completion=true,true;local old=assert(addon.DialogueTurnInPortrait(65));assert(old.current())
+    f.completion=false;assert(addon.DialogueTurnInPortrait(65)==nil);f.completion=true
+    assert(addon.DialogueTurnInPortrait(65)==nil and old.current()==false)
+end)
+check("Portrait caller loss and old readonly proofs preserve newer stage and never reread tuple",function()
+    open("completion");assert(addon.DialogueTurnInPortrait(65,function()return false end)==nil)
+    local valid=true;local dto=assert(addon.DialogueTurnInPortrait(65,function()return valid end));valid=false
+    assert(dto.current()==false and f.portraitReads==1)
+    assert(addon.DialogueTurnInPortrait(65).displayID==4321)
+    open("progress");assert(dto.current()==false);assert(addon.DialogueText(65).stage=="progress")
+    open("completion");assert(addon.DialogueTurnInPortrait(65).current()==true)
+end)
+check("Portrait tuple getter mutations reject stale results without corrupting fresh stages",function()
+    for _,mode in ipairs({"id","char","locale","player","panel","getter","checker","newstage"})do
+        setup();local original=GetQuestPortraitTurnIn
+        GetQuestPortraitTurnIn=function()
+            local display,text,name=original()
+            if mode=="id"then f.id=66 elseif mode=="char"then addon.char={} elseif mode=="locale"then f.locale="ruRU"
+            elseif mode=="player"then f.player="Player-two" elseif mode=="panel"then f.completion=false
+            elseif mode=="getter"then GetQuestPortraitTurnIn=function()return 5678 end elseif mode=="checker"then issecretvalue=function()return false end
+            else f.progress,f.completion=true,false;addon.DialogueTextEvent("QUEST_PROGRESS")end
+            return display,text,name
+        end
+        open("completion");assert(addon.DialogueTurnInPortrait(65)==nil,mode)
+        if mode=="getter"then assert(addon.DialogueText(65))elseif mode=="newstage"then assert(addon.DialogueText(65).stage=="progress")end
+    end
+end)
+check("Portrait name sanitization and last caller proof cannot publish stale identity",function()
+    open("completion");local clean=addon.Clean;local armed=true
+    addon.Clean=function(v,kind)
+        local value=clean(v,kind)
+        if armed and v=="Native turn-in"then armed=false;f.id=66;f.progress,f.completion=true,false;addon.DialogueTextEvent("QUEST_PROGRESS")end
+        return value
+    end
+    -- Capture current helper identity for the new event before reading the tuple.
+    open("completion");assert(addon.DialogueTurnInPortrait(65)==nil);assert(addon.DialogueText(66).stage=="progress")
+    setup();local valid=true;local id=GetQuestID;GetQuestID=function()local result=id();if f.portraitReads then valid=false end;return result end
+    open("completion");assert(addon.DialogueTurnInPortrait(65,function()return valid end)==nil)
+    setup();open("completion");GetQuestPortraitTurnIn=function()return 1234,"Ignored",secret end
+    local dto=assert(addon.DialogueTurnInPortrait(65));assert(dto.displayID==1234 and dto.name==nil)
+end)
+check("Stage validation cannot invoke a prose getter replaced during its native ID read",function()
+    local originalID=GetQuestID;local armed=false
+    GetQuestID=function()
+        local id=originalID()
+        if armed then armed=false;GetRewardText=function()error("Replacement getter must not run")end end
+        return id
+    end
+    open("completion");armed=true
+    assert(addon.DialogueText(65)==nil)
+    assert(f.rewardReads==0,"Expired prose getter invoked after stage validation replaced it")
+    assert(addon.DialogueTurnInPortrait(65).displayID==4321)
 end)
 issecretvalue=nil
 print("Dialogue stage text modeled checks passed: "..total.." (native client unverified)")

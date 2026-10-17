@@ -1427,30 +1427,119 @@ function UI:RefreshDetail()
                 texture = self.detail:CreateTexture(nil, "ARTWORK"); texture:SetSize(64, 64); texture:Hide()
                 self[field] = texture
             end
+            local captionField, captionBinding
+            local function imageCurrent()
+                local fresh = addon.Read(current, "boolean") == true
+                return fresh and portraitCardCurrent() and self[field] == texture
+            end
+            local function retireOwnedImage()
+                if portraitCardCurrent() and self[field] == texture then
+                    local busy = self.portraitRenderBusy
+                    if not busy then self.portraitRenderBusy = true end
+                    pcall(texture.Hide, texture)
+                    if portraitCardCurrent() and captionField and captionField.detailTextBinding == captionBinding then
+                        pcall(captionField.Hide, captionField)
+                        local newer = captionField.detailTextBinding
+                        if newer and newer ~= captionBinding and addon.Read(newer.current, "boolean") == true and
+                            captionField.detailTextBinding == newer and self.quest == newer.quest and self.dungeon == newer.dungeon and
+                            self.engine == newer.engine and addon.char == newer.character and self.rewardGeneration == newer.generation then
+                            pcall(captionField.Show, captionField)
+                        end
+                    end
+                    if not busy then self.portraitRenderBusy = nil end
+                end
+                return false
+            end
             texture:ClearAllPoints()
+            if not imageCurrent() then return retireOwnedImage() end
             self.portraitRenderBusy = true
             local rendered = pcall(setter, texture, displayID)
             self.portraitRenderBusy = nil
-            if not portraitCardCurrent() or not current() then return false end
+            if not imageCurrent() then return retireOwnedImage() end
             if SetPortraitTextureFromCreatureDisplayID ~= setter then rendered = false end
             if rendered then
-                if line(caption, nil, nil, nil, current) == false then return false end
-                texture:SetPoint("TOPLEFT", 4, -y); texture:Show(); y = y + 64 + 8
+                local captionIndex = n + 1
+                local captionWritten = line(caption, nil, nil, nil, current)
+                local captionCandidate = pool[captionIndex]
+                local binding = captionCandidate and captionCandidate.detailTextBinding
+                if binding and binding.generation == rewardGeneration and binding.current == current then
+                    captionField, captionBinding = captionCandidate, binding
+                end
+                if captionWritten == false then return retireOwnedImage() end
+                texture:SetPoint("TOPLEFT", 4, -y)
+                if not imageCurrent() then return retireOwnedImage() end
+                texture:Show()
+                if not imageCurrent() then return retireOwnedImage() end
+                y = y + 64 + 8
             else
                 self.portraitRenderBusy = true; pcall(texture.SetTexture, texture, nil); self.portraitRenderBusy = nil
-                if not portraitCardCurrent() or not current() then return false end
+                if not imageCurrent() then return retireOwnedImage() end
             end
             return true
         end
-        local dialoguePortrait, questPortrait = addon.DialoguePortrait, addon.QuestPortrait
-        local portrait = addon.Read(dialoguePortrait, "table", id)
+        local completionProvider, dialoguePortrait, questPortrait = addon.DialogueTurnInPortrait, addon.DialoguePortrait, addon.QuestPortrait
+        local completionCapability = addon.Clean(completionProvider, "function")
+        local completionDB, completionLocaleGetter = addon.db, GetLocale
+        local completionUILocale = completionDB and rawget(completionDB, "locale")
+        local completionGameLocale = completionCapability and addon.Read(completionLocaleGetter, "string")
+        local completionEngineGetter = engine.Current
+        local function completionBaseCurrent()
+            local locale = addon.Read(completionLocaleGetter, "string")
+            local fresh = completionEngineGetter == nil or addon.Read(completionEngineGetter, "boolean", engine) == true
+            return fresh and portraitCardCurrent() and addon.quests[id] == q and rawget(q, "id") == id and
+                addon.DialogueTurnInPortrait == completionProvider and addon.db == completionDB and
+                (not completionDB or rawget(completionDB, "locale") == completionUILocale) and GetLocale == completionLocaleGetter and
+                locale == completionGameLocale and engine.Current == completionEngineGetter and issecretvalue == portraitChecker
+        end
+        local completion = completionCapability and addon.Read(completionProvider, "table", id, completionBaseCurrent)
         if not portraitCardCurrent() then return end
-        if not portrait then portrait = addon.Read(questPortrait, "table", id) end
+        local completionValues
+        if completion then
+            completionValues = {}
+            for field, kind in pairs({ source="string", stage="string", displayID="number", hidden="boolean", name="string", current="function" }) do
+                local value = rawget(completion, field)
+                if type(portraitChecker) == "function" and addon.Read(portraitChecker, "boolean", value) ~= false then completionValues=nil; break end
+                if value ~= nil then
+                    local clean = addon.Clean(value, kind)
+                    if clean == nil then completionValues=nil; break end
+                    completionValues[field] = clean
+                end
+            end
+        end
+        if completion and not completionBaseCurrent() then return end
+        local validCompletion = completionValues and completionValues.source == "dialogue" and completionValues.stage == "completion" and
+            completionValues.current and ((completionValues.hidden == true and completionValues.displayID == nil) or
+            (completionValues.hidden == nil and completionValues.displayID and completionValues.displayID > 0 and
+                completionValues.displayID <= 4294967295 and completionValues.displayID % 1 == 0))
+        local function completionCurrent()
+            local live = completionValues and addon.Read(completionValues.current, "boolean") == true
+            if not live or not completionBaseCurrent() then return false end
+            local ok, same = pcall(function()
+                for field, value in pairs(completionValues) do if rawget(completion, field) ~= value then return false end end
+                return rawget(completion, "displayID") == completionValues.displayID and rawget(completion, "hidden") == completionValues.hidden and
+                    rawget(completion, "name") == completionValues.name and portraitCardCurrent() and addon.quests[id] == q and rawget(q, "id") == id and
+                    addon.DialogueTurnInPortrait == completionProvider and issecretvalue == portraitChecker
+            end)
+            return ok and same == true
+        end
+        local portrait, nativeCurrent
+        if validCompletion then
+            if not completionCurrent() then return end
+            portrait, nativeCurrent = completionValues, completionCurrent
+        else
+            portrait = addon.Read(dialoguePortrait, "table", id)
+            if not portraitCardCurrent() then return end
+            if not portrait then portrait = addon.Read(questPortrait, "table", id) end
+            nativeCurrent = function()
+                return addon.DialogueTurnInPortrait == completionProvider and addon.DialoguePortrait == dialoguePortrait and
+                    addon.QuestPortrait == questPortrait and issecretvalue == portraitChecker
+            end
+        end
         if not portraitCardCurrent() then return end
         local displayID = portrait and addon.Clean(portrait.hidden, "boolean") ~= true and addon.Clean(portrait.displayID, "number")
-        if not renderPortrait("portrait", displayID, addon.L("QUEST_PORTRAIT"), function()
-            return addon.DialoguePortrait == dialoguePortrait and addon.QuestPortrait == questPortrait and issecretvalue == portraitChecker
-        end) then return end
+        local nativeCaption = addon.L("QUEST_PORTRAIT")
+        if validCompletion and not completionCurrent() then return end
+        if not renderPortrait("portrait", displayID, nativeCaption, nativeCurrent) then return end
         local start = addon.Clean(q.start, "table")
         local producer = addon.GiverPortrait
         local fieldTypes = { npcID = "number", objectID = "number", itemID = "number", dropNPCID = "number",

@@ -1129,4 +1129,62 @@ check("Real quest events expose only the matching visible progress or turn-in di
     addon.DialogueTextEvent("PLAYER_LEAVING_WORLD")
 end)
 
+check("Completion events expose matching visible portraits without NPC log or prose requirements",function()
+    assert(type(addon.DialogueTurnInPortrait)=="function","completion portrait provider is unavailable")
+    addon.UI.frame:Hide()
+    local qid=98423;assert(addon.quests[qid].start.itemID==281030)
+    local portraitReads,proseReads,selectedReads,effects=0,0,0,0
+    local texts=addon.char.texts;local savedText=texts[qid];local character=addon.char
+    GetQuestID=function(...)assert(select("#",...)==0);return qid end
+    UnitGUID=function(unit)if unit=="player"then return "Player-completion-events"end;assert(unit=="npc");return nil end
+    C_QuestLog.GetSelectedQuest=function()selectedReads=selectedReads+1;return 65 end
+    C_QuestLog.GetLogIndexForQuestID=function()selectedReads=selectedReads+1;return nil end
+    C_QuestLog.IsOnQuest=function()return false end
+    HaveQuestRewardData=function()error("no reward-loaded gate is supported for this dialogue accessor")end
+    GetRewardText=nil
+    GetProgressText=function()proseReads=proseReads+1;error("portrait must not read progress text")end
+    GetQuestText=function()proseReads=proseReads+1;error("portrait must not read original text")end
+    AcceptQuest=function()effects=effects+1 end;SelectQuestLogEntry=function()effects=effects+1 end
+    addon.Navigation={Start=function()effects=effects+1 end,Map=function()effects=effects+1 end,Stop=function()end}
+    QuestFrame,QuestFrameRewardPanel,QuestFrameProgressPanel=create("Frame"),create("Frame"),create("Frame")
+    local display=9876
+    GetQuestPortraitTurnIn=function(...)assert(select("#",...)==0);portraitReads=portraitReads+1;return display,"ignored synthetic portrait prose","Completion speaker"end
+    local function event(name)eventFrame.scripts.OnEvent(eventFrame,name)end
+    event("QUEST_COMPLETE")
+    assert(addon.DialogueTurnInPortrait(qid)==nil and portraitReads==0,"pending not-yet-shown stage is not readable")
+    QuestFrame:Show();QuestFrameRewardPanel:Show()
+    local result=assert(addon.DialogueTurnInPortrait(qid,function()return true end))
+    assert(result.source=="dialogue"and result.stage=="completion"and result.displayID==9876 and result.name=="Completion speaker")
+    assert(result.npcID==nil and result.portraitSource==nil and result.hidden==nil)
+    local reads=portraitReads;assert(result.current()and result.current()and portraitReads==reads)
+    assert(addon.DialogueTurnInPortrait(96393)==nil and portraitReads==reads,"another catalogue ID cannot read this conversation")
+    assert(addon.DialogueTurnInPortrait(qid,function()return false end)==nil)
+    assert(result.current(),"a false caller must not erase otherwise valid conversation ownership")
+    assert(selectedReads==0 and proseReads==0 and effects==0 and addon.char==character and character.texts==texts and texts[qid]==savedText)
+    local state=addon.Context();assert(state.active(qid)==false and state.completed(qid)~=true)
+    QuestFrameRewardPanel:Hide();assert(not result.current()and addon.DialogueTurnInPortrait(qid)==nil)
+    QuestFrameRewardPanel:Show();assert(addon.DialogueTurnInPortrait(qid)==nil,"a closed observed stage cannot revive without its own event")
+    event("QUEST_COMPLETE");assert(addon.DialogueTurnInPortrait(qid).displayID==9876)
+    event("QUEST_PROGRESS");QuestFrameRewardPanel:Hide();QuestFrameProgressPanel:Show()
+    reads=portraitReads;assert(addon.DialogueTurnInPortrait(qid)==nil and portraitReads==reads)
+    QuestFrameProgressPanel:Hide();QuestFrameRewardPanel:Show();event("QUEST_COMPLETE")
+    display=0;result=assert(addon.DialogueTurnInPortrait(qid));assert(result.hidden==true and result.displayID==nil and result.current())
+    display=-1;assert(addon.DialogueTurnInPortrait(qid)==nil,"negative display is unavailable, not an invented hidden sentinel")
+    GetQuestPortraitTurnIn=nil;assert(addon.DialogueTurnInPortrait(qid)==nil)
+    event("QUEST_FINISHED");assert(not result.current()and addon.DialogueTurnInPortrait(qid)==nil)
+    assert(selectedReads==0 and proseReads==0 and effects==0 and addon.char==character and character.texts==texts and texts[qid]==savedText)
+end)
+
+check("Completion portrait ownership expires on leaving the world",function()
+    local id=96395;GetQuestID=function()return id end
+    QuestFrame:Show();QuestFrameRewardPanel:Show();QuestFrameProgressPanel:Hide()
+    GetRewardText=function()error("fresh portrait must remain independent of completion prose")end
+    local reads=0;GetQuestPortraitTurnIn=function()reads=reads+1;return 6543,nil,nil end
+    eventFrame.scripts.OnEvent(eventFrame,"QUEST_COMPLETE")
+    local result=assert(addon.DialogueTurnInPortrait(id));assert(result.displayID==6543 and reads==1)
+    assert(result.current()and reads==1)
+    eventFrame.scripts.OnEvent(eventFrame,"PLAYER_LEAVING_WORLD")
+    assert(not result.current()and addon.DialogueTurnInPortrait(id)==nil)
+end)
+
 print("Client/UI modeled checks passed: " .. total .. " (no pixel or native-client validation)")
