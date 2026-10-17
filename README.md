@@ -100,8 +100,8 @@ Level ranges are provisional recommendations.
   when supplied by the client.
 - Known single-NPC quest starters can also show their own giver portrait using
   client models. The appearance is a reference and may differ by quest phase.
-- Item rewards and choices for the currently selected active quest, when the
-  client provides them. Unknown reward data is shown explicitly.
+- Item rewards, choices and experience for the currently selected active quest,
+  when the client provides them. Unknown reward data is shown explicitly.
 - Reward previews for other quests when the client confirms their reward data
   is already loaded. Missing data stays unknown.
 - Reward items use native icons and item-ID hover tooltips when available.

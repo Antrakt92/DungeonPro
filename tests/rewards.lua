@@ -6,6 +6,7 @@ local fixed, choice = {}, {}
 local secret = {}
 local function reset()
     selected, logIndex, fixedCount, choiceCount, money = 65, 1, 1, 1, 12345
+    GetQuestLogRewardXP, HaveQuestRewardData = nil, nil
     fixed = { "Reward", 123, 2, 3, false, 7001 }
     choice = { "Choice", "Interface\\Icons\\Choice", 1, 4, true, 8001 }
     issecretvalue = function(v) return v == secret end
@@ -156,6 +157,124 @@ check("Changed selected reward getters locale and checker discard mixed snapshot
         assert(addon.QuestRewards(65) == nil)
     end
     GetLocale = oldLocale
+end)
+local function xpSetup()
+    GetLocale = function() return "enUS" end
+    local state = { value = 1234, loaded = true, visible = true, reads = 0 }
+    HaveQuestRewardData = function(id) assert(id == 65); return state.loaded end
+    C_QuestLog.ShouldShowQuestRewards = function(id) assert(id == 65); return state.visible end
+    GetQuestLogRewardXP = function(id, ...)
+        assert(id == 65 and id ~= logIndex and select("#", ...) == 0)
+        state.reads = state.reads + 1
+        if state.hook then state.hook() end
+        return state.value, secret
+    end
+    C_QuestLog.RequestLoadQuestByID = function() error("XP must not request data") end
+    C_TaskQuest = { RequestPreloadRewardData = function() error("XP must not preload data") end }
+    C_Timer = { After = function() error("XP must not schedule") end }
+    GetMoney = function() error("XP must not inspect balance") end
+    return state
+end
+check("Selected reward XP uses explicit quest ID and first native total without suppressing existing rewards", function()
+    local state = xpSetup()
+    local result = assert(addon.QuestRewards(65))
+    assert(result.xp == 1234 and state.reads == 1 and #result.items == 1 and #result.choices == 1 and result.money == 12345)
+    assert(result.items[1].id == 7001 and result.choices[1].id == 8001)
+    result.xp = 1; assert(addon.QuestRewards(65).xp == 1234)
+end)
+check("Loaded visible zero XP is real while cold hidden and unknown data omit only XP", function()
+    for _,mode in ipairs({ "zero", "cold", "hidden", "loadedUnknown", "visibleUnknown", "loadedSecret", "visibleSecret" }) do
+        reset(); local state = xpSetup()
+        if mode == "zero" then state.value = 0 elseif mode == "cold" then state.loaded = false elseif mode == "hidden" then state.visible = false
+        elseif mode == "loadedUnknown" then state.loaded = nil elseif mode == "visibleUnknown" then state.visible = nil
+        elseif mode == "loadedSecret" then state.loaded = secret else state.visible = secret end
+        local result = assert(addon.QuestRewards(65))
+        assert(#result.items == 1 and #result.choices == 1 and result.money == 12345)
+        if mode == "zero" then assert(result.xp == 0 and state.reads == 1) else assert(result.xp == nil and state.reads == 0,mode) end
+    end
+end)
+check("Missing malformed restricted throwing or invalid XP leaves valid item and money snapshots intact", function()
+    for _,mode in ipairs({ "missingXP", "missingLoaded", "missingVisible", "badXP", "throwXP", "secretFunction", "negative", "fraction", "overflow", "nan", "secretValue" }) do
+        reset(); local state = xpSetup()
+        if mode == "missingXP" then GetQuestLogRewardXP = nil elseif mode == "missingLoaded" then HaveQuestRewardData = nil
+        elseif mode == "missingVisible" then C_QuestLog.ShouldShowQuestRewards = nil elseif mode == "badXP" then GetQuestLogRewardXP = false
+        elseif mode == "throwXP" then GetQuestLogRewardXP = function() error("cold XP") end
+        elseif mode == "secretFunction" then local fn=GetQuestLogRewardXP;issecretvalue=function(v)return v==fn end
+        elseif mode == "negative" then state.value = -1 elseif mode == "fraction" then state.value = 1.5 elseif mode == "overflow" then state.value = 9007199254740992
+        elseif mode == "nan" then state.value = 0/0 else state.value = secret end
+        local result = assert(addon.QuestRewards(65)); assert(result.xp == nil and result.money == 12345 and result.items[1].id == 7001,mode)
+    end
+end)
+check("XP loses only its optional field on loaded visibility or XP capability drift", function()
+    for _,mode in ipairs({ "loadedFalse", "hidden", "xpGetter", "loadedGetter", "visibleGetter" }) do
+        reset(); local state = xpSetup()
+        state.hook = function()
+            if mode == "loadedFalse" then state.loaded = false elseif mode == "hidden" then state.visible = false
+            elseif mode == "xpGetter" then GetQuestLogRewardXP = function() return 9999 end
+            elseif mode == "loadedGetter" then HaveQuestRewardData = function() return true end
+            else C_QuestLog.ShouldShowQuestRewards = function() return true end end
+        end
+        local result = assert(addon.QuestRewards(65)); assert(result.xp == nil and result.items[1].id == 7001 and result.money == 12345,mode)
+    end
+end)
+check("XP callbacks cannot return rewards from a new selection index namespace character or locale", function()
+    for _,mode in ipairs({ "selection", "index", "namespace", "character", "locale", "checker" }) do
+        reset();local state=xpSetup();local char=addon.char
+        state.hook=function()
+            if mode=="selection"then selected=66 elseif mode=="index"then logIndex=2 elseif mode=="namespace"then C_QuestLog={}
+            elseif mode=="character"then addon.char={} elseif mode=="locale"then GetLocale=function()return"ruRU"end
+            else issecretvalue=function()return false end end
+        end
+        assert(addon.QuestRewards(65)==nil,mode);addon.char=char
+    end
+end)
+check("Final XP scalar sanitization cannot publish replaced optional API data", function()
+    local state=xpSetup();local checkSecret=issecretvalue;local armed=true
+    issecretvalue=function(value)
+        if armed and value==1234 then armed=false;GetQuestLogRewardXP=function()return 9999 end end
+        return checkSecret(value)
+    end
+    local result=assert(addon.QuestRewards(65));assert(not armed and result.xp==nil and result.items[1].id==7001)
+end)
+check("Another selected quest cannot trigger an XP read and normal selected DTO carries XP without cache fallback", function()
+    local state=xpSetup();selected=66
+    assert(addon.QuestRewards(65)==nil and state.reads==0)
+    selected=65;local result=assert(addon.QuestRewards(65));assert(result.xp==1234)
+    -- A valid selected DTO is already the existing UI priority; no separate cache API is needed to fill XP.
+end)
+check("Late selected ownership reads cannot retain positive or zero XP after cache or visibility loss", function()
+    for _,mode in ipairs({"loaded", "visible"}) do
+        for _,value in ipairs({1234, 0}) do
+            reset(); local state=xpSetup(); state.value=value
+            local loadedReads, visibleReads, expired=0,0,false
+            HaveQuestRewardData=function(id)assert(id==65);loadedReads=loadedReads+1;return state.loaded end
+            C_QuestLog.ShouldShowQuestRewards=function(id)assert(id==65);visibleReads=visibleReads+1;return state.visible end
+            GetLocale=function()
+                if loadedReads==3 and visibleReads==3 and not expired then
+                    expired=true;if mode=="loaded"then state.loaded=false else state.visible=false end
+                end
+                return "enUS"
+            end
+            local result=assert(addon.QuestRewards(65))
+            assert(expired and state.reads==1 and result.xp==nil,mode)
+            assert(result.items[1].id==7001 and result.choices[1].id==8001 and result.money==12345)
+        end
+    end
+end)
+check("Final optional visibility reads cannot retain base rewards after selected quest index or character changes", function()
+    for _,mode in ipairs({"selection", "index", "character"}) do
+        reset(); local state=xpSetup(); local reads,changed=0,false
+        C_QuestLog.ShouldShowQuestRewards=function(id)
+            assert(id==65);reads=reads+1
+            if reads==4 then
+                changed=true
+                if mode=="selection"then selected=66 elseif mode=="index"then logIndex=2 else addon.char={} end
+            end
+            return true
+        end
+        assert(addon.QuestRewards(65)==nil,mode)
+        assert(changed and state.reads==1)
+    end
 end)
 issecretvalue = nil
 print("Quest reward adapter modeled checks passed: " .. total .. " (native client unverified)")

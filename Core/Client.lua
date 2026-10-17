@@ -1057,8 +1057,15 @@ function addon.QuestRewards(id)
     end
     id = integer(id, 1)
     if not id then return nil end
-    local scope = selectedLogReadScope(id)
+    local scope, _, scopeIndex = selectedLogReadScope(id)
     if not scope then return nil end
+    local xpQuest, xpGetter, xpLoaded, xpChecker = C_QuestLog, GetQuestLogRewardXP, HaveQuestRewardData, issecretvalue
+    local xpLibrary = addon.Clean(xpQuest, "table")
+    local xpVisible = xpLibrary and rawget(xpLibrary, "ShouldShowQuestRewards")
+    local xpLocaleGetter, xpCharacter = GetLocale, addon.char
+    local rawBase = { selected = xpLibrary and rawget(xpLibrary, "GetSelectedQuest"),
+        index = xpLibrary and rawget(xpLibrary, "GetLogIndexForQuestID"), rewards = GetNumQuestLogRewards,
+        choices = GetNumQuestLogChoices, fixed = GetQuestLogRewardInfo, choice = GetQuestLogChoiceInfo, money = GetQuestLogRewardMoney }
     local api = { rewards = addon.Clean(GetNumQuestLogRewards, "function"),
         choices = addon.Clean(GetNumQuestLogChoices, "function"),
         fixed = addon.Clean(GetQuestLogRewardInfo, "function"), choice = addon.Clean(GetQuestLogChoiceInfo, "function"),
@@ -1109,7 +1116,54 @@ function addon.QuestRewards(id)
     local money = addon.Read(api.money, "number")
     if money and money < 0 then money = nil end
     if not selected() then return nil end
-    return { items = fixed, choices = choice, money = money }
+    local xp
+    local xpFunction = addon.Clean(xpGetter, "function")
+    local loadedFunction = addon.Clean(xpLoaded, "function")
+    local visibleFunction = addon.Clean(xpVisible, "function")
+    local xpLocale = xpFunction and loadedFunction and visibleFunction and addon.Read(xpLocaleGetter, "string")
+    local function xpIdentities()
+        local ok, same = pcall(function()
+            return C_QuestLog == xpQuest and rawget(xpLibrary, "ShouldShowQuestRewards") == xpVisible and
+                GetQuestLogRewardXP == xpGetter and HaveQuestRewardData == xpLoaded and
+                GetLocale == xpLocaleGetter and addon.char == xpCharacter and issecretvalue == xpChecker
+        end)
+        return ok and same == true
+    end
+    local function xpCurrent()
+        if not xpIdentities() or not selected() then return false end
+        if addon.Read(loadedFunction, "boolean", id) ~= true or not xpIdentities() then return false end
+        if addon.Read(visibleFunction, "boolean", id) ~= true or not xpIdentities() then return false end
+        if addon.Read(xpLocaleGetter, "string") ~= xpLocale or not selected() then return false end
+        return xpIdentities()
+    end
+    if xpFunction and loadedFunction and visibleFunction and
+        xpLocale and #xpLocale <= 32 and xpLocale:find("%S") and xpCurrent() then
+        -- The first return is total XP. Explicit ID does not change selection.
+        local value = integer(addon.Read(xpFunction, "number", id), 0, 9007199254740991)
+        if xpCurrent() then xp = value end
+    end
+    if xp ~= nil and not xpCurrent() then xp = nil end
+    if not selected() then return nil end
+    if xp ~= nil then
+        -- Selection reads above may have made optional reward data cold or hidden.
+        if addon.Read(loadedFunction, "boolean", id) ~= true or
+            addon.Read(visibleFunction, "boolean", id) ~= true or not xpIdentities() then xp = nil end
+        -- Optional native reads may change selection without replacing their functions.
+        local finalIndex = dialogueInteger(addon.Read(rawBase.index, "number", id), 1)
+        local finalSelected = addon.Read(rawBase.selected, "number")
+        if finalIndex ~= scopeIndex or finalSelected ~= id then return nil end
+        local ok, owned, xpOwned = pcall(function()
+            return C_QuestLog == xpQuest and addon.char == xpCharacter and GetLocale == xpLocaleGetter and issecretvalue == xpChecker and
+                rawget(xpLibrary, "GetSelectedQuest") == rawBase.selected and rawget(xpLibrary, "GetLogIndexForQuestID") == rawBase.index and
+                GetNumQuestLogRewards == rawBase.rewards and GetNumQuestLogChoices == rawBase.choices and
+                GetQuestLogRewardInfo == rawBase.fixed and GetQuestLogChoiceInfo == rawBase.choice and GetQuestLogRewardMoney == rawBase.money,
+                GetQuestLogRewardXP == xpGetter and HaveQuestRewardData == xpLoaded and
+                rawget(xpLibrary, "ShouldShowQuestRewards") == xpVisible
+        end)
+        if not ok or owned ~= true then return nil end
+        if xpOwned ~= true then xp = nil end
+    end
+    return { items = fixed, choices = choice, money = money, xp = xp }
 end
 
 function addon.CachedQuestRewards(id)
