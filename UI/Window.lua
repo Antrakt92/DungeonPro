@@ -630,8 +630,8 @@ function UI:RefreshDungeons()
         end)
         return ok and valid == true
     end
-    local function current()
-        if not sourceReady or not baseCurrent() then return false end
+    local function current(sourceOnly)
+        if not sourceReady or not baseCurrent(sourceOnly) then return false end
         if contextCurrent and addon.Read(contextCurrent, "boolean") ~= true then return false end
         for _, cached in ipairs(sourceMatches) do
             if addon.Read(cached.current, "boolean") ~= true then return expireSources() end
@@ -639,7 +639,7 @@ function UI:RefreshDungeons()
         for _, cached in ipairs(sourceMatches) do
             if not unchanged(cached) then return expireSources() end
         end
-        return baseCurrent()
+        return baseCurrent(sourceOnly)
     end
     local function proveSources()
         if not current() then return false end
@@ -653,39 +653,52 @@ function UI:RefreshDungeons()
         end
         return baseCurrent()
     end
+    local function scanMember(input, index, member, other)
+        local ok, valid = pcall(function()
+            local dungeon = input.dungeon
+            return baseCurrent(true) and catalogue[index] == dungeon and dungeon.name == input.name and
+                dungeon.key == input.key and dungeon.minLevel == input.minimum and dungeon.maxLevel == input.maximum and
+                dungeon.quests == input.targets and #input.targets == #input.members and
+                (not member or (input.targets[other] == member.id and definitions[member.id] == member.quest and
+                (not member.quest or member.quest.name == member.name)))
+        end)
+        return ok and valid == true
+    end
     if not current() then return end
-    for _, input in ipairs(inputs) do
+    for inputIndex, input in ipairs(inputs) do
         local dungeon = input.dungeon
         if not range or (context.level and context.level >= input.minimum - 3 and context.level <= input.maximum + 3) then
+            if not scanMember(input, inputIndex) then return end
             local name = addon.Read(dungeonGetter, "string", dungeon) or addon.Clean(input.name, "string") or ""
-            if not current() then return end
+            if not current(true) then return end
             local matches = query == "" or searchText(name):find(needle, 1, true) or searchText(input.name):find(needle, 1, true)
             local matchedName, matchedID, sourceMatch
             if not matches then
                 for _, member in ipairs(input.members) do
                     local source = addon.Clean(member.name, "string")
-                    if not current() then return end
+                    if not current(true) then return end
                     if source and searchText(source):find(needle, 1, true) then
                         matchedName, matchedID = source, member.id; break
                     end
                 end
             end
             if not matches and not matchedName then
-                for _, member in ipairs(input.members) do
+                for memberIndex, member in ipairs(input.members) do
+                    if not scanMember(input, inputIndex, member, memberIndex) then return end
                     local cached = memo[member.id]
                     if not cached then
                         cached = { name = addon.Read(getter, "string", member.id) }
                         memo[member.id] = cached
                     end
-                    if not current() then return end
+                    if not current(true) then return end
                     if cached.name and searchText(cached.name):find(needle, 1, true) then
                         matchedName, matchedID = cached.name, member.id; break
                     end
                 end
             end
             if not matches and not matchedName and addon.Clean(sourceGetter, "function") then
-                for _, member in ipairs(input.members) do
-                    if not baseCurrent(true) then return end
+                for memberIndex, member in ipairs(input.members) do
+                    if not scanMember(input, inputIndex, member, memberIndex) then return end
                     local cached = sourceMemo[member.id]
                     if not cached then
                         cached = {}; sourceMemo[member.id] = cached
@@ -730,12 +743,12 @@ function UI:RefreshDungeons()
                     if matchedName then break end
                 end
             end
-            if not current() then return end
+            if not current(true) then return end
             if matches or matchedName then
                 local note = addon.L("CATALOG_LEVELS", input.minimum, input.maximum) .. "\n" .. addon.L("CATALOG_QUESTS", #input.members)
                 if matchedName then note = note .. "\n" .. addon.L("SEARCH_QUEST_MATCH", matchedName) end
                 if sourceMatch then note = note .. "\n" .. addon.L(sourceMatch.kind == "npc" and "SEARCH_NPC_MATCH" or "SEARCH_PLACE_MATCH", sourceMatch.text) end
-                if not current() then return end
+                if not current(true) then return end
                 results[#results + 1] = { dungeon = dungeon, title = name, note = note, questID = matchedID, sourceMatch = sourceMatch }
             end
         end

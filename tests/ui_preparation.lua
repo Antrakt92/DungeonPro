@@ -7721,4 +7721,44 @@ check("Expired source cleanup cannot hide or clear handlers from a newer complet
     end
 end)
 
+check("Source scan rejects an expired later dungeon before its name getter",function()
+    local f=targetSearchFixture();local first,second=addon.dungeons[1],addon.dungeons[2];local seen={}
+    addon.DungeonName=function(d)
+        seen[d]=(seen[d]or 0)+1
+        if d==first then addon.dungeons[2]={key="replacement",name="Replacement dungeon",minLevel=1,maxLevel=60,quests={}}end
+        return d.name
+    end
+    f:search("nonmatching old scope");assert(not seen[second]);f:finish()
+end)
+check("Source scan guards changed target definitions and names before another cached read",function()
+    for _,kind in ipairs({"target","definition","name","dungeon"})do
+        local f=targetSearchFixture();local reads=0;local oldClick=f:cards()[1].scripts.OnClick;local dungeon,quest=ui.dungeon,ui.quest
+        addon.CachedQuestName=function()
+            reads=reads+1
+            if reads==1 then
+                if kind=="target"then addon.dungeons[1].quests[2]=31003
+                elseif kind=="definition"then addon.quests[31002]={id=31002,name="Replaced",minLevel=1}
+                elseif kind=="name"then addon.quests[31002].name="New source name"
+                else addon.dungeons[1].name="Renamed dungeon"end
+            end
+        end
+        f:search("unmatched native title");assert(reads==1);oldClick();assert(ui.dungeon==dungeon and ui.quest==quest);f:finish()
+    end
+end)
+check("Source scan rejects replaced members before calling their source helper",function()
+    for _,kind in ipairs({"target","definition","name"})do
+        local f=sourceSearchFixture();local calls=0;local provider=f.provider
+        addon.QuestSourceSearchTerms=function(q)
+            calls=calls+1
+            if calls==1 then
+                if kind=="target"then addon.dungeons[1].quests[2]=31003
+                elseif kind=="definition"then addon.quests[31002]={id=31002,name="Replacement",minLevel=1}
+                else addon.quests[31002].name="Changed source name"end
+            end
+            return provider(q)
+        end
+        f:search("nonmatching source needle");assert(calls==1);f:finish()
+    end
+end)
+
 print("Preparation UI modeled checks passed: " .. total .. " (no native layout validation)")
