@@ -13,6 +13,7 @@ Locales\Translations.lua
 Database\Catalog.lua
 Database\SearchCaseFold.lua
 Core\Planner.lua
+Core\QuestTree.lua
 Core\Search.lua
 Core\Client.lua
 Core\DialogueText.lua
@@ -22,6 +23,7 @@ Core\HeldQuestWaypoint.lua
 UI\Theme.lua
 UI\Language.lua
 UI\QuestStatus.lua
+UI\QuestListRewards.lua
 UI\Window.lua
 UI\Navigation.lua
 Core\Entrances.lua

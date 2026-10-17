@@ -14,6 +14,11 @@ local DETAIL_STYLES = {
 local function styleRow(row, kind, selected)
     local theme = addon.Clean(addon.Theme, "table")
     if theme then addon.Read(theme.StyleRow, "boolean", row, { kind = kind, selected = selected == true }) end
+    if row.compact and row.questCompleted and type(row.title.SetTextColor) == "function" then
+        local ui, current = addon.UI, row.questListCurrent
+        if ui and current and ui.QuestListWrite then ui:QuestListWrite(row.title, "SetTextColor", current, .52, .62, .55)
+        else pcall(row.title.SetTextColor, row.title, .52, .62, .55) end
+    end
 end
 
 function UI:CurrentDetailAction()
@@ -168,6 +173,29 @@ function UI:HideNavigationHint()
     self.navigationTooltip = nil
     if held and GameTooltip == held.tip and addon.Read(held.tip.IsOwned, "boolean", held.tip, held.button) == true then
         pcall(held.tip.Hide, held.tip)
+    end
+end
+
+function UI:QuestListHint(row)
+    self:HideNavigationHint()
+    local owner, frame = row.questListCurrent, self.frame
+    local tip = addon.Clean(GameTooltip, "table") or addon.Clean(GameTooltip, "userdata")
+    local function current()
+        return tip and row.questListCurrent == owner and owner and owner() and self.frame == frame and
+            GameTooltip == tip and addon.Read(frame.IsShown, "boolean", frame) == true and owner()
+    end
+    if not current() then return end
+    local title = addon.Read(row.title.GetText, "string", row.title)
+    local note = addon.Read(row.note.GetText, "string", row.note)
+    if not current() or not title or not note then return end
+    local held = { tip = tip, button = row }; self.navigationTooltip = held
+    for _, call in ipairs({ { "SetOwner", row, "ANCHOR_RIGHT" }, { "SetText", title }, { "AddLine", note, 1, 1, 1, true }, { "Show" } }) do
+        if not current() or self.navigationTooltip ~= held then return end
+        local fn = addon.Clean(tip[call[1]], "function")
+        if not fn or not pcall(fn, tip, unpack(call, 2)) or not current() or self.navigationTooltip ~= held then
+            if self.navigationTooltip == held then self:HideNavigationHint() end
+            return
+        end
     end
 end
 
@@ -577,7 +605,27 @@ function UI:CopyLink(id)
     return pcall(highlight, box) and current()
 end
 
-function UI:MakeRow(parent, pool, index, height)
+function UI:QuestListWrite(object, method, ownerCurrent, ...)
+    if not ownerCurrent() then return false end
+    local bindings = object.questListWrites or {}; object.questListWrites = bindings
+    local key = (method == "Show" or method == "Hide" or method == "SetShown") and "visibility" or
+        (method == "SetScript" and "script:" .. tostring((...)) or method)
+    local binding = { current = ownerCurrent, setter = object[method], args = { ... }, count = select("#", ...) }
+    bindings[key] = binding
+    local ok = pcall(binding.setter, object, ...)
+    local fresh = ownerCurrent()
+    if not fresh then
+        local newer = bindings[key]
+        if newer and newer ~= binding and not newer.repairing and newer.current() then
+            newer.repairing = true
+            if bindings[key] == newer and newer.current() then pcall(newer.setter, object, unpack(newer.args, 1, newer.count)) end
+            newer.repairing = nil
+        end
+    end
+    return ok and fresh
+end
+
+function UI:MakeRow(parent, pool, index, height, ownerCurrent)
     local row = pool[index]
     if not row then
         row = CreateFrame("Button", nil, parent)
@@ -590,7 +638,7 @@ function UI:MakeRow(parent, pool, index, height)
         row.note = label(row, "", 8, -29, parent:GetWidth() - 22, 14)
         pool[index] = row
     end
-    row:Show()
+    if ownerCurrent then self:QuestListWrite(row, "Show", ownerCurrent) else row:Show() end
     styleRow(row, "quest", false)
     return row
 end
@@ -604,6 +652,15 @@ function UI:LayoutRow(row, minimum, offset, ownerCurrent, ownerWrite)
         return current()
     end
     if not current() then return nil end
+    if row.compact then
+        local left = 8 + (row.questTreeIndent or 0) + (row.statusInset or 0)
+        local height = math.max(minimum, 12 + measuredHeight(row.title, 18))
+        if not current() or not write(row.note, "Hide") or not write(row.title, "ClearAllPoints") or
+            not write(row.title, "SetPoint", "TOPLEFT", left, -6) or not write(row, "SetHeight", height) or
+            not write(row, "ClearAllPoints") or not write(row, "SetPoint", "TOPLEFT", 0, -offset) then return nil end
+        return offset + height + 2
+    end
+    if not write(row.note, "SetShown", not row.heading) then return nil end
     local noteLeft = row.art and 58 or 8
     local titleLeft = noteLeft + (not row.art and row.statusInset or 0)
     local titleHeight = measuredHeight(row.title, 18)
@@ -650,7 +707,7 @@ function UI:HistoryOffsets()
     return self.detailOffsets
 end
 
-function UI:InspectQuest(id)
+function UI:InspectQuest(id, refreshList)
     id = addon.Clean(id, "number")
     if not id or id <= 0 or id % 1 ~= 0 then return false end
     local history, dungeon = self.detailHistory, self.dungeon
@@ -675,6 +732,10 @@ function UI:InspectQuest(id)
             end
         end
         self.quest = id
+    end
+    if refreshList then
+        self:RefreshQuests()
+        if self.quest ~= id or self.dungeon ~= dungeon or self.detailHistory ~= history or self.detailNavigationRevision ~= revision then return false end
     end
     self:RefreshDetail()
     return true
@@ -1235,12 +1296,13 @@ function UI:RefreshDungeons()
 end
 
 function UI:PaintQuestRowStatus(row, entry, engine, ownerCurrent)
-    local painter, checker, token = addon.PaintQuestStatus, issecretvalue, {}
     local id, state, heading = entry.id, entry.state, entry.heading
     local status = state and state.status
+    local compactRole = row.compact and status ~= "ACTIVE" and status ~= "READY"
+    local painter, checker, token = compactRole and addon.PaintCompactQuestStatus or addon.PaintQuestStatus, issecretvalue, {}
     local definition = id and addon.quests[id]
     local widthGetter, widthSetter = row.title.GetWidth, row.title.SetWidth
-    local eligible = not heading and (status == "ACTIVE" or status == "READY")
+    local eligible = not heading and (row.compact or status == "ACTIVE" or status == "READY")
     row.statusGeneration = token
     local function current()
         if not ownerCurrent() then return false end
@@ -1248,7 +1310,7 @@ function UI:PaintQuestRowStatus(row, entry, engine, ownerCurrent)
         local ok, same = pcall(function()
             return fresh and ownerCurrent() and row.statusGeneration == token and row.questID == id and row.heading == heading and
                 entry.id == id and entry.state == state and (not state or state.status == status) and
-                (not id or addon.quests[id] == definition) and addon.PaintQuestStatus == painter and issecretvalue == checker and
+                (not id or addon.quests[id] == definition) and (compactRole and addon.PaintCompactQuestStatus or addon.PaintQuestStatus) == painter and issecretvalue == checker and
                 row.title.GetWidth == widthGetter and row.title.SetWidth == widthSetter
         end)
         return ok and same == true
@@ -1279,8 +1341,9 @@ function UI:PaintQuestRowStatus(row, entry, engine, ownerCurrent)
                 local ok = pcall(texture[method], texture, ...)
                 return ok and current()
             end
-            if configure("SetSize", 16, 16) and configure("ClearAllPoints") and configure("SetPoint", "TOPLEFT", 8, -8) then
-                painted = addon.Read(usable, "boolean", texture, status, current) == true
+            if configure("SetSize", 16, 16) and configure("ClearAllPoints") and configure("SetPoint", "TOPLEFT", 8 + (row.questTreeIndent or 0), row.compact and -7 or -8) then
+                if compactRole then painted = addon.Read(usable, "boolean", texture, status, state and state.reason, current) == true
+                else painted = addon.Read(usable, "boolean", texture, status, current, row.compact, state and state.reason) == true end
             end
             if not current() then return false end
         end
@@ -1311,16 +1374,31 @@ function UI:RefreshQuests()
     local engine = addon.Planner.New(addon.quests, context, addon.Clean(character.choices, "table"))
     self.engine = engine
     self.currentPlan = nil
-    local generation = {}
+    local generation, treeCurrent, treeFailed = {}, nil, false
     self.questListGeneration = generation
     local function current()
+        local owned = self.questListGeneration == generation and self.engine == engine and self.dungeon == d and addon.char == character and
+            self.preparation == preparation and self.includeUnavailable == includeUnavailable
+        if not owned or treeFailed then return false end
+        if treeCurrent and addon.Read(treeCurrent, "boolean") ~= true then
+            treeFailed = true
+            -- Retire only this still-current hierarchy; callbacks may already
+            -- have published a replacement list while validating the source.
+            for _, row in ipairs(self.rows) do
+                if self.questListGeneration ~= generation then return false end
+                if row.questTreeNode then
+                    local function cleanupCurrent() return self.questListGeneration == generation end
+                    if not self:QuestListWrite(row, "Hide", cleanupCurrent) then return false end
+                    if not self:QuestListWrite(row, "SetScript", cleanupCurrent, "OnClick", nil) then return false end
+                end
+            end
+            return false
+        end
         return self.questListGeneration == generation and self.engine == engine and self.dungeon == d and addon.char == character and
             self.preparation == preparation and self.includeUnavailable == includeUnavailable
     end
     local function write(object, method, ...)
-        if not current() then return false end
-        object[method](object, ...)
-        return current()
+        return self:QuestListWrite(object, method, current, ...)
     end
     local function writeText(fs, value)
         if not current() then return false end
@@ -1381,6 +1459,37 @@ function UI:RefreshQuests()
         if self.currentPlan.preparationEmpty then
             entries = { { heading = "PREPARATION_EMPTY", argument = addon.L("QUESTS") } }
         end
+        local tree, treeBuilder = nil, addon.Clean(addon.QuestTree, "table")
+        if not preparation and self.questTreeDungeon == d and self.questTreeRoot and treeBuilder then
+            local build = addon.Clean(treeBuilder.Build, "function")
+            tree = build and addon.Read(build, "table", addon.quests, engine, self.questTreeRoot)
+            if not current() then return end
+            if tree then
+                local expanded = {}
+                for _, entry in ipairs(entries) do
+                    expanded[#expanded + 1] = entry
+                    if entry.id == self.questTreeRoot then
+                        local relation, option
+                        for _, node in ipairs(tree) do
+                            if not node.root then
+                                if node.relation ~= relation then
+                                    relation = node.relation
+                                    expanded[#expanded + 1] = { heading = relation == "story" and "STORY" or "CHAIN" }
+                                end
+                                local group = node.alternatives and node.alternatives > 1 and tostring(node.parentID) .. ":" .. tostring(node.group)
+                                if group and group ~= option then
+                                    option = group
+                                    expanded[#expanded + 1] = { heading = node.mode == "active" and "REQUIREMENT_ACTIVE" or "REQUIREMENT_COMPLETE" }
+                                end
+                                expanded[#expanded + 1] = { id = node.id, state = node.state, tree = node, rootID = entry.id }
+                            end
+                        end
+                    end
+                end
+                entries = expanded
+            end
+        end
+        treeCurrent = tree and addon.Clean(tree.current, "function")
         for _, entry in ipairs(entries) do
             local id, state = entry.id, entry.state
             local title, note
@@ -1400,12 +1509,31 @@ function UI:RefreshQuests()
                 end
                 if not current() then return end
                 note = "|cff" .. COLOR[state.status] .. statusLabel(state, note) .. "|r"
+                if entry.tree then note = note .. "\n" .. addon.L(entry.tree.relation == "story" and "STORY_GROUP_NOTICE" or "REQUIREMENT_NOTICE") end
             end
             if not current() then return end
             n = n + 1
-            local row = self:MakeRow(self.questList, self.rows, n, 59)
+            local row = self:MakeRow(self.questList, self.rows, n, entry.heading and 32 or 30, current)
             if not current() then return end
-            row.heading, row.questID = entry.heading, id
+            row.heading, row.questID, row.compact = entry.heading, id, not entry.heading and not preparation
+            row.questCompleted = state and state.status == "COMPLETED"
+            row.questTreeNode = entry.tree ~= nil
+            row.questTreeRoot = entry.rootID or id
+            row.questTreeRelation = entry.tree and entry.tree.relation
+            row.questTreeDepth = entry.tree and entry.tree.depth or 0
+            row.questTreeIndent = entry.tree and math.min(3, math.max(1, row.questTreeDepth)) * 12 or 0
+            row.questListCurrent = current
+            if not write(row, "SetScript", "OnEnter", function() if current() then self:QuestListHint(row) end end) or
+                not write(row, "SetScript", "OnLeave", function() self:HideNavigationHint() end) then return end
+            local rewards = addon.Clean(addon.QuestListRewards, "table")
+            local rewardPaint = rewards and addon.Clean(rewards.Paint, "function")
+            local reserve = not entry.heading and rewardPaint and addon.Read(rewardPaint, "number", row, id, current) or 0
+            if not current() then return end
+            if not reserve or reserve < 0 or reserve > 100 then reserve = 0 end
+            if entry.heading and rewards then addon.Read(rewards.Clear, "nil", row) end
+            if not current() then return end
+            row.statusBaseWidth = math.max(24, row:GetWidth() - 22 - row.questTreeIndent - reserve)
+            if not current() then return end
             if not self:PaintQuestRowStatus(row, entry, engine, current) then return end
             if not writeText(row.title, title) or not writeText(row.note, note) or
                 not write(row, "SetEnabled", not entry.heading) then return end
@@ -1414,11 +1542,41 @@ function UI:RefreshQuests()
                     not write(row, "SetScript", "OnClick", nil) then return end
             else
                 if not write(row.bg, "SetColorTexture", 0.13, 0.16, 0.20, 1) or
-                    not write(row, "SetScript", "OnClick", function() if current() then self:InspectQuest(id) end end) then return end
+                    not write(row, "SetScript", "OnClick", function()
+                        if addon.Read(self.frame.IsShown, "boolean", self.frame) ~= true or not current() or (entry.tree and treeCurrent and addon.Read(treeCurrent, "boolean") ~= true) or not current() then return end
+                        if not entry.tree then
+                            if self.questTreeDungeon == d and self.questTreeRoot == id and self.quest == id then
+                                self.questTreeRoot, self.questTreeDungeon = nil, nil
+                            else self.questTreeRoot, self.questTreeDungeon = id, d end
+                        end
+                        self:InspectQuest(id, true)
+                    end) then return end
             end
             styleRow(row, entry.heading and "section" or "quest", id == self.quest and not entry.heading)
             if not current() then return end
-            offset = self:LayoutRow(row, entry.heading and 32 or 59, offset, current)
+            if type(row.title.SetTextColor) == "function" then
+                local completed = state and state.status == "COMPLETED"
+                if not write(row.title, "SetTextColor", completed and .52 or .92, completed and .62 or .91, completed and .55 or .87) then return end
+            end
+            local complete = row.compact and state and state.status == "COMPLETED"
+            if complete and not row.completedStrike then
+                local ok, texture = pcall(row.CreateTexture, row, nil, "ARTWORK")
+                if not current() then return end
+                if ok then row.completedStrike = texture end
+            end
+            local strike = row.completedStrike
+            if strike then
+                if not write(strike, "Hide") then return end
+                if complete and type(strike.SetColorTexture) == "function" then
+                    local width = addon.Read(row.title.GetStringWidth, "number", row.title) or row.statusBaseWidth - (row.statusInset or 0)
+                    if not current() then return end
+                    width = math.min(row.statusBaseWidth - (row.statusInset or 0), math.max(1, width))
+                    if not write(strike, "SetColorTexture", .5, .65, .55, .65) or not write(strike, "SetSize", width, 1) or
+                        not write(strike, "ClearAllPoints") or not write(strike, "SetPoint", "TOPLEFT", row.title, "TOPLEFT", 0, -9) or
+                        not write(strike, "Show") then return end
+                end
+            end
+            offset = self:LayoutRow(row, entry.heading and 32 or (preparation and 59 or 30), offset, current)
             if not offset then return end
         end
         if #plan.rows == 0 then
@@ -1438,7 +1596,13 @@ function UI:RefreshQuests()
         not write(self.coverage, "ClearAllPoints") or not write(self.coverage, "SetPoint", "TOPLEFT", 288, -coverageY) or
         not write(self.questScroll, "ClearAllPoints") or not write(self.questScroll, "SetPoint", "TOPLEFT", 288, -listY) or
         not write(self.questScroll, "SetHeight", math.max(80, 643 - listY)) then return end
-    for index = n + 1, #self.rows do if not write(self.rows[index], "Hide") then return end end
+    for index = n + 1, #self.rows do
+        local row = self.rows[index]
+        if not write(row, "Hide") then return end
+        local rewards = addon.Clean(addon.QuestListRewards, "table")
+        if rewards then addon.Read(rewards.Clear, "nil", row) end
+        if not current() then return end
+    end
     if not write(self.questList, "SetHeight", math.max(1, offset)) then return end
     local identity = d and (addon.Clean(d.key, "string") or d)
     if not current() then return end

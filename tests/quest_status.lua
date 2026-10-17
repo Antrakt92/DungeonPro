@@ -173,4 +173,45 @@ check("An entry checker painting another texture does not cancel this target's h
     assert(not addon.PaintQuestStatus(t, "UNKNOWN") and not t.shown and not t.atlas)
     assert(other.shown and other.atlas == ready)
 end)
+local function compactTexture()
+    local t=texture()
+    function t:SetTexture(value) self.texture=value; self.atlas=nil end
+    function t:SetVertexColor(r,g,b) self.color={r,g,b} end
+    function t:SetDesaturated(value) self.desaturated=value end
+    return t
+end
+check("Compact quest roles distinguish completion level locks availability and unknown",function()
+    local t=compactTexture()
+    assert(addon.PaintCompactQuestStatus(t,"COMPLETED",nil) and t.shown and t.texture=="Interface\\RaidFrame\\ReadyCheck-Ready")
+    assert(addon.PaintCompactQuestStatus(t,"LOCKED","level") and t.shown and t.color[1]>t.color[2])
+    assert(addon.PaintCompactQuestStatus(t,"AVAILABLE",nil) and t.shown and t.color[1]>t.color[3])
+    assert(addon.PaintCompactQuestStatus(t,"UNKNOWN","requirements") and t.shown and t.color[1]==t.color[2] and t.color[2]==t.color[3] and t.desaturated==true)
+    assert(addon.PaintCompactQuestStatus(t,"AVAILABLE",nil) and t.desaturated==false)
+    assert(addon.PaintCompactQuestStatus(t,"ACTIVE",nil) and t.atlas==active)
+    assert(addon.PaintCompactQuestStatus(t,"READY",nil) and t.atlas==ready)
+end)
+check("Compact status invalidation and unsupported status clear recycled textures",function()
+    local t=compactTexture()
+    assert(addon.PaintCompactQuestStatus(t,"COMPLETED",nil))
+    assert(not addon.PaintCompactQuestStatus(t,"LOCKED","level",function()return false end) and not t.shown)
+    assert(not addon.PaintCompactQuestStatus(t,secret,nil) and not t.shown)
+end)
+check("A late compact tint setter restores the newer quest role color",function()
+    local t=compactTexture();local original=t.SetVertexColor;local armed=true
+    function t:SetVertexColor(r,g,b)
+        if armed then armed=false;assert(addon.PaintCompactQuestStatus(self,"AVAILABLE",nil))end
+        original(self,r,g,b)
+    end
+    assert(not addon.PaintCompactQuestStatus(t,"LOCKED","level"))
+    assert(t.shown and t.color[1]==1 and t.color[2]==1 and t.color[3]==0,"newer available role must retain its yellow tint")
+end)
+check("A late gray desaturation setter preserves the newer colored quest role",function()
+    local t=compactTexture();local original=t.SetDesaturated;local armed=true
+    function t:SetDesaturated(value)
+        if armed then armed=false;assert(addon.PaintCompactQuestStatus(self,"AVAILABLE",nil))end
+        original(self,value)
+    end
+    assert(not addon.PaintCompactQuestStatus(t,"UNKNOWN","requirements"))
+    assert(t.shown and t.desaturated==false,"newer available role must not inherit old gray desaturation")
+end)
 print("Quest status painter checks passed: " .. total .. " (no native-client validation)")

@@ -95,6 +95,10 @@ Level ranges are provisional recommendations.
   planning. Choosing a route does not bypass requirements or confirm availability.
 - World map, optional TomTom and a built-in direction arrow. The arrow points
   toward a coordinate; it does not find paths around terrain or plan transport.
+- Browse compact quest rows with status icons and cached item reward previews.
+  Select a quest to expand its related steps in place, then select any step to
+  read its details without losing the opened list. Completed steps remain visible.
+  Required prerequisites and source-listed story quests are labelled separately.
 - When available, follow the game's next waypoint for a quest in your log.
   It may mark a route point, an entrance or a turn-in. Quest-giver locations
   and preparation steps remain separate.

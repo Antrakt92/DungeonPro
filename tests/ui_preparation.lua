@@ -143,6 +143,9 @@ addon.quests[5].minLevel = 30
 addon.dungeons = { { key = "fixture", name = "Dungeon", minLevel = 10, maxLevel = 30,
     coverage = "reviewed", quests = { 100, 101, 3, 4, 5, 6, 7 } } }
 assert(loadfile("UI/Theme.lua"))("DungeonPro", addon)
+assert(loadfile("UI/QuestStatus.lua"))("DungeonPro", addon)
+assert(loadfile("Core/QuestTree.lua"))("DungeonPro", addon)
+assert(loadfile("UI/QuestListRewards.lua"))("DungeonPro", addon)
 assert(loadfile("UI/Window.lua"))("DungeonPro", addon)
 function methods:SetToplevel(value) self.topLevel=value end
 function methods:Raise() self.raises=(self.raises or 0)+1 end
@@ -159,7 +162,7 @@ local function check(name, fn)
 end
 local function visibleRows()
     local result = {}
-    for _, row in ipairs(ui.rows) do if row.shown and not row.heading then result[#result + 1] = row end end
+    for _, row in ipairs(ui.rows) do if row.shown and not row.heading and not row.questTreeNode then result[#result + 1] = row end end
     return result
 end
 -- Exercise the retained planner grouping model directly; no mode widget is exposed.
@@ -548,8 +551,8 @@ check("Wrapped catalogue, quest and giver text expands cumulative rows without o
     end
     ui.preparation = false; ui:Refresh()
     local first = visibleRows()[1]
-    assert(first.height >= 108 and -first.note.point[3] >= 7 + 72)
-    assert(-visibleRows()[2].point[3] >= first.height + 4)
+    assert(first.height >= 84 and not first.note.shown)
+    assert(-visibleRows()[2].point[3] >= first.height + 2)
     assert(ui.cards[1].height >= 108 and ui.catalog.height >= ui.cards[1].height)
     ui.preparation = true; ui:RefreshQuests(); ui:RefreshDetail()
     local totalHeight, sawLongNote = 0, false
@@ -568,8 +571,8 @@ check("Wrapped catalogue, quest and giver text expands cumulative rows without o
     assert(ui.chainButtons[1].point[3] - ui.chainButtons[2].point[3] >= 81)
     addon.QuestName, addon.DungeonName, addon.quests[2].start.name = questName, dungeonName, giver
     measurement = nil; ui.preparation = false; ui:Refresh(); showDetail(100)
-    assert(visibleRows()[1] == first and first.height == 59 and ui.cards[1].height == 64)
-    assert(first.note.point[3] == -29 and ui.chainButtons[1].height == 34)
+    assert(visibleRows()[1] == first and first.height == 30 and ui.cards[1].height == 64)
+    assert(not first.note.shown and ui.chainButtons[1].height == 34)
 end)
 check("Invalid and restricted text measurements reuse clean geometry safely", function()
     ui.preparation = false; ui:Refresh(); showDetail(100)
@@ -2729,9 +2732,9 @@ do
         addon.ClassName = function() return long end
         measurement = function(fs) return fs.text and fs.text:find(long, 1, true) and 78 or 18 end
         ui:RefreshQuests()
-        assert(ui.rows[2].height >= 114 and -ui.rows[3].point[3] >= -ui.rows[2].point[3] + ui.rows[2].height + 4)
+        assert(ui.rows[2].height == 30 and not ui.rows[2].note.shown and -ui.rows[3].point[3] >= -ui.rows[2].point[3] + ui.rows[2].height + 2)
         addon.ClassName = function() return "Paladin" end; measurement = nil; ui:RefreshQuests()
-        assert(ui.rows[2].height == 59 and ui.rows[2].note.text:find("Paladin", 1, true))
+        assert(ui.rows[2].height == 30 and ui.rows[2].note.text:find("Paladin", 1, true))
         restore()
     end)
     check("Reentrant audience-name reads cannot overwrite the newly rendered dungeon list", function()
@@ -2809,11 +2812,15 @@ check("Optional theme styles the shell controls and recycled row selection witho
     for _, key in ipairs({ "rangeButton", "characterButton" }) do assert(ui[key].themeKind == "control") end
     local row = visibleRows()[1]; local note, callback, height = row.note.text, row.scripts.OnClick, row.height
     callback(row, "LeftButton", false)
-    assert(row.themeSelected and row.note.text == note and row.scripts.OnClick == callback and row.height == height)
+    assert(row.themeSelected and row.note.text == note and type(row.scripts.OnClick)=="function" and row.height == height)
     assert(ui.quest == 100 and ui.source.enabled)
-    local second = visibleRows()[2]; second.scripts.OnClick(second, "LeftButton", false)
-    assert(second.themeSelected and not row.themeSelected)
-    ui:BackQuest(); assert(row.themeSelected and not second.themeSelected)
+    local second = visibleRows()[2]; local firstID,secondID=row.questID,second.questID
+    second.scripts.OnClick(second, "LeftButton", false)
+    local function selected(id)
+        for _,entry in ipairs(visibleRows())do if entry.questID==id then return entry.themeSelected end end
+    end
+    assert(selected(secondID) and not selected(firstID))
+    ui:BackQuest(); assert(selected(firstID) and not selected(secondID))
     ui.preparation = true; ui:RefreshQuests(); ui:RefreshDetail()
     assert(ui.preparationButton==nil)
     for _, current in ipairs(ui.rows) do if current.shown then assert(current.themeKind == (current.heading and "section" or "quest")) end end
@@ -6142,7 +6149,7 @@ check("Quest-list layout and native row state writes stop before touching the ne
         if mode=="script"then method="SetScript"
         elseif mode=="color"then target,method=row.bg,"SetColorTexture"
         elseif mode=="titlePoint"then target,method=row.title,"SetPoint"
-        elseif mode=="notePoint"then target,method=row.note,"SetPoint"
+        elseif mode=="notePoint"then target,method=row.note,"Hide"
         elseif mode=="height"then method="SetHeight"
         elseif mode=="summaryPoint"then target,method=ui.summary,"SetPoint"
         elseif mode=="viewport"then target,method=ui.questScroll,"SetHeight"
@@ -6228,7 +6235,7 @@ check("Native ACTIVE and READY glyphs decorate only quest titles while original 
         assert(row.title.fontSize==17 and row.note.fontSize==14)
         assert(row.note.text:find(addon.L(index==1 and "ACTIVE"or"READY"),1,true))
     end
-    for index=3,6 do local row=ui.rows[index];assert(not(row.statusIcon and row.statusIcon.shown)and row.statusInset==0 and row.title.point[2]==8 and row.title.width==row.statusBaseWidth)end
+    for index=3,6 do local row=ui.rows[index];assert(row.statusIcon and row.statusIcon.shown and row.statusInset==20 and row.title.point[2]==28 and row.title.width==row.statusBaseWidth-20 and not row.note.shown)end
     assert(#f.calls==2)
     ui.rows[2].scripts.OnClick(ui.rows[2],"LeftButton",false);assert(ui.quest==32002 and ui.engine:State(32002).status=="READY")
     f:finish()
@@ -6236,7 +6243,7 @@ end)
 check("Quest glyphs clear on state and heading recycling and never indent note text or dungeon artwork",function()
     local f=statusGlyphFixture();local row=ui.rows[1];local width=row.statusBaseWidth
     f.active[32001]=false;ui:RefreshQuests()
-    assert(row.questID==32001 and not row.statusIcon.shown and row.statusInset==0 and row.title.width==width and row.title.point[2]==8 and row.note.point[2]==8)
+    assert(row.questID==32001 and row.statusIcon.shown and row.statusInset==20 and row.title.width==width-20 and row.title.point[2]==28 and not row.note.shown)
     ui.preparation=true;ui:RefreshQuests();assert(ui.rows[1].heading and not ui.rows[1].statusIcon.shown and ui.rows[1].title.width==width)
     ui.preparation=false;f.active[32001]=true;ui:RefreshQuests();assert(row.statusIcon.shown and row.title.width==width-20)
     ui:RefreshDungeons();for _,card in ipairs(ui.cards)do if card.shown then assert(card.title.point[2]==58 and card.note.point[2]==58)end end
@@ -6263,10 +6270,10 @@ check("Status title width is reduced before natural measurement and long localiz
     end
     for code in pairs(addon.locales)do
         addon.db.locale=code;ui:RefreshQuests();local row=ui.rows[1]
-        assert(row.height==108 and row.title.fontSize==17 and row.note.fontSize==14)
+        assert(row.height==84 and row.title.fontSize==17 and row.note.fontSize==14)
         assert(-ui.rows[2].point[3]>=-row.point[3]+row.height and row.note.point[2]==8)
     end
-    assert(#widths>=10);measurement=nil;addon.db.locale=locale;addon.QuestName=f.name;ui:RefreshQuests();assert(ui.rows[1].height==59)
+    assert(#widths>=10);measurement=nil;addon.db.locale=locale;addon.QuestName=f.name;ui:RefreshQuests();assert(ui.rows[1].height==30)
     f:finish()
 end)
 check("Glyph atlas getter and native setter reentry preserve newer pooled status rows and fresh callbacks",function()
@@ -6313,10 +6320,10 @@ check("Glyph caller rejects changed producer checker engine and source ownership
         f:finish()
     end
 end)
-check("Status width getter and before-original width setters cannot leave a newer ordinary row with glyph indentation",function()
+check("Status width getters and before-original setters preserve the newer compact role and indentation",function()
     for _,mode in ipairs({"getter","setterBefore"})do
         local f=statusGlyphFixture();local row=ui.rows[1];local width=row.statusBaseWidth;local armed=true
-        local object,method=row.title,mode=="getter"and"GetWidth"or"SetWidth";local original=object[method]
+        local object,method=mode=="getter"and row or row.title,mode=="getter"and"GetWidth"or"SetWidth";local original=object[method]
         if mode=="getter"then row.title:SetWidth(width);row.statusBaseWidth=nil end
         object[method]=function(self,...)
             local value
@@ -6326,8 +6333,8 @@ check("Status width getter and before-original width setters cannot leave a newe
             return value
         end
         ui:RefreshQuests();object[method]=original
-        assert(not armed and row.questID==32003 and row.title.width==width and row.statusInset==0 and not row.statusIcon.shown)
-        assert(row.title.point[2]==8 and row.note.point[2]==8);row.scripts.OnClick();assert(ui.quest==32003)
+        assert(not armed and row.questID==32003 and row.title.width==width-20 and row.statusInset==20 and row.statusIcon.shown)
+        assert(row.title.point[2]==28 and not row.note.shown);row.scripts.OnClick();assert(ui.quest==32003)
         f:finish()
     end
 end)
@@ -9072,6 +9079,107 @@ check("The sole giver footer icon replaces both header actions and selects guide
         assert(starts==(mapOnly and 0 or 1)and maps==(mapOnly and 1 or 0)and ui.frame.shown and f.hidden==0)
         giver.place.mapID=nil
         ui.giver.scripts.OnClick();assert(starts+maps==1,"stale giver coordinates cannot reuse the icon action")
+        f:finish()
+    end
+end)
+local function inlineTreeFixture()
+    local f={dungeon=ui.dungeon,quest=ui.quest,context=addon.Context,history=ui.detailHistory,root=ui.questTreeRoot,treeDungeon=ui.questTreeDungeon}
+    for id=43000,43004 do addon.quests[id]={id=id,minLevel=1,requirementsKnown=true}end
+    addon.quests[43000].requires={{ids={43001,43002},mode="completed"}}
+    addon.quests[43000].storyline={43001,43000,43003}
+    addon.Context=function()return {level=60,active=function()return false end,completed=function(id)return id==43001 end}end
+    ui.dungeon={key="inline-tree",name="Inline tree",minLevel=1,maxLevel=60,quests={43000,43004}}
+    ui.quest,ui.questTreeRoot,ui.questTreeDungeon=nil,nil,nil;ui.preparation=false;ui.detailHistory={};ui.frame:Show();ui:Refresh()
+    function f:row(id,branch)
+        for _,row in ipairs(ui.rows)do if row.shown and row.questID==id and row.questTreeNode==branch then return row end end
+    end
+    function f:finish()
+        for id=43000,43004 do addon.quests[id]=nil end
+        ui.dungeon,ui.quest,ui.detailHistory,ui.questTreeRoot,ui.questTreeDungeon=self.dungeon,self.quest,self.history,self.root,self.treeDungeon
+        addon.Context=self.context;ui:Refresh()
+    end
+    return f
+end
+check("Compact inline chains preserve the root while inspecting completed parent sibling and target",function()
+    local f=inlineTreeFixture();local root=f:row(43000,false)
+    assert(root.height==30 and not root.note.shown and root.title.text==addon.QuestName(43000))
+    root.scripts.OnClick();assert(ui.quest==43000 and ui.questTreeRoot==43000)
+    local parent=f:row(43001,true);assert(parent and parent.questTreeRelation=="required"and parent.statusIcon.shown and parent.completedStrike.shown)
+    assert(parent.title.textColor[1]<.7);ui:ApplyTheme();assert(parent.title.textColor[1]<.7)
+    parent.scripts.OnClick();assert(ui.quest==43001 and ui.questTreeRoot==43000 and f:row(43002,true))
+    f:row(43002,true).scripts.OnClick();assert(ui.quest==43002 and ui.questTreeRoot==43000)
+    f:row(43000,false).scripts.OnClick();assert(ui.quest==43000 and ui.questTreeRoot==43000 and f:row(43001,true)and #ui.detailHistory>=3)
+    f:row(43000,false).scripts.OnClick();assert(ui.questTreeRoot==nil and not f:row(43001,true))
+    f:finish()
+end)
+check("Inline OR and story context remain distinct and status reasons stay available on compact-row hover",function()
+    local f=inlineTreeFixture();f:row(43000,false).scripts.OnClick()
+    local required,story=f:row(43002,true),f:row(43003,true)
+    assert(required and story and required.questTreeRelation=="required"and story.questTreeRelation=="story")
+    assert(required.note.text:find(addon.L("REQUIREMENT_NOTICE"),1,true)and story.note.text:find(addon.L("STORY_GROUP_NOTICE"),1,true))
+    local headings={};for _,row in ipairs(ui.rows)do if row.shown and row.heading then headings[row.title.text]=true end end
+    assert(headings[addon.L("CHAIN")]and headings[addon.L("STORY")]and headings[addon.L("REQUIREMENT_COMPLETE")])
+    local previous=GameTooltip;local tip={}
+    function tip:SetOwner(owner)self.owner=owner end;function tip:IsOwned(owner)return self.owner==owner end
+    function tip:SetText(value)self.text=value end;function tip:AddLine(value)self.note=value end
+    function tip:Show()self.shown=true end;function tip:Hide()self.shown=false end
+    GameTooltip=tip;story.scripts.OnEnter();assert(tip.shown and tip.note==story.note.text and not story.note.shown)
+    story.scripts.OnLeave();assert(not tip.shown);GameTooltip=previous
+    local old=required.scripts.OnClick;ui.frame:Hide();old();assert(ui.quest==43000);ui.frame:Show()
+    f:row(43004,false).scripts.OnClick();old();assert(ui.quest==43004 and ui.questTreeRoot==43004)
+    f:finish()
+end)
+check("Inline source invalidation during title hydration retires old owned hierarchy without hiding a newer render",function()
+    local f=inlineTreeFixture();f:row(43000,false).scripts.OnClick()
+    local getter,armed=addon.QuestName,true
+    addon.QuestName=function(id)
+        if armed and id==43001 then armed=false;addon.quests[43000].requires=nil;addon.quests[43000].storyline={43000,43003}end
+        return getter(id)
+    end
+    ui:RefreshQuests();assert(not armed and not f:row(43001,true),"an invalidated required branch cannot remain visibly published")
+    addon.QuestName=getter;ui:RefreshQuests();assert(f:row(43003,true)and not f:row(43001,true))
+    armed=true
+    addon.QuestName=function(id)
+        if armed and id==43003 then armed=false;ui.questTreeRoot=43004;ui:RefreshQuests()end
+        return getter(id)
+    end
+    ui:RefreshQuests();assert(not armed and ui.questTreeRoot==43004 and f:row(43004,false).shown)
+    addon.QuestName=getter;f:finish()
+end)
+check("Compact reward space is reserved before wrapped title measurement without revealing a second note line",function()
+    local f=inlineTreeFixture();local rewards=addon.QuestListRewards;local measured=0
+    addon.QuestListRewards={Paint=function()return 70 end,Clear=function()end}
+    measurement=function(fs)
+        for _,row in ipairs(ui.rows)do if fs==row.title and row.questID==43000 then
+            assert(fs.width==row:GetWidth()-22-70-(row.statusInset or 0));measured=measured+1;return 54
+        end end
+        return 18
+    end
+    ui:RefreshQuests();local row=f:row(43000,false)
+    assert(measured>0 and row.height==66 and not row.note.shown and row.title.fontSize==17)
+    measurement=nil;addon.QuestListRewards=rewards;f:finish()
+end)
+check("Late expired-tree cleanup visibility and handlers cannot hide or disable a newer reused story row",function()
+    for _,method in ipairs({"Hide","SetScript"})do
+        local f=inlineTreeFixture();f:row(43000,false).scripts.OnClick()
+        local parent=f:row(43001,true);local original=parent[method];local armed=true
+        local getter,source=addon.QuestName,true
+        parent[method]=function(self,...)
+            if armed and not source and(method=="Hide"or ((...)=="OnClick"and select(2,...)==nil))then
+                armed=false;ui:RefreshQuests()
+            end
+            return original(self,...)
+        end
+        addon.QuestName=function(id)
+            if source and id==43001 then
+                source=false;addon.quests[43000].requires=nil;addon.quests[43000].storyline={43000,43003,43004}
+            end
+            return getter(id)
+        end
+        ui:RefreshQuests();addon.QuestName=getter;parent[method]=original
+        local newer=f:row(43004,true)
+        assert(not armed and newer==parent and newer.shown and type(newer.scripts.OnClick)=="function",method)
+        newer.scripts.OnClick();assert(ui.quest==43004 and ui.questTreeRoot==43000)
         f:finish()
     end
 end)

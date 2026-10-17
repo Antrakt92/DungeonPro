@@ -22,6 +22,7 @@ def main():
     for offset in range(0, len(syntax_paths), 32):
         run(luac, "-p", *syntax_paths[offset:offset + 32])
     run(lua, "tests/planner.lua")
+    run(lua, "tests/quest_tree.lua")
     run(lua, "tests/context.lua")
     run(lua, "tests/catalog_contexts.lua")
     run(lua, "tests/client_ui.lua")
@@ -30,8 +31,10 @@ def main():
     run(lua, "tests/language_hover.lua")
     run(lua, "tests/search.lua")
     run(lua, "tests/ui_preparation.lua")
+    run(lua, "tests/quest_tree_ui.lua")
     run(lua, "tests/theme.lua")
     run(lua, "tests/quest_status.lua")
+    run(lua, "tests/quest_list_rewards.lua")
     run(lua, "tests/quest_payment.lua")
     run(lua, "tests/held_quest_payment.lua")
     run(lua, "tests/held_quest_waypoint.lua")
