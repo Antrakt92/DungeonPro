@@ -8706,4 +8706,43 @@ check("Planner owns normal top-level focus without changing another window or it
     f.Raise=raise;ui.Fit,ui.Refresh=savedFit,savedRefresh
 end)
 
+check("Copy opening geometry cannot scroll a newly selected quest or replacement scroll owner",function()
+    local saved={quest=ui.quest,history=ui.detailHistory,refresh=ui.RefreshDetail,scroll=ui.detailScroll,detail=ui.detail}
+    for _,mode in ipairs({"quest","scroll","getter"})do
+        ui.RefreshDetail=saved.refresh;ui.detailScroll=saved.scroll;showDetail(1);ui:CloseCopyLink()
+        local detail,scroll=ui.detail,ui.detailScroll
+        local content,viewport=detail.GetHeight,scroll.GetHeight
+        local armed=false;local newer;local writes=scroll.scrollWrites
+        local function change()
+            if not armed then return end
+            armed=false
+            if mode=="quest"then showDetail(2);ui.detailScroll:SetVerticalScroll(7)
+            elseif mode=="scroll"then
+                newer=setmetatable({verticalScroll=7,scripts={}},getmetatable(scroll));ui.detailScroll=newer
+            else scroll.GetHeight=function()return 425 end end
+        end
+        if mode=="scroll"then
+            scroll.GetHeight=function(region)change();return viewport(region)end
+        else detail.GetHeight=function(region)if armed then change();return 2000 end;return content(region)end end
+        ui.RefreshDetail=function(self)saved.refresh(self);armed=true end
+        assert(not ui:CopyLink(1))
+        ui.RefreshDetail=saved.refresh;detail.GetHeight=content;scroll.GetHeight=viewport
+        if mode=="quest"then
+            assert(ui.quest==2 and ui.detailScroll.verticalScroll==7 and not ui.copy.shown and not ui.copy.focused)
+        elseif mode=="scroll"then
+            assert(ui.detailScroll==newer and newer.verticalScroll==7 and newer.scrollWrites==nil and not ui.copy.focused)
+        else assert(scroll.scrollWrites==writes and not ui.copy.focused)end
+        ui.detailScroll=scroll;ui:CloseCopyLink()
+    end
+    ui.RefreshDetail=saved.refresh;ui.detailScroll=saved.scroll;ui.quest,ui.detailHistory=saved.quest,saved.history;ui:Refresh()
+end)
+check("Current copy opening still scrolls to its drawer and focuses the same visible edit box",function()
+    local quest,history=ui.quest,ui.detailHistory
+    showDetail(1);ui.detailScroll:SetVerticalScroll(17)
+    assert(ui:CopyLink(1) and ui.copy.focused and ui.copy.shown)
+    assert(ui.copy.text=="https://www.wowhead.com/forever/quest=1")
+    assert(ui.detailScroll.verticalScroll==math.max(0,ui.detail:GetHeight()-ui.detailScroll:GetHeight()))
+    ui:EscapeCopyLink();assert(not ui.copy.shown and not ui.copy.focused)
+    ui.quest,ui.detailHistory=quest,history;ui:Refresh()
+end)
 print("Preparation UI modeled checks passed: " .. total .. " (no native layout validation)")

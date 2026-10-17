@@ -502,13 +502,29 @@ function UI:CopyLink(id)
     self.copyQuest = id
     self.copy:SetText("https://www.wowhead.com/forever/quest=" .. id)
     self:RefreshDetail()
-    if self.quest ~= id or self.copyQuest ~= id or addon.Read(self.copy.IsShown, "boolean", self.copy) ~= true then return false end
-    local content = addon.Read(self.detail.GetHeight, "number", self.detail)
-    local viewport = addon.Read(self.detailScroll.GetHeight, "number", self.detailScroll)
-    if content and viewport and content >= 0 and viewport > 0 then self.detailScroll:SetVerticalScroll(math.max(0, content - viewport)) end
-    if self.quest ~= id or self.copyQuest ~= id then return false end
-    self.copy:SetFocus(); self.copy:HighlightText()
-    return true
+    local frame, box, detail, scroll = self.frame, self.copy, self.detail, self.detailScroll
+    local dungeon, engine, character = self.dungeon, self.engine, addon.char
+    local revision, generation, checker = self.copyRevision, self.rewardGeneration, issecretvalue
+    local shown, contentGetter, viewportGetter = box.IsShown, detail.GetHeight, scroll.GetHeight
+    local scrollSetter, focus, highlight = scroll.SetVerticalScroll, box.SetFocus, box.HighlightText
+    local function current()
+        return addon.UI == self and self.frame == frame and self.copy == box and self.detail == detail and
+            self.detailScroll == scroll and self.quest == id and self.copyQuest == id and self.dungeon == dungeon and
+            self.engine == engine and addon.char == character and self.copyRevision == revision and
+            self.rewardGeneration == generation and issecretvalue == checker and box.IsShown == shown and
+            detail.GetHeight == contentGetter and scroll.GetHeight == viewportGetter and
+            scroll.SetVerticalScroll == scrollSetter and box.SetFocus == focus and box.HighlightText == highlight
+    end
+    if not current() or addon.Read(shown, "boolean", box) ~= true or not current() then return false end
+    local content = addon.Read(contentGetter, "number", detail)
+    if not current() then return false end
+    local viewport = addon.Read(viewportGetter, "number", scroll)
+    if not current() then return false end
+    if content and viewport and content >= 0 and viewport > 0 then
+        if not pcall(scrollSetter, scroll, math.max(0, content - viewport)) or not current() then return false end
+    end
+    if not pcall(focus, box) or not current() then return false end
+    return pcall(highlight, box) and current()
 end
 
 function UI:MakeRow(parent, pool, index, height)

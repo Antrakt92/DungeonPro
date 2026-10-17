@@ -2,6 +2,8 @@
 
 ## 0.1.0 - 16-Oct-2026 — Development preview
 
+- Fixed copying a quest link unexpectedly scrolling a different quest after the selection changes.
+
 - Improved cleanup of guide-created map pins when a navigation destination changes.
 
 - Improved planner window focus and the opaque background when other addon windows are open.
