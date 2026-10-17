@@ -1331,4 +1331,58 @@ check("Rejected native ownership cleanup preserves a newer manual pin or guide",
         end
     end
 end)
+check("Float32 native coordinate readback still identifies the old owned route pin during replacement", function()
+    C_Map.SetUserWaypoint = function(p)
+        nativeCalls = nativeCalls + 1
+        if nativeCalls == 1 then
+            current = { uiMapID = p.uiMapID, position = { x = .2750000059604645, y = .47999998927116394 } }
+        else current = p end
+        return true
+    end
+    local first = { mapID = 1, x = 27.5, y = 48 }
+    local second = { mapID = 2, x = 25, y = 35 }
+    assert(nav.Start({ id = 201, kind = "visit", place = first }) and nativeCalls == 1 and current.uiMapID == 1)
+    assert(nav.Start({ id = 202, kind = "visit", place = second }))
+    assert(nativeCalls == 2 and clears == 1 and current.uiMapID == 2 and current.position.x == .25 and current.position.y == .35,
+        "float32 readback must not orphan a successful old pin and block its replacement")
+    nav.Stop(); assert(clears == 2 and current == nil)
+    nav.Stop(); assert(clears == 2)
+end)
+check("Nearby manual pins outside native float precision remain untouched", function()
+    for _, point in ipairs({{uiMapID=1,position={x=.275001,y=.48}},
+        {uiMapID=1,position={x=.275,y=.480001}}, {uiMapID=2,position={x=.275,y=.48}}})do
+        reset()
+        assert(nav.Start({ id = 201, kind = "visit", place = {mapID=1,x=27.5,y=48} }))
+        current=point
+        assert(nav.Start({id=202,kind="visit",place={mapID=2,x=25,y=35}}))
+        nav.Stop();assert(nativeCalls==1 and clears==0 and current==point,
+            "coordinate tolerance must not clear a distinct manual location or map")
+    end
+end)
+check("Explicitly false or throwing native setters never gain ownership from a matching readback", function()
+    for _, failure in ipairs({ "false", "throw" }) do
+        reset()
+        C_Map.SetUserWaypoint = function(p)
+            nativeCalls = nativeCalls + 1; current = p
+            if failure == "throw" then error("setter failed") end
+            return false
+        end
+        assert(nav.Start(action) and nativeCalls == 1 and current)
+        nav.Stop(); assert(clears == 0 and current, "a failure signal must not authorize native pin cleanup")
+    end
+end)
+check("Repeated same-map and cross-map routes release rounded owned pins and Stop clears the final pin", function()
+    C_Map.SetUserWaypoint = function(p)
+        nativeCalls=nativeCalls+1
+        current={uiMapID=p.uiMapID,position={x=p.position.x+.00000000596,y=p.position.y-.00000001073}}
+        return true
+    end
+    local places={{mapID=1,x=27.5,y=48},{mapID=1,x=31.2,y=52.7},{mapID=2,x=25,y=35},{mapID=1,x=60,y=70}}
+    for index,place in ipairs(places)do
+        assert(nav.Start({id=210+index,kind="visit",place=place}))
+        assert(nativeCalls==index and clears==index-1 and current.uiMapID==place.mapID)
+    end
+    nav.Stop();assert(clears==#places and current==nil)
+    nav.Stop();assert(clears==#places)
+end)
 print("Navigation modeled checks passed: " .. total .. " (no native map validation)")

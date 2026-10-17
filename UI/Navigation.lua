@@ -348,7 +348,9 @@ local function releaseNativePoint(pin, generation)
     local x, y = pos and addon.Clean(pos.x, "number"), pos and addon.Clean(pos.y, "number")
     if navigationGeneration == generation and not nativePoint and C_Map == owner and issecretvalue == checker and
         addon.Clean(owner.GetUserWaypoint, "function") == getter and addon.Clean(owner.ClearUserWaypoint, "function") == clearer and
-        map == pin.mapID and x == pin.x and y == pin.y then
+        -- Native vector readback may round normalized coordinates to float precision.
+        map == pin.mapID and x and y and x >= 0 and x <= 1 and y >= 0 and y <= 1 and
+        math.abs(x - pin.x) <= 0.0000001 and math.abs(y - pin.y) <= 0.0000001 then
         pcall(clearer)
     end
 end
