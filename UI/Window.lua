@@ -727,7 +727,22 @@ function UI:RefreshDetail()
         for _, row in ipairs(buttons) do row:Hide(); row:SetEnabled(false); row:SetScript("OnClick", nil) end
     end
     self.back:SetEnabled(#self.detailHistory > 0 or self:CanReturnToOverview())
-    if self.portrait then self.portrait:Hide(); self.portrait:SetTexture(nil) end
+    local function portraitCardCurrent()
+        return self.quest == renderQuest and self.dungeon == renderDungeon and self.engine == renderEngine and
+            addon.char == renderCharacter and self.rewardGeneration == rewardGeneration
+    end
+    for _, field in ipairs({ "portrait", "giverPortrait" }) do
+        local texture = self[field]
+        if texture then
+            texture:Hide()
+            if not self.portraitRenderBusy then
+                self.portraitRenderBusy = true
+                pcall(texture.SetTexture, texture, nil)
+                self.portraitRenderBusy = nil
+                if not portraitCardCurrent() then return end
+            end
+        end
+    end
     if self.overviewArt then self.overviewArt:Hide() end
     self.action = nil
     self.map:SetEnabled(false); self.guide:SetEnabled(false)
@@ -833,24 +848,82 @@ function UI:RefreshDetail()
         end
         local offer = addon.Read(addon.CurrentOffer, "table", id)
         if offer and addon.Clean(offer.offeredNow, "boolean") == true then line(addon.L("OFFERED_NOW")) end
-        local portrait = addon.Read(addon.DialoguePortrait, "table", id) or
-            addon.Read(addon.QuestPortrait, "table", id)
-        local displayID = portrait and addon.Clean(portrait.hidden, "boolean") ~= true and
-            addon.Clean(portrait.displayID, "number")
-        if displayID and displayID > 0 and displayID % 1 == 0 and
-            type(SetPortraitTextureFromCreatureDisplayID) == "function" then
-            if not self.portrait then
-                self.portrait = self.detail:CreateTexture(nil, "ARTWORK")
-                self.portrait:SetSize(64, 64)
-                self.portrait:Hide()
+        local portraitSetter, portraitChecker = addon.Clean(SetPortraitTextureFromCreatureDisplayID, "function"), issecretvalue
+        local function renderPortrait(field, displayID, caption, current)
+            if not displayID or displayID <= 0 or displayID > 4294967295 or displayID % 1 ~= 0 or self.portraitRenderBusy then return true end
+            local setter = portraitSetter
+            if not setter then return true end
+            local texture = self[field]
+            if not texture then
+                texture = self.detail:CreateTexture(nil, "ARTWORK"); texture:SetSize(64, 64); texture:Hide()
+                self[field] = texture
             end
-            self.portrait:ClearAllPoints()
-            local rendered = pcall(SetPortraitTextureFromCreatureDisplayID, self.portrait, displayID)
+            texture:ClearAllPoints()
+            self.portraitRenderBusy = true
+            local rendered = pcall(setter, texture, displayID)
+            self.portraitRenderBusy = nil
+            if not portraitCardCurrent() or not current() then return false end
+            if SetPortraitTextureFromCreatureDisplayID ~= setter then rendered = false end
             if rendered then
-                line(addon.L("QUEST_PORTRAIT"))
-                self.portrait:SetPoint("TOPLEFT", 4, -y); self.portrait:Show()
-                y = y + 64 + 8
-            else self.portrait:SetTexture(nil) end
+                line(caption)
+                texture:SetPoint("TOPLEFT", 4, -y); texture:Show(); y = y + 64 + 8
+            else
+                self.portraitRenderBusy = true; pcall(texture.SetTexture, texture, nil); self.portraitRenderBusy = nil
+                if not portraitCardCurrent() or not current() then return false end
+            end
+            return true
+        end
+        local dialoguePortrait, questPortrait = addon.DialoguePortrait, addon.QuestPortrait
+        local portrait = addon.Read(dialoguePortrait, "table", id)
+        if not portraitCardCurrent() then return end
+        if not portrait then portrait = addon.Read(questPortrait, "table", id) end
+        if not portraitCardCurrent() then return end
+        local displayID = portrait and addon.Clean(portrait.hidden, "boolean") ~= true and addon.Clean(portrait.displayID, "number")
+        if not renderPortrait("portrait", displayID, addon.L("QUEST_PORTRAIT"), function()
+            return addon.DialoguePortrait == dialoguePortrait and addon.QuestPortrait == questPortrait and issecretvalue == portraitChecker
+        end) then return end
+        local start = addon.Clean(q.start, "table")
+        local producer = addon.GiverPortrait
+        local fieldTypes = { npcID = "number", objectID = "number", itemID = "number", dropNPCID = "number",
+            creatureDisplayID = "number", portraitSource = "string", name = "string", mapID = "number", x = "number", y = "number", zoneName = "string" }
+        local function sourceSnapshot()
+            local values = {}
+            for field, kind in pairs(fieldTypes) do
+                local value = start and rawget(start, field)
+                if type(portraitChecker) == "function" and addon.Read(portraitChecker, "boolean", value) ~= false then return nil end
+                if value ~= nil then
+                    value = addon.Clean(value, kind)
+                    if value == nil then return nil end
+                    values[field] = value
+                end
+            end
+            return values
+        end
+        local sourceValues = sourceSnapshot()
+        local function sourceCurrent()
+            if not portraitCardCurrent() or addon.quests[id] ~= q or q.start ~= start or addon.GiverPortrait ~= producer or
+                SetPortraitTextureFromCreatureDisplayID ~= portraitSetter or issecretvalue ~= portraitChecker then return false end
+            local values = sourceSnapshot()
+            if not sourceValues or not values then return false end
+            for field in pairs(fieldTypes) do if sourceValues[field] ~= values[field] then return false end end
+            return portraitCardCurrent()
+        end
+        if not portraitCardCurrent() then return end
+        local npcID = sourceValues and sourceValues.npcID
+        if npcID and npcID > 0 and npcID <= 4294967295 and npcID % 1 == 0 and
+            not sourceValues.objectID and not sourceValues.itemID and not sourceValues.dropNPCID then
+            local reference = addon.Read(producer, "table", start)
+            if not sourceCurrent() then return end
+            local referenceNPC = reference and addon.Clean(rawget(reference, "npcID"), "number")
+            local referenceDisplay = reference and addon.Clean(rawget(reference, "displayID"), "number")
+            local referenceSource = reference and addon.Clean(rawget(reference, "source"), "string")
+            if referenceNPC == npcID and referenceDisplay == sourceValues.creatureDisplayID and
+                referenceSource and referenceSource == sourceValues.portraitSource then
+                local name = addon.Clean(rawget(reference, "name"), "string")
+                if not name or #name > 1024 or not name:find("%S") then name = giverName(start) end
+                if not sourceCurrent() then return end
+                if not renderPortrait("giverPortrait", referenceDisplay, addon.L("GIVER_REFERENCE_PORTRAIT", name), sourceCurrent) then return end
+            end
         end
         if addon.Clean(q.repeatable, "boolean") == true then line(addon.L("REPEATABLE")) end
         if state.reason then

@@ -3807,4 +3807,109 @@ check("Faction detail labels localize deduplicated recorded audiences and clear 
     addon.db.locale=locale;addon.quests[25002],addon.quests[25003]=nil,nil
     ui.quest,ui.dungeon=quest,dungeon;ui:Refresh()
 end)
+local function giverPortraitFixture()
+    local quest,dungeon=ui.quest,ui.dungeon
+    local producer,journal,dialogue,setter=addon.GiverPortrait,addon.QuestPortrait,addon.DialoguePortrait,SetPortraitTextureFromCreatureDisplayID
+    addon.quests[26001]={id=26001,minLevel=1,requirementsKnown=true,start={npcID=4001,creatureDisplayID=5001,name="Reference One",portraitSource="https://www.wowhead.com/forever/npc=4001"}}
+    addon.quests[26002]={id=26002,minLevel=1,requirementsKnown=true,start={npcID=4002,creatureDisplayID=5002,name="Reference Two",portraitSource="https://www.wowhead.com/forever/npc=4002"}}
+    addon.GiverPortrait=function(place)return{npcID=place.npcID,displayID=place.creatureDisplayID,source=place.portraitSource,name=place.name}end
+    addon.QuestPortrait,addon.DialoguePortrait=nil,nil
+    SetPortraitTextureFromCreatureDisplayID=function(texture,id)texture:SetTexture("display:"..id)end
+    return function()
+        addon.GiverPortrait,addon.QuestPortrait,addon.DialoguePortrait,SetPortraitTextureFromCreatureDisplayID=producer,journal,dialogue,setter
+        addon.quests[26001],addon.quests[26002]=nil,nil;ui.quest,ui.dungeon=quest,dungeon;ui:Refresh()
+    end
+end
+check("Explicit sourced start NPC has its own measured reference portrait distinct from native journal artwork",function()
+    local restore=giverPortraitFixture()
+    addon.QuestPortrait=function()return{displayID=6001}end
+    measurement=function(fs)if fs.text==addon.L("GIVER_REFERENCE_PORTRAIT","Reference One")then return 56 end;return 18 end
+    showDetail(26001)
+    assert(ui.portrait.shown and ui.portrait.texture=="display:6001")
+    assert(ui.giverPortrait~=ui.portrait and ui.giverPortrait.shown and ui.giverPortrait.texture=="display:5001")
+    assert(ui.giverPortrait.width==64 and ui.giverPortrait.height==64 and not ui.giverPortrait.scripts.OnClick)
+    assert(detailHas(addon.L("GIVER_REFERENCE_PORTRAIT","Reference One")))
+    assert(-ui.giverPortrait.point[3]>=-ui.portrait.point[3]+64+8+56+8)
+    local before=ui.engine:State(26001).status
+    assert(before=="AVAILABLE" and ui.action and ui.action.id==26001)
+    addon.DialoguePortrait=function()return{hidden=true,displayID=6002}end
+    showDetail(26001)
+    assert(not ui.portrait.shown and ui.giverPortrait.shown and not detailHas(addon.L("QUEST_PORTRAIT")))
+    measurement=nil;restore()
+end)
+check("Reference portraits recycle across quests and ten locales without using finish alternative item or object identities",function()
+    local restore=giverPortraitFixture();local locale=addon.db.locale
+    showDetail(26001);local texture=ui.giverPortrait
+    for code in pairs(addon.locales)do
+        addon.db.locale=code;showDetail(26001)
+        assert(detailHas(addon.L("GIVER_REFERENCE_PORTRAIT","Reference One")) and ui.giverPortrait==texture)
+    end
+    local q=addon.quests[26001];local start=q.start
+    q.finish,q.startAlternatives=start,{start}
+    for _,value in ipairs({false,{itemID=10,dropNPCID=4001,creatureDisplayID=5001},{objectID=10,npcID=4001,creatureDisplayID=5001},{npcID=4001}})do
+        q.start=value or nil;showDetail(26001)
+        assert(not texture.shown and texture.texture==nil and not detailHas(addon.L("GIVER_REFERENCE_PORTRAIT","Reference One")))
+    end
+    q.start=start;showDetail(26001);assert(texture.shown)
+    ui.quest=nil;ui:RefreshDetail();assert(not texture.shown and texture.texture==nil)
+    addon.db.locale=locale;restore()
+end)
+check("Missing malformed restricted and throwing portrait capabilities omit the source image without changing quest state",function()
+    local restore=giverPortraitFixture();local producer=addon.GiverPortrait
+    showDetail(26001);local texture=ui.giverPortrait
+    for _,fn in ipairs({false,function()error("cold")end,function()return{npcID=4001,displayID="5001",source="wrong"}end})do
+        addon.GiverPortrait=fn or nil;showDetail(26001)
+        assert(not texture.shown and texture.texture==nil and ui.engine:State(26001).status=="AVAILABLE")
+    end
+    addon.GiverPortrait=producer
+    local checker=issecretvalue;local restricted={}
+    issecretvalue=function(v)return v==restricted end
+    addon.GiverPortrait=function()return{npcID=4001,displayID=restricted,source=addon.quests[26001].start.portraitSource}end
+    showDetail(26001);assert(not texture.shown)
+    issecretvalue=checker;addon.GiverPortrait=producer
+    SetPortraitTextureFromCreatureDisplayID=function(t)t:SetTexture("partial");error("no image")end
+    showDetail(26001);assert(not texture.shown and texture.texture==nil and not ui.portraitRenderBusy)
+    SetPortraitTextureFromCreatureDisplayID=nil;showDetail(26001);assert(not texture.shown)
+    restore()
+end)
+check("Reentrant reference rendering cannot publish an older card or overwrite a newer same-card generation",function()
+    local restore=giverPortraitFixture()
+    for _,destination in ipairs({26002,26001})do
+        local armed=true
+        SetPortraitTextureFromCreatureDisplayID=function(t,id)
+            if armed then armed=false;showDetail(destination)end
+            t:SetTexture("old opaque:"..id)
+        end
+        showDetail(26001)
+        assert(not armed and ui.quest==destination and detailHas("Quest "..destination))
+        assert(not ui.giverPortrait.shown and not ui.portraitRenderBusy)
+        assert(not detailHas(addon.L("GIVER_REFERENCE_PORTRAIT","Reference One")))
+        SetPortraitTextureFromCreatureDisplayID=function(t,id)t:SetTexture("recovered:"..id)end
+        ui:RefreshDetail();assert(ui.giverPortrait.shown and ui.giverPortrait.texture=="recovered:"..(destination==26001 and 5001 or 5002))
+    end
+    restore()
+end)
+check("Source portrait metadata and helper changes during native rendering invalidate the old image and recover freshly",function()
+    local restore=giverPortraitFixture();local q=addon.quests[26001];local producer=addon.GiverPortrait
+    for _,mutate in ipairs({function()q.start.creatureDisplayID=5003 end,function()q.start.portraitSource=q.start.portraitSource.."/changed"end,
+        function()addon.GiverPortrait=function(p)return producer(p)end end,function()q.start={npcID=4001}end})do
+        q.start={npcID=4001,creatureDisplayID=5001,name="Reference One",portraitSource="https://www.wowhead.com/forever/npc=4001"};addon.GiverPortrait=producer
+        local armed=true;SetPortraitTextureFromCreatureDisplayID=function(t,id)if armed then armed=false;mutate()end;t:SetTexture("opaque:"..id)end
+        showDetail(26001);assert(not armed and not ui.giverPortrait.shown)
+        SetPortraitTextureFromCreatureDisplayID=function(t,id)t:SetTexture("fresh:"..id)end
+        ui:RefreshDetail()
+        assert(ui.giverPortrait.shown==(q.start.creatureDisplayID~=nil))
+    end
+    restore()
+end)
+check("Native journal portrait rendering also rejects reentrant old-card publication",function()
+    local restore=giverPortraitFixture();addon.GiverPortrait=nil
+    addon.QuestPortrait=function(id)return{displayID=id==26001 and 6001 or 6002}end
+    local armed=true;SetPortraitTextureFromCreatureDisplayID=function(t,id)if armed then armed=false;showDetail(26002)end;t:SetTexture("opaque:"..id)end
+    showDetail(26001)
+    assert(ui.quest==26002 and not ui.portrait.shown and detailHas("Quest 26002") and not detailHas(addon.L("QUEST_PORTRAIT")))
+    SetPortraitTextureFromCreatureDisplayID=function(t,id)t:SetTexture("fresh:"..id)end
+    ui:RefreshDetail();assert(ui.portrait.shown and ui.portrait.texture=="fresh:6002")
+    restore()
+end)
 print("Preparation UI modeled checks passed: " .. total .. " (no native layout validation)")

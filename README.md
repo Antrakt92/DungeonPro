@@ -71,10 +71,11 @@ Level ranges are provisional recommendations.
 - Expand reported positions when a giver has several sourced points, then choose
   a point to visit. Movement and quest phases may affect which position is current.
 - Quest text saved when you open the quest at its giver. Complete unseen quest
-  descriptions and verified quest-giver portraits are not yet included.
+  descriptions are not yet included.
 - Optional quest portraits from the current offer or selected quest log entry,
-  when supplied by the client. These are journal portraits, not verified
-  photographs of each NPC.
+  when supplied by the client.
+- Known single-NPC quest starters can also show their own giver portrait using
+  client models. The appearance is a reference and may differ by quest phase.
 - Item rewards and choices for the currently selected active quest, when the
   client provides them. Unknown reward data is shown explicitly.
 - Reward previews for other quests when the client confirms their reward data
