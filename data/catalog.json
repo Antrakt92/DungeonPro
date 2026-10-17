@@ -26,7 +26,9 @@
         "mapID": 1433,
         "x": 26.5,
         "y": 45.3,
-        "npcID": 266
+        "npcID": 266,
+        "creatureDisplayID": 1741,
+        "portraitSource": "https://www.wowhead.com/forever/npc=266"
       }
     },
     {
@@ -44,7 +46,9 @@
         "mapID": 1433,
         "x": 26.5,
         "y": 45.3,
-        "npcID": 266
+        "npcID": 266,
+        "creatureDisplayID": 1741,
+        "portraitSource": "https://www.wowhead.com/forever/npc=266"
       },
       "finish": {
         "name": "Gryan Stoutmantle",
@@ -87,7 +91,9 @@
         "mapID": 1453,
         "x": 75.8,
         "y": 59.8,
-        "npcID": 332
+        "npcID": 332,
+        "creatureDisplayID": 1736,
+        "portraitSource": "https://www.wowhead.com/forever/npc=332"
       },
       "requires": [
         {
@@ -112,7 +118,9 @@
         "mapID": 1453,
         "x": 75.8,
         "y": 59.8,
-        "npcID": 332
+        "npcID": 332,
+        "creatureDisplayID": 1736,
+        "portraitSource": "https://www.wowhead.com/forever/npc=332"
       },
       "finish": {
         "name": "Gryan Stoutmantle",
@@ -182,7 +190,9 @@
         "mapID": 1436,
         "x": 55.7,
         "y": 47.8,
-        "npcID": 467
+        "npcID": 467,
+        "creatureDisplayID": 2311,
+        "portraitSource": "https://www.wowhead.com/forever/npc=467"
       },
       "finish": {
         "name": "Gryan Stoutmantle",
@@ -1617,14 +1627,18 @@
         "name": "Nara Wildmane",
         "mapID": 1456,
         "x": 75.6,
-        "y": 31.2
+        "y": 31.2,
+        "creatureDisplayID": 4513,
+        "portraitSource": "https://www.wowhead.com/forever/npc=5770"
       },
       "finish": {
         "npcID": 5770,
         "name": "Nara Wildmane",
         "mapID": 1456,
         "x": 75.6,
-        "y": 31.2
+        "y": 31.2,
+        "creatureDisplayID": 4513,
+        "portraitSource": "https://www.wowhead.com/forever/npc=5770"
       },
       "storyline": [
         1489,
@@ -1868,14 +1882,18 @@
         "name": "Crane Operator Bigglefuzz",
         "mapID": 1413,
         "x": 63.0,
-        "y": 37.4
+        "y": 37.4,
+        "creatureDisplayID": 7051,
+        "portraitSource": "https://www.wowhead.com/forever/npc=3665"
       },
       "finish": {
         "npcID": 3665,
         "name": "Crane Operator Bigglefuzz",
         "mapID": 1413,
         "x": 63.0,
-        "y": 37.4
+        "y": 37.4,
+        "creatureDisplayID": 7051,
+        "portraitSource": "https://www.wowhead.com/forever/npc=3665"
       },
       "objectiveItems": [
         {
@@ -1930,14 +1948,18 @@
         "name": "Apothecary Zamah",
         "mapID": 1456,
         "x": 23.6,
-        "y": 21.4
+        "y": 21.4,
+        "creatureDisplayID": 1814,
+        "portraitSource": "https://www.wowhead.com/forever/npc=3419"
       },
       "finish": {
         "npcID": 3419,
         "name": "Apothecary Zamah",
         "mapID": 1456,
         "x": 23.6,
-        "y": 21.4
+        "y": 21.4,
+        "creatureDisplayID": 1814,
+        "portraitSource": "https://www.wowhead.com/forever/npc=3419"
       },
       "objectiveItems": [
         {
@@ -1998,7 +2020,9 @@
         "name": "Nara Wildmane",
         "mapID": 1456,
         "x": 75.6,
-        "y": 31.2
+        "y": 31.2,
+        "creatureDisplayID": 4513,
+        "portraitSource": "https://www.wowhead.com/forever/npc=5770"
       },
       "storyline": [
         1489,
@@ -16515,7 +16539,19 @@
         "itemID": 18628,
         "name": "Thorium Brotherhood Contract",
         "itemMinLevel": 60
-      }
+      },
+      "providedItems": [
+        {
+          "itemID": 18628,
+          "name": "Thorium Brotherhood Contract"
+        }
+      ],
+      "objectiveItems": [
+        {
+          "itemID": 17203,
+          "name": "Sulfuron Ingot"
+        }
+      ]
     },
     {
       "id": 9015,
@@ -18627,7 +18663,13 @@
         "y": 59.4,
         "creatureDisplayID": 10465,
         "portraitSource": "https://www.wowhead.com/forever/npc=11035"
-      }
+      },
+      "providedItems": [
+        {
+          "itemID": 13920,
+          "name": "Healthy Dragon Scale"
+        }
+      ]
     },
     {
       "id": 5529,
@@ -19001,6 +19043,12 @@
         5464,
         5465,
         5466
+      ],
+      "providedItems": [
+        {
+          "itemID": 13585,
+          "name": "Keepsake of Remembrance"
+        }
       ]
     },
     {
@@ -27713,7 +27761,19 @@
         7625,
         7629
       ],
-      "storylineEvidence": "https://www.wowhead.com/forever/quest=7625/xorothian-stardust"
+      "storylineEvidence": "https://www.wowhead.com/forever/quest=7625/xorothian-stardust",
+      "objectiveEvents": [
+        {
+          "npcID": 14500,
+          "name": "Parchment Created"
+        }
+      ],
+      "providedItems": [
+        {
+          "itemID": 18688,
+          "name": "Imp in a Jar"
+        }
+      ]
     },
     {
       "id": 8258,
