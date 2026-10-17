@@ -3279,4 +3279,169 @@ check("Old language menu callbacks cannot edit a replacement database closed win
     ui.frame:Show();ui.frame.scripts.OnShow(ui.frame);hidden();assert(addon.db.locale=="enUS")
     restore();addon.db.locale=locale;ui:Refresh()
 end)
+local function multiActionFixture()
+    local saved={context=addon.Context,quest=ui.quest,dungeon=ui.dungeon,history=ui.detailHistory,nav=addon.Navigation}
+    addon.Context=function()return {level=60,active=function()return false end,completed=function()return false end}end
+    addon.quests[20001]={id=20001,minLevel=1,requirementsKnown=true,requires={{ids={20002}},{ids={20003}}}}
+    for _,id in ipairs({20002,20003})do addon.quests[id]={id=id,minLevel=1,requirementsKnown=true,start={mapID=1,x=20,y=30,name="Giver "..id}}end
+    ui.detailHistory={};showDetail(20001)
+    return function()
+        addon.Context,addon.Navigation=saved.context,saved.nav
+        addon.quests[20001],addon.quests[20002],addon.quests[20003]=nil,nil,nil
+        ui.quest,ui.dungeon,ui.detailHistory=saved.quest,saved.dungeon,saved.history;ui:Refresh()
+    end
+end
+check("Every independent preparation action can control guidance without changing the inspected target",function()
+    local restore=multiActionFixture()
+    local routed={};addon.Navigation={Start=function(action)routed[#routed+1]=action end,Map=function(point)routed[#routed+1]=point end}
+    assert(ui.actionButtons and ui.actionButtons[1].shown and ui.actionButtons[2].shown)
+    assert(ui.action.id==20002)
+    ui.actionButtons[2].scripts.OnClick(ui.actionButtons[2],"LeftButton",false)
+    assert(ui.quest==20001 and ui.action.id==20003 and #ui.detailHistory==0 and #routed==0)
+    ui.guide.scripts.OnClick(ui.guide,"LeftButton",false)
+    assert(routed[1].id==20003 and routed[1].place==addon.quests[20003].start)
+    ui.map.scripts.OnClick();assert(routed[2]==addon.quests[20003].start)
+    ui:RefreshDetail();assert(ui.action.id==20003)
+    local fresh={mapID=9,x=70,y=80,name="Moved giver"};local old=addon.quests[20003].start
+    addon.quests[20003].start=fresh;ui:RefreshDetail()
+    assert(ui.action.id==20003 and ui.action.place==fresh)
+    addon.quests[20003].start=old;restore()
+end)
+check("Preparation action choice disappears with its step and never authorizes unknown or level navigation",function()
+    local restore=multiActionFixture()
+    ui.actionButtons[2].scripts.OnClick();assert(ui.action.id==20003)
+    addon.quests[20003].requirementsKnown=false;ui:Refresh()
+    assert(ui.action.id==20002 and not ui.detailActionChoice and not ui.actionButtons[2].shown)
+    assert(detailHas(addon.L("UNKNOWN")))
+    addon.quests[20003].requirementsKnown=true;ui:Refresh()
+    assert(ui.action.id==20002)
+    addon.quests[20003].minLevel=80;ui:Refresh()
+    assert(ui.actionButtons[2].actionKind=="level")
+    ui.actionButtons[2].scripts.OnClick()
+    assert(ui.quest==20001 and ui.action.kind=="level" and not ui.map.enabled and not ui.guide.enabled)
+    ui.actionInspectButtons[2].scripts.OnClick()
+    assert(ui.quest==20003 and not ui.map.enabled and not ui.guide.enabled)
+    restore()
+end)
+check("Action inspection returns to its reading section while stale and recycled action callbacks remain inert",function()
+    local restore=multiActionFixture()
+    local description=addon.Description
+    addon.Description=function()return "Long action source reading"end
+    measurement=function(fs)return fs.text=="Long action source reading" and 900 or 18 end
+    ui:RefreshDetail();ui.detailScroll:SetVerticalScroll(200)
+    local inspect=ui.actionInspectButtons[2]
+    inspect.scripts.OnClick(inspect,"LeftButton",false)
+    assert(ui.quest==20003 and #ui.detailHistory==1)
+    assert(ui:BackQuest() and ui.quest==20001 and ui.detailScroll.verticalScroll==200)
+    local staleChoice,staleInspect=ui.actionButtons[2].scripts.OnClick,ui.actionInspectButtons[2].scripts.OnClick
+    ui:RefreshDetail();staleChoice();staleInspect()
+    assert(ui.quest==20001 and ui.action.id==20002 and not ui.detailActionChoice)
+    showDetail(20002);staleChoice();staleInspect()
+    assert(ui.quest==20002)
+    for _,pool in ipairs({ui.actionButtons,ui.actionInspectButtons})do
+        for _,row in ipairs(pool)do assert(not row.shown and not row.enabled and row.scripts.OnClick==nil)end
+    end
+    addon.Description=description;measurement=nil;restore()
+end)
+check("Preparation action rows wrap and recycle while session and character changes reset their preference",function()
+    local restore=multiActionFixture()
+    local first,inspect=ui.actionButtons[1],ui.actionInspectButtons[1]
+    measurement=function(fs)
+        if fs==first.title then return 72 end
+        if fs==first.note then return 54 end
+        if fs==inspect.label then return 54 end
+        return 18
+    end
+    ui:RefreshDetail()
+    assert(first.height==144 and inspect.height==64)
+    assert(first.point[3]-ui.actionButtons[2].point[3]>=first.height+4+inspect.height+6)
+    measurement=nil;ui:RefreshDetail();assert(ui.actionButtons[1]==first and first.height==59 and inspect.height==28)
+    ui.actionButtons[2].scripts.OnClick();assert(ui.action.id==20003)
+    local character=addon.char;addon.char={};ui:RefreshDetail()
+    assert(ui.action.id==20002 and not ui.detailActionChoice)
+    addon.char=character;ui.actionButtons[2].scripts.OnClick()
+    ui.frame:Hide();ui.frame.scripts.OnHide(ui.frame);ui.frame:Show();ui.frame.scripts.OnShow(ui.frame)
+    assert(ui.action.id==20002 and not ui.detailActionChoice)
+    restore()
+end)
+check("Hydrating an action name cannot finish rendering obsolete action controls after card reentry",function()
+    local restore=multiActionFixture()
+    local name,armed=addon.QuestName,true
+    addon.QuestName=function(id)
+        if armed and id==20003 then armed=false;ui:InspectQuest(20002)end
+        return name(id)
+    end
+    ui:RefreshDetail()
+    assert(not armed and ui.quest==20002 and ui.action.id==20002 and ui.map.enabled and ui.guide.enabled)
+    for _,pool in ipairs({ui.actionButtons,ui.actionInspectButtons})do
+        for _,row in ipairs(pool)do assert(not row.shown and not row.enabled and row.scripts.OnClick==nil)end
+    end
+    addon.QuestName=name;restore()
+end)
+check("Action name hydration cannot bind a previous character's prepared actions",function()
+    local restore=multiActionFixture()
+    local character,name=addon.char,addon.QuestName
+    local armed=true
+    addon.QuestName=function(id)
+        if armed and id==20002 then armed=false;addon.char={}end
+        return name(id)
+    end
+    ui:RefreshDetail()
+    assert(not armed and ui.action==nil)
+    for _,row in ipairs(ui.actionButtons)do assert(not row.shown and not row.enabled and row.scripts.OnClick==nil)end
+    addon.char,addon.QuestName=character,name;restore()
+end)
+check("Later action hydration cannot leave earlier action or navigation controls published for a former character",function()
+    for _,mode in ipairs({"name","place"})do
+        local restore=multiActionFixture()
+        local character,name,map=addon.char,addon.QuestName,C_Map
+        local armed=true
+        if mode=="name"then
+            addon.QuestName=function(id)
+                if armed and id==20003 then armed=false;addon.char={}end
+                return name(id)
+            end
+        else
+            C_Map={GetMapInfo=function()
+                if armed then armed=false;addon.char={}end
+                return {name="Clean zone"}
+            end}
+        end
+        ui:RefreshDetail()
+        assert(not armed and ui.action==nil and not ui.map.enabled and not ui.guide.enabled,mode)
+        addon.char,addon.QuestName,C_Map=character,name,map;restore()
+    end
+end)
+check("Guidance is published only after a current engine finishes later detail hydration",function()
+    local restore=multiActionFixture()
+    local objectives=addon.QuestObjectives
+    local current=ui.engine.Current
+    addon.QuestObjectives=function()
+        ui.engine.Current=function()return false end
+        return nil
+    end
+    ui:RefreshDetail()
+    assert(ui.action==nil and not ui.map.enabled and not ui.guide.enabled)
+    addon.QuestObjectives=objectives;ui.engine.Current=current;restore()
+end)
+check("Explicit map and guide clicks reject invalid throwing and reentered engine contexts",function()
+    local restore=multiActionFixture()
+    local calls=0;addon.Navigation={Map=function()calls=calls+1 end,Start=function()calls=calls+1 end}
+    local current=ui.engine.Current
+    for _,getter in ipairs({function()return false end,function()return nil end,function()error("expired")end})do
+        ui.engine.Current=getter
+        ui.map.scripts.OnClick();ui.guide.scripts.OnClick();assert(calls==0)
+    end
+    ui.engine.Current=current
+    local armed=true
+    ui.engine.Current=function(engine)
+        if armed then armed=false;ui:InspectQuest(20002)end
+        return current(engine)
+    end
+    ui.guide.scripts.OnClick()
+    assert(not armed and calls==0 and ui.quest==20002 and ui.action.id==20002 and ui.map.enabled and ui.guide.enabled)
+    ui.engine.Current=current
+    ui.guide.scripts.OnClick();assert(calls==1)
+    restore()
+end)
 print("Preparation UI modeled checks passed: " .. total .. " (no native layout validation)")

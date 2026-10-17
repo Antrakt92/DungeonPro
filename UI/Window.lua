@@ -16,6 +16,17 @@ local function styleRow(row, kind, selected)
     if theme then addon.Read(theme.StyleRow, "boolean", row, { kind = kind, selected = selected == true }) end
 end
 
+function UI:CurrentDetailAction()
+    local engine, action = self.engine, self.action
+    if not engine or not action then return nil end
+    local quest, dungeon, character, generation = self.quest, self.dungeon, addon.char, self.rewardGeneration
+    local getter, place, id, kind = engine.Current, action.place, action.id, action.kind
+    local fresh = getter == nil or addon.Read(getter, "boolean", engine) == true
+    if fresh and self.engine == engine and self.action == action and self.quest == quest and self.dungeon == dungeon and
+        addon.char == character and self.rewardGeneration == generation and engine.Current == getter and
+        action.place == place and action.id == id and action.kind == kind then return action end
+end
+
 function UI:OpenLanguageMenu()
     local choices = { { "auto" }, { "enUS", "English" }, { "ruRU", "Русский" }, { "deDE", "Deutsch" },
         { "frFR", "Français" }, { "esES", "Español" }, { "itIT", "Italiano" }, { "ptBR", "Português" },
@@ -661,11 +672,13 @@ end
 
 function UI:RefreshDetail()
     local renderQuest, renderDungeon = self.quest, self.dungeon
+    local renderEngine, renderCharacter, pendingAction = self.engine, addon.char, nil
     local rewardGeneration = self:ResetRewardPresentation()
     if not rewardGeneration or self.quest ~= renderQuest then return end
     local overviewIdentity = not renderQuest and renderDungeon and (addon.Clean(renderDungeon.key, "string") or renderDungeon) or nil
     if self.renderedQuest ~= self.quest or self.renderedOverview ~= overviewIdentity then
         self:CloseCopyLink()
+        self.detailActionChoice = nil
         self.detailScroll:SetVerticalScroll(0)
         self.renderedQuest, self.renderedOverview = self.quest, overviewIdentity
         self.reportedExpanded = {}
@@ -684,6 +697,7 @@ function UI:RefreshDetail()
     if self.portrait then self.portrait:Hide(); self.portrait:SetTexture(nil) end
     if self.overviewArt then self.overviewArt:Hide() end
     self.action = nil
+    self.map:SetEnabled(false); self.guide:SetEnabled(false)
     self.giverAction, self.giverHasCoordinates = nil, false
     self.giver:SetEnabled(false)
     self.giver:SetText(addon.L("VISIT_GIVER"))
@@ -739,6 +753,9 @@ function UI:RefreshDetail()
         return true
     end
     for _, b in ipairs(self.chainButtons) do b:Hide(); b:SetEnabled(false); b:SetScript("OnClick", nil) end
+    for _, buttons in ipairs({ self.actionButtons, self.actionInspectButtons }) do
+        for _, b in ipairs(buttons) do b:Hide(); b:SetEnabled(false); b:SetScript("OnClick", nil) end
+    end
     for _, b in ipairs(self.branchButtons) do b:Hide() end
     for _, b in ipairs(self.branchInspectButtons) do b:Hide(); b:SetEnabled(false); b:SetScript("OnClick", nil) end
     for _, b in ipairs(self.requirementButtons) do b:Hide(); b:SetEnabled(false); b:SetScript("OnClick", nil) end
@@ -945,13 +962,71 @@ function UI:RefreshDetail()
         local actions, uncertain = engine:Next(id)
         line(addon.L("NEXT"), "section")
         local action = actions[1]
+        local character = addon.char
+        local preferred = self.detailActionChoice
+        if preferred and (preferred.quest ~= id or preferred.dungeon ~= renderDungeon or preferred.character ~= addon.char) then
+            self.detailActionChoice, preferred = nil, nil
+        end
+        if preferred then
+            for _, candidate in ipairs(actions) do
+                if candidate.id == preferred.id and candidate.kind == preferred.kind then action = candidate; break end
+            end
+        end
+        if not action or not preferred or action.id ~= preferred.id or action.kind ~= preferred.kind then self.detailActionChoice = nil end
+        local function current()
+            local fresh = not engine.Current or addon.Read(engine.Current, "boolean", engine) == true
+            return fresh and self.quest == renderQuest and self.dungeon == renderDungeon and self.rewardGeneration == rewardGeneration and
+                self.engine == engine and addon.char == character
+        end
+        local function actionText(candidate)
+            local title = addon.QuestName(candidate.id)
+            if not current() then return nil end
+            return addon.L(candidate.kind) .. ": " .. title .. (candidate.level and (" (" .. candidate.level .. ")") or "")
+        end
         if action then
-            line(addon.L(action.kind) .. ": " .. addon.QuestName(action.id) .. (action.level and (" (" .. action.level .. ")") or ""))
+            local title = actionText(action)
+            if not title then return end
+            line(title)
         else line(addon.L(state.status == "COMPLETED" and "COMPLETED" or "UNKNOWN")) end
         if uncertain then line(addon.L("UNKNOWN")) end
-        self.action = action
-        self.map:SetEnabled(action ~= nil and action.place ~= nil and action.place.mapID ~= nil)
-        self.guide:SetEnabled(action ~= nil and action.place ~= nil and action.place.x ~= nil)
+        pendingAction = action
+        if #actions > 1 then
+            local inspectIndex = 0
+            for index, candidate in ipairs(actions) do
+                local title = actionText(candidate)
+                if not title then return end
+                local description = candidate.place and place(candidate.place) or ""
+                if not current() then return end
+                local row = self:MakeRow(self.detail, self.actionButtons, index, 59)
+                row.actionID, row.actionKind = candidate.id, candidate.kind
+                row.title:SetText(candidate == action and addon.L("BRANCH_SELECTED", title) or title)
+                row.note:SetText(description); row:SetEnabled(true)
+                styleRow(row, "quest", candidate == action)
+                local actionID, kind = candidate.id, candidate.kind
+                row:SetScript("OnClick", function()
+                    if not current() then return end
+                    self.detailActionChoice = { quest = id, id = actionID, kind = kind, dungeon = renderDungeon, character = addon.char }
+                    self:RefreshDetail()
+                end)
+                y = self:LayoutRow(row, 59, y)
+                if actionID ~= id then
+                    inspectIndex = inspectIndex + 1
+                    local inspect = self.actionInspectButtons[inspectIndex]
+                    if not inspect then
+                        inspect = CreateFrame("Button", nil, self.detail)
+                        inspect:SetWidth(316); inspect.label = label(inspect, "", 7, -5, 302, 12)
+                        inspect:SetHighlightTexture("Interface\\QuestFrame\\UI-QuestTitleHighlight")
+                        self.actionInspectButtons[inspectIndex] = inspect
+                    end
+                    inspect.actionID = actionID; inspect.label:SetText(addon.L("BRANCH_INSPECT"))
+                    local height = math.max(28, measuredHeight(inspect.label, 18) + 10)
+                    inspect:SetHeight(height); inspect:ClearAllPoints(); inspect:SetPoint("TOPLEFT", 16, -y)
+                    inspect:SetEnabled(true); styleRow(inspect, "control", false)
+                    inspect:SetScript("OnClick", function() if current() then self:InspectQuest(actionID) end end)
+                    inspect:Show(); y = y + height + 6
+                end
+            end
+        end
         local branchIndex, branchInspectIndex = 0, 0
         local requirementIndex = 0
         if q.requires and #q.requires > 0 then
@@ -1196,9 +1271,17 @@ function UI:RefreshDetail()
         self.copy:Show()
         y = y + 6 + 26 + 8 + measuredHeight(self.copyHint, 18) + 8
     end
+    if self.quest ~= renderQuest or self.dungeon ~= renderDungeon or self.rewardGeneration ~= rewardGeneration or
+        self.engine ~= renderEngine or addon.char ~= renderCharacter then return end
     hideRest(pool, n)
     self.detail:SetHeight(math.max(1, y + 12))
     self:ApplyTheme()
+    local fresh = not pendingAction or not renderEngine.Current or addon.Read(renderEngine.Current, "boolean", renderEngine) == true
+    if not fresh or self.quest ~= renderQuest or self.dungeon ~= renderDungeon or self.rewardGeneration ~= rewardGeneration or
+        self.engine ~= renderEngine or addon.char ~= renderCharacter then return end
+    self.action = pendingAction
+    self.map:SetEnabled(pendingAction ~= nil and pendingAction.place ~= nil and pendingAction.place.mapID ~= nil)
+    self.guide:SetEnabled(pendingAction ~= nil and pendingAction.place ~= nil and pendingAction.place.x ~= nil)
 end
 
 function UI:Refresh()
@@ -1307,11 +1390,13 @@ function UI:Create()
     self.questList, self.questScroll = scrolling(frame, 288, -218, 355, 425)
     self.detail, self.detailScroll = scrolling(frame, 690, -218, 350, 425)
     self.map = button(frame, "", 160, function()
-        if self.action then addon.Navigation.Map(self.action.place) end
+        local action = self:CurrentDetailAction()
+        if action then addon.Navigation.Map(action.place) end
     end)
     self.map:SetPoint("TOPLEFT", 690, -84)
     self.guide = button(frame, "", 172, function()
-        if self.action then addon.Navigation.Start(self.action) end
+        local action = self:CurrentDetailAction()
+        if action then addon.Navigation.Start(action) end
     end)
     self.guide:SetPoint("TOPLEFT", 856, -84)
     self.source = button(frame, "", 160, function() if self.quest then self:CopyLink(self.quest) end end)
@@ -1329,11 +1414,12 @@ function UI:Create()
     self.frame, self.cards, self.rows, self.details, self.chainButtons, self.branchButtons = frame, {}, {}, {}, {}, {}
     self.materialButtons = {}
     self.requirementButtons, self.branchInspectButtons = {}, {}
+    self.actionButtons, self.actionInspectButtons = {}, {}
     self.startButtons, self.finishButtons, self.containerButtons = {}, {}, {}
     UISpecialFrames[#UISpecialFrames + 1] = "DungeonProWindow"
     for _, d in ipairs(addon.dungeons) do if d.key == addon.char.selectedDungeon then self.dungeon = d end end
     frame:SetScript("OnShow", function() self:Fit(); self:Refresh() end)
-    frame:SetScript("OnHide", function() self.languageMenuRevision = {}; self:ResetHistoryReading(); self:ResetRewardPresentation(); self:CloseCopyLink() end)
+    frame:SetScript("OnHide", function() self.detailActionChoice = nil; self.languageMenuRevision = {}; self:ResetHistoryReading(); self:ResetRewardPresentation(); self:CloseCopyLink() end)
     self:ApplyTheme()
     frame:Hide()
 end

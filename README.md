@@ -35,6 +35,8 @@ Level ranges are provisional recommendations.
 - A next-step view collects the dungeon's preparation actions, combines shared
   prerequisites and groups pickups before entry, inside pickups, level gates,
   quests in progress and unresolved requirements.
+  A quest card lets you choose which independent next step to show on the map or
+  follow with the guide, and inspect its quest without changing the target.
 - Switch between quests for your character and all character restrictions.
   Restricted quests stay available for inspection and do not add preparation
   actions. Character, level and preparation filters are remembered per character.

@@ -64,6 +64,7 @@
 - Preserved saved descriptions after empty client responses and added bounded
   retries when localized quest-title loading fails.
 - Added a next-step list for dungeon preparation and client-provided objectives.
+- Let quest cards select and inspect each independent preparation step.
 - Grouped preparation steps by outside pickups, inside pickups, level gates,
   progress and unknown requirements, with translated headings.
 - Added initial Wailing Caverns quests and corrected Rahauro's approach waypoint.
