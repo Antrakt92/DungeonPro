@@ -1434,11 +1434,7 @@ function UI:RefreshQuests()
     if d then
         local plan = engine:Dungeon(d, { includeUnavailable = self.includeUnavailable })
         if not current() then return end
-        self.currentPlan = { engine = engine, dungeon = d, rows = plan.rows }
-        local summary = addon.L("SUMMARY", (plan.counts.ACTIVE or 0) + (plan.counts.READY or 0),
-            plan.counts.COMPLETED or 0, (plan.counts.LOCKED or 0) + (plan.counts.AVAILABLE or 0), plan.counts.UNKNOWN or 0)
-        if not writeText(self.summary, summary) or
-            not writeText(self.coverage, plan.unknown and addon.L("PARTIAL") or addon.L(plan.ready and "PREPARED" or "NOT_PREPARED")) then return end
+        self.currentPlan = { engine = engine, dungeon = d, rows = plan.rows, counts = plan.counts, unknown = plan.unknown, ready = plan.ready }
         local entries = plan.rows
         if self.preparation then
             entries = {}
@@ -1468,6 +1464,9 @@ function UI:RefreshQuests()
         self.currentPlan.preparationEmpty = preparation and #plan.rows > 0 and #entries == 0
         if self.currentPlan.preparationEmpty then
             entries = { { heading = "PREPARATION_EMPTY", argument = addon.L("QUESTS") } }
+        elseif #plan.rows == 0 then
+            self.currentPlan.notice = #d.quests > 0 and "NO_CHARACTER_QUESTS" or "EMPTY"
+            entries = { { heading = self.currentPlan.notice } }
         end
         local tree, treeBuilder = nil, addon.Clean(addon.QuestTree, "table")
         if not preparation and self.questTreeDungeon == d and self.questTreeRoot and treeBuilder then
@@ -1625,23 +1624,30 @@ function UI:RefreshQuests()
                     not write(row.treeRail, "Show") or not write(row.treeElbow, "Show") then return end
             end
         end
-        if #plan.rows == 0 then
-            if not writeText(self.coverage, addon.L(#d.quests > 0 and "NO_CHARACTER_QUESTS" or "EMPTY")) then return end
-        end
     else
-        if not writeText(self.summary, "") or not writeText(self.coverage, addon.L("PICK")) then return end
+        local row = self:MakeRow(self.questList, self.rows, 1, 32, current, true)
+        n = 1; row.heading, row.questID, row.compact = "PICK", nil, false
+        row.questTreeNode, row.questTreeIndent, row.questTreeInset = false, 0, 0
+        row.dungeonTarget, row.dungeonBadgeReserve, row.statusInset, row.questCompleted = false, 0, 0, false
+        row.questListCurrent = current
+        local rewards = addon.Clean(addon.QuestListRewards, "table")
+        if rewards then addon.Read(rewards.Clear, "nil", row) end
+        if not current() then return end
+        for _, field in ipairs({ "dungeonBadge", "statusIcon", "completedStrike", "treeRail", "treeElbow" }) do
+            if row[field] and not write(row[field], "Hide") then return end
+        end
+        if not write(row, "SetWidth", self.questList:GetWidth() - 4) or not write(row.title, "SetWidth", self.questList:GetWidth() - 22) then return end
+        if not writeText(row.title, addon.L("PICK")) or not writeText(row.note, "") then return end
+        offset = self:LayoutRow(row, 32, 0, current)
+        if not offset then return end
     end
-    local headingHeight = math.max(34, measuredHeight(self.heading, 34))
+    local headingHeight = math.max(26, measuredHeight(self.heading, 26))
     if not current() then return end
-    local summaryY = 125 + headingHeight + 8
-    local coverageY = summaryY + math.max(20, measuredHeight(self.summary, 20)) + 8
-    if not current() then return end
-    local listY = math.max(218, coverageY + math.max(20, measuredHeight(self.coverage, 20)) + 12)
-    if not current() then return end
-    if not write(self.summary, "ClearAllPoints") or not write(self.summary, "SetPoint", "TOPLEFT", 288, -summaryY) or
-        not write(self.coverage, "ClearAllPoints") or not write(self.coverage, "SetPoint", "TOPLEFT", 288, -coverageY) or
-        not write(self.questScroll, "ClearAllPoints") or not write(self.questScroll, "SetPoint", "TOPLEFT", 288, -listY) or
-        not write(self.questScroll, "SetHeight", math.max(80, 643 - listY)) then return end
+    local listY = 125 + headingHeight + 8
+    if not write(self.questScroll, "ClearAllPoints") or not write(self.questScroll, "SetPoint", "TOPLEFT", 288, -listY) or
+        not write(self.questScroll, "SetHeight", math.max(80, 643 - listY)) or
+        not write(self.detailScroll, "ClearAllPoints") or not write(self.detailScroll, "SetPoint", "TOPLEFT", 690, -listY) or
+        not write(self.detailScroll, "SetHeight", math.max(80, 643 - listY)) then return end
     for index = n + 1, #self.rows do
         local row = self.rows[index]
         if not write(row, "Hide") then return end
@@ -2183,7 +2189,7 @@ function UI:RefreshDetail()
         local metadataParts = {}
         local function metadataCurrent()
             local ok, same = pcall(function()
-                return portraitCardCurrent() and addon.quests[id] == q and addon.L == metadataLocalize and
+                return portraitCardCurrent() and addon.quests[id] == definition and addon.L == metadataLocalize and
                     addon.db == metadataDB and (not metadataDB or rawget(metadataDB, "locale") == metadataLocale) and
                     (not questLevel or rawget(q, "level") == questLevel) and (not minimum or rawget(q, "minLevel") == minimum)
             end)
@@ -2425,12 +2431,21 @@ function UI:RefreshDetail()
             return fresh and self.quest == renderQuest and self.dungeon == renderDungeon and self.rewardGeneration == rewardGeneration and
                 self.engine == engine and addon.char == character
         end
+        pendingAction = action
+        if not referencesExpanded and (state.status == "ACTIVE" or state.status == "READY" or state.status == "COMPLETED" or state.status == "AVAILABLE") then
+            if line("|cff" .. COLOR[state.status] .. statusLabel(state) .. "|r", nil, nil, nil, portraitCardCurrent) == false then return end
+        end
+        if not referencesExpanded and state.reason and state.reason ~= "level" then
+            local key = state.reason == "requirements" and state.status == "UNKNOWN" and "REASON_requirementsUnknown" or "REASON_" .. state.reason
+            if line(addon.L(key), nil, nil, nil, portraitCardCurrent) == false then return end
+        end
         local function actionText(candidate)
             if candidate.id == id then return addon.L(candidate.kind) .. (candidate.level and (" " .. candidate.level) or "") end
             local title = addon.QuestName(candidate.id)
             if not current() then return nil end
             return addon.L(candidate.kind) .. ": " .. title .. (candidate.level and (" (" .. candidate.level .. ")") or "")
         end
+        if referencesExpanded then
         do
         local source = self:SourceStory(id, q, portraitCardCurrent)
         if not portraitCardCurrent() then return end
@@ -2638,6 +2653,9 @@ function UI:RefreshDetail()
         end
         if not storyCurrent() then return end
         end
+        end
+        if not metadataCurrent() then return end
+        if referencesExpanded then
         if not action or action.kind ~= "level" then line(addon.L("NEXT"), "section") end
         if action and action.kind ~= "level" then
             local title = actionText(action)
@@ -2694,7 +2712,6 @@ function UI:RefreshDetail()
                 end
             end
         end
-        pendingAction = action
         if #actions > 1 then
             local inspectIndex = 0
             for index, candidate in ipairs(actions) do
@@ -2767,51 +2784,6 @@ function UI:RefreshDetail()
                 end
             end
         end
-        do
-            local toggle = self.referenceToggle
-            if not toggle then
-                toggle = CreateFrame("Button", nil, self.detail); toggle:SetWidth(332)
-                toggle.label = label(toggle, "", 7, -5, 318, 14); toggle.title = toggle.label
-                toggle:SetHighlightTexture("Interface\\QuestFrame\\UI-QuestTitleHighlight")
-                self.referenceToggle = toggle
-            end
-            local frame, database, localize = self.frame, addon.db, addon.L
-            if not portraitCardCurrent() or database ~= metadataDB or type(database) ~= "table" then return end
-            local locale = rawget(database, "locale")
-            local function referencesCurrent()
-                return current() and portraitCardCurrent() and addon.UI == self and self.frame == frame and
-                    self.referenceToggle == toggle and addon.quests[id] == definition and addon.db == database and
-                    rawget(database, "locale") == locale and addon.L == localize
-            end
-            local function write(object, method, ...)
-                if not referencesCurrent() then return false end
-                local ok = pcall(object[method], object, ...)
-                return ok and referencesCurrent()
-            end
-            if not write(toggle.label, "SetText", (referencesExpanded and "- " or "+ ") .. addon.L(referencesExpanded and "DETAIL_LESS" or "DETAIL_MORE")) then return end
-            local height = math.max(30, measuredHeight(toggle.label, 18) + 10)
-            if not write(toggle, "SetHeight", height) or not write(toggle, "ClearAllPoints") or
-                not write(toggle, "SetPoint", "TOPLEFT", 4, -y) or not write(toggle, "SetEnabled", true) then return end
-            styleRow(toggle, "control", referencesExpanded)
-            if not write(toggle, "SetScript", "OnClick", function()
-                if not referencesCurrent() or addon.Read(frame.IsShown, "boolean", frame) ~= true or not referencesCurrent() then return end
-                local scroll, getter, checker = self.detailScroll, self.detailScroll.GetVerticalScroll, issecretvalue
-                local offset = addon.Read(getter, "number", scroll)
-                if not referencesCurrent() or self.detailScroll ~= scroll or scroll.GetVerticalScroll ~= getter or issecretvalue ~= checker then return end
-                self.detailReferencesExpanded = not referencesExpanded
-                local generation = self:RefreshDetail()
-                local function fresh()
-                    return generation and self.detailScroll == scroll and scroll.GetVerticalScroll == getter and issecretvalue == checker and self.rewardGeneration == generation and self.quest == renderQuest and self.dungeon == renderDungeon and
-                        self.engine == renderEngine and addon.char == renderCharacter and self.frame == frame and self.detailReferencesExpanded ~= referencesExpanded
-                end
-                if not fresh() or not offset or offset < 0 then return end
-                local content = addon.Read(self.detail.GetHeight, "number", self.detail)
-                local viewport = addon.Read(scroll.GetHeight, "number", scroll)
-                if fresh() and content and content >= 0 and viewport and viewport > 0 then
-                    scroll:SetVerticalScroll(math.min(offset, math.max(0, content - viewport)))
-                end
-            end) or not write(toggle, "Show") then return end
-            y = y + height + 8
         end
         if referencesExpanded then
         local portraitSetter, portraitChecker = addon.Clean(SetPortraitTextureFromCreatureDisplayID, "function"), issecretvalue
@@ -3030,6 +3002,7 @@ function UI:RefreshDetail()
                 elseif required then line(addon.L("REASON_level", required)); line(addon.L("REASON_levelUnknown"))
                 else line(addon.L("REASON_levelUnknown")) end
             else line(addon.L(reason)) end
+        end
         end
         do
             local progressGetter, dialogueGetter, objectiveChecker = addon.QuestObjectives, addon.DialogueObjectiveText, issecretvalue
@@ -3685,6 +3658,7 @@ function UI:RefreshDetail()
                 end
             end
         end
+        if referencesExpanded then
         local starterSource = addon.Clean(q.start, "table")
         local starterID = starterSource and addon.Clean(rawget(starterSource, "itemID"), "number")
         local starterName = starterSource and addon.Clean(rawget(starterSource, "name"), "string")
@@ -3915,6 +3889,7 @@ function UI:RefreshDetail()
                 y = self:LayoutRow(row, 59, y)
             end
         end
+        end
         local descriptionGetter, descriptionChecker = addon.Description, issecretvalue
         local description = addon.Read(descriptionGetter, "string", id)
         local placeholder = addon.L("NO_TEXT")
@@ -3930,6 +3905,51 @@ function UI:RefreshDetail()
         end
         line(description)
         if not narrativeCurrent() then return end
+        do
+            local toggle = self.referenceToggle
+            if not toggle then
+                toggle = CreateFrame("Button", nil, self.detail); toggle:SetWidth(332)
+                toggle.label = label(toggle, "", 7, -5, 318, 14); toggle.title = toggle.label
+                toggle:SetHighlightTexture("Interface\\QuestFrame\\UI-QuestTitleHighlight")
+                self.referenceToggle = toggle
+            end
+            local frame, database, localize = self.frame, addon.db, addon.L
+            if not portraitCardCurrent() or database ~= metadataDB or type(database) ~= "table" then return end
+            local locale = rawget(database, "locale")
+            local function referencesCurrent()
+                return current() and portraitCardCurrent() and addon.UI == self and self.frame == frame and
+                    self.referenceToggle == toggle and addon.quests[id] == definition and addon.db == database and
+                    rawget(database, "locale") == locale and addon.L == localize
+            end
+            local function write(object, method, ...)
+                if not referencesCurrent() then return false end
+                local ok = pcall(object[method], object, ...)
+                return ok and referencesCurrent()
+            end
+            if not write(toggle.label, "SetText", (referencesExpanded and "- " or "+ ") .. addon.L(referencesExpanded and "DETAIL_LESS" or "DETAIL_MORE")) then return end
+            local height = math.max(30, measuredHeight(toggle.label, 18) + 10)
+            if not write(toggle, "SetHeight", height) or not write(toggle, "ClearAllPoints") or
+                not write(toggle, "SetPoint", "TOPLEFT", 4, -y) or not write(toggle, "SetEnabled", true) then return end
+            styleRow(toggle, "control", referencesExpanded)
+            if not write(toggle, "SetScript", "OnClick", function()
+                if not referencesCurrent() or addon.Read(frame.IsShown, "boolean", frame) ~= true or not referencesCurrent() then return end
+                local scroll, getter, checker = self.detailScroll, self.detailScroll.GetVerticalScroll, issecretvalue
+                local offset = addon.Read(getter, "number", scroll)
+                if not referencesCurrent() or self.detailScroll ~= scroll or scroll.GetVerticalScroll ~= getter or issecretvalue ~= checker then return end
+                self.detailReferencesExpanded = not referencesExpanded
+                local generation = self:RefreshDetail()
+                local function fresh()
+                    return generation and self.detailScroll == scroll and scroll.GetVerticalScroll == getter and issecretvalue == checker and self.rewardGeneration == generation and self.quest == renderQuest and self.dungeon == renderDungeon and
+                        self.engine == renderEngine and addon.char == renderCharacter and self.frame == frame and self.detailReferencesExpanded ~= referencesExpanded
+                end
+                if not fresh() or not offset or offset < 0 then return end
+                local content = addon.Read(self.detail.GetHeight, "number", self.detail)
+                local viewport = addon.Read(scroll.GetHeight, "number", scroll)
+                if fresh() and content and content >= 0 and viewport and viewport > 0 then
+                    scroll:SetVerticalScroll(math.min(offset, math.max(0, content - viewport)))
+                end
+            end) or not write(toggle, "Show") then return end
+            y = y + height + 8
         end
         self:SetFooterEnabled(self.source, true)
     else
@@ -3981,7 +4001,6 @@ function UI:RefreshDetail()
             local count = quests and #quests or 0
             line(addon.L("CATALOG_QUESTS", count))
             if count == 0 then line(addon.L("EMPTY")) end
-            line(addon.L(renderDungeon.coverage == "reviewed" and "OVERVIEW_REVIEWED" or "PARTIAL"))
             local plan, preparation = self.currentPlan, self.preparation
             local function promptCurrent()
                 return portraitCardCurrent() and self.currentPlan == plan and self.preparation == preparation
@@ -4149,13 +4168,11 @@ function UI:Create()
     local languageModule = addon.Clean(addon.Language, "table")
     if languageModule then addon.Read(languageModule.Attach, "boolean", languageModule, language, self) end
     self.heading = label(frame, "", 288, -125, 730, 26)
-    self.summary = label(frame, "", 288, -163, 760, 14)
-    self.coverage = label(frame, "", 288, -191, 760, 14)
     self.catalog, self.catalogScroll = scrolling(frame, 22, -125, 235, 518)
     self.searchHint = label(self.catalog, "", 4, 0, 220, 13)
     self.catalogNotice = label(self.catalog, "", 4, 0, 220, 13)
-    self.questList, self.questScroll = scrolling(frame, 288, -218, 355, 425)
-    self.detail, self.detailScroll = scrolling(frame, 690, -218, 350, 425)
+    self.questList, self.questScroll = scrolling(frame, 288, -159, 355, 484)
+    self.detail, self.detailScroll = scrolling(frame, 690, -159, 350, 484)
     self.source = button(frame, "", 36, function() if self.quest then self:CopyLink(self.quest) end end)
     self.source:SetPoint("BOTTOMRIGHT", -43, 19)
     self.giver = button(frame, "", 36, function()

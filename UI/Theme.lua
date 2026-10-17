@@ -438,6 +438,99 @@ end
 
 local scrollbars, scrollArrows = setmetatable({}, { __mode = "k" }), setmetatable({}, { __mode = "k" })
 
+local function quietScrollBar(scroll, bar, state)
+    if state.quietAttempted then return end
+    state.quietAttempted = true
+    local mouse = addon.Clean(MouseIsOver, "function")
+    local range = addon.Read(function() return bar.GetMinMaxValues end, "function")
+    local objects = { bar, cleanObject(bar.ScrollUpButton), cleanObject(bar.ScrollDownButton) }
+    local policies = {}
+    local originalAlpha = addon.Read(function() return bar:GetAlpha() end, "number") or 1
+    if not mouse or not range or #objects ~= 3 then return end
+    for _, object in ipairs(objects) do
+        local enabled = addon.Read(function() return object:IsMouseEnabled() end, "boolean")
+        if enabled == nil or not addon.Read(function() return object.EnableMouse end, "function") or
+            not addon.Read(function() return object.HookScript end, "function") then return end
+        policies[object] = enabled
+    end
+    if not addon.Read(function() return scroll.HookScript end, "function") or
+        not addon.Read(function() return scroll.IsShown end, "function") or
+        not addon.Read(function() return bar.IsShown end, "function") or
+        not addon.Read(function() return bar.SetAlpha end, "function") then return end
+    local function current()
+        return state.quiet and addon.Theme == Theme and scrollbars[bar] == state and
+            scroll.ScrollBar == bar and MouseIsOver == mouse and bar.GetMinMaxValues == range
+    end
+    local function update()
+        if not current() then
+            if state.quiet and addon.Theme == Theme and scrollbars[bar] == state and scroll.ScrollBar == bar then
+                state.quiet = false
+                invoke(bar, "SetAlpha", originalAlpha)
+                for _, object in ipairs(objects) do invoke(object, "EnableMouse", policies[object]) end
+            end
+            return
+        end
+        if state.quietBusy then return end
+        state.quietBusy = true
+        local scrollShown = addon.Read(function() return scroll.IsVisible or scroll.IsShown end, "function")
+        local barShown = addon.Read(function() return bar.IsVisible or bar.IsShown end, "function")
+        local shown = addon.Read(scrollShown, "boolean", scroll) == true and addon.Read(barShown, "boolean", bar) == true
+        local down = addon.Clean(IsMouseButtonDown, "function")
+        if state.quietPressed and down and addon.Read(down, "boolean", "LeftButton") == false then state.quietPressed = false end
+        local ok, minimum, maximum = pcall(range, bar)
+        minimum, maximum = addon.Clean(minimum, "number"), addon.Clean(maximum, "number")
+        local overflow = ok and minimum ~= nil and maximum ~= nil and maximum > minimum
+        local viewport, controls = false, false
+        if shown and overflow then
+            viewport = addon.Read(mouse, "boolean", scroll) == true
+            for _, object in ipairs(objects) do
+                if addon.Read(mouse, "boolean", object) == true then controls = true end
+            end
+        else state.quietPressed = false end
+        local active = shown and overflow and (viewport or controls or state.quietPressed)
+        local alpha = active and ((controls or state.quietPressed) and 1 or .5) or 0
+        if current() and state.quietAlpha ~= alpha then
+            if invoke(bar, "SetAlpha", alpha) and current() then state.quietAlpha = alpha end
+        end
+        for _, object in ipairs(objects) do
+            local enabled = active == true and policies[object] == true
+            state.quietMouse = state.quietMouse or {}
+            if current() and state.quietMouse[object] ~= enabled then
+                if invoke(object, "EnableMouse", enabled) and current() then state.quietMouse[object] = enabled end
+            end
+        end
+        state.quietBusy = false
+    end
+    local function hook(object, name, callback)
+        local ok, installed = pcall(object.HookScript, object, name, callback)
+        return ok and addon.Clean(installed, "boolean") == true
+    end
+    for _, object in ipairs(objects) do
+        for _, name in ipairs({ "OnEnter", "OnLeave", "OnShow", "OnHide" }) do
+            if not hook(object, name, update) then return end
+        end
+        if not hook(object, "OnMouseDown", function(_, button)
+            if current() and addon.Clean(button, "string") == "LeftButton" then state.quietPressed = true; update() end
+        end) or not hook(object, "OnMouseUp", function()
+            if current() then state.quietPressed = false; update() end
+        end) then return end
+    end
+    for _, name in ipairs({ "OnEnter", "OnLeave", "OnShow", "OnHide" }) do
+        if not hook(scroll, name, update) then return end
+    end
+    if not hook(scroll, "OnUpdate", function(_, elapsed)
+        if not state.quiet then return end
+        elapsed = addon.Clean(elapsed, "number")
+        if not elapsed or elapsed < 0 then return end
+        state.quietElapsed = (state.quietElapsed or 0) + elapsed
+        if state.quietElapsed < .08 then return end
+        state.quietElapsed = 0
+        update()
+    end) then return end
+    state.quiet = true
+    update()
+end
+
 local function styleScrollArrow(button, down)
     button = cleanObject(button)
     if not button then return false end
@@ -516,6 +609,7 @@ function Theme.StyleScrollBar(scroll)
     end
     styleScrollArrow(bar.ScrollUpButton, false)
     styleScrollArrow(bar.ScrollDownButton, true)
+    quietScrollBar(scroll, bar, state)
     return state.rail ~= nil and state.thumb ~= nil
 end
 

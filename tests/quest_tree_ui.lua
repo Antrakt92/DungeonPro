@@ -1,9 +1,13 @@
 local fixture=assert(loadfile("tests/client_ui.lua"))("fixture")
 local addon=fixture.addon
 function fixture.methods:SetTextColor(r,g,b)self.textColor={r,g,b}end
+function fixture.methods:SetAtlas(value)self.atlas=value end
+function fixture.methods:GetAtlas()return self.atlas end
+C_Texture={GetAtlasInfo=function()return {}end}
 fixture.eventFrame.scripts.OnEvent(fixture.eventFrame,"ADDON_LOADED","DungeonPro")
 SlashCmdList.DUNGEONPRO("")
 local ui=addon.UI
+addon.Description=function(id)return "Selected quest description "..id end
 local ids={71001,71002,71003,71004,71005}
 for _,id in ipairs(ids)do addon.quests[id]={id=id,name="Tree quest "..id,minLevel=1,requirementsKnown=true,
     start={mapID=1455,x=25,y=35,name="Tree giver "..id}}end
@@ -22,7 +26,12 @@ local function row(id,branch)
     end
     error("Missing tree row "..id.." branch="..tostring(branch))
 end
+for _,value in ipairs(ui.details)do if value:IsShown() then
+    assert(value.text~=addon.L("PARTIAL") and value.text~=addon.L("OVERVIEW_REVIEWED"),"overview does not repeat the removed coverage banner")
+end end
 assert(not ui.map and not ui.guide)
+assert(ui.summary==nil and ui.coverage==nil,"aggregate status and coverage labels must not occupy the workspace")
+assert(ui.questScroll.point[3]>-200 and ui.detailScroll.point[3]==ui.questScroll.point[3],"quest and detail panes reclaim the former summary space")
 local show=fixture.methods.Show
 local expected={71003,71001,71002,71004,71005}
 function fixture.methods:Show()
@@ -38,6 +47,17 @@ row(71003,false).scripts.OnClick()
 fixture.methods.Show=show
 assert(ui.quest==71003 and ui.questTreeRoot==71003)
 local target=row(71003,false)
+assert(not ui.storyToggle or not ui.storyToggle:IsShown(),"the default right pane does not repeat the left quest tree")
+local description,giverLines,rewardLine=nil,0,false
+for _,value in ipairs(ui.details)do if value:IsShown() then
+    if value.text=="Selected quest description 71003" then description=value end
+    local plain=value.text and value.text:gsub("|c%x%x%x%x%x%x%x%x",""):gsub("|r","")
+    assert(plain~=addon.L("LOCKED") and plain~=addon.L("UNKNOWN"),"default details use a concrete reason instead of generic preparation labels")
+    if value.text and value.text:find("Tree giver 71003",1,true)then giverLines=giverLines+1 end
+    if value.text and value.text:find("Cached reward",1,true)then rewardLine=true end
+end end
+assert(description and giverLines==1 and rewardLine,"default details keep the actual selected description giver and rewards without duplicated references")
+assert(ui.referenceToggle:IsShown() and ui.referenceToggle.point[3]<description.point[3],"extra factual references stay available after the main quest information")
 assert(target.title:GetWidth()<=target:GetWidth()-22-26-20-18,"cached reward and status icons reserve real title space")
 local reward
 for _,object in ipairs(fixture.objects)do
@@ -76,4 +96,11 @@ local hiddenClick=row(71003,false).scripts.OnClick
 ui.frame:Hide();hiddenClick()
 assert(ui.quest==before,"closed planner cannot act on a retained row callback")
 ui.frame:Show()
+C_QuestLog.IsOnQuest=function(id)return id==71002 end
+ui:Refresh()
+row(71003,false).scripts.OnClick()
+assert(row(71002,true).statusIcon.atlas=="Quest-In-Progress-Icon-yellow","a quest in the journal has its row progress icon")
+C_QuestLog.ReadyForTurnIn=function(id)return id==71002 end
+ui:Refresh()
+assert(row(71002,true).statusIcon.atlas=="UI-QuestIcon-TurnIn-Normal","ready-to-turn-in status is visible on its own row")
 print("Actual compact quest tree composition: PASS (target, completed parent, sibling, target, other root, stale click)")

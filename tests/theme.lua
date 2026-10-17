@@ -206,6 +206,11 @@ end)
 function methods:GetAlpha()return self.alpha or 1 end
 function methods:SetRotation(value)self.rotation=value end
 function methods:IsEnabled()return self.enabled~=false end
+function methods:IsShown()return self.shown~=false end
+function methods:IsMouseEnabled()return self.mouseEnabled~=false end
+function methods:EnableMouse(value)self.mouseEnabled=value end
+function methods:GetMinMaxValues()return self.minimum or 0,self.maximum or 100 end
+MouseIsOver=function(object)return object.pointer==true end
 function methods:HookScript(name,callback)
     if self.hookFailure==name then return false end
     if self.hookThrow==name then error("unsupported")end
@@ -258,10 +263,83 @@ test("all three native scrollbars receive bounded quiet cosmetics while native g
     for _,scroll in ipairs({ui.catalogScroll,ui.questScroll,ui.detailScroll})do
         local bar=scroll.ScrollBar;after=after+#bar.textures+#bar.ScrollUpButton.textures+#bar.ScrollDownButton.textures
         for _,button in ipairs({bar.ScrollUpButton,bar.ScrollDownButton})do
-            for _,list in pairs(button.hooks)do assert(#list==1)end
+            for name,list in pairs(button.hooks)do assert(#list==((name=="OnEnter"or name=="OnLeave")and 2 or 1))end
         end
     end
     assert(totalTextures==15 and after==totalTextures)
+end)
+
+test("quiet bars reveal on viewport and controls while idle targets stop intercepting clicks",function()
+    local scroll,bar=scrollFixture()
+    assert(addon.Theme.StyleScrollBar(scroll))
+    assert(bar.alpha==0 and not bar.mouseEnabled and not bar.ScrollUpButton.mouseEnabled)
+    scroll.pointer=true;nativeEvent(scroll,"OnEnter")
+    assert(bar.alpha==.5 and bar.mouseEnabled and bar.ScrollUpButton.mouseEnabled)
+    scroll.pointer=false;bar.pointer=true;nativeEvent(scroll,"OnLeave")
+    assert(bar.alpha==1 and bar.mouseEnabled)
+    bar.pointer=false;nativeEvent(bar,"OnLeave")
+    assert(bar.alpha==0 and not bar.mouseEnabled)
+    -- Geometry still discovers disabled native controls, without an invisible hit target.
+    bar.pointer=true;nativeEvent(scroll,"OnUpdate",.04);assert(bar.alpha==0)
+    nativeEvent(scroll,"OnUpdate",.04);assert(bar.alpha==1 and bar.mouseEnabled)
+end)
+
+test("native drag wheel and click handlers survive quiet leave and repeated theme application",function()
+    local scroll,bar=scrollFixture();local button=bar.ScrollDownButton
+    local down,change,wheel,click=bar.scripts.OnMouseDown,bar.scripts.OnValueChanged,scroll.scripts.OnMouseWheel,button.scripts.OnClick
+    local nativeUpdate=function(self)self.nativeTicks=(self.nativeTicks or 0)+1 end
+    scroll.scripts.OnUpdate=nativeUpdate
+    assert(addon.Theme.StyleScrollBar(scroll))
+    for i=1,30 do addon.Theme.StyleScrollBar(scroll)end
+    assert(bar.scripts.OnMouseDown==down and bar.scripts.OnValueChanged==change and scroll.scripts.OnMouseWheel==wheel and button.scripts.OnClick==click)
+    assert(scroll.scripts.OnUpdate==nativeUpdate and #scroll.hooks.OnUpdate==1)
+    bar.pointer=true;nativeEvent(scroll,"OnUpdate",.1);nativeEvent(bar,"OnMouseDown","LeftButton")
+    bar.pointer=false;nativeEvent(bar,"OnLeave");nativeEvent(scroll,"OnUpdate",.1)
+    assert(bar.alpha==1 and bar.mouseEnabled and bar.dragButton=="LeftButton")
+    nativeEvent(bar,"OnValueChanged",25);nativeEvent(scroll,"OnMouseWheel",-1);nativeEvent(button,"OnClick")
+    assert(bar.value==25 and scroll.wheel==-1 and button.clicked==1 and scroll.nativeTicks==2)
+    nativeEvent(bar,"OnMouseUp","LeftButton");assert(bar.alpha==0 and not bar.mouseEnabled)
+    addon.Theme.StyleScrollBar(scroll);scroll.pointer=true;nativeEvent(scroll,"OnEnter")
+    assert(bar.mouseEnabled,"reapplication must preserve original mouse policy rather than capture idle false")
+end)
+
+test("no overflow hidden parents and restricted mouse state leave bars quiet",function()
+    local scroll,bar=scrollFixture();scroll.pointer=true;bar.pointer=true
+    assert(addon.Theme.StyleScrollBar(scroll));assert(bar.alpha==1)
+    bar.maximum=0;nativeEvent(scroll,"OnUpdate",.1);assert(bar.alpha==0 and not bar.mouseEnabled and bar.shown~=false)
+    bar.maximum=100;scroll.IsVisible=function()return false end
+    nativeEvent(scroll,"OnUpdate",.1);assert(bar.alpha==0 and not bar.mouseEnabled)
+    scroll.IsVisible=nil
+    local old=MouseIsOver;MouseIsOver=function()return secret end
+    local s,b=scrollFixture();addon.Theme.StyleScrollBar(s);nativeEvent(s,"OnUpdate",.1)
+    assert(b.alpha==0 and not b.mouseEnabled);MouseIsOver=old
+end)
+
+test("quiet styling preserves a disabled native mouse policy and fails without altering input",function()
+    local scroll,bar=scrollFixture();bar.mouseEnabled=false;bar.pointer=true
+    assert(addon.Theme.StyleScrollBar(scroll));assert(bar.alpha==1 and not bar.mouseEnabled)
+    local s,b=scrollFixture();s.hookFailure="OnUpdate"
+    assert(addon.Theme.StyleScrollBar(s));assert(b.alpha==nil and b.mouseEnabled==nil)
+    s.pointer=true;nativeEvent(s,"OnEnter");assert(b.alpha==nil and b.mouseEnabled==nil)
+    for i=1,30 do addon.Theme.StyleScrollBar(s)end
+    assert(#s.hooks.OnEnter==1 and not s.hooks.OnUpdate)
+end)
+
+test("lost native mouse-up recovers through clean button state and restricted ranges never reveal controls",function()
+    local scroll,bar=scrollFixture();bar.pointer=true
+    local before=IsMouseButtonDown;local pressed=true
+    IsMouseButtonDown=function()return pressed end
+    assert(addon.Theme.StyleScrollBar(scroll))
+    nativeEvent(bar,"OnMouseDown","LeftButton");bar.pointer=false;nativeEvent(scroll,"OnUpdate",.1)
+    assert(bar.alpha==1 and bar.mouseEnabled)
+    pressed=false;nativeEvent(scroll,"OnUpdate",.1)
+    assert(bar.alpha==0 and not bar.mouseEnabled)
+    bar.pointer=true;bar.GetMinMaxValues=function()return 0,secret end
+    -- Replaced capabilities restore native input instead of freezing a hidden disabled slider.
+    nativeEvent(scroll,"OnUpdate",.1);assert(bar.alpha==1 and bar.mouseEnabled)
+    local s,b=scrollFixture();b.GetMinMaxValues=function()return 0,secret end;b.pointer=true
+    addon.Theme.StyleScrollBar(s);assert(b.alpha==0 and not b.mouseEnabled)
+    IsMouseButtonDown=before
 end)
 test("native arrow enable hover and disable events update only owned chevrons",function()
     local scroll,bar=scrollFixture();bar.ScrollUpButton.enabled=false

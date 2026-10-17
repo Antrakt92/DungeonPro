@@ -155,6 +155,14 @@ local function dispatchGiverMap()
     local action, giver = ui:NavigationDestination(false)
     if action then ui:DispatchDetail(action, true, giver) end
 end
+local function planSummary()
+    local p=ui.currentPlan;local c=p and p.counts or {}
+    return addon.L("SUMMARY",(c.ACTIVE or 0)+(c.READY or 0),c.COMPLETED or 0,(c.LOCKED or 0)+(c.AVAILABLE or 0),c.UNKNOWN or 0)
+end
+local function planCoverage()
+    local p=ui.currentPlan
+    return addon.L(not p and "PICK"or p.notice or(p.unknown and "PARTIAL"or(p.ready and "PREPARED"or"NOT_PREPARED")))
+end
 local function check(name, fn)
     local ok, err = pcall(fn)
     assert(ok, name .. ": " .. tostring(err))
@@ -306,10 +314,14 @@ end
 -- Full-data fixtures explicitly open the same disclosures available to players.
 local function expandDetail()
     local id = ui.quest
-    if ui.quest == id and ui.storyToggle and ui.storyToggle.shown and not ui.detailChainExpanded then ui.storyToggle.scripts.OnClick() end
     if ui.quest == id and ui.referenceToggle and ui.referenceToggle.shown and not ui.detailReferencesExpanded then ui.referenceToggle.scripts.OnClick() end
+    if ui.quest == id and ui.storyToggle and ui.storyToggle.shown and not ui.detailChainExpanded then ui.storyToggle.scripts.OnClick() end
 end
 local function showDetail(id, context)
+    -- Data fixtures render the explicit expanded view once. Separate disclosure
+    -- checks exercise the real collapsed-to-expanded user interaction.
+    ui.detailReferenceQuest,ui.detailReferenceDungeon=id,ui.dungeon
+    ui.detailReferencesExpanded,ui.detailChainExpanded=true,true
     local generation = showCompactDetail(id, context)
     if generation and ui.rewardGeneration == generation then expandDetail() end
 end
@@ -324,7 +336,9 @@ check("Quest cards show mandatory prerequisites before next guidance and keep re
     ui.dungeon = { key = "compact", quests = { 99220 } }
     showCompactDetail(99220)
     assert(not ui.detailReferencesExpanded and ui.detailChainExpanded and ui.giver.enabled)
-    assert(ui.action.id == 99222 and ui.referenceToggle.shown and ui.storyToggle.shown)
+    assert(ui.action.id == 99222 and ui.referenceToggle.shown and not(ui.storyToggle and ui.storyToggle.shown))
+    for _,row in ipairs(ui.chainButtons)do assert(not row.shown)end
+    ui.referenceToggle.scripts.OnClick();assert(ui.detailReferencesExpanded and ui.storyToggle.shown)
     local rows = {}; for _, row in ipairs(ui.chainButtons) do if row.shown then rows[#rows + 1] = row end end
     assert(#rows == 3)
     assert(rows[1].label.text:find("Quest 99222", 1, true) and rows[3].label.text:find("Quest 99220", 1, true))
@@ -332,7 +346,7 @@ check("Quest cards show mandatory prerequisites before next guidance and keep re
     assert(not detailHas(addon.L("START")))
     ui.storyToggle.scripts.OnClick()
     local count = 0; for _, row in ipairs(ui.chainButtons) do if row.shown then count = count + 1 end end
-    assert(count == 3 and ui.action.id == 99222 and not ui.detailReferencesExpanded)
+    assert(count == 3 and ui.action.id == 99222 and ui.detailReferencesExpanded)
     for _, id in ipairs({ 99220, 99221, 99222 }) do addon.quests[id] = nil end
     ui.dungeon = dungeon; showDetail(2)
 end)
@@ -343,13 +357,13 @@ check("Compact OR context never selects an arbitrary mandatory predecessor and d
     addon.quests[99230].start = { mapID = 1, x = 20, y = 30 }
     ui.dungeon = { key = "compact-or", quests = { 99230 } }; showCompactDetail(99230)
     local count = 0; for _, row in ipairs(ui.chainButtons) do if row.shown then count = count + 1 end end
-    assert(count == 3 and ui.branchButtons[1].shown and not ui.requirementButtons[1].shown)
+    assert(count == 0 and not(ui.branchButtons[1]and ui.branchButtons[1].shown))
     local action, status = ui.action, ui.engine:State(99230).status
     ui.referenceToggle.scripts.OnClick()
     assert(ui.detailReferencesExpanded and ui.giver.enabled and ui.action.id == action.id and ui.action.kind == action.kind and ui.engine:State(99230).status == status)
     ui.storyToggle.scripts.OnClick(); assert(not ui.branchButtons[1].shown)
     ui.storyToggle.scripts.OnClick(); assert(ui.branchButtons[1].shown)
-    ui.referenceToggle.scripts.OnClick(); assert(not ui.detailReferencesExpanded and ui.detailChainExpanded and ui.branchButtons[1].shown)
+    ui.referenceToggle.scripts.OnClick(); assert(not ui.detailReferencesExpanded and ui.detailChainExpanded and not ui.branchButtons[1].shown)
     for _, id in ipairs({ 99230, 99231, 99232 }) do addon.quests[id] = nil end
     ui.dungeon = dungeon; showDetail(2)
 end)
@@ -530,13 +544,13 @@ check("Filtered-out quests are distinguished from missing dungeon data", functio
     addon.quests[301] = { id = 301, minLevel = 1, requirementsKnown = true, factions = { "Horde" } }
     ui.dungeon = { name = "Faction fixture", coverage = "reviewed", quests = { 301 } }
     ui:Refresh()
-    assert(#visibleRows() == 0 and ui.coverage.text == addon.L("NO_CHARACTER_QUESTS"))
+    assert(#visibleRows() == 0 and planCoverage() == addon.L("NO_CHARACTER_QUESTS"))
     ui.characterButton.scripts.OnClick()
     assert(#visibleRows() == 1 and visibleRows()[1].title.text == "Quest 301")
-    assert(ui.coverage.text ~= addon.L("NO_CHARACTER_QUESTS") and ui.coverage.text ~= addon.L("EMPTY"))
+    assert(planCoverage() ~= addon.L("NO_CHARACTER_QUESTS") and planCoverage() ~= addon.L("EMPTY"))
     ui.characterButton.scripts.OnClick()
     ui.dungeon.quests = {}; ui:Refresh()
-    assert(#visibleRows() == 0 and ui.coverage.text == addon.L("EMPTY"))
+    assert(#visibleRows() == 0 and planCoverage() == addon.L("EMPTY"))
     ui.dungeon = originalDungeon; addon.Context = originalContext; addon.quests[301] = nil; ui:Refresh()
 end)
 check("Wrapped catalogue, quest and giver text expands cumulative rows without overlap", function()
@@ -601,7 +615,7 @@ check("OR alternatives support explicit persisted choices, automatic reset and s
     addon.char.choices = { [999] = { retain = true }, [400] = { [2] = 777 } }
     local choices = addon.char.choices
     ui.dungeon = { name = "Branch fixture", coverage = "reviewed", quests = { 400 } }
-    ui.preparation, ui.quest = false, 400; ui:Refresh()
+    ui.preparation, ui.quest = false, 400; ui:Refresh();expandDetail()
     assert(ui.detailChainExpanded, "mandatory alternatives are visible on first open")
     local function option(parent)
         for _, b in ipairs(ui.branchButtons) do
@@ -641,7 +655,7 @@ check("Completed preparation keeps the prepared result instead of empty data war
     end
     for id in pairs(addon.quests) do done[id] = true end
     togglePreparationFixture()
-    assert(#visibleRows() == 0 and ui.coverage.text == addon.L("PREPARED"))
+    assert(#visibleRows() == 0 and planCoverage() == addon.L("PREPARED"))
     assert(ui.rows[1].shown and not ui.rows[1].enabled and not ui.rows[1].scripts.OnClick)
     assert(ui.rows[1].title.text == addon.L("PREPARATION_EMPTY", addon.L("QUESTS")))
     for index = 2, #ui.rows do assert(not ui.rows[index].shown) end
@@ -654,7 +668,7 @@ check("Completion history cannot hide the current held quest from preparation pr
     local rows = visibleRows()
     assert(#rows == 1 and rows[1].title.text == "Quest 6")
     assert(rows[1].note.text:find(addon.L("complete"), 1, true))
-    assert(ui.coverage.text == addon.L("PREPARED"), "held repeat work does not revoke preparation")
+    assert(planCoverage() == addon.L("PREPARED"), "held repeat work does not revoke preparation")
 end)
 check("Reopening recalculates fit after a screen change", function()
     screenWidth, screenHeight = 800, 900
@@ -1278,6 +1292,7 @@ check("Explicit supporting-card inspection can go back without recording refresh
     assert(not singleton.shown and not singleton.scripts.OnClick)
     ui:BackQuest()
     assert(ui.quest == 980 and #ui.detailHistory == 0 and canGoBack(), "history is exhausted; overview remains reachable")
+    expandDetail()
     ui.chainButtons[1].scripts.OnClick()
     assert(ui.quest == 981 and #ui.detailHistory == 1)
     ui:BackQuest()
@@ -1690,7 +1705,7 @@ check("Unverified inactive quests identify missing requirements in rows and deta
         active = function() return false end } end
     ui.quest, ui.preparation = 3, false; ui:Refresh()
     local expected = "|cffb4aacd" .. addon.L("UNKNOWN_REQUIREMENTS") .. "|r"
-    assert(detailHas(expected) and ui.engine:State(3).status == "UNKNOWN")
+    assert(detailHas(addon.L("REASON_requirementsUnknown")) and not detailHas(expected) and ui.engine:State(3).status == "UNKNOWN")
     assert(ui.engine:State(3).reason == "requirements" and not ui.action and hasDestination(true) and hasDestination(false))
     local found
     for _, row in ipairs(visibleRows()) do if row.title.text == "Quest 3" then found = row.note.text end end
@@ -1762,12 +1777,12 @@ check("Partial requirement chains show held-parent work while keeping the target
         local state = ui.engine:State(9950)
         local plan = ui.engine:Dungeon(ui.dungeon)
         assert(state.status == "UNKNOWN" and state.reason == "requirements")
-        assert(plan.unknown and not plan.ready and ui.coverage.text == addon.L("PARTIAL"))
+        assert(plan.unknown and not plan.ready and planCoverage() == addon.L("PARTIAL"))
         assert(#plan.actions == 1 and plan.actions[1].id == 9951)
         assert(plan.actions[1].kind == (turnin and "turnin" or "complete"))
         assert(ui.action and ui.action.id == 9951 and ui.action.kind == plan.actions[1].kind)
         assert(not hasDestination(true) and not hasDestination(false), "missing selected giver cannot navigate to a prerequisite instead")
-        assert(detailIncludes("|cffb4aacd" .. addon.L("UNKNOWN_REQUIREMENTS") .. "|r"))
+        assert(detailIncludes(addon.L("REASON_requirementsUnknown")))
         local heldRow, targetRow
         for _, row in ipairs(visibleRows()) do
             if row.title.text == "Quest 9951" then heldRow = row end
@@ -2908,7 +2923,7 @@ do
         local first, _, restore = overviewFixture()
         assert(ui.quest == nil and #ui.detailHistory == 0 and #visibleRows() == 1)
         assert(detailHas(first.name) and detailHas(addon.L("CATALOG_LEVELS", 12, 24)))
-        assert(detailHas(addon.L("CATALOG_QUESTS", 2)) and detailHas(addon.L("PARTIAL")) and detailHas(addon.L("OVERVIEW_PICK")))
+        assert(detailHas(addon.L("CATALOG_QUESTS", 2)) and not detailHas(addon.L("PARTIAL")) and detailHas(addon.L("OVERVIEW_PICK")))
         assert(not detailHas(addon.L("PREPARED")) and not detailHas(addon.L("PICK")))
         assert(ui.overviewArt and ui.overviewArt.kind ~= "Button" and ui.overviewArt.width <= 334 and ui.overviewArt.shown)
         assert(ui.overviewArt.texture == first.key and not ui.source.enabled and not hasDestination(true) and not hasDestination(false) and not ui.giver.enabled)
@@ -2934,13 +2949,13 @@ do
         assert(detailHas(addon.L("PICK")) and not art.shown and not ui.source.enabled)
         restore()
     end)
-    check("Overview coverage translates and rejects stale painter results after quest or dungeon reentry", function()
+    check("Overview omits coverage labels and rejects stale painter results after quest or dungeon reentry", function()
         local first, second, restore = overviewFixture()
         first.coverage = "reviewed"
         for code, strings in pairs(addon.locales) do
             assert(type(strings.OVERVIEW_PICK) == "string" and type(strings.OVERVIEW_REVIEWED) == "string")
             addon.db.locale = code; ui:RefreshDetail()
-            assert(detailHas(addon.L("OVERVIEW_REVIEWED")) and detailHas(addon.L("OVERVIEW_PICK")))
+            assert(not detailHas(addon.L("OVERVIEW_REVIEWED")) and detailHas(addon.L("OVERVIEW_PICK")))
         end
         addon.PaintDungeonArt = function() return false end; ui:RefreshDetail(); assert(not ui.overviewArt.shown)
         for _, targetQuest in ipairs({ false, true }) do
@@ -3526,6 +3541,7 @@ check("Action inspection returns to its reading section while stale and recycled
     inspect.scripts.OnClick(inspect,"LeftButton",false)
     assert(ui.quest==20003 and #ui.detailHistory==1)
     assert(ui:BackQuest() and ui.quest==20001 and ui.detailScroll.verticalScroll==math.min(200,math.max(0,ui.detail.height-ui.detailScroll:GetHeight())))
+    expandDetail()
     local staleChoice,staleInspect=ui.actionButtons[2].scripts.OnClick,ui.actionInspectButtons[2].scripts.OnClick
     ui:RefreshDetail();staleChoice();staleInspect()
     assert(ui.quest==20001 and ui.action.id==20002 and not ui.detailActionChoice)
@@ -3648,7 +3664,7 @@ local function preparationForFixture()
     addon.quests[21006].requirementsKnown=false
     addon.char.choices={}
     ui.dungeon={key="preparation-for-fixture",name="Plan fixture",coverage="partial",quests={21001,21002,21005,21006}}
-    ui.detailHistory={};ui.quest=21003;ui:Refresh()
+    ui.detailHistory={};ui.quest=21003;ui:Refresh();expandDetail()
     return function()
         addon.Context,addon.char.choices=saved.context,saved.choices
         ui.preparation,ui.includeUnavailable=saved.preparation,saved.all
@@ -3664,6 +3680,7 @@ check("A support card identifies only targets whose current preparation actions 
         if row.shown and row.questID==21003 then row.scripts.OnClick(row,"LeftButton",false);clicked=true;break end
     end
     assert(clicked and ui.quest==21003)
+    expandDetail()
     assert(ui.preparationForButtons and ui.preparationForButtons[1].shown and ui.preparationForButtons[2].shown)
     assert(ui.preparationForButtons[1].questID==21001 and ui.preparationForButtons[2].questID==21002)
     assert(detailHas(addon.L("PREPARATION_FOR")) and detailHas(addon.L("PREPARATION_FOR_NOTICE")))
@@ -3701,6 +3718,7 @@ check("Preparation target associations deduplicate wrap translate and clear stal
     ui:RefreshDetail();ui.detailScroll:SetVerticalScroll(200)
     first.scripts.OnClick(first,"LeftButton",false)
     assert(ui.quest==21001 and ui:BackQuest() and ui.quest==21003 and ui.detailScroll.verticalScroll==math.min(200,math.max(0,ui.detail.height-ui.detailScroll:GetHeight())))
+    expandDetail()
     local old=ui.preparationForButtons[2].scripts.OnClick
     addon.char.choices[21002]={[1]=21004};ui:Refresh();old();assert(ui.quest==21003)
     showDetail(21005);old();assert(ui.quest==21005)
@@ -3853,7 +3871,7 @@ check("Noto and probed CJK assets retain actual sizes and unscaled reusable rows
     local old,locale=ChatFontNormal,addon.db.locale
     assert(ui.searchBox.fontSize==14 and not ui.searchBox.scaledText and ui.searchBox.SetFontHeight==false)
     assert(ui.copy and ui.copy.fontSize==14 and ui.copy.SetFontHeight==false)
-    assert(ui.title.fontSize==26 and ui.heading.fontSize==26 and ui.summary.fontSize==14 and ui.coverage.fontSize==14)
+    assert(ui.title.fontSize==26 and ui.heading.fontSize==26 and ui.summary==nil and ui.coverage==nil)
     assert(ui.footer.fontSize==13 and ui.capacityStatus.fontSize==13 and ui.searchPlaceholder.fontSize==13)
     ChatFontNormal={unchanged=true}
     for code in pairs(addon.locales)do
@@ -3870,22 +3888,15 @@ check("Noto and probed CJK assets retain actual sizes and unscaled reusable rows
     assert(not row.title.scaledText and not row.note.scaledText and not ChatFontNormal.fontSize and ChatFontNormal.unchanged)
     row:Hide();ChatFontNormal,addon.db.locale=old,locale;ui:Refresh()
 end)
-check("Larger heading and metadata reflow above the quest viewport while preserving its reading offset",function()
+check("Heading reflow aligns both taller viewports without aggregate counter labels",function()
     local selected,quest=ui.dungeon,ui.quest
-    measurement=function(fs)
-        if fs==ui.heading then return 68 end
-        if fs==ui.summary then return 40 end
-        if fs==ui.coverage then return 40 end
-        return 18
-    end
+    measurement=function(fs)if fs==ui.heading then return 68 end;return 18 end
     ui.questScroll:SetVerticalScroll(30);ui:RefreshQuests()
-    assert(ui.summary.point[3]==-(125+68+8))
-    assert(ui.coverage.point[3]==-(125+68+8+40+8))
-    assert(ui.questScroll.point[3]==-(125+68+8+40+8+40+12))
-    assert(ui.questScroll.height==643+ui.questScroll.point[3] and ui.questScroll.verticalScroll==30)
+    assert(ui.summary==nil and ui.coverage==nil)
+    assert(ui.questScroll.point[3]==-(125+68+8)and ui.detailScroll.point[3]==ui.questScroll.point[3])
+    assert(ui.questScroll.height==643+ui.questScroll.point[3]and ui.detailScroll.height==ui.questScroll.height and ui.questScroll.verticalScroll==30)
     assert(ui.dungeon==selected and ui.quest==quest)
-    measurement=nil;ui:RefreshQuests()
-    assert(ui.questScroll.point[3]==-227 and ui.questScroll.height==416)
+    measurement=nil;ui:RefreshQuests();assert(ui.questScroll.point[3]==-159 and ui.questScroll.height==484)
 end)
 local function questListReentryFixture()
     local saved={context=addon.Context,quest=ui.quest,dungeon=ui.dungeon,preparation=ui.preparation,all=ui.includeUnavailable,
@@ -5452,8 +5463,8 @@ local function storyCollapseFixture(actualID)
     q.objectiveKills = { { npcID = 42, name = "Visible independent goal" } }
     ui.storyStates, ui.storyOrder = nil, nil
     ui:RefreshDetail()
-    if ui.detailChainExpanded then ui.storyToggle.scripts.OnClick() end
     if not ui.detailReferencesExpanded then ui.referenceToggle.scripts.OnClick() end
+    if ui.detailChainExpanded then ui.storyToggle.scripts.OnClick() end
     return f, q
 end
 local function visibleStory()
@@ -5501,12 +5512,14 @@ check("Story expansion survives all locale refreshes and actual inspection Back 
     end
     local history=ui.detailHistory;ui.detailHistory={}
     visibleStory()[1].scripts.OnClick();assert(ui.quest==8926)
-    assert(ui:BackQuest() and ui.quest==9970 and #visibleStory()==1)
+    assert(ui:BackQuest() and ui.quest==9970 and #visibleStory()==0)
+    ui.referenceToggle.scripts.OnClick();assert(#visibleStory()==1)
     ui.storyToggle.scripts.OnClick();assert(#visibleStory()==24)
     local old=ui.storyToggle.scripts.OnClick
     q.storylineGroups={unpack(q.storylineGroups)};ui:RefreshDetail()
     assert(#visibleStory()==24);old();assert(#visibleStory()==24)
-    ui.frame.scripts.OnHide();ui.frame.scripts.OnShow();assert(#visibleStory()==1)
+    ui.frame.scripts.OnHide();ui.frame.scripts.OnShow();assert(#visibleStory()==0)
+    ui.referenceToggle.scripts.OnClick();assert(#visibleStory()==1)
     ui.detailHistory=history;addon.db.locale=locale;f:finish()
 end)
 check("Source story counts deduplicate only listed IDs and prerequisites and completion materials stay independent",function()
@@ -5594,7 +5607,8 @@ check("Story controls wrap measured locale labels and reject changed context lis
     q.storylineGroups[1][#q.storylineGroups[1]+1]=9971;old();assert(#visibleStory()==1)
     ui:RefreshDetail();assert(ui.storyToggle.label.text=="+ "..addon.L("STORY_SOURCE_QUESTS",25))
     old=ui.storyToggle.scripts.OnClick;ui.frame.scripts.OnHide();old();assert(#visibleStory()==1)
-    ui.frame.scripts.OnShow();assert(#visibleStory()==1)
+    ui.frame.scripts.OnShow();assert(#visibleStory()==0)
+    ui.referenceToggle.scripts.OnClick();assert(#visibleStory()==1)
     q.storylineGroups=nil;q.storyline={9970,9971,41,42};ui:RefreshDetail()
     assert(ui.storyToggle.shown and #visibleStory()==1)
     q.storyline[5]=43;ui:RefreshDetail();assert(ui.storyToggle.shown and #visibleStory()==1)
@@ -6106,7 +6120,7 @@ check("Actual95647 event pilot uses its factual task label and has no inferred q
 end)
 check("Quest-list text publication preserves the newer note metadata engine and actual click across native setter reentry",function()
     for _,phase in ipairs({"after","before"})do
-        for _,field in ipairs({"title","note","heading","summary","coverage"})do
+        for _,field in ipairs({"title","note","heading"})do
             local old,new,restore=questListReentryFixture();addon.quests[24001].requirementsKnown=false
             local row=ui.rows[1];local target=(field=="title"or field=="note")and row[field]or ui[field]
             local setter=target.SetText;local armed=true;local expectedText,expectedNote,newEngine,newClick
@@ -6134,16 +6148,16 @@ check("A newer same-dungeon list generation retains ready status summary and rea
     local row=ui.rows[1];local setter=row.title.SetText;local armed=true;local expectedNote,summary,newEngine
     row.title.SetText=function(self,value)
         setter(self,value)
-        if armed then armed=false;held=true;ui:RefreshQuests();expectedNote,summary,newEngine=row.note.text,ui.summary.text,ui.engine end
+        if armed then armed=false;held=true;ui:RefreshQuests();expectedNote,summary,newEngine=row.note.text,planSummary(),ui.engine end
     end
     ui:RefreshQuests();row.title.SetText=setter
     assert(not armed and ui.dungeon==old and ui.engine==newEngine and row.questID==24001)
-    assert(row.note.text==expectedNote and row.note.text:find(addon.L("READY"),1,true) and ui.summary.text==summary)
+    assert(row.note.text==expectedNote and row.note.text:find(addon.L("READY"),1,true) and planSummary()==summary)
     row.scripts.OnClick();assert(ui.quest==24001 and ui.engine:State(24001).status=="READY")
     addon.Context=context;restore()
 end)
 check("Quest-list layout and native row state writes stop before touching the newer pooled row",function()
-    for _,mode in ipairs({"enabled","script","color","titlePoint","notePoint","height","summaryPoint","viewport","contentHeight"})do
+    for _,mode in ipairs({"enabled","script","color","titlePoint","notePoint","height","headingPoint","viewport","contentHeight"})do
         local old,new,restore=questListReentryFixture();addon.quests[24001].requirementsKnown=false
         local row=ui.rows[1];local target,method=row,"SetEnabled"
         if mode=="script"then method="SetScript"
@@ -6151,7 +6165,7 @@ check("Quest-list layout and native row state writes stop before touching the ne
         elseif mode=="titlePoint"then target,method=row.title,"SetPoint"
         elseif mode=="notePoint"then target,method=row.note,"Hide"
         elseif mode=="height"then method="SetHeight"
-        elseif mode=="summaryPoint"then target,method=ui.summary,"SetPoint"
+        elseif mode=="headingPoint"then target,method=ui.heading,"SetText"
         elseif mode=="viewport"then target,method=ui.questScroll,"SetHeight"
         elseif mode=="contentHeight"then target,method=ui.questList,"SetHeight"end
         local original=target[method];local armed=true;local expectedNote,newClick,newHeight,newPoint
@@ -6599,7 +6613,7 @@ check("Actual completed Deadmines quests remain directly listed without a retire
     assert(#ui.currentPlan.rows==7 and #visibleRows()==7 and not ui.currentPlan.preparationEmpty)
     local notice=addon.L("PREPARATION_EMPTY",addon.L("QUESTS"));local row=ui.rows[1]
     assert(row.shown and row.enabled and row.scripts.OnClick)
-    assert(not detailHas(notice) and detailHas(addon.L("OVERVIEW_PICK")) and ui.coverage.text==addon.L("PARTIAL"))
+    assert(not detailHas(notice) and detailHas(addon.L("OVERVIEW_PICK")) and planCoverage()==addon.L("PARTIAL"))
     assert(not detailHas(addon.L("PREPARED")) and not ui.action and ui.quest==nil and #ui.detailHistory==0)
     assert(not ui.preparation and #visibleRows()==7 and not ui.currentPlan.preparationEmpty)
     assert(detailHas(addon.L("OVERVIEW_PICK")) and not detailHas(notice) and ui.rows[1].enabled)
@@ -6613,11 +6627,11 @@ check("Direct quest browsing localizes and preserves genuinely empty or excluded
         assert(#visibleRows()==7 and detailOccurrences(notice)==0 and ui.rows[1].enabled and not ui.preparation)
     end
     ui.dungeon={key="empty-guidance",name="No target data",minLevel=1,maxLevel=60,coverage="partial",quests={}}
-    ui:Refresh();assert(not ui.currentPlan.preparationEmpty and ui.coverage.text==addon.L("EMPTY") and not ui.rows[1].shown)
+    ui:Refresh();assert(not ui.currentPlan.preparationEmpty and planCoverage()==addon.L("EMPTY") and ui.rows[1].shown and ui.rows[1].heading=="EMPTY")
     assert(detailHas(addon.L("EMPTY")) and not detailHas(addon.L("PREPARATION_EMPTY",addon.L("QUESTS"))))
     addon.quests={[30001]={id=30001,name="Foreign faction",requirementsKnown=true,minLevel=1,factions={"Horde"}}}
     ui.dungeon={key="foreign-guidance",name="Foreign targets",minLevel=1,maxLevel=60,coverage="reviewed",quests={30001}}
-    ui:Refresh();assert(#ui.currentPlan.rows==0 and not ui.currentPlan.preparationEmpty and ui.coverage.text==addon.L("NO_CHARACTER_QUESTS"))
+    ui:Refresh();assert(#ui.currentPlan.rows==0 and not ui.currentPlan.preparationEmpty and planCoverage()==addon.L("NO_CHARACTER_QUESTS"))
     ui.characterButton.scripts.OnClick(ui.characterButton,"LeftButton")
     assert(#ui.currentPlan.rows==1 and #visibleRows()==1 and not ui.currentPlan.preparationEmpty,"completed foreign history is directly inspectable in all-character view")
     finish()
@@ -6665,11 +6679,11 @@ check("Actual source-empty Shapers and character-excluded RFC overview prompts e
         addon.db.locale=code;ui.dungeon=dungeons.shapers;ui:Refresh()
         assert(#ui.dungeon.quests==0 and #ui.currentPlan.rows==0 and #visibleRows()==0)
         assert(detailOccurrences(addon.L("EMPTY"))==1 and not detailHas(addon.L("OVERVIEW_PICK")))
-        assert(ui.coverage.text==addon.L("EMPTY") and not detailHas(addon.L("NO_CHARACTER_QUESTS")))
+        assert(planCoverage()==addon.L("EMPTY") and not detailHas(addon.L("NO_CHARACTER_QUESTS")))
         ui.dungeon=dungeons.rfc;ui:Refresh()
         assert(#ui.dungeon.quests==6 and #ui.currentPlan.rows==0 and #visibleRows()==0)
         assert(detailHas(addon.L("NO_CHARACTER_QUESTS")) and not detailHas(addon.L("OVERVIEW_PICK")) and not detailHas(addon.L("EMPTY")))
-        assert(ui.coverage.text==addon.L("NO_CHARACTER_QUESTS") and not ui.action and ui.quest==nil and #ui.detailHistory==0)
+        assert(planCoverage()==addon.L("NO_CHARACTER_QUESTS") and not ui.action and ui.quest==nil and #ui.detailHistory==0)
     end
     finish()
 end)
@@ -7678,7 +7692,7 @@ check("reading profile enlarges body and row text while measured spacing and hea
         local body=0
         for _,fs in ipairs(ui.details)do if fs.shown and fs.detailStyle=="body"then body=body+1;assert(fs.fontSize==15)end end
         assert(body>0 and ui.title.fontSize==26 and ui.heading.fontSize==26 and ui.searchBox.fontSize==14)
-        assert(ui.footer.fontSize==13 and ui.summary.fontSize==14 and ui.coverage.fontSize==14)
+        assert(ui.footer.fontSize==13 and ui.summary==nil and ui.coverage==nil)
     end
     row:Hide();addon.db.locale,ui.quest,ui.dungeon=locale,quest,dungeon;ui:Refresh()
 end)
@@ -8588,7 +8602,7 @@ check("Real language hover previews the existing window and restores its labels 
     assert(addon.db.locale=="enUS" and ui.language.languageCaption=="Русский" and ui.language.text=="RU")
     assert(ui.rangeButton.text==addon.L(ui.range and "RANGE"or"ALL")and ui.rangeButton.text~=range)
     assert(ui.rows[1].note.text~=note)
-    assert(detailHas(addon.locales.ruRU.NEXT) and ui.back==nil and ui.preparationButton==nil)
+    assert(detailHas(addon.locales.ruRU.QUEST_GIVER) and ui.back==nil and ui.preparationButton==nil)
     assert(language:Cancel(ui)and addon.db.locale=="enUS"and ui.rangeButton.text==range and ui.heading.text==heading)
     local selections={"enUS","ruRU","deDE","frFR","esES","itIT","ptBR","koKR","zhCN","zhTW"}
     ui.language.scripts.OnEnter();local session=language.session
@@ -8600,7 +8614,7 @@ check("Real language hover previews the existing window and restores its labels 
         assert(ui.rangeButton.text==addon.locales[code][ui.range and "RANGE"or"ALL"])
         assert(session.rows[1].text==addon.locales[code].LANGUAGE_AUTO and row.languagePreview)
         assert(session.rows[2].languageSelected and row.languageSelected==(code=="enUS"),"checkmark follows committed English while hover previews another locale")
-        assert(detailHas(addon.locales[code].NEXT))
+        assert(detailHas(addon.locales[code].QUEST_GIVER))
     end
     session.rows[4].scripts.OnClick();assert(addon.db.locale=="deDE" and not language.session)
     addon.db.locale="enUS";ui:Refresh()
@@ -8881,7 +8895,8 @@ check("Compact selected giver stays visible before the mandatory chain and never
         if id<42002 then addon.quests[id].requires={{ids={id+1}}}end
     end
     ui.dungeon={key="visible-giver-chain",quests={42000}};showCompactDetail(42000)
-    assert(not ui.detailReferencesExpanded and ui.detailChainExpanded and ui.chainButtons[1].shown)
+    assert(not ui.detailReferencesExpanded and ui.detailChainExpanded and not ui.chainButtons[1].shown)
+    ui.referenceToggle.scripts.OnClick();assert(ui.chainButtons[1].shown)
     assert(detailSectionY(addon.L("QUEST_GIVER"))<detailSectionY(addon.L("CHAIN")))
     assert(-ui.chainButtons[1].point[3]<detailSectionY(addon.L("NEXT")))
     assert(destinationLine("Giver 42000") and ui.action.id==42002)
@@ -8932,6 +8947,8 @@ check("Long mandatory chains open as bounded visible prerequisite context with a
         if id<41009 then addon.quests[id].requires={{ids={id+1}}}end
     end
     ui.dungeon={key="long-mandatory",quests={41001}};showCompactDetail(41001)
+    for _,row in ipairs(ui.chainButtons)do assert(not row.shown)end
+    ui.referenceToggle.scripts.OnClick()
     local shown,parentVisible=0,false
     for _,row in ipairs(ui.chainButtons)do if row.shown then
         shown=shown+1;if row.label.text:find("Quest 41002",1,true)then parentVisible=true end
@@ -9234,5 +9251,44 @@ check("Dungeon membership changes during title hydration cannot publish stale ta
     for _,row in ipairs(ui.rows)do assert(not row.shown,"unproven membership cannot publish a staged badge")end
     addon.QuestName=names;ui:RefreshQuests();assert(f:row(43003,false).dungeonTarget and f:row(43004,false).dungeonTarget)
     f:finish()
+end)
+check("Default detail prioritizes narrative objectives rewards and one named giver while advanced chains stay explicit",function()
+    local f=inlineTreeFixture();local description,objectives,rewards,dialogue,log=addon.Description,addon.QuestObjectives,addon.CachedQuestRewards,addon.DialogueRewards,addon.QuestRewards
+    addon.quests[43000].start={name="Named primary giver",mapID=1,x=20,y=30}
+    addon.DialogueRewards,addon.QuestRewards=nil,nil
+    addon.Description=function()return "Selected quest narrative"end
+    addon.QuestObjectives=function()return{{text="Selected live objective",finished=false}}end
+    addon.CachedQuestRewards=function()return{source="cache",items={{name="Selected reward",count=1}},choices={}}end
+    f:row(43000,false).scripts.OnClick()
+    assert(ui.summary==nil and ui.coverage==nil and type(ui.currentPlan.counts)=="table")
+    assert(ui.questScroll.point[3]==-159 and ui.detailScroll.point[3]==-159 and ui.questScroll.height==484 and ui.detailScroll.height==484)
+    assert(not ui.detailReferencesExpanded and not(ui.storyToggle and ui.storyToggle.shown))
+    assert(detailHas("Selected quest narrative"),"default narrative")
+    assert(detailIncludes("Selected live objective"),"default progress")
+    assert(detailHas(addon.L("REWARD_ITEM","Selected reward",1)),"default cached reward")
+    local giverLines,narrativeY=0
+    for _,fs in ipairs(ui.details)do if fs.shown then
+        if fs.text:find("Named primary giver",1,true)then giverLines=giverLines+1 end
+        if fs.text=="Selected quest narrative"then narrativeY=-fs.point[3]end
+    end end
+    assert(giverLines==1 and narrativeY and -ui.referenceToggle.point[3]>narrativeY)
+    assert(not detailHas(addon.L("NEXT"))and not detailHas(addon.L("STORY_SHORT")))
+    local action=ui.action;assert(action)
+    ui.referenceToggle.scripts.OnClick();assert(ui.detailReferencesExpanded and ui.storyToggle.shown and ui.action.id==action.id)
+    ui.referenceToggle.scripts.OnClick();assert(not ui.detailReferencesExpanded and not ui.storyToggle.shown and detailHas("Selected quest narrative"))
+    addon.Description,addon.QuestObjectives,addon.CachedQuestRewards,addon.DialogueRewards,addon.QuestRewards=description,objectives,rewards,dialogue,log;f:finish()
+end)
+check("No-dungeon PICK notice clears recycled quest decorations and reward ownership",function()
+    local f=inlineTreeFixture();local context=addon.Context
+    addon.Context=function()return{level=60,active=function()return false end,completed=function()return true end}end
+    ui:RefreshQuests();local row=ui.rows[1]
+    assert(row.dungeonBadge.shown and row.statusIcon.shown and row.completedStrike.shown)
+    local clear,clears=addon.QuestListRewards.Clear,0
+    addon.QuestListRewards.Clear=function(value)if value==row then clears=clears+1 end;return clear(value)end
+    ui.dungeon,ui.quest=nil,nil;ui:RefreshQuests()
+    assert(ui.currentPlan==nil and row.shown and row.heading=="PICK"and row.title.text==addon.L("PICK"))
+    assert(not row.dungeonBadge.shown and not row.statusIcon.shown and not row.completedStrike.shown and clears==1)
+    assert(row.width==ui.questList:GetWidth()-4 and row.title.width==ui.questList:GetWidth()-22 and not row.scripts.OnClick)
+    addon.QuestListRewards.Clear=clear;addon.Context=context;f:finish()
 end)
 print("Preparation UI modeled checks passed: " .. total .. " (no native layout validation)")
