@@ -75,8 +75,9 @@ Level ranges are provisional recommendations.
   used or consumed, so an empty bag count does not mean preparation has failed.
   Starter, collection and supplied items can show native icons and hover tooltips;
   unavailable images leave their names and quantities visible.
-- Known quest payments are listed separately from rewards. They do not
-  determine whether you can accept a quest.
+- Known quest payments are listed separately from rewards. Payments reported
+  for quests in your log have their own label, alongside any source reference.
+  These amounts do not determine whether you can accept a quest.
 - The window shows current quest-log occupancy and the client-provided standard
   quest limit when available, separately from dungeon preparation status.
   A held quest can be opened in the native quest log from its detail card when

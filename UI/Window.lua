@@ -1107,6 +1107,20 @@ function UI:RefreshDetail()
         return self.quest == renderQuest and self.dungeon == renderDungeon and self.engine == renderEngine and
             addon.char == renderCharacter and self.rewardGeneration == rewardGeneration
     end
+    local previousPaymentLine, previousPaymentBinding = self.heldPaymentDetail, self.heldPaymentBinding
+    self.heldPaymentDetail, self.heldPaymentBinding = nil, nil
+    if previousPaymentLine then
+        previousPaymentLine:Hide()
+        if not portraitCardCurrent() then
+            local newer = self.heldPaymentBinding
+            if newer and newer ~= previousPaymentBinding and newer.field == previousPaymentLine and
+                self.heldPaymentDetail == previousPaymentLine and addon.Read(newer.current, "boolean") == true and
+                self.heldPaymentBinding == newer and self.heldPaymentDetail == previousPaymentLine then
+                pcall(previousPaymentLine.Show, previousPaymentLine)
+            end
+            return
+        end
+    end
     for _, field in ipairs({ "portrait", "giverPortrait" }) do
         local texture = self[field]
         if texture then
@@ -1640,6 +1654,54 @@ function UI:RefreshDetail()
             for _, objective in ipairs(objectives or {}) do
                 local text = "|cff" .. (objective.finished and COLOR.COMPLETED or COLOR.ACTIVE) .. objective.text .. "|r"
                 if line(text, nil, nil, nil, objectivesCurrent) == false then return end
+            end
+            do
+                local getter, checker, localize = addon.HeldQuestPayment, issecretvalue, addon.L
+                if type(getter) == "function" and addon.Clean(rawget(q, "id"), "number") == id then
+                    local database, selectedLocale, localeGetter = addon.db, addon.db.locale, GetLocale
+                    local gameLocale = addon.Read(localeGetter, "string")
+                    local currencyRoot = C_CurrencyInfo
+                    local currency = addon.Clean(currencyRoot, "table")
+                    local formatter = currency and rawget(currency, "GetCoinTextureString")
+                    local result, rawAmount, rawFormatted, proofReady
+                    local function heldPaymentCurrent()
+                        local language = addon.Read(localeGetter, "string")
+                        local ok, same = pcall(function()
+                            return portraitCardCurrent() and addon.quests[id] == definition and rawget(q, "id") == id and
+                                addon.HeldQuestPayment == getter and issecretvalue == checker and addon.L == localize and
+                                addon.db == database and database.locale == selectedLocale and GetLocale == localeGetter and language == gameLocale and
+                                C_CurrencyInfo == currencyRoot and (not currency or rawget(currency, "GetCoinTextureString") == formatter) and
+                                (not proofReady or (rawget(result, "amount") == rawAmount and rawget(result, "formatted") == rawFormatted))
+                        end)
+                        return ok and same == true
+                    end
+                    if not heldPaymentCurrent() then return end
+                    local candidate = addon.Read(getter, "table", id, heldPaymentCurrent)
+                    if not heldPaymentCurrent() then return end
+                    if candidate then
+                        result = candidate
+                        rawAmount, rawFormatted = rawget(result, "amount"), rawget(result, "formatted")
+                        local amount = addon.Clean(rawAmount, "number")
+                        local readable = type(checker) ~= "function" or addon.Read(checker, "boolean", rawFormatted) == false
+                        if not heldPaymentCurrent() then return end
+                        if amount and amount > 0 and amount <= 9007199254740991 and amount % 1 == 0 and readable then
+                            local formatted = addon.Clean(rawFormatted, "string")
+                            proofReady = true
+                            if not heldPaymentCurrent() then return end
+                            if not formatted or #formatted > 4096 or not formatted:find("%S") then
+                                formatted = addon.Read(localize, "string", "MONEY_COPPER", amount)
+                            end
+                            if not heldPaymentCurrent() then return end
+                            local title = formatted and addon.Read(localize, "string", "QUEST_LOG_PAYMENT", formatted)
+                            if not heldPaymentCurrent() then return end
+                            if title and title:find("%S") then
+                                if line(title, nil, nil, nil, heldPaymentCurrent) == false then return end
+                                self.heldPaymentDetail = pool[n]
+                                self.heldPaymentBinding = { field = pool[n], current = heldPaymentCurrent }
+                            end
+                        end
+                    end
+                end
             end
             local dialogueObjective = addon.Read(dialogueGetter, "string", id)
             if not objectivesCurrent() then return end

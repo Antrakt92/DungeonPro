@@ -31,6 +31,7 @@ def main():
     run(lua, "tests/theme.lua")
     run(lua, "tests/quest_status.lua")
     run(lua, "tests/quest_payment.lua")
+    run(lua, "tests/held_quest_payment.lua")
     run(lua, "tests/quest_details.lua")
     run(lua, "tests/rewards.lua")
     run(lua, "tests/cached_rewards.lua")

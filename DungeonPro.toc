@@ -16,6 +16,7 @@ Core\Planner.lua
 Core\Search.lua
 Core\Client.lua
 Core\QuestPayment.lua
+Core\HeldQuestPayment.lua
 UI\Theme.lua
 UI\QuestStatus.lua
 UI\Window.lua

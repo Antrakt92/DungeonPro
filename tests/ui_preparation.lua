@@ -6522,4 +6522,153 @@ check("Excluded-character overview localization and prompt setters cannot overwr
     end
 end)
 
+
+local function heldPaymentFixture()
+    local f,q=paymentFixture();local saved={helper=addon.HeldQuestPayment,progress=addon.QuestObjectives,dialogue=addon.DialogueObjectiveText}
+    f.native={amount=300};f.held=true
+    addon.HeldQuestPayment=function(id,current)assert(id==9970 or id==9971);assert(current());if f.held and id==9970 then return f.native end end
+    addon.QuestObjectives=function()return {{text="Held native counter",finished=false}}end
+    addon.DialogueObjectiveText=function()return "Separate current dialogue"end
+    local finish=f.finish
+    function f:finish()addon.HeldQuestPayment,addon.QuestObjectives,addon.DialogueObjectiveText=saved.helper,saved.progress,saved.dialogue;finish(self)end
+    ui:RefreshDetail();return f,q
+end
+local function logPaymentText(amount)return addon.L("QUEST_LOG_PAYMENT",addon.L("MONEY_COPPER",amount))end
+check("Held quest-log payment is a positive native line between live counters and dialogue separate from source price and rewards",function()
+    local f,q=heldPaymentFixture();local title=logPaymentText(300)
+    assert(detailHas(title) and detailSectionY(addon.L("OBJECTIVE_PROGRESS"))<detailSectionY(title))
+    assert(detailSectionY(title)<detailSectionY(addon.L("OBJECTIVE_DIALOGUE")) and detailSectionY(title)<detailSectionY(addon.L("QUEST_PAYMENT",addon.L("MONEY_COPPER",300))))
+    assert(detailOccurrences(title)==1 and detailHas(addon.L("REWARD_ITEM","Fixed reward",2)) and ui.engine:State(9970).status=="UNKNOWN")
+    f.price={amount=700};q.requiredMoney=700;ui:RefreshDetail()
+    assert(detailHas(title) and detailHas(addon.L("QUEST_PAYMENT",addon.L("MONEY_COPPER",700))))
+    q.requiredMoney=nil;addon.QuestObjectives=nil;ui:RefreshDetail()
+    assert(detailHas(title) and not detailHas(addon.L("OBJECTIVE_PROGRESS")) and not detailHas(addon.L("QUEST_PAYMENT_NOTICE")))
+    assert(not ui.action and not ui.map.enabled and not ui.guide.enabled);f:finish()
+end)
+check("Held payment localizes native or plain copper fallback and omits absent zero malformed cold or unheld data",function()
+    local f,q=heldPaymentFixture();local locale=addon.db.locale
+    for code in pairs(addon.locales)do
+        addon.db.locale=code;f.native={amount=300,formatted="Native money texture"};ui:RefreshDetail()
+        assert(detailHas(addon.L("QUEST_LOG_PAYMENT","Native money texture")))
+        for _,format in ipairs({false,""," ",{},string.rep("x",4097)})do
+            f.native={amount=300,formatted=format};ui:RefreshDetail();assert(detailHas(logPaymentText(300)))
+        end
+    end
+    addon.db.locale=locale
+    for _,value in ipairs({false,{}, {amount=0},{amount=-1},{amount=1.5},{amount="300"},{amount=math.huge},{amount=9007199254740992}})do
+        f.native=value;ui:RefreshDetail();assert(not detailHas(logPaymentText(300)) and detailHas(addon.L("QUEST_PAYMENT_NOTICE")))
+    end
+    f.native=nil;ui:RefreshDetail();assert(not detailHas(logPaymentText(300)))
+    addon.HeldQuestPayment=function()error("cold native API")end;ui:RefreshDetail();assert(not detailHas(logPaymentText(300)))
+    addon.HeldQuestPayment=nil;ui:RefreshDetail();assert(not detailHas(logPaymentText(300)))
+    f:finish()
+end)
+check("Held payment helper and fallback localization reentry reject old card DTOs and same-card newer amounts",function()
+    for _,stage in ipairs({"helper-card","helper-same","fallback"})do
+        local f,q=heldPaymentFixture();local getter=addon.HeldQuestPayment;local localize=addon.L;local armed=true
+        if stage=="fallback"then
+            addon.L=function(key,...)local text=localize(key,...);if key=="MONEY_COPPER" and armed then armed=false;f.native={amount=700};ui:RefreshDetail()end;return text end
+        else
+            addon.HeldQuestPayment=function(id,current)
+                local dto=getter(id,current)
+                if armed then armed=false
+                    if stage=="helper-card"then ui:InspectQuest(9971)else f.native={amount=700};ui:RefreshDetail()end
+                end
+                return dto
+            end
+        end
+        ui:RefreshDetail();addon.L=localize
+        assert(not detailHas(logPaymentText(300)))
+        if stage=="helper-card"then assert(ui.quest==9971)else assert(ui.quest==9970 and detailHas(logPaymentText(700)))end
+        f:finish()
+    end
+end)
+check("Held payment source helper formatter and DTO mutation after native reads cannot publish an old amount",function()
+    for _,stage in ipairs({"definition","helper","formatter","dto"})do
+        local f,q=heldPaymentFixture();local getter=addon.HeldQuestPayment;local source=addon.quests[9970]
+        addon.HeldQuestPayment=function(id,current)
+            local result=getter(id,current)
+            if stage=="definition"then addon.quests[9970]={id=9970,name="Replacement",minLevel=1,requirementsKnown=false}
+            elseif stage=="helper"then addon.HeldQuestPayment=function()return nil end
+            elseif stage=="formatter"then C_CurrencyInfo={GetCoinTextureString=function()return"new"end}
+            end
+            return result
+        end
+        if stage=="dto"then
+            local cleaner=addon.Clean;local armed=true
+            addon.Clean=function(value,expected)
+                local clean=cleaner(value,expected)
+                if armed and value==300 and expected=="number"then armed=false;f.native.amount=700 end
+                return clean
+            end
+            ui:RefreshDetail();addon.Clean=cleaner
+        else ui:RefreshDetail()end
+        assert(not detailHas(logPaymentText(300)))
+        addon.quests[9970]=source;f:finish()
+    end
+end)
+check("Held payment line setter reentry preserves a newer same-card amount and clears when inspecting another card",function()
+    local f,q=heldPaymentFixture();local first
+    for _,fs in ipairs(ui.details)do if fs.shown and fs.text==logPaymentText(300)then first=fs end end
+    assert(first);local setter=first.SetText;local armed=true
+    first.SetText=function(self,text)setter(self,text);if armed then armed=false;f.native={amount=700};ui:RefreshDetail()end end
+    ui:RefreshDetail();first.SetText=setter
+    assert(detailHas(logPaymentText(700)) and not detailHas(logPaymentText(300)))
+    ui:InspectQuest(9971);assert(not detailHas(logPaymentText(700)))
+    ui:BackQuest();assert(detailHas(logPaymentText(700)))
+    f.held=false;ui:RefreshDetail();assert(not detailHas(logPaymentText(700)) and detailHas(addon.L("QUEST_PAYMENT_NOTICE")))
+    f:finish()
+end)
+
+
+check("Held payment restricted amounts and changing checker locale or character scopes reject prior native text without a free-cost claim",function()
+    for _,stage in ipairs({"restricted","checker","locale","character"})do
+        local f,q=heldPaymentFixture();local getter=addon.HeldQuestPayment;local checker=issecretvalue;local locale=addon.db.locale;local character=addon.char
+        if stage=="restricted"then issecretvalue=function(value)return value==300 end
+        else
+            addon.HeldQuestPayment=function(id,current)
+                local dto=getter(id,current)
+                if stage=="checker"then issecretvalue=function()return false end
+                elseif stage=="locale"then addon.db.locale=locale=="ruRU" and "enUS"or"ruRU"
+                else addon.char={}end
+                return dto
+            end
+        end
+        ui:RefreshDetail();issecretvalue=checker;addon.db.locale=locale;addon.char=character
+        assert(not detailHas(logPaymentText(300)) and not ui.action)
+        f:finish()
+    end
+end)
+check("Clearing a recycled held-payment line cannot erase a newer reentrant card payment",function()
+    local f,q=heldPaymentFixture();local line=ui.heldPaymentDetail;assert(line)
+    local hide=line.Hide;local armed=true
+    line.Hide=function(self)
+        hide(self)
+        if armed then armed=false;f.native={amount=700};ui:RefreshDetail()end
+    end
+    ui:RefreshDetail();line.Hide=hide
+    assert(detailHas(logPaymentText(700)) and not detailHas(logPaymentText(300)))
+    f:finish()
+end)
+
+
+check("Held payment cleanup before-original Hide restores only a newer exact owned line without rerender",function()
+    for _,available in ipairs({true,false})do
+        local f,q=heldPaymentFixture();local field=ui.heldPaymentDetail;local hide=field.Hide;local armed=true;local calls=0
+        local getter=addon.HeldQuestPayment
+        addon.HeldQuestPayment=function(...)calls=calls+1;return getter(...)end
+        field.Hide=function(self)
+            if armed then armed=false;f.native=available and{amount=700}or nil;ui:RefreshDetail()end
+            hide(self)
+        end
+        ui:RefreshDetail();field.Hide=hide
+        assert(calls==1,"cleanup recovery must not trigger another detail render or payment read")
+        assert(not detailHas(logPaymentText(300)))
+        if available then
+            assert(ui.heldPaymentDetail==field and detailHas(logPaymentText(700)))
+        else assert(not ui.heldPaymentDetail and not detailHas(logPaymentText(700)))end
+        f:finish()
+    end
+end)
+
 print("Preparation UI modeled checks passed: " .. total .. " (no native layout validation)")
