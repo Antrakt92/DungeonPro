@@ -1047,7 +1047,7 @@ check("Live dialogue objective prose stays separate from accepted progress and h
         if fs.shown and fs.text == addon.L("OBJECTIVE_PROGRESS") then progressIndex = i end
         if fs.shown and fs.text:find("Report delivered: 0/1", 1, true) then progressText = true end
     end
-    assert(summaryIndex < progressIndex and progressText and detailHas(addon.L("REWARD_HIDDEN")))
+    assert(progressIndex < summaryIndex and progressText and detailHas(addon.L("REWARD_HIDDEN")))
     assert(ui.engine:State(2).status == previousState and (ui.action and ui.action.kind) == previousKind)
     showDetail(1)
     assert(not detailHas(addon.L("OBJECTIVE_DIALOGUE")) and not detailHas(addon.L("OBJECTIVE_PROGRESS")))
@@ -4461,7 +4461,7 @@ end)
 check("Starter objective provided and reward hovers remain source-distinct and stale starter leaves preserve newer owners",function()
     local f,q=starterPresentationFixture()
     q.objectiveItems={{itemID=801,name="Goal",quantity=6}};q.providedItems={{itemID=801,name="Supplied"}};ui:RefreshDetail()
-    local starter,objective,provided=ui.objectiveButtons[1],ui.objectiveButtons[2],ui.objectiveButtons[3]
+    local starter,objective,provided=ui.objectiveButtons[3],ui.objectiveButtons[1],ui.objectiveButtons[2]
     assert(starter.objectiveBinding.role=="starter" and objective.objectiveBinding.role=="objective" and provided.objectiveBinding.role=="provided")
     starter.scripts.OnEnter();local oldLeave,oldEnter=starter.scripts.OnLeave,starter.scripts.OnEnter
     objective.scripts.OnEnter();local hides=f.tip.hides;oldLeave();assert(f.tip.hides==hides and f.tip.owner==objective)
@@ -6291,5 +6291,101 @@ check("Native payment formatter and locale changes cannot publish old formatted 
         assert(detailHas(addon.L("QUEST_PAYMENT",addon.L("MONEY_COPPER",q.requiredMoney))))
         f:finish()
     end
+end)
+local function hierarchyFixture(id)
+    local f=rewardPresentationFixture();local actual={};assert(loadfile("Database/Catalog.lua"))("DungeonPro",actual)
+    local saved={quests=addon.quests,name=addon.QuestName,objectives=addon.QuestObjectives,dialogue=addon.DialogueObjectiveText,
+        item=addon.ItemName,icon=addon.ItemIcon,count=addon.CarriedItemCount}
+    addon.quests=actual.quests;addon.QuestName=function(other)return actual.quests[other]and actual.quests[other].name or("Quest "..other)end
+    addon.ItemName,addon.ItemIcon,addon.CarriedItemCount=nil,nil,nil
+    f.held=true;f.progress={{text="Current native counter 0/1",finished=false}};f.dialogue="Current dialogue objective"
+    addon.QuestObjectives=function(other)if other==id and f.held then return f.progress end end
+    addon.DialogueObjectiveText=function(other)if other==id then return f.dialogue end end
+    f.context={level=60,faction=(actual.quests[id].factions or{})[1]or"Alliance",class=(actual.quests[id].classes or{})[1]or"WARRIOR",race=(actual.quests[id].races or{})[1]or 1,
+        active=function(other)return f.held and other==id end,completed=function()return false end,ready=function()return false end}
+    showDetail(id,f.context)
+    function f:restore()
+        addon.quests,addon.QuestName,addon.QuestObjectives,addon.DialogueObjectiveText=saved.quests,saved.name,saved.objectives,saved.dialogue
+        addon.ItemName,addon.ItemIcon,addon.CarriedItemCount=saved.item,saved.icon,saved.count
+        self:finish()
+    end
+    return f,actual.quests[id]
+end
+local function firstDetailPrefix(prefix)
+    for _,fs in ipairs(ui.details)do if fs.shown and fs.text:find(prefix,1,true)==1 then return -fs.point[3]end end
+end
+check("Actual1654 accepted native progress precedes long source item goals provided tools and every reference location",function()
+    local f,q=hierarchyFixture(1654)
+    local nextY=detailSectionY(addon.L("NEXT"));local progressY=detailSectionY(addon.L("OBJECTIVE_PROGRESS"))
+    local dialogueY=detailSectionY(addon.L("OBJECTIVE_DIALOGUE"));local itemsY=detailSectionY(addon.L("OBJECTIVE_ITEMS"))
+    local suppliedY=detailSectionY(addon.L("PROVIDED_ITEMS"));local startY=firstDetailPrefix(addon.L("START")..": ")
+    assert(nextY<progressY and progressY<dialogueY and dialogueY<itemsY and itemsY<suppliedY and suppliedY<startY)
+    assert(progressY<ui.detailScroll:GetHeight() and detailHas("|cff88bfffCurrent native counter 0/1|r"))
+    assert(q.requirementsKnown==false and ui.engine:State(1654).status=="ACTIVE" and ui.action.kind=="complete" and not ui.action.place)
+    assert(ui.materialButtons[1].shown and -ui.materialButtons[1].point[3]>suppliedY)
+    f:restore()
+end)
+check("Native-first hierarchy preserves actual source role text in all locales and omits empty unavailable live sections",function()
+    local f,q=hierarchyFixture(1654);local locale=addon.db.locale
+    for code in pairs(addon.locales)do
+        addon.db.locale=code;ui:RefreshDetail()
+        assert(detailSectionY(addon.L("OBJECTIVE_PROGRESS"))<detailSectionY(addon.L("OBJECTIVE_ITEMS")))
+        assert(detailOccurrences(addon.L("OBJECTIVE_PROGRESS"))==1 and detailOccurrences(addon.L("OBJECTIVE_DIALOGUE"))==1)
+        f.progress={};f.dialogue=nil;ui:RefreshDetail()
+        assert(not detailHas(addon.L("OBJECTIVE_PROGRESS")) and not detailHas(addon.L("OBJECTIVE_DIALOGUE")))
+        assert(detailHas(addon.L("OBJECTIVE_ITEMS")) and detailHas(addon.L("PROVIDED_ITEMS")))
+        f.progress={{text="Current native counter 0/1",finished=false}};f.dialogue="Current dialogue objective"
+    end
+    f.held=false;f.dialogue=nil;showDetail(1654,f.context)
+    assert(ui.engine:State(1654).status=="UNKNOWN" and not ui.action and not detailHas(addon.L("OBJECTIVE_PROGRESS")))
+    assert(detailSectionY(addon.L("OBJECTIVE_ITEMS"))<firstDetailPrefix(addon.L("START")..": "))
+    addon.QuestObjectives,addon.DialogueObjectiveText=nil,nil;ui:RefreshDetail()
+    assert(not detailHas(addon.L("OBJECTIVE_PROGRESS")) and not detailHas(addon.L("OBJECTIVE_DIALOGUE")))
+    addon.db.locale=locale;f:restore()
+end)
+check("Promoted source facts remain distinct and goal-free twelve-start cards add no placeholder progress or source panels",function()
+    for _,id in ipairs({92753,8991,1160})do
+        local f,q=hierarchyFixture(id)
+        local goal=q.objectiveEvents and"OBJECTIVE_OBJECTS"or(q.objectiveKills and"OBJECTIVE_KILLS"or"OBJECTIVE_ITEMS")
+        assert(detailSectionY(addon.L("OBJECTIVE_PROGRESS"))<detailSectionY(addon.L(goal)))
+        assert(detailSectionY(addon.L(goal))<firstDetailPrefix(addon.L("START")..": "))
+        assert(detailHas(addon.L("OBJECTIVE_PROGRESS")) and q.requirementsKnown==false and ui.engine:State(id).status=="ACTIVE")
+        f:restore()
+    end
+    local f,q=hierarchyFixture(2933);f.held=false;f.dialogue=nil;showDetail(2933,f.context)
+    assert(ui.startButtons[12].shown and not detailHas(addon.L("OBJECTIVE_PROGRESS")) and not detailHas(addon.L("OBJECTIVE_DIALOGUE")))
+    assert(not detailHas(addon.L("OBJECTIVE_ITEMS"))and not detailHas(addon.L("PROVIDED_ITEMS"))and not detailHas(addon.L("OBJECTIVE_OBJECTS")))
+    f:restore()
+end)
+check("Early native objective producer reentry cannot overwrite replacement or newer same-card live data",function()
+    for _,helper in ipairs({"QuestObjectives","DialogueObjectiveText"})do
+        for _,sameCard in ipairs({false,true})do
+            local f,q=hierarchyFixture(1654);local original=addon[helper];local armed=true
+            addon[helper]=function(id)
+                local value=original(id)
+                if armed and id==1654 then
+                    armed=false
+                    if sameCard then f.progress={{text="Fresh native counter 1/2",finished=false}};f.dialogue="Fresh dialogue";ui:RefreshDetail()
+                    else ui:InspectQuest(5382)end
+                end
+                return value
+            end
+            ui:RefreshDetail();assert(not armed and ui.quest==(sameCard and 1654 or 5382))
+            if sameCard then assert(detailHas("|cff88bfffFresh native counter 1/2|r")and detailHas("Fresh dialogue")and not detailHas("|cff88bfffCurrent native counter 0/1|r"))
+            else assert(not detailHas("Current dialogue objective")and not detailHas("|cff88bfffCurrent native counter 0/1|r"))end
+            addon[helper]=original;f:restore()
+        end
+    end
+end)
+check("Promoted native label publication preserves current card and native helper omission without duplicate sections",function()
+    local f,q=hierarchyFixture(1654);local fs=objectiveText("|cff88bfffCurrent native counter 0/1|r");local setter=fs.SetText;local armed=true
+    fs.SetText=function(self,value)
+        setter(self,value)
+        if armed and value=="|cff88bfffCurrent native counter 0/1|r"then armed=false;f.progress={};f.dialogue=nil;ui:RefreshDetail()end
+    end
+    ui:RefreshDetail();fs.SetText=setter
+    assert(not armed and not detailHas(addon.L("OBJECTIVE_PROGRESS"))and not detailHas(addon.L("OBJECTIVE_DIALOGUE")))
+    assert(detailOccurrences(addon.L("OBJECTIVE_ITEMS"))==1 and detailOccurrences(addon.L("PROVIDED_ITEMS"))==1)
+    f:restore()
 end)
 print("Preparation UI modeled checks passed: " .. total .. " (no native layout validation)")
