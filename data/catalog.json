@@ -8011,7 +8011,11 @@
       "source": "https://www.wowhead.com/forever/quest=2864/tranrek",
       "start": {
         "npcID": 773,
-        "name": "Krazek"
+        "name": "Krazek",
+        "zoneName": "Stranglethorn Vale",
+        "mapID": 1434,
+        "x": 27,
+        "y": 77.2
       },
       "finish": {
         "npcID": 7876,
@@ -8846,7 +8850,11 @@
       "source": "https://www.wowhead.com/forever/quest=3380/the-sunken-temple",
       "start": {
         "npcID": 8115,
-        "name": "Witch Doctor Uzer'i"
+        "name": "Witch Doctor Uzer'i",
+        "zoneName": "Feralas",
+        "mapID": 1444,
+        "x": 74.4,
+        "y": 43.4
       },
       "finish": {
         "npcID": 7771,
@@ -9920,7 +9928,25 @@
       "source": "https://www.wowhead.com/forever/quest=3981/commander-gorshak",
       "start": {
         "npcID": 9081,
-        "name": "Galamav the Marksman"
+        "name": "Galamav the Marksman",
+        "zoneName": "Badlands",
+        "mapID": 1418,
+        "x": 5.8,
+        "y": 47.4,
+        "reportedLocations": [
+          {
+            "mapID": 1418,
+            "x": 5.8,
+            "y": 47.4,
+            "zoneName": "Badlands"
+          },
+          {
+            "mapID": 1418,
+            "x": 5.8,
+            "y": 47.6,
+            "zoneName": "Badlands"
+          }
+        ]
       },
       "finish": {
         "npcID": 9020,
@@ -10247,7 +10273,31 @@
       },
       "finish": {
         "npcID": 2921,
-        "name": "Lotwil Veriatus"
+        "name": "Lotwil Veriatus",
+        "zoneName": "Badlands",
+        "mapID": 1418,
+        "x": 25.8,
+        "y": 44.4,
+        "reportedLocations": [
+          {
+            "mapID": 1418,
+            "x": 25.8,
+            "y": 44.4,
+            "zoneName": "Badlands"
+          },
+          {
+            "mapID": 1418,
+            "x": 25.8,
+            "y": 45,
+            "zoneName": "Badlands"
+          },
+          {
+            "mapID": 1418,
+            "x": 26,
+            "y": 45.6,
+            "zoneName": "Badlands"
+          }
+        ]
       },
       "storyline": [
         4061,
@@ -10267,11 +10317,59 @@
       "source": "https://www.wowhead.com/forever/quest=4063/the-rise-of-the-machines",
       "start": {
         "npcID": 2921,
-        "name": "Lotwil Veriatus"
+        "name": "Lotwil Veriatus",
+        "zoneName": "Badlands",
+        "mapID": 1418,
+        "x": 25.8,
+        "y": 44.4,
+        "reportedLocations": [
+          {
+            "mapID": 1418,
+            "x": 25.8,
+            "y": 44.4,
+            "zoneName": "Badlands"
+          },
+          {
+            "mapID": 1418,
+            "x": 25.8,
+            "y": 45,
+            "zoneName": "Badlands"
+          },
+          {
+            "mapID": 1418,
+            "x": 26,
+            "y": 45.6,
+            "zoneName": "Badlands"
+          }
+        ]
       },
       "finish": {
         "npcID": 2921,
-        "name": "Lotwil Veriatus"
+        "name": "Lotwil Veriatus",
+        "zoneName": "Badlands",
+        "mapID": 1418,
+        "x": 25.8,
+        "y": 44.4,
+        "reportedLocations": [
+          {
+            "mapID": 1418,
+            "x": 25.8,
+            "y": 44.4,
+            "zoneName": "Badlands"
+          },
+          {
+            "mapID": 1418,
+            "x": 25.8,
+            "y": 45,
+            "zoneName": "Badlands"
+          },
+          {
+            "mapID": 1418,
+            "x": 26,
+            "y": 45.6,
+            "zoneName": "Badlands"
+          }
+        ]
       },
       "storyline": [
         4061,
@@ -10496,11 +10594,19 @@
       "source": "https://www.wowhead.com/forever/quest=4123/the-heart-of-the-mountain",
       "start": {
         "npcID": 9536,
-        "name": "Maxwort Uberglint"
+        "name": "Maxwort Uberglint",
+        "zoneName": "Burning Steppes",
+        "mapID": 1428,
+        "x": 65.2,
+        "y": 23.8
       },
       "finish": {
         "npcID": 9536,
-        "name": "Maxwort Uberglint"
+        "name": "Maxwort Uberglint",
+        "zoneName": "Burning Steppes",
+        "mapID": 1428,
+        "x": 65.2,
+        "y": 23.8
       }
     },
     {
@@ -10515,11 +10621,47 @@
       "source": "https://www.wowhead.com/forever/quest=4126/hurley-blackbreath",
       "start": {
         "npcID": 1267,
-        "name": "Ragnar Thunderbrew"
+        "name": "Ragnar Thunderbrew",
+        "zoneName": "Dun Morogh",
+        "mapID": 1426,
+        "x": 46.8,
+        "y": 52.4,
+        "reportedLocations": [
+          {
+            "mapID": 1426,
+            "x": 46.8,
+            "y": 52.4,
+            "zoneName": "Dun Morogh"
+          },
+          {
+            "mapID": 1426,
+            "x": 46.8,
+            "y": 52.6,
+            "zoneName": "Dun Morogh"
+          }
+        ]
       },
       "finish": {
         "npcID": 1267,
-        "name": "Ragnar Thunderbrew"
+        "name": "Ragnar Thunderbrew",
+        "zoneName": "Dun Morogh",
+        "mapID": 1426,
+        "x": 46.8,
+        "y": 52.4,
+        "reportedLocations": [
+          {
+            "mapID": 1426,
+            "x": 46.8,
+            "y": 52.4,
+            "zoneName": "Dun Morogh"
+          },
+          {
+            "mapID": 1426,
+            "x": 46.8,
+            "y": 52.6,
+            "zoneName": "Dun Morogh"
+          }
+        ]
       },
       "storyline": [
         4128,
@@ -10542,7 +10684,25 @@
       },
       "finish": {
         "npcID": 1267,
-        "name": "Ragnar Thunderbrew"
+        "name": "Ragnar Thunderbrew",
+        "zoneName": "Dun Morogh",
+        "mapID": 1426,
+        "x": 46.8,
+        "y": 52.4,
+        "reportedLocations": [
+          {
+            "mapID": 1426,
+            "x": 46.8,
+            "y": 52.4,
+            "zoneName": "Dun Morogh"
+          },
+          {
+            "mapID": 1426,
+            "x": 46.8,
+            "y": 52.6,
+            "zoneName": "Dun Morogh"
+          }
+        ]
       },
       "storyline": [
         4128,
@@ -10687,11 +10847,19 @@
       "source": "https://www.wowhead.com/forever/quest=4136/ribbly-screwspigot",
       "start": {
         "npcID": 9544,
-        "name": "Yuka Screwspigot"
+        "name": "Yuka Screwspigot",
+        "zoneName": "Burning Steppes",
+        "mapID": 1428,
+        "x": 66,
+        "y": 22
       },
       "finish": {
         "npcID": 9544,
-        "name": "Yuka Screwspigot"
+        "name": "Yuka Screwspigot",
+        "zoneName": "Burning Steppes",
+        "mapID": 1428,
+        "x": 66,
+        "y": 22
       },
       "storyline": [
         4324,
@@ -11291,11 +11459,71 @@
       "source": "https://www.wowhead.com/forever/quest=4286/the-good-stuff",
       "start": {
         "npcID": 9177,
-        "name": "Oralius"
+        "name": "Oralius",
+        "zoneName": "Burning Steppes",
+        "mapID": 1428,
+        "x": 84.4,
+        "y": 68.4,
+        "reportedLocations": [
+          {
+            "mapID": 1428,
+            "x": 84.4,
+            "y": 68.4,
+            "zoneName": "Burning Steppes"
+          },
+          {
+            "mapID": 1428,
+            "x": 84.4,
+            "y": 68.6,
+            "zoneName": "Burning Steppes"
+          },
+          {
+            "mapID": 1428,
+            "x": 84.6,
+            "y": 68.4,
+            "zoneName": "Burning Steppes"
+          },
+          {
+            "mapID": 1428,
+            "x": 84.6,
+            "y": 68.6,
+            "zoneName": "Burning Steppes"
+          }
+        ]
       },
       "finish": {
         "npcID": 9177,
-        "name": "Oralius"
+        "name": "Oralius",
+        "zoneName": "Burning Steppes",
+        "mapID": 1428,
+        "x": 84.4,
+        "y": 68.4,
+        "reportedLocations": [
+          {
+            "mapID": 1428,
+            "x": 84.4,
+            "y": 68.4,
+            "zoneName": "Burning Steppes"
+          },
+          {
+            "mapID": 1428,
+            "x": 84.4,
+            "y": 68.6,
+            "zoneName": "Burning Steppes"
+          },
+          {
+            "mapID": 1428,
+            "x": 84.6,
+            "y": 68.4,
+            "zoneName": "Burning Steppes"
+          },
+          {
+            "mapID": 1428,
+            "x": 84.6,
+            "y": 68.6,
+            "zoneName": "Burning Steppes"
+          }
+        ]
       },
       "objectiveItems": [
         {
@@ -11371,7 +11599,11 @@
       },
       "finish": {
         "npcID": 9544,
-        "name": "Yuka Screwspigot"
+        "name": "Yuka Screwspigot",
+        "zoneName": "Burning Steppes",
+        "mapID": 1428,
+        "x": 66,
+        "y": 22
       },
       "storyline": [
         4324,
@@ -12750,11 +12982,47 @@
       "minLevel": 55,
       "start": {
         "npcID": 9081,
-        "name": "Galamav the Marksman"
+        "name": "Galamav the Marksman",
+        "zoneName": "Badlands",
+        "mapID": 1418,
+        "x": 5.8,
+        "y": 47.4,
+        "reportedLocations": [
+          {
+            "mapID": 1418,
+            "x": 5.8,
+            "y": 47.4,
+            "zoneName": "Badlands"
+          },
+          {
+            "mapID": 1418,
+            "x": 5.8,
+            "y": 47.6,
+            "zoneName": "Badlands"
+          }
+        ]
       },
       "finish": {
         "npcID": 9081,
-        "name": "Galamav the Marksman"
+        "name": "Galamav the Marksman",
+        "zoneName": "Badlands",
+        "mapID": 1418,
+        "x": 5.8,
+        "y": 47.4,
+        "reportedLocations": [
+          {
+            "mapID": 1418,
+            "x": 5.8,
+            "y": 47.4,
+            "zoneName": "Badlands"
+          },
+          {
+            "mapID": 1418,
+            "x": 5.8,
+            "y": 47.6,
+            "zoneName": "Badlands"
+          }
+        ]
       },
       "requirementsKnown": false,
       "factions": [
@@ -22994,12 +23262,46 @@
       "finish": {
         "npcID": 6176,
         "name": "Bath'rah the Windwatcher",
-        "zoneName": "Alterac Mountains"
+        "zoneName": "Alterac Mountains",
+        "mapID": 1416,
+        "x": 80.2,
+        "y": 62.6,
+        "reportedLocations": [
+          {
+            "mapID": 1416,
+            "x": 80.2,
+            "y": 62.6,
+            "zoneName": "Alterac Mountains"
+          },
+          {
+            "mapID": 1416,
+            "x": 80.4,
+            "y": 66.8,
+            "zoneName": "Alterac Mountains"
+          }
+        ]
       },
       "start": {
         "npcID": 6176,
         "name": "Bath'rah the Windwatcher",
-        "zoneName": "Alterac Mountains"
+        "zoneName": "Alterac Mountains",
+        "mapID": 1416,
+        "x": 80.2,
+        "y": 62.6,
+        "reportedLocations": [
+          {
+            "mapID": 1416,
+            "x": 80.2,
+            "y": 62.6,
+            "zoneName": "Alterac Mountains"
+          },
+          {
+            "mapID": 1416,
+            "x": 80.4,
+            "y": 66.8,
+            "zoneName": "Alterac Mountains"
+          }
+        ]
       },
       "objectiveItems": [
         {
