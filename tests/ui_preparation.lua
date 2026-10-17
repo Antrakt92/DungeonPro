@@ -277,9 +277,96 @@ local function detailHas(value)
     for _, fs in ipairs(ui.details) do if fs.shown and fs.text == value then return true end end
     return false
 end
-local function showDetail(id, context)
-    ui.quest = id; ui.engine = addon.Planner.New(addon.quests, context or addon.Context()); ui:RefreshDetail()
+local function showCompactDetail(id, context)
+    ui.quest = id; ui.engine = addon.Planner.New(addon.quests, context or addon.Context()); return ui:RefreshDetail()
 end
+-- Full-data fixtures explicitly open the same disclosures available to players.
+local function expandDetail()
+    local id = ui.quest
+    if ui.quest == id and ui.storyToggle and ui.storyToggle.shown and not ui.detailChainExpanded then ui.storyToggle.scripts.OnClick() end
+    if ui.quest == id and ui.referenceToggle and ui.referenceToggle.shown and not ui.detailReferencesExpanded then ui.referenceToggle.scripts.OnClick() end
+end
+local function showDetail(id, context)
+    local generation = showCompactDetail(id, context)
+    if generation and ui.rewardGeneration == generation then expandDetail() end
+end
+check("Compact cards keep real next guidance and a short qualified chain before optional references", function()
+    local dungeon = ui.dungeon
+    for _, id in ipairs({ 99220, 99221, 99222 }) do
+        addon.quests[id] = { id = id, name = "Same title", minLevel = 1, requirementsKnown = true,
+            start = { mapID = 1, x = 20, y = 30 } }
+    end
+    addon.quests[99220].requires = { { ids = { 99221 } } }
+    addon.quests[99221].requires = { { ids = { 99222 } } }
+    ui.dungeon = { key = "compact", quests = { 99220 } }
+    showCompactDetail(99220)
+    assert(not ui.detailReferencesExpanded and not ui.detailChainExpanded and ui.giver.enabled)
+    assert(ui.action.id == 99222 and ui.referenceToggle.shown and ui.storyToggle.shown)
+    local rows = {}; for _, row in ipairs(ui.chainButtons) do if row.shown then rows[#rows + 1] = row end end
+    assert(#rows == 2)
+    assert(rows[1].label.text:find("(#99221)", 1, true) and rows[2].label.text:find("(#99220)", 1, true))
+    assert(-ui.referenceToggle.point[3] > -rows[2].point[3])
+    assert(not detailHas(addon.L("START")))
+    ui.storyToggle.scripts.OnClick()
+    local count = 0; for _, row in ipairs(ui.chainButtons) do if row.shown then count = count + 1 end end
+    assert(count == 3 and ui.action.id == 99222 and not ui.detailReferencesExpanded)
+    for _, id in ipairs({ 99220, 99221, 99222 }) do addon.quests[id] = nil end
+    ui.dungeon = dungeon; showDetail(2)
+end)
+check("Compact OR context never selects an arbitrary mandatory predecessor and disclosures retain actions", function()
+    local dungeon = ui.dungeon
+    for _, id in ipairs({ 99230, 99231, 99232 }) do addon.quests[id] = { id = id, minLevel = 1, requirementsKnown = true } end
+    addon.quests[99230].requires = { { ids = { 99231, 99232 } } }
+    addon.quests[99230].start = { mapID = 1, x = 20, y = 30 }
+    ui.dungeon = { key = "compact-or", quests = { 99230 } }; showCompactDetail(99230)
+    local count = 0; for _, row in ipairs(ui.chainButtons) do if row.shown then count = count + 1; assert(row.label.text:find("(#99230)", 1, true)) end end
+    assert(count == 1 and not ui.requirementButtons[1].shown)
+    local action, status = ui.action, ui.engine:State(99230).status
+    ui.referenceToggle.scripts.OnClick()
+    assert(ui.detailReferencesExpanded and ui.giver.enabled and ui.action.id == action.id and ui.action.kind == action.kind and ui.engine:State(99230).status == status)
+    ui.storyToggle.scripts.OnClick(); assert(ui.branchButtons[1].shown)
+    ui.referenceToggle.scripts.OnClick(); assert(not ui.detailReferencesExpanded and ui.detailChainExpanded and ui.branchButtons[1].shown)
+    for _, id in ipairs({ 99230, 99231, 99232 }) do addon.quests[id] = nil end
+    ui.dungeon = dungeon; showDetail(2)
+end)
+check("Reference disclosure resets on a different card and stale callbacks cannot expand its successor", function()
+    showCompactDetail(1); local old = ui.referenceToggle.scripts.OnClick
+    ui.referenceToggle.scripts.OnClick(); assert(ui.detailReferencesExpanded)
+    ui:RefreshDetail(); assert(ui.detailReferencesExpanded)
+    showCompactDetail(2); assert(not ui.detailReferencesExpanded)
+    old(); assert(ui.quest == 2 and not ui.detailReferencesExpanded)
+    local current = ui.referenceToggle.scripts.OnClick
+    ui.frame.scripts.OnHide(); current(); assert(not ui.detailReferencesExpanded)
+    ui.frame.scripts.OnShow(); showDetail(2)
+end)
+check("Disclosure offset getters cannot transfer a toggle or restoration to a replaced scroll owner", function()
+    for _, chain in ipairs({ false, true }) do
+        showDetail(100)
+        if chain then ui.storyToggle.scripts.OnClick() else ui.referenceToggle.scripts.OnClick() end
+        local scroll, expanded = ui.detailScroll, chain and ui.detailChainExpanded or ui.detailReferencesExpanded
+        local getter = scroll.GetVerticalScroll
+        local replacement = object("ScrollFrame"); replacement:SetHeight(425)
+        scroll.GetVerticalScroll = function() ui.detailScroll = replacement; return 125 end
+        local toggle = chain and ui.storyToggle or ui.referenceToggle
+        toggle.scripts.OnClick()
+        assert((chain and ui.detailChainExpanded or ui.detailReferencesExpanded) == expanded and not replacement.scrollWrites)
+        scroll.GetVerticalScroll, ui.detailScroll = getter, scroll
+    end
+    showDetail(2)
+end)
+check("Owned chain styling that replaces settings aborts reference setup without indexing stale settings", function()
+    showDetail(100)
+    local database, style, armed = addon.db, addon.Theme.StyleRow, true
+    addon.Theme.StyleRow = function(row, ...)
+        local result = style(row, ...)
+        if armed and row == ui.storyToggle then armed = false; addon.db = nil end
+        return result
+    end
+    local ok = pcall(ui.RefreshDetail, ui)
+    addon.db, addon.Theme.StyleRow = database, style
+    assert(ok and not armed and not ui.referenceToggle.shown)
+    showDetail(2)
+end)
 check("Unknown quests allow an explicit location visit without claiming availability", function()
     local started, mapped = {}, {}
     addon.Navigation = { Start = function(action) started[#started + 1] = action end,
@@ -382,6 +469,7 @@ check("All-character browsing preserves restricted quests for inspection without
         for _, row in ipairs(visibleRows()) do
             if row.title.text == "Quest 300" then
                 row.scripts.OnClick()
+                if ui.referenceToggle.shown and not ui.detailReferencesExpanded then ui.referenceToggle.scripts.OnClick() end
                 assert(detailHas(addon.L("REASON_faction")) and not ui.action and not ui.guide.enabled)
                 return true
             end
@@ -491,6 +579,7 @@ check("OR alternatives support explicit persisted choices, automatic reset and s
     local choices = addon.char.choices
     ui.dungeon = { name = "Branch fixture", coverage = "reviewed", quests = { 400 } }
     ui.preparation, ui.quest = false, 400; ui:Refresh()
+    ui.storyToggle.scripts.OnClick()
     local function option(parent)
         for _, b in ipairs(ui.branchButtons) do
             if b.shown and b.questID == 400 and b.groupIndex == 1 and b.parentID == parent then return b end
@@ -554,7 +643,7 @@ check("Detail renders native objective text and removes stale objectives", funct
         assert(id == 2)
         return { { text = "Native objective: 2/6", finished = false } }
     end
-    ui.quest = 2; ui:RefreshDetail()
+    showDetail(2)
     local function hasObjective()
         for _, fs in ipairs(ui.details) do
             if fs.shown and fs.text:find("Native objective: 2/6", 1, true) then return true end
@@ -903,7 +992,7 @@ check("Narrative group rows wrap, recycle, and preserve ordinary ordered story l
     addon.quests[910].storylineGroups = nil
     addon.quests[910].storyline = { 910 }
     showDetail(910)
-    assert(ui.chainButtons[1].height == 34 and ui.chainButtons[1].label.text:find("1. Quest 910", 1, true))
+    assert(not ui.chainButtons[1].shown, "a single inspected story entry needs no repeated chain row")
     assert(not ui.chainButtons[2].shown and not detailHas(addon.L("STORY_GROUP", 1)))
     addon.quests[910], addon.quests[911] = nil, nil
 end)
@@ -1136,6 +1225,7 @@ check("Prerequisite groups expose AND and OR structure and distinguish acceptanc
     assert(ui.engine:State(970).status == "UNKNOWN" and ui.action == nil)
     assert(row.questID == 974 and row.height == 59 and row.note.text:find(addon.L("UNKNOWN"), 1, true))
     row.scripts.OnClick()
+    if ui.referenceToggle.shown and not ui.detailReferencesExpanded then ui.referenceToggle.scripts.OnClick() end
     assert(ui.quest == 974 and detailHas(addon.L("REASON_missing")))
     assert(not detailHas(addon.L("REQUIREMENT_GROUPS")) and not row.shown and not row.scripts.OnClick)
     for _, id in ipairs({ 970, 971, 972, 973 }) do addon.quests[id] = nil end
@@ -1158,6 +1248,7 @@ check("Explicit supporting-card inspection can go back without recording refresh
     addon.dungeons, ui.dungeon, ui.quest, ui.preparation, ui.detailHistory = { dungeon, other }, dungeon, 980, false, {}
     ui:Refresh()
     assert(ui.back.enabled and ui.back.text == addon.L("DETAIL_BACK"), "a root quest can now return to its selected dungeon overview")
+    expandDetail()
     local singleton = ui.requirementButtons[1]
     singleton.scripts.OnClick()
     assert(ui.quest == 981 and #ui.detailHistory == 1 and ui.detailHistory[1] == 980 and ui.back.enabled)
@@ -1167,6 +1258,7 @@ check("Explicit supporting-card inspection can go back without recording refresh
     ui.chainButtons[1].scripts.OnClick()
     assert(ui.quest == 981 and #ui.detailHistory == 1)
     ui:BackQuest()
+    expandDetail()
     local material = ui.materialButtons[1]
     material.scripts.OnClick()
     assert(ui.quest == 984 and #ui.detailHistory == 1 and not material.scripts.OnClick)
@@ -1193,7 +1285,7 @@ check("Back history caps clean IDs at twenty and supports unknown cards without 
     ui.quest, ui.detailHistory = 2000, {}
     for id = 2001, 2025 do assert(ui:InspectQuest(id)) end
     assert(#ui.detailHistory == 20 and ui.detailHistory[1] == 2005 and ui.detailHistory[20] == 2024)
-    ui:InspectQuest(2025); ui:RefreshDetail()
+    ui:InspectQuest(2025); ui:RefreshDetail(); expandDetail()
     assert(#ui.detailHistory == 20 and detailHas(addon.L("REASON_missing")))
     for _, id in ipairs({ 0, -1, 1.5, math.huge, "2026", false }) do assert(not ui:InspectQuest(id)) end
     assert(ui.quest == 2025 and #ui.detailHistory == 20)
@@ -1602,7 +1694,7 @@ check("Requirement wording does not replace other unknown reasons or explicit st
     local story = addon.quests[3].storyline
     addon.quests[3].storyline = { 3 }
     showDetail(3, { level = 20, active = function() return false end, completed = function() return false end })
-    assert(ui.chainButtons[1].shown and ui.chainButtons[1].label.text == "|cffb4aacd1. Quest 3|r")
+    assert(not ui.chainButtons[1].shown and not ui.storyToggle.shown, "the inspected quest is not repeated as a one-entry story")
     addon.quests[3].storyline = story; showDetail(2)
 end)
 check("Requirement label is translated in every locale and held or completed evidence keeps its status", function()
@@ -1622,7 +1714,7 @@ check("Requirement label is translated in every locale and held or completed evi
         context.ready = function() return ready end
         showDetail(3, context)
         local status, color = ready and "READY" or "ACTIVE", ready and "ffe066" or "88bfff"
-        assert(detailHas("|cff" .. color .. addon.L(status) .. " — " .. addon.L("COMPLETED_BEFORE") .. "|r"))
+        assert(detailIncludes("|cff" .. color .. addon.L(status) .. " — " .. addon.L("COMPLETED_BEFORE") .. "|r"))
         assert(ui.engine:State(3).status == status and ui.action.kind == (ready and "turnin" or "complete"))
     end
     context.active = function() return false end; showDetail(3, context)
@@ -1652,7 +1744,7 @@ check("Partial requirement chains show held-parent work while keeping the target
         assert(plan.actions[1].kind == (turnin and "turnin" or "complete"))
         assert(ui.action and ui.action.id == 9951 and ui.action.kind == plan.actions[1].kind)
         assert(ui.guide.enabled == turnin and ui.map.enabled == turnin)
-        assert(detailHas("|cffb4aacd" .. addon.L("UNKNOWN_REQUIREMENTS") .. "|r"))
+        assert(detailIncludes("|cffb4aacd" .. addon.L("UNKNOWN_REQUIREMENTS") .. "|r"))
         local heldRow, targetRow
         for _, row in ipairs(visibleRows()) do
             if row.title.text == "Quest 9951" then heldRow = row end
@@ -2115,14 +2207,14 @@ check("All-character inspection explains recorded quest classes races and minimu
     addon.RaceName = function(id) assert(id == 95); return "Native new race" end
     ui.includeUnavailable, ui.quest = true, 9980; ui:Refresh()
     assert(ui.engine:State(9980).status == "UNAVAILABLE" and not ui.action and not ui.guide.enabled)
-    assert(detailHas(addon.L("QUEST_MIN_LEVEL", 40)))
-    assert(detailHas(addon.L("QUEST_CLASSES", "Native mage")) and detailHas(addon.L("QUEST_RACES", "Native new race")))
+    assert(detailIncludes(addon.L("QUEST_MIN_LEVEL", 40)))
+    assert(detailIncludes(addon.L("QUEST_CLASSES", "Native mage")) and detailIncludes(addon.L("QUEST_RACES", "Native new race")))
     local found = false
     for _, row in ipairs(visibleRows()) do if row.title.text == "Quest 9980" then found = true end end
     assert(found)
     addon.ClassName, addon.RaceName = nil, nil; ui:RefreshDetail()
-    assert(detailHas(addon.L("QUEST_CLASSES", "MAGE")) and detailHas(addon.L("QUEST_RACES", addon.L("RACE_ID", 95))))
-    assert(not detailHas(addon.L("QUEST_RACES", "Native new race")) and ui.engine:State(9980).status == "UNAVAILABLE" and not ui.action)
+    assert(detailIncludes(addon.L("QUEST_CLASSES", "MAGE")) and detailIncludes(addon.L("QUEST_RACES", addon.L("RACE_ID", 95))))
+    assert(not detailIncludes(addon.L("QUEST_RACES", "Native new race")) and ui.engine:State(9980).status == "UNAVAILABLE" and not ui.action)
     addon.Context, addon.ClassName, addon.RaceName = oldContext, className, raceName
     addon.quests[9980] = nil; ui.dungeon, ui.includeUnavailable, ui.quest = dungeon, include, quest; ui:Refresh()
 end)
@@ -2137,16 +2229,17 @@ check("Restriction display cleans deduplicates and bounds entries without guessi
     addon.RaceName = function(id) raceReads = raceReads + 1; if id == 1 then error("Cold") end; return "   " end
     local context = { level = 60, active = function() return true end, completed = function() return false end }
     showDetail(9981, context)
+    classReads, raceReads = 0, 0; ui:RefreshDetail()
     assert(classReads == 1 and raceReads == 2)
-    assert(detailHas(addon.L("QUEST_CLASSES", "MAGE")))
-    assert(detailHas(addon.L("QUEST_RACES", addon.L("RACE_ID", 95) .. ", " .. addon.L("RACE_ID", 1))))
+    assert(detailIncludes(addon.L("QUEST_CLASSES", "MAGE")))
+    assert(detailIncludes(addon.L("QUEST_RACES", addon.L("RACE_ID", 95) .. ", " .. addon.L("RACE_ID", 1))))
     assert(ui.engine:State(9981).status == "ACTIVE")
     local many = {}; for i = 1, 101 do many[i] = i end
     addon.quests[9981].races = many; raceReads = 0; addon.RaceName = function() raceReads = raceReads + 1; return nil end
     ui:RefreshDetail(); assert(raceReads == 100)
     for _, minimum in ipairs({ 0, -1, 1.5, "35", math.huge, restricted }) do
         addon.quests[9981].minLevel = minimum; ui:RefreshDetail()
-        assert(not detailHas(addon.L("QUEST_MIN_LEVEL", 35)))
+        assert(not detailIncludes(addon.L("QUEST_MIN_LEVEL", 35)))
     end
     addon.quests[9981].classes, addon.quests[9981].races = nil, nil; ui:RefreshDetail()
     for _, fs in ipairs(ui.details) do
@@ -2163,16 +2256,16 @@ check("Restriction labels refresh all locales and recycled cards omit absent lim
     local dictionaries = 0
     for code in pairs(addon.locales) do
         addon.db.locale = code; showDetail(9982)
-        assert(detailHas(addon.L("QUEST_MIN_LEVEL", 50)))
-        assert(detailHas(addon.L("QUEST_CLASSES", "Client class")))
-        assert(detailHas(addon.L("QUEST_RACES", addon.L("RACE_ID", 95))))
+        assert(detailIncludes(addon.L("QUEST_MIN_LEVEL", 50)))
+        assert(detailIncludes(addon.L("QUEST_CLASSES", "Client class")))
+        assert(detailIncludes(addon.L("QUEST_RACES", addon.L("RACE_ID", 95))))
         assert(ui.engine:State(9982).status == "UNKNOWN" and not ui.action)
         dictionaries = dictionaries + 1
     end
     assert(dictionaries == 10)
     addon.db.locale = locale; showDetail(2)
-    assert(not detailHas(addon.L("QUEST_MIN_LEVEL", 50)) and not detailHas(addon.L("QUEST_CLASSES", "Client class")))
-    assert(not detailHas(addon.L("QUEST_RACES", addon.L("RACE_ID", 95))))
+    assert(not detailIncludes(addon.L("QUEST_MIN_LEVEL", 50)) and not detailIncludes(addon.L("QUEST_CLASSES", "Client class")))
+    assert(not detailIncludes(addon.L("QUEST_RACES", addon.L("RACE_ID", 95))))
     addon.ClassName, addon.RaceName = className, raceName; addon.quests[9982] = nil
 end)
 check("Restriction name reentry cannot append old labels after quest or generation changes", function()
@@ -2197,12 +2290,12 @@ check("Restriction name reentry cannot append old labels after quest or generati
             showDetail(9984)
             assert(not armed and ui.quest == (sameQuest and 9984 or 2))
             assert(ui.detail.height == nestedHeight, "stale restriction loop changed the newer card geometry")
-            assert(not detailHas(addon.L("QUEST_CLASSES", "Stale outer restriction")))
-            assert(not detailHas(addon.L("QUEST_RACES", "Stale outer restriction")))
+            assert(not detailIncludes(addon.L("QUEST_CLASSES", "Stale outer restriction")))
+            assert(not detailIncludes(addon.L("QUEST_RACES", "Stale outer restriction")))
             if sameQuest then
-                assert(detailHas(addon.L("QUEST_CLASSES", "Current class")) and detailHas(addon.L("QUEST_RACES", "Current race")))
+                assert(detailIncludes(addon.L("QUEST_CLASSES", "Current class")) and detailIncludes(addon.L("QUEST_RACES", "Current race")))
             else
-                assert(not detailHas(addon.L("QUEST_CLASSES", "Current class")) and not detailHas(addon.L("QUEST_RACES", "Current race")))
+                assert(not detailIncludes(addon.L("QUEST_CLASSES", "Current class")) and not detailIncludes(addon.L("QUEST_RACES", "Current race")))
             end
             assert(addon[helper] == getter and addon.quests[9984].classes == classes and addon.quests[9984].races == races)
             assert(addon.quests[9984].requirementsKnown == false)
@@ -2971,6 +3064,7 @@ check("Copy Escape clamps against fresh content and never restores another card 
     assert(ui:BackQuest() and ui.quest == 1 and ui.detailScroll.verticalScroll == math.min(sourceOffset, math.max(0, ui.detail:GetHeight() - ui.detailScroll:GetHeight())))
     ui.detailScroll:SetVerticalScroll(23); ui.source.scripts.OnClick(ui.source, "LeftButton", false)
     ui.frame:Hide(); ui.frame.scripts.OnHide(ui.frame); ui.frame:Show(); ui.frame.scripts.OnShow(ui.frame)
+    expandDetail()
     ui.detailScroll:SetVerticalScroll(31); ui.source.scripts.OnClick(ui.source, "LeftButton", false)
     ui.copy.scripts.OnEscapePressed(ui.copy); assert(ui.detailScroll.verticalScroll == 31)
     assert(addon.char.copyReturn == nil and addon.db.copyReturn == nil)
@@ -3046,7 +3140,8 @@ do
         addon.quests[18003] = { id = 18003, minLevel = 1, requirementsKnown = true }
         local long = "Long related quest reading text"
         addon.Description = function() return long end
-        measurement = function(fs) return fs.text == long and 900 or 18 end
+        -- Keep every inspected card scrollable independently of disclosure defaults.
+        measurement = function(fs) return (fs.text == long or fs.text == addon.L("QUEST_MIN_LEVEL", 1)) and 900 or 18 end
         ui.detailHistory = {}; showDetail(18001)
         return function()
             addon.quests[18001], addon.quests[18002], addon.quests[18003] = nil, nil, nil
@@ -3113,24 +3208,24 @@ do
     end)
     check("Back restoration clamps shortened content and cannot overwrite a reentered window session", function()
         local restore = historyReadingFixture()
-        local description, height = addon.Description, ui.detail.GetHeight
+        local description, height, title = addon.Description, ui.detail.GetHeight, addon.QuestName
         ui.detailScroll:SetVerticalScroll(480); ui:InspectQuest(18002)
         addon.Description = function() return "Shortened reading text" end
         assert(ui:BackQuest() and ui.detailScroll.verticalScroll == math.min(480, math.max(0, ui.detail:GetHeight() - ui.detailScroll:GetHeight())))
         addon.Description = description
         ui:RefreshDetail(); ui.detailScroll:SetVerticalScroll(480); ui:InspectQuest(18002)
         local armed = true
-        addon.Description = function(id)
+        addon.QuestName = function(id)
             if armed then
                 armed = false
                 ui.frame:Hide(); ui.frame.scripts.OnHide(ui.frame)
                 ui.frame:Show(); ui.frame.scripts.OnShow(ui.frame)
                 ui.detailScroll:SetVerticalScroll(7)
             end
-            return description(id)
+            return title(id)
         end
         assert(ui:BackQuest() and ui.quest == 18001 and ui.detailScroll.verticalScroll == 7)
-        addon.Description = description
+        addon.QuestName = title
         ui.detailScroll:SetVerticalScroll(480); ui:InspectQuest(18002)
         armed = true
         ui.detail.GetHeight = function(region)
@@ -3172,9 +3267,11 @@ check("OR alternatives expose separate inspection without changing preferences o
     local picked=addon.char.choices
     ui.detailScroll:SetVerticalScroll(12)
     button.scripts.OnClick(button,"LeftButton",false)
+    expandDetail()
     assert(ui.quest==19003 and addon.char.choices==picked and picked[19001][1]==19002)
     assert(detailHas(addon.L("REASON_faction")) and not ui.action)
-    assert(ui:BackQuest() and ui.quest==19001 and ui.action.id==19002 and ui.detailScroll.verticalScroll==12)
+    assert(ui:BackQuest() and ui.quest==19001 and ui.action.id==19002 and ui.detailScroll.verticalScroll==math.min(12,math.max(0,ui.detail.height-ui.detailScroll:GetHeight())))
+    expandDetail()
     local stale=ui.branchInspectButtons[1].scripts.OnClick
     ui:RefreshDetail();stale();assert(ui.quest==19001)
     local reused=ui.branchInspectButtons[1]
@@ -3330,7 +3427,7 @@ check("Preparation action choice disappears with its step and never authorizes u
     ui.actionButtons[2].scripts.OnClick();assert(ui.action.id==20003)
     addon.quests[20003].requirementsKnown=false;ui:Refresh()
     assert(ui.action.id==20002 and not ui.detailActionChoice and not ui.actionButtons[2].shown)
-    assert(detailHas(addon.L("UNKNOWN")))
+    assert(detailIncludes(addon.L("UNKNOWN_REQUIREMENTS")))
     addon.quests[20003].requirementsKnown=true;ui:Refresh()
     assert(ui.action.id==20002)
     addon.quests[20003].minLevel=80;ui:Refresh()
@@ -3350,7 +3447,7 @@ check("Action inspection returns to its reading section while stale and recycled
     local inspect=ui.actionInspectButtons[2]
     inspect.scripts.OnClick(inspect,"LeftButton",false)
     assert(ui.quest==20003 and #ui.detailHistory==1)
-    assert(ui:BackQuest() and ui.quest==20001 and ui.detailScroll.verticalScroll==200)
+    assert(ui:BackQuest() and ui.quest==20001 and ui.detailScroll.verticalScroll==math.min(200,math.max(0,ui.detail.height-ui.detailScroll:GetHeight())))
     local staleChoice,staleInspect=ui.actionButtons[2].scripts.OnClick,ui.actionInspectButtons[2].scripts.OnClick
     ui:RefreshDetail();staleChoice();staleInspect()
     assert(ui.quest==20001 and ui.action.id==20002 and not ui.detailActionChoice)
@@ -3524,7 +3621,7 @@ check("Preparation target associations deduplicate wrap translate and clear stal
     measurement=function(fs)return fs.text=="Long support reading" and 900 or 18 end
     ui:RefreshDetail();ui.detailScroll:SetVerticalScroll(200)
     first.scripts.OnClick(first,"LeftButton",false)
-    assert(ui.quest==21001 and ui:BackQuest() and ui.quest==21003 and ui.detailScroll.verticalScroll==200)
+    assert(ui.quest==21001 and ui:BackQuest() and ui.quest==21003 and ui.detailScroll.verticalScroll==math.min(200,math.max(0,ui.detail.height-ui.detailScroll:GetHeight())))
     local old=ui.preparationForButtons[2].scripts.OnClick
     addon.char.choices[21002]={[1]=21004};ui:Refresh();old();assert(ui.quest==21003)
     showDetail(21005);old();assert(ui.quest==21005)
@@ -3611,7 +3708,7 @@ check("Alternative and container hydration cannot overwrite the replacement card
         local restore=giverReentryFixture(mode)
         local armed=true
         C_Map={GetMapInfo=function(id)
-            if armed and id==1 then armed=false;ui:InspectQuest(23002)end
+            if armed and id==1 then armed=false;ui:InspectQuest(23002);expandDetail()end
             return{name="Zone"..id}
         end}
         local routed;addon.Navigation={Start=function(action)routed=action end}
@@ -3629,7 +3726,7 @@ check("A replacement unknown map-only giver keeps informational navigation witho
     addon.quests[23002].start.x,addon.quests[23002].start.y=nil,nil
     local armed=true
     C_Map={GetMapInfo=function(id)
-        if armed and id==1 then armed=false;ui:InspectQuest(23002)end
+        if armed and id==1 then armed=false;ui:InspectQuest(23002);expandDetail()end
         return{name="Zone"..id}
     end}
     local mapped,started;addon.Navigation={Map=function(point)mapped=point end,Start=function()started=true end}
@@ -3800,8 +3897,8 @@ check("All-character detail records the actual faction requirement without chang
     ui.dungeon={key="faction-detail",name="Faction detail",quests={25001},coverage="reviewed"}
     ui.includeUnavailable=true;ui.quest=25001;ui:Refresh()
     assert(ui.engine:State(25001).status=="UNAVAILABLE" and ui.engine:State(25001).reason=="faction")
-    assert(detailHas(addon.L("QUEST_FACTIONS",addon.L("FACTION_Horde"))))
-    assert(detailHas(addon.L("QUEST_CLASSES","PALADIN")) and not ui.action and not ui.map.enabled and not ui.guide.enabled)
+    assert(detailIncludes(addon.L("QUEST_FACTIONS",addon.L("FACTION_Horde"))))
+    assert(detailIncludes(addon.L("QUEST_CLASSES","PALADIN")) and not ui.action and not ui.map.enabled and not ui.guide.enabled)
     addon.quests[25001]=nil;addon.Context=context
     ui.quest,ui.dungeon,ui.includeUnavailable=quest,dungeon,all;ui:Refresh()
 end)
@@ -3813,9 +3910,9 @@ check("Faction detail labels localize deduplicated recorded audiences and clear 
     for code in pairs(addon.locales)do
         addon.db.locale=code;showDetail(25002,context)
         local expected=addon.L("QUEST_FACTIONS",table.concat({addon.L("FACTION_Alliance"),addon.L("FACTION_Horde"),addon.L("FACTION_Neutral")},", "))
-        assert(detailHas(expected) and ui.engine:State(25002).status=="AVAILABLE")
+        assert(detailIncludes(expected) and ui.engine:State(25002).status=="AVAILABLE")
         showDetail(25003,context)
-        assert(not detailHas(expected) and ui.engine:State(25003).status=="AVAILABLE")
+        assert(not detailIncludes(expected) and ui.engine:State(25003).status=="AVAILABLE")
     end
     addon.db.locale=locale;addon.quests[25002],addon.quests[25003]=nil,nil
     ui.quest,ui.dungeon=quest,dungeon;ui:Refresh()
@@ -4025,7 +4122,7 @@ check("Material hydration preserves the replacement card's visible row and actua
     for _,helper in ipairs({"ItemName","CarriedItemCount","QuestName"})do
         local original=addon[helper];local armed=true
         addon[helper]=function(value)
-            if armed and value==(helper=="QuestName"and 28002 or 4001)then armed=false;ui:InspectQuest(28003)end
+            if armed and value==(helper=="QuestName"and 28002 or 4001)then armed=false;ui:InspectQuest(28003);expandDetail()end
             return original(value)
         end
         showDetail(28001)
@@ -4043,7 +4140,7 @@ check("Same-card material hydration supersession and CompletionSteps reentry abo
     local restore=materialReentryFixture()
     for _,helper in ipairs({"CompletionSteps","ItemName","CarriedItemCount"})do
         addon.quests[28001].completionQuests={{id=28002,itemID=4001}}
-        ui.quest=28001;ui.engine=addon.Planner.New(addon.quests,addon.Context())
+        showDetail(28001)
         local owner=helper=="CompletionSteps"and ui.engine or addon
         local original=owner[helper];local armed=true;local nestedHeight
         owner[helper]=function(...)
@@ -5275,6 +5372,8 @@ local function storyCollapseFixture(actualID)
     q.objectiveKills = { { npcID = 42, name = "Visible independent goal" } }
     ui.storyStates, ui.storyOrder = nil, nil
     ui:RefreshDetail()
+    if ui.detailChainExpanded then ui.storyToggle.scripts.OnClick() end
+    if not ui.detailReferencesExpanded then ui.referenceToggle.scripts.OnClick() end
     return f, q
 end
 local function visibleStory()
@@ -5284,7 +5383,7 @@ local function visibleStory()
 end
 check("Long actual grouped source stories default closed and expand all24 source rows with original group order", function()
     local f,q = storyCollapseFixture(8950)
-    assert(ui.storyToggle.shown and ui.storyToggle.enabled and #visibleStory() == 0)
+    assert(ui.storyToggle.shown and ui.storyToggle.enabled and #visibleStory() == 1)
     assert(ui.storyToggle.label.text == "+ " .. addon.L("STORY_SOURCE_QUESTS",24))
     assert(not detailHas(addon.L("STORY_GROUP_NOTICE")))
     assert(detailHas(addon.L("OBJECTIVE_ITEM_UNKNOWN","Visible independent goal")))
@@ -5294,23 +5393,23 @@ check("Long actual grouped source stories default closed and expand all24 source
     local rows=visibleStory();assert(#rows==24 and detailHas(addon.L("STORY_GROUP_NOTICE")))
     assert(detailHas(addon.L("STORY_GROUP",8)))
     assert(rows[1].label.text:find("• Quest 8926",1,true) and rows[24].label.text:find("• Quest 8950",1,true))
-    assert(ui.engine:State(9970).status==state and ui.action==action)
+    assert(ui.engine:State(9970).status==state and (not action or (ui.action.id==action.id and ui.action.kind==action.kind)))
     local click=rows[1].scripts.OnClick
-    ui.storyToggle.scripts.OnClick();assert(#visibleStory()==0)
+    ui.storyToggle.scripts.OnClick();assert(#visibleStory()==1)
     click();assert(ui.quest==9970,"captured expanded rows must not inspect after collapse")
     f:finish()
 end)
 check("Actual eleven-listed source story preserves expanded ordinary ancestor traversal and short/fallback chains",function()
     local f,q=storyCollapseFixture(92819)
-    assert(ui.storyToggle.label.text=="+ "..addon.L("STORY_SOURCE_QUESTS",11) and #visibleStory()==0)
+    assert(ui.storyToggle.label.text=="+ "..addon.L("STORY_SOURCE_QUESTS",11) and #visibleStory()==1)
     local old=addon.quests[92742]
     addon.quests[92742]={id=92742,minLevel=1,requirementsKnown=false,requires={{ids={9971}}}}
     ui.storyToggle.scripts.OnClick();assert(#visibleStory()==12)
     assert(visibleStory()[1].label.text:find("Quest 9971",1,true))
     q.storyline={9971,9970};q.storylineGroups=nil;ui:RefreshDetail()
-    assert(not ui.storyToggle.shown and #visibleStory()==2)
+    assert(ui.storyToggle.shown and #visibleStory()==2)
     q.storyline=nil;q.requires={{ids={9971}}};ui:RefreshDetail()
-    assert(not ui.storyToggle.shown and #visibleStory()==2 and detailHas(addon.L("CHAIN")))
+    assert(ui.storyToggle.shown and #visibleStory()==2 and detailHas(addon.L("CHAIN")))
     addon.quests[92742]=old;f:finish()
 end)
 check("Story expansion survives all locale refreshes and actual inspection Back but resets on source and session changes",function()
@@ -5322,12 +5421,12 @@ check("Story expansion survives all locale refreshes and actual inspection Back 
     end
     local history=ui.detailHistory;ui.detailHistory={}
     visibleStory()[1].scripts.OnClick();assert(ui.quest==8926)
-    assert(ui:BackQuest() and ui.quest==9970 and #visibleStory()==24)
+    assert(ui:BackQuest() and ui.quest==9970 and #visibleStory()==1)
+    ui.storyToggle.scripts.OnClick();assert(#visibleStory()==24)
     local old=ui.storyToggle.scripts.OnClick
     q.storylineGroups={unpack(q.storylineGroups)};ui:RefreshDetail()
-    assert(#visibleStory()==0);old();assert(#visibleStory()==0)
-    ui.storyToggle.scripts.OnClick();assert(#visibleStory()==24)
-    ui.frame.scripts.OnHide();ui.frame.scripts.OnShow();assert(#visibleStory()==0)
+    assert(#visibleStory()==24);old();assert(#visibleStory()==24)
+    ui.frame.scripts.OnHide();ui.frame.scripts.OnShow();assert(#visibleStory()==1)
     ui.detailHistory=history;addon.db.locale=locale;f:finish()
 end)
 check("Source story counts deduplicate only listed IDs and prerequisites and completion materials stay independent",function()
@@ -5336,12 +5435,12 @@ check("Source story counts deduplicate only listed IDs and prerequisites and com
     q.requires={{ids={9971}}};q.completionQuests={{id=9971,itemID=555}}
     ui:RefreshDetail()
     assert(ui.storyToggle.label.text=="+ "..addon.L("STORY_SOURCE_QUESTS",6))
-    assert(ui.requirementButtons[1].shown and ui.materialButtons[1].shown and #visibleStory()==0)
+    assert(not ui.requirementButtons[1].shown and ui.materialButtons[1].shown and #visibleStory()==1)
     ui.storyToggle.scripts.OnClick();assert(#visibleStory()==6)
     assert(ui.requirementButtons[1].shown and ui.materialButtons[1].shown)
     local old=ui.storyToggle.scripts.OnClick
     q.storylineGroups[2][1]=45;old();assert(#visibleStory()==6)
-    ui:RefreshDetail();assert(#visibleStory()==0)
+    ui:RefreshDetail();assert(#visibleStory()==6)
     f:finish()
 end)
 check("Story title hydration and native label setters preserve a newer card or same-card source render",function()
@@ -5355,8 +5454,8 @@ check("Story title hydration and native label setters preserve a newer card or s
             return getter(id)
         end
         ui.storyToggle.scripts.OnClick()
-        assert(ui.quest==(sameCard and 9970 or 9971) and not ui.storyToggle.shown)
-        assert(#visibleStory()==(sameCard and 2 or 1))
+        assert(ui.quest==(sameCard and 9970 or 9971) and (sameCard or not ui.storyToggle.shown))
+        assert(#visibleStory()==(sameCard and 2 or 0))
         addon.QuestName=getter;f:finish()
     end
     local f,q=storyCollapseFixture();local row=ui.chainButtons[1];local setter=row.label.SetText;local armed=true
@@ -5378,7 +5477,7 @@ check("Story collapse retains valid reading offsets and clamps long expanded con
     ui.detailScroll:SetVerticalScroll(0);ui.storyToggle.scripts.OnClick();assert(ui.detailScroll.verticalScroll==0)
     local cb=ui.storyToggle.scripts.OnClick;local getter=ui.detailScroll.GetVerticalScroll
     ui.detailScroll.GetVerticalScroll=function()return nil end
-    cb();assert(#visibleStory()==0)
+    cb();assert(#visibleStory()==1)
     ui.detailScroll.GetVerticalScroll=getter
     assert(addon.char==prefs and addon.char.storyStates==nil)
     f:finish()
@@ -5409,16 +5508,16 @@ check("Story controls wrap measured locale labels and reject changed context lis
     for code in pairs(addon.locales)do addon.db.locale=code;ui:RefreshDetail();assert(ui.storyToggle.height==74) end
     measurement=nil;addon.db.locale=locale;ui:RefreshDetail();assert(ui.storyToggle.height==30)
     local old=ui.storyToggle.scripts.OnClick;local char=addon.char
-    addon.char={};old();assert(#visibleStory()==0);addon.char=char
-    local engine=ui.engine;ui.engine={};old();assert(#visibleStory()==0);ui.engine=engine
-    local checker=issecretvalue;issecretvalue=function()return false end;old();assert(#visibleStory()==0);issecretvalue=checker
-    q.storylineGroups[1][#q.storylineGroups[1]+1]=9971;old();assert(#visibleStory()==0)
+    addon.char={};old();assert(#visibleStory()==1);addon.char=char
+    local engine=ui.engine;ui.engine={};old();assert(#visibleStory()==1);ui.engine=engine
+    local checker=issecretvalue;issecretvalue=function()return false end;old();assert(#visibleStory()==1);issecretvalue=checker
+    q.storylineGroups[1][#q.storylineGroups[1]+1]=9971;old();assert(#visibleStory()==1)
     ui:RefreshDetail();assert(ui.storyToggle.label.text=="+ "..addon.L("STORY_SOURCE_QUESTS",25))
-    old=ui.storyToggle.scripts.OnClick;ui.frame.scripts.OnHide();old();assert(#visibleStory()==0)
-    ui.frame.scripts.OnShow();assert(#visibleStory()==0)
+    old=ui.storyToggle.scripts.OnClick;ui.frame.scripts.OnHide();old();assert(#visibleStory()==1)
+    ui.frame.scripts.OnShow();assert(#visibleStory()==1)
     q.storylineGroups=nil;q.storyline={9970,9971,41,42};ui:RefreshDetail()
-    assert(not ui.storyToggle.shown and #visibleStory()==4)
-    q.storyline[5]=43;ui:RefreshDetail();assert(ui.storyToggle.shown and #visibleStory()==0)
+    assert(ui.storyToggle.shown and #visibleStory()==1)
+    q.storyline[5]=43;ui:RefreshDetail();assert(ui.storyToggle.shown and #visibleStory()==1)
     f:finish()
 end)
 local function targetSearchFixture()
@@ -5599,7 +5698,7 @@ check("Promoted multi-action selection and inspection precede reference location
     ui.guide.scripts.OnClick();ui.map.scripts.OnClick()
     assert(calls[1].id==20003 and calls[1].place==addon.quests[20003].start and calls[2]==addon.quests[20003].start)
     ui.actionInspectButtons[2].scripts.OnClick();assert(ui.quest==20003)
-    assert(ui:BackQuest() and ui.quest==20001 and ui.startButtons[12].shown)
+    assert(ui:BackQuest() and ui.quest==20001); expandDetail(); assert(ui.startButtons[12].shown)
     restore()
 end)
 check("Promoted Next block retains starter container and mapped drop reference visit controls below guidance",function()
@@ -5770,7 +5869,7 @@ check("Consecutive unknown action placeholders collapse to one while explicit un
     end end
     assert(repeated==0 and ui.engine:State(9970).status=="UNKNOWN")
     local restore=multiActionFixture();addon.quests[20003].requirementsKnown=false;ui:Refresh()
-    assert(ui.action.id==20002 and detailHas(addon.L("UNKNOWN")))
+    assert(ui.action.id==20002 and detailIncludes(addon.L("UNKNOWN_REQUIREMENTS")))
     restore();f:finish()
 end)
 check("Single starter-item destination hydration preserves new and same-card source identity without fabricating item actions",function()
@@ -5906,7 +6005,7 @@ check("Factual goal FontString setters preserve replacement event cards and inde
             setter(self,value)
             if armed and value==old then
                 armed=false
-                if sameCard then q.objectiveEvents={{npcID=8,name="Current task"}};ui:RefreshDetail()else ui:InspectQuest(9971)end
+                if sameCard then q.objectiveEvents={{npcID=8,name="Current task"}};ui:RefreshDetail()else ui:InspectQuest(9971);expandDetail()end
             end
         end
         ui:RefreshDetail();assert(not armed and ui.quest==(sameCard and 9970 or 9971))
@@ -6229,7 +6328,7 @@ check("Payment helper and localized text hydration preserve a replacement card o
         ui:RefreshDetail();assert(not armed)
         assert(not detailHas(localize("QUEST_PAYMENT","Stale pending price")))
         if mode=="sameCard"or mode=="localize"then assert(detailHas(localize("QUEST_PAYMENT",localize("MONEY_COPPER",500))))end
-        addon.L,addon.char,addon.QuestPayment=localize,char,getter;addon.quests[9970]=q;C_CurrencyInfo=nil;f.price={amount=q.requiredMoney};ui.quest=9970;ui:RefreshDetail()
+        addon.L,addon.char,addon.QuestPayment=localize,char,getter;addon.quests[9970]=q;C_CurrencyInfo=nil;f.price={amount=q.requiredMoney};ui.quest=9970;ui:RefreshDetail();expandDetail()
         assert(detailHas(addon.L("QUEST_PAYMENT",addon.L("MONEY_COPPER",q.requiredMoney))))
         f:finish()
     end
@@ -6294,7 +6393,7 @@ check("Native payment formatter and locale changes cannot publish old formatted 
         elseif mode=="formatter"then assert(not detailHas(addon.L("QUEST_PAYMENT","Native fee 300")))
         elseif mode=="sameCard"then assert(detailHas(addon.L("QUEST_PAYMENT","Native fee 500")))
         else assert(detailHas(addon.L("QUEST_PAYMENT","Native fee 300")))end
-        C_CurrencyInfo=nil;GetLocale=nativeLocale;addon.db.locale=locale;ui.quest=9970;ui:RefreshDetail()
+        C_CurrencyInfo=nil;GetLocale=nativeLocale;addon.db.locale=locale;ui.quest=9970;ui:RefreshDetail();expandDetail()
         assert(detailHas(addon.L("QUEST_PAYMENT",addon.L("MONEY_COPPER",q.requiredMoney))))
         f:finish()
     end
@@ -6620,7 +6719,7 @@ check("Held payment line setter reentry preserves a newer same-card amount and c
     ui:RefreshDetail();first.SetText=setter
     assert(detailHas(logPaymentText(700)) and not detailHas(logPaymentText(300)))
     ui:InspectQuest(9971);assert(not detailHas(logPaymentText(700)))
-    ui:BackQuest();assert(detailHas(logPaymentText(700)))
+    ui:BackQuest();expandDetail();assert(detailHas(logPaymentText(700)))
     f.held=false;ui:RefreshDetail();assert(not detailHas(logPaymentText(700)) and detailHas(addon.L("QUEST_PAYMENT_NOTICE")))
     f:finish()
 end)
@@ -7086,7 +7185,7 @@ check("finish reference requires a fresh single own turnin and skips alternative
         f:refresh();local nextAction=ui.engine.Next;local reads=0
         ui.engine.Next=function(engine,id,...)
             reads=reads+1
-            if reads==1 then
+            if reads==2 then
                 local actions=nextAction(engine,id,...)
                 if kind=="foreign"then actions[1].id=26002 else actions[2]={id=26002,kind="turnin",place=q.finish}end
                 return actions,false
@@ -7226,7 +7325,8 @@ check("actual quest level stays distinct from minimum level without changing sta
     for _,id in ipairs({5724,2933})do
         local f,q=questLevelFixture(id);local status=ui.engine:State(id).status
         local metadata=addon.L("QUEST_LEVEL",q.level).." · "..addon.L("QUEST_MIN_LEVEL",q.minLevel)
-        assert(detailHas(metadata)and detailOccurrences(metadata)==1)
+        local copies=0;for _,fs in ipairs(ui.details)do if fs.shown and fs.text:find(metadata,1,true)then copies=copies+1 end end
+        assert(detailIncludes(metadata)and copies==1)
         assert(ui.engine:State(id).status==status and status==f.expectedStatus)
         if id==2933 then local count=0;for _,b in ipairs(ui.startButtons)do if b.shown then count=count+1 end end;assert(count==12)end
         f:finish()
@@ -7236,14 +7336,14 @@ check("absent zero negative invalid or restricted recorded level keeps known min
     local f,q=questLevelFixture(5724);local checker=issecretvalue;local secretLevel={}
     issecretvalue=function(v)return v==secretLevel end
     for _,value in ipairs({0,-1,false,"16",16.5,math.huge,secretLevel})do
-        q.level=value;f:refresh();assert(detailHas(addon.L("QUEST_MIN_LEVEL",9))and not detailHas(addon.L("QUEST_LEVEL",16)))
+        q.level=value;f:refresh();assert(detailIncludes(addon.L("QUEST_MIN_LEVEL",9))and not detailIncludes(addon.L("QUEST_LEVEL",16)))
         assert(ui.engine:State(5724).status==f.expectedStatus)
     end
-    q.level=nil;f:refresh();assert(detailHas(addon.L("QUEST_MIN_LEVEL",9)))
+    q.level=nil;f:refresh();assert(detailIncludes(addon.L("QUEST_MIN_LEVEL",9)))
     -- Missing minimum is outside the Planner schema; exercise only the display boundary with a read-only unknown state.
     q.level=16;q.minLevel=nil
     ui.engine={context=f.context,State=function()return{status="UNKNOWN"}end,Next=function()return{},false end}
-    ui:RefreshDetail();assert(detailHas(addon.L("QUEST_LEVEL",16))and not detailHas(addon.L("QUEST_MIN_LEVEL",9)))
+    ui:RefreshDetail();assert(detailIncludes(addon.L("QUEST_LEVEL",16))and not detailIncludes(addon.L("QUEST_MIN_LEVEL",9)))
     issecretvalue=checker;f:finish()
 end)
 check("recorded level and minimum wrap in ten locales at the existing readable body size and recycle",function()
@@ -7251,10 +7351,10 @@ check("recorded level and minimum wrap in ten locales at the existing readable b
     measurement=function(fs)return fs.text:find(" · ",1,true)and 54 or 18 end
     for code in pairs(addon.locales)do addon.db.locale=code;f:refresh()
         local value=addon.L("QUEST_LEVEL",16).." · "..addon.L("QUEST_MIN_LEVEL",9);local found=false
-        for _,fs in ipairs(ui.details)do if fs.shown and fs.text==value then found=true;assert(fs.fontSize==15 and fs.measuredHeight==54)end end
+        for _,fs in ipairs(ui.details)do if fs.shown and fs.text:find(value,1,true)then found=true;assert(fs.fontSize==15 and fs.measuredHeight==54)end end
         assert(found)
     end
-    q.level=nil;f:refresh();assert(not detailHas(addon.L("QUEST_LEVEL",16)))
+    q.level=nil;f:refresh();assert(not detailIncludes(addon.L("QUEST_LEVEL",16)))
     addon.db.locale=locale;f:finish()
 end)
 check("level localization replacing a quest cannot write the old metadata over a new card",function()

@@ -1393,6 +1393,11 @@ function UI:RefreshDetail()
     local renderEngine, renderCharacter, pendingAction, pendingGiver = self.engine, addon.char, nil, nil
     local rewardGeneration = self:ResetRewardPresentation()
     if not rewardGeneration or self.quest ~= renderQuest then return end
+    if self.detailReferenceQuest ~= renderQuest or self.detailReferenceDungeon ~= renderDungeon then
+        self.detailReferencesExpanded, self.detailChainExpanded = false, false
+        self.detailReferenceQuest, self.detailReferenceDungeon = renderQuest, renderDungeon
+    end
+    local referencesExpanded, chainExpanded = self.detailReferencesExpanded == true, self.detailChainExpanded == true
     local overviewIdentity = not renderQuest and renderDungeon and (addon.Clean(renderDungeon.key, "string") or renderDungeon) or nil
     if self.renderedQuest ~= self.quest or self.renderedOverview ~= overviewIdentity then
         self:CloseCopyLink()
@@ -1414,7 +1419,8 @@ function UI:RefreshDetail()
     self.back:SetEnabled(#self.detailHistory > 0 or self:CanReturnToOverview())
     local function portraitCardCurrent()
         return self.quest == renderQuest and self.dungeon == renderDungeon and self.engine == renderEngine and
-            addon.char == renderCharacter and self.rewardGeneration == rewardGeneration
+            addon.char == renderCharacter and self.rewardGeneration == rewardGeneration and
+            (self.detailReferencesExpanded == true) == referencesExpanded and (self.detailChainExpanded == true) == chainExpanded
     end
     self.clientWaypointBinding = nil
     if self.clientWaypointButton then
@@ -1567,6 +1573,7 @@ function UI:RefreshDetail()
         return true
     end
     if self.storyToggle then self.storyToggle:Hide(); self.storyToggle:SetEnabled(false); self.storyToggle:SetScript("OnClick", nil) end
+    if self.referenceToggle then self.referenceToggle:Hide(); self.referenceToggle:SetEnabled(false); self.referenceToggle:SetScript("OnClick", nil) end
     for _, b in ipairs(self.chainButtons) do b:Hide(); b:SetEnabled(false); b:SetScript("OnClick", nil) end
     for _, buttons in ipairs({ self.actionButtons, self.actionInspectButtons, self.preparationForButtons }) do
         for _, b in ipairs(buttons) do b:Hide(); b:SetEnabled(false); b:SetScript("OnClick", nil) end
@@ -1599,7 +1606,6 @@ function UI:RefreshDetail()
             if not titleCurrent() or line(title, "title", nil, nil, titleCurrent) == false then return end
         end
         local state = engine:State(id)
-        line("|cff" .. COLOR[state.status] .. statusLabel(state) .. "|r")
         local logCapability, logOpener = addon.CanOpenQuestLog, addon.OpenQuestLogQuest
         local logRevision, logChecker = self.questLogGeneration, issecretvalue
         local logFrame = self.frame
@@ -1649,6 +1655,7 @@ function UI:RefreshDetail()
         local questLevel = addon.Clean(rawget(q, "level"), "number")
         if not (questLevel and questLevel > 0 and questLevel <= 9007199254740991 and questLevel % 1 == 0) then questLevel = nil end
         if not (minimum and minimum > 0 and minimum % 1 == 0) then minimum = nil end
+        local metadataParts = {}
         local function metadataCurrent()
             local ok, same = pcall(function()
                 return portraitCardCurrent() and addon.quests[id] == q and addon.L == metadataLocalize and
@@ -1659,7 +1666,6 @@ function UI:RefreshDetail()
         end
         if minimum or questLevel then
             if not metadataCurrent() then return end
-            local metadataParts = {}
             if questLevel then
                 local value = addon.Read(metadataLocalize, "string", "QUEST_LEVEL", questLevel)
                 if value and value:find("%S") then metadataParts[#metadataParts + 1] = value end
@@ -1670,13 +1676,12 @@ function UI:RefreshDetail()
                 if value and value:find("%S") then metadataParts[#metadataParts + 1] = value end
             end
             if not metadataCurrent() then return end
-            if #metadataParts > 0 and line(table.concat(metadataParts, " · "), nil, nil, nil, metadataCurrent) == false then return end
         end
         local factions = audienceLabel({ factions = q.factions }, function()
             return self.quest == renderQuest and self.dungeon == renderDungeon and self.rewardGeneration == rewardGeneration and addon.char == renderCharacter
         end)
         if factions == false then return end
-        if factions then line(addon.L("QUEST_FACTIONS", factions)) end
+        if factions then metadataParts[#metadataParts + 1] = addon.L("QUEST_FACTIONS", factions) end
         for _, rule in ipairs({ { "classes", "string", "QUEST_CLASSES", addon.ClassName },
             { "races", "number", "QUEST_RACES", addon.RaceName } }) do
             local entries = addon.Clean(q[rule[1]], "table")
@@ -1695,230 +1700,20 @@ function UI:RefreshDetail()
                     names[#names + 1] = name
                 end
             end
-            if #names > 0 then line(addon.L(rule[3], table.concat(names, ", "))) end
+            if #names > 0 then metadataParts[#metadataParts + 1] = addon.L(rule[3], table.concat(names, ", ")) end
         end
+        if #metadataParts > 0 and line(table.concat(metadataParts, " · "), nil, nil, nil, metadataCurrent) == false then return end
         local offerGetter = addon.CurrentOffer
         local offer = addon.Read(offerGetter, "table", id)
         local offeredNow = offer and addon.Clean(offer.offeredNow, "boolean") == true
         if not portraitCardCurrent() or addon.quests[id] ~= definition or addon.CurrentOffer ~= offerGetter then return end
         if offeredNow then line(addon.L("OFFERED_NOW")) end
-        local portraitSetter, portraitChecker = addon.Clean(SetPortraitTextureFromCreatureDisplayID, "function"), issecretvalue
-        local function renderPortrait(field, displayID, caption, current)
-            if not displayID or displayID <= 0 or displayID > 4294967295 or displayID % 1 ~= 0 or self.portraitRenderBusy then return true end
-            local setter = portraitSetter
-            if not setter then return true end
-            local texture = self[field]
-            if not texture then
-                texture = self.detail:CreateTexture(nil, "ARTWORK"); texture:SetSize(64, 64); texture:Hide()
-                self[field] = texture
-            end
-            local captionField, captionBinding
-            local function imageCurrent()
-                local fresh = addon.Read(current, "boolean") == true
-                return fresh and portraitCardCurrent() and self[field] == texture
-            end
-            local function retireOwnedImage()
-                if portraitCardCurrent() and self[field] == texture then
-                    local busy = self.portraitRenderBusy
-                    if not busy then self.portraitRenderBusy = true end
-                    pcall(texture.Hide, texture)
-                    if portraitCardCurrent() and captionField and captionField.detailTextBinding == captionBinding then
-                        pcall(captionField.Hide, captionField)
-                        local newer = captionField.detailTextBinding
-                        if newer and newer ~= captionBinding and addon.Read(newer.current, "boolean") == true and
-                            captionField.detailTextBinding == newer and self.quest == newer.quest and self.dungeon == newer.dungeon and
-                            self.engine == newer.engine and addon.char == newer.character and self.rewardGeneration == newer.generation then
-                            pcall(captionField.Show, captionField)
-                        end
-                    end
-                    if not busy then self.portraitRenderBusy = nil end
-                end
-                return false
-            end
-            texture:ClearAllPoints()
-            if not imageCurrent() then return retireOwnedImage() end
-            self.portraitRenderBusy = true
-            local rendered = pcall(setter, texture, displayID)
-            self.portraitRenderBusy = nil
-            if not imageCurrent() then return retireOwnedImage() end
-            if SetPortraitTextureFromCreatureDisplayID ~= setter then rendered = false end
-            if rendered then
-                local captionIndex = n + 1
-                local captionWritten = line(caption, nil, nil, nil, current)
-                local captionCandidate = pool[captionIndex]
-                local binding = captionCandidate and captionCandidate.detailTextBinding
-                if binding and binding.generation == rewardGeneration and binding.current == current then
-                    captionField, captionBinding = captionCandidate, binding
-                end
-                if captionWritten == false then return retireOwnedImage() end
-                texture:SetPoint("TOPLEFT", 4, -y)
-                if not imageCurrent() then return retireOwnedImage() end
-                texture:Show()
-                if not imageCurrent() then return retireOwnedImage() end
-                y = y + 64 + 8
-            else
-                self.portraitRenderBusy = true; pcall(texture.SetTexture, texture, nil); self.portraitRenderBusy = nil
-                if not imageCurrent() then return retireOwnedImage() end
-            end
-            return true
-        end
-        local completionProvider, dialoguePortrait, questPortrait = addon.DialogueTurnInPortrait, addon.DialoguePortrait, addon.QuestPortrait
-        local completionCapability = addon.Clean(completionProvider, "function")
-        local completionDB, completionLocaleGetter = addon.db, GetLocale
-        local completionUILocale = completionDB and rawget(completionDB, "locale")
-        local completionGameLocale = completionCapability and addon.Read(completionLocaleGetter, "string")
-        local completionEngineGetter = engine.Current
-        local function completionBaseCurrent()
-            local locale = addon.Read(completionLocaleGetter, "string")
-            local fresh = completionEngineGetter == nil or addon.Read(completionEngineGetter, "boolean", engine) == true
-            return fresh and portraitCardCurrent() and addon.quests[id] == q and rawget(q, "id") == id and
-                addon.DialogueTurnInPortrait == completionProvider and addon.db == completionDB and
-                (not completionDB or rawget(completionDB, "locale") == completionUILocale) and GetLocale == completionLocaleGetter and
-                locale == completionGameLocale and engine.Current == completionEngineGetter and issecretvalue == portraitChecker
-        end
-        local completion = completionCapability and addon.Read(completionProvider, "table", id, completionBaseCurrent)
-        if not portraitCardCurrent() then return end
-        local completionValues
-        if completion then
-            completionValues = {}
-            for field, kind in pairs({ source="string", stage="string", displayID="number", hidden="boolean", name="string", current="function" }) do
-                local value = rawget(completion, field)
-                if type(portraitChecker) == "function" and addon.Read(portraitChecker, "boolean", value) ~= false then completionValues=nil; break end
-                if value ~= nil then
-                    local clean = addon.Clean(value, kind)
-                    if clean == nil then completionValues=nil; break end
-                    completionValues[field] = clean
-                end
-            end
-        end
-        if completion and not completionBaseCurrent() then return end
-        local validCompletion = completionValues and completionValues.source == "dialogue" and completionValues.stage == "completion" and
-            completionValues.current and ((completionValues.hidden == true and completionValues.displayID == nil) or
-            (completionValues.hidden == nil and completionValues.displayID and completionValues.displayID > 0 and
-                completionValues.displayID <= 4294967295 and completionValues.displayID % 1 == 0))
-        local function completionCurrent()
-            local live = completionValues and addon.Read(completionValues.current, "boolean") == true
-            if not live or not completionBaseCurrent() then return false end
-            local ok, same = pcall(function()
-                for field, value in pairs(completionValues) do if rawget(completion, field) ~= value then return false end end
-                return rawget(completion, "displayID") == completionValues.displayID and rawget(completion, "hidden") == completionValues.hidden and
-                    rawget(completion, "name") == completionValues.name and portraitCardCurrent() and addon.quests[id] == q and rawget(q, "id") == id and
-                    addon.DialogueTurnInPortrait == completionProvider and issecretvalue == portraitChecker
-            end)
-            return ok and same == true
-        end
-        local portrait, nativeCurrent
-        if validCompletion then
-            if not completionCurrent() then return end
-            portrait, nativeCurrent = completionValues, completionCurrent
-        else
-            portrait = addon.Read(dialoguePortrait, "table", id)
-            if not portraitCardCurrent() then return end
-            if not portrait then portrait = addon.Read(questPortrait, "table", id) end
-            nativeCurrent = function()
-                return addon.DialogueTurnInPortrait == completionProvider and addon.DialoguePortrait == dialoguePortrait and
-                    addon.QuestPortrait == questPortrait and issecretvalue == portraitChecker
-            end
-        end
-        if not portraitCardCurrent() then return end
-        local displayID = portrait and addon.Clean(portrait.hidden, "boolean") ~= true and addon.Clean(portrait.displayID, "number")
-        local nativeCaption = addon.L("QUEST_PORTRAIT")
-        if validCompletion and not completionCurrent() then return end
-        if not renderPortrait("portrait", displayID, nativeCaption, nativeCurrent) then return end
         local start = addon.Clean(q.start, "table")
-        local producer = addon.GiverPortrait
-        local fieldTypes = { npcID = "number", objectID = "number", itemID = "number", dropNPCID = "number",
-            creatureDisplayID = "number", portraitSource = "string", name = "string", mapID = "number", x = "number", y = "number", zoneName = "string" }
-        local referenceActions, referenceAction, referenceEngineGetter
-        if state.status == "READY" then
-            referenceEngineGetter = engine.Current
-            referenceActions = engine:Next(id)
-            if not portraitCardCurrent() then return end
-            if #referenceActions == 1 then
-                local candidate = referenceActions[1]
-                if candidate.id == id and candidate.kind == "turnin" and candidate.place == q.finish and not q.finishAlternatives then
-                    referenceAction = candidate
-                end
-            end
-        end
-        local function sourceReference(point, endpoint, captionKey, turnin)
-            local function sourceSnapshot()
-                local values = {}
-                for field, kind in pairs(fieldTypes) do
-                    local value = point and rawget(point, field)
-                    if type(portraitChecker) == "function" and addon.Read(portraitChecker, "boolean", value) ~= false then return nil end
-                    if value ~= nil then
-                        value = addon.Clean(value, kind)
-                        if value == nil then return nil end
-                        values[field] = value
-                    end
-                end
-                return values
-            end
-            local sourceValues = sourceSnapshot()
-            local function sourceCurrent()
-                local fresh = not turnin or referenceEngineGetter == nil or addon.Read(referenceEngineGetter, "boolean", engine) == true
-                if not fresh or not portraitCardCurrent() or addon.quests[id] ~= q or q[endpoint] ~= point or addon.GiverPortrait ~= producer or
-                    SetPortraitTextureFromCreatureDisplayID ~= portraitSetter or issecretvalue ~= portraitChecker then return false end
-                local values = sourceSnapshot()
-                if not sourceValues or not values then return false end
-                for field in pairs(fieldTypes) do if sourceValues[field] ~= values[field] then return false end end
-                local ok, same = pcall(function()
-                    for field in pairs(fieldTypes) do if rawget(point, field) ~= sourceValues[field] then return false end end
-                    return portraitCardCurrent() and addon.quests[id] == q and q[endpoint] == point and
-                        addon.GiverPortrait == producer and SetPortraitTextureFromCreatureDisplayID == portraitSetter and issecretvalue == portraitChecker and
-                        (not turnin or (state.status == "READY" and rawget(q, "id") == id and q.finishAlternatives == nil and
-                            engine.Current == referenceEngineGetter and #referenceActions == 1 and referenceActions[1] == referenceAction and
-                            referenceAction.id == id and referenceAction.kind == "turnin" and referenceAction.place == point))
-                end)
-                return ok and same == true
-            end
-            if not portraitCardCurrent() then return false end
-            local npcID = sourceValues and sourceValues.npcID
-            if npcID and npcID > 0 and npcID <= 4294967295 and npcID % 1 == 0 and
-                not sourceValues.objectID and not sourceValues.itemID and not sourceValues.dropNPCID then
-                local reference = addon.Read(producer, "table", point)
-                if not sourceCurrent() then return false end
-                local referenceNPC = reference and addon.Clean(rawget(reference, "npcID"), "number")
-                local referenceDisplay = reference and addon.Clean(rawget(reference, "displayID"), "number")
-                local referenceSource = reference and addon.Clean(rawget(reference, "source"), "string")
-                if referenceNPC == npcID and referenceDisplay == sourceValues.creatureDisplayID and
-                    referenceSource and referenceSource == sourceValues.portraitSource then
-                    local name = addon.Clean(rawget(reference, "name"), "string")
-                    if not name or #name > 1024 or not name:find("%S") then name = giverName(point) end
-                    if not sourceCurrent() then return false end
-                    if not renderPortrait("giverPortrait", referenceDisplay, addon.L(captionKey, name), sourceCurrent) then return false end
-                    return true, true
-                end
-            end
-            return true, false
-        end
-        local referenceShown = false
-        local finish = referenceAction and addon.Clean(q.finish, "table")
-        local startNPC = start and addon.Clean(rawget(start, "npcID"), "number")
-        local finishNPC = finish and addon.Clean(rawget(finish, "npcID"), "number")
-        if not portraitCardCurrent() then return end
-        if finish and (not startNPC or startNPC ~= finishNPC) then
-            local current, shown = sourceReference(finish, "finish", "TURNIN_REFERENCE_PORTRAIT", true)
-            if not current then return end
-            referenceShown = shown
-        end
-        if not referenceShown then
-            if not sourceReference(start, "start", "GIVER_REFERENCE_PORTRAIT", false) then return end
-        end
-        if addon.Clean(q.repeatable, "boolean") == true then line(addon.L("REPEATABLE")) end
-        if state.reason then
-            local reason = "REASON_" .. state.reason
-            if state.reason == "requirements" and state.status == "UNKNOWN" then
-                reason = "REASON_requirementsUnknown"
-            end
-            if state.reason == "level" then
-                local required = addon.Clean(q.minLevel, "number")
-                local current = addon.Clean(engine.context.level, "number")
-                if required and current then line(addon.L("REASON_level_current", required, current))
-                elseif required then line(addon.L("REASON_level", required)); line(addon.L("REASON_levelUnknown"))
-                else line(addon.L("REASON_levelUnknown")) end
-            else line(addon.L(reason)) end
+        local map = start and addon.Clean(start.mapID, "number")
+        if map and map > 0 then
+            local x, gy = addon.Clean(start.x, "number"), addon.Clean(start.y, "number")
+            pendingGiver = { action = { id = id, kind = "visit", place = start }, source = q, map = map, x = x, y = gy,
+                coordinates = x ~= nil and gy ~= nil and x >= 0 and x <= 100 and gy >= 0 and gy <= 100 }
         end
         local function locationCurrent()
             return self.quest == renderQuest and self.dungeon == renderDungeon and self.engine == renderEngine and
@@ -2057,6 +1852,7 @@ function UI:RefreshDetail()
                 self.engine == engine and addon.char == character
         end
         local function actionText(candidate)
+            if candidate.id == id then return addon.L(candidate.kind) .. (candidate.level and (" " .. candidate.level) or "") end
             local title = addon.QuestName(candidate.id)
             if not current() then return nil end
             return addon.L(candidate.kind) .. ": " .. title .. (candidate.level and (" (" .. candidate.level .. ")") or "")
@@ -2064,9 +1860,9 @@ function UI:RefreshDetail()
         if action then
             local title = actionText(action)
             if not title then return end
-            line(title)
-        else line(addon.L(state.status == "COMPLETED" and "COMPLETED" or "UNKNOWN")) end
-        if uncertain and (action or state.status == "COMPLETED") then line(addon.L("UNKNOWN")) end
+            line("|cff" .. COLOR[state.status] .. statusLabel(state) .. "|r · " .. title)
+        else line("|cff" .. COLOR[state.status] .. statusLabel(state) .. "|r") end
+        if uncertain and state.status ~= "UNKNOWN" and (action or state.status == "COMPLETED") then line(addon.L("UNKNOWN")) end
         do
             local destination = #actions == 1 and action and addon.Clean(action.place, "table")
             if destination then
@@ -2153,6 +1949,492 @@ function UI:RefreshDetail()
                     inspect:Show(); y = y + height + 6
                 end
             end
+        end
+        local plan = self.currentPlan
+        if plan and plan.engine == engine and plan.dungeon == renderDungeon then
+            local related, seen = {}, {}
+            for index = 1, math.min(#plan.rows, 100) do
+                local entry = plan.rows[index]
+                local targetID = addon.Clean(entry.id, "number")
+                if targetID and targetID > 0 and targetID % 1 == 0 and targetID ~= id and not seen[targetID] then
+                    seen[targetID] = true
+                    local nextActions = engine:Next(targetID)
+                    if not current() or self.currentPlan ~= plan then return end
+                    for _, nextAction in ipairs(nextActions) do
+                        if nextAction.id == id then related[#related + 1] = targetID; break end
+                    end
+                end
+            end
+            if #related > 0 then
+                line(addon.L("PREPARATION_FOR"), "section")
+                line(addon.L("PREPARATION_FOR_NOTICE"))
+                for index, targetID in ipairs(related) do
+                    local targetName = addon.QuestName(targetID)
+                    local targetState = engine:State(targetID)
+                    if not current() or self.currentPlan ~= plan then return end
+                    local row = self:MakeRow(self.detail, self.preparationForButtons, index, 59)
+                    row.questID = targetID
+                    row.title:SetText(targetName)
+                    row.note:SetText("|cff" .. COLOR[targetState.status] .. statusLabel(targetState) .. "|r")
+                    row:SetEnabled(true); styleRow(row, "quest", false)
+                    local other = targetID
+                    row:SetScript("OnClick", function()
+                        if current() and self.currentPlan == plan then self:InspectQuest(other) end
+                    end)
+                    y = self:LayoutRow(row, 59, y)
+                end
+            end
+        end
+        do
+        local source = self:SourceStory(id, q, portraitCardCurrent)
+        if not portraitCardCurrent() then return end
+        local states = self.storyStates
+        local showChain = (source and source.count > 1) or (q.requires and #q.requires > 0)
+        if source then source.expanded = chainExpanded end
+        local function storyCurrent()
+            return portraitCardCurrent() and addon.quests[id] == definition and
+                (not source or (self.storyStates == states and states[id] == source and source.same()))
+        end
+        local function write(row, method, ...)
+            if not storyCurrent() then return false end
+            local ok = pcall(row[method], row, ...)
+            return ok and storyCurrent()
+        end
+        if showChain then
+            line(addon.L((q.storyline or q.storylineGroups) and "STORY" or "CHAIN"), "section")
+            local toggle = self.storyToggle
+            if not toggle then
+                toggle = CreateFrame("Button", nil, self.detail)
+                toggle:SetWidth(332); toggle.label = label(toggle, "", 7, -5, 318, 14)
+                toggle.title = toggle.label
+                toggle:SetHighlightTexture("Interface\\QuestFrame\\UI-QuestTitleHighlight")
+                self.storyToggle = toggle
+            end
+            local value = (chainExpanded and "- " or "+ ") .. (source and addon.L("STORY_SOURCE_QUESTS", source.count) or addon.L("DETAIL_CHAIN"))
+            if not write(toggle.label, "SetText", value) then return end
+            local height = math.max(30, measuredHeight(toggle.label, 18) + 10)
+            if not write(toggle, "SetHeight", height) or not write(toggle, "ClearAllPoints") or
+                not write(toggle, "SetPoint", "TOPLEFT", 4, -y) or not write(toggle, "SetEnabled", true) then return end
+            styleRow(toggle, "control", chainExpanded)
+            if not storyCurrent() then return end
+            if not write(toggle, "SetScript", "OnClick", function()
+                if not storyCurrent() then return end
+                local scroll, getter, checker = self.detailScroll, self.detailScroll.GetVerticalScroll, issecretvalue
+                local offset = addon.Read(getter, "number", scroll)
+                if not storyCurrent() or self.detailScroll ~= scroll or scroll.GetVerticalScroll ~= getter or issecretvalue ~= checker then return end
+                self.detailChainExpanded = not chainExpanded
+                if source then source.expanded = self.detailChainExpanded end
+                local generation = self:RefreshDetail()
+                local function fresh()
+                    if not generation then return false end
+                    return self.detailScroll == scroll and scroll.GetVerticalScroll == getter and self.quest == renderQuest and self.dungeon == renderDungeon and self.engine == renderEngine and
+                        addon.char == renderCharacter and self.detailChainExpanded ~= chainExpanded and
+                        (not source or (self.storyStates == states and states[id] == source and source.same())) and self.rewardGeneration == generation and issecretvalue == checker
+                end
+                if not fresh() or not offset or offset < 0 then return end
+                local content = addon.Read(self.detail.GetHeight, "number", self.detail)
+                local viewport = addon.Read(scroll.GetHeight, "number", scroll)
+                if fresh() and self.detailScroll == scroll and content and content >= 0 and viewport and viewport > 0 then
+                    scroll:SetVerticalScroll(math.min(offset, math.max(0, content - viewport)))
+                end
+            end) or not write(toggle, "Show") then return end
+            y = y + height + 6
+        end
+        if chainExpanded then
+        local branchIndex, branchInspectIndex = 0, 0
+        local requirementIndex = 0
+        if q.requires and #q.requires > 0 then
+            line(addon.L("REQUIREMENT_GROUPS"), "section")
+            line(addon.L("REQUIREMENT_NOTICE"))
+        end
+        for groupIndex, group in ipairs(q.requires or {}) do
+            line(addon.L("REQUIREMENT_GROUP", groupIndex), "section")
+            line(addon.L(group.mode == "active" and "REQUIREMENT_ACTIVE" or "REQUIREMENT_COMPLETE"))
+            if #group.ids > 1 then
+                local index = groupIndex
+                local choices = addon.Clean(addon.char.choices, "table")
+                local saved = choices and addon.Clean(choices[id], "table")
+                local selected = saved and addon.Clean(saved[index], "number")
+                local valid = false
+                for _, parent in ipairs(group.ids) do
+                    if parent == selected and engine:State(parent).status ~= "UNAVAILABLE" then valid = true end
+                end
+                if not valid then selected = nil end
+                local function option(value, parent, enabled, chosen)
+                    branchIndex = branchIndex + 1
+                    local b = self.branchButtons[branchIndex]
+                    if not b then
+                        b = CreateFrame("Button", nil, self.detail)
+                        b:SetWidth(332); b.label = label(b, "", 3, -3, 326, 14)
+                        b:SetHighlightTexture("Interface\\QuestFrame\\UI-QuestTitleHighlight")
+                        self.branchButtons[branchIndex] = b
+                    end
+                    b.questID, b.groupIndex, b.parentID = id, index, parent
+                    b.label:SetText(chosen and addon.L("BRANCH_SELECTED", value) or value)
+                    local height = math.max(30, measuredHeight(b.label, 18) + 6)
+                    b:SetHeight(height); b:ClearAllPoints(); b:SetPoint("TOPLEFT", 4, -y)
+                    b:SetEnabled(enabled)
+                    styleRow(b, "quest", chosen)
+                    b:SetScript("OnClick", enabled and function() self:ChooseBranch(id, index, parent) end or nil)
+                    b:Show(); y = y + height + 3
+                end
+                option(addon.L("BRANCH_AUTO"), nil, true, selected == nil)
+                for _, parentID in ipairs(group.ids) do
+                    local parent, parentState = parentID, engine:State(parentID)
+                    option(addon.QuestName(parent) .. " — " .. statusLabel(parentState), parent,
+                        parentState.status ~= "UNAVAILABLE", parent == selected)
+                    branchInspectIndex = branchInspectIndex + 1
+                    local inspect = self.branchInspectButtons[branchInspectIndex]
+                    if not inspect then
+                        inspect = CreateFrame("Button", nil, self.detail)
+                        inspect:SetWidth(316); inspect.label = label(inspect, "", 7, -5, 302, 14)
+                        inspect:SetHighlightTexture("Interface\\QuestFrame\\UI-QuestTitleHighlight")
+                        self.branchInspectButtons[branchInspectIndex] = inspect
+                    end
+                    inspect.parentID = parent
+                    inspect.label:SetText(addon.L("BRANCH_INSPECT"))
+                    local inspectHeight = math.max(28, measuredHeight(inspect.label, 18) + 10)
+                    inspect:SetHeight(inspectHeight); inspect:ClearAllPoints(); inspect:SetPoint("TOPLEFT", 16, -y)
+                    inspect:SetEnabled(true); styleRow(inspect, "control", false)
+                    inspect:SetScript("OnClick", function()
+                        if self.quest == renderQuest and self.dungeon == renderDungeon and self.rewardGeneration == rewardGeneration then
+                            self:InspectQuest(parent)
+                        end
+                    end)
+                    inspect:Show(); y = y + inspectHeight + 6
+                end
+            elseif #group.ids == 1 then
+                requirementIndex = requirementIndex + 1
+                local parent = group.ids[1]
+                local row = self:MakeRow(self.detail, self.requirementButtons, requirementIndex, 59)
+                row.questID = parent
+                row.title:SetText(addon.QuestName(parent))
+                local parentState = engine:State(parent)
+                row.note:SetText("|cff" .. COLOR[parentState.status] .. statusLabel(parentState) .. "|r")
+                row:SetEnabled(true)
+                row:SetScript("OnClick", function() self:InspectQuest(parent) end)
+                y = self:LayoutRow(row, 59, y)
+            end
+        end
+        end
+        local seen, chainIndex = {}, 0
+        local function visit(qid, depth, grouped)
+            if not storyCurrent() or seen[qid] or depth > 50 then return end
+            seen[qid] = true
+            local def = addon.quests[qid]
+            if not grouped then
+                for _, group in ipairs(def and def.requires or {}) do
+                    for _, parent in ipairs(group.ids) do visit(parent, depth + 1) end
+                end
+            end
+            if not storyCurrent() then return end
+            chainIndex = chainIndex + 1
+            local b = self.chainButtons[chainIndex]
+            if not b then
+                b = CreateFrame("Button", nil, self.detail)
+                b:SetSize(332, 34)
+                b.label = label(b, "", 3, -2, 326, 14)
+                b:SetHighlightTexture("Interface\\QuestFrame\\UI-QuestTitleHighlight")
+                self.chainButtons[chainIndex] = b
+            end
+            local questState = engine:State(qid)
+            local value = "|cff" .. COLOR[questState.status] .. (grouped and "• " or (chainIndex .. ". ")) ..
+                statusLabel(questState, addon.QuestName(qid) .. (not chainExpanded and (" (#" .. qid .. ")") or "")) .. "|r"
+            if not write(b.label, "SetText", value) or not write(b, "ClearAllPoints") or not write(b, "SetPoint", "TOPLEFT", 4, -y) then return end
+            local height = math.max(34, measuredHeight(b.label, 18) + 6)
+            if not write(b, "SetHeight", height) or not write(b, "SetEnabled", true) then return end
+            styleRow(b, "quest", qid == self.quest)
+            if not write(b, "SetScript", "OnClick", function() if storyCurrent() then self:InspectQuest(qid) end end) or
+                not write(b, "Show") then return end
+            y = y + height + 3
+        end
+        if showChain and chainExpanded then
+        if q.storylineGroups then
+            line(addon.L("STORY_GROUP_NOTICE"))
+            for groupIndex, group in ipairs(q.storylineGroups) do
+                line(addon.L("STORY_GROUP", groupIndex), "section")
+                for _, stepID in ipairs(group) do visit(stepID, 0, true) end
+            end
+        elseif q.storyline then
+            for _, stepID in ipairs(q.storyline) do visit(stepID, 0) end
+        else visit(id, 0) end
+        elseif showChain then
+            local previous
+            if q.storyline then
+                for index, stepID in ipairs(q.storyline) do if stepID == id then previous = q.storyline[index - 1]; break end end
+            elseif not q.storylineGroups then
+                for _, group in ipairs(q.requires or {}) do
+                    if #group.ids == 1 then previous = addon.Clean(group.ids[1], "number"); break end
+                end
+            end
+            if previous and previous ~= id then visit(previous, 0, true) end
+            visit(id, 0, true)
+        end
+        if not storyCurrent() then return end
+        end
+        do
+            local toggle = self.referenceToggle
+            if not toggle then
+                toggle = CreateFrame("Button", nil, self.detail); toggle:SetWidth(332)
+                toggle.label = label(toggle, "", 7, -5, 318, 14); toggle.title = toggle.label
+                toggle:SetHighlightTexture("Interface\\QuestFrame\\UI-QuestTitleHighlight")
+                self.referenceToggle = toggle
+            end
+            local frame, database, localize = self.frame, addon.db, addon.L
+            if not portraitCardCurrent() or database ~= metadataDB or type(database) ~= "table" then return end
+            local locale = rawget(database, "locale")
+            local function referencesCurrent()
+                return current() and portraitCardCurrent() and addon.UI == self and self.frame == frame and
+                    self.referenceToggle == toggle and addon.quests[id] == definition and addon.db == database and
+                    rawget(database, "locale") == locale and addon.L == localize
+            end
+            local function write(object, method, ...)
+                if not referencesCurrent() then return false end
+                local ok = pcall(object[method], object, ...)
+                return ok and referencesCurrent()
+            end
+            if not write(toggle.label, "SetText", (referencesExpanded and "- " or "+ ") .. addon.L(referencesExpanded and "DETAIL_LESS" or "DETAIL_MORE")) then return end
+            local height = math.max(30, measuredHeight(toggle.label, 18) + 10)
+            if not write(toggle, "SetHeight", height) or not write(toggle, "ClearAllPoints") or
+                not write(toggle, "SetPoint", "TOPLEFT", 4, -y) or not write(toggle, "SetEnabled", true) then return end
+            styleRow(toggle, "control", referencesExpanded)
+            if not write(toggle, "SetScript", "OnClick", function()
+                if not referencesCurrent() or addon.Read(frame.IsShown, "boolean", frame) ~= true or not referencesCurrent() then return end
+                local scroll, getter, checker = self.detailScroll, self.detailScroll.GetVerticalScroll, issecretvalue
+                local offset = addon.Read(getter, "number", scroll)
+                if not referencesCurrent() or self.detailScroll ~= scroll or scroll.GetVerticalScroll ~= getter or issecretvalue ~= checker then return end
+                self.detailReferencesExpanded = not referencesExpanded
+                local generation = self:RefreshDetail()
+                local function fresh()
+                    return generation and self.detailScroll == scroll and scroll.GetVerticalScroll == getter and issecretvalue == checker and self.rewardGeneration == generation and self.quest == renderQuest and self.dungeon == renderDungeon and
+                        self.engine == renderEngine and addon.char == renderCharacter and self.frame == frame and self.detailReferencesExpanded ~= referencesExpanded
+                end
+                if not fresh() or not offset or offset < 0 then return end
+                local content = addon.Read(self.detail.GetHeight, "number", self.detail)
+                local viewport = addon.Read(scroll.GetHeight, "number", scroll)
+                if fresh() and content and content >= 0 and viewport and viewport > 0 then
+                    scroll:SetVerticalScroll(math.min(offset, math.max(0, content - viewport)))
+                end
+            end) or not write(toggle, "Show") then return end
+            y = y + height + 8
+        end
+        if referencesExpanded then
+        local portraitSetter, portraitChecker = addon.Clean(SetPortraitTextureFromCreatureDisplayID, "function"), issecretvalue
+        local function renderPortrait(field, displayID, caption, current)
+            if not displayID or displayID <= 0 or displayID > 4294967295 or displayID % 1 ~= 0 or self.portraitRenderBusy then return true end
+            local setter = portraitSetter
+            if not setter then return true end
+            local texture = self[field]
+            if not texture then
+                texture = self.detail:CreateTexture(nil, "ARTWORK"); texture:SetSize(64, 64); texture:Hide()
+                self[field] = texture
+            end
+            local captionField, captionBinding
+            local function imageCurrent()
+                local fresh = addon.Read(current, "boolean") == true
+                return fresh and portraitCardCurrent() and self[field] == texture
+            end
+            local function retireOwnedImage()
+                if portraitCardCurrent() and self[field] == texture then
+                    local busy = self.portraitRenderBusy
+                    if not busy then self.portraitRenderBusy = true end
+                    pcall(texture.Hide, texture)
+                    if portraitCardCurrent() and captionField and captionField.detailTextBinding == captionBinding then
+                        pcall(captionField.Hide, captionField)
+                        local newer = captionField.detailTextBinding
+                        if newer and newer ~= captionBinding and addon.Read(newer.current, "boolean") == true and
+                            captionField.detailTextBinding == newer and self.quest == newer.quest and self.dungeon == newer.dungeon and
+                            self.engine == newer.engine and addon.char == newer.character and self.rewardGeneration == newer.generation then
+                            pcall(captionField.Show, captionField)
+                        end
+                    end
+                    if not busy then self.portraitRenderBusy = nil end
+                end
+                return false
+            end
+            texture:ClearAllPoints()
+            if not imageCurrent() then return retireOwnedImage() end
+            self.portraitRenderBusy = true
+            local rendered = pcall(setter, texture, displayID)
+            self.portraitRenderBusy = nil
+            if not imageCurrent() then return retireOwnedImage() end
+            if SetPortraitTextureFromCreatureDisplayID ~= setter then rendered = false end
+            if rendered then
+                local captionIndex = n + 1
+                local captionWritten = line(caption, nil, nil, nil, current)
+                local captionCandidate = pool[captionIndex]
+                local binding = captionCandidate and captionCandidate.detailTextBinding
+                if binding and binding.generation == rewardGeneration and binding.current == current then
+                    captionField, captionBinding = captionCandidate, binding
+                end
+                if captionWritten == false then return retireOwnedImage() end
+                texture:SetPoint("TOPLEFT", 4, -y)
+                if not imageCurrent() then return retireOwnedImage() end
+                texture:Show()
+                if not imageCurrent() then return retireOwnedImage() end
+                y = y + 64 + 8
+            else
+                self.portraitRenderBusy = true; pcall(texture.SetTexture, texture, nil); self.portraitRenderBusy = nil
+                if not imageCurrent() then return retireOwnedImage() end
+            end
+            return true
+        end
+        local completionProvider, dialoguePortrait, questPortrait = addon.DialogueTurnInPortrait, addon.DialoguePortrait, addon.QuestPortrait
+        local completionCapability = addon.Clean(completionProvider, "function")
+        local completionDB, completionLocaleGetter = addon.db, GetLocale
+        local completionUILocale = completionDB and rawget(completionDB, "locale")
+        local completionGameLocale = completionCapability and addon.Read(completionLocaleGetter, "string")
+        local completionEngineGetter = engine.Current
+        local function completionBaseCurrent()
+            local locale = addon.Read(completionLocaleGetter, "string")
+            local fresh = completionEngineGetter == nil or addon.Read(completionEngineGetter, "boolean", engine) == true
+            return fresh and portraitCardCurrent() and addon.quests[id] == q and rawget(q, "id") == id and
+                addon.DialogueTurnInPortrait == completionProvider and addon.db == completionDB and
+                (not completionDB or rawget(completionDB, "locale") == completionUILocale) and GetLocale == completionLocaleGetter and
+                locale == completionGameLocale and engine.Current == completionEngineGetter and issecretvalue == portraitChecker
+        end
+        local completion = completionCapability and addon.Read(completionProvider, "table", id, completionBaseCurrent)
+        if not portraitCardCurrent() then return end
+        local completionValues
+        if completion then
+            completionValues = {}
+            for field, kind in pairs({ source="string", stage="string", displayID="number", hidden="boolean", name="string", current="function" }) do
+                local value = rawget(completion, field)
+                if type(portraitChecker) == "function" and addon.Read(portraitChecker, "boolean", value) ~= false then completionValues=nil; break end
+                if value ~= nil then
+                    local clean = addon.Clean(value, kind)
+                    if clean == nil then completionValues=nil; break end
+                    completionValues[field] = clean
+                end
+            end
+        end
+        if completion and not completionBaseCurrent() then return end
+        local validCompletion = completionValues and completionValues.source == "dialogue" and completionValues.stage == "completion" and
+            completionValues.current and ((completionValues.hidden == true and completionValues.displayID == nil) or
+            (completionValues.hidden == nil and completionValues.displayID and completionValues.displayID > 0 and
+                completionValues.displayID <= 4294967295 and completionValues.displayID % 1 == 0))
+        local function completionCurrent()
+            local live = completionValues and addon.Read(completionValues.current, "boolean") == true
+            if not live or not completionBaseCurrent() then return false end
+            local ok, same = pcall(function()
+                for field, value in pairs(completionValues) do if rawget(completion, field) ~= value then return false end end
+                return rawget(completion, "displayID") == completionValues.displayID and rawget(completion, "hidden") == completionValues.hidden and
+                    rawget(completion, "name") == completionValues.name and portraitCardCurrent() and addon.quests[id] == q and rawget(q, "id") == id and
+                    addon.DialogueTurnInPortrait == completionProvider and issecretvalue == portraitChecker
+            end)
+            return ok and same == true
+        end
+        local portrait, nativeCurrent
+        if validCompletion then
+            if not completionCurrent() then return end
+            portrait, nativeCurrent = completionValues, completionCurrent
+        else
+            portrait = addon.Read(dialoguePortrait, "table", id)
+            if not portraitCardCurrent() then return end
+            if not portrait then portrait = addon.Read(questPortrait, "table", id) end
+            nativeCurrent = function()
+                return addon.DialogueTurnInPortrait == completionProvider and addon.DialoguePortrait == dialoguePortrait and
+                    addon.QuestPortrait == questPortrait and issecretvalue == portraitChecker
+            end
+        end
+        if not portraitCardCurrent() then return end
+        local displayID = portrait and addon.Clean(portrait.hidden, "boolean") ~= true and addon.Clean(portrait.displayID, "number")
+        local nativeCaption = addon.L("QUEST_PORTRAIT")
+        if validCompletion and not completionCurrent() then return end
+        if not renderPortrait("portrait", displayID, nativeCaption, nativeCurrent) then return end
+        local producer = addon.GiverPortrait
+        local fieldTypes = { npcID = "number", objectID = "number", itemID = "number", dropNPCID = "number",
+            creatureDisplayID = "number", portraitSource = "string", name = "string", mapID = "number", x = "number", y = "number", zoneName = "string" }
+        local referenceActions, referenceAction, referenceEngineGetter
+        if state.status == "READY" then
+            referenceEngineGetter = engine.Current
+            referenceActions = engine:Next(id)
+            if not portraitCardCurrent() then return end
+            if #referenceActions == 1 then
+                local candidate = referenceActions[1]
+                if candidate.id == id and candidate.kind == "turnin" and candidate.place == q.finish and not q.finishAlternatives then
+                    referenceAction = candidate
+                end
+            end
+        end
+        local function sourceReference(point, endpoint, captionKey, turnin)
+            local function sourceSnapshot()
+                local values = {}
+                for field, kind in pairs(fieldTypes) do
+                    local value = point and rawget(point, field)
+                    if type(portraitChecker) == "function" and addon.Read(portraitChecker, "boolean", value) ~= false then return nil end
+                    if value ~= nil then
+                        value = addon.Clean(value, kind)
+                        if value == nil then return nil end
+                        values[field] = value
+                    end
+                end
+                return values
+            end
+            local sourceValues = sourceSnapshot()
+            local function sourceCurrent()
+                local fresh = not turnin or referenceEngineGetter == nil or addon.Read(referenceEngineGetter, "boolean", engine) == true
+                if not fresh or not portraitCardCurrent() or addon.quests[id] ~= q or q[endpoint] ~= point or addon.GiverPortrait ~= producer or
+                    SetPortraitTextureFromCreatureDisplayID ~= portraitSetter or issecretvalue ~= portraitChecker then return false end
+                local values = sourceSnapshot()
+                if not sourceValues or not values then return false end
+                for field in pairs(fieldTypes) do if sourceValues[field] ~= values[field] then return false end end
+                local ok, same = pcall(function()
+                    for field in pairs(fieldTypes) do if rawget(point, field) ~= sourceValues[field] then return false end end
+                    return portraitCardCurrent() and addon.quests[id] == q and q[endpoint] == point and
+                        addon.GiverPortrait == producer and SetPortraitTextureFromCreatureDisplayID == portraitSetter and issecretvalue == portraitChecker and
+                        (not turnin or (state.status == "READY" and rawget(q, "id") == id and q.finishAlternatives == nil and
+                            engine.Current == referenceEngineGetter and #referenceActions == 1 and referenceActions[1] == referenceAction and
+                            referenceAction.id == id and referenceAction.kind == "turnin" and referenceAction.place == point))
+                end)
+                return ok and same == true
+            end
+            if not portraitCardCurrent() then return false end
+            local npcID = sourceValues and sourceValues.npcID
+            if npcID and npcID > 0 and npcID <= 4294967295 and npcID % 1 == 0 and
+                not sourceValues.objectID and not sourceValues.itemID and not sourceValues.dropNPCID then
+                local reference = addon.Read(producer, "table", point)
+                if not sourceCurrent() then return false end
+                local referenceNPC = reference and addon.Clean(rawget(reference, "npcID"), "number")
+                local referenceDisplay = reference and addon.Clean(rawget(reference, "displayID"), "number")
+                local referenceSource = reference and addon.Clean(rawget(reference, "source"), "string")
+                if referenceNPC == npcID and referenceDisplay == sourceValues.creatureDisplayID and
+                    referenceSource and referenceSource == sourceValues.portraitSource then
+                    local name = addon.Clean(rawget(reference, "name"), "string")
+                    if not name or #name > 1024 or not name:find("%S") then name = giverName(point) end
+                    if not sourceCurrent() then return false end
+                    if not renderPortrait("giverPortrait", referenceDisplay, addon.L(captionKey, name), sourceCurrent) then return false end
+                    return true, true
+                end
+            end
+            return true, false
+        end
+        local referenceShown = false
+        local finish = referenceAction and addon.Clean(q.finish, "table")
+        local startNPC = start and addon.Clean(rawget(start, "npcID"), "number")
+        local finishNPC = finish and addon.Clean(rawget(finish, "npcID"), "number")
+        if not portraitCardCurrent() then return end
+        if finish and (not startNPC or startNPC ~= finishNPC) then
+            local current, shown = sourceReference(finish, "finish", "TURNIN_REFERENCE_PORTRAIT", true)
+            if not current then return end
+            referenceShown = shown
+        end
+        if not referenceShown then
+            if not sourceReference(start, "start", "GIVER_REFERENCE_PORTRAIT", false) then return end
+        end
+        if addon.Clean(q.repeatable, "boolean") == true then line(addon.L("REPEATABLE")) end
+        if state.reason then
+            local reason = "REASON_" .. state.reason
+            if state.reason == "requirements" and state.status == "UNKNOWN" then
+                reason = "REASON_requirementsUnknown"
+            end
+            if state.reason == "level" then
+                local required = addon.Clean(q.minLevel, "number")
+                local current = addon.Clean(engine.context.level, "number")
+                if required and current then line(addon.L("REASON_level_current", required, current))
+                elseif required then line(addon.L("REASON_level", required)); line(addon.L("REASON_levelUnknown"))
+                else line(addon.L("REASON_levelUnknown")) end
+            else line(addon.L(reason)) end
         end
         do
             local progressGetter, dialogueGetter, objectiveChecker = addon.QuestObjectives, addon.DialogueObjectiveText, issecretvalue
@@ -2997,13 +3279,7 @@ function UI:RefreshDetail()
             end
             if #mappedDrops > 0 and alternativePlaces(mappedDrops, self.dropButtons, "ITEM_DROP_LOCATIONS", "dropSource:", acquisitionCurrent) == false then return end
         end
-        local map = start and addon.Clean(start.mapID, "number")
-        if map and map > 0 then
-            local x, gy = addon.Clean(start.x, "number"), addon.Clean(start.y, "number")
-            pendingGiver = { action = { id = id, kind = "visit", place = start }, source = q, map = map, x = x, y = gy,
-                coordinates = x ~= nil and gy ~= nil and x >= 0 and x <= 100 and gy >= 0 and gy <= 100 }
-            if state.status ~= "AVAILABLE" then line(addon.L("LOCATION_ONLY")) end
-        end
+        if pendingGiver and state.status ~= "AVAILABLE" then line(addon.L("LOCATION_ONLY")) end
         if q.finishAlternatives then
             if alternativePlaces(q.finishAlternatives, self.finishButtons, "POSSIBLE_TURNINS", "finishAlternative:") == false then return end
         else
@@ -3011,212 +3287,6 @@ function UI:RefreshDetail()
             if not ending then return end
             line(addon.L("ENDING") .. ": " .. ending)
             if reported(q.finish, "finish") == false then return end
-        end
-        local plan = self.currentPlan
-        if plan and plan.engine == engine and plan.dungeon == renderDungeon then
-            local related, seen = {}, {}
-            for index = 1, math.min(#plan.rows, 100) do
-                local entry = plan.rows[index]
-                local targetID = addon.Clean(entry.id, "number")
-                if targetID and targetID > 0 and targetID % 1 == 0 and targetID ~= id and not seen[targetID] then
-                    seen[targetID] = true
-                    local nextActions = engine:Next(targetID)
-                    if not current() or self.currentPlan ~= plan then return end
-                    for _, nextAction in ipairs(nextActions) do
-                        if nextAction.id == id then related[#related + 1] = targetID; break end
-                    end
-                end
-            end
-            if #related > 0 then
-                line(addon.L("PREPARATION_FOR"), "section")
-                line(addon.L("PREPARATION_FOR_NOTICE"))
-                for index, targetID in ipairs(related) do
-                    local targetName = addon.QuestName(targetID)
-                    local targetState = engine:State(targetID)
-                    if not current() or self.currentPlan ~= plan then return end
-                    local row = self:MakeRow(self.detail, self.preparationForButtons, index, 59)
-                    row.questID = targetID
-                    row.title:SetText(targetName)
-                    row.note:SetText("|cff" .. COLOR[targetState.status] .. statusLabel(targetState) .. "|r")
-                    row:SetEnabled(true); styleRow(row, "quest", false)
-                    local other = targetID
-                    row:SetScript("OnClick", function()
-                        if current() and self.currentPlan == plan then self:InspectQuest(other) end
-                    end)
-                    y = self:LayoutRow(row, 59, y)
-                end
-            end
-        end
-        local branchIndex, branchInspectIndex = 0, 0
-        local requirementIndex = 0
-        if q.requires and #q.requires > 0 then
-            line(addon.L("REQUIREMENT_GROUPS"), "section")
-            line(addon.L("REQUIREMENT_NOTICE"))
-        end
-        for groupIndex, group in ipairs(q.requires or {}) do
-            line(addon.L("REQUIREMENT_GROUP", groupIndex), "section")
-            line(addon.L(group.mode == "active" and "REQUIREMENT_ACTIVE" or "REQUIREMENT_COMPLETE"))
-            if #group.ids > 1 then
-                local index = groupIndex
-                local choices = addon.Clean(addon.char.choices, "table")
-                local saved = choices and addon.Clean(choices[id], "table")
-                local selected = saved and addon.Clean(saved[index], "number")
-                local valid = false
-                for _, parent in ipairs(group.ids) do
-                    if parent == selected and engine:State(parent).status ~= "UNAVAILABLE" then valid = true end
-                end
-                if not valid then selected = nil end
-                local function option(value, parent, enabled, chosen)
-                    branchIndex = branchIndex + 1
-                    local b = self.branchButtons[branchIndex]
-                    if not b then
-                        b = CreateFrame("Button", nil, self.detail)
-                        b:SetWidth(332); b.label = label(b, "", 3, -3, 326, 14)
-                        b:SetHighlightTexture("Interface\\QuestFrame\\UI-QuestTitleHighlight")
-                        self.branchButtons[branchIndex] = b
-                    end
-                    b.questID, b.groupIndex, b.parentID = id, index, parent
-                    b.label:SetText(chosen and addon.L("BRANCH_SELECTED", value) or value)
-                    local height = math.max(30, measuredHeight(b.label, 18) + 6)
-                    b:SetHeight(height); b:ClearAllPoints(); b:SetPoint("TOPLEFT", 4, -y)
-                    b:SetEnabled(enabled)
-                    styleRow(b, "quest", chosen)
-                    b:SetScript("OnClick", enabled and function() self:ChooseBranch(id, index, parent) end or nil)
-                    b:Show(); y = y + height + 3
-                end
-                option(addon.L("BRANCH_AUTO"), nil, true, selected == nil)
-                for _, parentID in ipairs(group.ids) do
-                    local parent, parentState = parentID, engine:State(parentID)
-                    option(addon.QuestName(parent) .. " — " .. statusLabel(parentState), parent,
-                        parentState.status ~= "UNAVAILABLE", parent == selected)
-                    branchInspectIndex = branchInspectIndex + 1
-                    local inspect = self.branchInspectButtons[branchInspectIndex]
-                    if not inspect then
-                        inspect = CreateFrame("Button", nil, self.detail)
-                        inspect:SetWidth(316); inspect.label = label(inspect, "", 7, -5, 302, 14)
-                        inspect:SetHighlightTexture("Interface\\QuestFrame\\UI-QuestTitleHighlight")
-                        self.branchInspectButtons[branchInspectIndex] = inspect
-                    end
-                    inspect.parentID = parent
-                    inspect.label:SetText(addon.L("BRANCH_INSPECT"))
-                    local inspectHeight = math.max(28, measuredHeight(inspect.label, 18) + 10)
-                    inspect:SetHeight(inspectHeight); inspect:ClearAllPoints(); inspect:SetPoint("TOPLEFT", 16, -y)
-                    inspect:SetEnabled(true); styleRow(inspect, "control", false)
-                    inspect:SetScript("OnClick", function()
-                        if self.quest == renderQuest and self.dungeon == renderDungeon and self.rewardGeneration == rewardGeneration then
-                            self:InspectQuest(parent)
-                        end
-                    end)
-                    inspect:Show(); y = y + inspectHeight + 6
-                end
-            elseif #group.ids == 1 then
-                requirementIndex = requirementIndex + 1
-                local parent = group.ids[1]
-                local row = self:MakeRow(self.detail, self.requirementButtons, requirementIndex, 59)
-                row.questID = parent
-                row.title:SetText(addon.QuestName(parent))
-                local parentState = engine:State(parent)
-                row.note:SetText("|cff" .. COLOR[parentState.status] .. statusLabel(parentState) .. "|r")
-                row:SetEnabled(true)
-                row:SetScript("OnClick", function() self:InspectQuest(parent) end)
-                y = self:LayoutRow(row, 59, y)
-            end
-        end
-        line(addon.L((q.storyline or q.storylineGroups) and "STORY" or "CHAIN"), "section")
-        do
-        local source = self:SourceStory(id, q, portraitCardCurrent)
-        if not portraitCardCurrent() then return end
-        local states = self.storyStates
-        local function storyCurrent()
-            return portraitCardCurrent() and addon.quests[id] == definition and
-                (not source or (self.storyStates == states and states[id] == source and source.same()))
-        end
-        local function write(row, method, ...)
-            if not storyCurrent() then return false end
-            local ok = pcall(row[method], row, ...)
-            return ok and storyCurrent()
-        end
-        if source and source.count > 4 then
-            local toggle = self.storyToggle
-            if not toggle then
-                toggle = CreateFrame("Button", nil, self.detail)
-                toggle:SetWidth(332); toggle.label = label(toggle, "", 7, -5, 318, 14)
-                toggle.title = toggle.label
-                toggle:SetHighlightTexture("Interface\\QuestFrame\\UI-QuestTitleHighlight")
-                self.storyToggle = toggle
-            end
-            local value = (source.expanded and "- " or "+ ") .. addon.L("STORY_SOURCE_QUESTS", source.count)
-            if not write(toggle.label, "SetText", value) then return end
-            local height = math.max(30, measuredHeight(toggle.label, 18) + 10)
-            if not write(toggle, "SetHeight", height) or not write(toggle, "ClearAllPoints") or
-                not write(toggle, "SetPoint", "TOPLEFT", 4, -y) or not write(toggle, "SetEnabled", true) then return end
-            styleRow(toggle, "control", source.expanded)
-            if not storyCurrent() then return end
-            if not write(toggle, "SetScript", "OnClick", function()
-                if not storyCurrent() then return end
-                local scroll, getter, checker = self.detailScroll, self.detailScroll.GetVerticalScroll, issecretvalue
-                local offset = addon.Read(getter, "number", scroll)
-                if not storyCurrent() or scroll.GetVerticalScroll ~= getter or issecretvalue ~= checker then return end
-                source.expanded = not source.expanded
-                local generation = self:RefreshDetail()
-                local function fresh()
-                    if not generation then return false end
-                    return self.quest == renderQuest and self.dungeon == renderDungeon and self.engine == renderEngine and
-                        addon.char == renderCharacter and self.storyStates == states and states[id] == source and
-                        source.same() and self.rewardGeneration == generation and issecretvalue == checker
-                end
-                if not fresh() or not offset or offset < 0 then return end
-                local content = addon.Read(self.detail.GetHeight, "number", self.detail)
-                local viewport = addon.Read(scroll.GetHeight, "number", scroll)
-                if fresh() and self.detailScroll == scroll and content and content >= 0 and viewport and viewport > 0 then
-                    scroll:SetVerticalScroll(math.min(offset, math.max(0, content - viewport)))
-                end
-            end) or not write(toggle, "Show") then return end
-            y = y + height + 6
-        end
-        local seen, chainIndex = {}, 0
-        local function visit(qid, depth, grouped)
-            if not storyCurrent() or seen[qid] or depth > 50 then return end
-            seen[qid] = true
-            local def = addon.quests[qid]
-            if not grouped then
-                for _, group in ipairs(def and def.requires or {}) do
-                    for _, parent in ipairs(group.ids) do visit(parent, depth + 1) end
-                end
-            end
-            if not storyCurrent() then return end
-            chainIndex = chainIndex + 1
-            local b = self.chainButtons[chainIndex]
-            if not b then
-                b = CreateFrame("Button", nil, self.detail)
-                b:SetSize(332, 34)
-                b.label = label(b, "", 3, -2, 326, 14)
-                b:SetHighlightTexture("Interface\\QuestFrame\\UI-QuestTitleHighlight")
-                self.chainButtons[chainIndex] = b
-            end
-            local questState = engine:State(qid)
-            local value = "|cff" .. COLOR[questState.status] .. (grouped and "• " or (chainIndex .. ". ")) ..
-                statusLabel(questState, addon.QuestName(qid)) .. "|r"
-            if not write(b.label, "SetText", value) or not write(b, "ClearAllPoints") or not write(b, "SetPoint", "TOPLEFT", 4, -y) then return end
-            local height = math.max(34, measuredHeight(b.label, 18) + 6)
-            if not write(b, "SetHeight", height) or not write(b, "SetEnabled", true) then return end
-            styleRow(b, "quest", qid == self.quest)
-            if not write(b, "SetScript", "OnClick", function() if storyCurrent() then self:InspectQuest(qid) end end) or
-                not write(b, "Show") then return end
-            y = y + height + 3
-        end
-        if not source or source.expanded then
-        if q.storylineGroups then
-            line(addon.L("STORY_GROUP_NOTICE"))
-            for groupIndex, group in ipairs(q.storylineGroups) do
-                line(addon.L("STORY_GROUP", groupIndex), "section")
-                for _, stepID in ipairs(group) do visit(stepID, 0, true) end
-            end
-        elseif q.storyline then
-            for _, stepID in ipairs(q.storyline) do visit(stepID, 0) end
-        else visit(id, 0) end
-        end
-        if not storyCurrent() then return end
         end
         local materialSource, materialGetter = q.completionQuests, engine.CompletionSteps
         local function materialCurrent()
@@ -3265,6 +3335,7 @@ function UI:RefreshDetail()
         end
         line(description)
         if not narrativeCurrent() then return end
+        end
         self.source:SetEnabled(true)
     else
         self.map:SetEnabled(false); self.guide:SetEnabled(false); self.source:SetEnabled(false)
@@ -3498,7 +3569,7 @@ function UI:Create()
             addon.Read(f.IsShown, "boolean", f) == true then self:Fit() end
     end)
     frame:SetScript("OnShow", function() self:Fit(); self:Refresh() end)
-    frame:SetScript("OnHide", function() self.pendingSearch = nil; self.storyStates, self.storyOrder = nil, nil; if not self:ResetQuestLogControl() then return end; self.detailActionChoice = nil; self.languageMenuRevision = {}; self:ResetHistoryReading(); self:ResetRewardPresentation(); self:CloseCopyLink() end)
+    frame:SetScript("OnHide", function() self.pendingSearch = nil; self.detailReferencesExpanded, self.detailChainExpanded = false, false; self.storyStates, self.storyOrder = nil, nil; if not self:ResetQuestLogControl() then return end; self.detailActionChoice = nil; self.languageMenuRevision = {}; self:ResetHistoryReading(); self:ResetRewardPresentation(); self:CloseCopyLink() end)
     self:ApplyTheme()
     frame:Hide()
 end

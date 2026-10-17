@@ -72,6 +72,26 @@ local addon = {}
 for line in io.lines("DungeonPro.toc") do
     if line:match("%.lua$") then assert(loadfile((line:gsub("\\", "/"))))("DungeonPro", addon) end
 end
+-- The existing data integration cases intentionally inspect the expanded reference view.
+local expandedReferenceFixture, expandingReference = true, false
+local detailRefresh = addon.UI.RefreshDetail
+addon.UI.RefreshDetail = function(self, ...)
+    local requested = self.quest
+    local result = detailRefresh(self, ...)
+    local toggle = self.referenceToggle
+    if expandedReferenceFixture and not expandingReference and self.quest == requested and self.frame and self.frame:IsShown() and
+        toggle and toggle:IsShown() and self.detailReferencesExpanded ~= true then
+        expandingReference = true
+        local ok, message = pcall(toggle.scripts.OnClick)
+        expandingReference = false
+        assert(ok, message)
+    end
+    return result
+end
+local function expandKnownChain()
+    local ui = addon.UI
+    if ui.storyToggle and ui.storyToggle:IsShown() and ui.detailChainExpanded ~= true then ui.storyToggle.scripts.OnClick() end
+end
 local function check(name, fn)
     local ok, err = pcall(fn); assert(ok, name .. ": " .. tostring(err)); total = total + 1; print("PASS " .. name)
 end
@@ -114,14 +134,31 @@ check("Actual Defias data stays uncertain even after every known parent is compl
     local completed = C_QuestLog.IsQuestFlaggedCompleted
     C_QuestLog.IsQuestFlaggedCompleted = function(id) return id ~= 166 end
     addon.UI.quest = 166; addon.UI:Refresh()
+    expandKnownChain()
     assert(addon.quests[166].requirementsKnown == false)
     assert(addon.UI.engine:State(166).status == "UNKNOWN" and not addon.UI.action and not addon.UI.guide.enabled)
     assert(#addon.UI.chainButtons == 7, "uncertain acceptance still retains source narrative")
     C_QuestLog.IsQuestFlaggedCompleted = completed; addon.UI:Refresh()
 end)
+check("Default compact quest card retains the real next step and explicit giver action", function()
+    local ui = addon.UI
+    expandedReferenceFixture = false
+    ui:InspectQuest(373); ui:InspectQuest(166)
+    assert(ui.detailReferencesExpanded == false and ui.detailChainExpanded == false)
+    assert(ui.referenceToggle:IsShown() and ui.giver.enabled and ui.giverAction.place == addon.quests[166].start)
+    assert(ui.engine:State(166).status == "UNKNOWN" and not ui.action)
+    withKnownDefias(function()
+        ui:Refresh()
+        assert(ui.detailReferencesExpanded == false and ui.detailChainExpanded == false)
+        assert(ui.action.id == 65 and ui.guide.enabled and ui.giver.enabled)
+        assert(ui.giverAction.place == addon.quests[166].start and ui.quest == 166)
+    end)
+    expandedReferenceFixture = true; ui:Refresh()
+end)
 check("Known graph fixture guides to the initial Defias step", function()
     withKnownDefias(function()
         addon.UI.quest = 166; addon.UI:Refresh()
+        expandKnownChain()
         assert(addon.UI.action.id == 65 and addon.UI.guide.enabled)
         assert(#addon.UI.chainButtons == 7)
     end)
@@ -133,7 +170,9 @@ check("Storyline renders separately without inventing dependency readiness", fun
     local ui = addon.UI
     assert(ui.storyToggle and ui.storyToggle:IsShown())
     assert(ui.storyToggle.label.text == "+ " .. addon.L("STORY_SOURCE_QUESTS", 11))
-    for _, row in ipairs(ui.chainButtons) do assert(not row:IsShown()) end
+    local compact, current = 0, false
+    for _, row in ipairs(ui.chainButtons) do if row:IsShown() then compact=compact+1;current=current or row.label.text:find("(#92753)",1,true)~=nil end end
+    assert(compact<=2 and current, "collapsed narrative keeps only the current quest and nearest known prior")
     ui.storyToggle.scripts.OnClick()
     local visible = 0
     for _, row in ipairs(ui.chainButtons) do if row:IsShown() then visible = visible + 1 end end
@@ -255,6 +294,7 @@ check("Close and reopen preserve selection", function()
     SlashCmdList.DUNGEONPRO(""); assert(addon.UI.frame:IsShown() and addon.UI.quest == 166)
 end)
 check("Quest-data events pass success to bounded delayed title recovery", function()
+    expandKnownChain()
     local savedTimer, savedRequest = C_Timer, C_QuestLog.RequestLoadQuestByID
     local callbacks, watchdogs, calls = {}, {}, 0
     C_Timer = { After = function(delay, fn)
@@ -920,7 +960,7 @@ check("All-character inspection explains actual paladin race and level limits wi
         return { raceID = id, raceName = id == 1 and "Native Human" or "Native Dwarf" }
     end }
     local function shown(value)
-        for _, line in ipairs(ui.details) do if line.shown and line.text == value then return true end end
+        for _, line in ipairs(ui.details) do if line.shown and line.text:find(value, 1, true) then return true end end
         return false
     end
     local pins = #waypoints
@@ -1116,7 +1156,7 @@ check("Kill-row recovery revalidates raw newer-card ownership after its current-
         if self.detailTextRepair and third and not inThirdRender then recoveryValue=value end
         return setter(self,value)
     end
-    ui:RefreshDetail();methods.SetText=setter;issecretvalue=checker
+    ui:Refresh();methods.SetText=setter;issecretvalue=checker
     assert(not armed and third and ui.quest==96394)
     assert(recoveryValue==nil,"recovery cannot write after the predicate sanitizer replaces its newer card")
     assert(not visibleDetail(ui,goal)and not visibleDetail(ui,addon.L("OBJECTIVE_ITEMS_NOTICE")))

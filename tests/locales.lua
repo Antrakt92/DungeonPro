@@ -13,6 +13,10 @@ for locale, strings in pairs(addon.locales) do
         assert(table.concat(expected) == table.concat(actual), locale .. " format mismatch " .. key)
     end
     assert(strings.SEARCH_HELP:find("ID", 1, true), locale .. " search help omits quest ID")
+    assert(type(strings.DETAIL_MORE) == "string" and strings.DETAIL_MORE:find("%S") and
+        type(strings.DETAIL_LESS) == "string" and strings.DETAIL_LESS:find("%S") and
+        strings.DETAIL_MORE ~= strings.DETAIL_LESS, locale .. " missing distinct detail disclosure labels")
+    assert(type(strings.DETAIL_CHAIN) == "string" and strings.DETAIL_CHAIN:find("%S"), locale .. " missing known-chain disclosure label")
     addon.db = { locale = locale }
     local idMatch = addon.L("SEARCH_QUEST_MATCH", "Example quest (#166)")
     assert(idMatch:find("Example quest (#166)", 1, true), locale .. " exact quest ID cue lost")
