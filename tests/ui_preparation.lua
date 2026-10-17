@@ -8745,4 +8745,114 @@ check("Current copy opening still scrolls to its drawer and focuses the same vis
     ui:EscapeCopyLink();assert(not ui.copy.shown and not ui.copy.focused)
     ui.quest,ui.detailHistory=quest,history;ui:Refresh()
 end)
+do
+    local function acquisitionFixture()
+        local f,q=hierarchyFixture(1221)
+        local nav,locale,character,map=addon.Navigation,addon.db.locale,addon.char,C_Map
+        f.held=false;f.calls={}
+        addon.Navigation={Start=function(action)f.calls[#f.calls+1]=action;return true end,
+            Map=function(point)f.calls[#f.calls+1]={place=point,mapOnly=true};return true end}
+        function f:refresh()showDetail(1221,self.context)end
+        function f:close()
+            addon.Navigation,addon.db.locale,addon.char,C_Map=nav,locale,character,map
+            ui.frame:Show();self:restore()
+        end
+        f:refresh();return f,q
+    end
+    local function sourceRows()
+        local result={}
+        for _,row in ipairs(ui.objectiveContainerButtons or{})do if row.shown then result[#result+1]=row end end
+        return result
+    end
+    check("Actual1221 objective acquisition preserves three item-object pairs and unknown tool quantities",function()
+        local f,q=acquisitionFixture();local rows=sourceRows()
+        assert(#rows==3 and #q.objectiveItems==4 and #q.objectiveItemSources==3 and #f.calls==0)
+        assert(q.objectiveItems[1].itemID==5876 and q.objectiveItems[1].quantity==6)
+        assert(not q.providedItems and not q.start.itemID and q.requirementsKnown==false)
+        assert(ui.engine:State(1221).status=="UNKNOWN" and not ui.action)
+        assert(detailHas(addon.L("OBJECTIVE_ITEM_SOURCES")) and detailHas(addon.L("OBJECTIVE_ITEM_SOURCES_NOTICE")))
+        for i,pair in ipairs({{5880,21277},{5897,21530},{6684,68865}})do
+            local source=q.objectiveItemSources[i];local point=source.containerSources[1]
+            assert(source.itemID==pair[1] and point.objectID==pair[2] and q.objectiveItems[i+1].quantity==nil)
+            assert(rows[i].title.text==point.name and rows[i].enabled and rows[i].note.text:find("62.3, 37.6",1,true))
+            rows[i].scripts.OnClick(rows[i],"LeftButton",false)
+            local action=f.calls[#f.calls]
+            assert(action and action.id==1221 and action.kind=="visit" and action.place==point)
+            assert(action.place.mapID==1413 and action.place.x==62.3 and action.place.y==37.6)
+        end
+        assert(#f.calls==3 and ui.engine:State(1221).status=="UNKNOWN" and not ui.action)
+        f:close()
+    end)
+    check("Objective acquisition rejects malformed and restricted source payloads without hiding the ordinary goals",function()
+        local modes={"wrong-object","quantity","coordinates","entry-key","point-key",
+            "objectID","name","source","zoneName","mapID","x","y"}
+        for _,mode in ipairs(modes)do
+            local f,q=acquisitionFixture();local point=q.objectiveItemSources[1].containerSources[1]
+            local checker,restricted=issecretvalue,{}
+            if mode=="wrong-object"then point.objectID=21530
+            elseif mode=="quantity"then q.objectiveItemSources[1].quantity=1
+            elseif mode=="coordinates"then point.x=101
+            else
+                issecretvalue=function(value)return value==restricted end
+                if mode=="entry-key"then q.objectiveItemSources[1][restricted]=true
+                elseif mode=="point-key"then point[restricted]=true
+                else point[mode]=restricted end
+            end
+            f:refresh()
+            assert(#sourceRows()==0 and not detailHas(addon.L("OBJECTIVE_ITEM_SOURCES")),mode)
+            assert(detailHas(addon.L("OBJECTIVE_ITEM","Blueleaf Tuber",6)),mode)
+            assert(#f.calls==0 and ui.engine:State(1221).status=="UNKNOWN" and q.objectiveItems[2].quantity==nil,mode)
+            issecretvalue=checker;f:close()
+        end
+    end)
+    check("Saved objective acquisition clicks expire after source context or hidden-planner changes",function()
+        for _,mode in ipairs({"list","point","entry","item","locale","character","navigation","map","hide"})do
+            local f,q=acquisitionFixture();local row=sourceRows()[1];local click=row.scripts.OnClick
+            if mode=="list"then q.objectiveItemSources={}
+            elseif mode=="point"then q.objectiveItemSources[1].containerSources[1].x=60
+            elseif mode=="entry"then q.objectiveItemSources[1].quantity=1
+            elseif mode=="item"then q.objectiveItems[2].name="Changed item definition"
+            elseif mode=="locale"then addon.db.locale="ruRU"
+            elseif mode=="character"then addon.char={}
+            elseif mode=="navigation"then addon.Navigation={Start=function()error("expired route must not dispatch")end}
+            elseif mode=="map"then C_Map={}
+            else ui.frame:Hide();ui.frame.scripts.OnHide(ui.frame)end
+            click(row,"LeftButton",false)
+            assert(#f.calls==0,mode)
+            f:close()
+        end
+    end)
+    check("Objective acquisition per-method restoration preserves newer text enabled state and exact visit callback",function()
+        for _,boundary in ipairs({"title","note","enabled","script"})do
+            local f,q=acquisitionFixture();local row=sourceRows()[1]
+            local target=boundary=="title"and row.title or boundary=="note"and row.note or row
+            local key=boundary=="enabled"and"SetEnabled"or boundary=="script"and"SetScript"or"SetText"
+            local original,armed=target[key],true
+            local replacement={objectID=21277,name="Newer container",zoneName="Newer region",
+                source="https://www.wowhead.com/forever/object=21277/crate-with-holes",mapID=1413,x=8,y=9}
+            if boundary=="enabled"then replacement.mapID,replacement.x,replacement.y=nil,nil,nil end
+            local newer
+            target[key]=function(self,...)
+                local first,second=...
+                local publish=boundary=="title"or boundary=="note"or boundary=="enabled"and first==true or
+                    boundary=="script"and first=="OnClick"and second~=nil
+                if armed and publish then
+                    armed=false;q.objectiveItemSources[1].containerSources={replacement};f:refresh()
+                    newer={title=row.title.text,note=row.note.text,enabled=row.enabled,click=row.scripts.OnClick,height=row.height,point=row.point}
+                end
+                return original(self,...)
+            end
+            f:refresh();target[key]=original
+            assert(not armed and newer and row.title.text==newer.title and row.note.text==newer.note,boundary)
+            assert(row.enabled==newer.enabled and row.scripts.OnClick==newer.click and row.height==newer.height and row.point==newer.point,boundary)
+            if boundary=="enabled"then assert(not row.enabled and not row.scripts.OnClick)
+            else
+                row.scripts.OnClick(row,"LeftButton",false)
+                assert(#f.calls==1 and f.calls[1].id==1221 and f.calls[1].kind=="visit" and f.calls[1].place==replacement,boundary)
+            end
+            assert(ui.engine:State(1221).status=="UNKNOWN" and q.objectiveItems[2].quantity==nil)
+            f:close()
+        end
+    end)
+end
 print("Preparation UI modeled checks passed: " .. total .. " (no native layout validation)")
