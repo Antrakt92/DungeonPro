@@ -545,10 +545,11 @@ function UI:MakeRow(parent, pool, index, height)
     return row
 end
 
-function UI:LayoutRow(row, minimum, offset, ownerCurrent)
+function UI:LayoutRow(row, minimum, offset, ownerCurrent, ownerWrite)
     local function current() return not ownerCurrent or ownerCurrent() end
     local function write(object, method, ...)
         if not current() then return false end
+        if ownerWrite then return ownerWrite(object, method, ...) end
         object[method](object, ...)
         return current()
     end
@@ -705,7 +706,67 @@ function UI:QueueSearch()
     self:FlushPendingSearch(pending)
 end
 
+function UI:CatalogResultNote(result)
+    local note = addon.L("CATALOG_LEVELS", result.minimum, result.maximum) .. "\n" .. addon.L("CATALOG_QUESTS", result.count)
+    if result.matchedName then note = note .. "\n" .. addon.L("SEARCH_QUEST_MATCH", result.matchedName) end
+    if result.sourceMatch then
+        note = note .. "\n" .. addon.L(result.sourceMatch.kind == "npc" and "SEARCH_NPC_MATCH" or "SEARCH_PLACE_MATCH", result.sourceMatch.text)
+    end
+    return note
+end
+
+function UI:RefreshCatalogLanguage()
+    local view = self.catalogLanguageView
+    if not view then return false end
+    -- Free-text results can include a UI-localized wing name. Numeric quest
+    -- searches and the unfiltered catalogue have language-independent membership.
+    if view.query ~= "" and not view.queryID then return false end
+    if not view.current() then
+        return false, self.catalogLanguageView ~= view and "superseded" or nil
+    end
+    local paint = {}; self.catalogLanguagePaint = paint
+    local function current()
+        return self.catalogLanguageView == view and self.catalogLanguagePaint == paint and view.owned()
+    end
+    local function failed()
+        return false, (self.catalogLanguageView ~= view or self.catalogLanguagePaint ~= paint) and "superseded" or nil
+    end
+    local function write(object, method, ...)
+        return view.write(current, object, method, ...)
+    end
+    if not write(self.searchPlaceholder, "SetText", addon.L("SEARCH")) or
+        not write(self.searchHint, "SetText", addon.L("SEARCH_HELP")) then return failed() end
+    local offset = view.query ~= "" and measuredHeight(self.searchHint, 42) + 10 or 0
+    for _, result in ipairs(view.results) do
+        if not current() then return failed() end
+        local row = result.row
+        local title = result.dungeon.wing and addon.DungeonName(result.dungeon) or result.title
+        if not write(row.title, "SetText", title) or
+            not write(row.note, "SetText", self:CatalogResultNote(result)) then return failed() end
+        offset = self:LayoutRow(row, 64, offset, current, write)
+        if not offset then return failed() end
+        local inspect = result.inspect
+        if inspect then
+            if not write(inspect.label, "SetText", addon.L("BRANCH_INSPECT")) then return failed() end
+            local height = math.max(28, measuredHeight(inspect.label, 18) + 10)
+            if not write(inspect, "SetHeight", height) or not write(inspect, "ClearAllPoints") or
+                not write(inspect, "SetPoint", "TOPLEFT", 8, -offset) then return failed() end
+            offset = offset + height + 6
+        end
+    end
+    if #view.results == 0 then
+        if not write(self.catalogNotice, "SetText", addon.L("NO_DUNGEONS")) or
+            not write(self.catalogNotice, "ClearAllPoints") or
+            not write(self.catalogNotice, "SetPoint", "TOPLEFT", 4, -offset) then return failed() end
+        offset = offset + measuredHeight(self.catalogNotice, 42) + 10
+    end
+    if not write(self.catalog, "SetHeight", math.max(1, offset)) then return failed() end
+    if not current() or not view.current() then return failed() end
+    return true
+end
+
 function UI:RefreshDungeons()
+    self.catalogLanguageView = nil
     self.pendingSearch = nil
     local generation = {}
     self.catalogGeneration = generation
@@ -720,7 +781,7 @@ function UI:RefreshDungeons()
     local sourceGetter, idParser = addon.QuestSourceSearchTerms, addon.SearchQuestID
     for index, dungeon in ipairs(catalogue) do
         local targets = dungeon.quests
-        local input = { dungeon = dungeon, name = dungeon.name, key = dungeon.key,
+        local input = { dungeon = dungeon, name = dungeon.name, key = dungeon.key, wing = dungeon.wing,
             minimum = dungeon.minLevel, maximum = dungeon.maxLevel, targets = targets, members = {} }
         inputs[index] = input
         for other, id in ipairs(targets) do
@@ -742,7 +803,7 @@ function UI:RefreshDungeons()
             if sourceOnly then return true end
             for index, input in ipairs(inputs) do
                 local dungeon = input.dungeon
-                if catalogue[index] ~= dungeon or dungeon.name ~= input.name or dungeon.key ~= input.key or
+                if catalogue[index] ~= dungeon or dungeon.name ~= input.name or dungeon.key ~= input.key or dungeon.wing ~= input.wing or
                     dungeon.minLevel ~= input.minimum or dungeon.maxLevel ~= input.maximum or dungeon.quests ~= input.targets or
                     #input.targets ~= #input.members then return false end
                 for other, member in ipairs(input.members) do
@@ -758,7 +819,8 @@ function UI:RefreshDungeons()
         if not ownerCurrent() then return false end
         local bindings = object.catalogWrites or {}
         object.catalogWrites = bindings
-        local key = (method == "Show" or method == "Hide" or method == "SetShown") and "visibility" or method
+        local key = (method == "Show" or method == "Hide" or method == "SetShown") and "visibility" or
+            ((method == "SetPoint" or method == "ClearAllPoints") and "anchor" or method)
         local args, count = { ... }, select("#", ...)
         local binding = { current = ownerCurrent, args = args, count = count, method = method }
         bindings[key] = binding
@@ -934,11 +996,11 @@ function UI:RefreshDungeons()
             end
             if not current(true) then return end
             if matches or matchedName then
-                local note = addon.L("CATALOG_LEVELS", input.minimum, input.maximum) .. "\n" .. addon.L("CATALOG_QUESTS", #input.members)
-                if matchedName then note = note .. "\n" .. addon.L("SEARCH_QUEST_MATCH", matchedName) end
-                if sourceMatch then note = note .. "\n" .. addon.L(sourceMatch.kind == "npc" and "SEARCH_NPC_MATCH" or "SEARCH_PLACE_MATCH", sourceMatch.text) end
+                local result = { dungeon = dungeon, title = name, questID = matchedID, sourceMatch = sourceMatch,
+                    idMatch = idMatch, minimum = input.minimum, maximum = input.maximum, count = #input.members, matchedName = matchedName }
+                result.note = self:CatalogResultNote(result)
                 if not current(true) then return end
-                results[#results + 1] = { dungeon = dungeon, title = name, note = note, questID = matchedID, sourceMatch = sourceMatch, idMatch = idMatch }
+                results[#results + 1] = result
             end
         end
     end
@@ -963,6 +1025,7 @@ function UI:RefreshDungeons()
     for index, result in ipairs(results) do
         local dungeon = result.dungeon
         local row = self:MakeRow(self.catalog, self.cards, index, 64)
+        result.row = row
         if not current() or not write(row, "Show") then return end
         if not row.art then
             row.art = row:CreateTexture(nil, "ARTWORK")
@@ -985,7 +1048,7 @@ function UI:RefreshDungeons()
             character.selectedDungeon = dungeon.key
             self:Refresh()
         end) then return end
-        offset = self:LayoutRow(row, 64, offset, current)
+        offset = self:LayoutRow(row, 64, offset, current, write)
         if not offset then return end
         if result.questID then
             local questID, definition = result.questID, definitions[result.questID]
@@ -1012,6 +1075,7 @@ function UI:RefreshDungeons()
             end
             if not inspectCurrent() then return end
             inspect.questID = questID
+            result.inspect = inspect
             if not write(inspect.label, "SetText", addon.L("BRANCH_INSPECT")) then return end
             local height = math.max(28, measuredHeight(inspect.label, 18) + 10)
             if not inspectCurrent() or not write(inspect, "SetHeight", height) or
@@ -1064,6 +1128,8 @@ function UI:RefreshDungeons()
         if not write(catalogScroll, "SetVerticalScroll", 0) or not proveSources() then return end
     end
     self.catalogQueryKey = needle
+    self.catalogLanguageView = { current = proveSources, owned = function() return baseCurrent(true) end,
+        write = ownedWrite, query = query, queryID = queryID, results = results }
 end
 
 function UI:PaintQuestRowStatus(row, entry, engine, ownerCurrent)
@@ -3548,9 +3614,13 @@ function UI:RefreshDetail()
     return portraitCardCurrent() and rewardGeneration or nil
 end
 
-function UI:Refresh()
+function UI:RefreshLanguagePreview()
+    return self:Refresh(true)
+end
+
+function UI:Refresh(languageOnly)
     if not self.frame or not self.frame:IsShown() then return end
-    self.preparation = false
+    if languageOnly ~= true then self.preparation = false end
     if addon.Theme and addon.Theme.RefreshFonts then addon.Theme.RefreshFonts() end
     self.title:SetText(addon.L("TITLE"))
     self.subtitle:SetText(addon.L("SUBTITLE"))
@@ -3565,7 +3635,12 @@ function UI:Refresh()
     local known = count ~= nil and capacity ~= nil and count >= 0 and count % 1 == 0 and capacity > 0 and capacity % 1 == 0
     self.capacityStatus:SetText(known and addon.L("QUEST_LOG_CAPACITY", count, capacity) or "")
     self.capacityStatus:SetShown(known)
-    self:RefreshDungeons(); self:RefreshQuests(); self:RefreshDetail()
+    if languageOnly == true then
+        local reused, reason = self:RefreshCatalogLanguage()
+        if reason == "superseded" then return true end
+        if not reused then self:RefreshDungeons() end
+    else self:RefreshDungeons() end
+    self:RefreshQuests(); self:RefreshDetail()
 end
 
 function UI:Fit()

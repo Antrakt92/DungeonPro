@@ -74,6 +74,11 @@ local addon = {}
 for line in io.lines("DungeonPro.toc") do
     if line:match("%.lua$") then assert(loadfile((line:gsub("\\", "/"))))("DungeonPro", addon) end
 end
+-- Reuse the actual TOC and native-shaped controls without executing this file's
+-- independent integration scenarios or its expanded-reference presentation hook.
+if ... == "fixture" then
+    return { addon = addon, objects = objects, eventFrame = objects[#objects], methods = methods }
+end
 -- The existing data integration cases intentionally inspect the expanded reference view.
 local expandedReferenceFixture, expandingReference = true, false
 local detailRefresh = addon.UI.RefreshDetail

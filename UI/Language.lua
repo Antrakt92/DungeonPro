@@ -60,6 +60,7 @@ local function owned(state)
         return addon.Language == Language and Language.session == state and addon.UI == state.ui and
             state.ui.frame == state.frame and state.ui.language == state.button and addon.db == state.db and
             rawget(state.db, "locale") == state.committed and state.ui.Refresh == state.refresh and
+            state.ui.RefreshLanguagePreview == state.previewRefresh and
             GetLocale == state.gameGetter and issecretvalue == state.checker
     end)
     return ok and same == true
@@ -178,7 +179,7 @@ function Language:Cancel(ui, expected)
         local theme = addon.Clean(addon.Theme, "table")
         if theme then addon.Read(theme.RefreshFonts, "boolean") end
         if self.session or addon.UI ~= state.ui or addon.db ~= state.db or state.ui.frame ~= state.frame then return true end
-        pcall(state.refresh, state.ui)
+        pcall(state.previewRefresh or state.refresh, state.ui)
     end
     return true
 end
@@ -191,11 +192,11 @@ function Language:Preview(state, value)
     if state.preview == value then return true end
     local previous = state.preview
     state.preview = value
-    local ok, result = pcall(state.refresh, state.ui)
+    local ok, result = pcall(state.previewRefresh or state.refresh, state.ui)
     ok = ok and result ~= false
-    if not ok and owned(state) then
+    if not ok and owned(state) and state.preview == value then
         state.preview = previous
-        pcall(state.refresh, state.ui)
+        pcall(state.previewRefresh or state.refresh, state.ui)
     end
     return ok and current(state)
 end
@@ -242,7 +243,8 @@ function Language:Open(ui)
     if addon.UI ~= ui or not database or not frame or not button then return false end
     local committed = addon.Clean(rawget(database, "locale"), "string")
     local state = { ui = ui, db = database, frame = frame, button = button, committed = committed,
-        refresh = addon.Clean(ui.Refresh, "function"), shown = method(frame, "IsShown"), gameGetter = GetLocale, checker = issecretvalue }
+        refresh = addon.Clean(ui.Refresh, "function"), previewRefresh = addon.Clean(ui.RefreshLanguagePreview, "function"),
+        shown = method(frame, "IsShown"), gameGetter = GetLocale, checker = issecretvalue }
     if not committed or not state.refresh or not state.shown then return false end
     self.session = state
     if not current(state) then self.session = nil; return false end

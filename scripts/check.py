@@ -27,6 +27,7 @@ def main():
     run(lua, "tests/client_ui.lua")
     run(lua, "tests/locales.lua")
     run(lua, "tests/language.lua")
+    run(lua, "tests/language_hover.lua")
     run(lua, "tests/search.lua")
     run(lua, "tests/ui_preparation.lua")
     run(lua, "tests/theme.lua")
