@@ -357,15 +357,24 @@ function UI:MakeRow(parent, pool, index, height)
     return row
 end
 
-function UI:LayoutRow(row, minimum, offset)
+function UI:LayoutRow(row, minimum, offset, ownerCurrent)
+    local function current() return not ownerCurrent or ownerCurrent() end
+    local function write(object, method, ...)
+        if not current() then return false end
+        object[method](object, ...)
+        return current()
+    end
+    if not current() then return nil end
     local left = row.art and 58 or 8
     local titleHeight = measuredHeight(row.title, 18)
+    if not current() then return nil end
     local noteHeight = row.heading and 0 or measuredHeight(row.note, 18)
+    if not current() then return nil end
     local height = math.max(minimum, 7 + titleHeight + (row.heading and 0 or 4) + noteHeight + 7)
-    row.title:ClearAllPoints(); row.title:SetPoint("TOPLEFT", left, -7)
-    row.note:ClearAllPoints(); row.note:SetPoint("TOPLEFT", left, -(7 + titleHeight + 4))
-    row:SetHeight(height)
-    row:ClearAllPoints(); row:SetPoint("TOPLEFT", 0, -offset)
+    if not write(row.title, "ClearAllPoints") or not write(row.title, "SetPoint", "TOPLEFT", left, -7) or
+        not write(row.note, "ClearAllPoints") or not write(row.note, "SetPoint", "TOPLEFT", left, -(7 + titleHeight + 4)) or
+        not write(row, "SetHeight", height) or not write(row, "ClearAllPoints") or
+        not write(row, "SetPoint", "TOPLEFT", 0, -offset) then return nil end
     return offset + height + 4
 end
 
@@ -942,7 +951,7 @@ function UI:RefreshDetail()
     for _, b in ipairs(self.branchInspectButtons) do b:Hide(); b:SetEnabled(false); b:SetScript("OnClick", nil) end
     for _, b in ipairs(self.requirementButtons) do b:Hide(); b:SetEnabled(false); b:SetScript("OnClick", nil) end
     for _, b in ipairs(self.materialButtons) do b:Hide(); b:SetEnabled(false); b:SetScript("OnClick", nil) end
-    for _, buttons in ipairs({ self.startButtons, self.finishButtons, self.containerButtons }) do
+    for _, buttons in ipairs({ self.startButtons, self.finishButtons, self.containerButtons, self.dropButtons }) do
         for _, b in ipairs(buttons) do
             b:Hide(); b:SetEnabled(false); b:SetScript("OnClick", nil)
         end
@@ -1081,43 +1090,57 @@ function UI:RefreshDetail()
             return self.quest == renderQuest and self.dungeon == renderDungeon and self.engine == renderEngine and
                 addon.char == renderCharacter and self.rewardGeneration == rewardGeneration and self.reportedGeneration == reportedGeneration
         end
+        local function locationWrite(current, object, method, ...)
+            if not current() then return false end
+            local ok = pcall(object[method], object, ...)
+            return ok and current()
+        end
         local function reported(parent, key, ownerCurrent)
             local function current() return locationCurrent() and (not ownerCurrent or ownerCurrent()) end
             if not current() then return false end
             local places = reportedPlaces(parent)
+            if not current() then return false end
             if not places then return end
             local parentName = giverName(parent)
             if not current() then return false end
             toggleIndex = toggleIndex + 1
             local toggle = self:MakeRow(self.detail, self.reportedToggles, toggleIndex, 40)
+            if not current() then return false end
             toggle.locationKey, toggle.heading = key, true
             local expanded = self.reportedExpanded[key] == true
-            toggle.title:SetText((expanded and "− " or "+ ") .. addon.L("REPORTED_POSITIONS", parentName, #places))
-            toggle.note:SetText(""); toggle:SetEnabled(true)
-            toggle:SetScript("OnClick", function()
+            if not locationWrite(current, toggle.title, "SetText", (expanded and "− " or "+ ") .. addon.L("REPORTED_POSITIONS", parentName, #places)) or
+                not locationWrite(current, toggle.note, "SetText", "") or not locationWrite(current, toggle, "SetEnabled", true) then return false end
+            if not locationWrite(current, toggle, "SetScript", "OnClick", function()
                 if not current() then return end
                 self.reportedExpanded[key] = not expanded
                 self:RefreshDetail()
-            end)
-            y = self:LayoutRow(toggle, 40, y)
+            end) then return false end
+            local nextY = self:LayoutRow(toggle, 40, y, current)
+            if not nextY then return false end
+            y = nextY
             if not expanded then return end
             line(addon.L("REPORTED_NOTICE"))
             for _, destination in ipairs(places) do
                 local point = destination
                 local zone = addon.Read(C_Map and C_Map.GetMapInfo, "table", point.mapID)
                 if not current() then return false end
+                local zoneName = (zone and addon.Clean(zone.name, "string")) or point.zoneName or addon.L("UNKNOWN_PLACE")
+                if not current() then return false end
                 reportIndex = reportIndex + 1
                 local row = self:MakeRow(self.detail, self.reportedRows, reportIndex, 59)
+                if not current() then return false end
                 row.locationKey, row.destination, row.heading = key, point, nil
-                local zoneName = (zone and addon.Clean(zone.name, "string")) or point.zoneName or addon.L("UNKNOWN_PLACE")
-                row.title:SetText(zoneName .. string.format(" (%.1f, %.1f)", point.x, point.y))
-                row.note:SetText(addon.L("REPORTED_VISIT")); row:SetEnabled(true)
-                row:SetScript("OnClick", function()
+                if not locationWrite(current, row.title, "SetText", zoneName .. string.format(" (%.1f, %.1f)", point.x, point.y)) or
+                    not locationWrite(current, row.note, "SetText", addon.L("REPORTED_VISIT")) or
+                    not locationWrite(current, row, "SetEnabled", true) then return false end
+                if not locationWrite(current, row, "SetScript", "OnClick", function()
                     if current() then
                         addon.Navigation.Start({ id = id, kind = "visit", place = point })
                     end
-                end)
-                y = self:LayoutRow(row, 59, y)
+                end) then return false end
+                local nextY = self:LayoutRow(row, 59, y, current)
+                if not nextY then return false end
+                y = nextY
             end
         end
         local function carried(itemID)
@@ -1144,6 +1167,7 @@ function UI:RefreshDetail()
             local function current() return locationCurrent() and (not ownerCurrent or ownerCurrent()) end
             if not current() then return false end
             line(addon.L(heading), "section")
+            if not current() then return false end
             for index, possible in ipairs(places) do
                 local destination = possible
                 local title = giverName(destination)
@@ -1152,21 +1176,26 @@ function UI:RefreshDetail()
                 local validMap = mapID ~= nil and mapID > 0 and mapID % 1 == 0
                 local zone = validMap and addon.Read(C_Map and C_Map.GetMapInfo, "table", mapID)
                 if not current() then return false end
-                local row = self:MakeRow(self.detail, buttons, index, 59)
-                row.title:SetText(title)
                 local x, py = addon.Clean(destination.x, "number"), addon.Clean(destination.y, "number")
                 local coordinates = validMap and x ~= nil and py ~= nil and x >= 0 and x <= 100 and py >= 0 and py <= 100
-                row.note:SetText(((zone and addon.Clean(zone.name, "string")) or
+                local note = ((zone and addon.Clean(zone.name, "string")) or
                     addon.Clean(destination.zoneName, "string") or destination.locationName or addon.L("UNKNOWN_PLACE")) ..
-                    (coordinates and string.format(" (%.1f, %.1f)", x, py) or ""))
-                row:SetEnabled(validMap)
-                row:SetScript("OnClick", validMap and function()
+                    (coordinates and string.format(" (%.1f, %.1f)", x, py) or "")
+                if not current() then return false end
+                local row = self:MakeRow(self.detail, buttons, index, 59)
+                if not current() then return false end
+                if not locationWrite(current, row.title, "SetText", title) or
+                    not locationWrite(current, row.note, "SetText", note) or
+                    not locationWrite(current, row, "SetEnabled", validMap) then return false end
+                if not locationWrite(current, row, "SetScript", "OnClick", validMap and function()
                     if not current() then return end
                     local visit = { id = id, kind = "visit", place = destination }
                     if coordinates then addon.Navigation.Start(visit)
                     else addon.Navigation.Map(destination) end
-                end or nil)
-                y = self:LayoutRow(row, 59, y)
+                end or nil) then return false end
+                local nextY = self:LayoutRow(row, 59, y, current)
+                if not nextY then return false end
+                y = nextY
                 if reported(destination, slot .. index, ownerCurrent) == false or not current() then return false end
             end
         end
@@ -1251,7 +1280,9 @@ function UI:RefreshDetail()
         end
         if typedStarter then
             -- Route facts remain separate from the item that starts the quest.
-            local routes, snapshots = {}, {}
+            local routes, snapshots, mappedDrops = {}, {}, {}
+            local mapNamespace, mapGetter = C_Map, C_Map and C_Map.GetMapInfo
+            local giverGetter, dungeonGetter = addon.GiverName, addon.DungeonName
             local function capture(object, fields, list)
                 local values = {}
                 for _, field in ipairs(fields) do values[field] = rawget(object, field) end
@@ -1261,6 +1292,8 @@ function UI:RefreshDetail()
             local function acquisitionCurrent()
                 if not starterCurrent() then return false end
                 local ok, same = pcall(function()
+                    if C_Map ~= mapNamespace or (mapNamespace and mapNamespace.GetMapInfo ~= mapGetter) or
+                        addon.GiverName ~= giverGetter or addon.DungeonName ~= dungeonGetter then return false end
                     for _, snapshot in ipairs(snapshots) do
                         if snapshot.length and #snapshot.object ~= snapshot.length then return false end
                         for _, field in ipairs(snapshot.fields) do
@@ -1313,12 +1346,28 @@ function UI:RefreshDetail()
                     capture(drops, { index })
                     local drop = addon.Clean(rawget(drops, index), "table")
                     if drop then
-                        capture(drop, { "npcID", "name", "locationName" })
+                        capture(drop, { "npcID", "objectID", "itemID", "name", "locationName", "mapID", "x", "y", "zoneName", "reportedLocations" })
+                        local points = addon.Clean(rawget(drop, "reportedLocations"), "table")
+                        if points then
+                            capture(points, {}, true)
+                            for pointIndex = 1, math.min(#points, 100) do
+                                capture(points, { pointIndex })
+                                local point = addon.Clean(rawget(points, pointIndex), "table")
+                                if point then capture(point, { "mapID", "x", "y", "zoneName" }) end
+                            end
+                        end
                         local name, location = addon.Clean(drop.name, "string"), addon.Clean(drop.locationName, "string")
                         if positive(drop.npcID) and name and name:find("%S") and location and location:find("%S") then
                             name = giverName(drop)
                             if not acquisitionCurrent() then return end
                             routes[#routes + 1] = { text = addon.L("ITEM_DROP_SOURCE", name, location) }
+                            local map = positive(rawget(drop, "mapID"))
+                            local reportedPoints = reportedPlaces(drop)
+                            local ok, npcOnly = pcall(function()
+                                return rawget(drop, "objectID") == nil and rawget(drop, "itemID") == nil and true or false
+                            end)
+                            if not acquisitionCurrent() then return end
+                            if ok and npcOnly == true and drop.npcID <= 4294967295 and (map or reportedPoints) then mappedDrops[#mappedDrops + 1] = drop end
                         end
                     end
                 end
@@ -1332,6 +1381,7 @@ function UI:RefreshDetail()
                 else line(route.text) end
                 if not acquisitionCurrent() then return end
             end
+            if #mappedDrops > 0 and alternativePlaces(mappedDrops, self.dropButtons, "ITEM_DROP_LOCATIONS", "dropSource:", acquisitionCurrent) == false then return end
         end
         local map = start and addon.Clean(start.mapID, "number")
         if map and map > 0 then
@@ -1930,7 +1980,7 @@ function UI:Create()
     self.materialButtons = {}
     self.requirementButtons, self.branchInspectButtons = {}, {}
     self.actionButtons, self.actionInspectButtons, self.preparationForButtons = {}, {}, {}
-    self.startButtons, self.finishButtons, self.containerButtons = {}, {}, {}
+    self.startButtons, self.finishButtons, self.containerButtons, self.dropButtons = {}, {}, {}, {}
     UISpecialFrames[#UISpecialFrames + 1] = "DungeonProWindow"
     for _, d in ipairs(addon.dungeons) do if d.key == addon.char.selectedDungeon then self.dungeon = d end end
     frame:RegisterEvent("DISPLAY_SIZE_CHANGED")

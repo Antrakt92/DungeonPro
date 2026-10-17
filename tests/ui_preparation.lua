@@ -4734,4 +4734,216 @@ check("Every filter text setter preserves a newer compact fitting pass before th
         finish()
     end
 end)
+local function mappedDropFixture()
+    local f,q=starterPresentationFixture();local real={}
+    assert(loadfile("Database/Catalog.lua"))("DungeonPro",real)
+    q.start=real.quests[96391].start
+    q.start.dropSources={
+        {npcID=6124,name="Captain Beld",locationName="Dun Morogh",zoneName="Dun Morogh",mapID=1426,x=77.8,y=62.4,
+            reportedLocations={{mapID=1426,x=77.8,y=62.4},{mapID=1426,x=77.8,y=62.6}}},
+        {npcID=6123,name="Dark Iron Spy",locationName="Dun Morogh",zoneName="Dun Morogh",mapID=1426,x=76.4,y=61,
+            reportedLocations={{mapID=1426,x=76.4,y=61},{mapID=1426,x=76.6,y=61.8},{mapID=1426,x=76.8,y=60},
+                {mapID=1426,x=77.2,y=59},{mapID=1426,x=77.4,y=61.4},{mapID=1426,x=77.6,y=59},
+                {mapID=1426,x=77.8,y=62.4},{mapID=1426,x=77.8,y=62.6},{mapID=1426,x=78,y=60},{mapID=1426,x=78,y=61.2}}}}
+    ui.reportedExpanded["dropSource:1"],ui.reportedExpanded["dropSource:2"]=nil,nil
+    ui:RefreshDetail();return f,q,q.start.dropSources
+end
+check("Known item-drop NPC locations retain both actual sources and all twelve explicit manual visit points",function()
+    local f,q,drops=mappedDropFixture();local nav=addon.Navigation;local visits,maps={},{}
+    addon.Navigation={Start=function(a)visits[#visits+1]=a end,Map=function(p)maps[#maps+1]=p end}
+    assert(detailHas(addon.L("ITEM_DROP_LOCATIONS")) and #visits==0 and #maps==0)
+    assert(ui.dropButtons~=ui.containerButtons and ui.dropButtons~=ui.startButtons)
+    for i,drop in ipairs(drops)do
+        assert(detailHas(addon.L("ITEM_DROP_SOURCE",drop.name,"Dun Morogh")))
+        local row=ui.dropButtons[i];assert(row.shown and row.enabled and row.title.text==drop.name)
+        row.scripts.OnClick(row,"LeftButton",false)
+        assert(visits[i].kind=="visit" and visits[i].place==drop and visits[i].place.npcID==drop.npcID)
+    end
+    reportToggle("dropSource:1").scripts.OnClick();reportToggle("dropSource:2").scripts.OnClick()
+    local rows=reportRows();assert(#rows==12 and #visits==2)
+    for i,row in ipairs(rows)do
+        row.scripts.OnClick(row,"LeftButton",false)
+        local parent=i<=2 and drops[1]or drops[2];local index=i<=2 and i or i-2;local point=parent.reportedLocations[index]
+        local a=visits[#visits];assert(a.kind=="visit" and a.place.npcID==parent.npcID and a.place.mapID==1426)
+        assert(a.place.x==point.x and a.place.y==point.y)
+    end
+    assert(#maps==0 and not ui.giverAction and not ui.action and ui.engine:State(9970).status=="UNKNOWN")
+    addon.Navigation=nav;f:finish()
+end)
+check("Text-only drop sources stay ordinary while map-only and reported-only sources require explicit selection",function()
+    local f,q,drops=mappedDropFixture();local nav=addon.Navigation;local visits,maps={},{}
+    addon.Navigation={Start=function(a)visits[#visits+1]=a end,Map=function(p)maps[#maps+1]=p end}
+    q.start.dropSources={{npcID=1,name="Text only",locationName="Dungeon"},
+        {npcID=2,name="Map only",locationName="Zone",mapID=1426},
+        {npcID=3,name="Reported only",locationName="Zone",reportedLocations={{mapID=1426,x=1,y=2},{mapID=1426,x=2,y=3}}}}
+    ui:RefreshDetail();assert(detailHas(addon.L("ITEM_DROP_SOURCE","Text only","Dungeon")))
+    assert(ui.dropButtons[1].title.text=="Map only" and ui.dropButtons[1].enabled)
+    assert(ui.dropButtons[2].title.text=="Reported only" and not ui.dropButtons[2].enabled and not ui.dropButtons[2].scripts.OnClick)
+    ui.dropButtons[1].scripts.OnClick();assert(#maps==1 and maps[1]==q.start.dropSources[2] and not maps[1].place and #visits==0)
+    reportToggle("dropSource:2").scripts.OnClick();local rows=reportRows();rows[2].scripts.OnClick()
+    assert(#visits==1 and visits[1].place.npcID==3 and visits[1].place.x==2)
+    q.start.dropSources={{npcID=1,name="Text only",locationName="Dungeon"}};ui:RefreshDetail()
+    assert(not detailHas(addon.L("ITEM_DROP_LOCATIONS")))
+    for _,row in ipairs(ui.dropButtons)do assert(not row.shown and not row.enabled and not row.scripts.OnClick)end
+    assert(not detailHas(addon.L("ITEM_ACQUISITION_UNKNOWN")))
+    addon.Navigation=nav;f:finish()
+end)
+check("Mapped drop callbacks bind source lists entries and reported coordinates without promoting NPC or mixed starters",function()
+    local f,q,drops=mappedDropFixture();local nav=addon.Navigation;local calls=0
+    addon.Navigation={Start=function()calls=calls+1 end,Map=function()calls=calls+1 end}
+    local click=ui.dropButtons[1].scripts.OnClick;drops[1].x=78;click();assert(calls==0)
+    ui:RefreshDetail();click=ui.dropButtons[1].scripts.OnClick
+    drops[3]={npcID=4,name="Extra",locationName="Zone"};click();assert(calls==0)
+    drops[3]=nil;ui:RefreshDetail();click=ui.dropButtons[1].scripts.OnClick
+    q.start.dropSources={drops[1],drops[2]};click();assert(calls==0)
+    ui:RefreshDetail();reportToggle("dropSource:1").scripts.OnClick()
+    local pointClick=reportRows()[1].scripts.OnClick
+    drops[1].reportedLocations[1]={mapID=1426,x=79,y=64};pointClick();assert(calls==0)
+    q.start={npcID=9,name="NPC",dropSources=drops};ui:RefreshDetail();assert(not detailHas(addon.L("ITEM_DROP_LOCATIONS")))
+    q.start={itemID=801,name="Mixed",npcID=9,dropSources=drops};ui:RefreshDetail();assert(not detailHas(addon.L("ITEM_DROP_LOCATIONS")))
+    addon.Navigation=nav;f:finish()
+end)
+check("Mapped source rows translate wrap and recycle without reusing starter or container actions",function()
+    local f,q,drops=mappedDropFixture();local locale=addon.db.locale
+    measurement=function(fs)return fs.text=="Captain Beld"and 72 or 18 end
+    for code in pairs(addon.locales)do
+        addon.db.locale=code;ui:RefreshDetail()
+        assert(detailHas(addon.L("ITEM_DROP_LOCATIONS")) and ui.dropButtons[1].height==108)
+        assert(ui.dropButtons[2].point[3]<ui.dropButtons[1].point[3]-ui.dropButtons[1].height)
+        assert(not ui.giverAction and not ui.action and ui.engine:State(9970).status=="UNKNOWN")
+    end
+    local stale=ui.dropButtons[1].scripts.OnClick;showDetail(9971)
+    for _,row in ipairs(ui.dropButtons)do assert(not row.shown and not row.enabled and not row.scripts.OnClick)end
+    assert(not detailHas(addon.L("ITEM_DROP_LOCATIONS")))
+    local nav,calls=addon.Navigation,0;addon.Navigation={Start=function()calls=calls+1 end,Map=function()calls=calls+1 end}
+    stale();assert(calls==0)
+    addon.Navigation=nav;addon.db.locale=locale;measurement=nil;f:finish()
+end)
+check("Drop map and name hydration preserve replacement cards and same-card source generations",function()
+    local f,q,drops=mappedDropFixture();local names,map=addon.GiverName,C_Map
+    for _,helper in ipairs({"name","map"})do
+        for _,same in ipairs({false,true})do
+            q.start={itemID=801,name="Old starter",dropSources={drops[1],drops[2]}}
+            local armed=true;local nestedHeight
+            local function replace()
+                if not armed then return end;armed=false
+                if same then
+                    q.start={itemID=802,name="New starter",dropSources={{npcID=8,name="New mapped source",locationName="New zone",mapID=2,x=8,y=9}}}
+                    ui:RefreshDetail()
+                else showDetail(9971)end
+                nestedHeight=ui.detail.height
+            end
+            if helper=="name"then addon.GiverName=function(p)if p.npcID==6124 then replace()end end
+            else C_Map={GetMapInfo=function(id)if id==1426 then replace()end;return{name="Zone"}end}end
+            showDetail(9970)
+            assert(not armed and ui.detail.height==nestedHeight)
+            if same then
+                assert(ui.dropButtons[1].shown and ui.dropButtons[1].title.text=="New mapped source")
+                local nav,captured=addon.Navigation;addon.Navigation={Start=function(a)captured=a end}
+                ui.dropButtons[1].scripts.OnClick();assert(captured.place.npcID==8 and captured.place.x==8)
+                addon.Navigation=nav
+            else for _,row in ipairs(ui.dropButtons)do assert(not row.shown)end end
+            addon.GiverName,C_Map=names,map
+        end
+    end
+    f:finish()
+end)
+check("Mapped drop visits reject changed helper namespace character engine and source role until a fresh render",function()
+    local f,q,drops=mappedDropFixture();local nav=addon.Navigation;local calls=0
+    addon.Navigation={Start=function()calls=calls+1 end,Map=function()calls=calls+1 end}
+    local baseMap=C_Map;C_Map={GetMapInfo=function()return{name="Fixture zone"}end}
+    local originalMap,originalNames,character=C_Map,addon.GiverName,addon.char
+    local originalGetter=originalMap.GetMapInfo
+    for _,change in ipairs({"map","getter","name","character","engine","pointlist","sourceNPCrole"})do
+        q.start={itemID=801,name="Starter",dropSources={drops[1],drops[2]}};ui:RefreshDetail()
+        local click=ui.dropButtons[1].scripts.OnClick;local engine=ui.engine
+        if change=="map"then C_Map={GetMapInfo=originalMap and originalMap.GetMapInfo}
+        elseif change=="getter"then originalMap.GetMapInfo=function()return{name="New zone"}end
+        elseif change=="name"then addon.GiverName=function()return"New native name"end
+        elseif change=="character"then addon.char={}
+        elseif change=="engine"then ui.engine={}
+        elseif change=="pointlist"then drops[1].reportedLocations[#drops[1].reportedLocations+1]={mapID=1426,x=78,y=63}
+        else drops[1].objectID=6124 end
+        click();assert(calls==0,change)
+        if change=="pointlist"then table.remove(drops[1].reportedLocations)end
+        drops[1].objectID=nil;originalMap.GetMapInfo=originalGetter;C_Map,addon.GiverName,addon.char,ui.engine=originalMap,originalNames,character,engine
+    end
+    ui:RefreshDetail();ui.dropButtons[1].scripts.OnClick();assert(calls==1)
+    addon.Navigation=nav;C_Map=baseMap;f:finish()
+end)
+check("Native drop-map getter supersession and invalid optional locations cannot publish an old manual route",function()
+    local f,q,drops=mappedDropFixture();local map=C_Map;local armed=true
+    C_Map={GetMapInfo=function()
+        if armed then armed=false;C_Map.GetMapInfo=function()return{name="New getter"}end end
+        return{name="Old getter"}
+    end}
+    ui:RefreshDetail();assert(not armed)
+    for _,row in ipairs(ui.dropButtons)do assert(not row.shown)end
+    ui:RefreshDetail();assert(ui.dropButtons[1].shown)
+    C_Map=map;q.start={itemID=801,name="Starter",dropSources={
+        {npcID=1,name="No client map",locationName="Known source region",mapID="1426"},
+        {npcID=2,name="No map",locationName="Other source",mapID=0},
+        {npcID=4294967296,name="Out of native identity range",locationName="Zone",mapID=1426}}}
+    ui:RefreshDetail();assert(not detailHas(addon.L("ITEM_DROP_LOCATIONS")))
+    assert(detailHas(addon.L("ITEM_DROP_SOURCE","No client map","Known source region")))
+    assert(not ui.giverAction and not ui.action)
+    f:finish()
+end)
+check("Each mapped source row publication boundary preserves a newer source note layout and actual visit callback",function()
+    for _,boundary in ipairs({"title","note","enabled","script","measure","height","point"})do
+        local f,q=mappedDropFixture();local row=ui.dropButtons[1]
+        local target=(boundary=="title"or boundary=="measure")and row.title or boundary=="note"and row.note or row
+        local key=({title="SetText",note="SetText",enabled="SetEnabled",script="SetScript",measure="GetStringHeight",height="SetHeight",point="SetPoint"})[boundary]
+        local original,armed=target[key],true
+        local replacement={npcID=8,name="New source",locationName="New source zone",zoneName="New source zone",mapID=1426,x=8,y=9}
+        local nestedHeight,nestedPoint
+        target[key]=function(self,...)
+            local result=original(self,...);local value=(...);local superseded=false
+            local publish=boundary~="enabled"and boundary~="script"or boundary=="enabled"and value==true or boundary=="script"and select(2,...)~=nil
+            if armed and publish then
+                superseded=true;armed=false;q.start.dropSources={replacement};ui:RefreshDetail()
+                nestedHeight,nestedPoint=row.height,row.point
+            end
+            if boundary=="measure"and superseded then return 900 end
+            return result
+        end
+        ui:RefreshDetail();target[key]=original
+        assert(not armed and row.title.text=="New source",boundary)
+        assert(row.note.text:find("8.0, 9.0",1,true),boundary.." retained an older source note")
+        assert(row.height==nestedHeight and row.point==nestedPoint,boundary.." overwrote newer layout")
+        if boundary=="measure"then assert(row.height==59)end
+        local nav,captured=addon.Navigation;addon.Navigation={Start=function(a)captured=a end}
+        row.scripts.OnClick(row,"LeftButton",false)
+        assert(captured and captured.place==replacement and captured.place.npcID==8 and captured.place.x==8,boundary.." overwrote newer click")
+        addon.Navigation=nav;f:finish()
+    end
+end)
+check("Reported source point publication and layout preserve the replacement source's explicit point callback",function()
+    for _,boundary in ipairs({"title","note","enabled","script","measure","height","point"})do
+        local f,q=mappedDropFixture();reportToggle("dropSource:1").scripts.OnClick()
+        local row=reportRows()[1]
+        local target=(boundary=="title"or boundary=="measure")and row.title or boundary=="note"and row.note or row
+        local key=({title="SetText",note="SetText",enabled="SetEnabled",script="SetScript",measure="GetStringHeight",height="SetHeight",point="SetPoint"})[boundary]
+        local original,armed=target[key],true;local nestedHeight,nestedPoint
+        target[key]=function(self,...)
+            local result=original(self,...);local value=(...);local superseded=false
+            local publish=boundary~="enabled"and boundary~="script"or boundary=="enabled"and value==true or boundary=="script"and select(2,...)~=nil
+            if armed and publish then
+                superseded=true;armed=false;q.start.dropSources={{npcID=8,name="New source",locationName="New zone",zoneName="New zone",mapID=1426,x=8,y=9,
+                    reportedLocations={{mapID=1426,x=8,y=9},{mapID=1426,x=8,y=10}}}}
+                ui:RefreshDetail();nestedHeight,nestedPoint=row.height,row.point
+            end
+            if boundary=="measure"and superseded then return 900 end
+            return result
+        end
+        ui:RefreshDetail();target[key]=original
+        assert(not armed and row.title.text:find("8.0, 9.0",1,true),boundary)
+        assert(row.height==nestedHeight and row.point==nestedPoint,boundary.." overwrote newer point layout")
+        if boundary=="measure"then assert(row.height==59)end
+        local nav,captured=addon.Navigation;addon.Navigation={Start=function(a)captured=a end}
+        row.scripts.OnClick(row,"LeftButton",false)
+        assert(captured and captured.place.npcID==8 and captured.place.x==8 and captured.place.y==9,boundary.." retained a stale point click")
+        addon.Navigation=nav;f:finish()
+    end
+end)
 print("Preparation UI modeled checks passed: " .. total .. " (no native layout validation)")
