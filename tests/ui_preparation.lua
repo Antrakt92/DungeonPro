@@ -3444,4 +3444,116 @@ check("Explicit map and guide clicks reject invalid throwing and reentered engin
     ui.guide.scripts.OnClick();assert(calls==1)
     restore()
 end)
+local function preparationForFixture()
+    local saved={context=addon.Context,quest=ui.quest,dungeon=ui.dungeon,history=ui.detailHistory,choices=addon.char.choices,preparation=ui.preparation,all=ui.includeUnavailable}
+    addon.Context=function()return{level=60,faction="Alliance",completed=function()return false end,active=function()return false end}end
+    for id=21001,21006 do addon.quests[id]={id=id,minLevel=1,requirementsKnown=true,start={mapID=1,x=20,y=30}}end
+    addon.quests[21001].requires={{ids={21003}}}
+    addon.quests[21002].requires={{ids={21003,21004}}}
+    addon.quests[21005].storyline={21003,21005}
+    addon.quests[21006].requirementsKnown=false
+    addon.char.choices={}
+    ui.dungeon={key="preparation-for-fixture",name="Plan fixture",coverage="partial",quests={21001,21002,21005,21006}}
+    ui.detailHistory={};ui.quest=21003;ui:Refresh()
+    return function()
+        addon.Context,addon.char.choices=saved.context,saved.choices
+        ui.preparation,ui.includeUnavailable=saved.preparation,saved.all
+        for id=21001,21006 do addon.quests[id]=nil end
+        ui.quest,ui.dungeon,ui.detailHistory=saved.quest,saved.dungeon,saved.history;ui:Refresh()
+    end
+end
+check("A support card identifies only targets whose current preparation actions contain that quest",function()
+    local restore=preparationForFixture()
+    ui.preparation=true;ui.quest=nil;ui:Refresh()
+    local clicked=false
+    for _,row in ipairs(ui.rows)do
+        if row.shown and row.questID==21003 then row.scripts.OnClick(row,"LeftButton",false);clicked=true;break end
+    end
+    assert(clicked and ui.quest==21003)
+    assert(ui.preparationForButtons and ui.preparationForButtons[1].shown and ui.preparationForButtons[2].shown)
+    assert(ui.preparationForButtons[1].questID==21001 and ui.preparationForButtons[2].questID==21002)
+    assert(detailHas(addon.L("PREPARATION_FOR")) and detailHas(addon.L("PREPARATION_FOR_NOTICE")))
+    addon.char.choices[21002]={[1]=21004};ui:Refresh()
+    assert(ui.preparationForButtons[1].questID==21001 and not ui.preparationForButtons[2].shown)
+    assert(ui.engine:Next(21002)[1].id==21004 and ui.action.id==21003)
+    local button=ui.preparationForButtons[1]
+    button.scripts.OnClick(button,"LeftButton",false)
+    assert(ui.quest==21001 and ui.detailHistory[#ui.detailHistory]==21003)
+    assert(ui:BackQuest() and ui.quest==21003)
+    restore()
+end)
+check("Preparation target associations deduplicate wrap translate and clear stale links without altering choices",function()
+    local restore=preparationForFixture()
+    local first,second=ui.preparationForButtons[1],ui.preparationForButtons[2]
+    local locale,description=addon.db.locale,addon.Description
+    local preferences=addon.char.choices
+    ui.currentPlan.rows[#ui.currentPlan.rows+1]=ui.currentPlan.rows[1]
+    measurement=function(fs)
+        if fs==first.title then return 72 end
+        if fs==first.note then return 54 end
+        return 18
+    end
+    ui:RefreshDetail()
+    assert(first.height==144 and first.point[3]-second.point[3]>=148)
+    assert(not ui.preparationForButtons[3] or not ui.preparationForButtons[3].shown)
+    measurement=nil
+    for localeCode in pairs(addon.locales)do
+        addon.db.locale=localeCode;ui:RefreshDetail()
+        assert(detailHas(addon.L("PREPARATION_FOR")) and detailHas(addon.L("PREPARATION_FOR_NOTICE")))
+    end
+    assert(ui.preparationForButtons[1]==first and first.height==59 and addon.char.choices==preferences)
+    addon.Description=function()return "Long support reading"end
+    measurement=function(fs)return fs.text=="Long support reading" and 900 or 18 end
+    ui:RefreshDetail();ui.detailScroll:SetVerticalScroll(200)
+    first.scripts.OnClick(first,"LeftButton",false)
+    assert(ui.quest==21001 and ui:BackQuest() and ui.quest==21003 and ui.detailScroll.verticalScroll==200)
+    local old=ui.preparationForButtons[2].scripts.OnClick
+    addon.char.choices[21002]={[1]=21004};ui:Refresh();old();assert(ui.quest==21003)
+    showDetail(21005);old();assert(ui.quest==21005)
+    for _,row in ipairs(ui.preparationForButtons)do assert(not row.shown and not row.enabled and row.scripts.OnClick==nil)end
+    addon.db.locale,addon.Description=locale,description;measurement=nil;restore()
+end)
+check("Preparation targets require a current selected-dungeon plan and never derive links from story or unknown-only data",function()
+    local restore=preparationForFixture()
+    showDetail(21005)
+    assert(not detailHas(addon.L("PREPARATION_FOR")))
+    showDetail(21006);assert(not detailHas(addon.L("PREPARATION_FOR")))
+    ui.quest=21003;ui.dungeon=nil;ui:Refresh()
+    assert(not ui.currentPlan and not detailHas(addon.L("PREPARATION_FOR")))
+    for _,row in ipairs(ui.preparationForButtons)do assert(not row.shown and not row.enabled and row.scripts.OnClick==nil)end
+    restore()
+end)
+check("Preparation target hydration cannot expose actionable links from a changed character or obsolete card",function()
+    for _,mode in ipairs({"character","card","engine"})do
+        local restore=preparationForFixture()
+        local character,name=addon.char,addon.QuestName
+        local armed=true
+        addon.QuestName=function(id)
+            if armed and id==21002 then
+                armed=false
+                if mode=="character"then addon.char={}
+                elseif mode=="engine"then ui.engine.Current=function()return false end
+                else ui:InspectQuest(21005)end
+            end
+            return name(id)
+        end
+        ui:RefreshDetail();assert(not armed)
+        if mode=="card"then assert(ui.quest==21005 and ui.action.id==21005)
+        else assert(ui.action==nil and not ui.map.enabled and not ui.guide.enabled)end
+        for _,row in ipairs(ui.preparationForButtons)do
+            if row.shown and row.scripts.OnClick then row.scripts.OnClick();assert(ui.quest==(mode=="card" and 21005 or 21003))end
+        end
+        addon.char,addon.QuestName=character,name;restore()
+    end
+end)
+check("Unavailable targets never become preparation associations even when all characters are visible",function()
+    local restore=preparationForFixture()
+    addon.quests[21002].factions={"Horde"}
+    for _,all in ipairs({false,true})do
+        ui.includeUnavailable=all;ui:Refresh()
+        assert(ui.engine:State(21002).status=="UNAVAILABLE")
+        assert(ui.preparationForButtons[1].questID==21001 and not ui.preparationForButtons[2].shown)
+    end
+    restore()
+end)
 print("Preparation UI modeled checks passed: " .. total .. " (no native layout validation)")

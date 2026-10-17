@@ -490,6 +490,7 @@ end
 function UI:RefreshQuests()
     local d, engine = self.dungeon, addon.Planner.New(addon.quests, addon.Context(), addon.Clean(addon.char.choices, "table"))
     self.engine = engine
+    self.currentPlan = nil
     local generation = {}
     self.questListGeneration = generation
     local function current()
@@ -500,6 +501,8 @@ function UI:RefreshQuests()
     local n, offset = 0, 0
     if d then
         local plan = engine:Dungeon(d, { includeUnavailable = self.includeUnavailable })
+        if not current() then return end
+        self.currentPlan = { engine = engine, dungeon = d, rows = plan.rows }
         self.summary:SetText(addon.L("SUMMARY", (plan.counts.ACTIVE or 0) + (plan.counts.READY or 0),
             plan.counts.COMPLETED or 0, (plan.counts.LOCKED or 0) + (plan.counts.AVAILABLE or 0), plan.counts.UNKNOWN or 0))
         self.coverage:SetText(plan.unknown and addon.L("PARTIAL") or addon.L(plan.ready and "PREPARED" or "NOT_PREPARED"))
@@ -753,7 +756,7 @@ function UI:RefreshDetail()
         return true
     end
     for _, b in ipairs(self.chainButtons) do b:Hide(); b:SetEnabled(false); b:SetScript("OnClick", nil) end
-    for _, buttons in ipairs({ self.actionButtons, self.actionInspectButtons }) do
+    for _, buttons in ipairs({ self.actionButtons, self.actionInspectButtons, self.preparationForButtons }) do
         for _, b in ipairs(buttons) do b:Hide(); b:SetEnabled(false); b:SetScript("OnClick", nil) end
     end
     for _, b in ipairs(self.branchButtons) do b:Hide() end
@@ -1024,6 +1027,41 @@ function UI:RefreshDetail()
                     inspect:SetEnabled(true); styleRow(inspect, "control", false)
                     inspect:SetScript("OnClick", function() if current() then self:InspectQuest(actionID) end end)
                     inspect:Show(); y = y + height + 6
+                end
+            end
+        end
+        local plan = self.currentPlan
+        if plan and plan.engine == engine and plan.dungeon == renderDungeon then
+            local related, seen = {}, {}
+            for index = 1, math.min(#plan.rows, 100) do
+                local entry = plan.rows[index]
+                local targetID = addon.Clean(entry.id, "number")
+                if targetID and targetID > 0 and targetID % 1 == 0 and targetID ~= id and not seen[targetID] then
+                    seen[targetID] = true
+                    local nextActions = engine:Next(targetID)
+                    if not current() or self.currentPlan ~= plan then return end
+                    for _, nextAction in ipairs(nextActions) do
+                        if nextAction.id == id then related[#related + 1] = targetID; break end
+                    end
+                end
+            end
+            if #related > 0 then
+                line(addon.L("PREPARATION_FOR"), "section")
+                line(addon.L("PREPARATION_FOR_NOTICE"))
+                for index, targetID in ipairs(related) do
+                    local targetName = addon.QuestName(targetID)
+                    local targetState = engine:State(targetID)
+                    if not current() or self.currentPlan ~= plan then return end
+                    local row = self:MakeRow(self.detail, self.preparationForButtons, index, 59)
+                    row.questID = targetID
+                    row.title:SetText(targetName)
+                    row.note:SetText("|cff" .. COLOR[targetState.status] .. statusLabel(targetState) .. "|r")
+                    row:SetEnabled(true); styleRow(row, "quest", false)
+                    local other = targetID
+                    row:SetScript("OnClick", function()
+                        if current() and self.currentPlan == plan then self:InspectQuest(other) end
+                    end)
+                    y = self:LayoutRow(row, 59, y)
                 end
             end
         end
@@ -1414,7 +1452,7 @@ function UI:Create()
     self.frame, self.cards, self.rows, self.details, self.chainButtons, self.branchButtons = frame, {}, {}, {}, {}, {}
     self.materialButtons = {}
     self.requirementButtons, self.branchInspectButtons = {}, {}
-    self.actionButtons, self.actionInspectButtons = {}, {}
+    self.actionButtons, self.actionInspectButtons, self.preparationForButtons = {}, {}, {}
     self.startButtons, self.finishButtons, self.containerButtons = {}, {}, {}
     UISpecialFrames[#UISpecialFrames + 1] = "DungeonProWindow"
     for _, d in ipairs(addon.dungeons) do if d.key == addon.char.selectedDungeon then self.dungeon = d end end
