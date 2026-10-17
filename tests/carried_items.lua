@@ -197,5 +197,104 @@ check("Unknown quantity linkage is rechecked after native reads without inventin
     C_Item.GetItemCount = function() row.quantity = nil; return 3 end
     assert(addon.CarriedItemCount(20606) == 3 and row.quantity == nil)
 end)
+check("Provided-only supplies expose neutral carried zero without changing objective or preparation state", function()
+    local quest = { id = 68, minLevel = 1, requirementsKnown = false,
+        providedItems = { { itemID = 20606, name = "Provided supply" } } }
+    addon.quests[68] = quest
+    for _, value in ipairs({ 0, 1, 5 }) do
+        count = value; assert(addon.CarriedItemCount(20606) == value)
+        local context = { level = 60, active = function() return false end, completed = function() return false end }
+        local engine = addon.Planner.New(addon.quests, context)
+        assert(engine:State(68).status == "UNKNOWN" and not engine:Dungeon({ coverage = "partial", quests = { 68 } }).ready)
+    end
+    assert(quest.objectiveItems == nil and quest.requires == nil and quest.providedItems[1].quantity == nil and calls == 3)
+end)
+check("Malformed supplied metadata cannot authorize an inventory query", function()
+    addon.quests[68] = { id = 68 }
+    for _, rows in ipairs({ false, {}, secret, { false }, { secret },
+        { { itemID = 20606 } }, { { itemID = 20606, name = " " } },
+        { { itemID = 20606, name = secret } }, { { itemID = 20606, name = string.rep("界", 167) } },
+        { { itemID = 20606, name = "Provided", quantity = false } },
+        { { itemID = 20606, name = "Provided", quantity = 0 } },
+        { { itemID = 20606, name = "Provided", quantity = secret } },
+        { { itemID = 20606, name = "Provided", quantity = 1.5 } },
+        { { itemID = 20606, name = "Provided", objectID = 1 } },
+        { { itemID = 4294967296, name = "Provided" } } }) do
+        addon.quests[68].providedItems = rows
+        assert(addon.CarriedItemCount(20606) == nil and calls == 0)
+    end
+end)
+check("Provided relation scan accepts the hundredth entry and rejects an oversized list", function()
+    local rows = {}
+    for i = 1, 99 do rows[i] = { itemID = i, name = "Other" } end
+    rows[100] = { itemID = 20606, name = "Provided", quantity = 2 }
+    addon.quests[68] = { id = 68, providedItems = rows }
+    assert(addon.CarriedItemCount(20606) == 3 and calls == 1)
+    rows[101] = { itemID = 20606, name = "Tail" }
+    assert(addon.CarriedItemCount(20606) == nil and calls == 1)
+end)
+check("Removed replaced invalid or reclassified supplied relations discard a read count", function()
+    for mode = 1, 5 do
+        reset()
+        local row = { itemID = 20606, name = "Provided" }
+        addon.quests[68] = { id = 68, providedItems = { row } }
+        C_Item.GetItemCount = function()
+            if mode == 1 then addon.quests[68].providedItems = nil
+            elseif mode == 2 then addon.quests[68].providedItems[1] = { itemID = 1, name = "Other" }
+            elseif mode == 3 then row.name = " "
+            elseif mode == 4 then row.quantity = secret
+            else row.objectID = 1 end
+            return 3
+        end
+        assert(addon.CarriedItemCount(20606) == nil)
+    end
+end)
+check("Final capability sanitization cannot remove the sole provided relation after its linked check", function()
+    addon.quests[68] = { id = 68, providedItems = { { itemID = 20606, name = "Provided" } } }
+    local read = false
+    local getter = function() read = true; return 3 end
+    C_Item.GetItemCount = getter
+    issecretvalue = function(value)
+        if read and value == getter then addon.quests[68].providedItems = nil end
+        return false
+    end
+    assert(addon.CarriedItemCount(20606) == nil and read)
+end)
+check("Final capability sanitization cannot grow a source list beyond its valid bound", function()
+    for _, field in ipairs({ "objectiveItems", "providedItems" }) do
+        reset()
+        local rows = { { itemID = 20606, name = "Provided" } }
+        addon.quests[68] = { id = 68, [field] = rows }
+        local read, armed = false, false
+        C_Item.GetItemCount = function() read = true; return 3 end
+        issecretvalue = function(value)
+            if read and (value == "Provided" or type(value) == "table" and value == rows[1]) then armed = true end
+            if armed and value == C_Item then
+                armed = false
+                for i = 2, 101 do rows[i] = { itemID = i, name = "Other" } end
+            end
+            return false
+        end
+        assert(addon.CarriedItemCount(20606) == nil and #rows == 101)
+    end
+end)
+check("Supplied name sanitization cannot authorize a stale entry before the native read", function()
+    local row = { itemID = 20606, name = "Provided" }
+    addon.quests[68] = { id = 68, providedItems = { row } }
+    issecretvalue = function(value)
+        if value == "Provided" then row.name = false end
+        return false
+    end
+    assert(addon.CarriedItemCount(20606) == nil and calls == 0)
+end)
+check("Malformed supplied metadata does not suppress another independently valid item role", function()
+    addon.quests[68] = { id = 68, providedItems = { { itemID = 20606, name = "Provided", objectID = 1 } },
+        completionQuests = { { id = 69, itemID = 20606 } } }
+    assert(addon.CarriedItemCount(20606) == 3 and calls == 1)
+    addon.quests[68].providedItems = nil
+    assert(addon.CarriedItemCount(20606) == 3 and calls == 2)
+    addon.quests[68].completionQuests = nil
+    assert(addon.CarriedItemCount(20606) == nil and calls == 2)
+end)
 issecretvalue = nil
 print("Carried item count checks passed: " .. total .. " (native client unverified)")

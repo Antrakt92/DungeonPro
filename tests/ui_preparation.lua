@@ -4235,4 +4235,122 @@ check("Final objective binding validation rejects entry or quantity replacement 
     end
     first.icon.SetTexture=setter;issecretvalue=checker;f:finish()
 end)
+check("Quest-provided items remain a separate informational role with unknown quantity and neutral carried zero",function()
+    local f=objectivePresentationFixture();local q=addon.quests[9970]
+    q.objectiveItems=nil;q.providedItems={{itemID=801,name="Provided tool"}};f.data={source="dialogue",hidden=true}
+    ui:RefreshDetail()
+    assert(detailHas(addon.L("PROVIDED_ITEMS")) and detailHas(addon.L("PROVIDED_ITEMS_NOTICE")))
+    assert(not detailHas(addon.L("OBJECTIVE_ITEMS")) and detailHas(addon.L("OBJECTIVE_ITEM_UNKNOWN","Objective 801")))
+    assert(detailHas(addon.L("ITEM_CARRIED",0)) and not detailHas(addon.L("OBJECTIVE_ITEM","Objective 801",1)))
+    local button=ui.objectiveButtons[1]
+    assert(button.shown and button.objectiveBinding.role=="provided" and button.objectiveBinding.sourceField=="providedItems")
+    button.scripts.OnEnter();assert(f.tip.owner==button and f.tip.items[#f.tip.items]==801)
+    assert(ui.engine:State(9970).status=="UNKNOWN" and not ui.action and not ui.guide.enabled)
+    addon.CarriedItemCount=nil;ui:RefreshDetail()
+    assert(detailHas(addon.L("PROVIDED_ITEMS")) and not detailHas(addon.L("ITEM_CARRIED",0)))
+    f:finish()
+end)
+check("Identical item IDs in provided and objective roles keep separate source bindings and quantities",function()
+    local f=objectivePresentationFixture();local q=addon.quests[9970]
+    q.objectiveItems={{itemID=801,name="Objective source",quantity=6}};q.providedItems={{itemID=801,name="Provided source"}}
+    ui:RefreshDetail();local objective,provided=ui.objectiveButtons[1],ui.objectiveButtons[2]
+    assert(detailHas(addon.L("OBJECTIVE_ITEMS")) and detailHas(addon.L("PROVIDED_ITEMS")))
+    assert(detailHas(addon.L("OBJECTIVE_ITEM","Objective 801",6)) and detailHas(addon.L("OBJECTIVE_ITEM_UNKNOWN","Objective 801")))
+    assert(objective.objectiveBinding.role=="objective" and provided.objectiveBinding.role=="provided")
+    assert(objective.objectiveBinding~=provided.objectiveBinding)
+    provided.scripts.OnEnter();local oldLeave=provided.scripts.OnLeave;objective.scripts.OnEnter();local hides=f.tip.hides
+    oldLeave();assert(f.tip.hides==hides and f.tip.owner==objective)
+    q.providedItems={};provided.scripts.OnEnter();assert(f.tip.owner==objective)
+    objective.scripts.OnEnter();assert(ui.objectiveTooltip and ui.objectiveTooltip.button==objective)
+    assert(q.objectiveItems[1].quantity==6 and ui.engine:State(9970).status=="UNKNOWN")
+    f:finish()
+end)
+check("Provided item labels translate independently and recycle known unknown and absent source data",function()
+    local f=objectivePresentationFixture();local locale=addon.db.locale;local objectives=addon.QuestObjectives
+    local q=addon.quests[9970];q.objectiveItems=nil;q.providedItems={{itemID=801,name="Provided source",quantity=2}}
+    addon.QuestObjectives=function()return{{text="Actual native objective",finished=false}}end
+    for code in pairs(addon.locales)do
+        addon.db.locale=code;ui:RefreshDetail()
+        assert(detailHas(addon.L("PROVIDED_ITEMS")) and detailHas(addon.L("OBJECTIVE_ITEM","Objective 801",2)))
+        q.providedItems[1].quantity=nil;ui:RefreshDetail()
+        assert(detailHas(addon.L("OBJECTIVE_ITEM_UNKNOWN","Objective 801")) and not detailHas(addon.L("OBJECTIVE_ITEM","Objective 801",2)))
+        assert(detailHas(addon.L("OBJECTIVE_PROGRESS")))
+        q.providedItems=nil;ui:RefreshDetail();assert(not detailHas(addon.L("PROVIDED_ITEMS")) and not ui.objectiveButtons[1].shown)
+        q.providedItems={{itemID=801,name="Provided source",quantity=2}}
+    end
+    addon.db.locale=locale;addon.QuestObjectives=objectives;f:finish()
+end)
+check("Provided entries require their own valid source name uint32 identity and absent-only unknown quantity before native reads",function()
+    local f=objectivePresentationFixture();local q=addon.quests[9970];q.objectiveItems=nil
+    local checker=issecretvalue;local restricted={};issecretvalue=function(v)return v==restricted end
+    local calls=0;addon.ItemName=function()calls=calls+1;return"Should not read"end
+    addon.ItemIcon=function()calls=calls+1;return 1801 end;addon.CarriedItemCount=function()calls=calls+1;return 0 end
+    for _,entry in ipairs({{itemID=801},{itemID=801,name=" "},{itemID=801,name=string.rep("x",501)},
+        {itemID=801,name=restricted},{itemID=4294967296,name="Invalid"},{itemID=0,name="Invalid"},
+        {itemID=801,name="Invalid",quantity=0},{itemID=801,name="Invalid",quantity=false},
+        {itemID=801,name="Invalid",quantity=restricted}})do
+        q.providedItems={entry};ui:RefreshDetail();assert(not detailHas(addon.L("PROVIDED_ITEMS")) and calls==0)
+    end
+    issecretvalue=checker;f:finish()
+end)
+check("Provided item hydration preserves newer cards and same-card generations without promoting the old source role",function()
+    local f=objectivePresentationFixture();local q=addon.quests[9970];q.objectiveItems=nil
+    for _,helper in ipairs({"ItemName","CarriedItemCount","ItemIcon"})do
+        for _,sameQuest in ipairs({false,true})do
+            q.providedItems={{itemID=801,name="Old provided",quantity=2}}
+            local original=addon[helper];local armed=true;local nestedHeight
+            addon[helper]=function(id)
+                if armed and id==801 then
+                    armed=false
+                    if sameQuest then q.providedItems={{itemID=802,name="Fresh provided"}};ui:RefreshDetail()else showDetail(9971)end
+                    nestedHeight=ui.detail.height
+                end
+                return original(id)
+            end
+            showDetail(9970);assert(not armed and ui.detail.height==nestedHeight)
+            if sameQuest then assert(detailHas(addon.L("OBJECTIVE_ITEM_UNKNOWN","Objective 802")))
+            else assert(ui.quest==9971 and not detailHas(addon.L("PROVIDED_ITEMS")))end
+            assert(not detailHas(addon.L("OBJECTIVE_ITEM","Objective 801",2)))
+            addon[helper]=original
+        end
+    end
+    f:finish()
+end)
+check("Provided role and source names remain validated through the final native icon binding boundary",function()
+    local f=objectivePresentationFixture();local q=addon.quests[9970];q.objectiveItems=nil
+    q.providedItems={{itemID=801,name="Original provided",quantity=6}};ui:RefreshDetail()
+    local button=ui.objectiveButtons[1];local checker=issecretvalue;local setter=button.icon.SetTexture;local armed=false
+    button.icon.SetTexture=function(self,v)if v then armed=true end;return setter(self,v)end
+    issecretvalue=function(v)if armed and v==6 then armed=false;q.providedItems[1].name="Replacement provided"end;return false end
+    ui:RefreshDetail();assert(not button.shown and not button.objectiveBinding)
+    button.icon.SetTexture=setter;issecretvalue=checker;ui:RefreshDetail();assert(button.shown)
+    local binding=button.objectiveBinding;binding.role="objective";binding.sourceField="objectiveItems"
+    local items=#f.tip.items;button.scripts.OnEnter();assert(#f.tip.items==items and not ui.objectiveTooltip)
+    f:finish()
+end)
+check("Plain provided-item rows reject mandatory source changes after hydration even when no icon is available",function()
+    local f=objectivePresentationFixture();local q=addon.quests[9970];q.objectiveItems=nil;addon.ItemIcon=nil
+    local names,counts=addon.ItemName,addon.CarriedItemCount
+    for _,helper in ipairs({"ItemName","CarriedItemCount"})do
+        for _,mutation in ipairs({"name","entry","quantity","length"})do
+            q.providedItems={{itemID=801,name="Supply",quantity=2}}
+            local original=addon[helper];local armed=true
+            addon[helper]=function(id)
+                if armed and id==801 then
+                    armed=false
+                    if mutation=="name"then q.providedItems[1].name=" "
+                    elseif mutation=="entry"then q.providedItems[1]={itemID=802,name="Replacement"}
+                    elseif mutation=="quantity"then q.providedItems[1].quantity=3
+                    else q.providedItems[2]={itemID=802,name="New supplied item"}end
+                end
+                return original(id)
+            end
+            ui:RefreshDetail()
+            assert(not armed and not detailHas(addon.L("PROVIDED_ITEMS")))
+            assert(not detailHas(addon.L("OBJECTIVE_ITEM","Objective 801",2)))
+            addon[helper]=original
+        end
+    end
+    addon.ItemName,addon.CarriedItemCount=names,counts;f:finish()
+end)
 print("Preparation UI modeled checks passed: " .. total .. " (no native layout validation)")

@@ -521,25 +521,55 @@ function addon.CarriedItemCount(id)
     local quests = addon.Clean(addon.quests, "table")
     local checker = issecretvalue
     if not id or not getter or not quests then return nil end
+    local function relation(ownerKey, quest, field, entries, index, entry, quantity, name)
+        return function()
+            local ok, valid = pcall(function()
+                if C_Item ~= item or rawget(item, "GetItemCount") ~= getter or addon.quests ~= quests or
+                    issecretvalue ~= checker or rawget(quests, ownerKey) ~= quest or rawget(quest, field) ~= entries or
+                    (index and rawget(entries, index) or entries) ~= entry or rawget(entry, "itemID") ~= id then return false end
+                if (field == "objectiveItems" or field == "providedItems") and rawget(entry, "quantity") ~= quantity then return false end
+                if (field == "objectiveItems" or field == "providedItems") and (#entries < 1 or #entries > 100) then return false end
+                if field == "providedItems" then
+                    if rawget(entry, "name") ~= name then return false end
+                    for key in next, entry do
+                        if key ~= "itemID" and key ~= "name" and key ~= "quantity" then return false end
+                    end
+                end
+                return true
+            end)
+            return ok and valid == true
+        end
+    end
     local function linked()
-        for _, value in next, quests do
+        for ownerKey, value in next, quests do
             local quest = addon.Clean(value, "table")
             local start = quest and addon.Clean(quest.start, "table")
-            if start and addon.Clean(start.itemID, "number") == id then return true end
-            local objectives = quest and addon.Clean(quest.objectiveItems, "table")
-            if objectives and #objectives >= 1 and #objectives <= 100 then
-                for index = 1, #objectives do
-                    local entry = addon.Clean(objectives[index], "table")
-                    if entry then
-                        local itemID = dialogueInteger(rawget(entry, "itemID"), 1, 9007199254740991)
-                        local quantity = rawget(entry, "quantity")
-                        local readable = true
-                        if type(issecretvalue) == "function" then
-                            local ok, restricted = pcall(issecretvalue, quantity)
-                            readable = ok and addon.Clean(restricted, "boolean") == false
+            if start and addon.Clean(start.itemID, "number") == id then
+                local candidate = relation(ownerKey, quest, "start", start, nil, start)
+                if candidate() then return candidate end
+            end
+            for _, field in ipairs({ "objectiveItems", "providedItems" }) do
+                local entries = quest and addon.Clean(quest[field], "table")
+                if entries and #entries >= 1 and #entries <= 100 then
+                    for index = 1, #entries do
+                        local entry = addon.Clean(entries[index], "table")
+                        if entry then
+                            local provided = field == "providedItems"
+                            local itemID = dialogueInteger(rawget(entry, "itemID"), 1, provided and 4294967295 or 9007199254740991)
+                            local name = provided and addon.Clean(rawget(entry, "name"), "string") or nil
+                            local named = not provided or name and #name <= 500 and name:find("%S")
+                            local quantity = rawget(entry, "quantity")
+                            local readable = true
+                            if type(issecretvalue) == "function" then
+                                local ok, restricted = pcall(issecretvalue, quantity)
+                                readable = ok and addon.Clean(restricted, "boolean") == false
+                            end
+                            if named and readable and itemID == id and (type(quantity) == "nil" or
+                                dialogueInteger(quantity, 1, 9007199254740991)) then
+                                local candidate = relation(ownerKey, quest, field, entries, index, entry, quantity, name)
+                                if candidate() then return candidate end
+                            end
                         end
-                        if readable and itemID == id and (type(quantity) == "nil" or
-                            dialogueInteger(quantity, 1, 9007199254740991)) then return true end
                     end
                 end
             end
@@ -547,7 +577,10 @@ function addon.CarriedItemCount(id)
             if related then
                 for index = 1, math.min(#related, 100) do
                     local entry = addon.Clean(related[index], "table")
-                    if entry and addon.Clean(entry.itemID, "number") == id then return true end
+                    if entry and addon.Clean(entry.itemID, "number") == id then
+                        local candidate = relation(ownerKey, quest, "completionQuests", related, index, entry)
+                        if candidate() then return candidate end
+                    end
                 end
             end
         end
@@ -557,9 +590,11 @@ function addon.CarriedItemCount(id)
         return addon.Clean(C_Item, "table") == item and addon.Clean(item.GetItemCount, "function") == getter and
             addon.Clean(addon.quests, "table") == quests and issecretvalue == checker
     end
-    if not linked() or not current() then return nil end
+    local before = linked()
+    if not before or not current() or not before() then return nil end
     local count = addon.Read(getter, "number", id, false, false, false, false)
-    if not count or count < 0 or count % 1 ~= 0 or not current() or not linked() or not current() then return nil end
+    local after = linked()
+    if not count or count < 0 or count % 1 ~= 0 or not after or not current() or not after() then return nil end
     return count
 end
 

@@ -80,6 +80,50 @@ class CatalogTests(unittest.TestCase):
                 with self.assertRaisesRegex(ValueError, "objective kill name"):
                     catalog.validate(self.data)
 
+    def test_provided_items_preserve_unknown_counts_and_independent_roles(self):
+        data = copy.deepcopy(self.data)
+        quest = data["quests"][0]
+        quest["providedItems"] = [{"itemID": 13523, "name": "Blood of Innocents"},
+                                  {"itemID": 18746, "name": "Divination Scryer", "quantity": 2}]
+        quest["objectiveItems"] = [{"itemID": 13523, "quantity": 8}]
+        before = copy.deepcopy(data)
+        catalog.validate(data)
+        generated = catalog.generate(data)
+        self.assertIn('["providedItems"]', generated)
+        self.assertEqual(data, before)
+        self.assertNotIn("quantity", quest["providedItems"][0])
+        self.assertEqual(quest.get("requires"), self.data["quests"][0].get("requires"))
+        self.assertEqual(quest["requirementsKnown"], self.data["quests"][0]["requirementsKnown"])
+
+    def test_provided_items_require_distinct_typed_bounded_rows(self):
+        valid = {"itemID": 13523, "name": "Blood of Innocents"}
+        invalid = [None, {}, [], [None], [True], [valid] * 101, [valid, valid],
+                   [{"npcID": 13523, "name": "NPC"}], [{"objectID": 13523, "name": "Object"}],
+                   [{**valid, "required": True}], [{**valid, "objectID": 1}],
+                   [{**valid, "classes": ["MAGE"]}]]
+        for value in invalid:
+            with self.subTest(value=value):
+                self.data["quests"][0]["providedItems"] = value
+                with self.assertRaisesRegex(ValueError, "provided item"):
+                    catalog.validate(self.data)
+        self.data["quests"][0]["providedItems"] = [
+            {"itemID": i + 1, "name": "Provided"} for i in range(100)]
+        catalog.validate(self.data)
+
+    def test_provided_items_reject_invalid_identity_name_and_present_quantity(self):
+        for field, values in (("itemID", (None, True, False, 0, -1, 1.0, 1.5, "1", 2 ** 32)),
+                              ("name", (None, True, 1, "", " \n\t", "x" * 501, "中" * 167, "\ud800")),
+                              ("quantity", (None, True, False, 0, -1, 1.0, 1.5, "1",
+                                            float("inf"), float("nan"), 2 ** 53))):
+            for value in values:
+                with self.subTest(field=field, value=repr(value)):
+                    self.data["quests"][0]["providedItems"] = [{"itemID": 1, "name": "Provided", field: value}]
+                    with self.assertRaisesRegex(ValueError, "provided item"):
+                        catalog.validate(self.data)
+        self.data["quests"][0]["providedItems"] = [
+            {"itemID": 2 ** 32 - 1, "name": "中" * 166, "quantity": 2 ** 53 - 1}]
+        catalog.validate(self.data)
+
     def test_giver_portrait_requires_a_typed_npc_and_matching_forever_source(self):
         valid = {"npcID": 234, "name": "Gryan", "creatureDisplayID": 1690,
                  "portraitSource": "https://www.wowhead.com/forever/npc=234/gryan-stoutmantle"}

@@ -1461,42 +1461,37 @@ function UI:RefreshDetail()
                 line(quantityUnknown and addon.L("OBJECTIVE_ITEM_UNKNOWN", name) or addon.L("OBJECTIVE_ITEM", name, quantity))
             end
         end
-        local objectiveItems = addon.Clean(q.objectiveItems, "table")
-        local objectiveChecker = issecretvalue
-        local function objectiveCurrent()
-            return portraitCardCurrent() and addon.quests[id] == definition and q.objectiveItems == objectiveItems and issecretvalue == objectiveChecker
-        end
-        local shownObjectives, seenItems = false, {}
-        for index = 1, math.min(objectiveItems and #objectiveItems or 0, 100) do
-            local entry = addon.Clean(objectiveItems[index], "table")
-            local itemID = entry and addon.Clean(entry.itemID, "number")
-            local rawQuantity = entry and rawget(entry, "quantity")
-            local quantityReadable = true
-            if type(issecretvalue) == "function" then
-                local ok, restricted = pcall(issecretvalue, rawQuantity)
-                quantityReadable = ok and addon.Clean(restricted, "boolean") == false
+        for _, source in ipairs({ { "objective", "objectiveItems", "OBJECTIVE_ITEMS", "OBJECTIVE_ITEMS_NOTICE", 9007199254740991 },
+            { "provided", "providedItems", "PROVIDED_ITEMS", "PROVIDED_ITEMS_NOTICE", 4294967295 } }) do
+            local sourceRole, sourceField, heading, notice, maximumID = unpack(source)
+            local objectiveItems = addon.Clean(q[sourceField], "table")
+            local sourceLength = objectiveItems and #objectiveItems or 0
+            local objectiveChecker = issecretvalue
+            local function objectiveCurrent()
+                return portraitCardCurrent() and addon.quests[id] == definition and q[sourceField] == objectiveItems and issecretvalue == objectiveChecker
             end
-            local quantityUnknown = quantityReadable and rawQuantity == nil
-            local quantity = quantityReadable and addon.Clean(rawQuantity, "number")
-            if itemID and itemID > 0 and itemID <= 9007199254740991 and itemID % 1 == 0 and
-                (quantityUnknown or (quantity and quantity > 0 and quantity <= 9007199254740991 and quantity % 1 == 0)) and not seenItems[itemID] then
-                seenItems[itemID] = true
-                local name = addon.Read(addon.ItemName, "string", itemID)
-                if not objectiveCurrent() then return end
-                if not name or #name > 1024 or not name:find("%S") then
-                    name = addon.Clean(entry.name, "string")
-                    if not name or #name > 2000 or not name:find("%S") then name = string.format("#%.0f", itemID) end
+            local shownObjectives, seenItems = false, {}
+            for index = 1, math.min(objectiveItems and #objectiveItems or 0, 100) do
+                local entry = addon.Clean(objectiveItems[index], "table")
+                local itemID = entry and addon.Clean(entry.itemID, "number")
+                local sourceName = entry and addon.Clean(rawget(entry, "name"), "string")
+                local validName = sourceRole ~= "provided" or (sourceName and #sourceName <= 500 and sourceName:find("%S"))
+                local rawQuantity = entry and rawget(entry, "quantity")
+                local quantityReadable = true
+                if type(issecretvalue) == "function" then
+                    local ok, restricted = pcall(issecretvalue, rawQuantity)
+                    quantityReadable = ok and addon.Clean(restricted, "boolean") == false
                 end
-                local count = carried(itemID)
+                local quantityUnknown = quantityReadable and rawQuantity == nil
+                local quantity = quantityReadable and addon.Clean(rawQuantity, "number")
                 if not objectiveCurrent() then return end
-                local iconGetter = addon.ItemIcon
-                local icon = itemID <= 4294967295 and addon.Read(iconGetter, "number", itemID) or nil
-                if not objectiveCurrent() then return end
-                local binding
-                if icon and icon > 0 and icon <= 4294967295 and icon % 1 == 0 then
-                    binding = { id = itemID, texture = icon }
-                    binding.current = function()
-                        if not objectiveCurrent() or addon.ItemIcon ~= iconGetter or objectiveItems[index] ~= entry or
+                if validName and itemID and itemID > 0 and itemID <= maximumID and itemID % 1 == 0 and
+                    (quantityUnknown or (quantity and quantity > 0 and quantity <= 9007199254740991 and quantity % 1 == 0)) and not seenItems[itemID] then
+                    seenItems[itemID] = true
+                    local iconGetter = addon.ItemIcon
+                    local function entryCurrent(binding)
+                        if not objectiveCurrent() or (binding and (binding.role ~= sourceRole or binding.sourceField ~= sourceField)) or
+                            addon.ItemIcon ~= iconGetter or objectiveItems[index] ~= entry or
                             addon.Clean(rawget(entry, "itemID"), "number") ~= itemID then return false end
                         if not objectiveCurrent() then return false end
                         local raw = rawget(entry, "quantity")
@@ -1508,20 +1503,38 @@ function UI:RefreshDetail()
                         local ok, same = pcall(function()
                             return self.quest == renderQuest and self.dungeon == renderDungeon and self.engine == renderEngine and
                                 addon.char == renderCharacter and self.rewardGeneration == rewardGeneration and
-                                addon.quests[id] == definition and q.objectiveItems == objectiveItems and
+                                addon.quests[id] == definition and q[sourceField] == objectiveItems and #objectiveItems == sourceLength and
                                 rawget(objectiveItems, index) == entry and rawget(entry, "itemID") == itemID and
                                 rawget(entry, "quantity") == raw and addon.ItemIcon == iconGetter and
+                                (not binding or (binding.role == sourceRole and binding.sourceField == sourceField)) and
+                                (sourceRole ~= "provided" or rawget(entry, "name") == sourceName) and
                                 issecretvalue == objectiveChecker and true or false
                         end)
                         return ok and same == true
                     end
-                    if not binding.current() then return end
+                    if not entryCurrent() then return end
+                    local name = addon.Read(addon.ItemName, "string", itemID)
+                    if not entryCurrent() then return end
+                    if not name or #name > 1024 or not name:find("%S") then
+                        name = addon.Clean(entry.name, "string")
+                        if not name or #name > 2000 or not name:find("%S") then name = string.format("#%.0f", itemID) end
+                    end
+                    local count = carried(itemID)
+                    if not entryCurrent() then return end
+                    local icon = itemID <= 4294967295 and addon.Read(iconGetter, "number", itemID) or nil
+                    if not entryCurrent() then return end
+                    local binding
+                    if icon and icon > 0 and icon <= 4294967295 and icon % 1 == 0 then
+                        binding = { id = itemID, texture = icon, role = sourceRole, sourceField = sourceField }
+                        binding.current = function() return entryCurrent(binding) end
+                        if not binding.current() then return end
+                    end
+                    if not shownObjectives then
+                        line(addon.L(heading), "section"); line(addon.L(notice)); shownObjectives = true
+                    end
+                    if line(quantityUnknown and addon.L("OBJECTIVE_ITEM_UNKNOWN", name) or addon.L("OBJECTIVE_ITEM", name, quantity), nil, nil, binding) == false then return end
+                    if count then line(count) end
                 end
-                if not shownObjectives then
-                    line(addon.L("OBJECTIVE_ITEMS"), "section"); line(addon.L("OBJECTIVE_ITEMS_NOTICE")); shownObjectives = true
-                end
-                if line(quantityUnknown and addon.L("OBJECTIVE_ITEM_UNKNOWN", name) or addon.L("OBJECTIVE_ITEM", name, quantity), nil, nil, binding) == false then return end
-                if count then line(count) end
             end
         end
         line(addon.Description(id))

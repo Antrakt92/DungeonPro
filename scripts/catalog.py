@@ -23,6 +23,31 @@ def nonempty_string(value):
     return type(value) is str and bool(value.strip())
 
 
+def validate_named_facts(quest, field, identity, maximum, label, *, required_name=False, utf8_name=False):
+    if field not in quest:
+        return
+    rows = quest[field]
+    if type(rows) is not list or not 1 <= len(rows) <= 100:
+        raise ValueError(f"Invalid {label} list: {quest['id']}")
+    seen = set()
+    for row in rows:
+        if (type(row) is not dict or set(row) - {identity, "quantity", "name"} or
+                not integer(row.get(identity)) or row[identity] > maximum or
+                ("quantity" in row and (not integer(row["quantity"]) or row["quantity"] > 2 ** 53 - 1))):
+            raise ValueError(f"Invalid {label} identity/quantity: {quest['id']}")
+        if required_name or "name" in row:
+            name = row.get("name")
+            try:
+                valid = nonempty_string(name) and len(name.encode("utf-8") if utf8_name else name) <= 500
+            except UnicodeEncodeError:
+                valid = False
+            if not valid:
+                raise ValueError(f"Invalid {label} name: {quest['id']}")
+        if row[identity] in seen:
+            raise ValueError(f"Duplicate {label}: {quest['id']}")
+        seen.add(row[identity])
+
+
 def validate(data):
     if data.get("schema") != 1:
         raise ValueError("Unsupported catalogue schema")
@@ -53,43 +78,11 @@ def validate(data):
             raise ValueError(f"Invalid startsInside flag: {q['id']}")
         if "repeatable" in q and type(q["repeatable"]) is not bool:
             raise ValueError(f"Invalid repeatable flag: {q['id']}")
-        if "objectiveItems" in q:
-            items = q["objectiveItems"]
-            if type(items) is not list or not 1 <= len(items) <= 100:
-                raise ValueError(f"Invalid objective item list: {q['id']}")
-            seen_items = set()
-            for item in items:
-                if (type(item) is not dict or set(item) - {"itemID", "quantity", "name"} or
-                        not integer(item.get("itemID")) or item["itemID"] > 2 ** 53 - 1 or
-                        ("quantity" in item and
-                         (not integer(item["quantity"]) or item["quantity"] > 2 ** 53 - 1))):
-                    raise ValueError(f"Invalid objective item identity/quantity: {q['id']}")
-                if "name" in item and (not nonempty_string(item["name"]) or len(item["name"]) > 500):
-                    raise ValueError(f"Invalid objective item name: {q['id']}")
-                if item["itemID"] in seen_items:
-                    raise ValueError(f"Duplicate objective item: {q['id']}")
-                seen_items.add(item["itemID"])
-        if "objectiveKills" in q:
-            kills = q["objectiveKills"]
-            if type(kills) is not list or not 1 <= len(kills) <= 100:
-                raise ValueError(f"Invalid objective kill list: {q['id']}")
-            seen_kills = set()
-            for kill in kills:
-                if (type(kill) is not dict or set(kill) - {"npcID", "name", "quantity"} or
-                        not integer(kill.get("npcID")) or kill["npcID"] > 2 ** 32 - 1 or
-                        ("quantity" in kill and
-                         (not integer(kill["quantity"]) or kill["quantity"] > 2 ** 53 - 1))):
-                    raise ValueError(f"Invalid objective kill identity/quantity: {q['id']}")
-                name = kill.get("name")
-                try:
-                    name_valid = nonempty_string(name) and len(name.encode("utf-8")) <= 500
-                except UnicodeEncodeError:
-                    name_valid = False
-                if not name_valid:
-                    raise ValueError(f"Invalid objective kill name: {q['id']}")
-                if kill["npcID"] in seen_kills:
-                    raise ValueError(f"Duplicate objective kill: {q['id']}")
-                seen_kills.add(kill["npcID"])
+        validate_named_facts(q, "objectiveItems", "itemID", 2 ** 53 - 1, "objective item")
+        validate_named_facts(q, "objectiveKills", "npcID", 2 ** 32 - 1, "objective kill",
+                             required_name=True, utf8_name=True)
+        validate_named_facts(q, "providedItems", "itemID", 2 ** 32 - 1, "provided item",
+                             required_name=True, utf8_name=True)
         source = q.get("source")
         if type(source) is not str or not re.fullmatch(
             rf"https://www\.wowhead\.com/forever/quest={q['id']}(?:/[^\s/?#]+)?", source
