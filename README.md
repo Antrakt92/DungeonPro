@@ -16,8 +16,9 @@ Level ranges are provisional recommendations.
   Blackrock Spire wings share their instance's image. Five newer entries still
   need verified artwork; missing client images keep a fallback icon.
   Search by dungeon name or a listed quest name. Quest matches identify the
-  matching quest on the dungeon card. Localized quest names are included when
-  already available from the client. Search ignores letter case, including
+  matching quest on the dungeon card; View quest opens its details directly.
+  Localized quest names are included when already available from the client.
+  Search ignores letter case, including
   Cyrillic and accented Latin letters. Accents and spelling still matter; search
   does not normalize different Unicode spellings or transliterate names.
 - A dark, restrained interface with distinct dungeon and quest selection accents,
@@ -96,10 +97,15 @@ Level ranges are provisional recommendations.
   a point to visit. Movement and quest phases may affect which position is current.
 - Quest text saved when you open the quest at its giver. Complete unseen quest
   descriptions are not yet included.
+- Text from the current progress or turn-in conversation appears separately
+  while its matching quest dialogue is open. It does not replace the saved original
+  description or mark the quest completed.
 - Optional quest portraits from the current offer or selected quest log entry,
   when supplied by the client.
 - Known single-NPC quest starters can also show their own giver portrait using
   client models. The appearance is a reference and may differ by quest phase.
+  A ready quest can instead show its known distinct turn-in NPC, with a separate
+  caption. Missing or ambiguous finish portraits keep any known starter portrait.
 - Item rewards, choices and experience for the currently selected active quest,
   when the client provides them. Unknown reward data is shown explicitly.
 - Reward previews for other quests when the client confirms their reward data

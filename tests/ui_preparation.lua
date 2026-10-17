@@ -7049,4 +7049,100 @@ check("dialogue owned native text setters preserve newer stage before and after 
         assert(detailHas("Original narrative remains separate."));f:finish()
     end
 end)
+local function finishReferenceFixture()
+    local restore=giverPortraitFixture();local q=addon.quests[26001]
+    q.finish={npcID=4003,creatureDisplayID=5003,name="Finish Three",portraitSource="https://www.wowhead.com/forever/npc=4003",mapID=1,x=20,y=30}
+    local f={mode=3}
+    f.context={level=60,faction="Alliance",class="WARRIOR",race=1,completed=function()return false end,
+        active=function(id)return id==26001 and f.mode>=2 end,ready=function(id)return id==26001 and f.mode==3 end}
+    function f:refresh()showDetail(26001,self.context)end
+    function f:finish()measurement=nil;restore()end
+    f:refresh();return f,q
+end
+check("READY finish portrait is separate from native artwork and never replaces start location semantics",function()
+    local f,q=finishReferenceFixture();addon.QuestPortrait=function()return{displayID=6001}end
+    addon.DialoguePortrait=function()return{displayID=6002}end;f:refresh()
+    assert(ui.portrait.shown and ui.portrait.texture=="display:6002")
+    assert(ui.giverPortrait.shown and ui.giverPortrait.texture=="display:5003"and ui.giverPortrait.width==64 and ui.giverPortrait.height==64)
+    assert(detailHas(addon.L("TURNIN_REFERENCE_PORTRAIT","Finish Three"))and not detailHas(addon.L("GIVER_REFERENCE_PORTRAIT","Reference One")))
+    assert(ui.action.id==26001 and ui.action.kind=="turnin"and ui.action.place==q.finish)
+    f.mode=2;f:refresh();assert(ui.giverPortrait.texture=="display:5001"and detailHas(addon.L("GIVER_REFERENCE_PORTRAIT","Reference One")))
+    assert(ui.action.kind=="complete"and ui.action.place==nil)
+    q.finish=q.start;f.mode=3;f:refresh()
+    -- German turn-in portrait wording equals the ordinary finish line; test the role caption, not a substring absence.
+    assert(ui.giverPortrait.texture=="display:5001"and detailHas(addon.L("GIVER_REFERENCE_PORTRAIT","Reference One")))
+    q.finish={npcID=q.start.npcID,creatureDisplayID=5999,name="Reference One",portraitSource="https://www.wowhead.com/forever/npc=4001"}
+    f:refresh();assert(ui.giverPortrait.texture=="display:5001"and detailHas(addon.L("GIVER_REFERENCE_PORTRAIT","Reference One")))
+    f:finish()
+end)
+check("finish reference requires a fresh single own turnin and skips alternative object item or unknown models",function()
+    local f,q=finishReferenceFixture()
+    for _,kind in ipairs({"foreign","multiple"})do
+        f:refresh();local nextAction=ui.engine.Next;local reads=0
+        ui.engine.Next=function(engine,id,...)
+            reads=reads+1
+            if reads==1 then
+                local actions=nextAction(engine,id,...)
+                if kind=="foreign"then actions[1].id=26002 else actions[2]={id=26002,kind="turnin",place=q.finish}end
+                return actions,false
+            end
+            return nextAction(engine,id,...)
+        end
+        ui:RefreshDetail();assert(ui.giverPortrait.texture=="display:5001"and ui.action.id==26001 and reads==2)
+    end
+    local original=q.finish
+    for _,endpoint in ipairs({{npcID=4003,name="Unknown model"},{objectID=4003,name="Object"},{itemID=4003,name="Item"}})do
+        q.finish=endpoint;f:refresh();assert(ui.giverPortrait.texture=="display:5001")
+        assert(detailHas(addon.L("GIVER_REFERENCE_PORTRAIT","Reference One")))
+    end
+    q.finish=nil;q.finishAlternatives={original,{npcID=4004,name="Other"}};f:refresh()
+    assert(ui.giverPortrait.texture=="display:5001"and ui.action.place==nil and not ui.guide.enabled)
+    f:finish()
+end)
+check("finish source hydration and native renderer replacement reject an old reference and recover on fresh redraw",function()
+    local f,q=finishReferenceFixture();local producer=addon.GiverPortrait;local old=q.finish;local armed=true
+    addon.GiverPortrait=function(point)
+        local result=producer(point)
+        if armed and point==old then armed=false;q.finish={npcID=4004,creatureDisplayID=5004,name="Fresh Finish",portraitSource="https://www.wowhead.com/forever/npc=4004"}end
+        return result
+    end
+    f:refresh();assert(not armed and not ui.giverPortrait.shown)
+    addon.GiverPortrait=producer;f:refresh();assert(ui.giverPortrait.texture=="display:5004"and detailHas(addon.L("TURNIN_REFERENCE_PORTRAIT","Fresh Finish")))
+    armed=true
+    SetPortraitTextureFromCreatureDisplayID=function(texture,id)
+        if armed then armed=false;showDetail(26002,f.context)end
+        texture:SetTexture("old opaque:"..id)
+    end
+    f:refresh();assert(not armed and ui.quest==26002 and not ui.giverPortrait.shown)
+    SetPortraitTextureFromCreatureDisplayID=function(texture,id)texture:SetTexture("recovered:"..id)end
+    ui:RefreshDetail();assert(ui.giverPortrait.texture=="recovered:5002")
+    f:finish()
+end)
+check("finish caption native setters before and after reentry preserve the newer source image and label",function()
+    for _,before in ipairs({true,false})do
+        local f=finishReferenceFixture();local oldCaption=addon.L("TURNIN_REFERENCE_PORTRAIT","Finish Three");local field
+        for _,fs in ipairs(ui.details)do if fs.shown and fs.text==oldCaption then field=fs end end
+        local setter,armed=field.SetText,true
+        field.SetText=function(self,text)
+            if not before then setter(self,text)end
+            if armed and text==oldCaption then armed=false;showDetail(26002,f.context)end
+            if before then setter(self,text)end
+        end
+        f:refresh();field.SetText=setter
+        assert(not armed and ui.quest==26002 and ui.giverPortrait.texture=="display:5002")
+        assert(detailHas(addon.L("GIVER_REFERENCE_PORTRAIT","Reference Two"))and not detailHas(oldCaption))
+        f:finish()
+    end
+end)
+check("finish captions wrap in ten languages while one64pixel reference slot recycles by state",function()
+    local f=finishReferenceFixture();local texture=ui.giverPortrait
+    measurement=function(fs)return fs.text==addon.L("TURNIN_REFERENCE_PORTRAIT","Finish Three")and 64 or 18 end
+    for code in pairs(addon.locales)do addon.db.locale=code;f:refresh()
+        assert(ui.giverPortrait==texture and texture.width==64 and texture.height==64)
+        local caption=addon.L("TURNIN_REFERENCE_PORTRAIT","Finish Three");assert(detailHas(caption))
+        for _,fs in ipairs(ui.details)do if fs.shown and fs.text==caption then assert(fs.fontSize==14 and fs.measuredHeight==64)end end
+    end
+    f.mode=1;f:refresh();assert(texture.texture=="display:5001"and not detailHas(addon.L("TURNIN_REFERENCE_PORTRAIT","Finish Three")))
+    f:finish()
+end)
 print("Preparation UI modeled checks passed: " .. total .. " (no native layout validation)")

@@ -1434,7 +1434,7 @@ function UI:RefreshDetail()
             if not portraitCardCurrent() or not current() then return false end
             if SetPortraitTextureFromCreatureDisplayID ~= setter then rendered = false end
             if rendered then
-                line(caption)
+                if line(caption, nil, nil, nil, current) == false then return false end
                 texture:SetPoint("TOPLEFT", 4, -y); texture:Show(); y = y + 64 + 8
             else
                 self.portraitRenderBusy = true; pcall(texture.SetTexture, texture, nil); self.portraitRenderBusy = nil
@@ -1455,44 +1455,82 @@ function UI:RefreshDetail()
         local producer = addon.GiverPortrait
         local fieldTypes = { npcID = "number", objectID = "number", itemID = "number", dropNPCID = "number",
             creatureDisplayID = "number", portraitSource = "string", name = "string", mapID = "number", x = "number", y = "number", zoneName = "string" }
-        local function sourceSnapshot()
-            local values = {}
-            for field, kind in pairs(fieldTypes) do
-                local value = start and rawget(start, field)
-                if type(portraitChecker) == "function" and addon.Read(portraitChecker, "boolean", value) ~= false then return nil end
-                if value ~= nil then
-                    value = addon.Clean(value, kind)
-                    if value == nil then return nil end
-                    values[field] = value
+        local referenceActions, referenceAction, referenceEngineGetter
+        if state.status == "READY" then
+            referenceEngineGetter = engine.Current
+            referenceActions = engine:Next(id)
+            if not portraitCardCurrent() then return end
+            if #referenceActions == 1 then
+                local candidate = referenceActions[1]
+                if candidate.id == id and candidate.kind == "turnin" and candidate.place == q.finish and not q.finishAlternatives then
+                    referenceAction = candidate
                 end
             end
-            return values
         end
-        local sourceValues = sourceSnapshot()
-        local function sourceCurrent()
-            if not portraitCardCurrent() or addon.quests[id] ~= q or q.start ~= start or addon.GiverPortrait ~= producer or
-                SetPortraitTextureFromCreatureDisplayID ~= portraitSetter or issecretvalue ~= portraitChecker then return false end
-            local values = sourceSnapshot()
-            if not sourceValues or not values then return false end
-            for field in pairs(fieldTypes) do if sourceValues[field] ~= values[field] then return false end end
-            return portraitCardCurrent()
-        end
-        if not portraitCardCurrent() then return end
-        local npcID = sourceValues and sourceValues.npcID
-        if npcID and npcID > 0 and npcID <= 4294967295 and npcID % 1 == 0 and
-            not sourceValues.objectID and not sourceValues.itemID and not sourceValues.dropNPCID then
-            local reference = addon.Read(producer, "table", start)
-            if not sourceCurrent() then return end
-            local referenceNPC = reference and addon.Clean(rawget(reference, "npcID"), "number")
-            local referenceDisplay = reference and addon.Clean(rawget(reference, "displayID"), "number")
-            local referenceSource = reference and addon.Clean(rawget(reference, "source"), "string")
-            if referenceNPC == npcID and referenceDisplay == sourceValues.creatureDisplayID and
-                referenceSource and referenceSource == sourceValues.portraitSource then
-                local name = addon.Clean(rawget(reference, "name"), "string")
-                if not name or #name > 1024 or not name:find("%S") then name = giverName(start) end
-                if not sourceCurrent() then return end
-                if not renderPortrait("giverPortrait", referenceDisplay, addon.L("GIVER_REFERENCE_PORTRAIT", name), sourceCurrent) then return end
+        local function sourceReference(point, endpoint, captionKey, turnin)
+            local function sourceSnapshot()
+                local values = {}
+                for field, kind in pairs(fieldTypes) do
+                    local value = point and rawget(point, field)
+                    if type(portraitChecker) == "function" and addon.Read(portraitChecker, "boolean", value) ~= false then return nil end
+                    if value ~= nil then
+                        value = addon.Clean(value, kind)
+                        if value == nil then return nil end
+                        values[field] = value
+                    end
+                end
+                return values
             end
+            local sourceValues = sourceSnapshot()
+            local function sourceCurrent()
+                local fresh = not turnin or referenceEngineGetter == nil or addon.Read(referenceEngineGetter, "boolean", engine) == true
+                if not fresh or not portraitCardCurrent() or addon.quests[id] ~= q or q[endpoint] ~= point or addon.GiverPortrait ~= producer or
+                    SetPortraitTextureFromCreatureDisplayID ~= portraitSetter or issecretvalue ~= portraitChecker then return false end
+                local values = sourceSnapshot()
+                if not sourceValues or not values then return false end
+                for field in pairs(fieldTypes) do if sourceValues[field] ~= values[field] then return false end end
+                local ok, same = pcall(function()
+                    for field in pairs(fieldTypes) do if rawget(point, field) ~= sourceValues[field] then return false end end
+                    return portraitCardCurrent() and addon.quests[id] == q and q[endpoint] == point and
+                        addon.GiverPortrait == producer and SetPortraitTextureFromCreatureDisplayID == portraitSetter and issecretvalue == portraitChecker and
+                        (not turnin or (state.status == "READY" and rawget(q, "id") == id and q.finishAlternatives == nil and
+                            engine.Current == referenceEngineGetter and #referenceActions == 1 and referenceActions[1] == referenceAction and
+                            referenceAction.id == id and referenceAction.kind == "turnin" and referenceAction.place == point))
+                end)
+                return ok and same == true
+            end
+            if not portraitCardCurrent() then return false end
+            local npcID = sourceValues and sourceValues.npcID
+            if npcID and npcID > 0 and npcID <= 4294967295 and npcID % 1 == 0 and
+                not sourceValues.objectID and not sourceValues.itemID and not sourceValues.dropNPCID then
+                local reference = addon.Read(producer, "table", point)
+                if not sourceCurrent() then return false end
+                local referenceNPC = reference and addon.Clean(rawget(reference, "npcID"), "number")
+                local referenceDisplay = reference and addon.Clean(rawget(reference, "displayID"), "number")
+                local referenceSource = reference and addon.Clean(rawget(reference, "source"), "string")
+                if referenceNPC == npcID and referenceDisplay == sourceValues.creatureDisplayID and
+                    referenceSource and referenceSource == sourceValues.portraitSource then
+                    local name = addon.Clean(rawget(reference, "name"), "string")
+                    if not name or #name > 1024 or not name:find("%S") then name = giverName(point) end
+                    if not sourceCurrent() then return false end
+                    if not renderPortrait("giverPortrait", referenceDisplay, addon.L(captionKey, name), sourceCurrent) then return false end
+                    return true, true
+                end
+            end
+            return true, false
+        end
+        local referenceShown = false
+        local finish = referenceAction and addon.Clean(q.finish, "table")
+        local startNPC = start and addon.Clean(rawget(start, "npcID"), "number")
+        local finishNPC = finish and addon.Clean(rawget(finish, "npcID"), "number")
+        if not portraitCardCurrent() then return end
+        if finish and (not startNPC or startNPC ~= finishNPC) then
+            local current, shown = sourceReference(finish, "finish", "TURNIN_REFERENCE_PORTRAIT", true)
+            if not current then return end
+            referenceShown = shown
+        end
+        if not referenceShown then
+            if not sourceReference(start, "start", "GIVER_REFERENCE_PORTRAIT", false) then return end
         end
         if addon.Clean(q.repeatable, "boolean") == true then line(addon.L("REPEATABLE")) end
         if state.reason then
