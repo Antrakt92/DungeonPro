@@ -815,7 +815,8 @@ function UI:RefreshDetail()
     end
     local id, engine = self.quest, self.engine
     if id then
-        local q = addon.quests[id] or {}
+        local definition = addon.quests[id]
+        local q = definition or {}
         line(addon.QuestName(id), "title")
         local state = engine:State(id)
         line("|cff" .. COLOR[state.status] .. statusLabel(state) .. "|r")
@@ -846,8 +847,11 @@ function UI:RefreshDetail()
             end
             if #names > 0 then line(addon.L(rule[3], table.concat(names, ", "))) end
         end
-        local offer = addon.Read(addon.CurrentOffer, "table", id)
-        if offer and addon.Clean(offer.offeredNow, "boolean") == true then line(addon.L("OFFERED_NOW")) end
+        local offerGetter = addon.CurrentOffer
+        local offer = addon.Read(offerGetter, "table", id)
+        local offeredNow = offer and addon.Clean(offer.offeredNow, "boolean") == true
+        if not portraitCardCurrent() or addon.quests[id] ~= definition or addon.CurrentOffer ~= offerGetter then return end
+        if offeredNow then line(addon.L("OFFERED_NOW")) end
         local portraitSetter, portraitChecker = addon.Clean(SetPortraitTextureFromCreatureDisplayID, "function"), issecretvalue
         local function renderPortrait(field, displayID, caption, current)
             if not displayID or displayID <= 0 or displayID > 4294967295 or displayID % 1 ~= 0 or self.portraitRenderBusy then return true end
@@ -1310,23 +1314,35 @@ function UI:RefreshDetail()
         elseif q.storyline then
             for _, stepID in ipairs(q.storyline) do visit(stepID, 0) end
         else visit(id, 0) end
-        local materials = addon.Read(engine.CompletionSteps, "table", engine, id)
+        local materialSource, materialGetter = q.completionQuests, engine.CompletionSteps
+        local function materialCurrent()
+            return current() and portraitCardCurrent() and addon.quests[id] == definition and
+                q.completionQuests == materialSource and engine.CompletionSteps == materialGetter
+        end
+        local materials = addon.Read(materialGetter, "table", engine, id)
+        if not materialCurrent() then return end
         if materials and #materials > 0 then
             line(addon.L("MATERIAL_QUESTS"), "section")
             line(addon.L("MATERIAL_NOTICE"))
             for index, entry in ipairs(materials) do
-                local other = entry.id
-                local row = self:MakeRow(self.detail, self.materialButtons, index, 59)
-                row.questID, row.itemID = other, entry.itemID
-                row.title:SetText(addon.QuestName(other))
+                local other, itemID = entry.id, entry.itemID
+                local title = addon.QuestName(other)
+                if not materialCurrent() then return end
                 local status = entry.state.status
-                local count = carried(entry.itemID)
-                row.note:SetText("|cff" .. COLOR[status] .. statusLabel(entry.state) .. "|r\n" ..
-                    (addon.Read(addon.ItemName, "string", entry.itemID) or addon.L("MATERIAL_ITEM", entry.itemID)) ..
+                local count = carried(itemID)
+                if not materialCurrent() then return end
+                local itemName = addon.Read(addon.ItemName, "string", itemID) or addon.L("MATERIAL_ITEM", itemID)
+                if not materialCurrent() then return end
+                local note = "|cff" .. COLOR[status] .. statusLabel(entry.state) .. "|r\n" .. itemName ..
                     (entry.unknown and status ~= "UNKNOWN" and (" — " .. addon.L("UNKNOWN")) or "") ..
-                    (count and ("\n" .. count) or ""))
+                    (count and ("\n" .. count) or "")
+                local row = self:MakeRow(self.detail, self.materialButtons, index, 59)
+                row.questID, row.itemID = other, itemID
+                row.title:SetText(title); row.note:SetText(note)
                 row:SetEnabled(true)
-                row:SetScript("OnClick", function() self:InspectQuest(other) end)
+                row:SetScript("OnClick", function()
+                    if materialCurrent() and row.questID == other and row.itemID == itemID then self:InspectQuest(other) end
+                end)
                 y = self:LayoutRow(row, 59, y)
             end
         end

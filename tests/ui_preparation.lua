@@ -3994,4 +3994,86 @@ check("Kill objective source names follow the explicit 500 UTF-8 byte budget acr
     end
     addon.quests[27005]=nil;showDetail(2)
 end)
+local function materialReentryFixture()
+    local quest,dungeon=ui.quest,ui.dungeon
+    local names,items,counts=addon.QuestName,addon.ItemName,addon.CarriedItemCount
+    for _,id in ipairs({28001,28002,28003,28004})do addon.quests[id]={id=id,minLevel=1,requirementsKnown=true}end
+    addon.quests[28001].completionQuests={{id=28002,itemID=4001}}
+    addon.quests[28003].completionQuests={{id=28004,itemID=4002}}
+    addon.ItemName=function(itemID)return"Item "..itemID end;addon.CarriedItemCount=function()return 0 end
+    return function()
+        addon.QuestName,addon.ItemName,addon.CarriedItemCount=names,items,counts
+        for _,id in ipairs({28001,28002,28003,28004})do addon.quests[id]=nil end
+        ui.quest,ui.dungeon=quest,dungeon;ui:Refresh()
+    end
+end
+check("Material hydration preserves the replacement card's visible row and actual native-style inspect click",function()
+    local restore=materialReentryFixture()
+    for _,helper in ipairs({"ItemName","CarriedItemCount","QuestName"})do
+        local original=addon[helper];local armed=true
+        addon[helper]=function(value)
+            if armed and value==(helper=="QuestName"and 28002 or 4001)then armed=false;ui:InspectQuest(28003)end
+            return original(value)
+        end
+        showDetail(28001)
+        local row=ui.materialButtons[1]
+        assert(not armed and ui.quest==28003 and row.questID==28004 and row.title.text=="Quest 28004")
+        local freshNote=row.note.text:find("Item 4002",1,true) and not row.note.text:find("Item 4001",1,true)
+        row.scripts.OnClick(row,"LeftButton",false);assert(ui.quest==28004,"material click must inspect the visible new target")
+        assert(freshNote)
+        assert(ui:BackQuest() and ui.quest==28003)
+        addon[helper]=original
+    end
+    restore()
+end)
+check("Same-card material hydration supersession and CompletionSteps reentry abort only the old renderer",function()
+    local restore=materialReentryFixture()
+    for _,helper in ipairs({"CompletionSteps","ItemName","CarriedItemCount"})do
+        addon.quests[28001].completionQuests={{id=28002,itemID=4001}}
+        ui.quest=28001;ui.engine=addon.Planner.New(addon.quests,addon.Context())
+        local owner=helper=="CompletionSteps"and ui.engine or addon
+        local original=owner[helper];local armed=true;local nestedHeight
+        owner[helper]=function(...)
+            local result=original(...)
+            if armed then
+                armed=false;addon.quests[28001].completionQuests={{id=28004,itemID=4002}};ui:RefreshDetail();nestedHeight=ui.detail.height
+            end
+            return result
+        end
+        ui:RefreshDetail();assert(not armed and ui.quest==28001 and ui.detail.height==nestedHeight)
+        local row=ui.materialButtons[1];assert(row.questID==28004 and row.note.text:find("Item 4002",1,true))
+        row.scripts.OnClick(row,"LeftButton",false);assert(ui.quest==28004)
+        owner[helper]=original
+    end
+    restore()
+end)
+check("Captured material inspect callbacks reject redraw character and source ownership changes",function()
+    local restore=materialReentryFixture();showDetail(28001)
+    local stale=ui.materialButtons[1].scripts.OnClick;ui:RefreshDetail();stale();assert(ui.quest==28001)
+    local character=addon.char;local callback=ui.materialButtons[1].scripts.OnClick
+    addon.char={};callback();assert(ui.quest==28001);addon.char=character
+    addon.quests[28001].completionQuests={{id=28004,itemID=4002}};callback();assert(ui.quest==28001)
+    ui:RefreshDetail();ui.materialButtons[1].scripts.OnClick();assert(ui.quest==28004)
+    restore()
+end)
+check("An old CurrentOffer result cannot label a newer quest or same-card generation as currently offered",function()
+    local getter=addon.CurrentOffer
+    for _,sameQuest in ipairs({false,true})do
+        for _,id in ipairs({29001,29002})do addon.quests[id]={id=id,minLevel=1,requirementsKnown=false}end
+        local armed=true;local nestedHeight
+        addon.CurrentOffer=function(id)
+            if armed and id==29001 then
+                armed=false
+                if sameQuest then ui:RefreshDetail()else ui:InspectQuest(29002)end
+                nestedHeight=ui.detail.height
+                return{offeredNow=true}
+            end
+        end
+        showDetail(29001)
+        assert(not armed and ui.quest==(sameQuest and 29001 or 29002) and not detailHas(addon.L("OFFERED_NOW")))
+        assert(ui.detail.height==nestedHeight and not ui.action)
+        addon.quests[29001],addon.quests[29002]=nil,nil
+    end
+    addon.CurrentOffer=getter;showDetail(2)
+end)
 print("Preparation UI modeled checks passed: " .. total .. " (no native layout validation)")
