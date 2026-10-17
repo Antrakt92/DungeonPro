@@ -3,8 +3,14 @@ function methods:SetScript(event, fn) self.scripts[event] = fn end
 function methods:Show() self.shown = true end
 function methods:Hide() self.shown = false end
 function methods:SetText(value) self.text = value end
+function methods:SetHeight(value) self.height = value end
+function methods:SetSize(w,h) self.width,self.height=w,h end
+function methods:SetPoint(...) self.point={...} end
+function methods:ClearAllPoints() end
+function methods:SetJustifyH() end
+function methods:GetStringHeight() return self.measured or 18 end
 function methods:SetRotation(value) assert(value == value and value ~= math.huge and value ~= -math.huge) end
-for _, name in ipairs({ "SetSize", "SetPoint", "SetMovable", "EnableMouse", "RegisterForDrag", "SetTexture",
+for _, name in ipairs({ "SetMovable", "EnableMouse", "RegisterForDrag", "SetTexture",
     "SetWidth", "StartMoving", "StopMovingOrSizing" }) do methods[name] = function() end end
 local function object()
     local result = setmetatable({ scripts = {} }, { __index = methods })
@@ -16,7 +22,7 @@ CreateFrame = object
 UIParent = object()
 local addon = {}
 assert(loadfile("Core/Namespace.lua"))("DungeonPro", addon)
-addon.L = function(key) return key end
+addon.L = function(key,value) return key == "GUIDE_DISTANCE" and (value .. " yd") or key end
 addon.QuestName = function() return "Quest" end
 assert(loadfile("UI/Navigation.lua"))("DungeonPro", addon)
 local nav, total, nativeCalls, clears, current = addon.Navigation, 0
@@ -26,6 +32,9 @@ local function reset()
     nav.Stop()
     nativeCalls, clears, current = 0, 0, nil
     TomTom, C_SuperTrack, issecretvalue = nil, nil, nil
+    addon.GiverName, addon.db = nil, nil
+    addon.Theme = { StyleRow = function(row, options) assert(options.kind == "section"); row.skinned = true; return true end }
+    GetLocale = function() return "enUS" end
     GetPlayerFacing = function() return 0 end
     CreateVector2D = function(x, y) return { x = x, y = y } end
     UiMapPoint = { CreateFromCoordinates = function(mapID, x, y) return { uiMapID = mapID, position = { x = x, y = y } } end }
@@ -412,7 +421,7 @@ check("A title refresh starting another guide cannot overwrite the newer HUD lab
     assert(not nav.Start(action))
     local shown = false
     for _, item in ipairs(frames) do if item.shown and item.scripts.OnUpdate then
-        assert(item.label.text:find("Quest 2", 1, true) == 1); shown = true
+        assert(item.title.text == "Quest 2"); shown = true
     end end
     assert(shown)
     addon.QuestName = questName
@@ -490,5 +499,110 @@ check("Restricted destination changes during native reads never reach coordinate
     end
     assert(nav.Start({ id = 2, place = destination }) and nativeCalls == 0)
     noPosition(); nav.Stop(); assert(clears == 0)
+end)
+local function hud()
+    for _,item in ipairs(frames) do if item.shown and item.scripts.OnUpdate then return item end end
+    error("No current guide")
+end
+check("Guide context shows the exact giver and zone even when bearing is unavailable", function()
+    local p={mapID=1,x=60,y=70,npcID=99,name="Recorded giver",zoneName="Recorded zone"}
+    addon.GiverName=function(place) assert(place==p);return "Live giver" end
+    C_Map.GetMapInfo=function(id) assert(id==1);return {name="Client zone"} end
+    GetPlayerFacing=function() return nil end
+    assert(nav.Start({id=1,place=p}))
+    local card=hud()
+    assert(card.skinned and card.title.text=="Quest" and card.note.text=="Live giver · Client zone")
+    assert(card.label.text=="NO_POSITION" and not card.arrow.shown)
+    assert(card.scripts.OnDragStart==card.StartMoving and card.scripts.OnDragStop==card.StopMovingOrSizing)
+end)
+check("Guide presentation refreshes context sparingly and never retains changed source names", function()
+    local p={mapID=1,x=60,y=70,name="Source giver",zoneName="Source zone"}
+    local names,maps=0,0
+    addon.GiverName=function() names=names+1;return nil end
+    C_Map.GetMapInfo=function() maps=maps+1;return nil end
+    assert(nav.Start({id=1,place=p}));local card=hud()
+    assert(card.note.text=="Source giver · Source zone" and names==1 and maps==1)
+    for tick=1,4 do card.scripts.OnUpdate(card,0.1) end
+    assert(names==1 and maps==1)
+    p.name="Changed giver";card.scripts.OnUpdate(card,0.1)
+    assert(card.note.text=="Changed giver · Source zone" and names==2)
+    GetLocale=function() return "ruRU" end
+    card.scripts.OnUpdate(card,1.1);assert(names==3)
+end)
+check("Guide wraps long text grows its themed surface and shrinks cleanly on replacement", function()
+    local styles=0
+    addon.Theme={StyleRow=function(card,options) assert(options.kind=="section");styles=styles+1;return true end}
+    assert(nav.Start({id=1,place={mapID=1,x=60,y=70,name="A long giver",zoneName="A long zone"}}))
+    local card=hud()
+    card.title.measured,card.note.measured,card.label.measured=90,60,36
+    card.scripts.OnUpdate(card,0.1)
+    assert(card.height==220 and card.note.point[3]==-107 and card.label.point[3]==-172)
+    card.title.measured,card.note.measured,card.label.measured=nil,nil,nil
+    assert(nav.Start(action));assert(hud()==card and card.note.text=="" and card.height==88)
+    assert(styles==0,"reused HUD retains its original skin without repeated theme allocation")
+end)
+check("Guide context getters cannot publish a mutated destination or cancel a newer guide", function()
+    local p={mapID=1,x=60,y=70,name="Old giver",zoneName="Old zone"}
+    local a={id=1,place=p};local armed=true
+    addon.GiverName=function()
+        if armed then armed=false;a.place={mapID=1,x=60,y=70,name="New giver",zoneName="New zone"} end
+        return "Obsolete giver"
+    end
+    assert(nav.Start(a));local card=hud();assert(card.note.text=="")
+    addon.GiverName=nil;card.scripts.OnUpdate(card,0.1)
+    assert(card.note.text=="New giver · New zone")
+    armed=true
+    addon.GiverName=function()
+        if armed then armed=false;nav.Stop() end
+        return "Detached giver"
+    end
+    assert(not nav.Start(a) and not card.shown)
+end)
+check("Guide rejects source identity and locale mutation inside a contextual name read", function()
+    for _,field in ipairs({"name","mapID","x","npcID","locale"}) do
+        local p={mapID=1,x=60,y=70,npcID=99,name="Recorded",zoneName="Zone"}
+        local locale="enUS";GetLocale=function() return locale end
+        local armed=true
+        addon.GiverName=function()
+            if armed then
+                armed=false
+                if field=="locale" then locale="ruRU"
+                elseif field=="name" then p.name="Changed"
+                else p[field]=2 end
+            end
+            return "Detached native giver"
+        end
+        assert(nav.Start({id=1,place=p}));assert(hud().note.text=="",field)
+        addon.GiverName=nil;hud().scripts.OnUpdate(hud(),0.1)
+        assert(hud().note.text==(field=="name" and "Changed · Zone" or "Recorded · Zone"),field)
+        nav.Stop()
+    end
+end)
+check("Guide ignores malformed native names and unclean geometry while retaining close ownership", function()
+    local restricted={};issecretvalue=function(value) return value==restricted end
+    addon.GiverName=function() return restricted end
+    C_Map.GetMapInfo=function() return {name=restricted} end
+    assert(nav.Start({id=1,place={mapID=1,x=60,y=70,name="Source",zoneName="Zone"}}))
+    local card=hud();assert(card.note.text=="Source · Zone")
+    for _,value in ipairs({restricted,math.huge,-1,0}) do
+        card.title.measured=value;card.scripts.OnUpdate(card,0.1)
+        assert(card.height==92)
+    end
+    card.title.measured=nil
+    local found=false
+    for _,part in ipairs(frames) do
+        if part.scripts.OnClick==nav.Stop then part.scripts.OnClick(part,"LeftButton",false);found=true;break end
+    end
+    assert(found and not card.shown and current==nil)
+end)
+check("A saved guide tick after Stop stays quiet and cannot rewrite hidden presentation",function()
+    assert(nav.Start(action));local card=hud()
+    local tick,title,note,status,height=card.scripts.OnUpdate,card.title.text,card.note.text,card.label.text,card.height
+    nav.Stop()
+    local calls=0
+    addon.QuestName=function()calls=calls+1;error("stopped context must not read titles")end
+    tick(card,0.2)
+    assert(not card.shown and calls==0 and card.title.text==title and card.note.text==note and card.label.text==status and card.height==height)
+    addon.QuestName=function()return "Quest"end
 end)
 print("Navigation modeled checks passed: " .. total .. " (no native map validation)")

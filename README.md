@@ -87,6 +87,8 @@ Level ranges are provisional recommendations.
   quest-log progress. It clears when that dialogue ends.
 - Quest objectives from the client appear when available. The window adjusts to
   screen width and height and recovers saved positions outside the visible area.
+- The floating guide keeps its quest and destination visible when your position
+  is unavailable. Its arrow gives a bearing, rather than a route around obstacles.
 - A minimap button opens the browser. Drag it around the minimap to reposition it.
 - Interface dictionaries for English, Russian, German, French, Spanish, Italian,
   Portuguese, Korean, Simplified Chinese and Traditional Chinese. enGB and esMX

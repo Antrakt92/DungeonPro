@@ -17,6 +17,8 @@
 - Preserved map pins when their native API context changes during guidance.
 - Added the dungeon browser, character quest states and prerequisite planning.
 - Added map guidance, a direction arrow and optional TomTom support.
+- Gave the floating guide a quest, destination and distance card that keeps its
+  context when the bearing is unavailable.
 - Added initial quest facts for The Deadmines, Ragefire Chasm and The Hall of Thanes.
 - Added explicit notices for incomplete data and interface translations.
 - Renamed the addon to Dungeon Pro, with `/DP` and `/DungeonPro` commands.

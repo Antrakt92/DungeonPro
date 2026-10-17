@@ -4,6 +4,7 @@ addon.Navigation = N
 local target, frame, elapsed = nil, nil, 0
 local tomtomOwner, tomtomUID, nativePoint
 local navigationGeneration = {}
+local presentation, contextElapsed = nil, 0
 
 local function nativeWaypointEmpty(getter)
     if type(getter) ~= "function" then return false end
@@ -54,6 +55,7 @@ function N.Stop()
     local owner, uid, pin = tomtomOwner, tomtomUID, nativePoint
     -- Release ownership before third-party cleanup can invoke callbacks.
     tomtomOwner, tomtomUID, nativePoint, target = nil, nil, nil, nil
+    presentation, contextElapsed = nil, 0
     if frame then frame:Hide() end
     if uid and owner and type(owner.RemoveWaypoint) == "function" then
         pcall(owner.RemoveWaypoint, owner, uid)
@@ -91,27 +93,89 @@ function N.Vector(point)
     return addon.Clean(bx - ax, "number"), addon.Clean(by - ay, "number")
 end
 
+local function context(action, generation)
+    local place, id = action.place, addon.Clean(action.id, "number")
+    local mapID, name = addon.Clean(place.mapID, "number"), addon.Clean(place.name, "string")
+    local zone, npc = addon.Clean(place.zoneName, "string"), addon.Clean(place.npcID, "number")
+    local x, y, objectID = addon.Clean(place.x, "number"), addon.Clean(place.y, "number"), addon.Clean(place.objectID, "number")
+    local library, checker, localeGetter = C_Map, issecretvalue, GetLocale
+    local mapGetter = library and addon.Clean(library.GetMapInfo, "function")
+    local giverGetter, questGetter = addon.Clean(addon.GiverName, "function"), addon.Clean(addon.QuestName, "function")
+    local database = addon.Clean(addon.db, "table")
+    local choice = database and addon.Clean(database.locale, "string")
+    local locale = addon.Read(localeGetter, "string")
+    local function current()
+        if GetLocale ~= localeGetter or issecretvalue ~= checker then return false end
+        local liveLocale = addon.Read(localeGetter, "string")
+        if liveLocale ~= locale or GetLocale ~= localeGetter or issecretvalue ~= checker then return false end
+        return navigationGeneration == generation and rawequal(target, action) and addon.Clean(action.place, "table") == place and
+            addon.Clean(action.id, "number") == id and addon.Clean(place.mapID, "number") == mapID and
+            addon.Clean(place.name, "string") == name and addon.Clean(place.zoneName, "string") == zone and
+            addon.Clean(place.npcID, "number") == npc and addon.Clean(place.x, "number") == x and
+            addon.Clean(place.y, "number") == y and addon.Clean(place.objectID, "number") == objectID and C_Map == library and issecretvalue == checker and
+            GetLocale == localeGetter and (not library or addon.Clean(library.GetMapInfo, "function") == mapGetter) and
+            addon.Clean(addon.GiverName, "function") == giverGetter and addon.Clean(addon.QuestName, "function") == questGetter and
+            addon.Clean(addon.db, "table") == database and (not database or addon.Clean(database.locale, "string") == choice)
+    end
+    if not current() then return nil end
+    local title = addon.Read(questGetter, "string", id)
+    if not current() then return nil end
+    local giver = addon.Read(giverGetter, "string", place)
+    if not current() then return nil end
+    local info = addon.Read(mapGetter, "table", mapID)
+    if not current() then return nil end
+    local region = info and addon.Clean(info.name, "string") or zone
+    local function text(value)
+        return value and #value <= 1024 and value:find("%S") and value or nil
+    end
+    giver, region = text(giver) or text(name), text(region) or text(zone)
+    return { title = text(title) or "", destination = giver and region and (giver .. " · " .. region) or giver or region or "",
+        current = current, locale = locale, localeGetter = localeGetter }
+end
+
+local function present(action, generation, status)
+    if not presentation or not presentation.current() or contextElapsed >= 1 then
+        local refreshed = context(action, generation)
+        if navigationGeneration ~= generation or not rawequal(target, action) then return end
+        presentation = refreshed
+        contextElapsed = 0
+    end
+    if navigationGeneration ~= generation or not rawequal(target, action) then return end
+    local shown = presentation
+    if not shown then
+        frame.title:SetText(""); frame.note:SetText(""); frame.label:SetText(status); return
+    end
+    frame.title:SetText(shown.title); frame.note:SetText(shown.destination); frame.label:SetText(status)
+    local function height(region, fallback)
+        local measured = addon.Read(region.GetStringHeight, "number", region)
+        return measured and measured > 0 and measured <= 4096 and measured or fallback
+    end
+    local titleHeight, noteHeight, statusHeight = height(frame.title, 22), height(frame.note, 18), height(frame.label, 18)
+    if not shown.current() or presentation ~= shown then return end
+    frame.note:ClearAllPoints(); frame.note:SetPoint("TOPLEFT", 66, -12 - titleHeight - 5)
+    frame.label:ClearAllPoints(); frame.label:SetPoint("TOPLEFT", 66, -12 - titleHeight - 5 - noteHeight - 5)
+    frame:SetHeight(math.max(82, 12 + titleHeight + 5 + noteHeight + 5 + statusHeight + 12))
+end
+
 local function update(_, delta)
-    elapsed = elapsed + delta
+    elapsed, contextElapsed = elapsed + delta, contextElapsed + delta
     if elapsed < 0.1 then return end
     elapsed = 0
     local action, generation = target, navigationGeneration
+    if not action then return end
     local north, west
     if action then north, west = N.Vector(action.place) end
     if navigationGeneration ~= generation or not rawequal(target, action) then return end
     local facing = addon.Read(GetPlayerFacing, "number")
     if navigationGeneration ~= generation or not rawequal(target, action) then return end
     if not north or not west or not facing then
-        frame.label:SetText(addon.L("NO_POSITION")); frame.arrow:Hide(); return
+        frame.arrow:Hide(); present(action, generation, addon.L("NO_POSITION")); return
     end
     local distance = addon.Clean(math.sqrt(north * north + west * west), "number")
-    if not distance then frame.label:SetText(addon.L("NO_POSITION")); frame.arrow:Hide(); return end
-    local bearing = math.atan2(west, north)
-    frame.arrow:SetRotation(bearing - facing)
+    if not distance then frame.arrow:Hide(); present(action, generation, addon.L("NO_POSITION")); return end
+    frame.arrow:SetRotation(math.atan2(west, north) - facing)
     frame.arrow:Show()
-    local title = addon.QuestName(action.id)
-    if navigationGeneration ~= generation or not rawequal(target, action) then return end
-    frame.label:SetText(title .. "\n" .. math.floor(distance) .. " yd")
+    present(action, generation, addon.L("GUIDE_DISTANCE", math.floor(distance)))
 end
 
 function N.Start(action)
@@ -187,15 +251,21 @@ function N.Start(action)
     end
     if not frame then
         frame = CreateFrame("Frame", nil, UIParent)
-        frame:SetSize(320, 115); frame:SetPoint("TOP", 0, -90)
+        frame:SetSize(354, 104); frame:SetPoint("TOP", 0, -90)
         frame:SetMovable(true); frame:EnableMouse(true); frame:RegisterForDrag("LeftButton")
         frame:SetScript("OnDragStart", frame.StartMoving)
         frame:SetScript("OnDragStop", frame.StopMovingOrSizing)
         frame.arrow = frame:CreateTexture(nil, "ARTWORK")
-        frame.arrow:SetSize(42, 42); frame.arrow:SetPoint("TOP")
+        frame.arrow:SetSize(42, 42); frame.arrow:SetPoint("TOPLEFT", 12, -16)
         frame.arrow:SetTexture("Interface\\Minimap\\MinimapArrow")
+        frame.title = frame:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+        frame.title:SetPoint("TOPLEFT", 66, -12); frame.title:SetWidth(258); frame.title:SetJustifyH("LEFT")
+        frame.note = frame:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+        frame.note:SetWidth(258); frame.note:SetJustifyH("LEFT")
         frame.label = frame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-        frame.label:SetPoint("TOP", 0, -46); frame.label:SetWidth(310)
+        frame.label:SetWidth(258); frame.label:SetJustifyH("LEFT")
+        local theme = addon.Clean(addon.Theme, "table")
+        if theme then addon.Read(theme.StyleRow, "boolean", frame, { kind = "section" }) end
         local close = CreateFrame("Button", nil, frame, "UIPanelCloseButton")
         close:SetSize(22, 22); close:SetPoint("TOPRIGHT"); close:SetScript("OnClick", N.Stop)
         frame:SetScript("OnUpdate", update)
