@@ -436,6 +436,59 @@ class CatalogTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "drop sources"):
             catalog.validate(self.data)
 
+    def test_item_drop_locations_preserve_source_roles_and_raw_area_labels(self):
+        quest = self.data["quests"][0]
+        facts = {key: copy.deepcopy(quest.get(key)) for key in ("requires", "requirementsKnown", "classes")}
+        for location in (
+            {"mapID": 1426},
+            {"mapID": 1426, "x": 0, "y": 100},
+            {"mapID": 1426, "x": 77.8, "y": 62.4, "zoneName": "Dun Morogh",
+             "reportedLocations": [{"mapID": 1426, "x": 77.8, "y": 62.4},
+                                   {"mapID": 1426, "x": 77.8, "y": 62.6}]},
+            {"reportedLocations": [{"mapID": 1426, "x": 1, "y": 2},
+                                   {"mapID": 1427, "x": 1, "y": 2}]},
+        ):
+            with self.subTest(location=location):
+                quest["start"] = {"itemID": 274268, "name": "Map", "dropSources": [
+                    {"npcID": 6124, "name": "Captain Beld", "locationName": "Broad source label", **location}]}
+                before = copy.deepcopy(self.data)
+                catalog.generate(self.data)
+                self.assertEqual(self.data, before)
+                self.assertEqual({key: quest.get(key) for key in facts}, facts)
+                self.assertNotIn("mapID", quest["start"])
+                self.assertNotIn("npcID", quest["start"])
+
+    def test_item_drop_locations_reject_invalid_maps_coordinates_and_reports(self):
+        point = {"mapID": 1426, "x": 77.8, "y": 62.4}
+        invalid = [{"mapID": value} for value in (None, True, 0, -1, 1426.0, "1426")]
+        invalid += [{"mapID": 1426, "x": value, "y": 10}
+                    for value in (None, True, -0.1, 100.1, "10", float("inf"), float("nan"))]
+        invalid += [{"x": 10, "y": 20}, {"mapID": 1426, "x": 10}, {"zoneName": " "}]
+        invalid += [{"reportedLocations": value} for value in
+                    (None, [], [point], [point] * 101, [point, point], [point, None],
+                     [point, {"mapID": 1426, "x": 1}],
+                     [point, {"mapID": True, "x": 1, "y": 2}],
+                     [point, {"mapID": 1426, "x": 1, "y": 101}],
+                     [point, {"mapID": 1426, "x": 1, "y": 2, "itemID": 1}])]
+        invalid += [{"mapID": 1426, "x": 20, "y": 30,
+                     "reportedLocations": [point, {"mapID": 1426, "x": 1, "y": 2}]}]
+        for location in invalid:
+            with self.subTest(location=location):
+                self.data["quests"][0]["start"] = {"itemID": 274268, "dropSources": [
+                    {"npcID": 6124, "name": "Captain Beld", "locationName": "Dun Morogh", **location}]}
+                with self.assertRaises(ValueError):
+                    catalog.validate(self.data)
+
+    def test_item_drop_sources_reject_other_entity_and_nested_acquisition_roles(self):
+        for key, value in (("objectID", 1), ("itemID", 1), ("dropNPCID", 1),
+                           ("containerSource", {}), ("dropSources", []), ("dungeonKey", "dm"),
+                           ("creatureDisplayID", 1), ("portraitSource", "source"), ("unexpected", True)):
+            with self.subTest(key=key):
+                self.data["quests"][0]["start"] = {"itemID": 274268, "dropSources": [
+                    {"npcID": 6124, "name": "Captain Beld", "locationName": "Dun Morogh", key: value}]}
+                with self.assertRaises(ValueError):
+                    catalog.validate(self.data)
+
     def test_starter_item_requirements_preserve_separate_quest_restrictions(self):
         quest = self.data["quests"][0]
         before = {key: copy.deepcopy(quest.get(key)) for key in ("classes", "minLevel", "requirementsKnown", "requires")}
@@ -711,8 +764,7 @@ class CatalogTests(unittest.TestCase):
         data = self.minimal_catalog()
         data["quests"][1]["start"] = {"itemID": 10, "dropSources": [
             {"npcID": 1, "name": "Drop NPC", "locationName": "Zone", "reportedLocations": points}]}
-        with self.assertRaisesRegex(ValueError, "reported location"):
-            catalog.validate(data)
+        catalog.validate(data)
 
     def test_reported_locations_preserve_candidates_without_changing_quest_requirements(self):
         data = self.minimal_catalog()

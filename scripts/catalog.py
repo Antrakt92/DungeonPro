@@ -179,15 +179,14 @@ def validate(data):
                         raise ValueError(f"Giver portrait on an item drop source: {q['id']}")
                     if type(drop) is dict and "containerSource" in drop:
                         raise ValueError(f"Invalid container source on item drop: {q['id']}")
-                    if type(drop) is dict and "reportedLocations" in drop:
-                        raise ValueError(f"Invalid reported locations on item drop: {q['id']}")
                     if (type(drop) is not dict or not integer(drop.get("npcID")) or
-                        type(drop.get("name")) is not str or not drop["name"] or
-                        type(drop.get("locationName")) is not str or not drop["locationName"]):
+                        set(drop) - {"npcID", "name", "locationName", "zoneName", "mapID", "x", "y", "reportedLocations"} or
+                        not nonempty_string(drop.get("name")) or not nonempty_string(drop.get("locationName"))):
                         raise ValueError(f"Invalid item drop identity: {q['id']}")
                     if drop["npcID"] in seen_drops:
                         raise ValueError(f"Duplicate item drop source: {q['id']}")
                     seen_drops.add(drop["npcID"])
+                    places.append(("dropSource", drop))
             if "mapID" in p and not integer(p["mapID"]):
                 raise ValueError("Invalid map ID")
             if ("x" in p) != ("y" in p):
