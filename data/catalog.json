@@ -1731,7 +1731,8 @@
         "x": 62.4,
         "y": 37.6,
         "creatureDisplayID": 7034,
-        "portraitSource": "https://www.wowhead.com/forever/npc=3446"
+        "portraitSource": "https://www.wowhead.com/forever/npc=3446",
+        "zoneName": "The Barrens"
       },
       "finish": {
         "npcID": 3446,
@@ -1740,7 +1741,8 @@
         "x": 62.4,
         "y": 37.6,
         "creatureDisplayID": 7034,
-        "portraitSource": "https://www.wowhead.com/forever/npc=3446"
+        "portraitSource": "https://www.wowhead.com/forever/npc=3446",
+        "zoneName": "The Barrens"
       },
       "requires": [
         {
@@ -4782,7 +4784,8 @@
         "x": 62.4,
         "y": 37.6,
         "creatureDisplayID": 7034,
-        "portraitSource": "https://www.wowhead.com/forever/npc=3446"
+        "portraitSource": "https://www.wowhead.com/forever/npc=3446",
+        "zoneName": "The Barrens"
       },
       "finish": {
         "npcID": 3446,
@@ -4791,7 +4794,8 @@
         "x": 62.4,
         "y": 37.6,
         "creatureDisplayID": 7034,
-        "portraitSource": "https://www.wowhead.com/forever/npc=3446"
+        "portraitSource": "https://www.wowhead.com/forever/npc=3446",
+        "zoneName": "The Barrens"
       },
       "objectiveItems": [
         {
