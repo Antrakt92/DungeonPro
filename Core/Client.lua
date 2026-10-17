@@ -318,21 +318,63 @@ function addon.QuestDataResult(id, success)
 end
 
 function addon.Context()
-    local quest = C_QuestLog or {}
+    local result, checker = {}, issecretvalue
+    local function characterRoot()
+        local value = addon.char
+        if type(issecretvalue) == "function" then
+            local ok, restricted = pcall(issecretvalue, value)
+            if not ok or restricted ~= false then return nil, false end
+        end
+        if value == nil then return nil, true end
+        value = addon.Clean(value, "table")
+        return value, value ~= nil
+    end
+    local character, readable = characterRoot()
+    local quest = addon.Clean(C_QuestLog, "table")
+    local level, faction = addon.Clean(UnitLevel, "function"), addon.Clean(UnitFactionGroup, "function")
+    local class, race = addon.Clean(UnitClass, "function"), addon.Clean(UnitRace, "function")
+    local completed = quest and addon.Clean(quest.IsQuestFlaggedCompleted, "function")
+    local active = quest and addon.Clean(quest.IsOnQuest, "function")
+    local ready = quest and addon.Clean(quest.ReadyForTurnIn, "function")
+    local complete = quest and addon.Clean(quest.IsComplete, "function")
+    local valid = readable
+    local function forget()
+        result.level, result.faction, result.class, result.race = nil, nil, nil, nil
+        return false
+    end
+    local function current()
+        if not valid then return forget() end
+        local root, known = characterRoot()
+        valid = known and root == character and issecretvalue == checker and addon.Clean(C_QuestLog, "table") == quest and
+            addon.Clean(UnitLevel, "function") == level and addon.Clean(UnitFactionGroup, "function") == faction and
+            addon.Clean(UnitClass, "function") == class and addon.Clean(UnitRace, "function") == race and
+            (not quest or (addon.Clean(quest.IsQuestFlaggedCompleted, "function") == completed and
+                addon.Clean(quest.IsOnQuest, "function") == active and addon.Clean(quest.ReadyForTurnIn, "function") == ready and
+                addon.Clean(quest.IsComplete, "function") == complete))
+        if not valid then return forget() end
+        return true
+    end
     local function unitPart(fn, index, expected)
-        if type(fn) ~= "function" then return nil end
+        if not current() or not fn then return nil end
         local values = { pcall(fn, "player") }
-        if not values[1] then return nil end
+        if not current() or not values[1] then return nil end
         return addon.Clean(values[index + 1], expected)
     end
-    return {
-        level = addon.Read(UnitLevel, "number", "player"),
-        faction = addon.Read(UnitFactionGroup, "string", "player"),
-        class = unitPart(UnitClass, 2, "string"), race = unitPart(UnitRace, 3, "number"),
-        completed = function(id) return addon.Read(quest.IsQuestFlaggedCompleted, "boolean", id) end,
-        active = function(id) return addon.Read(quest.IsOnQuest, "boolean", id) end,
-        ready = function(id) return addon.Read(quest.ReadyForTurnIn or quest.IsComplete, "boolean", id) end,
-    }
+    local function evidence(fn, id)
+        id = dialogueInteger(id, 1)
+        if not id or not current() then return nil end
+        local value = addon.Read(fn, "boolean", id)
+        if current() then return value end
+    end
+    result.current = current
+    result.level = unitPart(level, 1, "number")
+    result.faction = unitPart(faction, 1, "string")
+    result.class, result.race = unitPart(class, 2, "string"), unitPart(race, 3, "number")
+    result.completed = function(id) return evidence(completed, id) end
+    result.active = function(id) return evidence(active, id) end
+    result.ready = function(id) return evidence(ready or complete, id) end
+    current()
+    return result
 end
 
 function addon.QuestName(id)

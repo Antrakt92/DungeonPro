@@ -2,6 +2,16 @@ local _, addon = ...
 local Planner = {}
 addon.Planner = Planner
 
+local function contextCurrent(context)
+    local fn = context.current
+    if type(issecretvalue) == "function" then
+        local ok, restricted = pcall(issecretvalue, fn)
+        if not ok or restricted ~= false then return false end
+    end
+    if fn == nil then return true end
+    return addon.Read(fn, "boolean") == true
+end
+
 local function contains(list, value)
     for _, entry in ipairs(list) do if entry == value then return true end end
     return false
@@ -13,6 +23,7 @@ local function prerequisiteSatisfied(state, mode)
 end
 
 function Planner.Eligible(q, context)
+    if not contextCurrent(context) then return nil, "character" end
     local unknown
     for _, rule in ipairs({ { "factions", "faction" }, { "classes", "class" }, { "races", "race" } }) do
         if q[rule[1]] then
@@ -28,14 +39,23 @@ end
 function Planner.New(quests, context, choices)
     local engine = { quests = quests, context = context, choices = choices, states = {}, visiting = {} }
 
+    function engine:Current()
+        if self.invalid then return false end
+        if contextCurrent(self.context) then return true end
+        self.invalid, self.states, self.visiting = true, {}, {}
+        return false
+    end
+
     function engine:State(id)
-        if self.states[id] then return self.states[id] end
         local completedHistory = false
         local function save(status, reason)
+            if not self:Current() then status, reason, completedHistory = "UNKNOWN", "character", false end
             local result = { status = status, reason = reason, id = id, completedHistory = completedHistory }
             self.states[id] = result
             return result
         end
+        if not self:Current() then return save("UNKNOWN", "character") end
+        if self.states[id] then return self.states[id] end
         local q = self.quests[id]
         if not q then return save("UNKNOWN", "missing") end
         local done = self.context.completed(id)
@@ -76,6 +96,10 @@ function Planner.New(quests, context, choices)
     -- Each group is an OR; groups together are AND. Resolve all the way to an
     -- actionable ancestor, rather than sending players to another locked quest.
     function engine:Next(id, path)
+        local function publish(actions, unknown)
+            if not self:Current() then return {}, true end
+            return actions, unknown
+        end
         path = path or {}
         if path[id] then return {}, true end
         local state, q = self:State(id), self.quests[id]
@@ -86,13 +110,13 @@ function Planner.New(quests, context, choices)
         if state.status == "COMPLETED" or state.status == "UNAVAILABLE" then return {}, false end
         if state.status == "ACTIVE" or state.status == "READY" then
             -- The turn-in NPC is not an objective location for an unfinished quest.
-            return { { id = id, kind = state.status == "READY" and "turnin" or "complete",
-                place = state.status == "READY" and q.finish or nil } }, false
+            return publish({ { id = id, kind = state.status == "READY" and "turnin" or "complete",
+                place = state.status == "READY" and q.finish or nil } }, false)
         end
         if state.status == "AVAILABLE" then
-            return { { id = id, kind = q.startsInside and "inside" or "pickup", place = q.start } }, false
+            return publish({ { id = id, kind = q.startsInside and "inside" or "pickup", place = q.start } }, false)
         end
-        if state.reason == "level" then return { { id = id, kind = "level", level = q.minLevel } }, false end
+        if state.reason == "level" then return publish({ { id = id, kind = "level", level = q.minLevel } }, false) end
         path[id] = true
         local actions, uncertain, seen = {}, state.status == "UNKNOWN" and q.requirementsKnown ~= true, {}
         for groupIndex, group in ipairs(q.requires or {}) do
@@ -126,7 +150,7 @@ function Planner.New(quests, context, choices)
             end
         end
         path[id] = nil
-        return actions, uncertain
+        return publish(actions, uncertain)
     end
 
     -- Material sources are informational completion links, never acceptance gates.
@@ -147,6 +171,11 @@ function Planner.New(quests, context, choices)
                 local actions, unknown = self:Next(other)
                 result[#result + 1] = { id = other, itemID = itemID, state = self:State(other),
                     actions = actions, unknown = unknown }
+            end
+        end
+        if not self:Current() then
+            for _, entry in ipairs(result) do
+                entry.actions, entry.unknown, entry.state = {}, true, self:State(entry.id)
             end
         end
         return result
@@ -182,6 +211,13 @@ function Planner.New(quests, context, choices)
             end
         end
         if result.unknown or relevant == 0 then result.ready = false end
+        if not self:Current() then
+            result = { rows = {}, actions = {}, counts = {}, unknown = true, ready = false }
+            for _, id in ipairs(dungeon.quests) do
+                result.rows[#result.rows + 1] = { id = id, state = self:State(id) }
+            end
+            result.counts.UNKNOWN = #result.rows
+        end
         return result
     end
     return engine

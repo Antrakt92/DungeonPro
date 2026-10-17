@@ -22,6 +22,7 @@ def main():
         if "dist" not in path.parts:
             run(luac, "-p", str(path))
     run(lua, "tests/planner.lua")
+    run(lua, "tests/context.lua")
     run(lua, "tests/catalog_contexts.lua")
     run(lua, "tests/client_ui.lua")
     run(lua, "tests/locales.lua")
