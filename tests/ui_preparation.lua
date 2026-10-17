@@ -5414,4 +5414,152 @@ check("Story controls wrap measured locale labels and reject changed context lis
     q.storyline[5]=43;ui:RefreshDetail();assert(ui.storyToggle.shown and #visibleStory()==0)
     f:finish()
 end)
+local function targetSearchFixture()
+    local f={dungeons=addon.dungeons,quests=addon.quests,dungeonName=addon.DungeonName,cached=addon.CachedQuestName,
+        questName=addon.QuestName,search=ui.search,range=ui.range,dungeon=ui.dungeon,quest=ui.quest,
+        locale=addon.db.locale,reads={},cachedNames={}}
+    addon.quests={
+        [31001]={id=31001,name="Source target",minLevel=1,requirementsKnown=false},
+        [31002]={id=31002,name="Other source",minLevel=1,requirementsKnown=false},
+        [31003]={id=31003,name="Support only",minLevel=1,requirementsKnown=false}}
+    addon.dungeons={
+        {key="target-a",name="Alpha dungeon",minLevel=10,maxLevel=30,quests={31001,31002,31001}},
+        {key="target-b",name="Beta dungeon",minLevel=10,maxLevel=30,quests={31001}},
+        {key="target-c",name="Gamma dungeon",minLevel=50,maxLevel=60,quests={}}}
+    addon.DungeonName=function(d)return d.name end
+    addon.CachedQuestName=function(id)f.reads[#f.reads+1]=id;return f.cachedNames[id] end
+    addon.QuestName=function()error("Dungeon search must not request ordinary quest title hydration")end
+    ui.range=false;ui.search="";ui:RefreshDungeons()
+    function f:search(value)
+        ui.searchBox:SetText(value);ui.searchBox.scripts.OnTextChanged(ui.searchBox)
+    end
+    function f:cards()
+        local result={};for _,row in ipairs(ui.cards)do if row.shown then result[#result+1]=row end end;return result
+    end
+    function f:finish()
+        addon.dungeons,addon.quests,addon.DungeonName,addon.CachedQuestName,addon.QuestName=self.dungeons,self.quests,self.dungeonName,self.cached,self.questName
+        ui.search,ui.range,ui.dungeon,ui.quest=self.search,self.range,self.dungeon,self.quest
+        addon.db.locale=self.locale;ui:RefreshDungeons()
+    end
+    return f
+end
+check("Dungeon search finds only listed target source names and keeps selected quest preparation reading and actions intact",function()
+    local f=targetSearchFixture()
+    local selected,quest,engine,action,history,offset=ui.dungeon,ui.quest,ui.engine,ui.action,ui.detailHistory,ui.detailScroll.verticalScroll
+    f:search("SOURCE TARGET");local rows=f:cards()
+    assert(#rows==2 and rows[1].matchQuestID==31001 and rows[2].matchQuestID==31001)
+    assert(rows[1].note.text:find(addon.L("SEARCH_QUEST_MATCH","Source target"),1,true))
+    assert(rows[1].note.text:find(addon.L("CATALOG_QUESTS",3),1,true) and rows[2].note.text:find(addon.L("CATALOG_QUESTS",1),1,true))
+    assert(#f.reads==0,"source match should not query cached native titles")
+    addon.dungeons[2].quests={};f:search("Other source");assert(#f:cards()==1 and #f.reads==0,"all source names precede optional cached reads")
+    f:search("Support only");assert(#f:cards()==0 and ui.catalogNotice.shown)
+    assert(ui.dungeon==selected and ui.quest==quest and ui.engine==engine and ui.action==action and ui.detailHistory==history and ui.detailScroll.verticalScroll==offset)
+    f:finish()
+end)
+check("Cached target search uses Unicode literal names without loads and memoizes only within each refresh",function()
+    local f=targetSearchFixture()
+    for _,pair in ipairs({{"ЗАДАНИЕ В КОПЯХ","задание в копях"},{"Épreuve","épreuve"},{"Straße","STRASSE"},{"测试[100%]","[100%]"}})do
+        f.cachedNames[31001]=pair[1];f.reads={};f:search(pair[2]);local rows=f:cards()
+        assert(#rows==2 and rows[1].note.text:find(addon.L("SEARCH_QUEST_MATCH",pair[1]),1,true))
+        local count=0;for _,id in ipairs(f.reads)do if id==31001 then count=count+1 end end;assert(count==1)
+    end
+    f:search(".*");assert(#f:cards()==0)
+    f.cachedNames[31001]="Épreuve";f:search("epreuve");assert(#f:cards()==0)
+    f.cachedNames[31001]="Fresh available title";f:search("Fresh available");assert(#f:cards()==2)
+    f.cachedNames[31001]=nil;ui:RefreshDungeons();assert(#f:cards()==0,"no persistent title memo")
+    f:finish()
+end)
+check("Empty and direct dungeon matches avoid their own native target reads and missing capability retains source search",function()
+    local f=targetSearchFixture();f.reads={};f:search("  ");assert(#f:cards()==3 and #f.reads==0)
+    f.reads={};f:search("Alpha")
+    for _,id in ipairs(f.reads)do assert(id~=31002,"matching Alpha skips its own private target")end
+    assert(#f:cards()==1 and not f:cards()[1].matchQuestID)
+    f.cachedNames[31001]="Alpha quest elsewhere";f:search("Alpha");assert(#f:cards()==2,"dungeon matches cannot suppress another dungeon's cached quest match")
+    for _,getter in ipairs({false,function()error("missing")end,function()return {} end})do
+        addon.CachedQuestName=getter;f:search("Source target");assert(#f:cards()==2)
+        f:search("No match");assert(#f:cards()==0)
+    end
+    addon.CachedQuestName=nil;f:search("Source target");assert(#f:cards()==2)
+    f:finish()
+end)
+check("Target match cues wrap dynamically across locales and recycle without changing existing dungeon filters",function()
+    local f=targetSearchFixture();local long=string.rep("Long target ",20);addon.quests[31001].name=long
+    measurement=function(fs)if fs.text and fs.text:find(long,1,true)then return 108 end;return 18 end
+    for locale in pairs(addon.locales)do
+        addon.db.locale=locale;f:search("Long target");local rows=f:cards()
+        assert(#rows==2 and rows[1].height>=144 and -rows[2].point[3]>=-rows[1].point[3]+rows[1].height)
+        assert(rows[1].title.width==158 and rows[1].note.width==158 and rows[1].note.text:find(addon.L("SEARCH_QUEST_MATCH",long),1,true))
+    end
+    measurement=nil;f:search("Alpha");local row=f:cards()[1]
+    assert(not row.matchQuestID and not row.note.text:find(long,1,true) and row.height==64)
+    ui.range=true;f:search("Gamma");assert(#f:cards()==0)
+    ui.clearSearch.scripts.OnClick();assert(ui.search=="" and ui.range==true and #f:cards()==2)
+    f:finish()
+end)
+check("Cached-title query hydration rejects older searches and source membership replacements before row publication",function()
+    for _,kind in ipairs({"query","source","membership","character","locale","helper"})do
+        local f=targetSearchFixture();local armed=true;local char=addon.char;local original=addon.CachedQuestName
+        addon.CachedQuestName=function(id)
+            if armed then
+                armed=false
+                if kind=="query"then f:search("Gamma")
+                elseif kind=="source"then addon.quests[31001].name="New source match";f:search("New source match")
+                elseif kind=="membership"then addon.dungeons[1].quests={31002};f:search("Other source")
+                elseif kind=="character"then addon.char={};f:search("Gamma")
+                elseif kind=="locale"then addon.db.locale="ruRU";f:search("Gamma")
+                else addon.CachedQuestName=original;f:search("Gamma")end
+            end
+            return "Old cached match"
+        end
+        f:search("Old cached");local rows=f:cards()
+        assert(#rows==(kind=="source" and 2 or 1) and not rows[1].note.text:find("Old cached match",1,true))
+        if kind=="source"then assert(rows[1].matchQuestID==31001)
+        elseif kind=="membership"then assert(rows[1].matchQuestID==31002)
+        else assert(rows[1].title.text=="Gamma dungeon")end
+        addon.char=char;f:finish()
+    end
+end)
+check("Native target row writes measurements and old clicks cannot overwrite or select superseded search results",function()
+    for _,kind in ipairs({"setter","measure"})do
+        local f=targetSearchFixture();f:search("Source target");local row=f:cards()[1];local setter=row.note.SetText;local armed=true
+        local oldClick=row.scripts.OnClick
+        if kind=="setter"then
+            row.note.SetText=function(self,value)setter(self,value);if armed then armed=false;f:search("Gamma")end end
+        else
+            measurement=function(fs)if fs==row.note and armed then armed=false;f:search("Gamma")end;return 18 end
+        end
+        f:search("Source target");assert(#f:cards()==1 and f:cards()[1].title.text=="Gamma dungeon")
+        local dungeon=ui.dungeon;oldClick();assert(ui.dungeon==dungeon)
+        row.note.SetText=setter;measurement=nil
+        local current=f:cards()[1].scripts.OnClick;local char=addon.char;addon.char={};current();assert(ui.dungeon==dungeon);addon.char=char
+        addon.QuestName=f.questName;current();assert(ui.dungeon.key=="target-c" and ui.quest==nil)
+        f:finish()
+    end
+end)
+check("Real catalogue target source search retains exact declared dungeon membership without loading supporting titles",function()
+    local f=targetSearchFixture();local actual={};assert(loadfile("Database/Catalog.lua"))("DungeonPro",actual)
+    addon.dungeons,addon.quests=actual.dungeons,actual.quests;addon.CachedQuestName=nil
+    for _,id in ipairs({166,5728,1654,8950})do
+        local name=actual.quests[id].name
+        f:search(name);local rows=f:cards();local expected=0
+        for _,d in ipairs(actual.dungeons)do
+            local dungeonMatch=addon.SearchFold(d.name):find(addon.SearchFold(name),1,true)
+            local targetMatch=false
+            for _,target in ipairs(d.quests)do
+                if addon.SearchFold(actual.quests[target].name):find(addon.SearchFold(name),1,true)then targetMatch=true end
+            end
+            if dungeonMatch or targetMatch then expected=expected+1 end
+        end
+        assert(#rows==expected and expected>0)
+        for _,row in ipairs(rows)do
+            assert(row.matchQuestID)
+            local member=false
+            for _,d in ipairs(actual.dungeons)do if d.name==row.title.text then
+                for _,target in ipairs(d.quests)do if target==row.matchQuestID then member=true end end
+            end end
+            assert(member,"only declared target IDs explain a quest-name result")
+        end
+    end
+    assert(#f.reads==0);f:finish()
+end)
 print("Preparation UI modeled checks passed: " .. total .. " (no native layout validation)")

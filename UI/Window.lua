@@ -496,54 +496,140 @@ end
 function UI:RefreshDungeons()
     local generation = {}
     self.catalogGeneration = generation
+    local catalogue, definitions, character, database = addon.dungeons, addon.quests, addon.char, addon.db
+    local search, range, locale = self.search, self.range, addon.db.locale
+    local getter, dungeonGetter, fold, checker = addon.CachedQuestName, addon.DungeonName, addon.SearchFold, issecretvalue
     local context = addon.Context()
-    local query = (addon.Clean(self.search, "string") or ""):gsub("^%s+", ""):gsub("%s+$", "")
+    local contextCurrent = context.current
+    local query = (addon.Clean(search, "string") or ""):gsub("^%s+", ""):gsub("%s+$", "")
     local needle = searchText(query)
-    local n, offset = 0, 0
-    self.searchPlaceholder:SetText(addon.L("SEARCH"))
-    self.searchPlaceholder:SetShown(self.search == "")
-    self.clearSearch:SetEnabled(self.search ~= "")
-    self.searchHint:SetText(addon.L("SEARCH_HELP"))
-    self.searchHint:SetShown(query ~= "")
-    if query ~= "" then offset = measuredHeight(self.searchHint, 42) + 10 end
-    self.catalogNotice:Hide()
-    for _, d in ipairs(addon.dungeons) do
-        local name = addon.DungeonName(d)
-        local matches = query == "" or searchText(name):find(needle, 1, true) or searchText(d.name):find(needle, 1, true)
-        if matches and (not self.range or (context.level and context.level >= d.minLevel - 3 and context.level <= d.maxLevel + 3)) then
-            n = n + 1
-            local row = self:MakeRow(self.catalog, self.cards, n, 64)
-            if not row.art then
-                row.art = row:CreateTexture(nil, "ARTWORK")
-                row.art:SetSize(44, 44); row.art:SetPoint("TOPLEFT", 6, -9)
-                row.title:ClearAllPoints(); row.title:SetPoint("TOPLEFT", 58, -7); row.title:SetWidth(158)
-                row.note:ClearAllPoints(); row.note:SetPoint("TOPLEFT", 58, -42); row.note:SetWidth(158)
-            end
-            row.art:Hide()
-            addon.Read(addon.PaintDungeonArt, "boolean", row.art, d)
-            if self.catalogGeneration ~= generation then return end
-            row.title:SetText(name)
-            row.note:SetText(addon.L("CATALOG_LEVELS", d.minLevel, d.maxLevel) .. "\n" ..
-                addon.L("CATALOG_QUESTS", #d.quests))
-            row.bg:SetColorTexture(self.dungeon == d and 0.22 or 0.13, 0.19, 0.23, 1)
-            styleRow(row, "dungeon", self.dungeon == d)
-            row:SetScript("OnClick", function()
-                self:ResetHistoryReading()
-                self.detailHistory = {}
-                self.dungeon, self.quest = d, nil
-                addon.char.selectedDungeon = d.key
-                self:Refresh()
-            end)
-            offset = self:LayoutRow(row, 64, offset)
+    local inputs, results, memo = {}, {}, {}
+    for index, dungeon in ipairs(catalogue) do
+        local targets = dungeon.quests
+        local input = { dungeon = dungeon, name = dungeon.name, key = dungeon.key,
+            minimum = dungeon.minLevel, maximum = dungeon.maxLevel, targets = targets, members = {} }
+        inputs[index] = input
+        for other, id in ipairs(targets) do
+            local quest = definitions[id]
+            input.members[other] = { id = id, quest = quest, name = quest and quest.name }
         end
     end
-    hideRest(self.cards, n)
-    if n == 0 then
-        self.catalogNotice:SetText(addon.L("NO_DUNGEONS"))
-        self.catalogNotice:ClearAllPoints(); self.catalogNotice:SetPoint("TOPLEFT", 4, -offset)
-        self.catalogNotice:Show(); offset = offset + measuredHeight(self.catalogNotice, 42) + 10
+    local function current()
+        if contextCurrent and addon.Read(contextCurrent, "boolean") ~= true then return false end
+        local ok, valid = pcall(function()
+            if context.current ~= contextCurrent then return false end
+            if self.catalogGeneration ~= generation or self.search ~= search or self.range ~= range or
+                addon.dungeons ~= catalogue or addon.quests ~= definitions or addon.char ~= character or
+                addon.db ~= database or database.locale ~= locale or addon.CachedQuestName ~= getter or
+                addon.DungeonName ~= dungeonGetter or addon.SearchFold ~= fold or issecretvalue ~= checker or
+                #catalogue ~= #inputs then return false end
+            for index, input in ipairs(inputs) do
+                local dungeon = input.dungeon
+                if catalogue[index] ~= dungeon or dungeon.name ~= input.name or dungeon.key ~= input.key or
+                    dungeon.minLevel ~= input.minimum or dungeon.maxLevel ~= input.maximum or dungeon.quests ~= input.targets or
+                    #input.targets ~= #input.members then return false end
+                for other, member in ipairs(input.members) do
+                    if input.targets[other] ~= member.id or definitions[member.id] ~= member.quest or
+                        (member.quest and member.quest.name ~= member.name) then return false end
+                end
+            end
+            return true
+        end)
+        return ok and valid == true
     end
-    self.catalog:SetHeight(math.max(1, offset))
+    if not current() then return end
+    for _, input in ipairs(inputs) do
+        local dungeon = input.dungeon
+        if not range or (context.level and context.level >= input.minimum - 3 and context.level <= input.maximum + 3) then
+            local name = addon.Read(dungeonGetter, "string", dungeon) or addon.Clean(input.name, "string") or ""
+            if not current() then return end
+            local matches = query == "" or searchText(name):find(needle, 1, true) or searchText(input.name):find(needle, 1, true)
+            local matchedName, matchedID
+            if not matches then
+                for _, member in ipairs(input.members) do
+                    local source = addon.Clean(member.name, "string")
+                    if not current() then return end
+                    if source and searchText(source):find(needle, 1, true) then
+                        matchedName, matchedID = source, member.id; break
+                    end
+                end
+            end
+            if not matches and not matchedName then
+                for _, member in ipairs(input.members) do
+                    local cached = memo[member.id]
+                    if not cached then
+                        cached = { name = addon.Read(getter, "string", member.id) }
+                        memo[member.id] = cached
+                    end
+                    if not current() then return end
+                    if cached.name and searchText(cached.name):find(needle, 1, true) then
+                        matchedName, matchedID = cached.name, member.id; break
+                    end
+                end
+            end
+            if not current() then return end
+            if matches or matchedName then
+                local note = addon.L("CATALOG_LEVELS", input.minimum, input.maximum) .. "\n" .. addon.L("CATALOG_QUESTS", #input.members)
+                if matchedName then note = note .. "\n" .. addon.L("SEARCH_QUEST_MATCH", matchedName) end
+                if not current() then return end
+                results[#results + 1] = { dungeon = dungeon, title = name, note = note, questID = matchedID }
+            end
+        end
+    end
+    local function write(object, method, ...)
+        if not current() then return false end
+        local ok = pcall(object[method], object, ...)
+        return ok and current()
+    end
+    local offset = 0
+    if not write(self.searchPlaceholder, "SetText", addon.L("SEARCH")) or
+        not write(self.searchPlaceholder, "SetShown", search == "") or
+        not write(self.clearSearch, "SetEnabled", search ~= "") or
+        not write(self.searchHint, "SetText", addon.L("SEARCH_HELP")) or
+        not write(self.searchHint, "SetShown", query ~= "") or not write(self.catalogNotice, "Hide") then return end
+    if query ~= "" then offset = measuredHeight(self.searchHint, 42) + 10 end
+    if not current() then return end
+    for index, result in ipairs(results) do
+        local dungeon = result.dungeon
+        local row = self:MakeRow(self.catalog, self.cards, index, 64)
+        if not current() then return end
+        if not row.art then
+            row.art = row:CreateTexture(nil, "ARTWORK")
+            if not write(row.art, "SetSize", 44, 44) or not write(row.art, "SetPoint", "TOPLEFT", 6, -9) or
+                not write(row.title, "SetWidth", 158) or not write(row.note, "SetWidth", 158) then return end
+        end
+        if not write(row.art, "Hide") then return end
+        addon.Read(addon.PaintDungeonArt, "boolean", row.art, dungeon)
+        if not current() then return end
+        if not write(row.title, "SetText", result.title) or not write(row.note, "SetText", result.note) or
+            not write(row.bg, "SetColorTexture", self.dungeon == dungeon and 0.22 or 0.13, 0.19, 0.23, 1) then return end
+        styleRow(row, "dungeon", self.dungeon == dungeon)
+        if not current() then return end
+        row.matchQuestID = result.questID
+        if not write(row, "SetScript", "OnClick", function()
+            if not current() then return end
+            self:ResetHistoryReading()
+            self.detailHistory = {}
+            self.dungeon, self.quest = dungeon, nil
+            character.selectedDungeon = dungeon.key
+            self:Refresh()
+        end) then return end
+        offset = self:LayoutRow(row, 64, offset, current)
+        if not offset then return end
+    end
+    for index = #results + 1, #self.cards do
+        local row = self.cards[index]
+        if not write(row, "Hide") or not write(row, "SetScript", "OnClick", nil) then return end
+        row.matchQuestID = nil
+    end
+    if #results == 0 then
+        if not write(self.catalogNotice, "SetText", addon.L("NO_DUNGEONS")) or
+            not write(self.catalogNotice, "ClearAllPoints") or not write(self.catalogNotice, "SetPoint", "TOPLEFT", 4, -offset) or
+            not write(self.catalogNotice, "Show") then return end
+        offset = offset + measuredHeight(self.catalogNotice, 42) + 10
+    end
+    if not current() then return end
+    write(self.catalog, "SetHeight", math.max(1, offset))
 end
 
 function UI:RefreshQuests()

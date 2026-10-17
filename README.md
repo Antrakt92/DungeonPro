@@ -15,9 +15,11 @@ Level ranges are provisional recommendations.
   including Hall of Thanes, Ruins of Lordaeron, Excavation Site and City of Dalaran.
   Blackrock Spire wings share their instance's image. Five newer entries still
   need verified artwork; missing client images keep a fallback icon.
-  Search ignores letter case in localized and source names, including Cyrillic
-  and accented Latin letters. Accents and spelling still matter; search does not
-  normalize different Unicode spellings or transliterate names.
+  Search by dungeon name or a listed quest name. Quest matches identify the
+  matching quest on the dungeon card. Localized quest names are included when
+  already available from the client. Search ignores letter case, including
+  Cyrillic and accented Latin letters. Accents and spelling still matter; search
+  does not normalize different Unicode spellings or transliterate names.
 - A dark, restrained interface with distinct dungeon and quest selection accents,
   quieter controls and clearer text hierarchy. Visual refinement is ongoing.
 - Selecting a dungeon opens an illustrated overview with its level range, listed
