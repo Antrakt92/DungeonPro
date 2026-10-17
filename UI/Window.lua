@@ -3274,21 +3274,27 @@ function UI:RefreshDetail()
             line(name or addon.Clean(renderDungeon.name, "string") or addon.L("UNKNOWN_PLACE"), "title")
             if not self.overviewArt then
                 self.overviewArt = self.detail:CreateTexture(nil, "ARTWORK")
-                self.overviewArt:SetSize(148, 148)
             end
-            self.overviewArt:ClearAllPoints(); self.overviewArt:SetPoint("TOPLEFT", 97, -y)
+            self.overviewArt:SetSize(334, 334)
+            if not portraitCardCurrent() then return end
+            self.overviewArt:ClearAllPoints(); self.overviewArt:SetPoint("TOPLEFT", 4, -y)
+            if not portraitCardCurrent() then return end
             local painter = addon.Clean(addon.PaintDungeonArt, "function")
-            local ok, painted, kind
-            if painter then ok, painted, kind = pcall(painter, self.overviewArt, renderDungeon) end
+            local ok, painted, kind, aspect
+            if painter then ok, painted, kind, aspect = pcall(painter, self.overviewArt, renderDungeon, "overview") end
             painted, kind = ok and addon.Clean(painted, "boolean"), ok and addon.Clean(kind, "string")
+            aspect = ok and addon.Clean(aspect, "number")
             if not portraitCardCurrent() or addon.PaintDungeonArt ~= painter then return end
             if painted == true then
                 local compact = kind == "generic"
-                self.overviewArt:SetSize(compact and 48 or 148, compact and 48 or 148)
+                local height = kind == "art" and aspect and aspect > 0 and addon.Clean(334 / aspect, "number") or nil
                 if not portraitCardCurrent() then return end
-                self.overviewArt:ClearAllPoints(); self.overviewArt:SetPoint("TOPLEFT", compact and 147 or 97, -y)
+                height = height and height > 0 and height or 334
+                self.overviewArt:SetSize(compact and 48 or 334, compact and 48 or height)
                 if not portraitCardCurrent() then return end
-                y = y + (compact and 56 or 156)
+                self.overviewArt:ClearAllPoints(); self.overviewArt:SetPoint("TOPLEFT", compact and 147 or 4, -y)
+                if not portraitCardCurrent() then return end
+                y = y + (compact and 56 or height + 8)
             end
             local minimum, maximum = addon.Clean(renderDungeon.minLevel, "number"), addon.Clean(renderDungeon.maxLevel, "number")
             if minimum and maximum and minimum > 0 and maximum >= minimum and minimum % 1 == 0 and maximum % 1 == 0 then

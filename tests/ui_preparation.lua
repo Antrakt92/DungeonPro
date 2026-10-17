@@ -7795,7 +7795,7 @@ check("Main close styling is optional and preserves native close tooltip geometr
     end
 end)
 
-check("Compact overview uses explicit painter classification without shrinking actual or legacy art",function()
+check("Compact overview keeps generic icons small and gives actual or legacy art the full detail width",function()
     local paint,quest,dungeon,engine=addon.PaintDungeonArt,ui.quest,ui.dungeon,ui.engine
     local data={};assert(loadfile("Database/Catalog.lua"))("DungeonPro",data)
     local keys={drowned=true,kroldok=true,alcaz=true,blackmaw=true,shapers=true}
@@ -7806,9 +7806,9 @@ check("Compact overview uses explicit painter classification without shrinking a
         ui:RefreshDetail();assert(ui.overviewArt.width==48 and ui.overviewArt.height==48 and ui.overviewArt.point[2]==147)
         local compactHeight=ui.detail.height
         addon.PaintDungeonArt=function(t)t:SetTexture(123);t:Show();return true,"art"end
-        ui:RefreshDetail();assert(ui.overviewArt.width==148 and ui.overviewArt.height==148 and ui.detail.height==compactHeight+100)
+        ui:RefreshDetail();assert(ui.overviewArt.width==334 and ui.overviewArt.height==334 and ui.overviewArt.point[2]==4 and ui.detail.height==compactHeight+286)
         addon.PaintDungeonArt=function(t)t:SetTexture("legacy");t:Show();return true end
-        ui:RefreshDetail();assert(ui.overviewArt.width==148 and ui.detail.height==compactHeight+100)
+        ui:RefreshDetail();assert(ui.overviewArt.width==334 and ui.detail.height==compactHeight+286)
         addon.PaintDungeonArt=function(t)t:Hide();return false end
         ui:RefreshDetail();assert(not ui.overviewArt.shown and ui.detail.height==compactHeight-56)
     end end
@@ -8283,6 +8283,53 @@ check("Quest-log dispatch cannot close a newer card owner frame button or replac
         assert(calls==1 and f.hidden==0 and f.frame.shown and ui.frame.shown)
         f:finish()
     end
+end)
+
+check("Full-width overview uses a verified painter aspect and reserves matching space through recycled generic and legacy images",function()
+    local paint,quest,dungeon,engine,checker=addon.PaintDungeonArt,ui.quest,ui.dungeon,ui.engine,issecretvalue
+    local target={key="full-overview",name="Overview fixture",minLevel=1,maxLevel=60,quests={}}
+    local kind,aspect="generic",nil;local calls=0;local restricted={}
+    issecretvalue=function(value)if value==restricted then return true end;return checker and checker(value)or false end
+    addon.PaintDungeonArt=function(texture,d,mode)
+        calls=calls+1;assert(d==target and mode=="overview")
+        assert(texture.width==334 and texture.height==334 and texture.point[2]==4,"recycled compact geometry cannot reach the painter")
+        texture:SetTexture("overview");texture:Show();return true,kind,aspect
+    end
+    ui.quest=nil;ui.dungeon=target;ui:RefreshDetail()
+    local compact=ui.detail.height
+    assert(ui.overviewArt.width==48 and ui.overviewArt.height==48)
+    kind,aspect="art",2992/1684;ui:RefreshDetail()
+    local expected=334*1684/2992
+    assert(ui.overviewArt.width==334 and math.abs(ui.overviewArt.height-expected)<.000001 and ui.overviewArt.point[2]==4)
+    assert(math.abs(ui.detail.height-(compact+expected-48))<.000001)
+    for _,invalid in ipairs({0,-1,math.huge,0/0,restricted,false,"1.77",1e-320})do
+        aspect=invalid;ui:RefreshDetail();assert(ui.overviewArt.width==334 and ui.overviewArt.height==334 and ui.detail.height==compact+286)
+    end
+    kind,aspect="generic",2;ui:RefreshDetail()
+    assert(ui.overviewArt.width==48 and ui.overviewArt.height==48 and ui.overviewArt.point[2]==147 and ui.detail.height==compact)
+    kind,aspect="art",2;ui:RefreshDetail()
+    assert(ui.overviewArt.width==334 and ui.overviewArt.height==167 and ui.detail.height==compact+119)
+    kind=nil;ui:RefreshDetail();assert(ui.overviewArt.height==334,"legacy helpers cannot claim a verified aspect without art classification")
+    assert(calls==13)
+    issecretvalue=checker;addon.PaintDungeonArt=paint;ui.quest,ui.dungeon,ui.engine=quest,dungeon,engine;ui:Refresh()
+end)
+check("Superseded overview painting cannot resize a newer compact overview or overwrite its layout space",function()
+    local paint,quest,dungeon,engine=addon.PaintDungeonArt,ui.quest,ui.dungeon,ui.engine
+    local old={key="old-wide",name="Old overview",minLevel=1,maxLevel=60,quests={}}
+    local newer={key="new-compact",name="New overview",minLevel=1,maxLevel=60,quests={}}
+    local armed=true;local freshHeight
+    addon.PaintDungeonArt=function(texture,d,mode)
+        assert(mode=="overview")
+        if d==old and armed then
+            armed=false;ui.dungeon=newer;ui:RefreshDetail();freshHeight=ui.detail.height
+            return true,"art",2
+        end
+        assert(d==newer);texture:SetTexture("new generic");texture:Show();return true,"generic"
+    end
+    ui.quest=nil;ui.dungeon=old;ui:RefreshDetail()
+    assert(not armed and ui.dungeon==newer and ui.overviewArt.texture=="new generic"and ui.overviewArt.width==48 and ui.overviewArt.height==48)
+    assert(ui.overviewArt.point[2]==147 and ui.detail.height==freshHeight)
+    addon.PaintDungeonArt=paint;ui.quest,ui.dungeon,ui.engine=quest,dungeon,engine;ui:Refresh()
 end)
 
 print("Preparation UI modeled checks passed: " .. total .. " (no native layout validation)")

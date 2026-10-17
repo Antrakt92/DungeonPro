@@ -871,10 +871,11 @@ function addon.DungeonArt(d)
 end
 
 local dungeonArtPaints = setmetatable({}, { __mode = "k" })
-function addon.PaintDungeonArt(texture, dungeon)
+function addon.PaintDungeonArt(texture, dungeon, mode)
     local token = {}
     dungeonArtPaints[texture] = token
     local checker = issecretvalue
+    local overview = addon.Clean(mode, "string") == "overview"
     dungeon = addon.Clean(dungeon, "table") or {}
     local art = addon.Clean(dungeon.art, "table")
     local fileID, mapID = art and artInteger(art.fileID), artInteger(dungeon.instanceID)
@@ -923,9 +924,9 @@ function addon.PaintDungeonArt(texture, dungeon)
     end
     local coordinates = addon.Clean(texture.SetTexCoord, "function")
     if coordinates then
-        local inset = type(image) == "number" and 0.18 or 0
+        local inset = not overview and type(image) == "number" and 0.18 or 0
         local left, right, top, bottom = inset, 1 - inset, inset, 1 - inset
-        if image == fileID and artMap and (not mapID or mapID == artMap) and previewWidth and previewHeight then
+        if not overview and image == fileID and artMap and (not mapID or mapID == artMap) and previewWidth and previewHeight then
             local widthGetter = addon.Clean(texture.GetWidth, "function")
             local heightGetter = addon.Clean(texture.GetHeight, "function")
             if widthGetter and heightGetter then
@@ -957,7 +958,9 @@ function addon.PaintDungeonArt(texture, dungeon)
     end
     texture:Show()
     local success = current()
-    return success, success and kind or nil
+    local aspect = overview and kind == "art" and image == fileID and artMap and
+        (not mapID or mapID == artMap) and previewWidth and previewHeight and previewWidth / previewHeight or nil
+    return success, success and kind or nil, success and aspect or nil
 end
 
 local function selectedLogReadScope(id)

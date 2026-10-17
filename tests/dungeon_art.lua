@@ -448,4 +448,44 @@ check("Failed or superseded paints never report a positive kind",function()
     assert(success==false and kind==nil)
 end)
 
+check("Explicit overview paints the complete reviewed texture without changing square thumbnails",function()
+    local dungeon={instanceID=3065,art={fileID=7963781,gameMapID=3065,previewWidth=2992,previewHeight=1684}}
+    local icon=canvas();icon.GetWidth=function()return 44 end;icon.GetHeight=function()return 44 end
+    assert(addon.PaintDungeonArt(icon,dungeon))
+    assert(icon.coords[1]>.18 and icon.coords[3]==.18)
+    icon.GetWidth=function()error("full overview must not inspect target geometry")end;icon.GetHeight=icon.GetWidth
+    local ok,kind,aspect=addon.PaintDungeonArt(icon,dungeon,"overview")
+    assert(ok==true and kind=="art"and aspect==2992/1684)
+    assert(icon.coords[1]==0 and icon.coords[2]==1 and icon.coords[3]==0 and icon.coords[4]==1)
+end)
+check("Overview aspect is optional and belongs only to its accepted matching reviewed image",function()
+    for _,mode in ipairs({"legacy","generic","rejected","mismatch","invalid","restricted"})do
+        local dungeon={instanceID=3065,art={fileID=7963781,gameMapID=3065,previewWidth=2992,previewHeight=1684}}
+        if mode=="legacy"then dungeon.art.previewWidth=nil;dungeon.art.previewHeight=nil
+        elseif mode=="generic"then dungeon={}
+        elseif mode=="mismatch"then dungeon.instanceID=36
+        elseif mode=="invalid"then dungeon.art.previewHeight=0
+        elseif mode=="restricted"then dungeon.art.previewWidth=secret end
+        local icon=canvas()
+        if mode=="rejected"then icon.SetTexture=function(self,value)self.texture=value;return type(value)=="string"end end
+        local ok,kind,aspect=addon.PaintDungeonArt(icon,dungeon,"overview")
+        assert(ok==true and aspect==nil,mode)
+        assert(icon.coords[1]==0 and icon.coords[2]==1 and icon.coords[3]==0 and icon.coords[4]==1,mode)
+        if mode=="generic"or mode=="rejected"then assert(kind=="generic")end
+    end
+end)
+check("Failed and superseded overview paints never publish a positive kind or aspect",function()
+    local dungeon={art={fileID=7963781,gameMapID=3065,previewWidth=2992,previewHeight=1684}}
+    local icon=canvas();icon.SetTexture=function()return false end
+    local ok,kind,aspect=addon.PaintDungeonArt(icon,dungeon,"overview")
+    assert(ok==false and kind==nil and aspect==nil)
+    icon=canvas();local set=icon.SetTexture;local armed=true
+    icon.SetTexture=function(self,value)
+        if armed then armed=false;assert(addon.PaintDungeonArt(self,{},"overview"))end
+        return set(self,value)
+    end
+    ok,kind,aspect=addon.PaintDungeonArt(icon,dungeon,"overview")
+    assert(ok==false and kind==nil and aspect==nil)
+end)
+
 print("Dungeon art checks passed: " .. total)
