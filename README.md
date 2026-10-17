@@ -67,8 +67,9 @@ Level ranges are provisional recommendations.
   reference objectives and do not replace quest-log progress.
 - Sourced creature objectives show the listed targets and any verified counts
   before pickup, separately from live quest-log progress.
-- Other sourced tasks, such as burning remains or an archive, have their own
-  reference section, with live quest-log progress shown separately.
+- Other sourced tasks, including event and discovery objectives or burning
+  remains, share a separate reference section. Event tasks are distinct from
+  kill objectives, and live quest-log progress is shown separately.
 - Items supplied by a quest have their own section. They may already have been
   used or consumed, so an empty bag count does not mean preparation has failed.
   Starter, collection and supplied items can show native icons and hover tooltips;

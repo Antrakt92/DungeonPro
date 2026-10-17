@@ -1023,20 +1023,31 @@ function UI:RefreshDetail()
     self.giver:SetEnabled(false)
     self.giver:SetText(addon.L("VISIT_GIVER"))
     local rewardIndex, objectiveIndex = 0, 0
-    local function line(value, style, reward, objective)
+    local function line(value, style, reward, objective, ownerCurrent)
+        if ownerCurrent and not ownerCurrent() then return false end
+        local function write(object, method, ...)
+            if ownerCurrent and not ownerCurrent() then return false end
+            object[method](object, ...)
+            return not ownerCurrent or ownerCurrent()
+        end
         style = DETAIL_STYLES[style] and style or "body"
         local format = DETAIL_STYLES[style]
         local height = format.minimum
         y = y + (format.before or 0)
         n = n + 1
         local fs = pool[n]
-        if not fs then fs = label(self.detail, "", 4, 0, 334, 13); pool[n] = fs end
+        if not fs then
+            fs = label(self.detail, "", 4, 0, 334, 13)
+            if ownerCurrent and not ownerCurrent() then return false end
+            pool[n] = fs
+        end
         local font = setFont(fs, format.size)
+        if ownerCurrent and not ownerCurrent() then return false end
         if fs.detailStyle ~= style or fs.detailFont ~= font then fs.measuredHeight = nil end
         fs.detailStyle, fs.detailFont = style, font
-        fs:SetTextColor(unpack(format.color))
-        fs:SetWidth(334)
-        fs:ClearAllPoints(); fs:SetPoint("TOPLEFT", 4, -y); fs:SetText(value); fs:Show()
+        if not write(fs, "SetTextColor", unpack(format.color)) or not write(fs, "SetWidth", 334) or
+            not write(fs, "ClearAllPoints") or not write(fs, "SetPoint", "TOPLEFT", 4, -y) or
+            not write(fs, "SetText", value) or not write(fs, "Show") then return false end
         local itemID = reward and addon.Clean(reward.item.id, "number")
         local texture = reward and (addon.Clean(reward.item.texture, "string") or addon.Clean(reward.item.texture, "number"))
         local validTexture = type(texture) == "string" and texture ~= "" and #texture <= 1024 or
@@ -1095,6 +1106,7 @@ function UI:RefreshDetail()
             end
         end
         local measured = measuredHeight(fs, height or 18)
+        if ownerCurrent and not ownerCurrent() then return false end
         y = y + math.max(height or 18, measured) + 8
         return true
     end
@@ -1974,55 +1986,71 @@ function UI:RefreshDetail()
             end
         end
         do
-            local objects, objectChecker = addon.Clean(rawget(q, "objectiveObjects"), "table"), issecretvalue
-            local length = objects and #objects or 0
-            local function objectsCurrent()
-                return portraitCardCurrent() and addon.quests[id] == definition and issecretvalue == objectChecker and
-                    (not objects or (rawget(q, "objectiveObjects") == objects and #objects == length))
+            local factChecker = issecretvalue
+            local roots = { objectiveObjects = rawget(q, "objectiveObjects"), objectiveEvents = rawget(q, "objectiveEvents") }
+            local sources = { { field = "objectiveObjects", identity = "objectID", other = "npcID" },
+                { field = "objectiveEvents", identity = "npcID", other = "objectID" } }
+            local function sectionCurrent()
+                local ok, same = pcall(function()
+                    return portraitCardCurrent() and addon.quests[id] == definition and issecretvalue == factChecker and
+                        rawget(q, "objectiveObjects") == roots.objectiveObjects and rawget(q, "objectiveEvents") == roots.objectiveEvents
+                end)
+                return ok and same == true
             end
-            if not objectsCurrent() then return end
-            local shown, seen = false, {}
-            if length >= 1 and length <= 100 then
-                for index = 1, length do
-                    local entry = addon.Clean(rawget(objects, index), "table")
-                    local objectID = entry and addon.Clean(rawget(entry, "objectID"), "number")
-                    local name = entry and addon.Clean(rawget(entry, "name"), "string")
-                    local rawQuantity = entry and rawget(entry, "quantity")
-                    local quantityReadable = true
-                    if type(objectChecker) == "function" then
-                        local ok, restricted = pcall(objectChecker, rawQuantity)
-                        quantityReadable = ok and addon.Clean(restricted, "boolean") == false
-                    end
-                    local unknown = quantityReadable and rawQuantity == nil
-                    local quantity = quantityReadable and addon.Clean(rawQuantity, "number")
-                    if not objectsCurrent() then return end
-                    if objectID and objectID > 0 and objectID <= 4294967295 and objectID % 1 == 0 and
-                        name and #name <= 500 and name:find("%S") and not seen[objectID] and
-                        (unknown or (quantity and quantity > 0 and quantity <= 9007199254740991 and quantity % 1 == 0)) then
-                        local function entryCurrent()
-                            if not objectsCurrent() then return false end
-                            local ok, same = pcall(function()
-                                return portraitCardCurrent() and addon.quests[id] == definition and issecretvalue == objectChecker and
-                                    rawget(q, "objectiveObjects") == objects and #objects == length and rawget(objects, index) == entry and
-                                    rawget(entry, "objectID") == objectID and rawget(entry, "name") == name and
-                                    rawget(entry, "quantity") == rawQuantity and rawget(entry, "itemID") == nil and rawget(entry, "npcID") == nil
-                            end)
-                            return ok and same == true
+            for _, source in ipairs(sources) do
+                source.rows = addon.Clean(roots[source.field], "table")
+                source.length = source.rows and #source.rows or 0
+                if not sectionCurrent() then return end
+            end
+            local function listsCurrent()
+                if not sectionCurrent() then return false end
+                for _, source in ipairs(sources) do
+                    if source.rows and #source.rows ~= source.length then return false end
+                end
+                return true
+            end
+            local shown = false
+            for _, source in ipairs(sources) do
+                local rows, length, seen = source.rows, source.length, {}
+                if length >= 1 and length <= 100 then
+                    for index = 1, length do
+                        local entry = addon.Clean(rawget(rows, index), "table")
+                        local identity = entry and addon.Clean(rawget(entry, source.identity), "number")
+                        local name = entry and addon.Clean(rawget(entry, "name"), "string")
+                        local rawQuantity = entry and rawget(entry, "quantity")
+                        local quantityReadable = true
+                        if type(factChecker) == "function" then
+                            local ok, restricted = pcall(factChecker, rawQuantity)
+                            quantityReadable = ok and addon.Clean(restricted, "boolean") == false
                         end
-                        if entryCurrent() then
-                            local heading, notice = addon.L("OBJECTIVE_OBJECTS"), addon.L("OBJECTIVE_OBJECTS_NOTICE")
-                            local text = unknown and addon.L("OBJECTIVE_ITEM_UNKNOWN", name) or addon.L("OBJECTIVE_ITEM", name, quantity)
-                            if not entryCurrent() then return end
-                            seen[objectID] = true
-                            if not shown then
-                                line(heading, "section")
-                                if not entryCurrent() then return end
-                                line(notice); shown = true
-                                if not entryCurrent() then return end
+                        local unknown = quantityReadable and rawQuantity == nil
+                        local quantity = quantityReadable and addon.Clean(rawQuantity, "number")
+                        if not listsCurrent() then return end
+                        if identity and identity > 0 and identity <= 4294967295 and identity % 1 == 0 and
+                            name and #name <= 500 and name:find("%S") and not seen[identity] and
+                            (unknown or (quantity and quantity > 0 and quantity <= 9007199254740991 and quantity % 1 == 0)) then
+                            local function entryCurrent()
+                                if not listsCurrent() then return false end
+                                local ok, same = pcall(function()
+                                    return sectionCurrent() and rawget(rows, index) == entry and rawget(entry, source.identity) == identity and
+                                        rawget(entry, "name") == name and rawget(entry, "quantity") == rawQuantity and
+                                        rawget(entry, "itemID") == nil and rawget(entry, source.other) == nil
+                                end)
+                                return ok and same == true
                             end
-                            line(text)
-                            if not entryCurrent() then return end
-                        elseif not objectsCurrent() then return end
+                            if entryCurrent() then
+                                local heading, notice = addon.L("OBJECTIVE_OBJECTS"), addon.L("OBJECTIVE_OBJECTS_NOTICE")
+                                local text = unknown and addon.L("OBJECTIVE_ITEM_UNKNOWN", name) or addon.L("OBJECTIVE_ITEM", name, quantity)
+                                if not entryCurrent() then return end
+                                seen[identity] = true
+                                if not shown then
+                                    if line(heading, "section", nil, nil, entryCurrent) == false or
+                                        line(notice, nil, nil, nil, entryCurrent) == false then return end
+                                    shown = true
+                                end
+                                if line(text, nil, nil, nil, entryCurrent) == false then return end
+                            elseif not listsCurrent() then return end
+                        end
                     end
                 end
             end

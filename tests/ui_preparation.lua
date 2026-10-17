@@ -5785,4 +5785,136 @@ check("Single starter-item destination hydration preserves new and same-card sou
         addon.ItemName=names;f:finish()
     end
 end)
+local function eventObjectivesFixture()
+    local f=objectObjectivesFixture();local q=addon.quests[9970]
+    q.objectiveObjects=nil;q.objectiveEvents={{npcID=262681,name="Learn what happened to Ardin Grassman"}}
+    ui:RefreshDetail();return f,q
+end
+local function detailOccurrences(value)
+    local count=0;for _,fs in ipairs(ui.details)do if fs.shown and fs.text==value then count=count+1 end end;return count
+end
+check("Event credit labels share neutral objectives without becoming slain NPC names item counts portraits or navigation",function()
+    local f,q=eventObjectivesFixture()
+    assert(detailOccurrences(addon.L("OBJECTIVE_OBJECTS"))==1 and detailOccurrences(addon.L("OBJECTIVE_OBJECTS_NOTICE"))==1)
+    assert(detailHas(addon.L("OBJECTIVE_ITEM_UNKNOWN",q.objectiveEvents[1].name)) and q.objectiveEvents[1].quantity==nil)
+    assert(not detailHas(addon.L("OBJECTIVE_KILLS")) and not detailHas(addon.L("OBJECTIVE_ITEMS")))
+    assert(detailHas(addon.L("OBJECTIVE_PROGRESS")) and detailHas("|cff88bfffNative objective 0/1|r"))
+    assert(not q.finish and ui.engine:State(9970).status=="UNKNOWN" and not ui.action)
+    assert(f.api.name==0 and f.api.icon==0 and f.api.count==0 and f.api.navigation==0)
+    f:finish()
+end)
+check("Mixed object and event namespaces retain independent same-number facts one heading and native progress",function()
+    local f,q=eventObjectivesFixture()
+    q.objectiveObjects={{objectID=777,name="Object task",quantity=2}}
+    q.objectiveEvents={{npcID=777,name="Event task"},{npcID=777,name="Duplicate event"}}
+    q.objectiveKills={{npcID=777,name="Separate slain row",quantity=3}}
+    q.objectiveItems={{itemID=777,name="Real item",quantity=4}}
+    ui:RefreshDetail()
+    assert(detailOccurrences(addon.L("OBJECTIVE_OBJECTS"))==1 and detailOccurrences(addon.L("OBJECTIVE_OBJECTS_NOTICE"))==1)
+    assert(detailHas(addon.L("OBJECTIVE_ITEM","Object task",2)) and detailHas(addon.L("OBJECTIVE_ITEM_UNKNOWN","Event task")))
+    assert(not detailHas(addon.L("OBJECTIVE_ITEM_UNKNOWN","Duplicate event")))
+    assert(detailSectionY(addon.L("OBJECTIVE_ITEM","Object task",2))<detailSectionY(addon.L("OBJECTIVE_ITEM_UNKNOWN","Event task")))
+    assert(detailHas(addon.L("OBJECTIVE_ITEM","Separate slain row",3)) and detailHas(addon.L("OBJECTIVE_ITEM","Native item 777",4)))
+    assert(detailHas(addon.L("ITEM_CARRIED",0)) and f.api.name==1 and f.api.icon==1 and f.api.count==1 and f.api.navigation==0)
+    assert(detailHas("|cff88bfffNative objective 0/1|r") and ui.engine:State(9970).status=="UNKNOWN")
+    f:finish()
+end)
+check("Event labels validate absent-only quantities uint32 identities bounded UTF8 text and typed containers",function()
+    local f,q=eventObjectivesFixture();local checker=issecretvalue;local secret={};issecretvalue=function(v)return v==secret end
+    for _,entry in ipairs({{objectID=1,name="Wrong object"},{itemID=1,name="Wrong item"},{npcID=1,objectID=2,name="Mixed"},
+        {npcID=1,itemID=2,name="Mixed"},{npcID=0,name="Bad"},{npcID=-1,name="Bad"},{npcID=1.5,name="Bad"},
+        {npcID=4294967296,name="Bad"},{npcID="1",name="Bad"},{npcID=secret,name="Bad"},{npcID=1},
+        {npcID=1,name=" "},{npcID=1,name=secret},{npcID=1,name=string.rep("x",501)},{npcID=1,name=string.rep("中",167)}})do
+        q.objectiveEvents={entry};ui:RefreshDetail();assert(not detailHas(addon.L("OBJECTIVE_OBJECTS")))
+    end
+    for _,quantity in ipairs({false,true,0,-1,1.5,"1",{},secret,math.huge,0/0,9007199254740992})do
+        q.objectiveEvents={{npcID=1,name="Invalid amount",quantity=quantity}};ui:RefreshDetail();assert(not detailHas(addon.L("OBJECTIVE_OBJECTS")))
+    end
+    for _,rows in ipairs({false,"bad",{}, {false}})do q.objectiveEvents=rows;ui:RefreshDetail();assert(not detailHas(addon.L("OBJECTIVE_OBJECTS")))end
+    local rows={};for index=1,101 do rows[index]={npcID=index,name="Bounded event"}end
+    q.objectiveEvents=rows;ui:RefreshDetail();assert(not detailHas(addon.L("OBJECTIVE_OBJECTS")))
+    q.objectiveEvents={{npcID=4294967295,name=string.rep("中",166),quantity=9007199254740991}};ui:RefreshDetail()
+    assert(detailHas(addon.L("OBJECTIVE_ITEM",q.objectiveEvents[1].name,9007199254740991)))
+    issecretvalue=checker;f:finish()
+end)
+check("Event-only and mixed factual goals translate reuse one section and disappear with source or card",function()
+    local f,q=eventObjectivesFixture();local locale=addon.db.locale
+    for code in pairs(addon.locales)do
+        addon.db.locale=code;q.objectiveObjects={};q.objectiveEvents={{npcID=1,name="Task"}};ui:RefreshDetail()
+        assert(detailOccurrences(addon.L("OBJECTIVE_OBJECTS"))==1 and detailHas(addon.L("OBJECTIVE_ITEM_UNKNOWN","Task")))
+        q.objectiveObjects={{objectID=1,name="Object"}};q.objectiveEvents[1].quantity=2;ui:RefreshDetail()
+        assert(detailOccurrences(addon.L("OBJECTIVE_OBJECTS"))==1 and detailHas(addon.L("OBJECTIVE_ITEM","Task",2)))
+        q.objectiveObjects=nil;q.objectiveEvents=nil;ui:RefreshDetail();assert(not detailHas(addon.L("OBJECTIVE_OBJECTS")))
+    end
+    q.objectiveEvents={{npcID=1,name="Old task"}};ui:RefreshDetail();ui:InspectQuest(9971)
+    assert(not detailHas(addon.L("OBJECTIVE_ITEM_UNKNOWN","Old task")) and not detailHas(addon.L("OBJECTIVE_OBJECTS")))
+    addon.db.locale=locale;f:finish()
+end)
+check("Event sanitizer and source member mutation cannot publish old labels across new or same-card generations",function()
+    for _,sameCard in ipairs({false,true})do
+        local f,q=eventObjectivesFixture();local checker=issecretvalue;local armed=true
+        q.objectiveEvents={{npcID=123456789,name="Old event",quantity=6}}
+        issecretvalue=function(value)
+            if armed and value==123456789 then
+                armed=false
+                if sameCard then q.objectiveEvents={{npcID=8,name="Fresh event"}};ui:RefreshDetail()else ui:InspectQuest(9971)end
+            end
+            return false
+        end
+        ui:RefreshDetail();assert(not armed and ui.quest==(sameCard and 9970 or 9971))
+        assert(not detailHas(addon.L("OBJECTIVE_ITEM","Old event",6)))
+        if sameCard then assert(detailHas(addon.L("OBJECTIVE_ITEM_UNKNOWN","Fresh event")))end
+        issecretvalue=checker;f:finish()
+    end
+    local f,q=eventObjectivesFixture();local checker=issecretvalue;local armed=true
+    local entry={npcID=262681,name="Old task",quantity=6};q.objectiveEvents={entry}
+    issecretvalue=function(value)if armed and value==6 then armed=false;entry.name="Changed task"end;return false end
+    ui:RefreshDetail();assert(not detailHas(addon.L("OBJECTIVE_ITEM","Old task",6)))
+    issecretvalue=checker;ui:RefreshDetail();assert(detailHas(addon.L("OBJECTIVE_ITEM","Changed task",6)))
+    f:finish()
+end)
+check("Cross-source event root and list mutations invalidate object publication before either source proceeds",function()
+    for _,mode in ipairs({"replace","append"})do
+        local f,q=eventObjectivesFixture();local checker=issecretvalue;local armed=true
+        q.objectiveObjects={{objectID=123456789,name="Old object",quantity=6}}
+        issecretvalue=function(value)
+            if armed and value==123456789 then
+                armed=false
+                if mode=="replace"then q.objectiveEvents={{npcID=8,name="New event"}}
+                else q.objectiveEvents[2]={npcID=8,name="New event"}end
+            end
+            return false
+        end
+        ui:RefreshDetail();assert(not armed and not detailHas(addon.L("OBJECTIVE_ITEM","Old object",6)))
+        issecretvalue=checker;ui:RefreshDetail();assert(detailHas(addon.L("OBJECTIVE_ITEM_UNKNOWN","New event")))
+        assert(detailOccurrences(addon.L("OBJECTIVE_OBJECTS"))==1)
+        f:finish()
+    end
+end)
+check("Factual goal FontString setters preserve replacement event cards and independent live progress during native publication",function()
+    for _,sameCard in ipairs({false,true})do
+        local f,q=eventObjectivesFixture();local old=addon.L("OBJECTIVE_ITEM_UNKNOWN",q.objectiveEvents[1].name)
+        local row=objectiveText(old);assert(row);local setter=row.SetText;local armed=true
+        row.SetText=function(self,value)
+            setter(self,value)
+            if armed and value==old then
+                armed=false
+                if sameCard then q.objectiveEvents={{npcID=8,name="Current task"}};ui:RefreshDetail()else ui:InspectQuest(9971)end
+            end
+        end
+        ui:RefreshDetail();assert(not armed and ui.quest==(sameCard and 9970 or 9971))
+        assert(not detailHas(old) and detailHas("|cff88bfffNative objective 0/1|r"))
+        if sameCard then assert(detailHas(addon.L("OBJECTIVE_ITEM_UNKNOWN","Current task")))end
+        row.SetText=setter;f:finish()
+    end
+end)
+check("Actual95647 event pilot uses its factual task label and has no inferred quantity or canonical NPC data",function()
+    local f,q=eventObjectivesFixture();local actual={};assert(loadfile("Database/Catalog.lua"))("DungeonPro",actual)
+    q.objectiveEvents=actual.quests[95647].objectiveEvents
+    assert(#q.objectiveEvents==1 and q.objectiveEvents[1].npcID==262681 and q.objectiveEvents[1].quantity==nil)
+    ui:RefreshDetail();assert(detailHas(addon.L("OBJECTIVE_ITEM_UNKNOWN","Learn what happened to Ardin Grassman")))
+    assert(f.api.name==0 and f.api.icon==0 and f.api.count==0 and f.api.navigation==0)
+    assert(ui.engine:State(9970).status=="UNKNOWN" and not ui.action)
+    f:finish()
+end)
 print("Preparation UI modeled checks passed: " .. total .. " (no native layout validation)")
