@@ -1385,8 +1385,35 @@ function UI:RefreshDetail()
                 end) or not write(control, "Show") then return end
             y = y + height + 8
         end
-        local minimum = addon.Clean(q.minLevel, "number")
-        if minimum and minimum > 0 and minimum % 1 == 0 then line(addon.L("QUEST_MIN_LEVEL", minimum)) end
+        local metadataDB, metadataLocalize = addon.db, addon.L
+        local metadataLocale = metadataDB and rawget(metadataDB, "locale")
+        local minimum = addon.Clean(rawget(q, "minLevel"), "number")
+        local questLevel = addon.Clean(rawget(q, "level"), "number")
+        if not (questLevel and questLevel > 0 and questLevel <= 9007199254740991 and questLevel % 1 == 0) then questLevel = nil end
+        if not (minimum and minimum > 0 and minimum % 1 == 0) then minimum = nil end
+        local function metadataCurrent()
+            local ok, same = pcall(function()
+                return portraitCardCurrent() and addon.quests[id] == q and addon.L == metadataLocalize and
+                    addon.db == metadataDB and (not metadataDB or rawget(metadataDB, "locale") == metadataLocale) and
+                    (not questLevel or rawget(q, "level") == questLevel) and (not minimum or rawget(q, "minLevel") == minimum)
+            end)
+            return ok and same == true
+        end
+        if minimum or questLevel then
+            if not metadataCurrent() then return end
+            local metadataParts = {}
+            if questLevel then
+                local value = addon.Read(metadataLocalize, "string", "QUEST_LEVEL", questLevel)
+                if value and value:find("%S") then metadataParts[#metadataParts + 1] = value end
+            end
+            if not metadataCurrent() then return end
+            if minimum then
+                local value = addon.Read(metadataLocalize, "string", "QUEST_MIN_LEVEL", minimum)
+                if value and value:find("%S") then metadataParts[#metadataParts + 1] = value end
+            end
+            if not metadataCurrent() then return end
+            if #metadataParts > 0 and line(table.concat(metadataParts, " · "), nil, nil, nil, metadataCurrent) == false then return end
+        end
         local factions = audienceLabel({ factions = q.factions }, function()
             return self.quest == renderQuest and self.dungeon == renderDungeon and self.rewardGeneration == rewardGeneration and addon.char == renderCharacter
         end)

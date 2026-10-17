@@ -7205,4 +7205,64 @@ check("Completion portrait clearing its anchor preserves a newer card and its so
     assert(detailHas(addon.L("GIVER_REFERENCE_PORTRAIT","Reference Two")))
     addon.DialogueTurnInPortrait=previous;f:finish()
 end)
+local function questLevelFixture(id)
+    local corpus={};assert(loadfile("Database/Catalog.lua"))("DungeonPro",corpus)
+    local old=addon.quests[id];local original=corpus.quests[id];local q={}
+    for key,value in pairs(original)do q[key]=value end
+    addon.quests[id]=q
+    local f={context={level=60,faction=(q.factions or{})[1]or"Alliance",class="WARRIOR",race=2,
+        completed=function()return false end,active=function()return false end}}
+    function f:refresh()showDetail(id,self.context)end
+    function f:finish()measurement=nil;addon.quests[id]=old end
+    f.expectedStatus=addon.Planner.New(addon.quests,f.context):State(id).status
+    f:refresh();return f,q
+end
+check("actual quest level stays distinct from minimum level without changing status or twelve sources",function()
+    for _,id in ipairs({5724,2933})do
+        local f,q=questLevelFixture(id);local status=ui.engine:State(id).status
+        local metadata=addon.L("QUEST_LEVEL",q.level).." · "..addon.L("QUEST_MIN_LEVEL",q.minLevel)
+        assert(detailHas(metadata)and detailOccurrences(metadata)==1)
+        assert(ui.engine:State(id).status==status and status==f.expectedStatus)
+        if id==2933 then local count=0;for _,b in ipairs(ui.startButtons)do if b.shown then count=count+1 end end;assert(count==12)end
+        f:finish()
+    end
+end)
+check("absent zero negative invalid or restricted recorded level keeps known minimum without guessing",function()
+    local f,q=questLevelFixture(5724);local checker=issecretvalue;local secretLevel={}
+    issecretvalue=function(v)return v==secretLevel end
+    for _,value in ipairs({0,-1,false,"16",16.5,math.huge,secretLevel})do
+        q.level=value;f:refresh();assert(detailHas(addon.L("QUEST_MIN_LEVEL",9))and not detailHas(addon.L("QUEST_LEVEL",16)))
+        assert(ui.engine:State(5724).status==f.expectedStatus)
+    end
+    q.level=nil;f:refresh();assert(detailHas(addon.L("QUEST_MIN_LEVEL",9)))
+    -- Missing minimum is outside the Planner schema; exercise only the display boundary with a read-only unknown state.
+    q.level=16;q.minLevel=nil
+    ui.engine={context=f.context,State=function()return{status="UNKNOWN"}end,Next=function()return{},false end}
+    ui:RefreshDetail();assert(detailHas(addon.L("QUEST_LEVEL",16))and not detailHas(addon.L("QUEST_MIN_LEVEL",9)))
+    issecretvalue=checker;f:finish()
+end)
+check("recorded level and minimum wrap in ten locales at the existing readable body size and recycle",function()
+    local f,q=questLevelFixture(5724);local locale=addon.db.locale
+    measurement=function(fs)return fs.text:find(" · ",1,true)and 54 or 18 end
+    for code in pairs(addon.locales)do addon.db.locale=code;f:refresh()
+        local value=addon.L("QUEST_LEVEL",16).." · "..addon.L("QUEST_MIN_LEVEL",9);local found=false
+        for _,fs in ipairs(ui.details)do if fs.shown and fs.text==value then found=true;assert(fs.fontSize==14 and fs.measuredHeight==54)end end
+        assert(found)
+    end
+    q.level=nil;f:refresh();assert(not detailHas(addon.L("QUEST_LEVEL",16)))
+    addon.db.locale=locale;f:finish()
+end)
+check("level localization replacing a quest cannot write the old metadata over a new card",function()
+    local f=questLevelFixture(5724);local q=addon.quests[5724];local L=addon.L;local armed=true
+    local old=addon.quests[99001];addon.quests[99001]={id=99001,name="New metadata card",level=30,minLevel=20,requires={},requirementsKnown=false}
+    addon.L=function(key,...)
+        local value=L(key,...)
+        if armed and key=="QUEST_LEVEL"then armed=false;showDetail(99001,f.context)end
+        return value
+    end
+    f:refresh();assert(not armed and ui.quest==99001 and not detailHas(L("QUEST_LEVEL",q.level)))
+    assert(detailHas(L("QUEST_LEVEL",30).." · "..L("QUEST_MIN_LEVEL",20)))
+    addon.L=L;addon.quests[99001]=old;f:finish()
+end)
+
 print("Preparation UI modeled checks passed: " .. total .. " (no native layout validation)")

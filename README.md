@@ -30,7 +30,8 @@ Level ranges are provisional recommendations.
 - Character-specific completed, active, ready-to-turn-in, available, locked and
   unknown quest states, with explanations for level gates, missing prerequisites,
   character restrictions and unverified data.
-  Detail cards show the recorded minimum level and any listed class/race limits.
+  Detail cards distinguish the recorded quest level from its minimum pickup level,
+  and show any listed class/race limits. Level alone does not confirm availability.
   Quests in progress and ready to turn in use familiar quest icons when available.
 - Recursive prerequisite planning where acceptance conditions are verified;
   unverified chains remain available for inspection.

@@ -861,7 +861,7 @@ check("All-character inspection explains actual paladin race and level limits wi
     end
     local pins = #waypoints
     ui.includeUnavailable = true; ui:InspectQuest(7647); ui:Refresh()
-    assert(shown(addon.L("QUEST_MIN_LEVEL", 60)))
+    assert(shown(addon.L("QUEST_LEVEL", 60) .. " · " .. addon.L("QUEST_MIN_LEVEL", 60)))
     assert(shown(addon.L("QUEST_CLASSES", "Native Paladin")))
     assert(shown(addon.L("QUEST_RACES", "Native Human, Native Dwarf")))
     assert(ui.engine:State(7647).status == "UNAVAILABLE" and not ui.action and #waypoints == pins)
