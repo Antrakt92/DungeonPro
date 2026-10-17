@@ -7761,4 +7761,38 @@ check("Source scan rejects replaced members before calling their source helper",
     end
 end)
 
+check("Main close styling is optional and preserves native close tooltip geometry Escape registration and reopening",function()
+    for _,mode in ipairs({"style","false","throw","missing"})do
+        local fresh={};for key,value in pairs(addon)do fresh[key]=value end
+        fresh.listeners={};local calls,tooltip=0,0;local close,nativeClick,nativeEnter
+        fresh.Theme={}
+        if mode~="missing"then fresh.Theme.StyleCloseButton=function(button)
+            calls=calls+1;assert(button==close and button.scripts.OnClick==nativeClick and button.scripts.OnEnter==nativeEnter)
+            assert(button.point[1]=="TOPRIGHT"and button.point[2]==-4 and button.point[3]==-4)
+            if mode=="throw"then error("optional style unavailable")end
+            return mode=="style"
+        end end
+        local create,global,specialCount=CreateFrame,_G.DungeonProWindow,#UISpecialFrames
+        CreateFrame=function(kind,name,parent,template)
+            local result=create(kind,name,parent,template)
+            if template=="UIPanelCloseButton"then
+                close=result;nativeClick=function()parent:Hide()end;nativeEnter=function()tooltip=tooltip+1 end
+                result:SetScript("OnClick",nativeClick);result:SetScript("OnEnter",nativeEnter)
+            end
+            return result
+        end
+        assert(loadfile("UI/Window.lua"))("DungeonPro",fresh);fresh.UI:Create();CreateFrame=create
+        local current=fresh.UI;current.search="retained close query";current.quest=ui.quest;current.dungeon=ui.dungeon
+        local selected,dungeon=current.quest,current.dungeon
+        assert(calls==(mode=="missing"and 0 or 1)and close.scripts.OnClick==nativeClick and close.scripts.OnEnter==nativeEnter)
+        assert(UISpecialFrames[#UISpecialFrames]=="DungeonProWindow")
+        close.scripts.OnEnter();assert(tooltip==1)
+        current.frame:Show();close.scripts.OnClick();assert(not current.frame.shown)
+        current:Toggle();current:Refresh()
+        assert(current.frame.shown and current.search=="retained close query"and current.quest==selected and current.dungeon==dungeon)
+        _G.DungeonProWindow=global
+        for index=#UISpecialFrames,specialCount+1,-1 do UISpecialFrames[index]=nil end
+    end
+end)
+
 print("Preparation UI modeled checks passed: " .. total .. " (no native layout validation)")

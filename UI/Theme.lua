@@ -189,6 +189,70 @@ function Theme.StyleButtonFonts(button)
     return true
 end
 
+local closeButtons = setmetatable({}, { __mode = "k" })
+
+function Theme.StyleCloseButton(button)
+    button = cleanObject(button)
+    if not button then return false end
+    local state = closeButtons[button]
+    if state then return state.active == true end
+    state = {}; closeButtons[button] = state
+    local hook = addon.Read(function() return button.HookScript end, "function")
+    local enabled = addon.Read(function() return button:IsEnabled() end, "boolean")
+    if not hook or enabled == nil then return false end
+    local originals, alphas = {}, {}
+    for _, key in ipairs({ "Normal", "Pushed", "Disabled", "Highlight" }) do
+        local original = objectResult(button, "Get" .. key .. "Texture")
+        local alpha = original and addon.Read(function() return original:GetAlpha() end, "number")
+        if not original or alpha == nil or alpha < 0 or alpha > 1 or not addon.Read(function() return original.SetAlpha end, "function") then return false end
+        originals[key], alphas[key] = original, alpha
+    end
+    local background = texture(button, "BACKGROUND")
+    local glyph = objectResult(button, "CreateFontString", nil, "OVERLAY")
+    if background and not invoke(background, "Hide") then return false end
+    if glyph and not invoke(glyph, "Hide") then return false end
+    if not background or not glyph or not Theme.ApplyFont(glyph, 20) or
+        not invoke(background, "SetAllPoints", button) or not color(background, palette.panel) or
+        not invoke(glyph, "SetAllPoints", button) or not invoke(glyph, "SetJustifyH", "CENTER") or
+        not invoke(glyph, "SetJustifyV", "MIDDLE") or not invoke(glyph, "SetText", "×") or
+        not invoke(glyph, "SetTextColor", unpack(palette.muted)) then return false end
+    state.background, state.glyph = background, glyph
+    local function refresh()
+        if not state.active then return end
+        local on = addon.Read(function() return button:IsEnabled() end, "boolean") == true
+        color(background, on and (state.pressed and palette.selected or state.hover and palette.row or palette.panel) or palette.panel)
+        invoke(glyph, "SetTextColor", unpack(on and (state.hover and palette.text or palette.muted) or palette.quiet))
+        invoke(glyph, "SetAlpha", on and 1 or 0.45)
+    end
+    state.refresh = refresh
+    for _, event in ipairs({ "OnEnter", "OnLeave", "OnMouseDown", "OnMouseUp", "OnHide", "OnEnable", "OnDisable" }) do
+        local name = event
+        local ok, installed = pcall(hook, button, name, function()
+            if name == "OnEnter" then state.hover = true end
+            if name == "OnLeave" or name == "OnHide" or name == "OnDisable" then state.hover, state.pressed = false, false end
+            if name == "OnMouseDown" then state.pressed = true end
+            if name == "OnMouseUp" then state.pressed = false end
+            refresh()
+        end)
+        if not ok or addon.Clean(installed, "boolean") ~= true then return false end
+    end
+    for key, original in pairs(originals) do
+        if not invoke(original, "SetAlpha", 0) then
+            for field, previous in pairs(originals) do invoke(previous, "SetAlpha", alphas[field]) end
+            return false
+        end
+    end
+    state.active = true
+    refresh()
+    if not invoke(background, "Show") or not invoke(glyph, "Show") then
+        state.active = nil
+        invoke(background, "Hide"); invoke(glyph, "Hide")
+        for field, previous in pairs(originals) do invoke(previous, "SetAlpha", alphas[field]) end
+        return false
+    end
+    return true
+end
+
 function Theme.RefreshFonts()
     local context, creator = fontContext(), addon.Clean(CreateFont, "function")
     for region, previous in pairs(fontRegions) do
@@ -199,6 +263,9 @@ function Theme.RefreshFonts()
     end
     for button, previous in pairs(styledButtons) do
         if previous.key ~= context.key or previous.family ~= context.family or previous.creator ~= creator then Theme.StyleButtonFonts(button) end
+    end
+    for _, state in pairs(closeButtons) do
+        if state.active then invoke(state.glyph, "SetText", "×"); state.refresh() end
     end
 end
 

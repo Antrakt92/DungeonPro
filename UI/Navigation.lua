@@ -496,6 +496,7 @@ function N.Start(action)
         end
         local close = CreateFrame("Button", nil, frame, "UIPanelCloseButton")
         close:SetSize(22, 22); close:SetPoint("TOPRIGHT"); close:SetScript("OnClick", N.Stop)
+        if theme then addon.Read(theme.StyleCloseButton, "boolean", close) end
         frame:SetScript("OnUpdate", update)
     end
     if not current() then return false end

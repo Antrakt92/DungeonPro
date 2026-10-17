@@ -444,4 +444,90 @@ test("repeated locale selections allocate only two actual source caches while pr
     f.finish()
 end)
 
+local function closeFixture()
+    local b=region();b.normal,b.pushed,b.disabled,b.highlight=region(),region(),region(),region()
+    for _,r in ipairs({b.normal,b.pushed,b.disabled,b.highlight})do r.alpha=1 end
+    b.enabled=true;b.fontStrings={};b.hooks={}
+    b.IsEnabled=function(self)return self.enabled end
+    b.HookScript=function(self,event,fn)self.hooks[event]=self.hooks[event]or{};table.insert(self.hooks[event],fn);return true end
+    b.CreateFontString=function(self)local r=region();self.fontStrings[#self.fontStrings+1]=r;return r end
+    b.fire=function(self,event,...)
+        if self.scripts[event]then self.scripts[event](self,...)end
+        for _,fn in ipairs(self.hooks[event]or{})do fn(self,...)end
+    end
+    return b
+end
+methods.GetAlpha=function(self)return self.alpha or 1 end
+methods.SetText=function(self,v)self.text=v end
+methods.SetJustifyH=function(self,v)self.halign=v end
+methods.SetJustifyV=function(self,v)self.valign=v end
+methods.SetFontObject=function(self,f)self.family=f end
+methods.SetFontHeight=function(self,n)self.fontHeight=n end
+ChatFontNormal={}
+test("Close glyph preserves native handlers with distinct hover press and disabled states",function()
+    local b=closeFixture();local click,tooltip=0,0
+    b.scripts.OnClick=function()click=click+1 end;b.scripts.OnEnter=function()tooltip=tooltip+1 end
+    local beforeClick,beforeEnter=b.scripts.OnClick,b.scripts.OnEnter
+    assert(addon.Theme.StyleCloseButton(b))
+    local bg,g=b.textures[1],b.fontStrings[1]
+    assert(g.text=="×"and g.fontHeight==20 and g.halign=="CENTER"and g.valign=="MIDDLE"and bg.shown and g.shown)
+    assert(b.normal.alpha==0 and b.pushed.alpha==0 and b.disabled.alpha==0 and b.highlight.alpha==0)
+    local neutral=bg.color[1];b:fire("OnEnter");assert(tooltip==1 and bg.color[1]>neutral)
+    local hover=bg.color[1];b:fire("OnMouseDown");assert(bg.color[1]>hover)
+    b:fire("OnMouseUp");assert(bg.color[1]==hover)
+    b:fire("OnClick");assert(click==1 and b.scripts.OnClick==beforeClick and b.scripts.OnEnter==beforeEnter)
+    b.enabled=false;b:fire("OnDisable");assert(g.alpha<1)
+    b.enabled=true;b:fire("OnEnable");assert(g.alpha==1)
+    b:fire("OnLeave");assert(bg.color[1]==neutral)
+    local count=#b.textures
+    for _=1,100 do assert(addon.Theme.StyleCloseButton(b));addon.Theme.RefreshFonts()end
+    assert(#b.textures==count and #b.fontStrings==1)
+    local hooks=0;for _,list in pairs(b.hooks)do hooks=hooks+#list end;assert(hooks==7)
+end)
+test("Close optional capability and partial setup failures retain native close",function()
+    for _,kind in ipairs({"hook","partialhook","texture","font","alpha","badalpha","creation","show"})do
+        local b=closeFixture();local clicks=0;b.scripts.OnClick=function()clicks=clicks+1 end
+        if kind=="hook"then b.HookScript=false
+        elseif kind=="partialhook"then local previous=b.HookScript;b.HookScript=function(self,event,fn)if event=="OnMouseUp"then return false end;return previous(self,event,fn)end
+        elseif kind=="badalpha"then b.normal.GetAlpha=function()return -1 end
+        elseif kind=="texture"then b.GetHighlightTexture=false
+        elseif kind=="font"then b.CreateFontString=function(self)local r=region();r.SetFontObject=false;r.SetFontHeight=false;self.fontStrings[#self.fontStrings+1]=r;return r end
+        elseif kind=="alpha"then b.pushed.SetAlpha=function()error("alpha fail")end
+        elseif kind=="creation"then b.CreateFontString=function()error("no font")end
+        else b.CreateFontString=function(self)local r=region();r.Show=function()error("show failed")end;self.fontStrings[#self.fontStrings+1]=r;return r end end
+        assert(not addon.Theme.StyleCloseButton(b),kind)
+        assert(b.normal.alpha==1 and b.pushed.alpha==1 and b.disabled.alpha==1 and b.highlight.alpha==1,kind.." native alpha")
+        local n=#b.textures+#b.fontStrings
+        for _=1,50 do assert(not addon.Theme.StyleCloseButton(b))end
+        assert(#b.textures+#b.fontStrings==n,kind.." allocation")
+        b:fire("OnClick");assert(clicks==1)
+    end
+end)
+test("Close font refresh repaints glyph after native context changes",function()
+    local b=closeFixture();assert(addon.Theme.StyleCloseButton(b));local g=b.fontStrings[1]
+    local previous=g.SetFontObject
+    g.SetFontObject=function(self,f)self.text="";previous(self,f)end
+    ChatFontNormal={};addon.Theme.RefreshFonts();assert(g.text=="×")
+end)
+
+test("Close setup cannot paint visible optional regions when their initial Hide fails",function()
+ for _,kind in ipairs({"glyph","background"})do
+  local b=closeFixture();local created
+  b.CreateFontString=function(self)
+   local r=region();r.shown=true;r.text=""
+   if kind=="glyph"then r.Hide=function()error("initial hide unavailable")end end
+   self.fontStrings[#self.fontStrings+1]=r;created=r;return r
+  end
+  if kind=="background"then b.CreateTexture=function(self)
+   local r=region();r.shown=true;r.Hide=function()error("initial hide unavailable")end
+   self.textures[#self.textures+1]=r;return r
+  end end
+  b.HookScript=function()return false end
+  assert(not addon.Theme.StyleCloseButton(b))
+  for _,r in ipairs({b.normal,b.pushed,b.disabled,b.highlight})do assert(r.alpha==1)end
+  assert(not created.shown or created.text=="","failed initial Hide must not leave a painted glyph")
+  assert(not b.textures[1].shown or b.textures[1].color==nil,"failed initial Hide must not leave a painted panel")
+ end
+end)
+
 print("theme: " .. total .. " scenarios passed")

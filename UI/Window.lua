@@ -3329,6 +3329,8 @@ function UI:Create()
     self.back:SetPoint("TOPLEFT", 560, -45)
     self.back:SetEnabled(false)
     local close = CreateFrame("Button", nil, frame, "UIPanelCloseButton"); close:SetPoint("TOPRIGHT", -4, -4)
+    local closeTheme = addon.Clean(addon.Theme, "table")
+    if closeTheme then addon.Read(closeTheme.StyleCloseButton, "boolean", close) end
     local search = CreateFrame("EditBox", nil, frame, "InputBoxTemplate")
     search:SetSize(200, 25); search:SetPoint("TOPLEFT", 27, -84); search:SetAutoFocus(false)
     self.searchBox = search

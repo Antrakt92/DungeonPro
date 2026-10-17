@@ -1085,4 +1085,28 @@ check("Geometry probe rejects an earlier getter replaced by a later final checke
     f.finish()
 end)
 
+check("Guide close styling is optional and preserves its exact Stop handler and owned HUD",function()
+    for _,mode in ipairs({"style","false","throw","missing"})do
+        local fresh={};assert(loadfile("Core/Namespace.lua"))("DungeonPro",fresh)
+        fresh.L,fresh.QuestName=addon.L,addon.QuestName
+        local calls,close=0,nil;fresh.Theme={}
+        if mode~="missing"then fresh.Theme.StyleCloseButton=function(button)
+            calls=calls+1;close=button
+            assert(button.width==22 and button.height==22 and button.point[1]=="TOPRIGHT"and button.scripts.OnClick==fresh.Navigation.Stop)
+            if mode=="throw"then error("optional style unavailable")end
+            return mode=="style"
+        end end
+        local first=#frames;assert(loadfile("UI/Navigation.lua"))("DungeonPro",fresh)
+        assert(fresh.Navigation.Start(action))
+        local card
+        for index=first+1,#frames do
+            if frames[index].scripts.OnUpdate then card=frames[index]end
+            if frames[index].scripts.OnClick==fresh.Navigation.Stop then close=frames[index]end
+        end
+        assert(card and card.shown and close and calls==(mode=="missing"and 0 or 1))
+        assert(close.scripts.OnClick==fresh.Navigation.Stop)
+        close.scripts.OnClick();assert(not card.shown)
+    end
+end)
+
 print("Navigation modeled checks passed: " .. total .. " (no native map validation)")
