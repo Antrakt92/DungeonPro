@@ -2057,6 +2057,84 @@ function UI:RefreshDetail()
                 end
             end
         end
+        do
+            local paymentGetter, paymentChecker, localize = addon.QuestPayment, issecretvalue, addon.L
+            local currencyRoot = C_CurrencyInfo
+            local currency = addon.Clean(currencyRoot, "table")
+            local formatter = currency and rawget(currency, "GetCoinTextureString")
+            local database, selectedLocale, localeGetter = addon.db, addon.db.locale, GetLocale
+            local gameLocale = addon.Read(localeGetter, "string")
+            local amount = addon.Clean(rawget(q, "requiredMoney"), "number")
+            local result, rawFormatted
+            local function paymentCurrent()
+                local language = addon.Read(localeGetter, "string")
+                local ok, same = pcall(function()
+                    return portraitCardCurrent() and addon.quests[id] == definition and rawget(q, "id") == id and
+                        rawget(q, "requiredMoney") == amount and addon.QuestPayment == paymentGetter and issecretvalue == paymentChecker and
+                        addon.L == localize and addon.db == database and database.locale == selectedLocale and
+                        GetLocale == localeGetter and language == gameLocale and C_CurrencyInfo == currencyRoot and
+                        (not currency or rawget(currency, "GetCoinTextureString") == formatter) and
+                        (not result or (rawget(result, "amount") == amount and rawget(result, "formatted") == rawFormatted))
+                end)
+                return ok and same == true
+            end
+            if not portraitCardCurrent() then return end
+            if amount and amount > 0 and amount <= 9007199254740991 and amount % 1 == 0 then
+                if not paymentCurrent() then return end
+                local candidate = addon.Read(paymentGetter, "table", id, paymentCurrent)
+                if not paymentCurrent() then return end
+                if candidate then
+                    local candidateFormatted = rawget(candidate, "formatted")
+                    local value = addon.Clean(rawget(candidate, "amount"), "number")
+                    local formatted = addon.Clean(candidateFormatted, "string")
+                    if not paymentCurrent() then return end
+                    if value == amount then
+                        result, rawFormatted = candidate, candidateFormatted
+                        if not paymentCurrent() then return end
+                        if not formatted or #formatted > 4096 or not formatted:find("%S") then formatted = addon.Read(localize, "string", "MONEY_COPPER", amount) end
+                        if not paymentCurrent() then return end
+                        local title = formatted and addon.Read(localize, "string", "QUEST_PAYMENT", formatted)
+                        local notice = addon.Read(localize, "string", "QUEST_PAYMENT_NOTICE")
+                        if not paymentCurrent() then return end
+                        if title and title:find("%S") and notice and notice:find("%S") then
+                            if line(title, nil, nil, nil, paymentCurrent) == false or
+                                line(notice, nil, nil, nil, paymentCurrent) == false then return end
+                        end
+                    end
+                elseif not paymentCurrent() then return end
+            end
+        end
+        local rewards, rewardOrigin = rewardData(id)
+        if rewards and addon.Clean(rewards.source, "string") == "dialogue" then line(addon.L("REWARD_DIALOGUE"), "section")
+        elseif rewards and addon.Clean(rewards.source, "string") == "cache" then line(addon.L("REWARD_PREVIEW"), "section") end
+        local items = rewards and addon.Clean(rewards.items, "table")
+        local choices = rewards and addon.Clean(rewards.choices, "table")
+        if rewards and addon.Clean(rewards.hidden, "boolean") == true then
+            line(addon.L("REWARD_HIDDEN"))
+        elseif items and choices then
+            if #items > 0 then
+                line(addon.L("REWARD_ITEMS"), "section")
+                for index, item in ipairs(items) do
+                    if line(addon.L("REWARD_ITEM", item.name, item.count), nil,
+                        { item = item, origin = rewardOrigin, source = addon.Clean(rewards.source, "string"), kind = "items", index = index }) == false then return end
+                end
+            end
+            if #choices > 0 then
+                line(addon.L("REWARD_CHOICES"), "section")
+                for index, item in ipairs(choices) do
+                    if line(addon.L("REWARD_ITEM", item.name, item.count), nil,
+                        { item = item, origin = rewardOrigin, source = addon.Clean(rewards.source, "string"), kind = "choices", index = index }) == false then return end
+                end
+            end
+            if #items == 0 and #choices == 0 then line(addon.L("REWARD_NO_ITEMS")) end
+            local xp = addon.Clean(rewards.xp, "number")
+            if xp and xp >= 0 and xp % 1 == 0 then line(addon.L("REWARD_XP", xp)) end
+            local money = addon.Clean(rewards.money, "number")
+            if money and money > 0 then
+                local formatted = addon.Read(GetCoinTextureString, "string", money)
+                line(formatted and (addon.L("REWARD_MONEY") .. ": " .. formatted) or addon.L("REWARD_MONEY_UNKNOWN"))
+            end
+        else line(addon.L("REWARD_UNAVAILABLE")) end
         local starterSource = addon.Clean(q.start, "table")
         local starterID = starterSource and addon.Clean(rawget(starterSource, "itemID"), "number")
         local starterName = starterSource and addon.Clean(rawget(starterSource, "name"), "string")
@@ -2255,53 +2333,6 @@ function UI:RefreshDetail()
             if not ending then return end
             line(addon.L("ENDING") .. ": " .. ending)
             if reported(q.finish, "finish") == false then return end
-        end
-        do
-            local paymentGetter, paymentChecker, localize = addon.QuestPayment, issecretvalue, addon.L
-            local currencyRoot = C_CurrencyInfo
-            local currency = addon.Clean(currencyRoot, "table")
-            local formatter = currency and rawget(currency, "GetCoinTextureString")
-            local database, selectedLocale, localeGetter = addon.db, addon.db.locale, GetLocale
-            local gameLocale = addon.Read(localeGetter, "string")
-            local amount = addon.Clean(rawget(q, "requiredMoney"), "number")
-            local result, rawFormatted
-            local function paymentCurrent()
-                local language = addon.Read(localeGetter, "string")
-                local ok, same = pcall(function()
-                    return portraitCardCurrent() and addon.quests[id] == definition and rawget(q, "id") == id and
-                        rawget(q, "requiredMoney") == amount and addon.QuestPayment == paymentGetter and issecretvalue == paymentChecker and
-                        addon.L == localize and addon.db == database and database.locale == selectedLocale and
-                        GetLocale == localeGetter and language == gameLocale and C_CurrencyInfo == currencyRoot and
-                        (not currency or rawget(currency, "GetCoinTextureString") == formatter) and
-                        (not result or (rawget(result, "amount") == amount and rawget(result, "formatted") == rawFormatted))
-                end)
-                return ok and same == true
-            end
-            if not portraitCardCurrent() then return end
-            if amount and amount > 0 and amount <= 9007199254740991 and amount % 1 == 0 then
-                if not paymentCurrent() then return end
-                local candidate = addon.Read(paymentGetter, "table", id, paymentCurrent)
-                if not paymentCurrent() then return end
-                if candidate then
-                    local candidateFormatted = rawget(candidate, "formatted")
-                    local value = addon.Clean(rawget(candidate, "amount"), "number")
-                    local formatted = addon.Clean(candidateFormatted, "string")
-                    if not paymentCurrent() then return end
-                    if value == amount then
-                        result, rawFormatted = candidate, candidateFormatted
-                        if not paymentCurrent() then return end
-                        if not formatted or #formatted > 4096 or not formatted:find("%S") then formatted = addon.Read(localize, "string", "MONEY_COPPER", amount) end
-                        if not paymentCurrent() then return end
-                        local title = formatted and addon.Read(localize, "string", "QUEST_PAYMENT", formatted)
-                        local notice = addon.Read(localize, "string", "QUEST_PAYMENT_NOTICE")
-                        if not paymentCurrent() then return end
-                        if title and title:find("%S") and notice and notice:find("%S") then
-                            if line(title, nil, nil, nil, paymentCurrent) == false or
-                                line(notice, nil, nil, nil, paymentCurrent) == false then return end
-                        end
-                    end
-                elseif not paymentCurrent() then return end
-            end
         end
         local plan = self.currentPlan
         if plan and plan.engine == engine and plan.dungeon == renderDungeon then
@@ -2556,37 +2587,6 @@ function UI:RefreshDetail()
         end
         line(description)
         if not narrativeCurrent() then return end
-        local rewards, rewardOrigin = rewardData(id)
-        if rewards and addon.Clean(rewards.source, "string") == "dialogue" then line(addon.L("REWARD_DIALOGUE"), "section")
-        elseif rewards and addon.Clean(rewards.source, "string") == "cache" then line(addon.L("REWARD_PREVIEW"), "section") end
-        local items = rewards and addon.Clean(rewards.items, "table")
-        local choices = rewards and addon.Clean(rewards.choices, "table")
-        if rewards and addon.Clean(rewards.hidden, "boolean") == true then
-            line(addon.L("REWARD_HIDDEN"))
-        elseif items and choices then
-            if #items > 0 then
-                line(addon.L("REWARD_ITEMS"), "section")
-                for index, item in ipairs(items) do
-                    if line(addon.L("REWARD_ITEM", item.name, item.count), nil,
-                        { item = item, origin = rewardOrigin, source = addon.Clean(rewards.source, "string"), kind = "items", index = index }) == false then return end
-                end
-            end
-            if #choices > 0 then
-                line(addon.L("REWARD_CHOICES"), "section")
-                for index, item in ipairs(choices) do
-                    if line(addon.L("REWARD_ITEM", item.name, item.count), nil,
-                        { item = item, origin = rewardOrigin, source = addon.Clean(rewards.source, "string"), kind = "choices", index = index }) == false then return end
-                end
-            end
-            if #items == 0 and #choices == 0 then line(addon.L("REWARD_NO_ITEMS")) end
-            local xp = addon.Clean(rewards.xp, "number")
-            if xp and xp >= 0 and xp % 1 == 0 then line(addon.L("REWARD_XP", xp)) end
-            local money = addon.Clean(rewards.money, "number")
-            if money and money > 0 then
-                local formatted = addon.Read(GetCoinTextureString, "string", money)
-                line(formatted and (addon.L("REWARD_MONEY") .. ": " .. formatted) or addon.L("REWARD_MONEY_UNKNOWN"))
-            end
-        else line(addon.L("REWARD_UNAVAILABLE")) end
         self.source:SetEnabled(true)
     else
         self.map:SetEnabled(false); self.guide:SetEnabled(false); self.source:SetEnabled(false)

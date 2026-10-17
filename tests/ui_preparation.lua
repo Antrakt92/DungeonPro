@@ -6863,4 +6863,53 @@ check("Game waypoint preview rejects a changed typed quest identity in the same 
     f:finish()
 end)
 
+check("Reward context precedes all twelve actual2933 source references after current goals without losing content",function()
+    local f=rewardPresentationFixture();local actual={};assert(loadfile("Database/Catalog.lua"))("DungeonPro",actual)
+    local old=addon.quests[2933];addon.quests[2933]=actual.quests[2933]
+    addon.DialogueRewards=function()return f.data end
+    local context={level=60,faction="Alliance",class="WARRIOR",race=1,completed=function()return false end,active=function()return false end}
+    local progress=addon.QuestObjectives;addon.QuestObjectives=function()return{{text="Live objective retained",finished=false}}end
+    for code in pairs(addon.locales)do addon.db.locale=code;showDetail(2933,context)
+        local rewardY=detailSectionY(addon.L("REWARD_ITEMS"));local referenceY=detailSectionY(addon.L("START_ALTERNATIVES"))
+        assert(rewardY and referenceY and detailSectionY(addon.L("NEXT"))<rewardY and detailSectionY(addon.L("OBJECTIVE_PROGRESS"))<rewardY)
+        assert(rewardY<referenceY,"Available reward context is buried behind twelve source references")
+        assert(detailOccurrences(addon.L("REWARD_ITEM","Fixed reward",2))==1 and detailOccurrences(addon.L("REWARD_ITEM","Choice reward",1))==1)
+        local shown=0;for index,row in ipairs(ui.startButtons)do if row.shown then shown=shown+1;assert(row.title.text==actual.quests[2933].startAlternatives[index].name)end end
+        assert(shown==12)
+    end
+    addon.QuestObjectives=progress;addon.quests[2933]=old;f:finish()
+end)
+check("Reward priority retains hidden unknown empty and zero contexts while source references recycle",function()
+    local f=rewardPresentationFixture();local actual={};assert(loadfile("Database/Catalog.lua"))("DungeonPro",actual)
+    local q=addon.quests[9970];q.startAlternatives=actual.quests[2933].startAlternatives
+    local coin=GetCoinTextureString;GetCoinTextureString=function(amount)return"Coins "..amount end
+    for _,kind in ipairs({"known","empty","hidden","unknown"})do
+        f.data=kind=="known"and{source="dialogue",items={{id=701,name="Fixed reward",count=2,texture=123}},choices={},xp=0,money=300}
+            or kind=="empty"and{source="dialogue",items={},choices={},xp=0,money=0}
+            or kind=="hidden"and{source="dialogue",hidden=true}or nil
+        ui:RefreshDetail();local reference=detailSectionY(addon.L("START_ALTERNATIVES"))
+        local key=kind=="known"and"REWARD_ITEMS"or kind=="empty"and"REWARD_NO_ITEMS"or kind=="hidden"and"REWARD_HIDDEN"or"REWARD_UNAVAILABLE"
+        assert(detailSectionY(addon.L(key))<reference)
+        assert(detailHas(addon.L("REWARD_XP",0))==(kind=="known"or kind=="empty"))
+        assert(detailHas(addon.L("REWARD_MONEY")..": Coins 300")== (kind=="known"))
+        if kind~="known"then for _,row in ipairs(ui.rewardButtons or{})do assert(not row.shown)end end
+    end
+    q.startAlternatives=nil;ui:RefreshDetail();for _,row in ipairs(ui.startButtons)do assert(not row.shown)end
+    GetCoinTextureString=coin;f:finish()
+end)
+check("Reward promotion preserves narrative content and current quest reading position on ordinary refresh",function()
+    local f=rewardPresentationFixture();local description=addon.Description
+    addon.Description=function()return"Narrative paragraph retained after references."end
+    measurement=function(fs)return fs.text=="Narrative paragraph retained after references."and 900 or 18 end
+    ui:RefreshDetail();ui.detailScroll:SetVerticalScroll(75)
+    local function content()
+        local texts={};for _,fs in ipairs(ui.details)do if fs.shown then texts[fs.text]=(texts[fs.text]or 0)+1 end end;return texts
+    end
+    local before=content();ui:RefreshDetail();local after=content()
+    for text,count in pairs(before)do assert(after[text]==count)end;for text,count in pairs(after)do assert(before[text]==count)end
+    assert(ui.detailScroll:GetVerticalScroll()==75)
+    assert(detailSectionY(addon.L("REWARD_ITEMS"))<detailSectionY(addon.L("QUEST_TEXT")))
+    assert(detailOccurrences("Narrative paragraph retained after references.")==1)
+    addon.Description=description;f:finish()
+end)
 print("Preparation UI modeled checks passed: " .. total .. " (no native layout validation)")
