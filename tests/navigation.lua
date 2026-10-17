@@ -605,4 +605,102 @@ check("A saved guide tick after Stop stays quiet and cannot rewrite hidden prese
     assert(not card.shown and calls==0 and card.title.text==title and card.note.text==note and card.label.text==status and card.height==height)
     addon.QuestName=function()return "Quest"end
 end)
+check("Bearing rejects destination changes during native player-map reads", function()
+    for _, stage in ipairs({ "GetBestMapForUnit", "GetPlayerMapPosition", "GetWorldPosFromMapPos" }) do
+        reset()
+        local p={mapID=1,x=60,y=70}
+        local getter=C_Map[stage]
+        C_Map[stage]=function(...)
+            local a,b=getter(...)
+            p.x=80
+            return a,b
+        end
+        local north,west=nav.Vector(p)
+        assert(north==nil and west==nil, stage .. " cannot mix a changed destination into an old read")
+    end
+end)
+check("Bearing rejects replaced native namespaces getters and constructors", function()
+    for _, field in ipairs({ "namespace", "GetPlayerMapPosition", "GetWorldPosFromMapPos", "constructor", "checker" }) do
+        reset()
+        local map=C_Map;local best=map.GetBestMapForUnit
+        map.GetBestMapForUnit=function(...)
+            if field=="namespace" then
+                local replacement={};for key,value in pairs(map)do replacement[key]=value end;C_Map=replacement
+            elseif field=="constructor" then CreateVector2D=function(x,y)return {x=x,y=y}end
+            elseif field=="checker" then issecretvalue=function()return false end
+            else
+                local old=map[field];map[field]=function(...)return old(...)end
+            end
+            return best(...)
+        end
+        local north,west=nav.Vector({mapID=1,x=60,y=70})
+        assert(north==nil and west==nil, field .. " identity drift must discard bearing")
+    end
+end)
+check("Bearing cannot retain a same-action destination detached during vector construction", function()
+    local p={mapID=1,x=60,y=70};local a={id=1,place=p}
+    assert(nav.Start(a));local card=hud()
+    local old=CreateVector2D;local armed=true
+    CreateVector2D=function(x,y)
+        if armed then armed=false;a.place={mapID=1,x=30,y=20}end
+        return old(x,y)
+    end
+    card.scripts.OnUpdate(card,0.2)
+    assert(card.label.text=="NO_POSITION" and not card.arrow.shown,
+        "same-action place replacement must not display the old bearing")
+    card.scripts.OnUpdate(card,0.2)
+    assert(card.arrow.shown,"the next detached read recovers for the new destination")
+end)
+check("Bearing discards drift during both constructors positions and world-field reads", function()
+    for _,stage in ipairs({"position", "constructor1", "constructor2", "conversion2", "fields"}) do
+        reset()
+        local p={mapID=1,x=60,y=70};local restricted={}
+        issecretvalue=function(value)return value==restricted end
+        if stage=="position" then
+            C_Map.GetPlayerMapPosition=function()
+                return {GetXY=function()p.mapID=2;return .5,.5 end}
+            end
+        elseif stage:find("constructor",1,true) then
+            local old,count=CreateVector2D,0
+            CreateVector2D=function(x,y)
+                count=count+1
+                if count==(stage=="constructor1" and 1 or 2) then p.y=restricted end
+                return old(x,y)
+            end
+        else
+            local old,count=C_Map.GetWorldPosFromMapPos,0
+            C_Map.GetWorldPosFromMapPos=function(...)
+                count=count+1;local map,world=old(...)
+                if count==2 then
+                    if stage=="conversion2" then C_Map.GetBestMapForUnit=function()return 1 end
+                    else
+                        world=setmetatable({y=world.y},{__index=function(_,key)
+                            if key=="x" then p.x=80;return 700 end
+                        end})
+                    end
+                end
+                return map,world
+            end
+        end
+        local ok,north,west=pcall(nav.Vector,p)
+        assert(ok and north==nil and west==nil,stage)
+    end
+end)
+check("Stable bearing retains exact orientation and direct-call behavior",function()
+    local north,west=nav.Vector({mapID=1,x=60,y=70})
+    assert(north==200 and west==100)
+    assert(nav.Start(action))
+    north,west=nav.Vector({mapID=1,x=30,y=20})
+    assert(north==-300 and west==-200,"an independent direct point is not bound to the guide's destination")
+end)
+check("Unreadable player-position methods quietly discard the bearing",function()
+    C_Map.GetPlayerMapPosition=function()
+        return setmetatable({},{__index=function()error("unavailable method")end})
+    end
+    assert(nav.Vector(point)==nil)
+    for _,value in ipairs({true,12,"invalid"})do
+        C_Map=value
+        assert(nav.Vector(point)==nil)
+    end
+end)
 print("Navigation modeled checks passed: " .. total .. " (no native map validation)")

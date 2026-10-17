@@ -71,26 +71,54 @@ end
 
 -- This is a bearing to a coordinate, not a terrain or transport route.
 function N.Vector(point)
-    if not N.Valid(point) or not C_Map or not CreateVector2D then return nil end
-    local mapID = addon.Read(C_Map.GetBestMapForUnit, "number", "player")
-    local position = mapID and addon.Read(C_Map.GetPlayerMapPosition, "table", mapID, "player")
-    if not position then return nil end
-    local ok, x, y = pcall(function() return position:GetXY() end)
+    if not N.Valid(point) then return nil end
+    local destination, px, py = addon.Clean(point.mapID, "number"), addon.Clean(point.x, "number"), addon.Clean(point.y, "number")
+    local library, checker = addon.Clean(C_Map, "table"), issecretvalue
+    local best = library and addon.Clean(library.GetBestMapForUnit, "function")
+    local locate = library and addon.Clean(library.GetPlayerMapPosition, "function")
+    local convert = library and addon.Clean(library.GetWorldPosFromMapPos, "function")
+    local create = addon.Clean(CreateVector2D, "function")
+    local action, generation = target, navigationGeneration
+    local owned = action and rawequal(action.place, point)
+    local function current()
+        return issecretvalue == checker and C_Map == library and CreateVector2D == create and
+            addon.Clean(library.GetBestMapForUnit, "function") == best and
+            addon.Clean(library.GetPlayerMapPosition, "function") == locate and
+            addon.Clean(library.GetWorldPosFromMapPos, "function") == convert and
+            addon.Clean(point.mapID, "number") == destination and addon.Clean(point.x, "number") == px and
+            addon.Clean(point.y, "number") == py and
+            (not owned or (navigationGeneration == generation and rawequal(target, action) and rawequal(action.place, point)))
+    end
+    if not destination or not px or not py or destination <= 0 or px < 0 or px > 100 or py < 0 or py > 100 or
+        not library or not best or not locate or not convert or not create or not current() then return nil end
+    local mapID = addon.Read(best, "number", "player")
+    if not current() or not mapID then return nil end
+    local position = addon.Read(locate, "table", mapID, "player")
+    if not current() or not position then return nil end
+    local function positionGetter() return addon.Read(function() return position.GetXY end, "function") end
+    local xy = positionGetter()
+    if not current() or not xy then return nil end
+    local ok, x, y = pcall(xy, position)
     x, y = addon.Clean(x, "number"), addon.Clean(y, "number")
-    if not ok or not x or not y or (x == 0 and y == 0) then return nil end
-    local convert = C_Map.GetWorldPosFromMapPos
-    if type(convert) ~= "function" then return nil end
-    local aOK, aMap, a = pcall(function() return convert(mapID, CreateVector2D(x, y)) end)
-    local bOK, bMap, b = pcall(function() return convert(point.mapID, CreateVector2D(point.x / 100, point.y / 100)) end)
+    if not current() or positionGetter() ~= xy or not ok or not x or not y or (x == 0 and y == 0) then return nil end
+    local sourceOK, source = pcall(create, x, y)
+    if not current() or not sourceOK then return nil end
+    local aOK, aMap, a = pcall(convert, mapID, source)
+    if not current() then return nil end
+    local destinationOK, destinationPoint = pcall(create, px / 100, py / 100)
+    if not current() or not destinationOK then return nil end
+    local bOK, bMap, b = pcall(convert, destination, destinationPoint)
+    if not current() then return nil end
     aMap, bMap = addon.Clean(aMap, "number"), addon.Clean(bMap, "number")
     a, b = addon.Clean(a, "table") or addon.Clean(a, "userdata"), addon.Clean(b, "table") or addon.Clean(b, "userdata")
     if not aOK or not bOK or not aMap or aMap ~= bMap or not a or not b then return nil end
     local aFields, ax, ay = pcall(function() return a.x, a.y end)
     local bFields, bx, by = pcall(function() return b.x, b.y end)
     ax, ay, bx, by = addon.Clean(ax, "number"), addon.Clean(ay, "number"), addon.Clean(bx, "number"), addon.Clean(by, "number")
-    if not aFields or not bFields or not ax or not ay or not bx or not by then return nil end
+    if not current() or not aFields or not bFields or not ax or not ay or not bx or not by then return nil end
     -- WoW world X points north and world Y points west.
-    return addon.Clean(bx - ax, "number"), addon.Clean(by - ay, "number")
+    local north, west = addon.Clean(bx - ax, "number"), addon.Clean(by - ay, "number")
+    if current() then return north, west end
 end
 
 local function context(action, generation)
