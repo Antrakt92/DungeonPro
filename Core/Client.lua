@@ -2,6 +2,7 @@ local _, addon = ...
 local requested, requestedItems = {}, {}
 local offerGeneration, currentOffers = {}, nil
 local dialogueGeneration, dialogueReward = {}, nil
+local textCaptureGeneration = {}
 
 local function dialogueInteger(value, minimum, maximum)
     value = addon.Clean(value, "number")
@@ -1017,15 +1018,33 @@ function addon.QuestPortrait(id)
 end
 
 function addon.CaptureQuestText()
-    local id = addon.Read(GetQuestID, "number")
-    if not id or id < 1 or id % 1 ~= 0 or not addon.quests[id] then return end
-    local locale = addon.Read(GetLocale, "string")
-    local text = addon.Read(GetQuestText, "string")
-    if text and text ~= "" and #text <= 30000 and locale and
-        addon.Read(GetQuestID, "number") == id and addon.Read(GetLocale, "string") == locale and
-        addon.char and type(addon.char.texts) == "table" then
-        addon.char.texts[id] = { text = text, locale = locale }
+    local generation = {}
+    textCaptureGeneration = generation
+    local character, quests = addon.Clean(addon.char, "table"), addon.Clean(addon.quests, "table")
+    local texts = character and addon.Clean(rawget(character, "texts"), "table")
+    local idGetter, localeGetter, textGetter = addon.Clean(GetQuestID, "function"),
+        addon.Clean(GetLocale, "function"), addon.Clean(GetQuestText, "function")
+    local checker = issecretvalue
+    if not texts or not quests or not idGetter or not localeGetter or not textGetter then return end
+    local id = dialogueInteger(addon.Read(idGetter, "number"), 1)
+    local definition = id and addon.Clean(rawget(quests, id), "table")
+    local locale = addon.Read(localeGetter, "string")
+    if not definition or not locale or #locale > 32 or not locale:find("%S") then return end
+    local function owned()
+        return textCaptureGeneration == generation and issecretvalue == checker and
+            addon.Clean(addon.char, "table") == character and addon.Clean(rawget(character, "texts"), "table") == texts and
+            addon.Clean(addon.quests, "table") == quests and addon.Clean(rawget(quests, id), "table") == definition and
+            addon.Clean(GetQuestID, "function") == idGetter and addon.Clean(GetLocale, "function") == localeGetter and
+            addon.Clean(GetQuestText, "function") == textGetter
     end
+    local function current()
+        if not owned() then return false end
+        local currentID, currentLocale = addon.Read(idGetter, "number"), addon.Read(localeGetter, "string")
+        return currentID == id and currentLocale == locale and owned()
+    end
+    if not current() then return end
+    local text = addon.Read(textGetter, "string")
+    if text and #text <= 30000 and text:find("%S") and current() then texts[id] = { text = text, locale = locale } end
 end
 
 function addon.RestoreDB()

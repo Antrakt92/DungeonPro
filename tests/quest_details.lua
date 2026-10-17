@@ -501,4 +501,59 @@ check("Malformed objective namespaces and unknown locale stay quiet before nativ
     assert(addon.QuestObjectives(166) == nil and reads == 0)
     GetLocale = localeGetter
 end)
+check("Offered text never crosses character cache replacement during hydration", function()
+    local previous, previousQuests = addon.char, addon.quests
+    for _, replace in ipairs({ "character", "texts" }) do
+        local original, replacement = {}, {}
+        addon.char = { texts = original }
+        local owner = addon.char
+        addon.quests = { [166] = {} }
+        GetQuestID = function() return 166 end
+        GetQuestText = function()
+            if replace == "character" then addon.char = { texts = replacement } else owner.texts = replacement end
+            return "Previous cache's description"
+        end
+        addon.CaptureQuestText()
+        assert(original[166] == nil and replacement[166] == nil, replace)
+    end
+    addon.char, addon.quests = previous, previousQuests
+end)
+check("Offered cache rejects capability catalogue and checker replacement while preserving valid text", function()
+    local character, quests, checker = addon.char, addon.quests, issecretvalue
+    for _, mutation in ipairs({ "idGetter", "localeGetter", "textGetter", "catalogue", "definition", "checker" }) do
+        local prior = { text = "Keep verified", locale = "ruRU" }
+        addon.char, addon.quests = { texts = { [166] = prior } }, { [166] = {} }
+        GetQuestID = function() return 166 end
+        GetLocale = function() return "ruRU" end
+        GetQuestText = function()
+            if mutation == "idGetter" then GetQuestID = function() return 166 end
+            elseif mutation == "localeGetter" then GetLocale = function() return "ruRU" end
+            elseif mutation == "textGetter" then GetQuestText = function() return "New reader" end
+            elseif mutation == "catalogue" then addon.quests = { [166] = {} }
+            elseif mutation == "definition" then addon.quests[166] = {}
+            else issecretvalue = function(value) return value == secret end end
+            return "Stale text"
+        end
+        addon.CaptureQuestText()
+        assert(addon.char.texts[166] == prior, mutation)
+        issecretvalue = checker
+    end
+    addon.char, addon.quests = character, quests
+    GetLocale = function() return locale end
+end)
+check("A nested offered capture retains its newer description instead of the outer result", function()
+    local character, quests = addon.char, addon.quests
+    addon.char, addon.quests = { texts = {} }, { [166] = {} }
+    GetQuestID = function() return 166 end
+    local nested = false
+    GetQuestText = function()
+        if nested then return "New verified text" end
+        nested = true
+        addon.CaptureQuestText()
+        return "Old outer text"
+    end
+    addon.CaptureQuestText()
+    assert(addon.char.texts[166].text == "New verified text")
+    addon.char, addon.quests = character, quests
+end)
 print("Quest detail modeled checks passed: " .. total .. " (native client unverified)")
