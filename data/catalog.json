@@ -3501,7 +3501,37 @@
       "source": "https://www.wowhead.com/forever/quest=2927/the-day-after",
       "start": {
         "npcID": 6569,
-        "name": "Gnoarn"
+        "name": "Gnoarn",
+        "mapID": 1455,
+        "x": 69.4,
+        "y": 50.4,
+        "zoneName": "Ironforge",
+        "reportedLocations": [
+          {
+            "mapID": 1455,
+            "x": 69.4,
+            "y": 50.4,
+            "zoneName": "Ironforge"
+          },
+          {
+            "mapID": 1455,
+            "x": 69.4,
+            "y": 50.6,
+            "zoneName": "Ironforge"
+          },
+          {
+            "mapID": 1455,
+            "x": 69.6,
+            "y": 50.4,
+            "zoneName": "Ironforge"
+          },
+          {
+            "mapID": 1455,
+            "x": 69.6,
+            "y": 50.6,
+            "zoneName": "Ironforge"
+          }
+        ]
       },
       "finish": {
         "npcID": 1268,
@@ -5255,7 +5285,30 @@
       "start": {
         "npcID": 12336,
         "name": "Brother Crowley",
-        "zoneName": "Stormwind City"
+        "zoneName": "Stormwind City",
+        "mapID": 1453,
+        "x": 42,
+        "y": 24.8,
+        "reportedLocations": [
+          {
+            "mapID": 1453,
+            "x": 42,
+            "y": 24.8,
+            "zoneName": "Stormwind City"
+          },
+          {
+            "mapID": 1453,
+            "x": 42.4,
+            "y": 24.4,
+            "zoneName": "Stormwind City"
+          },
+          {
+            "mapID": 1453,
+            "x": 43.2,
+            "y": 24.2,
+            "zoneName": "Stormwind City"
+          }
+        ]
       },
       "finish": {
         "npcID": 1182,
@@ -7537,7 +7590,25 @@
       },
       "finish": {
         "npcID": 3009,
-        "name": "Bena Winterhoof"
+        "name": "Bena Winterhoof",
+        "mapID": 1456,
+        "x": 46.8,
+        "y": 33.4,
+        "zoneName": "Thunder Bluff",
+        "reportedLocations": [
+          {
+            "mapID": 1456,
+            "x": 46.8,
+            "y": 33.4,
+            "zoneName": "Thunder Bluff"
+          },
+          {
+            "mapID": 1456,
+            "x": 46.8,
+            "y": 33.6,
+            "zoneName": "Thunder Bluff"
+          }
+        ]
       }
     },
     {
@@ -9547,11 +9618,30 @@
       "source": "https://www.wowhead.com/forever/quest=8733/eranikus-tyrant-of-the-dream",
       "start": {
         "npcID": 15362,
-        "name": "Malfurion Stormrage"
+        "name": "Malfurion Stormrage",
+        "zoneName": "The Temple of Atal'Hakkar"
       },
       "finish": {
         "npcID": 15624,
-        "name": "Forest Wisp"
+        "name": "Forest Wisp",
+        "zoneName": "Teldrassil",
+        "mapID": 1438,
+        "x": 37.4,
+        "y": 47.8,
+        "reportedLocations": [
+          {
+            "mapID": 1438,
+            "x": 37.4,
+            "y": 47.8,
+            "zoneName": "Teldrassil"
+          },
+          {
+            "mapID": 1438,
+            "x": 37.6,
+            "y": 48,
+            "zoneName": "Teldrassil"
+          }
+        ]
       },
       "storyline": [
         8733,
@@ -9907,11 +9997,19 @@
       "minLevel": 24,
       "start": {
         "npcID": 13155,
-        "name": "Deathstalker Agent"
+        "name": "Deathstalker Agent",
+        "zoneName": "Wetlands",
+        "mapID": 1437,
+        "x": 51.4,
+        "y": 59.2
       },
       "finish": {
         "npcID": 13155,
-        "name": "Deathstalker Agent"
+        "name": "Deathstalker Agent",
+        "zoneName": "Wetlands",
+        "mapID": 1437,
+        "x": 51.4,
+        "y": 59.2
       },
       "requirementsKnown": false,
       "factions": [
@@ -10206,7 +10304,25 @@
       "minLevel": 24,
       "start": {
         "npcID": 3970,
-        "name": "Llana"
+        "name": "Llana",
+        "mapID": 1440,
+        "x": 35,
+        "y": 48.4,
+        "zoneName": "Ashenvale",
+        "reportedLocations": [
+          {
+            "mapID": 1440,
+            "x": 35,
+            "y": 48.4,
+            "zoneName": "Ashenvale"
+          },
+          {
+            "mapID": 1440,
+            "x": 35,
+            "y": 48.6,
+            "zoneName": "Ashenvale"
+          }
+        ]
       },
       "finish": {
         "npcID": 1480,
@@ -10265,7 +10381,11 @@
       },
       "finish": {
         "npcID": 13155,
-        "name": "Deathstalker Agent"
+        "name": "Deathstalker Agent",
+        "zoneName": "Wetlands",
+        "mapID": 1437,
+        "x": 51.4,
+        "y": 59.2
       },
       "requirementsKnown": false,
       "factions": [
@@ -10617,7 +10737,25 @@
       "source": "https://www.wowhead.com/forever/quest=8734/tyrande-and-remulos",
       "start": {
         "npcID": 15624,
-        "name": "Forest Wisp"
+        "name": "Forest Wisp",
+        "zoneName": "Teldrassil",
+        "mapID": 1438,
+        "x": 37.4,
+        "y": 47.8,
+        "reportedLocations": [
+          {
+            "mapID": 1438,
+            "x": 37.4,
+            "y": 47.8,
+            "zoneName": "Teldrassil"
+          },
+          {
+            "mapID": 1438,
+            "x": 37.6,
+            "y": 48,
+            "zoneName": "Teldrassil"
+          }
+        ]
       },
       "finish": {
         "npcID": 11832,
@@ -10739,7 +10877,25 @@
       "source": "https://www.wowhead.com/forever/quest=3374/the-essence-of-eranikus",
       "finish": {
         "npcID": 5353,
-        "name": "Itharius"
+        "name": "Itharius",
+        "mapID": 1435,
+        "x": 13.6,
+        "y": 71.4,
+        "zoneName": "Swamp of Sorrows",
+        "reportedLocations": [
+          {
+            "mapID": 1435,
+            "x": 13.6,
+            "y": 71.4,
+            "zoneName": "Swamp of Sorrows"
+          },
+          {
+            "mapID": 1435,
+            "x": 13.6,
+            "y": 71.6,
+            "zoneName": "Swamp of Sorrows"
+          }
+        ]
       },
       "start": {
         "itemID": 10589,
@@ -14699,11 +14855,19 @@
       "minLevel": 55,
       "start": {
         "npcID": 9563,
-        "name": "Ragged John"
+        "name": "Ragged John",
+        "mapID": 1428,
+        "x": 65,
+        "y": 23.6,
+        "zoneName": "Burning Steppes"
       },
       "finish": {
         "npcID": 9563,
-        "name": "Ragged John"
+        "name": "Ragged John",
+        "mapID": 1428,
+        "x": 65,
+        "y": 23.6,
+        "zoneName": "Burning Steppes"
       },
       "requirementsKnown": false,
       "factions": [
@@ -14719,11 +14883,19 @@
       "minLevel": 40,
       "start": {
         "npcID": 10460,
-        "name": "Prospector Ironboot"
+        "name": "Prospector Ironboot",
+        "mapID": 1446,
+        "x": 66.8,
+        "y": 24,
+        "zoneName": "Tanaris"
       },
       "finish": {
         "npcID": 10460,
-        "name": "Prospector Ironboot"
+        "name": "Prospector Ironboot",
+        "mapID": 1446,
+        "x": 66.8,
+        "y": 24,
+        "zoneName": "Tanaris"
       },
       "requirementsKnown": false,
       "factions": [
@@ -17631,7 +17803,120 @@
       "finish": {
         "npcID": 1842,
         "name": "Highlord Taelan Fordring",
-        "zoneName": "Western Plaguelands"
+        "zoneName": "Western Plaguelands",
+        "mapID": 1422,
+        "x": 42,
+        "y": 14.8,
+        "reportedLocations": [
+          {
+            "mapID": 1422,
+            "x": 42,
+            "y": 14.8,
+            "zoneName": "Western Plaguelands"
+          },
+          {
+            "mapID": 1422,
+            "x": 42,
+            "y": 15.6,
+            "zoneName": "Western Plaguelands"
+          },
+          {
+            "mapID": 1422,
+            "x": 43.2,
+            "y": 15.8,
+            "zoneName": "Western Plaguelands"
+          },
+          {
+            "mapID": 1422,
+            "x": 44.4,
+            "y": 16.4,
+            "zoneName": "Western Plaguelands"
+          },
+          {
+            "mapID": 1422,
+            "x": 44.4,
+            "y": 17.8,
+            "zoneName": "Western Plaguelands"
+          },
+          {
+            "mapID": 1422,
+            "x": 44.6,
+            "y": 16.4,
+            "zoneName": "Western Plaguelands"
+          },
+          {
+            "mapID": 1422,
+            "x": 44.6,
+            "y": 16.6,
+            "zoneName": "Western Plaguelands"
+          },
+          {
+            "mapID": 1422,
+            "x": 45,
+            "y": 20,
+            "zoneName": "Western Plaguelands"
+          },
+          {
+            "mapID": 1422,
+            "x": 46.4,
+            "y": 21,
+            "zoneName": "Western Plaguelands"
+          },
+          {
+            "mapID": 1422,
+            "x": 46.8,
+            "y": 20.8,
+            "zoneName": "Western Plaguelands"
+          },
+          {
+            "mapID": 1422,
+            "x": 48,
+            "y": 21.4,
+            "zoneName": "Western Plaguelands"
+          },
+          {
+            "mapID": 1422,
+            "x": 48,
+            "y": 21.6,
+            "zoneName": "Western Plaguelands"
+          },
+          {
+            "mapID": 1422,
+            "x": 49.4,
+            "y": 23,
+            "zoneName": "Western Plaguelands"
+          },
+          {
+            "mapID": 1422,
+            "x": 49.8,
+            "y": 23.4,
+            "zoneName": "Western Plaguelands"
+          },
+          {
+            "mapID": 1422,
+            "x": 51,
+            "y": 23.6,
+            "zoneName": "Western Plaguelands"
+          },
+          {
+            "mapID": 1422,
+            "x": 51.2,
+            "y": 23.4,
+            "zoneName": "Western Plaguelands"
+          },
+          {
+            "mapID": 1422,
+            "x": 53.8,
+            "y": 24.4,
+            "zoneName": "Western Plaguelands"
+          },
+          {
+            "mapID": 1422,
+            "x": 53.8,
+            "y": 24.6,
+            "zoneName": "Western Plaguelands"
+          }
+        ]
       },
       "storyline": [
         5742,
@@ -18152,7 +18437,25 @@
       },
       "start": {
         "npcID": 2285,
-        "name": "Count Remington Ridgewell"
+        "name": "Count Remington Ridgewell",
+        "zoneName": "Stormwind City",
+        "mapID": 1453,
+        "x": 74,
+        "y": 29.2,
+        "reportedLocations": [
+          {
+            "mapID": 1453,
+            "x": 74,
+            "y": 29.2,
+            "zoneName": "Stormwind City"
+          },
+          {
+            "mapID": 1453,
+            "x": 74,
+            "y": 30,
+            "zoneName": "Stormwind City"
+          }
+        ]
       },
       "storyline": [
         4766,
@@ -18172,7 +18475,25 @@
       "source": "https://www.wowhead.com/forever/quest=4765/delivery-to-ridgewell",
       "finish": {
         "npcID": 2285,
-        "name": "Count Remington Ridgewell"
+        "name": "Count Remington Ridgewell",
+        "zoneName": "Stormwind City",
+        "mapID": 1453,
+        "x": 74,
+        "y": 29.2,
+        "reportedLocations": [
+          {
+            "mapID": 1453,
+            "x": 74,
+            "y": 29.2,
+            "zoneName": "Stormwind City"
+          },
+          {
+            "mapID": 1453,
+            "x": 74,
+            "y": 30,
+            "zoneName": "Stormwind City"
+          }
+        ]
       },
       "start": {
         "npcID": 9565,
@@ -18252,7 +18573,37 @@
       },
       "start": {
         "npcID": 10468,
-        "name": "Felnok Steelspring"
+        "name": "Felnok Steelspring",
+        "mapID": 1452,
+        "x": 61.4,
+        "y": 38.4,
+        "zoneName": "Winterspring",
+        "reportedLocations": [
+          {
+            "mapID": 1452,
+            "x": 61.4,
+            "y": 38.4,
+            "zoneName": "Winterspring"
+          },
+          {
+            "mapID": 1452,
+            "x": 61.4,
+            "y": 38.6,
+            "zoneName": "Winterspring"
+          },
+          {
+            "mapID": 1452,
+            "x": 61.6,
+            "y": 38.4,
+            "zoneName": "Winterspring"
+          },
+          {
+            "mapID": 1452,
+            "x": 61.6,
+            "y": 38.6,
+            "zoneName": "Winterspring"
+          }
+        ]
       },
       "storyline": [
         4907,
@@ -18513,7 +18864,31 @@
       },
       "finish": {
         "npcID": 10321,
-        "name": "Emberstrife"
+        "name": "Emberstrife",
+        "zoneName": "Dustwallow Marsh",
+        "mapID": 1445,
+        "x": 56.2,
+        "y": 88,
+        "reportedLocations": [
+          {
+            "mapID": 1445,
+            "x": 56.2,
+            "y": 88,
+            "zoneName": "Dustwallow Marsh"
+          },
+          {
+            "mapID": 1445,
+            "x": 56.6,
+            "y": 87.6,
+            "zoneName": "Dustwallow Marsh"
+          },
+          {
+            "mapID": 1445,
+            "x": 56.8,
+            "y": 87.4,
+            "zoneName": "Dustwallow Marsh"
+          }
+        ]
       },
       "storyline": [
         6566,
@@ -18589,12 +18964,18 @@
       "start": {
         "npcID": 10460,
         "name": "Prospector Ironboot",
-        "zoneName": "Tanaris"
+        "zoneName": "Tanaris",
+        "mapID": 1446,
+        "x": 66.8,
+        "y": 24
       },
       "finish": {
         "npcID": 10460,
         "name": "Prospector Ironboot",
-        "zoneName": "Tanaris"
+        "zoneName": "Tanaris",
+        "mapID": 1446,
+        "x": 66.8,
+        "y": 24
       },
       "storyline": [
         5065,
@@ -18699,7 +19080,10 @@
       "finish": {
         "npcID": 10976,
         "name": "Jeziba",
-        "zoneName": "Western Plaguelands"
+        "zoneName": "Western Plaguelands",
+        "mapID": 1422,
+        "x": 39.4,
+        "y": 66.8
       },
       "storyline": [
         5160,
@@ -18722,7 +19106,10 @@
       "start": {
         "npcID": 10976,
         "name": "Jeziba",
-        "zoneName": "Western Plaguelands"
+        "zoneName": "Western Plaguelands",
+        "mapID": 1422,
+        "x": 39.4,
+        "y": 66.8
       },
       "finish": {
         "objectID": 176192,
@@ -18824,12 +19211,58 @@
       "start": {
         "npcID": 10321,
         "name": "Emberstrife",
-        "zoneName": "Dustwallow Marsh"
+        "zoneName": "Dustwallow Marsh",
+        "mapID": 1445,
+        "x": 56.2,
+        "y": 88,
+        "reportedLocations": [
+          {
+            "mapID": 1445,
+            "x": 56.2,
+            "y": 88,
+            "zoneName": "Dustwallow Marsh"
+          },
+          {
+            "mapID": 1445,
+            "x": 56.6,
+            "y": 87.6,
+            "zoneName": "Dustwallow Marsh"
+          },
+          {
+            "mapID": 1445,
+            "x": 56.8,
+            "y": 87.4,
+            "zoneName": "Dustwallow Marsh"
+          }
+        ]
       },
       "finish": {
         "npcID": 10321,
         "name": "Emberstrife",
-        "zoneName": "Dustwallow Marsh"
+        "zoneName": "Dustwallow Marsh",
+        "mapID": 1445,
+        "x": 56.2,
+        "y": 88,
+        "reportedLocations": [
+          {
+            "mapID": 1445,
+            "x": 56.2,
+            "y": 88,
+            "zoneName": "Dustwallow Marsh"
+          },
+          {
+            "mapID": 1445,
+            "x": 56.6,
+            "y": 87.6,
+            "zoneName": "Dustwallow Marsh"
+          },
+          {
+            "mapID": 1445,
+            "x": 56.8,
+            "y": 87.4,
+            "zoneName": "Dustwallow Marsh"
+          }
+        ]
       },
       "storyline": [
         6585,
@@ -18849,7 +19282,31 @@
       "requirementsKnown": false,
       "start": {
         "npcID": 10321,
-        "name": "Emberstrife"
+        "name": "Emberstrife",
+        "zoneName": "Dustwallow Marsh",
+        "mapID": 1445,
+        "x": 56.2,
+        "y": 88,
+        "reportedLocations": [
+          {
+            "mapID": 1445,
+            "x": 56.2,
+            "y": 88,
+            "zoneName": "Dustwallow Marsh"
+          },
+          {
+            "mapID": 1445,
+            "x": 56.6,
+            "y": 87.6,
+            "zoneName": "Dustwallow Marsh"
+          },
+          {
+            "mapID": 1445,
+            "x": 56.8,
+            "y": 87.4,
+            "zoneName": "Dustwallow Marsh"
+          }
+        ]
       },
       "finish": {
         "npcID": 10182,
@@ -25862,7 +26319,30 @@
       "finish": {
         "npcID": 9516,
         "name": "Lord Banehollow",
-        "zoneName": "Felwood"
+        "zoneName": "Felwood",
+        "mapID": 1448,
+        "x": 36,
+        "y": 44.4,
+        "reportedLocations": [
+          {
+            "mapID": 1448,
+            "x": 36,
+            "y": 44.4,
+            "zoneName": "Felwood"
+          },
+          {
+            "mapID": 1448,
+            "x": 36,
+            "y": 44.6,
+            "zoneName": "Felwood"
+          },
+          {
+            "mapID": 1448,
+            "x": 36,
+            "y": 45.6,
+            "zoneName": "Felwood"
+          }
+        ]
       },
       "requirementsKnown": false,
       "storyline": [
@@ -25889,12 +26369,58 @@
       "start": {
         "npcID": 9516,
         "name": "Lord Banehollow",
-        "zoneName": "Felwood"
+        "zoneName": "Felwood",
+        "mapID": 1448,
+        "x": 36,
+        "y": 44.4,
+        "reportedLocations": [
+          {
+            "mapID": 1448,
+            "x": 36,
+            "y": 44.4,
+            "zoneName": "Felwood"
+          },
+          {
+            "mapID": 1448,
+            "x": 36,
+            "y": 44.6,
+            "zoneName": "Felwood"
+          },
+          {
+            "mapID": 1448,
+            "x": 36,
+            "y": 45.6,
+            "zoneName": "Felwood"
+          }
+        ]
       },
       "finish": {
         "npcID": 9516,
         "name": "Lord Banehollow",
-        "zoneName": "Felwood"
+        "zoneName": "Felwood",
+        "mapID": 1448,
+        "x": 36,
+        "y": 44.4,
+        "reportedLocations": [
+          {
+            "mapID": 1448,
+            "x": 36,
+            "y": 44.4,
+            "zoneName": "Felwood"
+          },
+          {
+            "mapID": 1448,
+            "x": 36,
+            "y": 44.6,
+            "zoneName": "Felwood"
+          },
+          {
+            "mapID": 1448,
+            "x": 36,
+            "y": 45.6,
+            "zoneName": "Felwood"
+          }
+        ]
       },
       "requirementsKnown": false,
       "storyline": [
@@ -25921,7 +26447,30 @@
       "start": {
         "npcID": 9516,
         "name": "Lord Banehollow",
-        "zoneName": "Felwood"
+        "zoneName": "Felwood",
+        "mapID": 1448,
+        "x": 36,
+        "y": 44.4,
+        "reportedLocations": [
+          {
+            "mapID": 1448,
+            "x": 36,
+            "y": 44.4,
+            "zoneName": "Felwood"
+          },
+          {
+            "mapID": 1448,
+            "x": 36,
+            "y": 44.6,
+            "zoneName": "Felwood"
+          },
+          {
+            "mapID": 1448,
+            "x": 36,
+            "y": 45.6,
+            "zoneName": "Felwood"
+          }
+        ]
       },
       "finish": {
         "npcID": 14437,
