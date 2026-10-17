@@ -3,6 +3,7 @@ import tempfile
 import unittest
 import zipfile
 from pathlib import Path
+from unittest import mock
 
 ROOT = Path(__file__).resolve().parents[1]
 SPEC = importlib.util.spec_from_file_location("packager", ROOT / "scripts/package.py")
@@ -44,6 +45,53 @@ class PackageTests(unittest.TestCase):
             _, a = packager.package(output=Path(tmp) / "a.zip")
             _, b = packager.package(output=Path(tmp) / "b.zip")
             self.assertEqual(a, b)
+
+    def test_failed_rebuild_preserves_previous_archive_and_removes_temporary_output(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            output = Path(tmp) / "addon.zip"
+            packager.package(output=output)
+            original = output.read_bytes()
+            native = packager.exact_path
+            def missing_last(root, name):
+                if name == "Core/Events.lua":
+                    raise ValueError("Missing payload")
+                return native(root, name)
+            with mock.patch.object(packager, "exact_path", side_effect=missing_last):
+                with self.assertRaisesRegex(ValueError, "Missing payload"):
+                    packager.package(output=output)
+            self.assertEqual(output.read_bytes(), original)
+            self.assertEqual(list(Path(tmp).iterdir()), [output])
+
+    def test_failed_archive_verification_never_publishes_an_unverified_output(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            output = Path(tmp) / "addon.zip"
+            with zipfile.ZipFile(output, "w") as previous:
+                previous.writestr("previous.txt", "previous verified build")
+            original = output.read_bytes()
+            with mock.patch.object(zipfile.ZipFile, "testzip", return_value="corrupt-entry"):
+                with self.assertRaises((AssertionError, ValueError)):
+                    packager.package(output=output)
+            self.assertEqual(output.read_bytes(), original)
+            self.assertEqual(list(Path(tmp).iterdir()), [output])
+
+    def test_failed_final_replace_preserves_previous_archive_and_cleans_staging(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            output = Path(tmp) / "addon.zip"
+            packager.package(output=output)
+            original = output.read_bytes()
+            with mock.patch.object(Path, "replace", side_effect=PermissionError("archive is open")):
+                with self.assertRaisesRegex(PermissionError, "archive is open"):
+                    packager.package(output=output)
+            self.assertEqual(output.read_bytes(), original)
+            self.assertEqual(list(Path(tmp).iterdir()), [output])
+
+    def test_failed_first_build_leaves_no_installable_or_temporary_archive(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            output = Path(tmp) / "addon.zip"
+            with mock.patch.object(zipfile.ZipFile, "testzip", return_value="corrupt-entry"):
+                with self.assertRaisesRegex(ValueError, "integrity"):
+                    packager.package(output=output)
+            self.assertEqual(list(Path(tmp).iterdir()), [])
 
 
 if __name__ == "__main__":
