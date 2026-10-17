@@ -65,12 +65,12 @@ Level ranges are provisional recommendations.
   provides it, excluding bank storage. Possession does not confirm quest eligibility.
 - Sourced objective items show confirmed quantities; an unverified amount is
   labeled explicitly. Current carried counts appear separately from these
-  reference objectives and do not replace quest-log progress.
+  reference objectives and do not replace objectives reported by the game.
 - Sourced creature objectives show the listed targets and any verified counts
-  before pickup, separately from live quest-log progress.
+  before pickup, separately from objectives reported by the game.
 - Other sourced tasks, including event and discovery objectives or burning
   remains, share a separate reference section. Event tasks are distinct from
-  kill objectives, and live quest-log progress is shown separately.
+  kill objectives, and objectives reported by the game is shown separately.
 - Items supplied by a quest have their own section. They may already have been
   used or consumed, so an empty bag count does not mean preparation has failed.
   Starter, collection and supplied items can show native icons and hover tooltips;
@@ -108,7 +108,7 @@ Level ranges are provisional recommendations.
 - Rewards, choices, money and experience from the quest dialogue while you
   view an offer, including quests started by an item.
 - A quest's objective summary from the open offer appears separately from
-  quest-log progress. It clears when that dialogue ends.
+  objectives reported by the game. It clears when that dialogue ends.
 - Quest objectives from the client appear when available. The window adjusts to
   screen width and height and recovers saved positions outside the visible area.
 - The floating guide keeps its quest and destination visible when your position
