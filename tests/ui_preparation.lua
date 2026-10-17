@@ -5562,4 +5562,89 @@ check("Real catalogue target source search retains exact declared dungeon member
     end
     assert(#f.reads==0);f:finish()
 end)
+local function detailSectionY(value)
+    for _,fs in ipairs(ui.details)do if fs.shown and fs.text==value then return -fs.point[3] end end
+end
+check("Next preparation appears before all twelve actual2933 starting references without hiding any source facts",function()
+    local f=rewardPresentationFixture();local actual={};assert(loadfile("Database/Catalog.lua"))("DungeonPro",actual)
+    local q=addon.quests[9970];q.startAlternatives=actual.quests[2933].startAlternatives
+    local nav=addon.Navigation;local calls=0;addon.Navigation={Start=function()calls=calls+1 end,Map=function()calls=calls+1 end}
+    ui:RefreshDetail();local nextY=detailSectionY(addon.L("NEXT"));local starts=0
+    for index,row in ipairs(ui.startButtons)do if row.shown then
+        starts=starts+1;assert(nextY < -row.point[3] and row.title.text==q.startAlternatives[index].name)
+    end end
+    assert(starts==12 and nextY<ui.detailScroll:GetHeight() and ui.engine:State(9970).status=="UNKNOWN")
+    assert(not ui.action and not ui.map.enabled and not ui.guide.enabled and calls==0)
+    assert(detailSectionY(addon.L("START_ALTERNATIVES"))>nextY)
+    assert(detailHas(addon.L("REWARD_ITEM","Fixed reward",2)))
+    addon.Navigation=nav;f:finish()
+end)
+check("Promoted multi-action selection and inspection precede reference locations while explicit guidance keeps its real target",function()
+    local restore=multiActionFixture();local actual={};assert(loadfile("Database/Catalog.lua"))("DungeonPro",actual)
+    addon.quests[20001].startAlternatives=actual.quests[2933].startAlternatives
+    local calls={};addon.Navigation={Start=function(action)calls[#calls+1]=action end,Map=function(point)calls[#calls+1]=point end}
+    ui:RefreshDetail();local firstReference=-ui.startButtons[1].point[3]
+    for _,row in ipairs(ui.actionButtons)do if row.shown then assert(-row.point[3]<firstReference) end end
+    for _,row in ipairs(ui.actionInspectButtons)do if row.shown then assert(-row.point[3]<firstReference) end end
+    local status=ui.engine:State(20001).status
+    ui.actionButtons[2].scripts.OnClick(ui.actionButtons[2],"LeftButton",false)
+    assert(ui.action.id==20003 and ui.quest==20001 and ui.engine:State(20001).status==status and #calls==0)
+    ui.guide.scripts.OnClick();ui.map.scripts.OnClick()
+    assert(calls[1].id==20003 and calls[1].place==addon.quests[20003].start and calls[2]==addon.quests[20003].start)
+    ui.actionInspectButtons[2].scripts.OnClick();assert(ui.quest==20003)
+    assert(ui:BackQuest() and ui.quest==20001 and ui.startButtons[12].shown)
+    restore()
+end)
+check("Promoted Next block retains starter container and mapped drop reference visit controls below guidance",function()
+    local actual={};assert(loadfile("Database/Catalog.lua"))("DungeonPro",actual)
+    for _,id in ipairs({1100,96391})do
+        local f,q=starterPresentationFixture();q.start=actual.quests[id].start
+        local nav=addon.Navigation;local visits={};addon.Navigation={Start=function(a)visits[#visits+1]=a end,Map=function(p)visits[#visits+1]=p end}
+        ui:RefreshDetail();local nextY=detailSectionY(addon.L("NEXT"))
+        assert(nextY<detailSectionY(addon.L("ITEM_ACQUISITION")) and #visits==0)
+        if id==1100 then
+            local row=ui.containerButtons[1];assert(row.shown and nextY < -row.point[3]);row.scripts.OnClick()
+            assert(#visits==1 and (visits[1].place or visits[1])==q.start.containerSource)
+        else
+            assert(ui.dropButtons[1].shown and ui.dropButtons[2].shown and nextY < -ui.dropButtons[1].point[3])
+            ui.dropButtons[2].scripts.OnClick();assert(#visits==1 and visits[1].place==q.start.dropSources[2])
+        end
+        assert(ui.engine:State(9970).status=="UNKNOWN" and not ui.action)
+        addon.Navigation=nav;f:finish()
+    end
+end)
+check("Next priority keeps unknown unavailable and completed text honest and clears long reference controls when recycled",function()
+    local f=rewardPresentationFixture();local actual={};assert(loadfile("Database/Catalog.lua"))("DungeonPro",actual)
+    local q=addon.quests[9970];q.startAlternatives=actual.quests[2933].startAlternatives
+    local locale=addon.db.locale
+    for code in pairs(addon.locales)do
+        addon.db.locale=code;ui:RefreshDetail();assert(detailSectionY(addon.L("NEXT")) < -ui.startButtons[1].point[3])
+        assert(ui.engine:State(9970).status=="UNKNOWN" and not ui.action)
+    end
+    q.factions={"Horde"};showDetail(9970,{level=60,faction="Alliance",completed=function()return false end,active=function()return false end})
+    assert(ui.engine:State(9970).status=="UNAVAILABLE" and not ui.action and not ui.guide.enabled and ui.startButtons[12].shown)
+    q.factions=nil;showDetail(9970,{level=60,completed=function(id)return id==9970 end,active=function()return false end})
+    assert(ui.engine:State(9970).status=="COMPLETED" and not ui.action)
+    showDetail(9971);assert(detailSectionY(addon.L("NEXT")) and not ui.startButtons[1].shown)
+    assert(not detailHas(addon.L("START_ALTERNATIVES")))
+    addon.db.locale=locale;f:finish()
+end)
+check("Long promoted action text reflows before references while later giver hydration cannot resurrect an older selected action",function()
+    local restore=multiActionFixture();local getter=addon.QuestName
+    addon.QuestName=function(id)if id==20002 then return string.rep("Long actual action name ",20)end;return getter(id)end
+    measurement=function(fs)if fs.text and fs.text:find("Long actual action name",1,true)then return 90 end;return 18 end
+    addon.quests[20001].start={mapID=91,x=1,y=2,name="Reference giver"}
+    ui:RefreshDetail();assert(ui.actionButtons[1].height>=126)
+    assert(-ui.actionButtons[2].point[3]>=-ui.actionButtons[1].point[3]+ui.actionButtons[1].height)
+    local referenceY;for _,fs in ipairs(ui.details)do if fs.shown and fs.text:find(addon.L("START")..": Reference giver",1,true)then referenceY=-fs.point[3]end end
+    assert(referenceY and referenceY > -ui.actionButtons[2].point[3])
+    local maps=C_Map;local armed=true
+    C_Map={GetMapInfo=function(id)
+        if armed and id==91 then armed=false;ui:InspectQuest(20002)end
+        return {name="Native reference zone"}
+    end}
+    ui:RefreshDetail();assert(not armed and ui.quest==20002 and ui.action.id==20002)
+    for _,row in ipairs(ui.actionButtons)do assert(not row.shown)end
+    measurement=nil;addon.QuestName=getter;C_Map=maps;restore()
+end)
 print("Preparation UI modeled checks passed: " .. total .. " (no native layout validation)")

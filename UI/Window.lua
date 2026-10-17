@@ -1394,6 +1394,74 @@ function UI:RefreshDetail()
                 if reported(destination, slot .. index, ownerCurrent) == false or not current() then return false end
             end
         end
+        local actions, uncertain = engine:Next(id)
+        line(addon.L("NEXT"), "section")
+        local action = actions[1]
+        local character = addon.char
+        local preferred = self.detailActionChoice
+        if preferred and (preferred.quest ~= id or preferred.dungeon ~= renderDungeon or preferred.character ~= addon.char) then
+            self.detailActionChoice, preferred = nil, nil
+        end
+        if preferred then
+            for _, candidate in ipairs(actions) do
+                if candidate.id == preferred.id and candidate.kind == preferred.kind then action = candidate; break end
+            end
+        end
+        if not action or not preferred or action.id ~= preferred.id or action.kind ~= preferred.kind then self.detailActionChoice = nil end
+        local function current()
+            local fresh = not engine.Current or addon.Read(engine.Current, "boolean", engine) == true
+            return fresh and self.quest == renderQuest and self.dungeon == renderDungeon and self.rewardGeneration == rewardGeneration and
+                self.engine == engine and addon.char == character
+        end
+        local function actionText(candidate)
+            local title = addon.QuestName(candidate.id)
+            if not current() then return nil end
+            return addon.L(candidate.kind) .. ": " .. title .. (candidate.level and (" (" .. candidate.level .. ")") or "")
+        end
+        if action then
+            local title = actionText(action)
+            if not title then return end
+            line(title)
+        else line(addon.L(state.status == "COMPLETED" and "COMPLETED" or "UNKNOWN")) end
+        if uncertain then line(addon.L("UNKNOWN")) end
+        pendingAction = action
+        if #actions > 1 then
+            local inspectIndex = 0
+            for index, candidate in ipairs(actions) do
+                local title = actionText(candidate)
+                if not title then return end
+                local description = candidate.place and place(candidate.place) or ""
+                if not current() then return end
+                local row = self:MakeRow(self.detail, self.actionButtons, index, 59)
+                row.actionID, row.actionKind = candidate.id, candidate.kind
+                row.title:SetText(candidate == action and addon.L("BRANCH_SELECTED", title) or title)
+                row.note:SetText(description); row:SetEnabled(true)
+                styleRow(row, "quest", candidate == action)
+                local actionID, kind = candidate.id, candidate.kind
+                row:SetScript("OnClick", function()
+                    if not current() then return end
+                    self.detailActionChoice = { quest = id, id = actionID, kind = kind, dungeon = renderDungeon, character = addon.char }
+                    self:RefreshDetail()
+                end)
+                y = self:LayoutRow(row, 59, y)
+                if actionID ~= id then
+                    inspectIndex = inspectIndex + 1
+                    local inspect = self.actionInspectButtons[inspectIndex]
+                    if not inspect then
+                        inspect = CreateFrame("Button", nil, self.detail)
+                        inspect:SetWidth(316); inspect.label = label(inspect, "", 7, -5, 302, 14)
+                        inspect:SetHighlightTexture("Interface\\QuestFrame\\UI-QuestTitleHighlight")
+                        self.actionInspectButtons[inspectIndex] = inspect
+                    end
+                    inspect.actionID = actionID; inspect.label:SetText(addon.L("BRANCH_INSPECT"))
+                    local height = math.max(28, measuredHeight(inspect.label, 18) + 10)
+                    inspect:SetHeight(height); inspect:ClearAllPoints(); inspect:SetPoint("TOPLEFT", 16, -y)
+                    inspect:SetEnabled(true); styleRow(inspect, "control", false)
+                    inspect:SetScript("OnClick", function() if current() then self:InspectQuest(actionID) end end)
+                    inspect:Show(); y = y + height + 6
+                end
+            end
+        end
         local starterSource = addon.Clean(q.start, "table")
         local starterID = starterSource and addon.Clean(rawget(starterSource, "itemID"), "number")
         local starterName = starterSource and addon.Clean(rawget(starterSource, "name"), "string")
@@ -1592,74 +1660,6 @@ function UI:RefreshDetail()
             if not ending then return end
             line(addon.L("ENDING") .. ": " .. ending)
             if reported(q.finish, "finish") == false then return end
-        end
-        local actions, uncertain = engine:Next(id)
-        line(addon.L("NEXT"), "section")
-        local action = actions[1]
-        local character = addon.char
-        local preferred = self.detailActionChoice
-        if preferred and (preferred.quest ~= id or preferred.dungeon ~= renderDungeon or preferred.character ~= addon.char) then
-            self.detailActionChoice, preferred = nil, nil
-        end
-        if preferred then
-            for _, candidate in ipairs(actions) do
-                if candidate.id == preferred.id and candidate.kind == preferred.kind then action = candidate; break end
-            end
-        end
-        if not action or not preferred or action.id ~= preferred.id or action.kind ~= preferred.kind then self.detailActionChoice = nil end
-        local function current()
-            local fresh = not engine.Current or addon.Read(engine.Current, "boolean", engine) == true
-            return fresh and self.quest == renderQuest and self.dungeon == renderDungeon and self.rewardGeneration == rewardGeneration and
-                self.engine == engine and addon.char == character
-        end
-        local function actionText(candidate)
-            local title = addon.QuestName(candidate.id)
-            if not current() then return nil end
-            return addon.L(candidate.kind) .. ": " .. title .. (candidate.level and (" (" .. candidate.level .. ")") or "")
-        end
-        if action then
-            local title = actionText(action)
-            if not title then return end
-            line(title)
-        else line(addon.L(state.status == "COMPLETED" and "COMPLETED" or "UNKNOWN")) end
-        if uncertain then line(addon.L("UNKNOWN")) end
-        pendingAction = action
-        if #actions > 1 then
-            local inspectIndex = 0
-            for index, candidate in ipairs(actions) do
-                local title = actionText(candidate)
-                if not title then return end
-                local description = candidate.place and place(candidate.place) or ""
-                if not current() then return end
-                local row = self:MakeRow(self.detail, self.actionButtons, index, 59)
-                row.actionID, row.actionKind = candidate.id, candidate.kind
-                row.title:SetText(candidate == action and addon.L("BRANCH_SELECTED", title) or title)
-                row.note:SetText(description); row:SetEnabled(true)
-                styleRow(row, "quest", candidate == action)
-                local actionID, kind = candidate.id, candidate.kind
-                row:SetScript("OnClick", function()
-                    if not current() then return end
-                    self.detailActionChoice = { quest = id, id = actionID, kind = kind, dungeon = renderDungeon, character = addon.char }
-                    self:RefreshDetail()
-                end)
-                y = self:LayoutRow(row, 59, y)
-                if actionID ~= id then
-                    inspectIndex = inspectIndex + 1
-                    local inspect = self.actionInspectButtons[inspectIndex]
-                    if not inspect then
-                        inspect = CreateFrame("Button", nil, self.detail)
-                        inspect:SetWidth(316); inspect.label = label(inspect, "", 7, -5, 302, 14)
-                        inspect:SetHighlightTexture("Interface\\QuestFrame\\UI-QuestTitleHighlight")
-                        self.actionInspectButtons[inspectIndex] = inspect
-                    end
-                    inspect.actionID = actionID; inspect.label:SetText(addon.L("BRANCH_INSPECT"))
-                    local height = math.max(28, measuredHeight(inspect.label, 18) + 10)
-                    inspect:SetHeight(height); inspect:ClearAllPoints(); inspect:SetPoint("TOPLEFT", 16, -y)
-                    inspect:SetEnabled(true); styleRow(inspect, "control", false)
-                    inspect:SetScript("OnClick", function() if current() then self:InspectQuest(actionID) end end)
-                    inspect:Show(); y = y + height + 6
-                end
-            end
         end
         local plan = self.currentPlan
         if plan and plan.engine == engine and plan.dungeon == renderDungeon then
