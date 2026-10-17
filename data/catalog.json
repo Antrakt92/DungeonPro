@@ -2543,6 +2543,12 @@
             303
           ]
         }
+      ],
+      "objectiveItems": [
+        {
+          "itemID": 3640,
+          "name": "Head of Deepfury"
+        }
       ]
     },
     {
@@ -2568,7 +2574,13 @@
         "x": 72,
         "y": 47.8
       },
-      "requirementsKnown": false
+      "requirementsKnown": false,
+      "objectiveItems": [
+        {
+          "itemID": 3628,
+          "name": "Hand of Dextren Ward"
+        }
+      ]
     },
     {
       "id": 391,
@@ -2599,6 +2611,12 @@
           "ids": [
             389
           ]
+        }
+      ],
+      "objectiveItems": [
+        {
+          "itemID": 2926,
+          "name": "Head of Bazil Thredd"
         }
       ]
     },
@@ -2657,7 +2675,13 @@
         "x": 26.4,
         "y": 46.4
       },
-      "requirementsKnown": false
+      "requirementsKnown": false,
+      "objectiveItems": [
+        {
+          "itemID": 3630,
+          "name": "Head of Targorr"
+        }
+      ]
     },
     {
       "id": 387,
@@ -5726,7 +5750,13 @@
             "zoneName": "Undercity"
           }
         ]
-      }
+      },
+      "objectiveItems": [
+        {
+          "itemID": 8026,
+          "name": "Garrett Family Treasure"
+        }
+      ]
     },
     {
       "id": 1139,
@@ -5759,6 +5789,12 @@
           "ids": [
             762
           ]
+        }
+      ],
+      "objectiveItems": [
+        {
+          "itemID": 5824,
+          "name": "Tablet of Will"
         }
       ]
     },
@@ -6031,7 +6067,13 @@
             "zoneName": "Ironforge"
           }
         ]
-      }
+      },
+      "objectiveItems": [
+        {
+          "itemID": 8027,
+          "name": "Krom Stoutarm's Treasure"
+        }
+      ]
     },
     {
       "id": 721,
@@ -6209,6 +6251,12 @@
           "ids": [
             721
           ]
+        }
+      ],
+      "objectiveItems": [
+        {
+          "itemID": 4635,
+          "name": "Hammertoe's Amulet"
         }
       ]
     },
