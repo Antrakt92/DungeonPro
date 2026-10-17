@@ -4806,7 +4806,13 @@
           }
         ]
       },
-      "requirementsKnown": false
+      "requirementsKnown": false,
+      "objectiveKills": [
+        {
+          "npcID": 7358,
+          "name": "Amnennar the Coldbringer"
+        }
+      ]
     },
     {
       "id": 6626,
@@ -17711,6 +17717,22 @@
         [
           8996
         ]
+      ],
+      "objectiveKills": [
+        {
+          "npcID": 16101,
+          "name": "Jarien"
+        },
+        {
+          "npcID": 16102,
+          "name": "Sothos"
+        }
+      ],
+      "providedItems": [
+        {
+          "itemID": 22051,
+          "name": "Brazier of Beckoning"
+        }
       ]
     },
     {
@@ -18251,7 +18273,13 @@
             "locationName": "Stratholme"
           }
         ]
-      }
+      },
+      "providedItems": [
+        {
+          "itemID": 13250,
+          "name": "Head of Balnazzar"
+        }
+      ]
     },
     {
       "id": 5213,
@@ -18287,6 +18315,12 @@
       "storyline": [
         5212,
         5213
+      ],
+      "objectiveItems": [
+        {
+          "itemID": 13176,
+          "name": "Scourge Data"
+        }
       ]
     },
     {
@@ -18426,6 +18460,12 @@
         5848,
         5861,
         5862
+      ],
+      "objectiveItems": [
+        {
+          "itemID": 14679,
+          "name": "Of Love and Family"
+        }
       ]
     },
     {
@@ -18566,6 +18606,13 @@
       "storyline": [
         5212,
         5213
+      ],
+      "objectiveItems": [
+        {
+          "itemID": 13174,
+          "name": "Plagued Flesh Sample",
+          "quantity": 20
+        }
       ]
     },
     {
@@ -18684,6 +18731,28 @@
         [
           8970
         ]
+      ],
+      "objectiveKills": [
+        {
+          "npcID": 16101,
+          "name": "Jarien"
+        },
+        {
+          "npcID": 16102,
+          "name": "Sothos"
+        }
+      ],
+      "objectiveItems": [
+        {
+          "itemID": 21984,
+          "name": "Left Piece of Lord Valthalak's Amulet"
+        }
+      ],
+      "providedItems": [
+        {
+          "itemID": 22051,
+          "name": "Brazier of Beckoning"
+        }
       ]
     },
     {
@@ -22750,6 +22819,16 @@
         {
           "itemID": 18539,
           "name": "Reliquary of Purity"
+        }
+      ],
+      "objectiveItems": [
+        {
+          "itemID": 18540,
+          "name": "Sealed Reliquary of Purity"
+        },
+        {
+          "itemID": 18501,
+          "name": "Felvine Shard"
         }
       ]
     },
