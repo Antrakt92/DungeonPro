@@ -11533,11 +11533,47 @@
       "source": "https://www.wowhead.com/forever/quest=7028/twisted-evils",
       "start": {
         "npcID": 13656,
-        "name": "Willow"
+        "name": "Willow",
+        "zoneName": "Desolace",
+        "mapID": 1443,
+        "x": 62,
+        "y": 39.4,
+        "reportedLocations": [
+          {
+            "mapID": 1443,
+            "x": 62,
+            "y": 39.4,
+            "zoneName": "Desolace"
+          },
+          {
+            "mapID": 1443,
+            "x": 62.2,
+            "y": 39.6,
+            "zoneName": "Desolace"
+          }
+        ]
       },
       "finish": {
         "npcID": 13656,
-        "name": "Willow"
+        "name": "Willow",
+        "zoneName": "Desolace",
+        "mapID": 1443,
+        "x": 62,
+        "y": 39.4,
+        "reportedLocations": [
+          {
+            "mapID": 1443,
+            "x": 62,
+            "y": 39.4,
+            "zoneName": "Desolace"
+          },
+          {
+            "mapID": 1443,
+            "x": 62.2,
+            "y": 39.6,
+            "zoneName": "Desolace"
+          }
+        ]
       },
       "objectiveItems": [
         {
@@ -11559,11 +11595,19 @@
       "source": "https://www.wowhead.com/forever/quest=7029/vyletongue-corruption",
       "start": {
         "npcID": 11823,
-        "name": "Vark Battlescar"
+        "name": "Vark Battlescar",
+        "zoneName": "Desolace",
+        "mapID": 1443,
+        "x": 23.2,
+        "y": 70.2
       },
       "finish": {
         "npcID": 11823,
-        "name": "Vark Battlescar"
+        "name": "Vark Battlescar",
+        "zoneName": "Desolace",
+        "mapID": 1443,
+        "x": 23.2,
+        "y": 70.2
       }
     },
     {
@@ -11578,11 +11622,19 @@
       "source": "https://www.wowhead.com/forever/quest=7041/vyletongue-corruption",
       "start": {
         "npcID": 11715,
-        "name": "Talendria"
+        "name": "Talendria",
+        "zoneName": "Desolace",
+        "mapID": 1443,
+        "x": 68.4,
+        "y": 8.8
       },
       "finish": {
         "npcID": 11715,
-        "name": "Talendria"
+        "name": "Talendria",
+        "zoneName": "Desolace",
+        "mapID": 1443,
+        "x": 68.4,
+        "y": 8.8
       }
     },
     {
@@ -11647,11 +11699,47 @@
       "source": "https://www.wowhead.com/forever/quest=7064/corruption-of-earth-and-seed",
       "start": {
         "npcID": 13699,
-        "name": "Selendra"
+        "name": "Selendra",
+        "zoneName": "Desolace",
+        "mapID": 1443,
+        "x": 26.8,
+        "y": 77.6,
+        "reportedLocations": [
+          {
+            "mapID": 1443,
+            "x": 26.8,
+            "y": 77.6,
+            "zoneName": "Desolace"
+          },
+          {
+            "mapID": 1443,
+            "x": 27,
+            "y": 77.4,
+            "zoneName": "Desolace"
+          }
+        ]
       },
       "finish": {
         "npcID": 13699,
-        "name": "Selendra"
+        "name": "Selendra",
+        "zoneName": "Desolace",
+        "mapID": 1443,
+        "x": 26.8,
+        "y": 77.6,
+        "reportedLocations": [
+          {
+            "mapID": 1443,
+            "x": 26.8,
+            "y": 77.6,
+            "zoneName": "Desolace"
+          },
+          {
+            "mapID": 1443,
+            "x": 27,
+            "y": 77.4,
+            "zoneName": "Desolace"
+          }
+        ]
       }
     },
     {
@@ -11666,11 +11754,47 @@
       "source": "https://www.wowhead.com/forever/quest=7065/corruption-of-earth-and-seed",
       "start": {
         "npcID": 13698,
-        "name": "Keeper Marandis"
+        "name": "Keeper Marandis",
+        "zoneName": "Desolace",
+        "mapID": 1443,
+        "x": 63.8,
+        "y": 10.6,
+        "reportedLocations": [
+          {
+            "mapID": 1443,
+            "x": 63.8,
+            "y": 10.6,
+            "zoneName": "Desolace"
+          },
+          {
+            "mapID": 1443,
+            "x": 64,
+            "y": 10.4,
+            "zoneName": "Desolace"
+          }
+        ]
       },
       "finish": {
         "npcID": 13698,
-        "name": "Keeper Marandis"
+        "name": "Keeper Marandis",
+        "zoneName": "Desolace",
+        "mapID": 1443,
+        "x": 63.8,
+        "y": 10.6,
+        "reportedLocations": [
+          {
+            "mapID": 1443,
+            "x": 63.8,
+            "y": 10.6,
+            "zoneName": "Desolace"
+          },
+          {
+            "mapID": 1443,
+            "x": 64,
+            "y": 10.4,
+            "zoneName": "Desolace"
+          }
+        ]
       }
     },
     {
@@ -11706,11 +11830,155 @@
       "source": "https://www.wowhead.com/forever/quest=7067/the-pariahs-instructions",
       "start": {
         "npcID": 13717,
-        "name": "Centaur Pariah"
+        "name": "Centaur Pariah",
+        "zoneName": "Desolace",
+        "mapID": 1443,
+        "x": 43.4,
+        "y": 84.8,
+        "reportedLocations": [
+          {
+            "mapID": 1443,
+            "x": 43.4,
+            "y": 84.8,
+            "zoneName": "Desolace"
+          },
+          {
+            "mapID": 1443,
+            "x": 43.6,
+            "y": 84.8,
+            "zoneName": "Desolace"
+          },
+          {
+            "mapID": 1443,
+            "x": 44.4,
+            "y": 85.6,
+            "zoneName": "Desolace"
+          },
+          {
+            "mapID": 1443,
+            "x": 45,
+            "y": 86.2,
+            "zoneName": "Desolace"
+          },
+          {
+            "mapID": 1443,
+            "x": 45.6,
+            "y": 86.4,
+            "zoneName": "Desolace"
+          },
+          {
+            "mapID": 1443,
+            "x": 46.2,
+            "y": 86.6,
+            "zoneName": "Desolace"
+          },
+          {
+            "mapID": 1443,
+            "x": 47.4,
+            "y": 87,
+            "zoneName": "Desolace"
+          },
+          {
+            "mapID": 1443,
+            "x": 48.4,
+            "y": 87,
+            "zoneName": "Desolace"
+          },
+          {
+            "mapID": 1443,
+            "x": 48.6,
+            "y": 87,
+            "zoneName": "Desolace"
+          },
+          {
+            "mapID": 1443,
+            "x": 50.4,
+            "y": 86.4,
+            "zoneName": "Desolace"
+          },
+          {
+            "mapID": 1443,
+            "x": 50.4,
+            "y": 86.6,
+            "zoneName": "Desolace"
+          }
+        ]
       },
       "finish": {
         "npcID": 13717,
-        "name": "Centaur Pariah"
+        "name": "Centaur Pariah",
+        "zoneName": "Desolace",
+        "mapID": 1443,
+        "x": 43.4,
+        "y": 84.8,
+        "reportedLocations": [
+          {
+            "mapID": 1443,
+            "x": 43.4,
+            "y": 84.8,
+            "zoneName": "Desolace"
+          },
+          {
+            "mapID": 1443,
+            "x": 43.6,
+            "y": 84.8,
+            "zoneName": "Desolace"
+          },
+          {
+            "mapID": 1443,
+            "x": 44.4,
+            "y": 85.6,
+            "zoneName": "Desolace"
+          },
+          {
+            "mapID": 1443,
+            "x": 45,
+            "y": 86.2,
+            "zoneName": "Desolace"
+          },
+          {
+            "mapID": 1443,
+            "x": 45.6,
+            "y": 86.4,
+            "zoneName": "Desolace"
+          },
+          {
+            "mapID": 1443,
+            "x": 46.2,
+            "y": 86.6,
+            "zoneName": "Desolace"
+          },
+          {
+            "mapID": 1443,
+            "x": 47.4,
+            "y": 87,
+            "zoneName": "Desolace"
+          },
+          {
+            "mapID": 1443,
+            "x": 48.4,
+            "y": 87,
+            "zoneName": "Desolace"
+          },
+          {
+            "mapID": 1443,
+            "x": 48.6,
+            "y": 87,
+            "zoneName": "Desolace"
+          },
+          {
+            "mapID": 1443,
+            "x": 50.4,
+            "y": 86.4,
+            "zoneName": "Desolace"
+          },
+          {
+            "mapID": 1443,
+            "x": 50.4,
+            "y": 86.6,
+            "zoneName": "Desolace"
+          }
+        ]
       }
     },
     {
@@ -11725,11 +11993,47 @@
       "source": "https://www.wowhead.com/forever/quest=7068/shadowshard-fragments",
       "start": {
         "npcID": 7311,
-        "name": "Uthel'nay"
+        "name": "Uthel'nay",
+        "zoneName": "Orgrimmar",
+        "mapID": 1454,
+        "x": 38.8,
+        "y": 85.4,
+        "reportedLocations": [
+          {
+            "mapID": 1454,
+            "x": 38.8,
+            "y": 85.4,
+            "zoneName": "Orgrimmar"
+          },
+          {
+            "mapID": 1454,
+            "x": 39,
+            "y": 86,
+            "zoneName": "Orgrimmar"
+          }
+        ]
       },
       "finish": {
         "npcID": 7311,
-        "name": "Uthel'nay"
+        "name": "Uthel'nay",
+        "zoneName": "Orgrimmar",
+        "mapID": 1454,
+        "x": 38.8,
+        "y": 85.4,
+        "reportedLocations": [
+          {
+            "mapID": 1454,
+            "x": 38.8,
+            "y": 85.4,
+            "zoneName": "Orgrimmar"
+          },
+          {
+            "mapID": 1454,
+            "x": 39,
+            "y": 86,
+            "zoneName": "Orgrimmar"
+          }
+        ]
       },
       "objectiveItems": [
         {
@@ -11751,11 +12055,59 @@
       "source": "https://www.wowhead.com/forever/quest=7070/shadowshard-fragments",
       "start": {
         "npcID": 4967,
-        "name": "Archmage Tervosh"
+        "name": "Archmage Tervosh",
+        "zoneName": "Dustwallow Marsh",
+        "mapID": 1445,
+        "x": 45.2,
+        "y": 24.4,
+        "reportedLocations": [
+          {
+            "mapID": 1445,
+            "x": 45.2,
+            "y": 24.4,
+            "zoneName": "Dustwallow Marsh"
+          },
+          {
+            "mapID": 1445,
+            "x": 59.6,
+            "y": 41.2,
+            "zoneName": "Dustwallow Marsh"
+          },
+          {
+            "mapID": 1445,
+            "x": 66.4,
+            "y": 49.2,
+            "zoneName": "Dustwallow Marsh"
+          }
+        ]
       },
       "finish": {
         "npcID": 4967,
-        "name": "Archmage Tervosh"
+        "name": "Archmage Tervosh",
+        "zoneName": "Dustwallow Marsh",
+        "mapID": 1445,
+        "x": 45.2,
+        "y": 24.4,
+        "reportedLocations": [
+          {
+            "mapID": 1445,
+            "x": 45.2,
+            "y": 24.4,
+            "zoneName": "Dustwallow Marsh"
+          },
+          {
+            "mapID": 1445,
+            "x": 59.6,
+            "y": 41.2,
+            "zoneName": "Dustwallow Marsh"
+          },
+          {
+            "mapID": 1445,
+            "x": 66.4,
+            "y": 49.2,
+            "zoneName": "Dustwallow Marsh"
+          }
+        ]
       },
       "objectiveItems": [
         {
