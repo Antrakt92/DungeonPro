@@ -16,6 +16,38 @@ class CatalogTests(unittest.TestCase):
     def setUp(self):
         self.data = json.loads((ROOT / "data/catalog.json").read_text(encoding="utf-8"))
 
+    def test_required_money_is_optional_copper_amount_without_mutation_or_role_promotion(self):
+        quest = next(q for q in self.data["quests"] if q["id"] == 2945)
+        quest.pop("requiredMoney", None)
+        original = copy.deepcopy(quest)
+        baseline = catalog.generate(self.data)
+        quest["requiredMoney"] = 300  # Explicit source3silver, normalized offline to copper.
+        before = copy.deepcopy(self.data)
+        generated = catalog.generate(self.data)
+        self.assertEqual(self.data, before)
+        self.assertIn('["requiredMoney"] = 300', generated)
+        for field in ("requires", "requirementsKnown", "start", "finish", "source", "providedItems"):
+            self.assertEqual(quest.get(field), original.get(field))
+        self.assertNotIn("quantity", quest["providedItems"][0])
+        del quest["requiredMoney"]
+        self.assertEqual(quest, original)
+        self.assertEqual(catalog.generate(self.data), baseline)
+
+    def test_required_money_rejects_unknown_zero_alias_and_unbounded_values(self):
+        for value in (None, False, True, 0, -1, 1.0, 1.5, "300", {}, [], float("nan"), float("inf"), 2 ** 53):
+            with self.subTest(value=repr(value)):
+                self.data["quests"][0]["requiredMoney"] = value
+                with self.assertRaisesRegex(ValueError, "required money"):
+                    catalog.validate(self.data)
+
+    def test_required_money_accepts_exact_positive_copper_boundaries(self):
+        for amount in (1, 100, 300, 2 ** 53 - 1):
+            with self.subTest(amount=amount):
+                self.data["quests"][0]["requiredMoney"] = amount
+                before = copy.deepcopy(self.data)
+                catalog.validate(self.data)
+                self.assertEqual(self.data, before)
+
     def test_objective_events_preserve_unknown_task_count_and_independent_roles(self):
         quest = next(q for q in self.data["quests"] if q["id"] == 95647)
         quest.pop("objectiveEvents", None)
