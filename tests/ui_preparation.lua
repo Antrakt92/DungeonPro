@@ -1408,7 +1408,7 @@ check("Each alternative endpoint owns its own reported-position expansion and or
     assert(not ui.action and addon.quests[9920].start == a)
     addon.Navigation = nav; endReports()
 end)
-check("Same-card refresh and language preserve expansion and scroll while Back resets card session", function()
+check("Same-card refresh preserves expansion while Back restores reading offset but resets expansion", function()
     reportedFixture()
     local locale, history, nav = addon.db.locale, ui.detailHistory, addon.Navigation
     local calls = 0; addon.Navigation = { Start = function() calls = calls + 1 end }; ui.detailHistory = {}
@@ -1423,7 +1423,7 @@ check("Same-card refresh and language preserve expansion and scroll while Back r
     for _, row in ipairs(oldRows) do assert(not row.shown and not row.enabled and row.scripts.OnClick == nil) end
     for _, row in ipairs(ui.reportedToggles) do assert(not row.shown and row.scripts.OnClick == nil) end
     ui:BackQuest(); assert(ui.quest == 9920 and #reportRows() == 0 and not ui.reportedExpanded.start)
-    assert(ui.detailScroll.verticalScroll == 0 and calls == 0)
+    assert(ui.detailScroll.verticalScroll == math.min(77, math.max(0, ui.detail:GetHeight() - ui.detailScroll:GetHeight())) and calls == 0)
     addon.db.locale, ui.detailHistory, addon.Navigation = locale, history, nav; endReports()
 end)
 check("Reported positions use measured wrapping and recycle expanded rows without stale destinations", function()
@@ -2944,9 +2944,11 @@ check("Copy Escape clamps against fresh content and never restores another card 
     ui.copy.scripts.OnEscapePressed(ui.copy)
     assert(ui.detailScroll.verticalScroll == math.min(95, math.max(0, ui.detail:GetHeight() - ui.detailScroll:GetHeight())))
     shortened = false; ui:RefreshDetail(); ui.detailScroll:SetVerticalScroll(75)
-    ui.source.scripts.OnClick(ui.source, "LeftButton", false); ui:InspectQuest(2)
+    ui.source.scripts.OnClick(ui.source, "LeftButton", false)
+    local sourceOffset = ui.detailScroll.verticalScroll
+    ui:InspectQuest(2)
     assert(ui.detailScroll.verticalScroll == 0 and not ui.copy.shown)
-    assert(ui:BackQuest() and ui.quest == 1 and ui.detailScroll.verticalScroll == 0)
+    assert(ui:BackQuest() and ui.quest == 1 and ui.detailScroll.verticalScroll == math.min(sourceOffset, math.max(0, ui.detail:GetHeight() - ui.detailScroll:GetHeight())))
     ui.detailScroll:SetVerticalScroll(23); ui.source.scripts.OnClick(ui.source, "LeftButton", false)
     ui.frame:Hide(); ui.frame.scripts.OnHide(ui.frame); ui.frame:Show(); ui.frame.scripts.OnShow(ui.frame)
     ui.detailScroll:SetVerticalScroll(31); ui.source.scripts.OnClick(ui.source, "LeftButton", false)
@@ -3016,4 +3018,121 @@ check("A copy close during reentrant same-quest reopen invalidates the older Esc
     measurement = nil; addon.Description, ui.detail.GetHeight = description, heightGetter
     ui.quest, ui.detailHistory = quest, history; ui:Refresh()
 end)
+do
+    local function historyReadingFixture()
+        local old = { quest = ui.quest, history = ui.detailHistory, dungeon = ui.dungeon, description = addon.Description }
+        addon.quests[18001] = { id = 18001, minLevel = 1, requirementsKnown = true, requires = { { ids = { 18002 } } } }
+        addon.quests[18002] = { id = 18002, minLevel = 1, requirementsKnown = true }
+        addon.quests[18003] = { id = 18003, minLevel = 1, requirementsKnown = true }
+        local long = "Long related quest reading text"
+        addon.Description = function() return long end
+        measurement = function(fs) return fs.text == long and 900 or 18 end
+        ui.detailHistory = {}; showDetail(18001)
+        return function()
+            addon.quests[18001], addon.quests[18002], addon.quests[18003] = nil, nil, nil
+            measurement = nil; addon.Description = old.description
+            ui.quest, ui.detailHistory, ui.dungeon = old.quest, old.history, old.dungeon; ui:Refresh()
+        end
+    end
+    check("Back from a clicked prerequisite returns to the original reading location", function()
+        local restore = historyReadingFixture()
+        ui.detailScroll:SetVerticalScroll(480)
+        local row = ui.requirementButtons[1]
+        assert(row.questID == 18002 and row.enabled)
+        row.scripts.OnClick(row, "LeftButton", false)
+        assert(ui.quest == 18002 and ui.detailScroll.verticalScroll == 0 and ui.detailHistory[1] == 18001)
+        ui.back.scripts.OnClick(ui.back, "LeftButton", false)
+        assert(ui.quest == 18001 and ui.detailScroll.verticalScroll == 480 and #ui.detailHistory == 0)
+        restore()
+    end)
+    check("Reading offsets follow duplicate history entries and preserve zero without entering saved data", function()
+        local restore = historyReadingFixture()
+        ui.detailScroll:SetVerticalScroll(480); ui:InspectQuest(18002)
+        ui.detailScroll:SetVerticalScroll(220); ui:InspectQuest(18001)
+        ui.detailScroll:SetVerticalScroll(130); ui:InspectQuest(18003)
+        assert(ui:BackQuest() and ui.quest == 18001 and ui.detailScroll.verticalScroll == 130)
+        assert(ui:BackQuest() and ui.quest == 18002 and ui.detailScroll.verticalScroll == 220)
+        assert(ui:BackQuest() and ui.quest == 18001 and ui.detailScroll.verticalScroll == 480)
+        ui.detailScroll:SetVerticalScroll(0); ui:InspectQuest(18002)
+        assert(ui:BackQuest() and ui.quest == 18001 and ui.detailScroll.verticalScroll == 0)
+        for _, id in ipairs(ui.detailHistory) do assert(type(id) == "number" and id > 0 and id % 1 == 0) end
+        assert(addon.char.detailOffsets == nil and addon.db.detailOffsets == nil)
+        restore()
+    end)
+    check("History reading positions stay aligned when the twenty-entry limit removes older visits", function()
+        local restore = historyReadingFixture()
+        for visit = 1, 25 do
+            ui.detailScroll:SetVerticalScroll(visit * 10)
+            assert(ui:InspectQuest(ui.quest == 18001 and 18002 or 18001))
+        end
+        assert(#ui.detailHistory == 20)
+        for visit = 25, 6, -1 do
+            assert(ui:BackQuest() and ui.detailScroll.verticalScroll == visit * 10)
+        end
+        assert(#ui.detailHistory == 0)
+        restore()
+    end)
+    check("Unknown reading offsets are omitted and reentrant scroll reads cannot overwrite a newer visit", function()
+        local restore = historyReadingFixture()
+        local getter = ui.detailScroll.GetVerticalScroll
+        for _, result in ipairs({ false, -1, math.huge, "95" }) do
+            ui.detailScroll.GetVerticalScroll = function() return result end
+            ui:InspectQuest(18002)
+            ui.detailScroll.GetVerticalScroll = getter
+            assert(ui:BackQuest() and ui.quest == 18001 and ui.detailScroll.verticalScroll == 0)
+        end
+        local armed = true
+        ui.detailScroll.GetVerticalScroll = function(region)
+            if armed then armed = false; ui:InspectQuest(18003) end
+            return getter(region)
+        end
+        assert(not ui:InspectQuest(18002) and ui.quest == 18003 and #ui.detailHistory == 1)
+        ui.detailScroll.GetVerticalScroll = getter
+        assert(ui:BackQuest() and ui.quest == 18001)
+        restore()
+    end)
+    check("Back restoration clamps shortened content and cannot overwrite a reentered window session", function()
+        local restore = historyReadingFixture()
+        local description, height = addon.Description, ui.detail.GetHeight
+        ui.detailScroll:SetVerticalScroll(480); ui:InspectQuest(18002)
+        addon.Description = function() return "Shortened reading text" end
+        assert(ui:BackQuest() and ui.detailScroll.verticalScroll == math.min(480, math.max(0, ui.detail:GetHeight() - ui.detailScroll:GetHeight())))
+        addon.Description = description
+        ui:RefreshDetail(); ui.detailScroll:SetVerticalScroll(480); ui:InspectQuest(18002)
+        local armed = true
+        addon.Description = function(id)
+            if armed then
+                armed = false
+                ui.frame:Hide(); ui.frame.scripts.OnHide(ui.frame)
+                ui.frame:Show(); ui.frame.scripts.OnShow(ui.frame)
+                ui.detailScroll:SetVerticalScroll(7)
+            end
+            return description(id)
+        end
+        assert(ui:BackQuest() and ui.quest == 18001 and ui.detailScroll.verticalScroll == 7)
+        addon.Description = description
+        ui.detailScroll:SetVerticalScroll(480); ui:InspectQuest(18002)
+        armed = true
+        ui.detail.GetHeight = function(region)
+            if armed then armed = false; ui:ResetHistoryReading(); ui.detailScroll:SetVerticalScroll(9) end
+            return height(region)
+        end
+        assert(ui:BackQuest() and ui.detailScroll.verticalScroll == 9)
+        ui.detail.GetHeight = height
+        restore()
+    end)
+    check("External history replacement dungeon changes and window close drop former reading offsets", function()
+        local restore = historyReadingFixture()
+        ui.detailScroll:SetVerticalScroll(480); ui:InspectQuest(18002)
+        ui.detailHistory = { 18001 }
+        assert(ui:BackQuest() and ui.quest == 18001 and ui.detailScroll.verticalScroll == 0)
+        ui.detailScroll:SetVerticalScroll(480); ui:InspectQuest(18002)
+        ui.frame:Hide(); ui.frame.scripts.OnHide(ui.frame); ui.frame:Show(); ui.frame.scripts.OnShow(ui.frame)
+        assert(ui:BackQuest() and ui.quest == 18001 and ui.detailScroll.verticalScroll == 0)
+        ui.detailScroll:SetVerticalScroll(480); ui:InspectQuest(18002)
+        ui.dungeon = { key = "other-reading-context", name = "Other context", minLevel = 1, maxLevel = 60, coverage = "partial", quests = {} }
+        assert(ui:BackQuest() and ui.quest == 18001 and ui.detailScroll.verticalScroll == 0)
+        restore()
+    end)
+end
 print("Preparation UI modeled checks passed: " .. total .. " (no native layout validation)")

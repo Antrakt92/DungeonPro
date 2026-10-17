@@ -12,6 +12,7 @@
 - Refined the window, controls and selected rows with a cohesive dark theme.
 - Added a dungeon overview before selecting a quest, with artwork and coverage notes.
 - Let Back return from the first quest to its dungeon overview.
+- Restored the reading position when returning from a related quest or copied link.
 - Showed a clear copy instruction beside the selected Wowhead link.
 - Preserved map pins when their native API context changes during guidance.
 - Added the dungeon browser, character quest states and prerequisite planning.

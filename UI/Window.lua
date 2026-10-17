@@ -263,14 +263,42 @@ function UI:SaveFilters()
     end
 end
 
+function UI:ResetHistoryReading()
+    self.detailNavigationRevision = {}
+    self.detailOffsets, self.detailOffsetsOwner, self.detailOffsetsDungeon = nil, nil, nil
+end
+
+function UI:HistoryOffsets()
+    if self.detailOffsetsOwner ~= self.detailHistory or self.detailOffsetsDungeon ~= self.dungeon then
+        self.detailOffsets = {}
+        self.detailOffsetsOwner, self.detailOffsetsDungeon = self.detailHistory, self.dungeon
+    end
+    return self.detailOffsets
+end
+
 function UI:InspectQuest(id)
     id = addon.Clean(id, "number")
     if not id or id <= 0 or id % 1 ~= 0 then return false end
+    local history, dungeon = self.detailHistory, self.dungeon
+    local offsets = self:HistoryOffsets()
+    local revision = {}
+    self.detailNavigationRevision = revision
     if self.quest ~= id then
         local previous = addon.Clean(self.quest, "number")
         if previous and previous > 0 and previous % 1 == 0 then
-            self.detailHistory[#self.detailHistory + 1] = previous
-            if #self.detailHistory > 20 then table.remove(self.detailHistory, 1) end
+            local scroll, generation, checker = self.detailScroll, self.rewardGeneration, issecretvalue
+            local getter = scroll.GetVerticalScroll
+            local offset = addon.Read(getter, "number", scroll)
+            if self.detailNavigationRevision ~= revision or self.quest ~= previous or self.dungeon ~= dungeon or
+                self.detailHistory ~= history or self.rewardGeneration ~= generation or
+                scroll.GetVerticalScroll ~= getter or issecretvalue ~= checker then return false end
+            history[#history + 1] = previous
+            offsets[#history] = { quest = previous, offset = offset and offset >= 0 and offset or nil }
+            if #history > 20 then
+                table.remove(history, 1)
+                for index = 1, #history do offsets[index] = offsets[index + 1] end
+                offsets[#history + 1] = nil
+            end
         end
         self.quest = id
     end
@@ -284,10 +312,29 @@ function UI:CanReturnToOverview()
 end
 
 function UI:BackQuest()
-    local previous = table.remove(self.detailHistory)
+    local history, dungeon = self.detailHistory, self.dungeon
+    local offsets, index = self:HistoryOffsets(), #history
+    local previous = history[index]
     if not previous and not self:CanReturnToOverview() then return false end
+    local saved = offsets[index]
+    offsets[index] = nil
+    table.remove(history)
+    local revision = {}
+    self.detailNavigationRevision = revision
     self.quest = previous
     self:RefreshDetail()
+    local offset = saved and saved.quest == previous and addon.Clean(saved.offset, "number")
+    if previous and offset and offset >= 0 and self.detailNavigationRevision == revision and self.quest == previous and
+        self.dungeon == dungeon and self.detailHistory == history and addon.Read(self.frame.IsShown, "boolean", self.frame) == true then
+        local generation, checker = self.rewardGeneration, issecretvalue
+        local content = addon.Read(self.detail.GetHeight, "number", self.detail)
+        local viewport = addon.Read(self.detailScroll.GetHeight, "number", self.detailScroll)
+        if self.detailNavigationRevision == revision and self.rewardGeneration == generation and issecretvalue == checker and
+            self.quest == previous and self.dungeon == dungeon and self.detailHistory == history and
+            content and viewport and content >= 0 and viewport > 0 then
+            self.detailScroll:SetVerticalScroll(math.min(offset, math.max(0, content - viewport)))
+        end
+    end
     return true
 end
 
@@ -348,6 +395,7 @@ function UI:RefreshDungeons()
             row.bg:SetColorTexture(self.dungeon == d and 0.22 or 0.13, 0.19, 0.23, 1)
             styleRow(row, "dungeon", self.dungeon == d)
             row:SetScript("OnClick", function()
+                self:ResetHistoryReading()
                 self.detailHistory = {}
                 self.dungeon, self.quest = d, nil
                 addon.char.selectedDungeon = d.key
@@ -1207,7 +1255,7 @@ function UI:Create()
     UISpecialFrames[#UISpecialFrames + 1] = "DungeonProWindow"
     for _, d in ipairs(addon.dungeons) do if d.key == addon.char.selectedDungeon then self.dungeon = d end end
     frame:SetScript("OnShow", function() self:Fit(); self:Refresh() end)
-    frame:SetScript("OnHide", function() self:ResetRewardPresentation(); self:CloseCopyLink() end)
+    frame:SetScript("OnHide", function() self:ResetHistoryReading(); self:ResetRewardPresentation(); self:CloseCopyLink() end)
     self:ApplyTheme()
     frame:Hide()
 end
