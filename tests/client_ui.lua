@@ -194,6 +194,59 @@ check("Native storyline probe is optional and tolerates missing APIs", function(
     assert(addon.char.probe.interface == 16001 and next(addon.char.probe.questLines) == nil)
     assert(addon.char.probe.api.lines == false and addon.char.probe.api.logText == false)
 end)
+check("Navigation probe has a distinct normalized command without toggling or saving quest data", function()
+    local getter, originalPrint, toggle, clientProbe = addon.Navigation.ProbeGeometry, print, addon.UI.Toggle, addon.ProbeClient
+    local output, calls, toggles, questReads = {}, 0, 0, 0
+    local saved, frames, beforeMaps, beforeRequests = addon.char.probe, #objects, mapCalls, requests
+    addon.Navigation.ProbeGeometry = function()
+        calls = calls + 1
+        return { status = "known", frames = {
+            hud = { status = "known", shown = true, visible = false, strata = "MEDIUM", level = 4,
+                scale = 0.75, left = -2.5, bottom = 9, width = 354, height = 104, questText = "DO_NOT_PRINT" },
+            planner = { status = "unknown" }, worldMap = { status = "known" },
+            player = { name = "DO_NOT_PRINT" } } }
+    end
+    print = function(line) output[#output + 1] = line end
+    addon.UI.Toggle = function() toggles = toggles + 1 end
+    addon.ProbeClient = function() questReads = questReads + 1 end
+    SlashCmdList.DUNGEONPRO("  PrObE\t NAV  ")
+    addon.Navigation.ProbeGeometry, print, addon.UI.Toggle, addon.ProbeClient = getter, originalPrint, toggle, clientProbe
+    assert(calls == 1 and toggles == 0 and questReads == 0 and addon.char.probe == saved)
+    assert(#objects == frames and mapCalls == beforeMaps and requests == beforeRequests)
+    assert(#output == 3 and output[1]:find("hud", 1, true) and output[2]:find("planner", 1, true) and output[3]:find("worldMap", 1, true))
+    assert(output[1]:find("shown=true", 1, true) and output[1]:find("visible=false", 1, true))
+    assert(output[1]:find("MEDIUM", 1, true) and output[1]:find("uiUnit", 1, true))
+    for _, line in ipairs(output) do assert(#line <= 240 and not line:find("DO_NOT_PRINT", 1, true)) end
+end)
+check("Navigation probe formatting rejects restricted malformed and extreme values", function()
+    local getter, originalPrint, checker = addon.Navigation.ProbeGeometry, print, issecretvalue
+    local restricted, output = {}, {}
+    issecretvalue = function(value) return rawequal(value, restricted) end
+    addon.Navigation.ProbeGeometry = function()
+        return { status = "known", frames = { hud = { status = "known", shown = restricted, visible = false,
+            strata = "DO_NOT_PRINT", level = 0 / 0, scale = -1, left = math.huge, bottom = 1e300, width = -1, height = restricted } } }
+    end
+    print = function(line) output[#output + 1] = line end
+    SlashCmdList.DUNGEONPRO("probe nav")
+    addon.Navigation.ProbeGeometry, print, issecretvalue = getter, originalPrint, checker
+    assert(#output == 3 and output[1]:find("shown=unknown", 1, true) and output[1]:find("visible=false", 1, true))
+    for _, line in ipairs(output) do
+        assert(#line <= 240 and not line:find("DO_NOT_PRINT", 1, true) and not line:find("nan", 1, true) and not line:find("inf", 1, true))
+    end
+end)
+check("Unavailable or failing navigation probes print unknown without opening the browser", function()
+    local getter, originalPrint, toggle = addon.Navigation.ProbeGeometry, print, addon.UI.Toggle
+    local output, toggles, saved = {}, 0, addon.char.probe
+    print = function(line) output[#output + 1] = line end
+    addon.UI.Toggle = function() toggles = toggles + 1 end
+    addon.Navigation.ProbeGeometry = nil
+    SlashCmdList.DUNGEONPRO("probe nav")
+    addon.Navigation.ProbeGeometry = function() error("unavailable") end
+    SlashCmdList.DUNGEONPRO("probe nav")
+    addon.Navigation.ProbeGeometry, print, addon.UI.Toggle = getter, originalPrint, toggle
+    assert(toggles == 0 and addon.char.probe == saved and #output == 2)
+    for _, line in ipairs(output) do assert(line:find("unknown", 1, true)) end
+end)
 check("Close and reopen preserve selection", function()
     SlashCmdList.DUNGEONPRO(""); assert(not addon.UI.frame:IsShown())
     SlashCmdList.DUNGEONPRO(""); assert(addon.UI.frame:IsShown() and addon.UI.quest == 166)

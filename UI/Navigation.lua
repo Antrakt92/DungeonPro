@@ -40,6 +40,121 @@ function N.Map(point)
     return false
 end
 
+function N.ProbeGeometry()
+    local unknown = { status = "unknown", frames = {
+        hud = { status = "unknown" }, planner = { status = "unknown" }, worldMap = { status = "unknown" } } }
+    local clean, read, checker, localeGetter, probe = addon.Clean, addon.Read, issecretvalue, GetLocale, N.ProbeGeometry
+    if type(clean) ~= "function" or type(read) ~= "function" then return unknown end
+    local ok, result = pcall(function()
+        local function readable(value)
+            if type(checker) ~= "function" then return true end
+            local checked, restricted = pcall(checker, value)
+            return checked and restricted == false
+        end
+        local function same(value, saved)
+            return readable(value) and rawequal(value, saved)
+        end
+        local function object(value)
+            return clean(value, "table") or clean(value, "userdata")
+        end
+        local ui, mapRoot = addon.UI, WorldMapFrame
+        if not readable(ui) or not readable(mapRoot) then return unknown end
+        local card = clean(ui, "table")
+        local cardFields, cardValues = { "frame", "quest", "dungeon", "engine", "rewardGeneration" }, {}
+        if card then
+            for _, key in ipairs(cardFields) do
+                local value = rawget(card, key)
+                if not readable(value) then return unknown end
+                cardValues[key] = value
+            end
+        end
+        local generation, action, hud = navigationGeneration, target, frame
+        local localeFunction = clean(localeGetter, "function")
+        local locale = localeFunction and clean(read(localeFunction, "string"), "string")
+        if not locale then return unknown end
+        local roles = { { key = "hud", owner = object(hud) },
+            { key = "planner", owner = card and object(cardValues.frame) },
+            { key = "worldMap", owner = object(mapRoot) } }
+        local specs = { { "shown", "IsShown", "boolean" }, { "visible", "IsVisible", "boolean" },
+            { "strata", "GetFrameStrata", "string" }, { "level", "GetFrameLevel", "number" },
+            { "scale", "GetEffectiveScale", "number" }, { "left", "GetLeft", "number" },
+            { "bottom", "GetBottom", "number" }, { "width", "GetWidth", "number" }, { "height", "GetHeight", "number" } }
+        local strata = { BACKGROUND = true, LOW = true, MEDIUM = true, HIGH = true, DIALOG = true,
+            FULLSCREEN = true, FULLSCREEN_DIALOG = true, TOOLTIP = true }
+        local output = { status = "known", frames = {} }
+        for _, role in ipairs(roles) do
+            local values = { status = role.owner and "known" or "unknown" }
+            output.frames[role.key], role.getters, role.rawMethods = values, {}, {}
+            if role.owner then
+                for _, spec in ipairs(specs) do
+                    local getter = clean(role.owner[spec[2]], "function")
+                    role.getters[spec[2]] = getter
+                    if type(role.owner) == "table" then
+                        local slot = rawget(role.owner, spec[2])
+                        if not readable(slot) then return unknown end
+                        role.rawMethods[spec[2]] = slot
+                    end
+                end
+            end
+        end
+        for _, role in ipairs(roles) do
+            local values = output.frames[role.key]
+            if role.owner then
+                for _, spec in ipairs(specs) do
+                    local getter = role.getters[spec[2]]
+                    local value = getter and clean(read(getter, spec[3], role.owner), spec[3])
+                    if spec[1] == "strata" and value and not strata[value] then value = nil end
+                    if spec[1] == "level" and value and (value < 0 or value % 1 ~= 0) then value = nil end
+                    if spec[1] == "scale" and value and value <= 0 then value = nil end
+                    if (spec[1] == "width" or spec[1] == "height") and value and value < 0 then value = nil end
+                    values[spec[1]] = value
+                end
+            end
+        end
+        if addon.Clean ~= clean or addon.Read ~= read or issecretvalue ~= checker or GetLocale ~= localeGetter or
+            addon.Navigation ~= N or navigationGeneration ~= generation or target ~= action or frame ~= hud or
+            not same(addon.UI, ui) or not same(WorldMapFrame, mapRoot) then return unknown end
+        if card then
+            for _, key in ipairs(cardFields) do if not same(rawget(card, key), cardValues[key]) then return unknown end end
+        end
+        local language = clean(read(localeFunction, "string"), "string")
+        for _, role in ipairs(roles) do
+            if role.owner then
+                for _, spec in ipairs(specs) do
+                    if clean(role.owner[spec[2]], "function") ~= role.getters[spec[2]] then return unknown end
+                end
+            end
+        end
+        if language ~= locale or addon.Clean ~= clean or addon.Read ~= read or issecretvalue ~= checker or
+            GetLocale ~= localeGetter or addon.Navigation ~= N or navigationGeneration ~= generation or
+            target ~= action or frame ~= hud or not same(addon.UI, ui) or not same(WorldMapFrame, mapRoot) then return unknown end
+        if card then
+            for _, key in ipairs(cardFields) do if not same(rawget(card, key), cardValues[key]) then return unknown end end
+        end
+        -- Final proof covers static bindings only; inherited native dispatch and
+        -- geometry sampled at different instants are not an atomic native snapshot.
+        if not rawequal(rawget(addon, "Clean"), clean) or not rawequal(rawget(addon, "Read"), read) or
+            not rawequal(rawget(_G, "issecretvalue"), checker) or not rawequal(rawget(_G, "GetLocale"), localeGetter) or
+            not rawequal(rawget(addon, "Navigation"), N) or not rawequal(rawget(N, "ProbeGeometry"), probe) or
+            not rawequal(rawget(addon, "UI"), ui) or not rawequal(rawget(_G, "WorldMapFrame"), mapRoot) or
+            navigationGeneration ~= generation or target ~= action or frame ~= hud then return unknown end
+        if card then
+            for _, key in ipairs(cardFields) do
+                if not rawequal(rawget(card, key), cardValues[key]) then return unknown end
+            end
+        end
+        for _, role in ipairs(roles) do
+            if type(role.owner) == "table" then
+                for _, spec in ipairs(specs) do
+                    if not rawequal(rawget(role.owner, spec[2]), role.rawMethods[spec[2]]) then return unknown end
+                end
+            end
+        end
+        return output
+    end)
+    return ok and result or unknown
+end
+
 local function releaseNativePoint(pin, generation)
     if not pin or nativePoint or navigationGeneration ~= generation or not C_Map then return end
     local owner, checker = pin.owner, issecretvalue

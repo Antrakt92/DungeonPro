@@ -149,6 +149,8 @@ This build has not yet passed native-client or visual acceptance.
 - `/DP minimap reset`: show the button at its default position.
 - `/DP probe`: save a small capability/quest-line report in this addon's own
   character settings. It does not export character identity or quest text.
+- `/DP probe nav`: print a visibility and geometry sample for the guide, browser
+  and world map in chat. Coordinates use UI units; unavailable values show `unknown`.
 - `/rl`: reload the interface, like `/reload`.
 
 Development aliases `/dprep` and `/dungeonprep` are also supported.

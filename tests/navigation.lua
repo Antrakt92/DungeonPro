@@ -957,4 +957,132 @@ check("Absent optional HUD clamp capability preserves existing guide and close b
     assert(close);close.scripts.OnClick();assert(not card.shown)
     methods.SetClampedToScreen=setter
 end)
+local function geometryFixture()
+    nav.Start(action)
+    local hud
+    for _, candidate in ipairs(frames) do if candidate.scripts.OnUpdate then hud=candidate;break end end
+    local oldUI,oldWorld=addon.UI,WorldMapFrame
+    local planner,world=object(),object()
+    addon.UI={frame=planner,quest=1,dungeon={},engine={},rewardGeneration={}}
+    WorldMapFrame=world
+    local owners={hud,planner,world};local saved,calls={},{}
+    for _,owner in ipairs(owners)do
+        saved[owner]={};calls[owner]={}
+        for name,value in pairs({IsShown=true,IsVisible=false,GetFrameStrata="DIALOG",GetFrameLevel=5,
+            GetEffectiveScale=0.75,GetLeft=12,GetBottom=24,GetWidth=354,GetHeight=104})do
+            saved[owner][name]=rawget(owner,name)
+            local key,result=name,value
+            owner[key]=function(self,...)
+                assert(select("#",...)==0)
+                calls[self][key]=(calls[self][key]or 0)+1
+                return result
+            end
+        end
+    end
+    return {hud=hud,planner=planner,world=world,calls=calls,finish=function()
+        for _,owner in ipairs(owners)do
+            for _,name in ipairs({"IsShown","IsVisible","GetFrameStrata","GetFrameLevel","GetEffectiveScale","GetLeft","GetBottom","GetWidth","GetHeight"})do
+                owner[name]=saved[owner][name]
+            end
+        end
+        addon.UI,WorldMapFrame=oldUI,oldWorld
+    end}
+end
+check("Geometry probe reads only three fixed existing frame roles once without actions or saved data",function()
+    local f=geometryFixture();local char,db={},{};addon.char,addon.db=char,db
+    local before=#frames;local mapCalls=0;C_Map.OpenWorldMap=function()mapCalls=mapCalls+1 end
+    local result=nav.ProbeGeometry()
+    assert(result.status=="known"and #frames==before and mapCalls==0 and next(char)==nil and next(db)==nil)
+    local count=0
+    for _,role in ipairs({"hud","planner","worldMap"})do
+        local value=result.frames[role]
+        assert(value.status=="known"and value.shown==true and value.visible==false and value.strata=="DIALOG"and
+            value.level==5 and value.scale==0.75 and value.left==12 and value.bottom==24 and value.width==354 and value.height==104)
+    end
+    for _,calls in pairs(f.calls)do for _,value in pairs(calls)do assert(value==1);count=count+value end end
+    assert(count==27);f.finish();addon.char=nil
+end)
+check("Geometry probe keeps missing roots and unavailable individual getters unknown",function()
+    local f=geometryFixture();WorldMapFrame=nil;f.planner.GetWidth=false;f.planner.GetLeft=function()error("unavailable")end
+    local result=nav.ProbeGeometry()
+    assert(result.status=="known"and result.frames.worldMap.status=="unknown"and result.frames.planner.width==nil and
+        result.frames.planner.left==nil and result.frames.planner.height==104)
+    f.finish()
+end)
+check("Geometry probe omits restricted nonfinite and invalid primitive geometry",function()
+    local f=geometryFixture();local restricted={}
+    issecretvalue=function(value)return value==restricted end
+    f.hud.GetLeft=function()return restricted end
+    f.hud.GetBottom=function()return 0/0 end
+    f.hud.GetWidth=function()return math.huge end
+    f.hud.GetHeight=function()return -1 end
+    f.hud.GetFrameLevel=function()return 1.5 end
+    f.hud.GetEffectiveScale=function()return 0 end
+    f.hud.GetFrameStrata=function()return "private arbitrary text"end
+    local result=nav.ProbeGeometry();local value=result.frames.hud
+    assert(result.status=="known"and value.shown==true and value.left==nil and value.bottom==nil and value.width==nil and
+        value.height==nil and value.level==nil and value.scale==nil and value.strata==nil)
+    f.finish()
+end)
+check("Geometry probe rejects root card navigation locale helper and getter replacements as a whole",function()
+    for _,kind in ipairs({"ui","world","card","navigation","locale","checker","clean","read","getter"})do
+        local f=geometryFixture();local clean,read,checker,locale=addon.Clean,addon.Read,issecretvalue,GetLocale
+        local ui,world=addon.UI,WorldMapFrame;local armed=true
+        f.world.GetHeight=function()
+            if armed then
+                armed=false
+                if kind=="ui"then addon.UI={}
+                elseif kind=="world"then WorldMapFrame={}
+                elseif kind=="card"then ui.rewardGeneration={}
+                elseif kind=="navigation"then nav.Stop()
+                elseif kind=="locale"then GetLocale=function()return "ruRU"end
+                elseif kind=="checker"then issecretvalue=function()return false end
+                elseif kind=="clean"then addon.Clean=function(...)return clean(...)end
+                elseif kind=="read"then addon.Read=function(...)return read(...)end
+                else f.hud.GetLeft=function()return 999 end end
+            end
+            return 104
+        end
+        local result=nav.ProbeGeometry()
+        assert(not armed and result.status=="unknown"and result.frames.hud.left==nil and result.frames.planner.width==nil)
+        addon.Clean,addon.Read,issecretvalue,GetLocale=clean,read,checker,locale
+        addon.UI,WorldMapFrame=ui,world;f.finish()
+    end
+end)
+
+check("Geometry probe pins later getters before reading and checks locale callbacks before final getter ownership",function()
+    for _,kind in ipairs({"earlierGeometry","locale"})do
+        local f=geometryFixture();local locale=GetLocale
+        if kind=="earlierGeometry"then
+            f.hud.GetLeft=function()f.world.GetHeight=function()return 999 end;return 12 end
+        else
+            local calls=0
+            GetLocale=function()
+                calls=calls+1
+                if calls==2 then f.hud.GetLeft=function()return 999 end end
+                return "enUS"
+            end
+        end
+        local result=nav.ProbeGeometry()
+        assert(result.status=="unknown"and result.frames.worldMap.height==nil)
+        GetLocale=locale;f.finish()
+    end
+end)
+
+check("Geometry probe rejects an earlier getter replaced by a later final checker callback",function()
+    local f=geometryFixture();local sampled,calls=false,0
+    local watched=function()sampled=true;return 104 end
+    f.world.GetHeight=watched
+    issecretvalue=function(value)
+        if sampled and value==watched then
+            calls=calls+1
+            if calls==1 then f.hud.GetLeft=function()return 999 end end
+        end
+        return false
+    end
+    local result=nav.ProbeGeometry()
+    assert(calls>=1 and result.status=="unknown"and result.frames.hud.left==nil)
+    f.finish()
+end)
+
 print("Navigation modeled checks passed: " .. total .. " (no native map validation)")

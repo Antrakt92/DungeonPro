@@ -2,6 +2,46 @@ local name, addon = ...
 local events = CreateFrame("Frame")
 local initialized, pending, refreshing = false, false, false
 
+local function probeNavigation()
+    local navigation = addon.Clean(addon.Navigation, "table")
+    local getter = navigation and addon.Clean(navigation.ProbeGeometry, "function")
+    local report = addon.Read(getter, "table")
+    if not report or addon.Clean(rawget(report, "status"), "string") ~= "known" then
+        print("Dungeon Pro nav: snapshot unknown"); return
+    end
+    local frames = addon.Clean(rawget(report, "frames"), "table")
+    local strata = { BACKGROUND = true, LOW = true, MEDIUM = true, HIGH = true, DIALOG = true,
+        FULLSCREEN = true, FULLSCREEN_DIALOG = true, TOOLTIP = true }
+    local lines = {}
+    for _, key in ipairs({ "hud", "planner", "worldMap" }) do
+        local row = frames and addon.Clean(rawget(frames, key), "table")
+        local prefix = "Dungeon Pro nav/" .. key .. ": "
+        if not row or addon.Clean(rawget(row, "status"), "string") ~= "known" then
+            lines[#lines + 1] = prefix .. "unknown"
+        else
+            local function flag(field)
+                local value = addon.Clean(rawget(row, field), "boolean")
+                if value == nil then return "unknown" end
+                return value and "true" or "false"
+            end
+            local function number(field, format)
+                local value = addon.Clean(rawget(row, field), "number")
+                if not value or value < -1000000 or value > 1000000 or
+                    ((field == "width" or field == "height" or field == "level") and value < 0) or
+                    (field == "level" and value % 1 ~= 0) or (field == "scale" and value <= 0) then return "unknown" end
+                return string.format(format, value)
+            end
+            local layer = addon.Clean(rawget(row, "strata"), "string")
+            layer = layer and strata[layer] and layer or "unknown"
+            lines[#lines + 1] = prefix .. "shown=" .. flag("shown") .. " visible=" .. flag("visible") ..
+                " strata=" .. layer .. " level=" .. number("level", "%.0f") .. " scale=" .. number("scale", "%.3f") ..
+                " uiUnit=(" .. number("left", "%.2f") .. "," .. number("bottom", "%.2f") ..
+                "," .. number("width", "%.2f") .. "," .. number("height", "%.2f") .. ")"
+        end
+    end
+    for _, line in ipairs(lines) do print(line) end
+end
+
 local function refresh()
     if pending or refreshing or not initialized then return end
     local token = {}
@@ -50,6 +90,7 @@ events:SetScript("OnEvent", function(_, event, arg1, arg2)
             msg = (addon.Clean(msg, "string") or ""):match("^%s*(.-)%s*$"):lower():gsub("%s+", " ")
             if msg == "clear" then addon.Navigation.Stop()
             elseif msg == "probe" then addon.ProbeClient()
+            elseif msg == "probe nav" then probeNavigation()
             elseif msg == "minimap" and addon.Minimap then addon.Minimap:ToggleVisibility()
             elseif msg == "minimap reset" and addon.Minimap then addon.Minimap:Reset()
             else addon.UI:Toggle() end
