@@ -516,7 +516,21 @@ end
 function addon.DungeonName(d)
     d = addon.Clean(d, "table") or {}
     local function fallback() return addon.Clean(d.name, "string") or "" end
-    local mapID, source = dialogueInteger(d.instanceID, 1), addon.Clean(d.name, "string")
+    local function identity()
+        local instanceID = rawget(d, "instanceID")
+        if type(issecretvalue) == "function" then
+            local ok, restricted = pcall(issecretvalue, instanceID)
+            if not ok or restricted ~= false then return nil end
+        end
+        if instanceID ~= nil then return dialogueInteger(instanceID, 1) end
+        -- Artwork maps may localize labels; they never become navigation or instance identities.
+        local art = addon.Clean(d.art, "table")
+        local fileID = art and dialogueInteger(art.fileID, 1)
+        local mapID = art and dialogueInteger(art.gameMapID, 1)
+        if fileID and mapID then return mapID, art, fileID end
+    end
+    local mapID, art, fileID = identity()
+    local source = addon.Clean(d.name, "string")
     if not mapID then return fallback() end
     local wing = addon.Clean(d.wing, "string")
     local getter, localize = addon.Clean(GetRealZoneText, "function"), addon.Clean(addon.L, "function")
@@ -524,8 +538,10 @@ function addon.DungeonName(d)
     local choice = database and addon.Clean(database.locale, "string")
     local scope = restrictionNameScope()
     local function current()
-        return scope and scope() and addon.Clean(GetRealZoneText, "function") == getter and
-            dialogueInteger(d.instanceID, 1) == mapID and addon.Clean(d.name, "string") == source and
+        if not scope or not scope() then return false end
+        local currentMap, currentArt, currentFile = identity()
+        return addon.Clean(GetRealZoneText, "function") == getter and
+            currentMap == mapID and currentArt == art and currentFile == fileID and addon.Clean(d.name, "string") == source and
             addon.Clean(d.wing, "string") == wing and addon.Clean(addon.L, "function") == localize and
             addon.Clean(addon.db, "table") == database and
             (not database or addon.Clean(database.locale, "string") == choice)

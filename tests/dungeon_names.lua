@@ -137,4 +137,71 @@ check("Restriction checker drift and unreadable locale never authorize a stale l
         assert(addon.DungeonName(ordinary)==ordinary.name)
     end
 end)
+check("Four reviewed art-only dungeon maps can supply client labels without becoming instance identities", function()
+    local catalog={}
+    assert(loadfile("Database/Catalog.lua"))("DungeonPro",catalog)
+    local expected={thanes=3065,lordaeron=2999,excavation=2998,dalaran=2959}
+    local count=0
+    for _,dungeon in ipairs(catalog.dungeons) do
+        if expected[dungeon.key] then
+            local source,art=dungeon.name,dungeon.art
+            assert(dungeon.instanceID==nil and art.gameMapID==expected[dungeon.key])
+            GetRealZoneText=function(id,...) assert(id==expected[dungeon.key] and select("#",...)==0);return "Native label "..id end
+            assert(addon.DungeonName(dungeon)=="Native label "..expected[dungeon.key])
+            assert(dungeon.name==source and dungeon.instanceID==nil and dungeon.art==art)
+            count=count+1
+        end
+    end
+    assert(count==4)
+end)
+check("Display-only art maps never override explicitly present invalid instance IDs or malformed artwork", function()
+    GetLocale = function() error("invalid identity must not query locale") end
+    GetRealZoneText = function() error("invalid identity must not query native label") end
+    local art = { fileID = 7963781, gameMapID = 3065 }
+    for _, value in ipairs({ false, secret, 0, -1, 1.5, math.huge, 0/0, "3065", {} }) do
+        assert(addon.DungeonName({ name = "Source", instanceID = value, art = art }) == "Source")
+    end
+    for _, field in ipairs({ "fileID", "gameMapID" }) do
+        for _, value in ipairs({ false, secret, 0, -1, 1.5, math.huge, 0/0, "3065", {} }) do
+            local invalid = { fileID = 7963781, gameMapID = 3065 }
+            invalid[field] = value
+            assert(addon.DungeonName({ name = "Source", art = invalid }) == "Source")
+        end
+        local incomplete = { fileID = 7963781, gameMapID = 3065 }
+        incomplete[field] = nil
+        assert(addon.DungeonName({ name = "Source", art = incomplete }) == "Source")
+    end
+    assert(addon.DungeonName({ name = "No artwork" }) == "No artwork")
+end)
+check("Art-only names retain native failure fallback and an existing instance keeps priority", function()
+    local art = { fileID = 7963781, gameMapID = 3065 }
+    local dungeon = { name = "Exact source", art = art }
+    GetRealZoneText = nil
+    assert(addon.DungeonName(dungeon) == dungeon.name)
+    for _, getter in ipairs({ function() return nil end, function() return secret end,
+        function() return false end, function() return "" end, function() return " " end,
+        function() error("unavailable") end }) do
+        GetRealZoneText = getter
+        assert(addon.DungeonName(dungeon) == dungeon.name)
+    end
+    dungeon.instanceID = 230
+    GetRealZoneText = function(id) assert(id == 230); return "Native instance label" end
+    assert(addon.DungeonName(dungeon) == "Native instance label")
+    assert(dungeon.instanceID == 230 and dungeon.art == art and dungeon.name == "Exact source")
+end)
+check("Art table file map and identity-route drift reject detached names and recover fresh", function()
+    for _, mode in ipairs({ "table", "file", "map", "route" }) do
+        local dungeon = { name = "Source", art = { fileID = 7963781, gameMapID = 3065 } }
+        GetRealZoneText = function()
+            if mode == "table" then dungeon.art = { fileID = 7963781, gameMapID = 3065 }
+            elseif mode == "file" then dungeon.art.fileID = 7963782
+            elseif mode == "map" then dungeon.art.gameMapID = 2999
+            else dungeon.instanceID = 3065 end
+            return "Detached native label"
+        end
+        assert(addon.DungeonName(dungeon) == "Source", mode)
+        GetRealZoneText = function(id) return "Fresh native label " .. id end
+        assert(addon.DungeonName(dungeon) == "Fresh native label " .. (mode == "map" and 2999 or 3065))
+    end
+end)
 print("Dungeon name checks passed: " .. total)
