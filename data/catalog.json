@@ -14937,7 +14937,19 @@
         "creatureDisplayID": 15968,
         "portraitSource": "https://www.wowhead.com/forever/npc=16016"
       },
-      "startsInside": true
+      "startsInside": true,
+      "objectiveItems": [
+        {
+          "itemID": 22047,
+          "name": "Top Piece of Lord Valthalak's Amulet"
+        }
+      ],
+      "providedItems": [
+        {
+          "itemID": 21986,
+          "name": "Banner of Provocation"
+        }
+      ]
     },
     {
       "id": 92401,
@@ -16658,6 +16670,18 @@
         5522,
         5531,
         4771
+      ],
+      "objectiveKills": [
+        {
+          "npcID": 10432,
+          "name": "Vectus"
+        }
+      ],
+      "providedItems": [
+        {
+          "itemID": 12368,
+          "name": "Dawn's Gambit"
+        }
       ]
     },
     {
@@ -17755,6 +17779,18 @@
         [
           8996
         ]
+      ],
+      "objectiveKills": [
+        {
+          "npcID": 16097,
+          "name": "Isalien"
+        }
+      ],
+      "providedItems": [
+        {
+          "itemID": 22050,
+          "name": "Brazier of Beckoning"
+        }
       ]
     },
     {
@@ -18625,6 +18661,12 @@
       "storyline": [
         5281,
         5282
+      ],
+      "providedItems": [
+        {
+          "itemID": 13289,
+          "name": "Egan's Blaster"
+        }
       ]
     },
     {
@@ -18879,6 +18921,24 @@
         [
           8970
         ]
+      ],
+      "objectiveItems": [
+        {
+          "itemID": 21984,
+          "name": "Left Piece of Lord Valthalak's Amulet"
+        }
+      ],
+      "objectiveKills": [
+        {
+          "npcID": 16097,
+          "name": "Isalien"
+        }
+      ],
+      "providedItems": [
+        {
+          "itemID": 22050,
+          "name": "Brazier of Beckoning"
+        }
       ]
     },
     {
@@ -21202,7 +21262,28 @@
         "zoneName": "Dire Maul",
         "creatureDisplayID": 14381,
         "portraitSource": "https://www.wowhead.com/forever/npc=14338"
-      }
+      },
+      "objectiveItems": [
+        {
+          "itemID": 14048,
+          "name": "Bolt of Runecloth",
+          "quantity": 4
+        },
+        {
+          "itemID": 8170,
+          "name": "Rugged Leather",
+          "quantity": 8
+        },
+        {
+          "itemID": 14341,
+          "name": "Rune Thread",
+          "quantity": 2
+        },
+        {
+          "itemID": 18240,
+          "name": "Ogre Tannin"
+        }
+      ]
     },
     {
       "id": 7503,
@@ -22273,7 +22354,13 @@
         "zoneName": "Dire Maul"
       },
       "requirementsKnown": false,
-      "source": "https://www.wowhead.com/forever/quest=7703/unfinished-gordok-business"
+      "source": "https://www.wowhead.com/forever/quest=7703/unfinished-gordok-business",
+      "objectiveItems": [
+        {
+          "itemID": 18336,
+          "name": "Gauntlet of Gordok Might"
+        }
+      ]
     },
     {
       "id": 7504,
@@ -22703,7 +22790,28 @@
         "portraitSource": "https://www.wowhead.com/forever/npc=14338"
       },
       "requirementsKnown": false,
-      "source": "https://www.wowhead.com/forever/quest=5519/the-gordok-ogre-suit"
+      "source": "https://www.wowhead.com/forever/quest=5519/the-gordok-ogre-suit",
+      "objectiveItems": [
+        {
+          "itemID": 14048,
+          "name": "Bolt of Runecloth",
+          "quantity": 4
+        },
+        {
+          "itemID": 8170,
+          "name": "Rugged Leather",
+          "quantity": 8
+        },
+        {
+          "itemID": 14341,
+          "name": "Rune Thread",
+          "quantity": 2
+        },
+        {
+          "itemID": 18240,
+          "name": "Ogre Tannin"
+        }
+      ]
     },
     {
       "id": 7494,
