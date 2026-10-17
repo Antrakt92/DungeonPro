@@ -5964,6 +5964,13 @@
             2258
           ]
         }
+      ],
+      "objectiveItems": [
+        {
+          "itemID": 8047,
+          "name": "Magenta Fungus Cap",
+          "quantity": 12
+        }
       ]
     },
     {
@@ -6388,6 +6395,24 @@
             2338
           ]
         }
+      ],
+      "objectiveItems": [
+        {
+          "itemID": 7669,
+          "name": "Shattered Necklace Ruby"
+        },
+        {
+          "itemID": 7670,
+          "name": "Shattered Necklace Sapphire"
+        },
+        {
+          "itemID": 7671,
+          "name": "Shattered Necklace Topaz"
+        },
+        {
+          "itemID": 7672,
+          "name": "Shattered Necklace Power Source"
+        }
       ]
     },
     {
@@ -6637,6 +6662,20 @@
             2200
           ]
         }
+      ],
+      "objectiveItems": [
+        {
+          "itemID": 7669,
+          "name": "Shattered Necklace Ruby"
+        },
+        {
+          "itemID": 7670,
+          "name": "Shattered Necklace Sapphire"
+        },
+        {
+          "itemID": 7671,
+          "name": "Shattered Necklace Topaz"
+        }
       ]
     },
     {
@@ -6741,6 +6780,12 @@
           "ids": [
             2201
           ]
+        }
+      ],
+      "objectiveItems": [
+        {
+          "itemID": 7672,
+          "name": "Shattered Necklace Power Source"
         }
       ]
     },
