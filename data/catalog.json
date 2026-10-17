@@ -1315,12 +1315,96 @@
           {
             "npcID": 6124,
             "name": "Captain Beld",
-            "locationName": "Dun Morogh"
+            "locationName": "Dun Morogh",
+            "zoneName": "Dun Morogh",
+            "mapID": 1426,
+            "x": 77.8,
+            "y": 62.4,
+            "reportedLocations": [
+              {
+                "zoneName": "Dun Morogh",
+                "mapID": 1426,
+                "x": 77.8,
+                "y": 62.4
+              },
+              {
+                "zoneName": "Dun Morogh",
+                "mapID": 1426,
+                "x": 77.8,
+                "y": 62.6
+              }
+            ]
           },
           {
             "npcID": 6123,
             "name": "Dark Iron Spy",
-            "locationName": "Dun Morogh"
+            "locationName": "Dun Morogh",
+            "zoneName": "Dun Morogh",
+            "mapID": 1426,
+            "x": 76.4,
+            "y": 61,
+            "reportedLocations": [
+              {
+                "zoneName": "Dun Morogh",
+                "mapID": 1426,
+                "x": 76.4,
+                "y": 61
+              },
+              {
+                "zoneName": "Dun Morogh",
+                "mapID": 1426,
+                "x": 76.6,
+                "y": 61.8
+              },
+              {
+                "zoneName": "Dun Morogh",
+                "mapID": 1426,
+                "x": 76.8,
+                "y": 60
+              },
+              {
+                "zoneName": "Dun Morogh",
+                "mapID": 1426,
+                "x": 77.2,
+                "y": 59
+              },
+              {
+                "zoneName": "Dun Morogh",
+                "mapID": 1426,
+                "x": 77.4,
+                "y": 61.4
+              },
+              {
+                "zoneName": "Dun Morogh",
+                "mapID": 1426,
+                "x": 77.6,
+                "y": 59
+              },
+              {
+                "zoneName": "Dun Morogh",
+                "mapID": 1426,
+                "x": 77.8,
+                "y": 62.4
+              },
+              {
+                "zoneName": "Dun Morogh",
+                "mapID": 1426,
+                "x": 77.8,
+                "y": 62.6
+              },
+              {
+                "zoneName": "Dun Morogh",
+                "mapID": 1426,
+                "x": 78,
+                "y": 60
+              },
+              {
+                "zoneName": "Dun Morogh",
+                "mapID": 1426,
+                "x": 78,
+                "y": 61.2
+              }
+            ]
           }
         ]
       },
