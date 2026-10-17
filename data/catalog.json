@@ -9180,6 +9180,18 @@
         92434,
         96984,
         97287
+      ],
+      "objectiveItems": [
+        {
+          "itemID": 251961,
+          "name": "Arcane Mote"
+        }
+      ],
+      "providedItems": [
+        {
+          "itemID": 277507,
+          "name": "Dalaran Sewer Key"
+        }
       ]
     },
     {
@@ -9244,6 +9256,18 @@
         92432,
         92458,
         92459
+      ],
+      "objectiveItems": [
+        {
+          "itemID": 251961,
+          "name": "Arcane Mote"
+        }
+      ],
+      "providedItems": [
+        {
+          "itemID": 277507,
+          "name": "Dalaran Sewer Key"
+        }
       ]
     },
     {
@@ -9303,7 +9327,24 @@
             "y": 45.2
           }
         ]
-      }
+      },
+      "objectiveKills": [
+        {
+          "npcID": 247003,
+          "name": "Seeking Remnant",
+          "quantity": 8
+        },
+        {
+          "npcID": 247001,
+          "name": "Saturated Remnant",
+          "quantity": 8
+        },
+        {
+          "npcID": 246600,
+          "name": "Mana Echo",
+          "quantity": 8
+        }
+      ]
     },
     {
       "id": 92456,
@@ -9394,7 +9435,13 @@
             "zoneName": "Stormwind City"
           }
         ]
-      }
+      },
+      "objectiveItems": [
+        {
+          "itemID": 251983,
+          "name": "Fel Infused Blossom"
+        }
+      ]
     },
     {
       "id": 96987,
@@ -11554,6 +11601,12 @@
       "storyline": [
         95664,
         98823
+      ],
+      "providedItems": [
+        {
+          "itemID": 287958,
+          "name": "Titan Relic"
+        }
       ]
     },
     {
@@ -11615,6 +11668,12 @@
       "storyline": [
         95664,
         98823
+      ],
+      "objectiveItems": [
+        {
+          "itemID": 270866,
+          "name": "Titan Relic"
+        }
       ]
     },
     {
@@ -11642,6 +11701,12 @@
       "storyline": [
         95810,
         98824
+      ],
+      "objectiveItems": [
+        {
+          "itemID": 270865,
+          "name": "Titan Relic"
+        }
       ]
     },
     {
@@ -11709,6 +11774,13 @@
       "requirementsKnown": false,
       "factions": [
         "Horde"
+      ],
+      "objectiveItems": [
+        {
+          "itemID": 271100,
+          "name": "Thicket Raptor Meat",
+          "quantity": 4
+        }
       ]
     },
     {
