@@ -128,7 +128,7 @@ end
 local function explicitGiverVisit(ui, id)
     local destination, giver = ui:NavigationDestination(true)
     assert(giver == true and destination == ui.giverAction and destination.id == id and destination.kind == "visit")
-    assert(destination.place == addon.quests[id].start and ui.guide.enabled and ui.guide.text == addon.L("VISIT_GIVER"))
+    assert(destination.place == addon.quests[id].start and ui.giver.enabled and ui.giver.footerLabelKey == "VISIT_GIVER")
 end
 local eventFrame = objects[#objects]
 check("Addon initializes on the matching Forever client", function()
@@ -173,7 +173,7 @@ check("Default compact quest card retains the real next step and explicit giver 
     withKnownDefias(function()
         ui:Refresh()
         assert(ui.detailReferencesExpanded == false and ui.detailChainExpanded == false)
-        assert(ui.action.id == 65 and ui.guide.enabled and ui.giver.enabled)
+        assert(ui.action.id == 65 and ui.giver.enabled)
         assert(ui.giverAction.place == addon.quests[166].start and ui.quest == 166)
     end)
     expandedReferenceFixture = true; ui:Refresh()
@@ -182,7 +182,7 @@ check("Known graph fixture guides to the initial Defias step", function()
     withKnownDefias(function()
         addon.UI.quest = 166; addon.UI:Refresh()
         expandKnownChain()
-        assert(addon.UI.action.id == 65 and addon.UI.guide.enabled)
+        assert(addon.UI.action.id == 65 and addon.UI.giver.enabled)
         assert(#addon.UI.chainButtons == 7)
     end)
     assert(addon.UI.engine:State(166).status == "UNKNOWN" and not addon.UI.action)
@@ -208,11 +208,11 @@ check("Quest title hydration is requested only once per ID", function()
     for i = 1, 5 do addon.UI:Refresh() end
     assert(requests == before)
 end)
-check("Native map and waypoint use the resolved ancestor from the known graph fixture", function()
+check("Quest icon maps and guides to the selected giver while the known graph remains open", function()
     withKnownDefias(function()
         addon.UI.quest = 166; addon.UI:Refresh()
         local quest, dungeon = addon.UI.quest, addon.UI.dungeon
-        addon.UI.guide.scripts.OnClick()
+        addon.UI.giver.scripts.OnClick()
         assert(#waypoints == 1 and waypoints[1].mapID == 1436)
         assert(math.abs(waypoints[1].x - 0.563) < 0.0001 and mapCalls == 1)
         assert(addon.UI.frame:IsShown() and addon.UI.quest == quest and addon.UI.dungeon == dungeon,
@@ -866,7 +866,7 @@ check("Hidden Enemies starter visits Neeru while preserving the separate Thrall 
     addon.Navigation.Stop()
     ui.quest, ui.detailHistory = previous, history; ui:Refresh()
 end)
-check("Actual partial Defias chain keeps held prerequisite work while the header stays on the selected giver", function()
+check("Actual partial Defias chain keeps held prerequisite work while the quest icon stays on the selected giver", function()
     local ui, previous, history = addon.UI, addon.UI.quest, addon.UI.detailHistory
     local active, ready = C_QuestLog.IsOnQuest, C_QuestLog.ReadyForTurnIn
     C_QuestLog.IsOnQuest = function(id) return id == 65 end
@@ -878,10 +878,10 @@ check("Actual partial Defias chain keeps held prerequisite work while the header
     assert(ui.action.id == 65 and ui.action.kind == "complete" and ui.action.place == nil)
     explicitGiverVisit(ui, 166)
     canTurnIn = true; eventFrame.scripts.OnEvent(eventFrame, "QUEST_LOG_UPDATE")
-    assert(ui.action.id == 65 and ui.action.kind == "turnin" and ui.guide.enabled)
+    assert(ui.action.id == 65 and ui.action.kind == "turnin" and ui.giver.enabled)
     assert(ui.engine:State(166).status == "UNKNOWN" and addon.quests[166].requirementsKnown == false)
     local before, place = #waypoints, addon.quests[166].start
-    ui.guide.scripts.OnClick()
+    ui.giver.scripts.OnClick()
     local actual = waypoints[#waypoints]
     assert(#waypoints == before + 1 and actual.mapID == place.mapID)
     assert(actual.x == place.x / 100 and actual.y == place.y / 100)

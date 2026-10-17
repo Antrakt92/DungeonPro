@@ -98,12 +98,12 @@ Level ranges are provisional recommendations.
 - When available, follow the game's next waypoint for a quest in your log.
   It may mark a route point, an entrance or a turn-in. Quest-giver locations
   and preparation steps remain separate.
-- A separate quest-giver button opens a known zone or guides to a known location.
+- The quest icon opens the giver's known zone or guides to a known location.
   Known coordinates appear as a Dungeon Pro marker on the map, even without native waypoint support.
-  The compact quest icon visits the giver; the Wowhead icon offers the quest link
-  for copying. Hover over either icon for its action description.
+  The Wowhead icon offers the quest link for copying. Hover over either icon
+  for its action description.
   Visiting a giver does not confirm that the quest is available to pick up.
-  The map and visit buttons always refer to the selected quest's giver.
+  The quest icon always refers to the selected quest's giver.
   Alternative givers have separate actions; missing coordinates are explained.
   A low-level character can still visit a known giver without treating the quest
   as available. The planner stays open; move it if it covers the map.

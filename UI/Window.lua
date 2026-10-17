@@ -299,7 +299,7 @@ function UI:FitHeaderControls()
             (not database or database.locale == locale) and issecretvalue == checker
     end
     local controls, wrapped = {}, false
-    for _, button in ipairs({ self.rangeButton, self.characterButton, self.map, self.guide }) do
+    for _, button in ipairs({ self.rangeButton, self.characterButton }) do
         local getter = addon.Clean(button.GetFontString, "function")
         local ok, value
         if getter then ok, value = pcall(getter, button) end
@@ -1770,7 +1770,6 @@ function UI:RefreshDetail()
     end
     if self.overviewArt then self.overviewArt:Hide() end
     self.action = nil
-    self.map:SetEnabled(false); self.guide:SetEnabled(false)
     self.giverAction, self.giverHasCoordinates, self.giverBinding = nil, false, nil
     self:SetFooterEnabled(self.giver, false)
     self:SetFooterLabel(self.giver, "VISIT_GIVER")
@@ -3722,7 +3721,7 @@ function UI:RefreshDetail()
         end
         self:SetFooterEnabled(self.source, true)
     else
-        self.map:SetEnabled(false); self.guide:SetEnabled(false); self:SetFooterEnabled(self.source, false)
+        self:SetFooterEnabled(self.source, false)
         if renderDungeon then
             local name = addon.Read(addon.DungeonName, "string", renderDungeon)
             if self.quest ~= renderQuest or self.dungeon ~= renderDungeon or self.rewardGeneration ~= rewardGeneration then return end
@@ -3816,11 +3815,7 @@ function UI:RefreshDetail()
         self:SetFooterLabel(self.giver, pendingGiver.coordinates and "VISIT_GIVER" or "GIVER_MAP")
         self:SetFooterEnabled(self.giver, true)
     end
-    local mapAction = self:NavigationDestination(false)
-    local guideAction = self:NavigationDestination(true)
     if not portraitCardCurrent() then return end
-    self.map:SetText(addon.L("GIVER_MAP")); self.map:SetEnabled(mapAction ~= nil)
-    self.guide:SetText(addon.L("VISIT_GIVER")); self.guide:SetEnabled(guideAction ~= nil)
     self:FitHeaderControls()
     return portraitCardCurrent() and rewardGeneration or nil
 end
@@ -3949,16 +3944,6 @@ function UI:Create()
     self.catalogNotice = label(self.catalog, "", 4, 0, 220, 13)
     self.questList, self.questScroll = scrolling(frame, 288, -218, 355, 425)
     self.detail, self.detailScroll = scrolling(frame, 690, -218, 350, 425)
-    self.map = button(frame, "", 160, function()
-        local action, giver = self:NavigationDestination(false)
-        if action then self:DispatchDetail(action, true, giver) end
-    end)
-    self.map:SetPoint("TOPLEFT", 690, -84)
-    self.guide = button(frame, "", 172, function()
-        local action, giver = self:NavigationDestination(true)
-        if action then self:DispatchDetail(action, false, giver) end
-    end)
-    self.guide:SetPoint("TOPLEFT", 856, -84)
     self.source = button(frame, "", 36, function() if self.quest then self:CopyLink(self.quest) end end)
     self.source:SetPoint("BOTTOMRIGHT", -43, 19)
     self.giver = button(frame, "", 36, function()
@@ -4023,9 +4008,7 @@ function UI:Create()
             self:HideNavigationHint()
         end)
     end
-    navigationHint(self.map, function() local action = self:NavigationDestination(false); return action and action.place end)
-    navigationHint(self.guide, function() local action = self:NavigationDestination(true); return action and action.place end)
-    navigationHint(self.giver, function() return self.giverAction and self.giverAction.place or {} end)
+    navigationHint(self.giver, function() local action = self:NavigationDestination(false); return action and action.place end)
     navigationHint(self.source, nil, "COPY")
     self.capacityStatus = label(frame, "", 22, -646, 640, 13)
     self.capacityStatus:Hide()

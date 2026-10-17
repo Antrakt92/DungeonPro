@@ -37,8 +37,8 @@ cardFor(ui.dungeon).entranceControl.scripts.OnClick()
 assert(WorldMapFrame.mapID == 1455 and markerAt(27.5, 48))
 addon.Navigation.Stop()
 ui:InspectQuest(96394)
-assert(ui.map.enabled)
-ui.map.scripts.OnClick()
+assert(ui.map == nil and ui.guide == nil and ui.giver.enabled, "giver navigation is available through the quest icon without duplicate toolbar controls")
+ui.giver.scripts.OnClick()
 assert(WorldMapFrame.mapID == 1455 and markerAt(32.8, 48.6))
 local expected = {}
 for _, key in ipairs({ "rfc", "wc", "dm", "sfk", "bfd", "stocks", "gnom", "rfk", "sm", "rfd", "ulda", "zf",
