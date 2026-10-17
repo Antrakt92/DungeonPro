@@ -33,6 +33,7 @@ local function reset()
     nav.Stop()
     nativeCalls, clears, current = 0, 0, nil
     TomTom, C_SuperTrack, issecretvalue = nil, nil, nil
+    InCombatLockdown = nil
     addon.GiverName, addon.db = nil, nil
     addon.Theme = { StyleRow = function(row, options) assert(options.kind == "section"); row.skinned = true; return true end }
     GetLocale = function() return "enUS" end
@@ -1107,6 +1108,81 @@ check("Guide close styling is optional and preserves its exact Stop handler and 
         assert(close.scripts.OnClick==fresh.Navigation.Stop)
         close.scripts.OnClick();assert(not card.shown)
     end
+end)
+
+local function layerFixture()
+    local ui,combat,strataSetter,levelSetter=addon.UI,InCombatLockdown,methods.SetFrameStrata,methods.SetFrameLevel
+    local f={level=40,strataCalls=0,levelCalls=0,reads=0}
+    f.planner={GetHighestFrameLevel=function(_,allChildren)assert(allChildren==true);f.reads=f.reads+1;return f.level end}
+    addon.UI={frame=f.planner};InCombatLockdown=function()return false end
+    methods.SetFrameStrata=function(self,value)f.strataCalls=f.strataCalls+1;assert(value=="DIALOG");if f.strataThrows then error("restricted")end;self.layerStrata=value end
+    methods.SetFrameLevel=function(self,value)f.levelCalls=f.levelCalls+1;if f.levelThrows then error("restricted")end;self.layerLevel=value end
+    f.finish=function()addon.UI,InCombatLockdown,methods.SetFrameStrata,methods.SetFrameLevel=ui,combat,strataSetter,levelSetter end
+    return f
+end
+check("Guide explicitly layers above the current owned planner subtree on every start",function()
+    local f=layerFixture();assert(nav.Start(action));local card=hud()
+    assert(card.layerStrata=="DIALOG"and card.layerLevel==41 and f.strataCalls==1 and f.levelCalls==1 and f.reads==1)
+    addon.UI.frame={GetHighestFrameLevel=function(_,allChildren)assert(allChildren==true);return 83 end}
+    assert(nav.Start(action)and hud()==card and card.layerLevel==84 and f.strataCalls==2 and f.levelCalls==2)
+    nav.Stop();f.finish()
+end)
+check("Unknown and out-of-policy planner levels never drive a numeric raise",function()
+    for _,kind in ipairs({"missing","restricted","negative","fractional","nan","infinite","aboveCap","throw","frameReplacement","getterReplacement"})do
+        local f=layerFixture();local token={}
+        if kind=="missing"then f.planner.GetHighestFrameLevel=nil
+        elseif kind=="restricted"then f.level=token;issecretvalue=function(v)return v==token end
+        elseif kind=="negative"then f.level=-1
+        elseif kind=="fractional"then f.level=1.5
+        elseif kind=="nan"then f.level=0/0
+        elseif kind=="infinite"then f.level=math.huge
+        elseif kind=="aboveCap"then f.level=100001
+        elseif kind=="throw"then f.planner.GetHighestFrameLevel=function()error("unavailable")end
+        elseif kind=="frameReplacement"then f.planner.GetHighestFrameLevel=function()addon.UI.frame={};return 40 end
+        else f.planner.GetHighestFrameLevel=function()f.planner.GetHighestFrameLevel=function()return 40 end;return 40 end end
+        assert(nav.Start(action)and hud().layerStrata=="DIALOG"and f.levelCalls==0)
+        nav.Stop();issecretvalue=nil;f.finish()
+    end
+    for _,level in ipairs({0,100000})do
+        local f=layerFixture();f.level=level;assert(nav.Start(action)and hud().layerLevel==level+1);nav.Stop();f.finish()
+    end
+end)
+check("Guide layer mutations require clean out-of-combat state and recheck it after planner reads",function()
+    for _,kind in ipairs({"combat","missing","throw","restricted","entered","getterChanged"})do
+        local f=layerFixture();local token={}
+        if kind=="combat"then InCombatLockdown=function()return true end
+        elseif kind=="missing"then InCombatLockdown=nil
+        elseif kind=="throw"then InCombatLockdown=function()error("unavailable")end
+        elseif kind=="restricted"then InCombatLockdown=function()return token end;issecretvalue=function(v)return v==token end
+        else f.planner.GetHighestFrameLevel=function()
+            if kind=="entered"then InCombatLockdown=function()return true end
+            else InCombatLockdown=function()return false end end
+            return 40
+        end end
+        assert(nav.Start(action)and f.levelCalls==0)
+        assert(f.strataCalls==((kind=="entered"or kind=="getterChanged")and 1 or 0))
+        nav.Stop();issecretvalue=nil;f.finish()
+    end
+end)
+check("Failed optional layer setters retain the existing live guide",function()
+    local f=layerFixture();f.strataThrows,f.levelThrows=true,true
+    assert(nav.Start(action)and hud().shown and f.strataCalls==1 and f.levelCalls==1)
+    nav.Stop();f.finish()
+end)
+check("Planner-layer callbacks cannot resurrect a canceled guide or suppress its replacement",function()
+    local f=layerFixture();f.planner.GetHighestFrameLevel=function()nav.Stop();return 40 end
+    assert(nav.Start(action)==false)
+    for _,frame in ipairs(frames)do if frame.scripts.OnUpdate then assert(not frame.shown)end end
+    f.finish()
+    f=layerFixture();local armed=true;local newer={id=2,kind="visit",place={mapID=1,x=30,y=40}}
+    f.planner.GetHighestFrameLevel=function()
+        if armed then armed=false;assert(nav.Start(newer))end
+        return 40
+    end
+    assert(nav.Start(action)==false and not armed and hud().shown)
+    nav.QuestChanged(1);assert(hud().shown)
+    nav.QuestChanged(2);for _,frame in ipairs(frames)do if frame.scripts.OnUpdate then assert(not frame.shown)end end
+    f.finish()
 end)
 
 print("Navigation modeled checks passed: " .. total .. " (no native map validation)")

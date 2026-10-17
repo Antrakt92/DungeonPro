@@ -1240,4 +1240,52 @@ check("Completion portrait ownership expires on leaving the world",function()
     assert(not result.current()and addon.DialogueTurnInPortrait(id)==nil)
 end)
 
+check("Actual level-one Defias giver click couples source UI navigation and owned planner layer intent",function()
+    local q=assert(addon.quests[166]);assert(q.level==22 and q.minLevel==14 and q.requirementsKnown==false)
+    local navigation=addon.Navigation;assert(loadfile("UI/Navigation.lua"))("DungeonPro",addon)
+    local globals={"UnitLevel","UnitFactionGroup","UnitClass","UnitRace","GetLocale","C_QuestLog","C_Map",
+        "UiMapPoint","CreateVector2D","GetPlayerFacing","TomTom","InCombatLockdown"};local saved={}
+    for _,key in ipairs(globals)do saved[key]=_G[key]end
+    local ui=addon.UI;local quest,dungeon,locale=ui.quest,ui.dungeon,addon.db.locale
+    local highest,strataSetter,levelSetter=ui.frame.GetHighestFrameLevel,methods.SetFrameStrata,methods.SetFrameLevel
+    UnitLevel=function()return 1 end;UnitFactionGroup=function()return "Alliance"end
+    UnitClass=function()return "Mage","MAGE",8 end;UnitRace=function()return "Dwarf","Dwarf",3 end
+    GetLocale=function()return "enUS"end;addon.db.locale="enUS";InCombatLockdown=function()return false end
+    C_QuestLog={IsQuestFlaggedCompleted=function()return false end,IsOnQuest=function()return false end,
+        ReadyForTurnIn=function()return false end,GetTitleForQuestID=function()return nil end,
+        GetNumQuestLogEntries=function()return 0,0 end}
+    local opened,pin,sets=0,nil,0
+    C_Map={GetMapInfo=function()return{name="Westfall"}end,GetBestMapForUnit=function()return 1436 end,
+        GetPlayerMapPosition=function()return{GetXY=function()return .5,.5 end}end,
+        GetWorldPosFromMapPos=function(_,p)return 0,{x=p.y*1000,y=p.x*1000}end,
+        OpenWorldMap=function(id)assert(id==1436);opened=opened+1 end,
+        CanSetUserWaypointOnMap=function()return true end,GetUserWaypoint=function()return pin end,
+        SetUserWaypoint=function(value)sets=sets+1;pin=value;return true end,ClearUserWaypoint=function()pin=nil end}
+    UiMapPoint={CreateFromCoordinates=function(id,x,y)return{uiMapID=id,position={x=x,y=y}}end}
+    CreateVector2D=function(x,y)return{x=x,y=y}end;GetPlayerFacing=function()return 0 end;TomTom=nil
+    ui.frame.GetHighestFrameLevel=function(_,allChildren)assert(allChildren==true);return 40 end
+    methods.SetFrameStrata=function(self,value)self.layerStrata=value end
+    methods.SetFrameLevel=function(self,value)self.layerLevel=value end
+    for _,d in ipairs(addon.dungeons)do if d.key=="dm"then ui.dungeon=d end end
+    ui.frame:Show();ui.quest=166;ui:Refresh()
+    local context=addon.Context()
+    assert(context.level==1 and context.faction=="Alliance"and context.class=="MAGE"and context.race==3)
+    assert(ui.engine:State(166).status=="LOCKED"and not ui.guide.enabled and ui.giver.enabled and ui.giverHasCoordinates)
+    assert(ui.giverAction.id==166 and ui.giverAction.kind=="visit"and ui.giverAction.place==q.start)
+    assert(q.start.npcID==234 and q.start.mapID==1436 and q.start.x==56.3 and q.start.y==47.5)
+    local start=addon.Navigation.Start;local started,result=0,nil
+    addon.Navigation.Start=function(action)started=started+1;assert(action==ui.giverAction);result=start(action);return result end
+    ui.giver.scripts.OnClick();addon.Navigation.Start=start
+    local guide
+    for _,object in ipairs(objects)do if object.arrow and object.scripts.OnUpdate and object.shown then guide=object end end
+    assert(started==1 and result==true and opened==1 and sets==1 and guide and guide.arrow.shown)
+    assert(guide.layerStrata=="DIALOG"and guide.layerLevel==41)
+    assert(pin and pin.uiMapID==1436 and math.abs(pin.position.x-.563)<1e-12 and math.abs(pin.position.y-.475)<1e-12)
+    addon.Navigation.Stop();assert(not guide.shown and pin==nil)
+    addon.Navigation=navigation
+    for _,key in ipairs(globals)do _G[key]=saved[key]end
+    ui.frame.GetHighestFrameLevel,methods.SetFrameStrata,methods.SetFrameLevel=highest,strataSetter,levelSetter
+    ui.quest,ui.dungeon,addon.db.locale=quest,dungeon,locale
+end)
+
 print("Client/UI modeled checks passed: " .. total .. " (no pixel or native-client validation)")

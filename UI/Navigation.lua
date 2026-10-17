@@ -500,6 +500,33 @@ function N.Start(action)
         frame:SetScript("OnUpdate", update)
     end
     if not current() then return false end
+    local combatGetter = addon.Clean(InCombatLockdown, "function")
+    local inCombat = addon.Read(combatGetter, "boolean")
+    if not current() then return false end
+    if inCombat == false and InCombatLockdown == combatGetter then
+        local strataSetter = addon.Clean(frame.SetFrameStrata, "function")
+        if not current() then return false end
+        if strataSetter then pcall(strataSetter, frame, "DIALOG") end
+        if not current() then return false end
+        local ui = addon.Clean(addon.UI, "table")
+        local planner = ui and (addon.Clean(ui.frame, "table") or addon.Clean(ui.frame, "userdata"))
+        local highest = planner and addon.Clean(planner.GetHighestFrameLevel, "function")
+        if not current() then return false end
+        local level = highest and addon.Read(highest, "number", planner, true)
+        if not current() then return false end
+        -- Bound the local raise policy independently of the client's level limits.
+        if level and level >= 0 and level <= 100000 and level % 1 == 0 then
+            local setter = addon.Clean(frame.SetFrameLevel, "function")
+            local outsideCombat = addon.Read(combatGetter, "boolean") == false
+            if not current() then return false end
+            if setter and outsideCombat and InCombatLockdown == combatGetter and addon.UI == ui and
+                (addon.Clean(ui.frame, "table") or addon.Clean(ui.frame, "userdata")) == planner and
+                addon.Clean(planner.GetHighestFrameLevel, "function") == highest and current() then
+                pcall(setter, frame, level + 1)
+            end
+        end
+        if not current() then return false end
+    end
     if not setVisible(true, action, generation) then return false end
     if not current() then return false end
     elapsed = 0.1; update(frame, 0)
