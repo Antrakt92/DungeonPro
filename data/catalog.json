@@ -16962,6 +16962,12 @@
           "itemID": 22052,
           "name": "Brazier of Beckoning"
         }
+      ],
+      "objectiveKills": [
+        {
+          "npcID": 16118,
+          "name": "Kormok"
+        }
       ]
     },
     {
