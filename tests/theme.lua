@@ -39,6 +39,17 @@ end
 local function test(name, fn)
     reset(); fn(); total = total + 1; print("ok - " .. name)
 end
+local function resolvedPath(region)
+    if region.path then return region.path end
+    if type(region.family) == "table" then return resolvedPath(region.family) end
+    return nil
+end
+local function resolvedHeight(region)
+    return region.height or (type(region.family) == "table" and resolvedHeight(region.family))
+end
+local function resolvedFamily(region, family)
+    return region == family or (type(region.family) == "table" and resolvedFamily(region.family, family))
+end
 test("window hierarchy preserves content geometry and handlers", function()
     local ui = { frame = region(), title = region(), subtitle = region(), coverage = region() }
     local click = function() end
@@ -140,7 +151,7 @@ test("readable native font families use real font height and never scale text or
     ChatFontNormal=secret;assert(addon.Theme.ApplyFont(r,14)==GameFontHighlight)
     r.SetFontHeight=function()error("unavailable native setter")end
     r.SetFont=function(self,path,size,flags)self.path,self.fontHeight,self.flags=path,size,flags;return true end
-    assert(type(addon.Theme.ApplyFont(r,14))=="string" and r.path and r.fontHeight==14 and r.flags=="")
+    assert(addon.Theme.ApplyFont(r,14) and resolvedPath(r) and r.fontHeight==14 and r.flags=="")
     ChatFontNormal,GameFontHighlight=oldChat,oldHighlight
 end)
 test("button roles use three owned font clones with distinct disabled color and bounded reuse",function()
@@ -282,4 +293,132 @@ test("missing rotation hook capabilities and partial hook failures preserve orig
     end
     assert(not addon.Theme.StyleScrollBar({}))
 end)
+
+local function notoFixture()
+    local previous={game=GetLocale,db=addon.db,chat=ChatFontNormal,creator=CreateFont}
+    local family={shared=true};ChatFontNormal=family;addon.db={locale="enUS"};GetLocale=function()return"enUS"end
+    local made=0
+    local function font()
+        return{
+            SetFont=function(self,path,size,flags)self.path,self.height,self.flags=path,size,flags;self.family=nil end,
+            GetFont=function(self)return self.path,self.height,self.flags end,
+            SetFontObject=function(self,value)self.family=value;self.path=nil end,
+            SetFontHeight=function(self,value)self.height=value end,
+            SetShadowOffset=function()end,SetTextColor=function(self,...)self.color={...}end}
+    end
+    CreateFont=function()made=made+1;return font()end
+    local button={}
+    for _,role in ipairs({"Normal","Highlight","Disabled"})do
+        button[role]=font()
+        button["Get"..role.."FontObject"]=function(self)return self[role]end
+        button["Set"..role.."FontObject"]=function(self,value)self[role]=value end
+    end
+    return{font=font,button=button,family=family,made=function()return made end,finish=function()
+        GetLocale,addon.db,ChatFontNormal,CreateFont=previous.game,previous.db,previous.chat,previous.creator
+    end}
+end
+test("bundled static Noto is selected only for supported non-CJK client and UI contexts",function()
+    local f=notoFixture();local r=f.font()
+    for _,code in ipairs({"enUS","enGB","ruRU","deDE","frFR","esES","esMX","itIT","ptBR"})do
+        GetLocale=function()return code end;addon.db.locale=code
+        assert(addon.Theme.ApplyFont(r,26) and resolvedPath(r):find("NotoSans-Regular.ttf",1,true) and resolvedHeight(r)==26)
+    end
+    GetLocale=function()return"enUS"end
+    for _,code in ipairs({"koKR","zhCN","zhTW"})do
+        addon.db.locale=code;assert(addon.Theme.ApplyFont(r,14) and resolvedFamily(r,f.family) and not resolvedPath(r))
+        addon.db.locale="enUS";GetLocale=function()return code end
+        assert(addon.Theme.ApplyFont(r,14) and resolvedFamily(r,f.family) and not resolvedPath(r))
+        GetLocale=function()return"enUS"end
+    end
+    addon.db.locale="unsupported";assert(addon.Theme.ApplyFont(r,14) and resolvedPath(r))
+    GetLocale=function()return"unknown-client"end;assert(addon.Theme.ApplyFont(r,14) and resolvedFamily(r,f.family))
+    GetLocale=function()error("unavailable")end;assert(addon.Theme.ApplyFont(r,14) and resolvedFamily(r,f.family))
+    assert(f.family.shared and not f.family.height and not f.family.path);f.finish()
+end)
+test("failed bundled font loads fall back to the native family rather than claiming success",function()
+    local f=notoFixture();CreateFont=nil
+    for _,mode in ipairs({"false","nil","throw"})do
+        local r=f.font();r.SetFont=function()if mode=="throw"then error("no asset")end;return mode=="false"and false or nil end
+        assert(addon.Theme.ApplyFont(r,14)==f.family and r.family==f.family and r.height==14)
+    end
+    f.finish()
+end)
+test("existing FontStrings inputs and all button states switch font context without mutating shared families",function()
+    local f=notoFixture();local r=f.font();local input={SetFontObject=function(self,value)self.font=value end}
+    assert(addon.Theme.ApplyFont(r,16));assert(addon.Theme.ApplyInputFont(input));assert(addon.Theme.StyleButtonFonts(f.button))
+    assert(resolvedPath(r) and input.font.path and f.button.Normal.path and f.button.Disabled.path)
+    local original=input.font
+    addon.db.locale="zhCN";addon.Theme.RefreshFonts()
+    assert(not resolvedPath(r) and resolvedFamily(r,f.family) and not input.font.path and input.font.family==f.family and input.font~=original)
+    assert(not f.button.Normal.path and f.button.Normal.family==f.family and f.button.Disabled.color[1]<f.button.Normal.color[1])
+    addon.db.locale="ruRU";addon.Theme.RefreshFonts()
+    assert(resolvedPath(r) and input.font.path and f.button.Normal.path and resolvedHeight(r)==16 and input.font.height==14)
+    local made=f.made();for i=1,20 do addon.Theme.RefreshFonts()end;assert(f.made()==made)
+    original=input.font;addon.db.locale="enGB";addon.Theme.RefreshFonts();assert(input.font~=original and input.font.path)
+    assert(f.family.shared and not f.family.height and not f.family.path);f.finish()
+end)
+
+
+test("input and button clones require successful asset loads and retain native fallback on failure",function()
+    local f=notoFixture();local creator=CreateFont
+    CreateFont=function(name)local font=creator(name);font.SetFont=function()return false end;return font end
+    local input={SetFontObject=function(self,value)self.font=value end}
+    assert(addon.Theme.ApplyInputFont(input) and input.font.family==f.family and not input.font.path and input.font.height==14)
+    assert(addon.Theme.StyleButtonFonts(f.button))
+    for _,role in ipairs({"Normal","Highlight","Disabled"})do
+        assert(f.button[role].family==f.family and not f.button[role].path and f.button[role].height==14)
+    end
+    assert(not f.family.height and not f.family.path);f.finish()
+end)
+
+
+test("font asset paths retain exact runtime separators for the packaged file and native fallback",function()
+    local f=notoFixture();local r=f.font()
+    local expected=table.concat({"Interface","AddOns","DungeonPro","Media","Fonts","NotoSans-Regular.ttf"},string.char(92))
+    assert(addon.Theme.ApplyFont(r,14) and resolvedPath(r)==expected,"packaged font runtime path must keep directory separators")
+    local chat,highlight,standard=ChatFontNormal,GameFontHighlight,STANDARD_TEXT_FONT
+    ChatFontNormal,GameFontHighlight,STANDARD_TEXT_FONT=nil,nil,nil;GetLocale=function()return"unknown-client"end
+    expected="Fonts"..string.char(92).."ARIALN.TTF"
+    assert(addon.Theme.ApplyFont(r,14) and resolvedPath(r)==expected,"native fallback path must keep its directory separator")
+    ChatFontNormal,GameFontHighlight,STANDARD_TEXT_FONT=chat,highlight,standard;f.finish()
+end)
+
+
+test("ordinary FontStrings switch from Noto to native CJK through clean owned font objects",function()
+    local f=notoFixture();local direct=0
+    local fs={SetFont=function(self,path,size)direct=direct+1;self.localPath=path;return true end,
+        SetFontObject=function(self,font)self.inherited=font end,
+        SetFontHeight=function(self,height)self.localHeight=height end,SetShadowOffset=function()end}
+    local font=addon.Theme.ApplyFont(fs,16)
+    assert(direct==0 and fs.localPath==nil and fs.inherited==font and font.path:find("NotoSans-Regular.ttf",1,true))
+    local same={SetFontObject=function(self,value)self.inherited=value end,SetShadowOffset=function()end}
+    assert(addon.Theme.ApplyFont(same,16)==font)
+    local made=f.made();for i=1,20 do addon.Theme.ApplyFont(fs,16)end;assert(f.made()==made)
+    addon.db.locale="zhCN";addon.Theme.RefreshFonts()
+    assert(direct==0 and not fs.localPath and fs.inherited~=font and fs.inherited.family==f.family and not fs.inherited.path)
+    addon.db.locale="ruRU";addon.Theme.RefreshFonts()
+    assert(direct==0 and fs.inherited.path and fs.inherited.height==16)
+    assert(not f.family.path and not f.family.height);f.finish()
+end)
+test("void SimpleFont setters are verified by current clean font path and height for every owned role",function()
+    local f=notoFixture();local creator=CreateFont
+    for _,mode in ipairs({"valid","wrong-path","wrong-height","throw"})do
+        CreateFont=function(name)
+            local font=creator(name)
+            font.GetFont=function(self)
+                if mode=="throw"then error("unavailable")end
+                return mode=="wrong-path"and"Fonts/Other.ttf"or self.path,mode=="wrong-height"and 99 or self.height,self.flags
+            end
+            return font
+        end
+        local r=f.font();local applied=addon.Theme.ApplyFont(r,14)
+        local input={SetFontObject=function(self,font)self.font=font end}
+        assert(applied and addon.Theme.ApplyInputFont(input) and addon.Theme.StyleButtonFonts(f.button))
+        local selected=mode=="valid"
+        assert((resolvedPath(r)~=nil)==selected and (input.font.path~=nil)==selected and(f.button.Normal.path~=nil)==selected,mode..":"..tostring(resolvedPath(r))..":"..tostring(input.font.path)..":"..tostring(f.button.Normal.path))
+        assert((f.button.Disabled.path~=nil)==selected)
+    end
+    f.finish()
+end)
+
 print("theme: " .. total .. " scenarios passed")

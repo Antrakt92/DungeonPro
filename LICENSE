@@ -6,3 +6,7 @@ World of Warcraft names and game-provided assets belong to Blizzard Entertainmen
 Unicode case-fold mapping data retains its separate Unicode License V3.
 The copyright and permission notice is included in Database/SearchCaseFold.lua
 and the normalized source data/search_casefold.json.
+
+The bundled Noto Sans font remains under the SIL Open Font License, Version 1.1.
+Its copyright, full license and source notice are in Media/Fonts/.
+The project restrictions above do not apply to that font.

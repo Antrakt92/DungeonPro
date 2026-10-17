@@ -1726,7 +1726,7 @@ function UI:RefreshDetail()
             if not current() then return false end
             toggle.locationKey, toggle.heading = key, true
             local expanded = self.reportedExpanded[key] == true
-            if not locationWrite(current, toggle.title, "SetText", (expanded and "− " or "+ ") .. addon.L("REPORTED_POSITIONS", parentName, #places)) or
+            if not locationWrite(current, toggle.title, "SetText", (expanded and "- " or "+ ") .. addon.L("REPORTED_POSITIONS", parentName, #places)) or
                 not locationWrite(current, toggle.note, "SetText", "") or not locationWrite(current, toggle, "SetEnabled", true) then return false end
             if not locationWrite(current, toggle, "SetScript", "OnClick", function()
                 if not current() then return end
@@ -2767,7 +2767,7 @@ function UI:RefreshDetail()
                 toggle:SetHighlightTexture("Interface\\QuestFrame\\UI-QuestTitleHighlight")
                 self.storyToggle = toggle
             end
-            local value = (source.expanded and "− " or "+ ") .. addon.L("STORY_SOURCE_QUESTS", source.count)
+            local value = (source.expanded and "- " or "+ ") .. addon.L("STORY_SOURCE_QUESTS", source.count)
             if not write(toggle.label, "SetText", value) then return end
             local height = math.max(30, measuredHeight(toggle.label, 18) + 10)
             if not write(toggle, "SetHeight", height) or not write(toggle, "ClearAllPoints") or
@@ -2954,6 +2954,8 @@ end
 
 function UI:Refresh()
     if not self.frame or not self.frame:IsShown() then return end
+    if addon.Theme and addon.Theme.RefreshFonts then addon.Theme.RefreshFonts() end
+    self.title:SetText(addon.L("TITLE"))
     self.subtitle:SetText(addon.L("SUBTITLE"))
     self.back:SetText(addon.L("DETAIL_BACK"))
     if not self:RefreshLanguageLabel() then return end

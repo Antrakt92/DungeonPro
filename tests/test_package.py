@@ -23,6 +23,8 @@ class PackageTests(unittest.TestCase):
                 names = archive.namelist()
                 self.assertIn("DungeonPro/DungeonPro.toc", names)
                 self.assertIn("DungeonPro/Database/Catalog.lua", names)
+                for resource in ("NotoSans-Regular.ttf", "OFL.txt", "NOTICE.txt"):
+                    self.assertIn("DungeonPro/Media/Fonts/" + resource, names)
                 self.assertFalse(any("tests/" in p or "scripts/" in p or "data/" in p for p in names))
                 self.assertTrue(all(p.startswith("DungeonPro/") for p in names))
 
@@ -32,6 +34,10 @@ class PackageTests(unittest.TestCase):
             (root / "DungeonPro.toc").write_text("## Version: 1.2.3\nCore.lua\n", encoding="utf-8")
             for name in ("README.md", "CHANGELOG.md", "LICENSE", "Core.lua"):
                 (root / name).write_text("fixture\n", encoding="utf-8")
+            media = root / "Media" / "Fonts"
+            media.mkdir(parents=True)
+            for name in ("NotoSans-Regular.ttf", "OFL.txt", "NOTICE.txt"):
+                (media / name).write_bytes(b"fixture")
             path, _ = packager.package(root=root)
             self.assertEqual(path, root / "dist" / "DungeonPro-1.2.3-Forever-dev.zip")
             with zipfile.ZipFile(path) as archive:

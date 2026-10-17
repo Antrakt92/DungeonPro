@@ -23,6 +23,7 @@ end
 function methods:SetFontObject(font)
     self.fontFamily, self.fontPending = font, true
     if self.kind == "EditBox" then self.fontSize = font.fontSize or font.nativeHeight end
+    if self.kind ~= "EditBox" and font.fontSize then self.fontSize,self.fontPath,self.fontFamily=font.fontSize,font.fontPath,font.family end
 end
 function methods:SetTextHeight(size) self.scaledText = true; self.fontSize, self.fontPending = size, true end
 function methods:SetFontHeight(size) self.fontSize, self.fontPending = size, true end
@@ -2812,7 +2813,7 @@ check("Detail typography uses explicit title section and body styles and resets 
     end
     assert(heading and body and heading.fontResetBeforeText and body.fontResetBeforeText, "native prose matching a heading stays body text")
     assert(reward and reward.fontSize == 14 and reward.fontResetBeforeText and reward.width == 304)
-    assert(title.fontFamily == ChatFontNormal and heading.fontFamily == ChatFontNormal and body.fontFamily == ChatFontNormal)
+    assert(title.fontPath:find("NotoSans-Regular.ttf",1,true) and heading.fontPath==title.fontPath and body.fontPath==title.fontPath)
     local titleColor = title.textColor[1]
     title.measuredHeight = 90; measurement = function() error("cold measurement after style change") end
     ui.quest, ui.dungeon = nil, nil; ui:RefreshDetail()
@@ -3199,7 +3200,8 @@ check("OR alternatives expose separate inspection without changing preferences o
     ui.dungeon,ui.quest,ui.detailHistory=dungeon,quest,history;ui:Refresh()
 end)
 check("Native font families retain alphabet fallback while detail sizes and pooled styles stay explicit", function()
-    local previous, family = ChatFontNormal, {}
+    local previous, family, getter = ChatFontNormal, {}, GetLocale
+    GetLocale=function()return "koKR"end
     ChatFontNormal = family
     local row = ui:MakeRow(ui.questList, {}, 1, 59)
     assert(row.title.fontFamily == family and row.title.fontSize == 16)
@@ -3214,7 +3216,7 @@ check("Native font families retain alphabet fallback while detail sizes and pool
     assert(title.measuredHeight ~= 777 and title.fontResetBeforeText)
     ui.source.scripts.OnClick(ui.source, "LeftButton", false)
     assert(ui.copyHint.fontFamily == ChatFontNormal and ui.copyHint.fontSize == 13)
-    ui:CloseCopyLink(); row:Hide(); ChatFontNormal = previous; ui:Refresh()
+    ui:CloseCopyLink(); row:Hide(); ChatFontNormal = previous; GetLocale=getter; ui:Refresh()
 end)
 check("Missing restricted and failing optional family setters retain the working font path", function()
     local previous, objectSetter, heightSetter, checker = ChatFontNormal, methods.SetFontObject, methods.SetFontHeight, issecretvalue
@@ -3671,20 +3673,23 @@ check("Same-card location redraw and character loss preserve only the newly owne
         addon.char=character;restore()
     end
 end)
-check("Readable chat family uses actual font height for rows search and all language scripts without text scaling",function()
+check("Noto and native CJK families retain actual sizes and unscaled reusable rows",function()
     local old,locale=ChatFontNormal,addon.db.locale
-    assert(ui.searchBox.fontSize==14 and ui.searchBox.fontFamily==old and not ui.searchBox.scaledText and ui.searchBox.SetFontHeight==false)
-    assert(ui.copy and ui.copy.fontSize==14 and ui.copy.fontFamily==old and ui.copy.SetFontHeight==false and not ui.copy.fontPath)
+    assert(ui.searchBox.fontSize==14 and not ui.searchBox.scaledText and ui.searchBox.SetFontHeight==false)
+    assert(ui.copy and ui.copy.fontSize==14 and ui.copy.SetFontHeight==false)
     assert(ui.title.fontSize==26 and ui.heading.fontSize==26 and ui.summary.fontSize==14 and ui.coverage.fontSize==14)
     assert(ui.footer.fontSize==13 and ui.capacityStatus.fontSize==13 and ui.searchPlaceholder.fontSize==13)
     ChatFontNormal={unchanged=true}
     for code in pairs(addon.locales)do
         addon.db.locale=code;showDetail(1)
-        assert(ui.details[1].fontFamily==ChatFontNormal and ui.details[1].fontSize==26 and not ui.details[1].scaledText)
-        assert(ui.details[1].shadow[1]==0 and ui.details[1].shadow[2]==0)
+        local title=ui.details[1]
+        if code=="koKR"or code=="zhCN"or code=="zhTW"then assert(title.fontFamily==ChatFontNormal)
+        else assert(title.fontPath:find("NotoSans-Regular.ttf",1,true) and title.fontFamily==nil)end
+        assert(title.fontSize==26 and not title.scaledText and title.shadow[1]==0 and title.shadow[2]==0)
     end
+    addon.db.locale="enUS"
     local row=ui:MakeRow(ui.questList,{},1,59)
-    assert(row.title.fontFamily==ChatFontNormal and row.title.fontSize==16 and row.note.fontSize==13)
+    assert(row.title.fontPath:find("NotoSans-Regular.ttf",1,true) and row.title.fontSize==16 and row.note.fontSize==13)
     assert(not row.title.scaledText and not row.note.scaledText and not ChatFontNormal.fontSize and ChatFontNormal.unchanged)
     row:Hide();ChatFontNormal,addon.db.locale=old,locale;ui:Refresh()
 end)
@@ -5313,7 +5318,7 @@ check("Story expansion survives all locale refreshes and actual inspection Back 
     ui.storyToggle.scripts.OnClick()
     for code in pairs(addon.locales)do
         addon.db.locale=code;ui:RefreshDetail()
-        assert(#visibleStory()==24 and ui.storyToggle.label.text=="− "..addon.L("STORY_SOURCE_QUESTS",24))
+        assert(#visibleStory()==24 and ui.storyToggle.label.text=="- "..addon.L("STORY_SOURCE_QUESTS",24))
     end
     local history=ui.detailHistory;ui.detailHistory={}
     visibleStory()[1].scripts.OnClick();assert(ui.quest==8926)
@@ -7397,6 +7402,85 @@ check("language setter recovery follows replacement setters profiles and owners"
         if mode=="setter"then assert(calls==2)end
     end
     addon.db=database;ui.language=owner;owner.SetText=setter;database.locale=locale;ui:Refresh()
+end)
+
+
+check("existing header catalogue detail and input roles update on UI language font transitions",function()
+    local locale,getter,creator=addon.db.locale,GetLocale,CreateFont
+    local made=0
+    CreateFont=function()
+        made=made+1
+        return{SetFont=function(self,path,size)self.fontPath,self.fontSize,self.family=path,size,nil end,
+            GetFont=function(self)return self.fontPath,self.fontSize,""end,
+            SetFontObject=function(self,family)self.family=family;self.fontPath=nil end,
+            SetFontHeight=function(self,size)self.fontSize=size end,
+            SetTextColor=function()end,SetShadowOffset=function()end}
+    end
+    GetLocale=function()return"enUS"end
+    local row=ui:MakeRow(ui.questList,{},1,59)
+    for _,code in ipairs({"enUS","ruRU","zhCN","enUS"})do
+        addon.db.locale=code;ui:Refresh()
+        for _,fs in ipairs({ui.title,ui.heading,ui.footer,ui.searchPlaceholder,row.title,row.note})do
+            if code=="zhCN"then assert(fs.fontFamily==ChatFontNormal)
+            else assert(fs.fontPath and fs.fontPath:find("NotoSans-Regular.ttf",1,true))end
+        end
+        local font=ui.searchBox.fontFamily
+        if code=="zhCN"then assert(font.family==ChatFontNormal and not font.fontPath)
+        else assert(font.fontPath:find("NotoSans-Regular.ttf",1,true))end
+        assert(ui.searchBox.fontSize==14 and row.title.fontSize==16 and row.note.fontSize==13)
+    end
+    local before=made;ui:Refresh();assert(made==before)
+    row:Hide();addon.db.locale,GetLocale,CreateFont=locale,getter,creator;ui:Refresh()
+end)
+
+check("main title is repainted after an existing font setter clears its text",function()
+    local locale,getter=addon.db.locale,GetLocale
+    local asset,family=methods.SetFont,methods.SetFontObject
+    local cleared=0
+    methods.SetFont=function(self,...)
+        local ok=asset(self,...)
+        if self==ui.title then self.text="";cleared=cleared+1 end
+        return ok
+    end
+    methods.SetFontObject=function(self,...)
+        family(self,...)
+        if self==ui.title then self.text="";cleared=cleared+1 end
+    end
+    GetLocale=function()return"enUS"end
+    for _,code in ipairs({"ruRU","zhCN","enUS"})do
+        local before=cleared;addon.db.locale=code;ui:Refresh()
+        assert(cleared>before,"the actual theme font refresh must hit the pre-existing title")
+        assert(ui.title.text==addon.L("TITLE") and ui.title.fontSize==26,"main title must be restored after font changes")
+    end
+    methods.SetFont,methods.SetFontObject=asset,family
+    addon.db.locale,GetLocale=locale,getter;ui:Refresh()
+end)
+
+
+check("from-creation owned text fonts avoid a sticky direct Noto override across English Chinese and Russian",function()
+    local locale,getter,creator=addon.db.locale,GetLocale,CreateFont
+    local asset,inherit=methods.SetFont,methods.SetFontObject
+    local direct=0
+    CreateFont=function()
+        return{SetFont=function(self,path,size)self.fontPath,self.fontSize,self.family=path,size,nil end,
+            GetFont=function(self)return self.fontPath,self.fontSize,""end,
+            SetFontObject=function(self,value)self.family=value;self.fontPath=nil end,
+            SetFontHeight=function(self,size)self.fontSize=size end,SetTextColor=function()end,SetShadowOffset=function()end}
+    end
+    methods.SetFont=function(self,...)direct=direct+1;return asset(self,...)end
+    GetLocale=function()return"enUS"end;addon.db.locale="enUS"
+    local row=ui:MakeRow(ui.questList,{},1,59)
+    local atCreation=direct
+    assert(atCreation==0 and row.title.fontPath and row.note.fontPath)
+    for _,code in ipairs({"zhCN","ruRU","enUS"})do
+        addon.db.locale=code;ui:Refresh()
+        assert(direct==atCreation,"ordinary FontStrings must inherit owned fonts instead of setting a local asset")
+        assert(ui.title.text==addon.L("TITLE")and row.title.fontSize==16 and row.note.fontSize==13)
+        if code=="zhCN"then assert(row.title.fontFamily==ChatFontNormal and not row.title.fontPath)
+        else assert(row.title.fontPath and row.title.fontPath:find("NotoSans-Regular.ttf",1,true))end
+    end
+    row:Hide();methods.SetFont,methods.SetFontObject=asset,inherit
+    addon.db.locale,GetLocale,CreateFont=locale,getter,creator;ui:Refresh()
 end)
 
 print("Preparation UI modeled checks passed: " .. total .. " (no native layout validation)")

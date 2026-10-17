@@ -41,51 +41,106 @@ end
 
 local controlFonts, fontSerial = nil, 0
 local styledButtons = setmetatable({}, { __mode = "k" })
+local fontRegions, inputRegions = setmetatable({}, { __mode = "k" }), setmetatable({}, { __mode = "k" })
+local NOTO_FONT = "Interface\\AddOns\\DungeonPro\\Media\\Fonts\\NotoSans-Regular.ttf"
+local FONT_LOCALES = { enUS = true, enGB = true, ruRU = true, deDE = true, frFR = true,
+    esES = true, esMX = true, itIT = true, ptBR = true, koKR = true, zhCN = true, zhTW = true }
+local function fontContext()
+    local family = cleanObject(ChatFontNormal) or cleanObject(GameFontHighlight)
+    local game = addon.Read(GetLocale, "string")
+    local database = addon.Clean(addon.db, "table")
+    local selection = database and addon.Clean(rawget(database, "locale"), "string") or "auto"
+    if not selection or #selection > 32 then selection = "auto" end
+    local locale = selection == "auto" and game or selection
+    if locale == "enGB" then locale = "enUS" elseif locale == "esMX" then locale = "esES" end
+    if not FONT_LOCALES[locale or ""] then locale = "enUS" end
+    local cjk = { koKR = true, zhCN = true, zhTW = true }
+    local path = game and FONT_LOCALES[game] and not cjk[game] and not cjk[locale] and NOTO_FONT or nil
+    return { family = family, path = path, key = (path or "native") .. ":" .. selection .. ":" .. (game or "?") }
+end
 
+local function setFontAsset(region, path, size, fontObject)
+    local ok, result = invoke(region, "SetFont", path, size, "")
+    if not ok then return nil end
+    if not fontObject then return addon.Clean(result, "boolean") == true and path or nil end
+    -- Font objects have a void SetFont setter; verify the resulting asset and size.
+    local inspected, currentPath, height = invoke(region, "GetFont")
+    currentPath, height = addon.Clean(currentPath, "string"), addon.Clean(height, "number")
+    if inspected and currentPath and #currentPath <= 4096 and height == size and
+        currentPath:gsub(string.char(92), "/"):lower() == path:gsub(string.char(92), "/"):lower() then return path end
+end
+
+local function applyFontSource(region, size, context, fontObject)
+    if context.path and setFontAsset(region, context.path, size, fontObject) then return context.path end
+    if context.family and invoke(region, "SetFontObject", context.family) and invoke(region, "SetFontHeight", size) then
+        return context.family
+    end
+    if context.path then return nil end
+    local path = addon.Clean(STANDARD_TEXT_FONT, "string") or "Fonts\\ARIALN.TTF"
+    return setFontAsset(region, path, size, fontObject)
+end
+
+-- Keep asset overrides on owned font objects when switching back to native families.
+local textFonts
 function Theme.ApplyFont(region, size)
     region, size = cleanObject(region), addon.Clean(size, "number")
     if not region or not size or size < 1 or size > 72 then return nil end
-    local family = cleanObject(ChatFontNormal) or cleanObject(GameFontHighlight)
-    local applied = family and invoke(region, "SetFontObject", family) and invoke(region, "SetFontHeight", size)
+    local context, creator = fontContext(), addon.Clean(CreateFont, "function")
+    local applied
+    if creator then
+        if not textFonts or textFonts.key ~= context.key or textFonts.family ~= context.family or textFonts.creator ~= creator then
+            textFonts = { key = context.key, family = context.family, creator = creator, sizes = {} }
+        end
+        local font = textFonts.sizes[size]
+        if not font then
+            fontSerial = fontSerial + 1
+            local ok, value = pcall(creator, "DungeonProTextFont" .. fontSerial)
+            font = ok and cleanObject(value) or nil
+            if font and applyFontSource(font, size, context, true) then
+                invoke(font, "SetShadowOffset", 0, 0)
+                textFonts.sizes[size] = font
+            else font = nil end
+        end
+        if font and invoke(region, "SetFontObject", font) then applied = font end
+    end
+    if not applied then applied = applyFontSource(region, size, context) end
     if applied then
         invoke(region, "SetShadowOffset", 0, 0)
-        return family
-    end
-    local path = addon.Clean(STANDARD_TEXT_FONT, "string") or "Fonts\\ARIALN.TTF"
-    local ok, result = invoke(region, "SetFont", path, size, "")
-    if ok and addon.Clean(result, "boolean") == true then
-        invoke(region, "SetShadowOffset", 0, 0)
-        return path
+        fontRegions[region] = { size = size, key = context.key, family = context.family, creator = creator }
+        return applied
     end
 end
 
 local inputFont
 function Theme.ApplyInputFont(region)
     region = cleanObject(region)
-    local family = cleanObject(ChatFontNormal) or cleanObject(GameFontHighlight)
-    if not region or not family then return nil end
+    local context = fontContext()
+    if not region or not context.family then return nil end
     local creator = addon.Clean(CreateFont, "function")
-    if not inputFont or inputFont.family ~= family or inputFont.creator ~= creator then
-        inputFont = { family = family, creator = creator }
+    if not inputFont or inputFont.family ~= context.family or inputFont.creator ~= creator or inputFont.key ~= context.key then
+        inputFont = { family = context.family, creator = creator, key = context.key }
         if creator then
             fontSerial = fontSerial + 1
             local ok, value = pcall(creator, "DungeonProInputFont" .. fontSerial)
             local font = ok and cleanObject(value) or nil
-            if font and invoke(font, "SetFontObject", family) and invoke(font, "SetFontHeight", 14) and
-                invoke(font, "SetTextColor", unpack(palette.text)) then
+            if font and applyFontSource(font, 14, context, true) and invoke(font, "SetTextColor", unpack(palette.text)) then
                 invoke(font, "SetShadowOffset", 0, 0)
                 inputFont.font = font
             end
         end
     end
-    -- EditBox supports font objects, not FontString's direct height setter.
-    local font = inputFont.font or family
-    if invoke(region, "SetFontObject", font) then return font end
+    -- EditBox receives an owned font object, never FontString's height setter.
+    local font = inputFont.font or context.family
+    if invoke(region, "SetFontObject", font) then
+        inputRegions[region] = { key = context.key, family = context.family, creator = creator }
+        return font
+    end
 end
 
 function Theme.StyleButtonFonts(button)
     button = cleanObject(button)
-    local family, creator = cleanObject(ChatFontNormal), addon.Clean(CreateFont, "function")
+    local context, creator = fontContext(), addon.Clean(CreateFont, "function")
+    local family = context.family
     if not button or not family or not creator then return false end
     local roles = { { "Normal", palette.text }, { "Highlight", palette.heading }, { "Disabled", palette.quiet } }
     local previous = {}
@@ -94,13 +149,13 @@ function Theme.StyleButtonFonts(button)
         previous[role[1]] = objectResult(button, "Get" .. role[1] .. "FontObject")
         if not previous[role[1]] then return false end
     end
-    if not controlFonts or controlFonts.family ~= family or controlFonts.creator ~= creator then
-        controlFonts = { family = family, creator = creator, failed = true }
+    if not controlFonts or controlFonts.family ~= family or controlFonts.creator ~= creator or controlFonts.key ~= context.key then
+        controlFonts = { family = family, creator = creator, key = context.key, failed = true }
         for _, role in ipairs(roles) do
             fontSerial = fontSerial + 1
             local ok, value = pcall(creator, "DungeonProControlFont" .. fontSerial)
             local font = ok and cleanObject(value) or nil
-            if not font or not invoke(font, "SetFontObject", family) or not invoke(font, "SetFontHeight", 14) or
+            if not font or not applyFontSource(font, 14, context, true) or
                 not invoke(font, "SetTextColor", unpack(role[2])) then return false end
             invoke(font, "SetShadowOffset", 0, 0)
             controlFonts[role[1]] = font
@@ -117,6 +172,19 @@ function Theme.StyleButtonFonts(button)
     end
     styledButtons[button] = controlFonts
     return true
+end
+
+function Theme.RefreshFonts()
+    local context, creator = fontContext(), addon.Clean(CreateFont, "function")
+    for region, previous in pairs(fontRegions) do
+        if previous.key ~= context.key or previous.family ~= context.family or previous.creator ~= creator then Theme.ApplyFont(region, previous.size) end
+    end
+    for region, previous in pairs(inputRegions) do
+        if previous.key ~= context.key or previous.family ~= context.family or previous.creator ~= creator then Theme.ApplyInputFont(region) end
+    end
+    for button, previous in pairs(styledButtons) do
+        if previous.key ~= context.key or previous.family ~= context.family or previous.creator ~= creator then Theme.StyleButtonFonts(button) end
+    end
 end
 
 local function surface(frame, existing)

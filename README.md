@@ -170,3 +170,6 @@ Never mark a requirement known solely because two quests appear next to each oth
 Generate the runtime data with `python scripts/catalog.py`.
 Run all local checks with `python scripts/check.py` (Python and Lua 5.1 required).
 No package installation or network access is needed for those checks.
+
+Noto Sans is included under the SIL Open Font License, Version 1.1.
+See Media/Fonts/OFL.txt and Media/Fonts/NOTICE.txt for its license and attribution.

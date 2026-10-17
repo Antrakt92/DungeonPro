@@ -25,6 +25,7 @@ def package(root=ROOT, output=None):
     toc = exact_path(root, toc_name).read_text(encoding="utf-8")
     version = re.search(r"^## Version: ([0-9]+\.[0-9]+\.[0-9]+)$", toc, re.MULTILINE).group(1)
     names = [toc_name, "README.md", "CHANGELOG.md", "LICENSE"]
+    names += ["Media/Fonts/NotoSans-Regular.ttf", "Media/Fonts/OFL.txt", "Media/Fonts/NOTICE.txt"]
     names += [line.strip().replace("\\", "/") for line in toc.splitlines() if line.strip() and not line.startswith("#")]
     output = output or root / "dist" / f"{ADDON_NAME}-{version}-Forever-dev.zip"
     output.parent.mkdir(parents=True, exist_ok=True)
