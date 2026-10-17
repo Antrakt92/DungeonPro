@@ -115,8 +115,9 @@ Run `/DP minimap` again to restore a hidden button. `reset` only returns it to
 its default position and makes it visible.
 
 The language button cycles through the interface languages. Search checks both
-localized and English dungeon names. English A–Z matches ignore letter case;
-other characters currently match exactly. Use the × button to clear the search.
+localized and English dungeon names without distinguishing letter case, including
+Cyrillic and accented Latin letters. Accents and spelling still matter. Use the ×
+button to clear the search.
 
 ## Contributing data
 
