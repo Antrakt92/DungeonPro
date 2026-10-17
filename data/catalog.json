@@ -926,6 +926,16 @@
             5727
           ]
         }
+      ],
+      "objectiveKills": [
+        {
+          "npcID": 11519,
+          "name": "Bazzalan"
+        },
+        {
+          "npcID": 11518,
+          "name": "Jergosh the Invoker"
+        }
       ]
     },
     {
@@ -1094,7 +1104,19 @@
         "npcID": 11833,
         "creatureDisplayID": 11754,
         "portraitSource": "https://www.wowhead.com/forever/npc=11833"
-      }
+      },
+      "objectiveKills": [
+        {
+          "npcID": 11318,
+          "name": "Ragefire Trogg",
+          "quantity": 8
+        },
+        {
+          "npcID": 11319,
+          "name": "Ragefire Shaman",
+          "quantity": 8
+        }
+      ]
     },
     {
       "id": 5724,
@@ -1605,7 +1627,29 @@
         "name": "Ebru",
         "creatureDisplayID": 4290,
         "portraitSource": "https://www.wowhead.com/forever/npc=5768"
-      }
+      },
+      "objectiveKills": [
+        {
+          "npcID": 3636,
+          "name": "Deviate Ravager",
+          "quantity": 7
+        },
+        {
+          "npcID": 5755,
+          "name": "Deviate Viper",
+          "quantity": 7
+        },
+        {
+          "npcID": 5761,
+          "name": "Deviate Shambler",
+          "quantity": 7
+        },
+        {
+          "npcID": 5056,
+          "name": "Deviate Dreadfang",
+          "quantity": 7
+        }
+      ]
     },
     {
       "id": 959,
@@ -2879,7 +2923,24 @@
         "creatureDisplayID": 1865,
         "portraitSource": "https://www.wowhead.com/forever/npc=1719"
       },
-      "requirementsKnown": false
+      "requirementsKnown": false,
+      "objectiveKills": [
+        {
+          "npcID": 1706,
+          "name": "Defias Prisoner",
+          "quantity": 10
+        },
+        {
+          "npcID": 1711,
+          "name": "Defias Convict",
+          "quantity": 8
+        },
+        {
+          "npcID": 1715,
+          "name": "Defias Insurgent",
+          "quantity": 8
+        }
+      ]
     },
     {
       "id": 1442,
@@ -3022,7 +3083,13 @@
         "mapID": 1455,
         "x": 69,
         "y": 49
-      }
+      },
+      "objectiveKills": [
+        {
+          "npcID": 7800,
+          "name": "Mekgineer Thermaplugg"
+        }
+      ]
     },
     {
       "id": 2904,
@@ -4737,7 +4804,24 @@
         "x": 49,
         "y": 94.8
       },
-      "requirementsKnown": false
+      "requirementsKnown": false,
+      "objectiveKills": [
+        {
+          "npcID": 7873,
+          "name": "Razorfen Battleguard",
+          "quantity": 8
+        },
+        {
+          "npcID": 7874,
+          "name": "Razorfen Thornweaver",
+          "quantity": 8
+        },
+        {
+          "npcID": 7872,
+          "name": "Death's Head Cultist",
+          "quantity": 8
+        }
+      ]
     },
     {
       "id": 3523,
@@ -5047,7 +5131,25 @@
         "creatureDisplayID": 11658,
         "portraitSource": "https://www.wowhead.com/forever/npc=2425"
       },
-      "requirementsKnown": false
+      "requirementsKnown": false,
+      "objectiveKills": [
+        {
+          "npcID": 3977,
+          "name": "High Inquisitor Whitemane"
+        },
+        {
+          "npcID": 3976,
+          "name": "Scarlet Commander Mograine"
+        },
+        {
+          "npcID": 3975,
+          "name": "Herod"
+        },
+        {
+          "npcID": 3974,
+          "name": "Houndmaster Loksey"
+        }
+      ]
     },
     {
       "id": 1053,
@@ -5080,6 +5182,24 @@
           "ids": [
             1052
           ]
+        }
+      ],
+      "objectiveKills": [
+        {
+          "npcID": 3977,
+          "name": "High Inquisitor Whitemane"
+        },
+        {
+          "npcID": 3976,
+          "name": "Scarlet Commander Mograine"
+        },
+        {
+          "npcID": 3975,
+          "name": "Herod"
+        },
+        {
+          "npcID": 3974,
+          "name": "Houndmaster Loksey"
         }
       ]
     },
@@ -11673,6 +11793,12 @@
           "itemID": 11126,
           "name": "Tablet of Kurniya"
         }
+      ],
+      "objectiveKills": [
+        {
+          "npcID": 9017,
+          "name": "Lord Incendius"
+        }
       ]
     },
     {
@@ -13446,6 +13572,12 @@
       "storyline": [
         4262,
         4263
+      ],
+      "objectiveKills": [
+        {
+          "npcID": 9017,
+          "name": "Lord Incendius"
+        }
       ]
     },
     {
