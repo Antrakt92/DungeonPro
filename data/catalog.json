@@ -10199,7 +10199,8 @@
       },
       "finish": {
         "npcID": 8929,
-        "name": "Princess Moira Bronzebeard"
+        "name": "Princess Moira Bronzebeard",
+        "zoneName": "Blackrock Depths"
       },
       "storyline": [
         3981,
@@ -10223,7 +10224,8 @@
       "source": "https://www.wowhead.com/forever/quest=4004/the-princess-saved",
       "start": {
         "npcID": 8929,
-        "name": "Princess Moira Bronzebeard"
+        "name": "Princess Moira Bronzebeard",
+        "zoneName": "Blackrock Depths"
       },
       "finish": {
         "npcID": 4949,
@@ -11464,11 +11466,13 @@
       "source": "https://www.wowhead.com/forever/quest=4201/the-love-potion",
       "start": {
         "npcID": 9500,
-        "name": "Mistress Nagmara"
+        "name": "Mistress Nagmara",
+        "zoneName": "Blackrock Depths"
       },
       "finish": {
         "npcID": 9500,
-        "name": "Mistress Nagmara"
+        "name": "Mistress Nagmara",
+        "zoneName": "Blackrock Depths"
       },
       "objectiveItems": [
         {
@@ -11892,11 +11896,13 @@
       "source": "https://www.wowhead.com/forever/quest=4295/rocknots-ale",
       "start": {
         "npcID": 9503,
-        "name": "Private Rocknot"
+        "name": "Private Rocknot",
+        "zoneName": "Blackrock Depths"
       },
       "finish": {
         "npcID": 9503,
-        "name": "Private Rocknot"
+        "name": "Private Rocknot",
+        "zoneName": "Blackrock Depths"
       }
     },
     {
@@ -12060,7 +12066,8 @@
       },
       "finish": {
         "npcID": 8929,
-        "name": "Princess Moira Bronzebeard"
+        "name": "Princess Moira Bronzebeard",
+        "zoneName": "Blackrock Depths"
       },
       "storyline": [
         4342,
@@ -12081,7 +12088,8 @@
       "source": "https://www.wowhead.com/forever/quest=4363/the-princesss-surprise",
       "start": {
         "npcID": 8929,
-        "name": "Princess Moira Bronzebeard"
+        "name": "Princess Moira Bronzebeard",
+        "zoneName": "Blackrock Depths"
       },
       "finish": {
         "npcID": 2784,
@@ -12776,7 +12784,8 @@
       "source": "https://www.wowhead.com/forever/quest=7604/a-binding-contract",
       "finish": {
         "npcID": 12944,
-        "name": "Lokhtos Darkbargainer"
+        "name": "Lokhtos Darkbargainer",
+        "zoneName": "Blackrock Depths"
       },
       "start": {
         "itemID": 18628,
@@ -15355,7 +15364,8 @@
       },
       "finish": {
         "npcID": 16073,
-        "name": "Spirit of Lord Valthalak"
+        "name": "Spirit of Lord Valthalak",
+        "zoneName": "Blackrock Spire"
       },
       "storylineGroups": [
         [
@@ -15394,7 +15404,8 @@
       "source": "https://www.wowhead.com/forever/quest=8996/return-to-bodley",
       "start": {
         "npcID": 16073,
-        "name": "Spirit of Lord Valthalak"
+        "name": "Spirit of Lord Valthalak",
+        "zoneName": "Blackrock Spire"
       },
       "finish": {
         "npcID": 16033,
@@ -15703,7 +15714,8 @@
       },
       "finish": {
         "npcID": 16031,
-        "name": "Ysida Harmon"
+        "name": "Ysida Harmon",
+        "zoneName": "Stratholme"
       },
       "storylineGroups": [
         [
@@ -18114,7 +18126,8 @@
       "source": "https://www.wowhead.com/forever/quest=7503/the-greatest-race-of-hunters",
       "finish": {
         "npcID": 14382,
-        "name": "Lorekeeper Mykos"
+        "name": "Lorekeeper Mykos",
+        "zoneName": "Dire Maul"
       },
       "start": {
         "itemID": 18361,
@@ -18219,7 +18232,8 @@
       "source": "https://www.wowhead.com/forever/quest=7502/harnessing-shadows",
       "finish": {
         "npcID": 14382,
-        "name": "Lorekeeper Mykos"
+        "name": "Lorekeeper Mykos",
+        "zoneName": "Dire Maul"
       },
       "start": {
         "itemID": 18360,
@@ -18301,7 +18315,8 @@
       "source": "https://www.wowhead.com/forever/quest=7506/the-emerald-dream",
       "finish": {
         "npcID": 14381,
-        "name": "Lorekeeper Javon"
+        "name": "Lorekeeper Javon",
+        "zoneName": "Dire Maul"
       },
       "start": {
         "itemID": 18364,
@@ -18388,7 +18403,8 @@
       "source": "https://www.wowhead.com/forever/quest=7498/garona-a-study-on-stealth-and-treachery",
       "finish": {
         "npcID": 14383,
-        "name": "Lorekeeper Kildrath"
+        "name": "Lorekeeper Kildrath",
+        "zoneName": "Dire Maul"
       },
       "start": {
         "itemID": 18356,
@@ -18550,7 +18566,8 @@
       ],
       "finish": {
         "npcID": 14383,
-        "name": "Lorekeeper Kildrath"
+        "name": "Lorekeeper Kildrath",
+        "zoneName": "Dire Maul"
       },
       "requirementsKnown": false,
       "source": "https://www.wowhead.com/forever/quest=7499/codex-of-defense",
@@ -18740,11 +18757,13 @@
       ],
       "start": {
         "npcID": 14322,
-        "name": "Stomper Kreeg"
+        "name": "Stomper Kreeg",
+        "zoneName": "Dire Maul"
       },
       "finish": {
         "npcID": 14322,
-        "name": "Stomper Kreeg"
+        "name": "Stomper Kreeg",
+        "zoneName": "Dire Maul"
       },
       "requirementsKnown": false,
       "source": "https://www.wowhead.com/forever/quest=5528/the-gordok-taste-test"
@@ -18760,7 +18779,8 @@
       ],
       "finish": {
         "npcID": 14383,
-        "name": "Lorekeeper Kildrath"
+        "name": "Lorekeeper Kildrath",
+        "zoneName": "Dire Maul"
       },
       "requirementsKnown": false,
       "source": "https://www.wowhead.com/forever/quest=7500/the-arcanists-cookbook",
@@ -18877,7 +18897,8 @@
       ],
       "finish": {
         "npcID": 14381,
-        "name": "Lorekeeper Javon"
+        "name": "Lorekeeper Javon",
+        "zoneName": "Dire Maul"
       },
       "requirementsKnown": false,
       "source": "https://www.wowhead.com/forever/quest=7505/frost-shock-and-you",
@@ -19110,11 +19131,13 @@
       ],
       "start": {
         "npcID": 14325,
-        "name": "Captain Kromcrush"
+        "name": "Captain Kromcrush",
+        "zoneName": "Dire Maul"
       },
       "finish": {
         "npcID": 14325,
-        "name": "Captain Kromcrush"
+        "name": "Captain Kromcrush",
+        "zoneName": "Dire Maul"
       },
       "requirementsKnown": false,
       "source": "https://www.wowhead.com/forever/quest=7703/unfinished-gordok-business"
@@ -19130,7 +19153,8 @@
       ],
       "finish": {
         "npcID": 14381,
-        "name": "Lorekeeper Javon"
+        "name": "Lorekeeper Javon",
+        "zoneName": "Dire Maul"
       },
       "requirementsKnown": false,
       "source": "https://www.wowhead.com/forever/quest=7504/holy-bologna-what-the-light-wont-tell-you",
@@ -19283,7 +19307,8 @@
       ],
       "finish": {
         "npcID": 14382,
-        "name": "Lorekeeper Mykos"
+        "name": "Lorekeeper Mykos",
+        "zoneName": "Dire Maul"
       },
       "requirementsKnown": false,
       "source": "https://www.wowhead.com/forever/quest=7501/the-light-and-how-to-swing-it",
@@ -21352,7 +21377,8 @@
       ],
       "start": {
         "npcID": 16031,
-        "name": "Ysida Harmon"
+        "name": "Ysida Harmon",
+        "zoneName": "Stratholme"
       },
       "finish": {
         "npcID": 16016,
@@ -22310,7 +22336,8 @@
       },
       "finish": {
         "npcID": 14568,
-        "name": "Darkreaver's Fallen Charger"
+        "name": "Darkreaver's Fallen Charger",
+        "zoneName": "Scholomance"
       },
       "source": "https://www.wowhead.com/forever/quest=7647/judgment-and-redemption",
       "requirementsKnown": false,
@@ -24831,7 +24858,8 @@
       },
       "finish": {
         "npcID": 14504,
-        "name": "Dreadsteed Spirit"
+        "name": "Dreadsteed Spirit",
+        "zoneName": "Dire Maul"
       },
       "requirementsKnown": false
     }
