@@ -570,7 +570,7 @@ function UI:RefreshDungeons()
     local query = (addon.Clean(search, "string") or ""):gsub("^%s+", ""):gsub("%s+$", "")
     local needle = searchText(query)
     local inputs, results, memo, sourceMemo, sourceMatches = {}, {}, {}, {}, {}
-    local sourceGetter = addon.QuestSourceSearchTerms
+    local sourceGetter, idParser = addon.QuestSourceSearchTerms, addon.SearchQuestID
     for index, dungeon in ipairs(catalogue) do
         local targets = dungeon.quests
         local input = { dungeon = dungeon, name = dungeon.name, key = dungeon.key,
@@ -578,13 +578,14 @@ function UI:RefreshDungeons()
         inputs[index] = input
         for other, id in ipairs(targets) do
             local quest = definitions[id]
-            input.members[other] = { id = id, quest = quest, name = quest and quest.name }
+            input.members[other] = { id = id, quest = quest, name = quest and quest.name, questID = quest and quest.id }
         end
     end
     local sourceReady = true
     local function baseCurrent(sourceOnly)
         local ok, valid = pcall(function()
-            if context.current ~= contextCurrent or addon.QuestSourceSearchTerms ~= sourceGetter then return false end
+            if context.current ~= contextCurrent or addon.QuestSourceSearchTerms ~= sourceGetter or
+                addon.SearchQuestID ~= idParser then return false end
             if self.catalogGeneration ~= generation or self.search ~= search or self.range ~= range or
                 addon.dungeons ~= catalogue or addon.quests ~= definitions or addon.char ~= character or
                 addon.db ~= database or database.locale ~= locale or addon.CachedQuestName ~= getter or
@@ -599,7 +600,7 @@ function UI:RefreshDungeons()
                     #input.targets ~= #input.members then return false end
                 for other, member in ipairs(input.members) do
                     if input.targets[other] ~= member.id or definitions[member.id] ~= member.quest or
-                        (member.quest and member.quest.name ~= member.name) then return false end
+                        (member.quest and (member.quest.name ~= member.name or member.quest.id ~= member.questID)) then return false end
                 end
             end
             return true
@@ -683,20 +684,37 @@ function UI:RefreshDungeons()
                 dungeon.key == input.key and dungeon.minLevel == input.minimum and dungeon.maxLevel == input.maximum and
                 dungeon.quests == input.targets and #input.targets == #input.members and
                 (not member or (input.targets[other] == member.id and definitions[member.id] == member.quest and
-                (not member.quest or member.quest.name == member.name)))
+                (not member.quest or (member.quest.name == member.name and member.quest.id == member.questID))))
         end)
         return ok and valid == true
     end
+    local queryID = addon.Read(idParser, "number", query)
+    if queryID and (queryID <= 0 or queryID > 9007199254740991 or queryID % 1 ~= 0) then queryID = nil end
     if not current() then return end
     for inputIndex, input in ipairs(inputs) do
         local dungeon = input.dungeon
         if not range or (context.level and context.level >= input.minimum - 3 and context.level <= input.maximum + 3) then
             if not scanMember(input, inputIndex) then return end
-            local name = addon.Read(dungeonGetter, "string", dungeon) or addon.Clean(input.name, "string") or ""
-            if not current(true) then return end
-            local matches = query == "" or searchText(name):find(needle, 1, true) or searchText(input.name):find(needle, 1, true)
-            local matchedName, matchedID, sourceMatch
-            if not matches then
+            local matchedName, matchedID, sourceMatch, idMatch
+            if queryID then
+                for memberIndex, member in ipairs(input.members) do
+                    if not scanMember(input, inputIndex, member, memberIndex) then return end
+                    if member.id == queryID and member.quest and member.questID == queryID then
+                        local title = addon.Clean(member.name, "string")
+                        if not current(true) then return end
+                        matchedName = title and title ~= "" and (title .. " (#" .. query .. ")") or ("#" .. query)
+                        matchedID, idMatch = member.id, true
+                        break
+                    end
+                end
+            end
+            local name, matches = "", false
+            if not queryID or matchedID then
+                name = addon.Read(dungeonGetter, "string", dungeon) or addon.Clean(input.name, "string") or ""
+                if not current(true) then return end
+                if not queryID then matches = query == "" or searchText(name):find(needle, 1, true) or searchText(input.name):find(needle, 1, true) end
+            end
+            if not queryID and not matches then
                 for _, member in ipairs(input.members) do
                     local source = addon.Clean(member.name, "string")
                     if not current(true) then return end
@@ -705,7 +723,7 @@ function UI:RefreshDungeons()
                     end
                 end
             end
-            if not matches and not matchedName then
+            if not queryID and not matches and not matchedName then
                 for memberIndex, member in ipairs(input.members) do
                     if not scanMember(input, inputIndex, member, memberIndex) then return end
                     local cached = memo[member.id]
@@ -719,7 +737,7 @@ function UI:RefreshDungeons()
                     end
                 end
             end
-            if not matches and not matchedName and addon.Clean(sourceGetter, "function") then
+            if not queryID and not matches and not matchedName and addon.Clean(sourceGetter, "function") then
                 for memberIndex, member in ipairs(input.members) do
                     if not scanMember(input, inputIndex, member, memberIndex) then return end
                     local cached = sourceMemo[member.id]
@@ -772,7 +790,7 @@ function UI:RefreshDungeons()
                 if matchedName then note = note .. "\n" .. addon.L("SEARCH_QUEST_MATCH", matchedName) end
                 if sourceMatch then note = note .. "\n" .. addon.L(sourceMatch.kind == "npc" and "SEARCH_NPC_MATCH" or "SEARCH_PLACE_MATCH", sourceMatch.text) end
                 if not current(true) then return end
-                results[#results + 1] = { dungeon = dungeon, title = name, note = note, questID = matchedID, sourceMatch = sourceMatch }
+                results[#results + 1] = { dungeon = dungeon, title = name, note = note, questID = matchedID, sourceMatch = sourceMatch, idMatch = idMatch }
             end
         end
     end
@@ -856,7 +874,9 @@ function UI:RefreshDungeons()
                 local shown = addon.Read(self.frame.IsShown, "boolean", self.frame)
                 if shown ~= true or not inspectCurrent() then return end
                 local matches
-                if result.sourceMatch then
+                if result.idMatch then
+                    matches = queryID == questID
+                elseif result.sourceMatch then
                     matches = searchText(result.sourceMatch.text):find(needle, 1, true)
                     if not inspectCurrent() then return end
                 else

@@ -12,7 +12,10 @@ for locale, strings in pairs(addon.locales) do
         for s in strings[key]:gsub("%%%%", ""):gmatch(pattern) do actual[#actual + 1] = s end
         assert(table.concat(expected) == table.concat(actual), locale .. " format mismatch " .. key)
     end
+    assert(strings.SEARCH_HELP:find("ID", 1, true), locale .. " search help omits quest ID")
     addon.db = { locale = locale }
+    local idMatch = addon.L("SEARCH_QUEST_MATCH", "Example quest (#166)")
+    assert(idMatch:find("Example quest (#166)", 1, true), locale .. " exact quest ID cue lost")
     assert(type(addon.L("SUMMARY", 1, 2, 3, 4)) == "string")
     assert(addon.L("ITEM_CARRIED", 1e20):find("100000000000000000000", 1, true), locale .. " count overflow")
     n = n + 1

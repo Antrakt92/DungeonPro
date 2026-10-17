@@ -7906,4 +7906,74 @@ check("A newer user edit queued during a catalogue callback survives the earlier
     f:drain();assert(f.renders==2);addon.DungeonName=getter;f:finish()
 end)
 
+check("Exact quest ID search uses only direct targets and identifies same-name variants without hydration",function()
+    local f=targetSearchFixture();local provider=addon.QuestSourceSearchTerms;local sourceCalls,cachedCalls=0,0
+    addon.quests[31002].name="Source target";addon.dungeons[3].name="31001 numeric dungeon"
+    addon.QuestSourceSearchTerms=function(...)sourceCalls=sourceCalls+1;return provider(...)end
+    addon.CachedQuestName=function()cachedCalls=cachedCalls+1 end
+    local quest,dungeon,range=ui.quest,ui.dungeon,ui.range
+    f:search(" 31001 ");local cards=f:cards();assert(#cards==2)
+    for _,row in ipairs(cards)do
+        assert(row.matchQuestID==31001 and row.note.text:find("Source target (#31001)",1,true))
+    end
+    assert(ui.quest==quest and ui.dungeon==dungeon and ui.range==range)
+    f:search("31002");assert(#f:cards()==1 and f:cards()[1].matchQuestID==31002)
+    for _,query in ipairs({"3100","31003","999999"})do f:search(query);assert(#f:cards()==0)end
+    assert(sourceCalls==0 and cachedCalls==0)
+    f:search("31001");local inspect=ui.catalogInspectButtons[1]
+    assert(inspect.shown and inspect.questID==31001)
+    addon.QuestName=f.questName;inspect.scripts.OnClick()
+    assert(ui.quest==31001 and ui.dungeon.key=="target-a")
+    addon.QuestSourceSearchTerms=provider;f:finish()
+end)
+check("ID results retain level filtering while ordinary names and optional parser fallback keep literal search",function()
+    local f=targetSearchFixture();local parser=addon.SearchQuestID
+    addon.dungeons[3].quests={31001};ui.range=true
+    f:search("31001");assert(#f:cards()==2 and ui.range)
+    ui.range=false;f:search("31001");assert(#f:cards()==3)
+    f:search("Source target");assert(#f:cards()==3 and not f:cards()[1].note.text:find("(#31001)",1,true))
+    addon.quests[31001].name="Numeric 31001 literal";addon.SearchQuestID=nil
+    f:search("31001");assert(#f:cards()==3)
+    local restricted={};local checker=issecretvalue
+    issecretvalue=function(value)return rawequal(value,restricted)end
+    for _,bad in ipairs({-1,1.5,math.huge,9007199254740992,restricted})do
+        addon.SearchQuestID=function()return bad end
+        f:search("31001");assert(#f:cards()==3)
+    end
+    issecretvalue=checker;addon.SearchQuestID=parser;f:finish()
+end)
+check("Exact ID cues retain all safe-integer digits and explicit inspection bypasses title matching",function()
+    local f=targetSearchFixture();local id=9007199254740991
+    addon.quests[id]={id=id,name="Maximum safe ID",minLevel=1,requirementsKnown=false}
+    addon.dungeons[1].quests={id};addon.dungeons[2].quests={}
+    f:search("9007199254740991");local cards=f:cards()
+    assert(#cards==1 and cards[1].matchQuestID==id)
+    assert(cards[1].note.text:find("Maximum safe ID (#9007199254740991)",1,true))
+    local inspect=ui.catalogInspectButtons[1];assert(inspect.shown and inspect.questID==id)
+    addon.QuestName=f.questName;inspect.scripts.OnClick();assert(ui.quest==id)
+    f:finish()
+end)
+check("ID parser callbacks cannot publish expired query catalogue or definition identities",function()
+    for _,kind in ipairs({"query","nested","parser","target","definitionID"})do
+        local f=targetSearchFixture();local parser=addon.SearchQuestID;local armed=true
+        local oldClick=f:cards()[1].scripts.OnClick;local dungeon,quest=ui.dungeon,ui.quest
+        addon.SearchQuestID=function(value)
+            local id=parser(value)
+            if armed then
+                armed=false
+                if kind=="query"then ui.search="Beta"
+                elseif kind=="nested"then f:search("Beta")
+                elseif kind=="parser"then addon.SearchQuestID=parser
+                elseif kind=="target"then addon.dungeons[1].quests[1]=31002
+                else addon.quests[31001].id=31002 end
+            end
+            return id
+        end
+        f:search("31001");assert(not armed)
+        if kind=="nested"then assert(ui.search=="Beta"and #f:cards()==1 and f:cards()[1].title.text=="Beta dungeon")end
+        oldClick();assert(ui.dungeon==dungeon and ui.quest==quest)
+        addon.SearchQuestID=parser;f:finish()
+    end
+end)
+
 print("Preparation UI modeled checks passed: " .. total .. " (no native layout validation)")

@@ -38,6 +38,25 @@ local function has(terms, text, kind)
     for _, term in ipairs(terms) do if term.text == text and term.kind == kind then return true end end
     return false
 end
+
+check("canonical exact quest IDs", function()
+    for _, pair in ipairs({ { "1", 1 }, { "166", 166 }, { " \t95036\r\n", 95036 },
+        { "4294967296", 4294967296 }, { "9007199254740991", 9007199254740991 } }) do
+        assert(addon.SearchQuestID(pair[1]) == pair[2])
+    end
+end)
+check("noncanonical and imprecise quest IDs stay literal queries", function()
+    for _, value in ipairs({ "", "0", "0166", "+166", "-166", "166.0", "1e2", "0xA6", "#166",
+        "quest=166", "１６６", "١٦٦", "16 6", "166\0", "9007199254740992", "9999999999999999",
+        "10000000000000000", string.rep(" ", 16385), false, 166, secret, {} }) do
+        assert(addon.SearchQuestID(value) == nil)
+    end
+    assert(addon.SearchQuestID(nil) == nil)
+end)
+check("restricted quest-ID input fails closed", function()
+    issecretvalue = function() error("restricted") end
+    assert(addon.SearchQuestID("166") == nil)
+end)
 local function fixture()
     return { name = "Target quest", description = "Narrative only", source = "https://example.invalid/quest",
         start = { npcID = 1, name = "Giver One", zoneName = "Westfall", locationName = "Sentinel Hill" },
@@ -226,4 +245,4 @@ check("Mutated result array proof stops after exceeding its original term count"
     next = original
     assert(ok and valid == false and visits <= 2, "visited keys: " .. visits)
 end)
-print("Unicode search and recorded source checks passed: " .. passed .. " source cases")
+print("Unicode, quest-ID and recorded source search checks passed: " .. passed .. " cases")

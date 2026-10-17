@@ -1,6 +1,16 @@
 local _, addon = ...
 local fold = addon.searchCaseFold
 
+-- Match canonical decimal IDs without accepting rounded integers or Lua numeric syntax.
+function addon.SearchQuestID(value)
+    value = addon.Clean(value, "string")
+    if not value or #value > 16384 then return nil end
+    value = value:gsub("^%s+", ""):gsub("%s+$", "")
+    if #value > 16 or not value:match("^[1-9][0-9]*$") then return nil end
+    if #value == 16 and value > "9007199254740991" then return nil end
+    return tonumber(value)
+end
+
 -- Only search keys are folded. Display strings and their UTF-8 byte sequences stay intact.
 function addon.SearchFold(value)
     value = addon.Clean(value, "string")

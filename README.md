@@ -15,7 +15,8 @@ Level ranges are provisional recommendations.
   including Hall of Thanes, Ruins of Lordaeron, Excavation Site and City of Dalaran.
   Blackrock Spire wings share their instance's image. Five newer entries still
   need verified artwork; missing client images keep a fallback icon.
-  Search by dungeon, listed quest, recorded NPC or source place. Matches identify
+  Search by dungeon, listed quest, recorded NPC or source place, or enter an exact
+  quest ID. ID searches show only dungeons that directly list that quest. Matches identify
   the related quest on the dungeon card; View quest opens its details directly.
   Localized quest names are included when already available from the client.
   Recorded source names keep their original language. An NPC match may be a
@@ -160,7 +161,9 @@ its default position and makes it visible.
 The language button opens a menu of interface languages, with an automatic option
 that follows the game language. If the client menu is unavailable, clicking the
 button cycles through the choices. Search checks localized and English dungeon
-names, listed quests, and recorded NPCs and source places. It ignores letter case,
+names, listed quests, and recorded NPCs and source places. Enter a quest ID such as
+`166` to find its listed dungeons without matching similarly numbered quests or
+supporting chain steps. It ignores letter case,
 including Cyrillic and accented Latin letters; accents and spelling still matter.
 Results update after a short pause in typing. Press Enter to apply the current
 search immediately, or use the × button to clear it.
