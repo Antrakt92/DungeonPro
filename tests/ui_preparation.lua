@@ -7976,4 +7976,69 @@ check("ID parser callbacks cannot publish expired query catalogue or definition 
     end
 end)
 
+local function searchScrollFixture()
+    local f=targetSearchFixture()
+    addon.dungeons={}
+    for index=1,12 do
+        addon.dungeons[index]={key="reading-"..index,name="Alpha Beta dungeon "..index,minLevel=1,maxLevel=60,quests={}}
+    end
+    f:search("")
+    return f
+end
+check("Changed committed search starts new catalogue results at top while equivalent queries preserve reading",function()
+    local f=searchScrollFixture()
+    local dungeon,quest,detail=ui.dungeon,ui.quest,ui.detailScroll:GetVerticalScroll()
+    ui.catalogScroll:SetVerticalScroll(300)
+    f:search("Alpha")
+    assert(#f:cards()==12 and ui.catalogScroll:GetVerticalScrollRange()>300)
+    assert(ui.catalogScroll:GetVerticalScroll()==0,"a different search must show the beginning of its results")
+    ui.catalogScroll:SetVerticalScroll(300)
+    f:search("  aLPHa  ")
+    assert(ui.catalogScroll:GetVerticalScroll()==300,"case and trim changes retain the same result reading")
+    ui:RefreshDungeons()
+    addon.db.locale="ruRU";ui:RefreshDungeons()
+    assert(ui.catalogScroll:GetVerticalScroll()==300,"same-query and localization refreshes preserve reading")
+    f:search("Beta");assert(ui.catalogScroll:GetVerticalScroll()==0)
+    ui.catalogScroll:SetVerticalScroll(300)
+    f:search("");assert(ui.catalogScroll:GetVerticalScroll()==0)
+    assert(ui.dungeon==dungeon and ui.quest==quest and ui.detailScroll:GetVerticalScroll()==detail)
+    f:finish()
+end)
+check("First catalogue render does not reset an existing initial reading offset",function()
+    local f=searchScrollFixture()
+    local fresh={};for key,value in pairs(addon)do fresh[key]=value end
+    fresh.listeners={}
+    local global,specialCount=_G.DungeonProWindow,#UISpecialFrames
+    assert(loadfile("UI/Window.lua"))("DungeonPro",fresh)
+    fresh.UI:Create();fresh.UI.range=false;fresh.UI.search="Alpha"
+    fresh.UI.catalogScroll:SetVerticalScroll(300)
+    local writes=fresh.UI.catalogScroll.scrollWrites
+    fresh.UI:RefreshDungeons()
+    assert(fresh.UI.catalogScroll:GetVerticalScrollRange()>300)
+    assert(fresh.UI.catalogScroll:GetVerticalScroll()==300 and fresh.UI.catalogScroll.scrollWrites==writes)
+    _G.DungeonProWindow=global
+    for index=#UISpecialFrames,specialCount+1,-1 do UISpecialFrames[index]=nil end
+    f:finish()
+end)
+check("Expired and nested search renders cannot reset a newer catalogue reading position",function()
+    for _,mode in ipairs({"expired","nested","layout"})do
+        local f=searchScrollFixture();ui.catalogScroll:SetVerticalScroll(300)
+        local provider=addon.DungeonName;local armed=true
+        local height=ui.catalog.SetHeight
+        local function interrupt()
+            if not armed then return end
+            armed=false
+            if mode=="expired"then ui.search="Beta"
+            else f:search("Beta");ui.catalogScroll:SetVerticalScroll(125)end
+        end
+        if mode=="layout"then ui.catalog.SetHeight=function(self,value)interrupt();height(self,value)end
+        else addon.DungeonName=function(d)local name=provider(d);interrupt();return name end end
+        f:search("Alpha");assert(not armed)
+        assert(ui.catalogScroll:GetVerticalScroll()==(mode=="expired"and 300 or 125))
+        ui.catalog.SetHeight=height;addon.DungeonName=provider
+        f:search("Alpha");assert(ui.catalogScroll:GetVerticalScroll()==0,"aborted searches cannot commit their query key")
+        f:finish()
+    end
+end)
+
 print("Preparation UI modeled checks passed: " .. total .. " (no native layout validation)")

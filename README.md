@@ -166,7 +166,8 @@ names, listed quests, and recorded NPCs and source places. Enter a quest ID such
 supporting chain steps. It ignores letter case,
 including Cyrillic and accented Latin letters; accents and spelling still matter.
 Results update after a short pause in typing. Press Enter to apply the current
-search immediately, or use the × button to clear it.
+search immediately, or use the × button to clear it. A different search starts
+at the top of its results; refreshing the same search keeps your place.
 
 ## Contributing data
 

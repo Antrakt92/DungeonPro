@@ -563,7 +563,7 @@ function UI:RefreshDungeons()
     local generation = {}
     self.catalogGeneration = generation
     local catalogue, definitions, character, database = addon.dungeons, addon.quests, addon.char, addon.db
-    local search, range, locale = self.search, self.range, addon.db.locale
+    local search, range, locale, catalogScroll = self.search, self.range, addon.db.locale, self.catalogScroll
     local getter, dungeonGetter, fold, checker = addon.CachedQuestName, addon.DungeonName, addon.SearchFold, issecretvalue
     local context = addon.Context()
     local contextCurrent = context.current
@@ -586,7 +586,7 @@ function UI:RefreshDungeons()
         local ok, valid = pcall(function()
             if context.current ~= contextCurrent or addon.QuestSourceSearchTerms ~= sourceGetter or
                 addon.SearchQuestID ~= idParser then return false end
-            if self.catalogGeneration ~= generation or self.search ~= search or self.range ~= range or
+            if self.catalogGeneration ~= generation or self.search ~= search or self.range ~= range or self.catalogScroll ~= catalogScroll or
                 addon.dungeons ~= catalogue or addon.quests ~= definitions or addon.char ~= character or
                 addon.db ~= database or database.locale ~= locale or addon.CachedQuestName ~= getter or
                 addon.DungeonName ~= dungeonGetter or addon.SearchFold ~= fold or issecretvalue ~= checker or
@@ -910,8 +910,12 @@ function UI:RefreshDungeons()
         offset = offset + measuredHeight(self.catalogNotice, 42) + 10
     end
     if not current() then return end
-    write(self.catalog, "SetHeight", math.max(1, offset))
+    if not write(self.catalog, "SetHeight", math.max(1, offset)) then return end
     if not proveSources() then return end
+    if self.catalogQueryKey ~= nil and self.catalogQueryKey ~= needle then
+        if not write(catalogScroll, "SetVerticalScroll", 0) or not proveSources() then return end
+    end
+    self.catalogQueryKey = needle
 end
 
 function UI:PaintQuestRowStatus(row, entry, engine, ownerCurrent)
