@@ -6392,7 +6392,8 @@
           {
             "npcID": 4851,
             "name": "Stonevault Rockchewer",
-            "locationName": "Uldaman"
+            "locationName": "Uldaman",
+            "zoneName": "Uldaman"
           },
           {
             "npcID": 4856,
@@ -7120,7 +7121,169 @@
           {
             "npcID": 4844,
             "name": "Shadowforge Surveyor",
-            "locationName": "Badlands"
+            "locationName": "Badlands",
+            "mapID": 1418,
+            "zoneName": "Badlands",
+            "x": 43.8,
+            "y": 10.6,
+            "reportedLocations": [
+              {
+                "mapID": 1418,
+                "zoneName": "Badlands",
+                "x": 43.8,
+                "y": 10.6
+              },
+              {
+                "mapID": 1418,
+                "zoneName": "Badlands",
+                "x": 44.2,
+                "y": 10.0
+              },
+              {
+                "mapID": 1418,
+                "zoneName": "Badlands",
+                "x": 44.4,
+                "y": 12.4
+              },
+              {
+                "mapID": 1418,
+                "zoneName": "Badlands",
+                "x": 44.6,
+                "y": 9.4
+              },
+              {
+                "mapID": 1418,
+                "zoneName": "Badlands",
+                "x": 44.6,
+                "y": 9.6
+              },
+              {
+                "mapID": 1418,
+                "zoneName": "Badlands",
+                "x": 45.0,
+                "y": 10.8
+              },
+              {
+                "mapID": 1418,
+                "zoneName": "Badlands",
+                "x": 45.0,
+                "y": 12.4
+              },
+              {
+                "mapID": 1418,
+                "zoneName": "Badlands",
+                "x": 45.0,
+                "y": 12.6
+              },
+              {
+                "mapID": 1418,
+                "zoneName": "Badlands",
+                "x": 45.6,
+                "y": 8.6
+              },
+              {
+                "mapID": 1418,
+                "zoneName": "Badlands",
+                "x": 46.0,
+                "y": 10.0
+              },
+              {
+                "mapID": 1418,
+                "zoneName": "Badlands",
+                "x": 46.2,
+                "y": 12.4
+              },
+              {
+                "mapID": 1418,
+                "zoneName": "Badlands",
+                "x": 46.4,
+                "y": 8.2
+              },
+              {
+                "mapID": 1418,
+                "zoneName": "Badlands",
+                "x": 46.4,
+                "y": 11.2
+              },
+              {
+                "mapID": 1418,
+                "zoneName": "Badlands",
+                "x": 46.4,
+                "y": 12.6
+              },
+              {
+                "mapID": 1418,
+                "zoneName": "Badlands",
+                "x": 46.6,
+                "y": 8.2
+              },
+              {
+                "mapID": 1418,
+                "zoneName": "Badlands",
+                "x": 46.6,
+                "y": 11.2
+              },
+              {
+                "mapID": 1418,
+                "zoneName": "Badlands",
+                "x": 46.6,
+                "y": 12.4
+              },
+              {
+                "mapID": 1418,
+                "zoneName": "Badlands",
+                "x": 46.6,
+                "y": 12.8
+              },
+              {
+                "mapID": 1418,
+                "zoneName": "Badlands",
+                "x": 47.2,
+                "y": 13.6
+              },
+              {
+                "mapID": 1418,
+                "zoneName": "Badlands",
+                "x": 47.4,
+                "y": 9.4
+              },
+              {
+                "mapID": 1418,
+                "zoneName": "Badlands",
+                "x": 47.4,
+                "y": 9.6
+              },
+              {
+                "mapID": 1418,
+                "zoneName": "Badlands",
+                "x": 47.5,
+                "y": 9.5
+              },
+              {
+                "mapID": 1418,
+                "zoneName": "Badlands",
+                "x": 47.6,
+                "y": 9.4
+              },
+              {
+                "mapID": 1418,
+                "zoneName": "Badlands",
+                "x": 47.6,
+                "y": 12.4
+              },
+              {
+                "mapID": 1418,
+                "zoneName": "Badlands",
+                "x": 47.6,
+                "y": 13.0
+              },
+              {
+                "mapID": 1418,
+                "zoneName": "Badlands",
+                "x": 47.6,
+                "y": 13.6
+              }
+            ]
           }
         ],
         "itemMinLevel": 37
@@ -11812,6 +11975,24 @@
       "storyline": [
         95663,
         95682
+      ],
+      "objectiveKills": [
+        {
+          "npcID": 275045,
+          "name": "Dragonmaw Saboteur",
+          "quantity": 2
+        },
+        {
+          "npcID": 275044,
+          "name": "Dragonmaw Warder",
+          "quantity": 4
+        }
+      ],
+      "objectiveItems": [
+        {
+          "itemID": 284844,
+          "name": "Dragonmaw Dispatch"
+        }
       ]
     },
     {
@@ -11937,6 +12118,12 @@
       "storyline": [
         95810,
         98824
+      ],
+      "providedItems": [
+        {
+          "itemID": 287959,
+          "name": "Titan Relic"
+        }
       ]
     },
     {
@@ -11998,6 +12185,12 @@
       "requirementsKnown": false,
       "factions": [
         "Alliance"
+      ],
+      "objectiveItems": [
+        {
+          "itemID": 270180,
+          "name": "Horrible Rootcore"
+        }
       ]
     },
     {
