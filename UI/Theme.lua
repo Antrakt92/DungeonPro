@@ -39,6 +39,86 @@ local function anchor(region, ...)
     invoke(region, "SetPoint", ...)
 end
 
+local controlFonts, fontSerial = nil, 0
+local styledButtons = setmetatable({}, { __mode = "k" })
+
+function Theme.ApplyFont(region, size)
+    region, size = cleanObject(region), addon.Clean(size, "number")
+    if not region or not size or size < 1 or size > 72 then return nil end
+    local family = cleanObject(ChatFontNormal) or cleanObject(GameFontHighlight)
+    local applied = family and invoke(region, "SetFontObject", family) and invoke(region, "SetFontHeight", size)
+    if applied then
+        invoke(region, "SetShadowOffset", 0, 0)
+        return family
+    end
+    local path = addon.Clean(STANDARD_TEXT_FONT, "string") or "Fonts\\ARIALN.TTF"
+    local ok, result = invoke(region, "SetFont", path, size, "")
+    if ok and addon.Clean(result, "boolean") == true then
+        invoke(region, "SetShadowOffset", 0, 0)
+        return path
+    end
+end
+
+local inputFont
+function Theme.ApplyInputFont(region)
+    region = cleanObject(region)
+    local family = cleanObject(ChatFontNormal) or cleanObject(GameFontHighlight)
+    if not region or not family then return nil end
+    local creator = addon.Clean(CreateFont, "function")
+    if not inputFont or inputFont.family ~= family or inputFont.creator ~= creator then
+        inputFont = { family = family, creator = creator }
+        if creator then
+            fontSerial = fontSerial + 1
+            local ok, value = pcall(creator, "DungeonProInputFont" .. fontSerial)
+            local font = ok and cleanObject(value) or nil
+            if font and invoke(font, "SetFontObject", family) and invoke(font, "SetFontHeight", 14) and
+                invoke(font, "SetTextColor", unpack(palette.text)) then
+                invoke(font, "SetShadowOffset", 0, 0)
+                inputFont.font = font
+            end
+        end
+    end
+    -- EditBox supports font objects, not FontString's direct height setter.
+    local font = inputFont.font or family
+    if invoke(region, "SetFontObject", font) then return font end
+end
+
+function Theme.StyleButtonFonts(button)
+    button = cleanObject(button)
+    local family, creator = cleanObject(ChatFontNormal), addon.Clean(CreateFont, "function")
+    if not button or not family or not creator then return false end
+    local roles = { { "Normal", palette.text }, { "Highlight", palette.heading }, { "Disabled", palette.quiet } }
+    local previous = {}
+    for _, role in ipairs(roles) do
+        if not addon.Read(function() return button["Set" .. role[1] .. "FontObject"] end, "function") then return false end
+        previous[role[1]] = objectResult(button, "Get" .. role[1] .. "FontObject")
+        if not previous[role[1]] then return false end
+    end
+    if not controlFonts or controlFonts.family ~= family or controlFonts.creator ~= creator then
+        controlFonts = { family = family, creator = creator, failed = true }
+        for _, role in ipairs(roles) do
+            fontSerial = fontSerial + 1
+            local ok, value = pcall(creator, "DungeonProControlFont" .. fontSerial)
+            local font = ok and cleanObject(value) or nil
+            if not font or not invoke(font, "SetFontObject", family) or not invoke(font, "SetFontHeight", 14) or
+                not invoke(font, "SetTextColor", unpack(role[2])) then return false end
+            invoke(font, "SetShadowOffset", 0, 0)
+            controlFonts[role[1]] = font
+        end
+        controlFonts.failed = nil
+    end
+    if controlFonts.failed then return false end
+    if styledButtons[button] == controlFonts then return true end
+    for _, role in ipairs(roles) do
+        if not invoke(button, "Set" .. role[1] .. "FontObject", controlFonts[role[1]]) then
+            for _, restore in ipairs(roles) do invoke(button, "Set" .. restore[1] .. "FontObject", previous[restore[1]]) end
+            return false
+        end
+    end
+    styledButtons[button] = controlFonts
+    return true
+end
+
 local function surface(frame, existing)
     local state = surfaces[frame]
     if state then return not state.failed and state or nil end
@@ -90,6 +170,7 @@ function Theme.StyleRow(row, options)
     local highlight = objectResult(row, "GetHighlightTexture")
     if highlight then invoke(highlight, "SetColorTexture", 0.55, 0.72, 0.73, 0.09) end
     if kind == "control" then
+        Theme.StyleButtonFonts(row)
         for _, name in ipairs({ "GetNormalTexture", "GetPushedTexture", "GetDisabledTexture" }) do
             local original = objectResult(row, name)
             if original then invoke(original, "SetAlpha", 0) end

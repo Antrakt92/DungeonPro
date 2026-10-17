@@ -128,4 +128,68 @@ test("failed optional native texture capability stays bounded", function()
     assert(#r.textures == 0 and r.title.text == "kept")
     assert(not addon.Theme.StyleRow({}, {kind="quest"}))
 end)
+test("readable native font families use real font height and never scale text or mutate the shared family",function()
+    local oldChat,oldHighlight=ChatFontNormal,GameFontHighlight
+    local family={sentinel=true};ChatFontNormal=family;GameFontHighlight={}
+    local r=region();r.SetFontObject=function(self,value)self.family=value end
+    r.SetFontHeight=function(self,value)self.fontHeight=value end
+    r.SetTextHeight=function()error("text scaling is forbidden")end
+    r.SetShadowOffset=function(self,x,y)self.shadow={x,y}end
+    assert(addon.Theme.ApplyFont(r,26)==family and r.family==family and r.fontHeight==26)
+    assert(r.shadow[1]==0 and r.shadow[2]==0 and family.sentinel and not family.fontHeight)
+    ChatFontNormal=secret;assert(addon.Theme.ApplyFont(r,14)==GameFontHighlight)
+    r.SetFontHeight=function()error("unavailable native setter")end
+    r.SetFont=function(self,path,size,flags)self.path,self.fontHeight,self.flags=path,size,flags;return true end
+    assert(type(addon.Theme.ApplyFont(r,14))=="string" and r.path and r.fontHeight==14 and r.flags=="")
+    ChatFontNormal,GameFontHighlight=oldChat,oldHighlight
+end)
+test("button roles use three owned font clones with distinct disabled color and bounded reuse",function()
+    local chat,creator=ChatFontNormal,CreateFont
+    ChatFontNormal={untouched=true};local made=0
+    CreateFont=function(name)
+        made=made+1;assert(name:find("DungeonProControlFont",1,true)==1)
+        return {SetFontObject=function(self,family)self.family=family end,SetFontHeight=function(self,height)self.height=height end,
+            SetTextColor=function(self,...)self.color={...}end,SetShadowOffset=function()end}
+    end
+    local button=region();local original={Normal={},Highlight={},Disabled={}}
+    for _,role in ipairs({"Normal","Highlight","Disabled"})do
+        button[role]=original[role]
+        button["Get"..role.."FontObject"]=function(self)return self[role]end
+        button["Set"..role.."FontObject"]=function(self,font)self[role]=font end
+    end
+    assert(addon.Theme.StyleButtonFonts(button))
+    assert(made==3 and button.Normal~=original.Normal and button.Disabled~=original.Disabled)
+    assert(button.Normal.family==ChatFontNormal and button.Normal.height==14 and button.Disabled.height==14)
+    assert(button.Normal.color[1]>button.Disabled.color[1] and button.Highlight.color[1]>button.Disabled.color[1])
+    assert(not ChatFontNormal.height and ChatFontNormal.untouched)
+    for n=1,20 do assert(addon.Theme.StyleButtonFonts(button))end
+    assert(made==3)
+    local nextButton=region()
+    for _,role in ipairs({"Normal","Highlight","Disabled"})do
+        nextButton[role]=original[role]
+        nextButton["Get"..role.."FontObject"]=button["Get"..role.."FontObject"]
+        nextButton["Set"..role.."FontObject"]=button["Set"..role.."FontObject"]
+    end
+    nextButton.SetHighlightFontObject=function()error("setter unavailable")end
+    assert(not addon.Theme.StyleButtonFonts(nextButton) and nextButton.Normal==original.Normal and nextButton.Disabled==original.Disabled)
+    ChatFontNormal,CreateFont=chat,creator
+end)
+test("EditBox uses an owned native-family font clone without a nonexistent direct height setter",function()
+    local chat,creator=ChatFontNormal,CreateFont
+    ChatFontNormal={native=true};local made=0
+    CreateFont=function(name)
+        made=made+1;assert(name:find("DungeonProInputFont",1,true)==1)
+        return {SetFontObject=function(self,value)self.family=value end,SetFontHeight=function(self,value)self.height=value end,
+            SetTextColor=function(self,...)self.color={...}end,SetShadowOffset=function()end}
+    end
+    local input={SetFontObject=function(self,font)self.font=font end,
+        SetFont=function()error("native family must not fall back to a single path")end}
+    local font=addon.Theme.ApplyInputFont(input)
+    assert(font and input.font==font and font~=ChatFontNormal and font.family==ChatFontNormal and font.height==14)
+    for n=1,20 do assert(addon.Theme.ApplyInputFont(input)==font)end
+    assert(made==1 and ChatFontNormal.native and not ChatFontNormal.height)
+    CreateFont=nil
+    assert(addon.Theme.ApplyInputFont(input)==ChatFontNormal and input.font==ChatFontNormal)
+    ChatFontNormal,CreateFont=chat,creator
+end)
 print("theme: " .. total .. " scenarios passed")

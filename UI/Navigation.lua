@@ -286,14 +286,22 @@ function N.Start(action)
         frame.arrow = frame:CreateTexture(nil, "ARTWORK")
         frame.arrow:SetSize(42, 42); frame.arrow:SetPoint("TOPLEFT", 12, -16)
         frame.arrow:SetTexture("Interface\\Minimap\\MinimapArrow")
-        frame.title = frame:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+        local font = (addon.Clean(ChatFontNormal, "table") or addon.Clean(ChatFontNormal, "userdata")) and "ChatFontNormal" or "GameFontNormal"
+        frame.title = frame:CreateFontString(nil, "OVERLAY", font)
         frame.title:SetPoint("TOPLEFT", 66, -12); frame.title:SetWidth(258); frame.title:SetJustifyH("LEFT")
-        frame.note = frame:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+        frame.note = frame:CreateFontString(nil, "OVERLAY", font)
         frame.note:SetWidth(258); frame.note:SetJustifyH("LEFT")
-        frame.label = frame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+        frame.label = frame:CreateFontString(nil, "OVERLAY", font)
         frame.label:SetWidth(258); frame.label:SetJustifyH("LEFT")
         local theme = addon.Clean(addon.Theme, "table")
-        if theme then addon.Read(theme.StyleRow, "boolean", frame, { kind = "section" }) end
+        if theme then
+            if addon.Clean(theme.ApplyFont, "function") then
+                pcall(theme.ApplyFont, frame.title, 16)
+                pcall(theme.ApplyFont, frame.note, 14)
+                pcall(theme.ApplyFont, frame.label, 14)
+            end
+            addon.Read(theme.StyleRow, "boolean", frame, { kind = "section" })
+        end
         local close = CreateFrame("Button", nil, frame, "UIPanelCloseButton")
         close:SetSize(22, 22); close:SetPoint("TOPRIGHT"); close:SetScript("OnClick", N.Stop)
         frame:SetScript("OnUpdate", update)

@@ -6,9 +6,9 @@ local COLOR = { COMPLETED = "66dd99", READY = "ffe066", ACTIVE = "88bfff", AVAIL
     LOCKED = "f0b080", UNKNOWN = "b4aacd", UNAVAILABLE = "999999" }
 local FONT
 local DETAIL_STYLES = {
-    body = { size = 13, minimum = 18, color = { 0.92, 0.91, 0.87 } },
-    title = { size = 20, minimum = 28, color = { 0.96, 0.83, 0.59 } },
-    section = { size = 14, minimum = 20, before = 8, color = { 0.76, 0.86, 0.85 } },
+    body = { size = 14, minimum = 20, color = { 0.92, 0.91, 0.87 } },
+    title = { size = 26, minimum = 34, color = { 0.96, 0.83, 0.59 } },
+    section = { size = 20, minimum = 26, before = 8, color = { 0.76, 0.86, 0.85 } },
 }
 
 local function styleRow(row, kind, selected)
@@ -190,19 +190,24 @@ local function measuredHeight(fs, fallback)
 end
 
 local function setFont(fs, size)
-    local family = addon.Clean(GameFontHighlight, "table") or addon.Clean(GameFontHighlight, "userdata")
-    local objectSetter, heightSetter = addon.Clean(fs.SetFontObject, "function"), addon.Clean(fs.SetTextHeight, "function")
-    -- Preserve the client's alphabet-specific font family when changing text size.
-    if family and objectSetter and heightSetter and pcall(objectSetter, fs, family) and pcall(heightSetter, fs, size) then
-        return family
+    local theme = addon.Clean(addon.Theme, "table")
+    if theme and addon.Clean(theme.ApplyFont, "function") then
+        local ok, font = pcall(theme.ApplyFont, fs, size)
+        font = ok and (addon.Clean(font, "table") or addon.Clean(font, "userdata") or addon.Clean(font, "string"))
+        if font then return font end
     end
     fs:SetFont(FONT, size, "")
     return FONT
 end
 
+local function setInputFont(box)
+    local theme = addon.Clean(addon.Theme, "table")
+    if theme and addon.Clean(theme.ApplyInputFont, "function") then pcall(theme.ApplyInputFont, box) end
+end
+
 local function text(parent, size, color)
     local fs = parent:CreateFontString(nil, "OVERLAY")
-    setFont(fs, size or 13)
+    setFont(fs, size or 14)
     fs:SetJustifyH("LEFT")
     fs:SetTextColor(unpack(color or { 0.92, 0.91, 0.87 }))
     return fs
@@ -273,9 +278,10 @@ function UI:CopyLink(id)
     if not self.copy then
         local box = CreateFrame("EditBox", nil, self.detail, "InputBoxTemplate")
         box:SetSize(326, 26)
+        setInputFont(box)
         box:SetAutoFocus(false)
         box:SetScript("OnEscapePressed", function() self:EscapeCopyLink() end)
-        self.copy, self.copyHint = box, label(box, "", 0, -34, 326, 11)
+        self.copy, self.copyHint = box, label(box, "", 0, -34, 326, 13)
     end
     self.copyQuest = id
     self.copy:SetText("https://www.wowhead.com/forever/quest=" .. id)
@@ -298,8 +304,8 @@ function UI:MakeRow(parent, pool, index, height)
         row.bg:SetAllPoints()
         row.bg:SetColorTexture(0.13, 0.16, 0.20, 1)
         row:SetHighlightTexture("Interface\\QuestFrame\\UI-QuestTitleHighlight")
-        row.title = label(row, "", 8, -7, parent:GetWidth() - 22, 14)
-        row.note = label(row, "", 8, -29, parent:GetWidth() - 22, 11)
+        row.title = label(row, "", 8, -7, parent:GetWidth() - 22, 16)
+        row.note = label(row, "", 8, -29, parent:GetWidth() - 22, 13)
         pool[index] = row
     end
     row:Show()
@@ -566,6 +572,15 @@ function UI:RefreshQuests()
     else
         self.summary:SetText(""); self.coverage:SetText(addon.L("PICK"))
     end
+    local headingHeight = math.max(34, measuredHeight(self.heading, 34))
+    local summaryY = 125 + headingHeight + 8
+    local coverageY = summaryY + math.max(20, measuredHeight(self.summary, 20)) + 8
+    local listY = math.max(218, coverageY + math.max(20, measuredHeight(self.coverage, 20)) + 12)
+    if not current() then return end
+    self.summary:ClearAllPoints(); self.summary:SetPoint("TOPLEFT", 288, -summaryY)
+    self.coverage:ClearAllPoints(); self.coverage:SetPoint("TOPLEFT", 288, -coverageY)
+    self.questScroll:ClearAllPoints(); self.questScroll:SetPoint("TOPLEFT", 288, -listY)
+    self.questScroll:SetHeight(math.max(80, 643 - listY))
     hideRest(self.rows, n)
     self.questList:SetHeight(math.max(1, offset))
     local identity = d and (addon.Clean(d.key, "string") or d)
@@ -1039,7 +1054,7 @@ function UI:RefreshDetail()
                     local inspect = self.actionInspectButtons[inspectIndex]
                     if not inspect then
                         inspect = CreateFrame("Button", nil, self.detail)
-                        inspect:SetWidth(316); inspect.label = label(inspect, "", 7, -5, 302, 12)
+                        inspect:SetWidth(316); inspect.label = label(inspect, "", 7, -5, 302, 14)
                         inspect:SetHighlightTexture("Interface\\QuestFrame\\UI-QuestTitleHighlight")
                         self.actionInspectButtons[inspectIndex] = inspect
                     end
@@ -1111,7 +1126,7 @@ function UI:RefreshDetail()
                     local b = self.branchButtons[branchIndex]
                     if not b then
                         b = CreateFrame("Button", nil, self.detail)
-                        b:SetWidth(332); b.label = label(b, "", 3, -3, 326, 12)
+                        b:SetWidth(332); b.label = label(b, "", 3, -3, 326, 14)
                         b:SetHighlightTexture("Interface\\QuestFrame\\UI-QuestTitleHighlight")
                         self.branchButtons[branchIndex] = b
                     end
@@ -1133,7 +1148,7 @@ function UI:RefreshDetail()
                     local inspect = self.branchInspectButtons[branchInspectIndex]
                     if not inspect then
                         inspect = CreateFrame("Button", nil, self.detail)
-                        inspect:SetWidth(316); inspect.label = label(inspect, "", 7, -5, 302, 12)
+                        inspect:SetWidth(316); inspect.label = label(inspect, "", 7, -5, 302, 14)
                         inspect:SetHighlightTexture("Interface\\QuestFrame\\UI-QuestTitleHighlight")
                         self.branchInspectButtons[branchInspectIndex] = inspect
                     end
@@ -1178,7 +1193,7 @@ function UI:RefreshDetail()
             if not b then
                 b = CreateFrame("Button", nil, self.detail)
                 b:SetSize(332, 34)
-                b.label = label(b, "", 3, -2, 326, 12)
+                b.label = label(b, "", 3, -2, 326, 14)
                 b:SetHighlightTexture("Interface\\QuestFrame\\UI-QuestTitleHighlight")
                 self.chainButtons[chainIndex] = b
             end
@@ -1327,7 +1342,7 @@ function UI:RefreshDetail()
     end
     if renderQuest and self.copyQuest == renderQuest and self.copy then
         self.copy:ClearAllPoints(); self.copy:SetPoint("TOPLEFT", 8, -(y + 6))
-        setFont(self.copyHint, 11); self.copyHint:SetText(addon.L("COPY")); self.copyHint:Show()
+        setFont(self.copyHint, 13); self.copyHint:SetText(addon.L("COPY")); self.copyHint:Show()
         self.copy:Show()
         y = y + 6 + 26 + 8 + measuredHeight(self.copyHint, 18) + 8
     end
@@ -1420,7 +1435,7 @@ function UI:Create()
     frame:SetBackdrop({ bgFile = "Interface\\Buttons\\WHITE8X8", edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border", edgeSize = 16 })
     frame:SetBackdropColor(0.045, 0.065, 0.085, 0.98)
     frame:SetBackdropBorderColor(0.7, 0.55, 0.27, 1)
-    self.title = label(frame, addon.L("TITLE"), 22, -18, 360, 24)
+    self.title = label(frame, addon.L("TITLE"), 22, -16, 360, 26)
     self.subtitle = label(frame, "", 22, -49, 500, 13)
     self.back = button(frame, addon.L("DETAIL_BACK"), 120, function() self:BackQuest() end)
     self.back:SetPoint("TOPLEFT", 560, -45)
@@ -1429,7 +1444,8 @@ function UI:Create()
     local search = CreateFrame("EditBox", nil, frame, "InputBoxTemplate")
     search:SetSize(200, 25); search:SetPoint("TOPLEFT", 27, -84); search:SetAutoFocus(false)
     self.searchBox = search
-    self.searchPlaceholder = label(search, "", 5, -5, 188, 11)
+    setInputFont(search)
+    self.searchPlaceholder = label(search, "", 5, -5, 188, 13)
     search:SetScript("OnTextChanged", function(b) self.search = addon.Read(b.GetText, "string", b) or ""; self:RefreshDungeons() end)
     search:SetScript("OnEscapePressed", function(b) b:ClearFocus() end)
     self.clearSearch = button(frame, "×", 25, function()
@@ -1449,11 +1465,11 @@ function UI:Create()
     local language = button(frame, "Auto", 100, function() self:OpenLanguageMenu() end)
     self.language = language
     language:SetPoint("TOPRIGHT", -44, -45)
-    self.heading = label(frame, "", 288, -125, 730, 20)
-    self.summary = label(frame, "", 288, -157, 760, 12)
-    self.coverage = label(frame, "", 288, -183, 760, 12)
+    self.heading = label(frame, "", 288, -125, 730, 26)
+    self.summary = label(frame, "", 288, -163, 760, 14)
+    self.coverage = label(frame, "", 288, -191, 760, 14)
     self.catalog, self.catalogScroll = scrolling(frame, 22, -125, 235, 518)
-    self.searchHint = label(self.catalog, "", 4, 0, 220, 11)
+    self.searchHint = label(self.catalog, "", 4, 0, 220, 13)
     self.catalogNotice = label(self.catalog, "", 4, 0, 220, 13)
     self.questList, self.questScroll = scrolling(frame, 288, -218, 355, 425)
     self.detail, self.detailScroll = scrolling(frame, 690, -218, 350, 425)
@@ -1476,9 +1492,9 @@ function UI:Create()
         end
     end)
     self.giver:SetPoint("BOTTOMLEFT", 690, 19)
-    self.capacityStatus = label(frame, "", 22, -646, 640, 11)
+    self.capacityStatus = label(frame, "", 22, -646, 640, 13)
     self.capacityStatus:Hide()
-    self.footer = label(frame, "", 22, -668, 640, 11)
+    self.footer = label(frame, "", 22, -668, 640, 13)
     self.frame, self.cards, self.rows, self.details, self.chainButtons, self.branchButtons = frame, {}, {}, {}, {}, {}
     self.materialButtons = {}
     self.requirementButtons, self.branchInspectButtons = {}, {}

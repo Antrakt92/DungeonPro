@@ -17,7 +17,7 @@ local function object()
     frames[#frames + 1] = result; return result
 end
 function methods:CreateTexture() return object() end
-function methods:CreateFontString() return object() end
+function methods:CreateFontString(_,_,font) local result=object();result.template=font;return result end
 CreateFrame = object
 UIParent = object()
 local addon = {}
@@ -702,5 +702,24 @@ check("Unreadable player-position methods quietly discard the bearing",function(
         C_Map=value
         assert(nav.Vector(point)==nil)
     end
+end)
+check("Guide uses the shared readable family and real font height with a safe native-template fallback",function()
+    local theme,chat=addon.Theme,ChatFontNormal
+    nav.Stop();ChatFontNormal={untouched=true}
+    methods.SetFontObject=function(self,font)self.family=font end
+    methods.SetFontHeight=function(self,height)self.fontHeight=height end
+    methods.SetShadowOffset=function(self,x,y)self.shadow={x,y}end
+    methods.SetTextHeight=function()error("guide must not scale rasterized text")end
+    assert(loadfile("UI/Theme.lua"))("DungeonPro",addon)
+    assert(loadfile("UI/Navigation.lua"))("DungeonPro",addon)
+    local fresh=addon.Navigation;assert(fresh.Start(action));local card=hud()
+    assert(card.title.family==ChatFontNormal and card.title.fontHeight==16 and card.note.fontHeight==14 and card.label.fontHeight==14)
+    assert(card.title.shadow[1]==0 and card.title.shadow[2]==0 and ChatFontNormal.untouched and not ChatFontNormal.fontHeight)
+    fresh.Stop();addon.Theme=nil
+    assert(loadfile("UI/Navigation.lua"))("DungeonPro",addon)
+    fresh=addon.Navigation;assert(fresh.Start(action));card=hud()
+    assert(card.title.template=="ChatFontNormal" and card.note.template=="ChatFontNormal")
+    fresh.Stop();addon.Navigation=nav;addon.Theme,ChatFontNormal=theme,chat
+    methods.SetFontObject,methods.SetFontHeight,methods.SetShadowOffset,methods.SetTextHeight=nil,nil,nil,nil
 end)
 print("Navigation modeled checks passed: " .. total .. " (no native map validation)")

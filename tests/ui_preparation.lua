@@ -18,9 +18,15 @@ end
 function methods:SetFont(path, size, flags)
     self.fontFamily = nil
     self.fontPath, self.fontSize, self.fontFlags, self.fontPending = path, size, flags, true
+    return true
 end
-function methods:SetFontObject(font) self.fontFamily, self.fontPending = font, true end
-function methods:SetTextHeight(size) self.fontSize, self.fontPending = size, true end
+function methods:SetFontObject(font)
+    self.fontFamily, self.fontPending = font, true
+    if self.kind == "EditBox" then self.fontSize = font.fontSize or font.nativeHeight end
+end
+function methods:SetTextHeight(size) self.scaledText = true; self.fontSize, self.fontPending = size, true end
+function methods:SetFontHeight(size) self.fontSize, self.fontPending = size, true end
+function methods:SetShadowOffset(x,y) self.shadow={x,y} end
 function methods:SetTextColor(...) self.textColor = { ... } end
 function methods:SetTexture(value) self.texture = value; return true end
 function methods:GetText() return self.text or "" end
@@ -72,6 +78,7 @@ updateScrollRange = function(changed)
 end
 local function object(kind, name, parent, template)
     local frame = setmetatable({ scripts = {}, name = name, kind = kind, parent = parent }, { __index = methods })
+    if kind == "EditBox" then frame.SetFontHeight = false end
     if template == "UIPanelScrollFrameTemplate" then
         frame.ScrollBar = setmetatable({ scripts = {}, shown = true, value = 0 }, { __index = methods })
         for _, key in ipairs({ "ScrollUpButton", "ScrollDownButton", "ThumbTexture" }) do
@@ -94,6 +101,7 @@ local screenWidth, screenHeight = 1920, 480
 GetScreenWidth = function() return screenWidth end
 GetScreenHeight = function() return screenHeight end
 GetLocale = function() return "enUS" end
+ChatFontNormal = { nativeHeight = 14 }
 local addon, done = {}, { [7] = true }
 assert(loadfile("Core/Namespace.lua"))("DungeonPro", addon)
 assert(loadfile("Database/SearchCaseFold.lua"))("DungeonPro", addon)
@@ -128,6 +136,7 @@ addon.quests[4].startsInside = true
 addon.quests[5].minLevel = 30
 addon.dungeons = { { key = "fixture", name = "Dungeon", minLevel = 10, maxLevel = 30,
     coverage = "reviewed", quests = { 100, 101, 3, 4, 5, 6, 7 } } }
+assert(loadfile("UI/Theme.lua"))("DungeonPro", addon)
 assert(loadfile("UI/Window.lua"))("DungeonPro", addon)
 local ui, total = addon.UI, 0
 local function check(name, fn)
@@ -2786,21 +2795,20 @@ check("Detail typography uses explicit title section and body styles and resets 
     addon.QuestRewards = function() return { items = { { id = 701, name = "Body reward", count = 1, texture = 123 } }, choices = {}, money = 0 } end
     showDetail(17001)
     local title = ui.details[1]
-    assert(title.text == addon.QuestName(17001) and title.fontSize == 20 and title.fontSizeAtText == 20 and title.fontResetBeforeText)
+    assert(title.text == addon.QuestName(17001) and title.fontSize == 26 and title.fontSizeAtText == 26 and title.fontResetBeforeText)
     local heading, body, reward
     for _, fs in ipairs(ui.details) do
         if fs.shown and fs.text == addon.L("NEXT") then
-            if fs.fontSize == 14 then heading = fs elseif fs.fontSize == 13 then body = fs end
+            if fs.fontSize == 20 then heading = fs elseif fs.fontSize == 14 then body = fs end
         elseif fs.shown and fs.text == addon.L("REWARD_ITEM", "Body reward", 1) then reward = fs end
     end
     assert(heading and body and heading.fontResetBeforeText and body.fontResetBeforeText, "native prose matching a heading stays body text")
-    assert(reward and reward.fontSize == 13 and reward.fontResetBeforeText and reward.width == 304)
-    local expectedFont = STANDARD_TEXT_FONT or "Fonts\\ARIALN.TTF"
-    assert(title.fontPath == expectedFont and heading.fontPath == expectedFont and body.fontPath == expectedFont)
+    assert(reward and reward.fontSize == 14 and reward.fontResetBeforeText and reward.width == 304)
+    assert(title.fontFamily == ChatFontNormal and heading.fontFamily == ChatFontNormal and body.fontFamily == ChatFontNormal)
     local titleColor = title.textColor[1]
     title.measuredHeight = 90; measurement = function() error("cold measurement after style change") end
     ui.quest, ui.dungeon = nil, nil; ui:RefreshDetail()
-    assert(ui.details[1] == title and title.text == addon.L("PICK") and title.fontSize == 13 and title.fontSizeAtText == 13 and title.fontResetBeforeText)
+    assert(ui.details[1] == title and title.text == addon.L("PICK") and title.fontSize == 14 and title.fontSizeAtText == 14 and title.fontResetBeforeText)
     assert(title.textColor[1] ~= titleColor and ui.detail.height < 90, "body recycling resets color and old title measurement")
     measurement = nil
     addon.Description, addon.QuestRewards = description, rewards
@@ -2813,14 +2821,14 @@ check("Large localized quest and overview titles measure wrapping without resett
     addon.QuestName = function(id) return id == 2 and long or questName(id) end
     measurement = function(fs) return fs.text == long and fs.fontSize * 3 or 18 end
     showDetail(2)
-    assert(ui.details[1].fontSize == 20 and ui.details[1].fontResetBeforeText)
+    assert(ui.details[1].fontSize == 26 and ui.details[1].fontResetBeforeText)
     assert(-ui.details[2].point[3] >= 68)
     ui.detailScroll:SetVerticalScroll(95); local writes = ui.detailScroll.scrollWrites
     ui:RefreshDetail(); ui.language.scripts.OnClick()
-    assert(ui.detailScroll.verticalScroll == 95 and ui.detailScroll.scrollWrites == writes and ui.details[1].fontSize == 20)
+    assert(ui.detailScroll.verticalScroll == 95 and ui.detailScroll.scrollWrites == writes and ui.details[1].fontSize == 26)
     ui.quest = nil; ui.dungeon = { key = "type-overview", name = "Overview title", minLevel = 1, maxLevel = 60, coverage = "partial", quests = {} }
     ui:RefreshDetail()
-    assert(ui.details[1].text == "Overview title" and ui.details[1].fontSize == 20 and ui.details[1].fontResetBeforeText)
+    assert(ui.details[1].text == "Overview title" and ui.details[1].fontSize == 26 and ui.details[1].fontResetBeforeText)
     measurement = nil; addon.QuestName, addon.db.locale = questName, locale
     ui.quest, ui.dungeon = quest, dungeon; ui:Refresh()
 end)
@@ -3183,41 +3191,41 @@ check("OR alternatives expose separate inspection without changing preferences o
     ui.dungeon,ui.quest,ui.detailHistory=dungeon,quest,history;ui:Refresh()
 end)
 check("Native font families retain alphabet fallback while detail sizes and pooled styles stay explicit", function()
-    local previous, family = GameFontHighlight, {}
-    GameFontHighlight = family
+    local previous, family = ChatFontNormal, {}
+    ChatFontNormal = family
     local row = ui:MakeRow(ui.questList, {}, 1, 59)
-    assert(row.title.fontFamily == family and row.title.fontSize == 14)
-    assert(row.note.fontFamily == family and row.note.fontSize == 11)
+    assert(row.title.fontFamily == family and row.title.fontSize == 16)
+    assert(row.note.fontFamily == family and row.note.fontSize == 13)
     showDetail(1)
     local title = ui.details[1]
-    assert(title.fontFamily == family and title.fontSize == 20 and title.fontSizeAtText == 20)
-    local oldFamily = family; GameFontHighlight = {}
+    assert(title.fontFamily == family and title.fontSize == 26 and title.fontSizeAtText == 26)
+    local oldFamily = family; ChatFontNormal = {}
     title.measuredHeight = 777
     ui:RefreshDetail()
-    assert(title.fontFamily == GameFontHighlight and title.fontFamily ~= oldFamily)
+    assert(title.fontFamily == ChatFontNormal and title.fontFamily ~= oldFamily)
     assert(title.measuredHeight ~= 777 and title.fontResetBeforeText)
     ui.source.scripts.OnClick(ui.source, "LeftButton", false)
-    assert(ui.copyHint.fontFamily == GameFontHighlight and ui.copyHint.fontSize == 11)
-    ui:CloseCopyLink(); row:Hide(); GameFontHighlight = previous; ui:Refresh()
+    assert(ui.copyHint.fontFamily == ChatFontNormal and ui.copyHint.fontSize == 13)
+    ui:CloseCopyLink(); row:Hide(); ChatFontNormal = previous; ui:Refresh()
 end)
 check("Missing restricted and failing optional family setters retain the working font path", function()
-    local previous, objectSetter, heightSetter, checker = GameFontHighlight, methods.SetFontObject, methods.SetTextHeight, issecretvalue
+    local previous, objectSetter, heightSetter, checker = ChatFontNormal, methods.SetFontObject, methods.SetFontHeight, issecretvalue
     local restricted = {}
     issecretvalue = function(value) return value == restricted end
     for mode = 1, 6 do
-        GameFontHighlight, methods.SetFontObject, methods.SetTextHeight = {}, objectSetter, heightSetter
-        if mode == 1 then GameFontHighlight = nil
-        elseif mode == 2 then GameFontHighlight = restricted
+        ChatFontNormal, methods.SetFontObject, methods.SetFontHeight = {}, objectSetter, heightSetter
+        if mode == 1 then ChatFontNormal = nil
+        elseif mode == 2 then ChatFontNormal = restricted
         elseif mode == 3 then methods.SetFontObject = false
-        elseif mode == 4 then methods.SetTextHeight = false
+        elseif mode == 4 then methods.SetFontHeight = false
         elseif mode == 5 then methods.SetFontObject = function() error("font object unavailable") end
-        else methods.SetTextHeight = function() error("font sizing unavailable") end end
+        else methods.SetFontHeight = function() error("font sizing unavailable") end end
         local row = ui:MakeRow(ui.questList, {}, 1, 59)
-        assert(row.title.fontPath and row.title.fontFamily == nil and row.title.fontSize == 14)
-        assert(row.note.fontPath and row.note.fontFamily == nil and row.note.fontSize == 11)
+        assert(row.title.fontPath and row.title.fontFamily == nil and row.title.fontSize == 16)
+        assert(row.note.fontPath and row.note.fontFamily == nil and row.note.fontSize == 13)
         row:Hide()
     end
-    GameFontHighlight, methods.SetFontObject, methods.SetTextHeight, issecretvalue = previous, objectSetter, heightSetter, checker
+    ChatFontNormal, methods.SetFontObject, methods.SetFontHeight, issecretvalue = previous, objectSetter, heightSetter, checker
     ui:Refresh()
 end)
 local function languageMenuFixture()
@@ -3654,5 +3662,39 @@ check("Same-card location redraw and character loss preserve only the newly owne
         else ui.giver.scripts.OnClick();assert(routed and routed.place.mapID==2 and routed.place==addon.quests[23001].start)end
         addon.char=character;restore()
     end
+end)
+check("Readable chat family uses actual font height for rows search and all language scripts without text scaling",function()
+    local old,locale=ChatFontNormal,addon.db.locale
+    assert(ui.searchBox.fontSize==14 and ui.searchBox.fontFamily==old and not ui.searchBox.scaledText and ui.searchBox.SetFontHeight==false)
+    assert(ui.copy and ui.copy.fontSize==14 and ui.copy.fontFamily==old and ui.copy.SetFontHeight==false and not ui.copy.fontPath)
+    assert(ui.title.fontSize==26 and ui.heading.fontSize==26 and ui.summary.fontSize==14 and ui.coverage.fontSize==14)
+    assert(ui.footer.fontSize==13 and ui.capacityStatus.fontSize==13 and ui.searchPlaceholder.fontSize==13)
+    ChatFontNormal={unchanged=true}
+    for code in pairs(addon.locales)do
+        addon.db.locale=code;showDetail(1)
+        assert(ui.details[1].fontFamily==ChatFontNormal and ui.details[1].fontSize==26 and not ui.details[1].scaledText)
+        assert(ui.details[1].shadow[1]==0 and ui.details[1].shadow[2]==0)
+    end
+    local row=ui:MakeRow(ui.questList,{},1,59)
+    assert(row.title.fontFamily==ChatFontNormal and row.title.fontSize==16 and row.note.fontSize==13)
+    assert(not row.title.scaledText and not row.note.scaledText and not ChatFontNormal.fontSize and ChatFontNormal.unchanged)
+    row:Hide();ChatFontNormal,addon.db.locale=old,locale;ui:Refresh()
+end)
+check("Larger heading and metadata reflow above the quest viewport while preserving its reading offset",function()
+    local selected,quest=ui.dungeon,ui.quest
+    measurement=function(fs)
+        if fs==ui.heading then return 68 end
+        if fs==ui.summary then return 40 end
+        if fs==ui.coverage then return 40 end
+        return 18
+    end
+    ui.questScroll:SetVerticalScroll(30);ui:RefreshQuests()
+    assert(ui.summary.point[3]==-(125+68+8))
+    assert(ui.coverage.point[3]==-(125+68+8+40+8))
+    assert(ui.questScroll.point[3]==-(125+68+8+40+8+40+12))
+    assert(ui.questScroll.height==643+ui.questScroll.point[3] and ui.questScroll.verticalScroll==30)
+    assert(ui.dungeon==selected and ui.quest==quest)
+    measurement=nil;ui:RefreshQuests()
+    assert(ui.questScroll.point[3]==-227 and ui.questScroll.height==416)
 end)
 print("Preparation UI modeled checks passed: " .. total .. " (no native layout validation)")
