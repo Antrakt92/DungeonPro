@@ -87,6 +87,9 @@ Level ranges are provisional recommendations.
   planning. Choosing a route does not bypass requirements or confirm availability.
 - World map, optional TomTom and a built-in direction arrow. The arrow points
   toward a coordinate; it does not find paths around terrain or plan transport.
+- When available, follow the game's next waypoint for a quest in your log.
+  It may mark a route point, an entrance or a turn-in. Quest-giver locations
+  and preparation steps remain separate.
 - A separate quest-giver button opens a known zone or guides to a known location.
   Visiting a giver does not confirm that the quest is available to pick up.
 - Expand reported positions when a giver has several sourced points, then choose

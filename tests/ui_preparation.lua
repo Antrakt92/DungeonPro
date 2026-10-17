@@ -6671,4 +6671,196 @@ check("Held payment cleanup before-original Hide restores only a newer exact own
     end
 end)
 
+
+local function clientWaypointFixture()
+    local f=rewardPresentationFixture();local saved={provider=addon.HeldQuestWaypoint,nav=addon.Navigation,progress=addon.QuestObjectives,dialogue=addon.DialogueObjectiveText}
+    local q=addon.quests[9970];q.start={npcID=10,name="Recorded start",mapID=1,x=10,y=20};q.finish={npcID=20,name="Recorded finish",mapID=2,x=30,y=40}
+    f.dto={source="clientWaypoint",questID=9970,uiMapID=43,normalizedX=0.1,normalizedY=0.9,text="Native route instruction"}
+    f.held=true;f.ready=false;f.reads=0;f.visits={}
+    f.context={level=60,active=function(id)return f.held and id==9970 end,ready=function(id)return f.ready and id==9970 end,completed=function()return false end}
+    addon.HeldQuestWaypoint=function(id,current)f.reads=f.reads+1;assert(id==9970 or id==9971);assert(current());if f.held and id==9970 then return f.dto end end
+    addon.Navigation={Start=function(action)f.visits[#f.visits+1]=action end,Map=function(place)f.mapped=place end}
+    addon.QuestObjectives=function(id)if id==9970 and f.held then return{{text="Native objective row",finished=false}}end end
+    addon.DialogueObjectiveText=function(id)if id==9970 then return"Current dialogue objective"end end
+    local finish=f.finish
+    function f:finish()
+        addon.HeldQuestWaypoint,addon.Navigation,addon.QuestObjectives,addon.DialogueObjectiveText=saved.provider,saved.nav,saved.progress,saved.dialogue
+        finish(self)
+    end
+    showDetail(9970,f.context);return f,q
+end
+check("Game waypoint is a separate optional manual destination after native objectives without replacing planner or recorded giver",function()
+    local f,q=clientWaypointFixture();local action,giver=ui.action,ui.giverAction;local button=ui.clientWaypointButton
+    assert(button and button.shown and button.enabled and button.label.text==addon.L("GAME_WAYPOINT_FOLLOW"),"game waypoint needs a separate explicit follow control")
+    assert(detailHas(addon.L("GAME_WAYPOINT_NOTICE"))and detailHas("Native route instruction")and #f.visits==0)
+    assert(detailSectionY(addon.L("OBJECTIVE_DIALOGUE"))<detailSectionY(addon.L("GAME_WAYPOINT")))
+    assert(detailSectionY(addon.L("GAME_WAYPOINT"))<firstDetailPrefix(addon.L("START")..": "))
+    assert(action.id==9970 and action.kind=="complete" and giver.place==q.start and ui.engine:State(9970).status=="ACTIVE")
+    button.scripts.OnClick(button,"LeftButton");local visit=f.visits[1]
+    assert(visit.id==9970 and visit.kind=="visit" and visit.place.mapID==43 and visit.place.x==10 and visit.place.y==90)
+    assert(visit.place.name=="Native route instruction" and visit.place.npcID==nil and visit.place.objectID==nil and visit.place.itemID==nil)
+    assert(ui.action==action and ui.giverAction==giver)
+    f.ready=true;showDetail(9970,f.context);local nextAction=ui.action
+    assert(nextAction.kind=="turnin"and nextAction.place==q.finish)
+    ui.clientWaypointButton.scripts.OnClick();assert(f.visits[#f.visits].place.mapID==43 and ui.action==nextAction)
+    f:finish()
+end)
+check("Game waypoint click reads fresh normalized coordinates once including exact zero and one boundaries",function()
+    local f,q=clientWaypointFixture();local reads=f.reads
+    f.dto={source="clientWaypoint",questID=9970,uiMapID=1440,normalizedX=0,normalizedY=1}
+    ui.clientWaypointButton.scripts.OnClick();assert(f.reads==reads+1)
+    local p=f.visits[1].place;assert(p.mapID==1440 and p.x==0 and p.y==100 and p.name==nil)
+    f.dto.normalizedX=1;f.dto.normalizedY=0
+    ui.clientWaypointButton.scripts.OnClick();p=f.visits[2].place;assert(p.x==100 and p.y==0)
+    assert(q.start.mapID==1 and q.start.x==10 and q.finish.mapID==2)
+    f:finish()
+end)
+check("Game waypoint omission rejects absent cold malformed nonheld or restricted DTOs and recycles without an empty section",function()
+    local f,q=clientWaypointFixture();local provider=addon.HeldQuestWaypoint
+    local bad={false,{}, {source="catalog",questID=9970,uiMapID=43,normalizedX=0.1,normalizedY=0.9},
+        {source="clientWaypoint",questID=9971,uiMapID=43,normalizedX=0.1,normalizedY=0.9},
+        {source="clientWaypoint",questID=9970,uiMapID=0,normalizedX=0,normalizedY=1},
+        {source="clientWaypoint",questID=9970,uiMapID=43,normalizedX=-0.1,normalizedY=0.9},
+        {source="clientWaypoint",questID=9970,uiMapID=43,normalizedX=0.1,normalizedY=1.1},
+        {source="clientWaypoint",questID=9970,uiMapID=43,normalizedX="0.1",normalizedY=0.9},
+        {source="clientWaypoint",questID=9970,uiMapID=43,normalizedX=0.1,normalizedY=0.9,text=false}}
+    for _,dto in ipairs(bad)do f.dto=dto;ui:RefreshDetail();assert(not detailHas(addon.L("GAME_WAYPOINT"))and not ui.clientWaypointButton.shown and not ui.clientWaypointBinding)end
+    f.dto=nil;ui:RefreshDetail();assert(not detailHas(addon.L("GAME_WAYPOINT")))
+    addon.HeldQuestWaypoint=nil;ui:RefreshDetail();assert(not ui.clientWaypointButton.shown and detailHas(addon.QuestName(9970)))
+    addon.HeldQuestWaypoint=function()error("cold API")end;ui:RefreshDetail();assert(not detailHas(addon.L("GAME_WAYPOINT")))
+    addon.HeldQuestWaypoint=provider;f.dto={source="clientWaypoint",questID=9970,uiMapID=43,normalizedX=0.1,normalizedY=0.9};f.held=false
+    showDetail(9970,f.context);assert(ui.engine:State(9970).status=="UNKNOWN"and not detailHas(addon.L("GAME_WAYPOINT"))and #f.visits==0)
+    f:finish()
+end)
+check("Game waypoint captions wrap across ten locales and optional text does not become a source identity",function()
+    local f,q=clientWaypointFixture();local locale=addon.db.locale
+    measurement=function(fs)return fs.text==addon.L("GAME_WAYPOINT_FOLLOW")and 42 or 18 end
+    for code in pairs(addon.locales)do addon.db.locale=code;f.dto.text=nil;ui:RefreshDetail()
+        assert(detailOccurrences(addon.L("GAME_WAYPOINT"))==1 and detailHas(addon.L("GAME_WAYPOINT_NOTICE")))
+        assert(ui.clientWaypointButton.label.text==addon.L("GAME_WAYPOINT_FOLLOW")and ui.clientWaypointButton.height>=52)
+        assert(q.start.npcID==10 and q.finish.npcID==20 and ui.action.kind=="complete")
+    end
+    addon.db.locale=locale;f:finish()
+end)
+check("Stale game-waypoint clicks cannot guide after ownership loss hidden window or a fresh provider returns no position",function()
+    local f,q=clientWaypointFixture();local old=ui.clientWaypointButton.scripts.OnClick
+    f.dto=nil;old();assert(#f.visits==0)
+    f.dto={source="clientWaypoint",questID=9970,uiMapID=43,normalizedX=0.1,normalizedY=0.9};ui:RefreshDetail();old();assert(#f.visits==0)
+    old=ui.clientWaypointButton.scripts.OnClick;f.held=false;old();assert(#f.visits==0)
+    f.held=true;ui.frame:Hide();old();assert(#f.visits==0);ui.frame:Show()
+    ui:InspectQuest(9971);old();assert(ui.quest==9971 and #f.visits==0)
+    f:finish()
+end)
+check("Game-waypoint preview and click providers preserve a newer card and never dispatch old coordinates after reentry",function()
+    for _,click in ipairs({false,true})do
+        local f,q=clientWaypointFixture();local provider=addon.HeldQuestWaypoint;local armed=true
+        addon.HeldQuestWaypoint=function(id,current)
+            local dto=provider(id,current)
+            if armed then armed=false;ui:InspectQuest(9971)end
+            return dto
+        end
+        if click then
+            -- Publish a binding owned by the replacement helper before its one-shot click reentry.
+            armed=false;ui:RefreshDetail();armed=true;ui.clientWaypointButton.scripts.OnClick()
+        else ui:RefreshDetail()end
+        assert(not armed and ui.quest==9971 and #f.visits==0 and not ui.clientWaypointButton.shown)
+        assert(detailHas(addon.QuestName(9971))and not detailHas("Native route instruction"))
+        f:finish()
+    end
+end)
+check("Game-waypoint localization and owned text setter reentry cannot publish old route text over a new card",function()
+    for _,stage in ipairs({"localize","setter-before","setter-after"})do
+        local f,q=clientWaypointFixture();local localize=addon.L;local setter=methods.SetText;local armed=true
+        if stage=="localize"then
+            addon.L=function(key,...)local value=localize(key,...);if armed and key=="GAME_WAYPOINT_NOTICE"then armed=false;ui:InspectQuest(9971)end;return value end
+        else
+            methods.SetText=function(self,value)
+                if stage=="setter-after"then setter(self,value)end
+                if armed and value=="Native route instruction"then armed=false;ui:InspectQuest(9971)end
+                if stage=="setter-before"then setter(self,value)end
+            end
+        end
+        ui:RefreshDetail();addon.L=localize;methods.SetText=setter
+        assert(not armed and ui.quest==9971 and not detailHas("Native route instruction")and not ui.clientWaypointButton.shown)
+        f:finish()
+    end
+end)
+check("Opaque waypoint button setters conservatively omit the nested optional block and recover on ordinary refresh",function()
+    for _,method in ipairs({"SetText","Show","Hide"})do
+        local f,q=clientWaypointFixture();local control=ui.clientWaypointButton
+        local object=method=="SetText"and control.label or control;local setter=object[method];local armed=true
+        object[method]=function(self,...)
+            if armed then armed=false;ui:InspectQuest(9971)end
+            return setter(self,...)
+        end
+        ui:RefreshDetail();object[method]=setter
+        assert(not armed and ui.quest==9971 and not control.shown and #f.visits==0 and not ui.clientWaypointWriteBusy)
+        showDetail(9970,f.context);assert(control.shown and detailHas(addon.L("GAME_WAYPOINT")))
+        f:finish()
+    end
+end)
+
+
+check("Game waypoint source sanitization rejects restricted fields and final DTO mutation without changing current actions",function()
+    local f,q=clientWaypointFixture();local checker=issecretvalue
+    local restricted={};f.dto.normalizedX=restricted;issecretvalue=function(value)return value==restricted end
+    ui:RefreshDetail();issecretvalue=checker
+    assert(not detailHas(addon.L("GAME_WAYPOINT"))and not ui.clientWaypointButton.shown and ui.action.kind=="complete")
+    f.dto={source="clientWaypoint",questID=9970,uiMapID=43,normalizedX=0.1,normalizedY=0.9,text="Native route instruction"}
+    local localize=addon.L;local armed=true
+    addon.L=function(key,...)local text=localize(key,...);if armed and key=="GAME_WAYPOINT_NOTICE"then armed=false;f.dto.normalizedX=0.5 end;return text end
+    ui:RefreshDetail();addon.L=localize
+    assert(not armed and not detailHas(addon.L("GAME_WAYPOINT"))and #f.visits==0)
+    ui:RefreshDetail();assert(ui.clientWaypointButton.shown)
+    ui.clientWaypointButton.scripts.OnClick();assert(f.visits[1].place.x==50)
+    f:finish()
+end)
+check("Game-waypoint clicks reject replaced helper character navigation locale and stale or reentrant engine scopes",function()
+    for _,stage in ipairs({"helper","character","navigation","locale","engine-stale","engine-reentrant"})do
+        local f,q=clientWaypointFixture();local callback=ui.clientWaypointButton.scripts.OnClick
+        local char,nav,locale=addon.char,addon.Navigation,addon.db.locale;local method=ui.engine.Current
+        if stage=="helper"then addon.HeldQuestWaypoint=function()return f.dto end
+        elseif stage=="character"then addon.char={}
+        elseif stage=="navigation"then addon.Navigation={Start=function()error("replacement navigation must not run")end}
+        elseif stage=="locale"then addon.db.locale=locale=="ruRU"and"enUS"or"ruRU"
+        elseif stage=="engine-stale"then
+            local valid=true
+            ui.engine.Current=function()return valid end
+            ui:RefreshDetail();callback=ui.clientWaypointButton.scripts.OnClick;valid=false
+        else
+            local armed=false
+            ui.engine.Current=function(self)if armed then armed=false;ui:InspectQuest(9971)end;return true end
+            ui:RefreshDetail();callback=ui.clientWaypointButton.scripts.OnClick;armed=true
+        end
+        callback();assert(#f.visits==0)
+        addon.char,addon.Navigation,addon.db.locale=char,nav,locale
+        f:finish()
+    end
+end)
+
+
+check("Waypoint owner predicate reads callback-capable locale before its final engine freshness check",function()
+    local f,q=clientWaypointFixture();local provider=addon.HeldQuestWaypoint;local localeGetter=GetLocale;local armed,valid=false,true;local owner
+    GetLocale=function()if armed then valid=false end;return"enUS"end
+    ui.engine.Current=function()return valid end
+    addon.HeldQuestWaypoint=function(id,current)owner=current;return provider(id,current)end
+    ui:RefreshDetail();assert(owner and ui.clientWaypointButton.shown)
+    armed=true;assert(owner()==false,"locale callback invalidated the same engine after its earlier freshness read")
+    GetLocale=localeGetter;f:finish()
+end)
+
+
+check("Game waypoint preview rejects a changed typed quest identity in the same definition table after localization",function()
+    local f,q=clientWaypointFixture();local localize=addon.L;local armed=true
+    addon.L=function(key,...)
+        local value=localize(key,...)
+        if armed and key=="GAME_WAYPOINT_NOTICE"then armed=false;q.id=9971 end
+        return value
+    end
+    ui:RefreshDetail();addon.L=localize
+    assert(not armed and not ui.clientWaypointButton.shown and not ui.clientWaypointBinding and #f.visits==0)
+    q.id=9970;ui:RefreshDetail();assert(ui.clientWaypointButton.shown)
+    f:finish()
+end)
+
 print("Preparation UI modeled checks passed: " .. total .. " (no native layout validation)")

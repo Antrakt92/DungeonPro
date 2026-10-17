@@ -1107,6 +1107,14 @@ function UI:RefreshDetail()
         return self.quest == renderQuest and self.dungeon == renderDungeon and self.engine == renderEngine and
             addon.char == renderCharacter and self.rewardGeneration == rewardGeneration
     end
+    self.clientWaypointBinding = nil
+    if self.clientWaypointButton then
+        local busy = self.clientWaypointWriteBusy
+        if not busy then self.clientWaypointWriteBusy = {} end
+        pcall(self.clientWaypointButton.Hide, self.clientWaypointButton)
+        if not busy then self.clientWaypointWriteBusy = nil end
+        if not portraitCardCurrent() then return end
+    end
     local previousPaymentLine, previousPaymentBinding = self.heldPaymentDetail, self.heldPaymentBinding
     self.heldPaymentDetail, self.heldPaymentBinding = nil, nil
     if previousPaymentLine then
@@ -1730,6 +1738,107 @@ function UI:RefreshDetail()
             if dialogueObjective and dialogueObjective ~= "" and #dialogueObjective <= 30000 then
                 if line(addon.L("OBJECTIVE_DIALOGUE"), "section", nil, nil, objectivesCurrent) == false or
                     line(dialogueObjective, nil, nil, nil, objectivesCurrent) == false then return end
+            end
+        end
+        if not self.clientWaypointWriteBusy and type(addon.HeldQuestWaypoint) == "function" then
+            local provider, checker, localize = addon.HeldQuestWaypoint, issecretvalue, addon.L
+            local engineCurrent = renderEngine and renderEngine.Current
+            local database, selectedLocale, localeGetter = addon.db, addon.db.locale, GetLocale
+            local gameLocale = addon.Read(localeGetter, "string")
+            local navigationRoot = addon.Navigation
+            local navigation = addon.Clean(navigationRoot, "table")
+            local rawStart = navigation and rawget(navigation, "Start")
+            local start = addon.Clean(rawStart, "function")
+            local function waypointCurrent()
+                local language = addon.Read(localeGetter, "string")
+                local engineFresh = type(engineCurrent) == "nil" or addon.Read(engineCurrent, "boolean", renderEngine) == true
+                return engineFresh and (not renderEngine or renderEngine.Current == engineCurrent) and portraitCardCurrent() and addon.quests[id] == definition and definition and rawget(definition, "id") == id and addon.HeldQuestWaypoint == provider and
+                    issecretvalue == checker and addon.L == localize and addon.db == database and database.locale == selectedLocale and
+                    GetLocale == localeGetter and language == gameLocale and addon.Navigation == navigationRoot and
+                    (not navigation or rawget(navigation, "Start") == rawStart)
+            end
+            local function snapshotCurrent(snapshot)
+                if not waypointCurrent() then return false end
+                local ok, same = pcall(function()
+                    local dto = snapshot.dto
+                    return portraitCardCurrent() and rawget(dto, "source") == "clientWaypoint" and rawget(dto, "questID") == id and
+                        rawget(dto, "uiMapID") == snapshot.map and rawget(dto, "normalizedX") == snapshot.x and
+                        rawget(dto, "normalizedY") == snapshot.y and rawget(dto, "text") == snapshot.text
+                end)
+                return ok and same == true
+            end
+            local function readWaypoint()
+                if not waypointCurrent() then return nil end
+                local dto = addon.Read(provider, "table", id, waypointCurrent)
+                if not waypointCurrent() or not dto then return nil end
+                local source = addon.Clean(rawget(dto, "source"), "string")
+                local quest = addon.Clean(rawget(dto, "questID"), "number")
+                local map = addon.Clean(rawget(dto, "uiMapID"), "number")
+                local x = addon.Clean(rawget(dto, "normalizedX"), "number")
+                local z = addon.Clean(rawget(dto, "normalizedY"), "number")
+                local rawText = rawget(dto, "text")
+                local readable = type(checker) ~= "function" or addon.Read(checker, "boolean", rawText) == false
+                if not waypointCurrent() then return nil end
+                local text = readable and addon.Clean(rawText, "string")
+                if source ~= "clientWaypoint" or quest ~= id or not map or map <= 0 or map > 9007199254740991 or map % 1 ~= 0 or
+                    not x or x < 0 or x > 1 or not z or z < 0 or z > 1 or not readable or
+                    (rawText ~= nil and (not text or #text > 1024 or not text:find("%S"))) then return nil end
+                local snapshot = { dto = dto, map = map, x = x, y = z, text = text }
+                return snapshotCurrent(snapshot) and snapshot or nil
+            end
+            local snapshot = readWaypoint()
+            if not portraitCardCurrent() then return end
+            if snapshot then
+                local function previewCurrent() return snapshotCurrent(snapshot) end
+                local heading = addon.Read(localize, "string", "GAME_WAYPOINT")
+                local notice = addon.Read(localize, "string", "GAME_WAYPOINT_NOTICE")
+                local follow = addon.Read(localize, "string", "GAME_WAYPOINT_FOLLOW")
+                if not previewCurrent() then return end
+                if heading and notice and follow then
+                    if line(heading, "section", nil, nil, previewCurrent) == false or
+                        line(notice, nil, nil, nil, previewCurrent) == false then return end
+                    if snapshot.text and line(snapshot.text, nil, nil, nil, previewCurrent) == false then return end
+                    if start then
+                        local control = self.clientWaypointButton
+                        if not control then
+                            control = CreateFrame("Button", nil, self.detail); control:Hide(); control:SetWidth(334)
+                            control.label = label(control, "", 7, -5, 320, 14); control.title = control.label
+                            control:SetHighlightTexture("Interface\\QuestFrame\\UI-QuestTitleHighlight")
+                            if not previewCurrent() then return end
+                            self.clientWaypointButton = control
+                        end
+                        local function write(object, method, ...)
+                            if not previewCurrent() then return false end
+                            local busy = {}
+                            self.clientWaypointWriteBusy = busy
+                            local ok = pcall(object[method], object, ...)
+                            local fresh = previewCurrent()
+                            if not fresh and self.clientWaypointWriteBusy == busy then pcall(control.Hide, control) end
+                            if self.clientWaypointWriteBusy == busy then self.clientWaypointWriteBusy = nil end
+                            return ok and fresh
+                        end
+                        if not write(control.label, "SetText", follow) then return end
+                        local height = math.max(28, measuredHeight(control.label, 18) + 10)
+                        if not previewCurrent() then return end
+                        styleRow(control, "control", false)
+                        if not previewCurrent() then return end
+                        local binding = {}
+                        if not write(control, "SetHeight", height) or not write(control, "ClearAllPoints") or
+                            not write(control, "SetPoint", "TOPLEFT", 4, -y) or not write(control, "SetEnabled", true) or
+                            not write(control, "SetScript", "OnClick", function()
+                                if self.clientWaypointBinding ~= binding or not waypointCurrent() or
+                                    addon.Read(self.frame.IsShown, "boolean", self.frame) ~= true or not waypointCurrent() then return end
+                                local fresh = readWaypoint()
+                                if not fresh or self.clientWaypointBinding ~= binding or not snapshotCurrent(fresh) then return end
+                                local place = { mapID = fresh.map, x = fresh.x * 100, y = fresh.y * 100, name = fresh.text }
+                                if self.clientWaypointBinding == binding and snapshotCurrent(fresh) then
+                                    pcall(start, { id = id, kind = "visit", place = place })
+                                end
+                            end) or not write(control, "Show") then return end
+                        self.clientWaypointBinding = binding
+                        y = y + height + 8
+                    end
+                end
             end
         end
         do
