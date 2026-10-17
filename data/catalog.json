@@ -2688,14 +2688,18 @@
         "name": "Motley Garmason",
         "mapID": 1437,
         "x": 49.6,
-        "y": 18.2
+        "y": 18.2,
+        "creatureDisplayID": 1675,
+        "portraitSource": "https://www.wowhead.com/forever/npc=1074"
       },
       "finish": {
         "npcID": 1074,
         "name": "Motley Garmason",
         "mapID": 1437,
         "x": 49.6,
-        "y": 18.2
+        "y": 18.2,
+        "creatureDisplayID": 1675,
+        "portraitSource": "https://www.wowhead.com/forever/npc=1074"
       },
       "requirementsKnown": false,
       "requires": [
@@ -3056,7 +3060,9 @@
             "y": 77.4,
             "zoneName": "Stranglethorn Vale"
           }
-        ]
+        ],
+        "creatureDisplayID": 7036,
+        "portraitSource": "https://www.wowhead.com/forever/npc=7853"
       },
       "startsInside": true
     },
@@ -3255,14 +3261,18 @@
         "name": "Klockmort Spannerspan",
         "mapID": 1455,
         "x": 68.2,
-        "y": 46.2
+        "y": 46.2,
+        "creatureDisplayID": 4999,
+        "portraitSource": "https://www.wowhead.com/forever/npc=6169"
       },
       "finish": {
         "npcID": 6169,
         "name": "Klockmort Spannerspan",
         "mapID": 1455,
         "x": 68.2,
-        "y": 46.2
+        "y": 46.2,
+        "creatureDisplayID": 4999,
+        "portraitSource": "https://www.wowhead.com/forever/npc=6169"
       },
       "storyline": [
         2925,
@@ -3419,7 +3429,9 @@
         "name": "Klockmort Spannerspan",
         "mapID": 1455,
         "x": 68.2,
-        "y": 46.2
+        "y": 46.2,
+        "creatureDisplayID": 4999,
+        "portraitSource": "https://www.wowhead.com/forever/npc=6169"
       },
       "storyline": [
         2925,
@@ -3484,7 +3496,9 @@
             "y": 77.4,
             "zoneName": "Stranglethorn Vale"
           }
-        ]
+        ],
+        "creatureDisplayID": 7036,
+        "portraitSource": "https://www.wowhead.com/forever/npc=7853"
       },
       "storyline": [
         2842,
@@ -3521,7 +3535,9 @@
             "y": 77.4,
             "zoneName": "Stranglethorn Vale"
           }
-        ]
+        ],
+        "creatureDisplayID": 7036,
+        "portraitSource": "https://www.wowhead.com/forever/npc=7853"
       },
       "finish": {
         "npcID": 7853,
@@ -3543,7 +3559,9 @@
             "y": 77.4,
             "zoneName": "Stranglethorn Vale"
           }
-        ]
+        ],
+        "creatureDisplayID": 7036,
+        "portraitSource": "https://www.wowhead.com/forever/npc=7853"
       },
       "storyline": [
         2842,
@@ -4847,7 +4865,9 @@
         "mapID": 1456,
         "x": 34.4,
         "y": 47.2,
-        "zoneName": "Thunder Bluff"
+        "zoneName": "Thunder Bluff",
+        "creatureDisplayID": 4518,
+        "portraitSource": "https://www.wowhead.com/forever/npc=3978"
       },
       "finish": {
         "npcID": 3978,
@@ -4855,7 +4875,9 @@
         "mapID": 1456,
         "x": 34.4,
         "y": 47.2,
-        "zoneName": "Thunder Bluff"
+        "zoneName": "Thunder Bluff",
+        "creatureDisplayID": 4518,
+        "portraitSource": "https://www.wowhead.com/forever/npc=3978"
       },
       "requirementsKnown": false,
       "objectiveItems": [
@@ -5578,7 +5600,9 @@
         "zoneName": "Desolace",
         "mapID": 1443,
         "x": 66.4,
-        "y": 7.8
+        "y": 7.8,
+        "creatureDisplayID": 2070,
+        "portraitSource": "https://www.wowhead.com/forever/npc=1182"
       },
       "requirementsKnown": false,
       "storyline": [
@@ -5602,7 +5626,9 @@
         "zoneName": "Desolace",
         "mapID": 1443,
         "x": 66.4,
-        "y": 7.8
+        "y": 7.8,
+        "creatureDisplayID": 2070,
+        "portraitSource": "https://www.wowhead.com/forever/npc=1182"
       },
       "finish": {
         "npcID": 1182,
@@ -5610,7 +5636,9 @@
         "zoneName": "Desolace",
         "mapID": 1443,
         "x": 66.4,
-        "y": 7.8
+        "y": 7.8,
+        "creatureDisplayID": 2070,
+        "portraitSource": "https://www.wowhead.com/forever/npc=1182"
       },
       "requirementsKnown": false,
       "storyline": [
@@ -5634,7 +5662,9 @@
         "zoneName": "Desolace",
         "mapID": 1443,
         "x": 66.4,
-        "y": 7.8
+        "y": 7.8,
+        "creatureDisplayID": 2070,
+        "portraitSource": "https://www.wowhead.com/forever/npc=1182"
       },
       "finish": {
         "npcID": 3980,
@@ -5688,7 +5718,9 @@
             "y": 65.6,
             "zoneName": "Loch Modan"
           }
-        ]
+        ],
+        "creatureDisplayID": 3437,
+        "portraitSource": "https://www.wowhead.com/forever/npc=1344"
       },
       "finish": {
         "npcID": 1344,
@@ -5710,7 +5742,9 @@
             "y": 65.6,
             "zoneName": "Loch Modan"
           }
-        ]
+        ],
+        "creatureDisplayID": 3437,
+        "portraitSource": "https://www.wowhead.com/forever/npc=1344"
       },
       "storyline": [
         707,
@@ -6218,7 +6252,9 @@
         "mapID": 1455,
         "x": 76.4,
         "y": 10.8,
-        "zoneName": "Ironforge"
+        "zoneName": "Ironforge",
+        "creatureDisplayID": 3598,
+        "portraitSource": "https://www.wowhead.com/forever/npc=2918"
       },
       "finish": {
         "npcID": 2918,
@@ -6226,7 +6262,9 @@
         "mapID": 1455,
         "x": 76.4,
         "y": 10.8,
-        "zoneName": "Ironforge"
+        "zoneName": "Ironforge",
+        "creatureDisplayID": 3598,
+        "portraitSource": "https://www.wowhead.com/forever/npc=2918"
       },
       "requires": [
         {
@@ -6272,7 +6310,9 @@
             "y": 36.6,
             "zoneName": "Orgrimmar"
           }
-        ]
+        ],
+        "creatureDisplayID": 5769,
+        "portraitSource": "https://www.wowhead.com/forever/npc=6986"
       },
       "finish": {
         "npcID": 6986,
@@ -6294,7 +6334,9 @@
             "y": 36.6,
             "zoneName": "Orgrimmar"
           }
-        ]
+        ],
+        "creatureDisplayID": 5769,
+        "portraitSource": "https://www.wowhead.com/forever/npc=6986"
       },
       "storyline": [
         2283,
@@ -6570,11 +6612,15 @@
             "x": 53.6,
             "y": 43.2
           }
-        ]
+        ],
+        "creatureDisplayID": 4900,
+        "portraitSource": "https://www.wowhead.com/forever/npc=2910"
       },
       "finish": {
         "npcID": 2909,
-        "name": "Hammertoe Grez"
+        "name": "Hammertoe Grez",
+        "creatureDisplayID": 4899,
+        "portraitSource": "https://www.wowhead.com/forever/npc=2909"
       },
       "storyline": [
         720,
@@ -6614,7 +6660,9 @@
       "finish": {
         "npcID": 6912,
         "name": "Remains of a Paladin",
-        "zoneName": "Uldaman"
+        "zoneName": "Uldaman",
+        "creatureDisplayID": 5711,
+        "portraitSource": "https://www.wowhead.com/forever/npc=6912"
       },
       "storyline": [
         2198,
@@ -6661,12 +6709,16 @@
             "y": 36.6,
             "zoneName": "Orgrimmar"
           }
-        ]
+        ],
+        "creatureDisplayID": 5769,
+        "portraitSource": "https://www.wowhead.com/forever/npc=6986"
       },
       "finish": {
         "npcID": 6912,
         "name": "Remains of a Paladin",
-        "zoneName": "Uldaman"
+        "zoneName": "Uldaman",
+        "creatureDisplayID": 5711,
+        "portraitSource": "https://www.wowhead.com/forever/npc=6912"
       },
       "storyline": [
         2283,
@@ -6694,11 +6746,15 @@
       "source": "https://www.wowhead.com/forever/quest=722/amulet-of-secrets",
       "start": {
         "npcID": 2909,
-        "name": "Hammertoe Grez"
+        "name": "Hammertoe Grez",
+        "creatureDisplayID": 4899,
+        "portraitSource": "https://www.wowhead.com/forever/npc=2909"
       },
       "finish": {
         "npcID": 2909,
-        "name": "Hammertoe Grez"
+        "name": "Hammertoe Grez",
+        "creatureDisplayID": 4899,
+        "portraitSource": "https://www.wowhead.com/forever/npc=2909"
       },
       "storyline": [
         720,
@@ -6978,7 +7034,9 @@
         "mapID": 1456,
         "x": 34.4,
         "y": 47.2,
-        "zoneName": "Thunder Bluff"
+        "zoneName": "Thunder Bluff",
+        "creatureDisplayID": 4518,
+        "portraitSource": "https://www.wowhead.com/forever/npc=3978"
       }
     },
     {
@@ -7011,7 +7069,9 @@
             "y": 36.6,
             "zoneName": "Orgrimmar"
           }
-        ]
+        ],
+        "creatureDisplayID": 5769,
+        "portraitSource": "https://www.wowhead.com/forever/npc=6986"
       },
       "finish": {
         "npcID": 6868,
@@ -7096,7 +7156,9 @@
             "y": 36.6,
             "zoneName": "Orgrimmar"
           }
-        ]
+        ],
+        "creatureDisplayID": 5769,
+        "portraitSource": "https://www.wowhead.com/forever/npc=6986"
       },
       "storyline": [
         2340,
@@ -7116,7 +7178,9 @@
       "start": {
         "npcID": 6912,
         "name": "Remains of a Paladin",
-        "zoneName": "Uldaman"
+        "zoneName": "Uldaman",
+        "creatureDisplayID": 5711,
+        "portraitSource": "https://www.wowhead.com/forever/npc=6912"
       },
       "finish": {
         "npcID": 6868,
@@ -7170,7 +7234,9 @@
       "start": {
         "npcID": 6912,
         "name": "Remains of a Paladin",
-        "zoneName": "Uldaman"
+        "zoneName": "Uldaman",
+        "creatureDisplayID": 5711,
+        "portraitSource": "https://www.wowhead.com/forever/npc=6912"
       },
       "finish": {
         "objectID": 112877,
@@ -7430,7 +7496,9 @@
             "y": 65.6,
             "zoneName": "Loch Modan"
           }
-        ]
+        ],
+        "creatureDisplayID": 3437,
+        "portraitSource": "https://www.wowhead.com/forever/npc=1344"
       },
       "storyline": [
         707,
@@ -7469,7 +7537,9 @@
             "y": 65.6,
             "zoneName": "Loch Modan"
           }
-        ]
+        ],
+        "creatureDisplayID": 3437,
+        "portraitSource": "https://www.wowhead.com/forever/npc=1344"
       },
       "finish": {
         "objectID": 2875,
@@ -7516,7 +7586,9 @@
             "y": 65.6,
             "zoneName": "Loch Modan"
           }
-        ]
+        ],
+        "creatureDisplayID": 3437,
+        "portraitSource": "https://www.wowhead.com/forever/npc=1344"
       },
       "storyline": [
         707,
@@ -7635,7 +7707,9 @@
             "x": 53.6,
             "y": 43.2
           }
-        ]
+        ],
+        "creatureDisplayID": 4900,
+        "portraitSource": "https://www.wowhead.com/forever/npc=2910"
       },
       "storyline": [
         720,
@@ -7657,7 +7731,9 @@
       "source": "https://www.wowhead.com/forever/quest=723/prospect-of-faith",
       "start": {
         "npcID": 2909,
-        "name": "Hammertoe Grez"
+        "name": "Hammertoe Grez",
+        "creatureDisplayID": 4899,
+        "portraitSource": "https://www.wowhead.com/forever/npc=2909"
       },
       "finish": {
         "npcID": 2910,
@@ -7685,7 +7761,9 @@
             "x": 53.6,
             "y": 43.2
           }
-        ]
+        ],
+        "creatureDisplayID": 4900,
+        "portraitSource": "https://www.wowhead.com/forever/npc=2910"
       },
       "storyline": [
         720,
@@ -7738,7 +7816,9 @@
             "x": 53.6,
             "y": 43.2
           }
-        ]
+        ],
+        "creatureDisplayID": 4900,
+        "portraitSource": "https://www.wowhead.com/forever/npc=2910"
       },
       "finish": {
         "npcID": 2916,
@@ -7746,7 +7826,9 @@
         "mapID": 1455,
         "x": 76.4,
         "y": 11.4,
-        "zoneName": "Ironforge"
+        "zoneName": "Ironforge",
+        "creatureDisplayID": 3595,
+        "portraitSource": "https://www.wowhead.com/forever/npc=2916"
       },
       "storyline": [
         720,
@@ -7892,7 +7974,9 @@
         "mapID": 1456,
         "x": 34.4,
         "y": 47.2,
-        "zoneName": "Thunder Bluff"
+        "zoneName": "Thunder Bluff",
+        "creatureDisplayID": 4518,
+        "portraitSource": "https://www.wowhead.com/forever/npc=3978"
       },
       "finish": {
         "npcID": 3009,
@@ -8945,7 +9029,9 @@
             "y": 74.6,
             "zoneName": "Durotar"
           }
-        ]
+        ],
+        "creatureDisplayID": 4072,
+        "portraitSource": "https://www.wowhead.com/forever/npc=3188"
       },
       "finish": {
         "npcID": 3188,
@@ -8967,7 +9053,9 @@
             "y": 74.6,
             "zoneName": "Durotar"
           }
-        ]
+        ],
+        "creatureDisplayID": 4072,
+        "portraitSource": "https://www.wowhead.com/forever/npc=3188"
       },
       "storyline": [
         2933,
@@ -9177,7 +9265,9 @@
       "source": "https://www.wowhead.com/forever/quest=2769/the-brassbolts-brothers",
       "start": {
         "npcID": 6169,
-        "name": "Klockmort Spannerspan"
+        "name": "Klockmort Spannerspan",
+        "creatureDisplayID": 4999,
+        "portraitSource": "https://www.wowhead.com/forever/npc=6169"
       },
       "finish": {
         "npcID": 4453,
@@ -9258,7 +9348,9 @@
         "zoneName": "Hillsbrad Foothills",
         "mapID": 1424,
         "x": 61.4,
-        "y": 19.2
+        "y": 19.2,
+        "creatureDisplayID": 1660,
+        "portraitSource": "https://www.wowhead.com/forever/npc=2216"
       },
       "storyline": [
         2933,
@@ -9284,7 +9376,9 @@
         "zoneName": "Hillsbrad Foothills",
         "mapID": 1424,
         "x": 61.4,
-        "y": 19.2
+        "y": 19.2,
+        "creatureDisplayID": 1660,
+        "portraitSource": "https://www.wowhead.com/forever/npc=2216"
       },
       "finish": {
         "npcID": 2216,
@@ -9292,7 +9386,9 @@
         "zoneName": "Hillsbrad Foothills",
         "mapID": 1424,
         "x": 61.4,
-        "y": 19.2
+        "y": 19.2,
+        "creatureDisplayID": 1660,
+        "portraitSource": "https://www.wowhead.com/forever/npc=2216"
       },
       "storyline": [
         2933,
@@ -9325,7 +9421,9 @@
         "zoneName": "Hillsbrad Foothills",
         "mapID": 1424,
         "x": 61.4,
-        "y": 19.2
+        "y": 19.2,
+        "creatureDisplayID": 1660,
+        "portraitSource": "https://www.wowhead.com/forever/npc=2216"
       },
       "finish": {
         "npcID": 3188,
@@ -9347,7 +9445,9 @@
             "y": 74.6,
             "zoneName": "Durotar"
           }
-        ]
+        ],
+        "creatureDisplayID": 4072,
+        "portraitSource": "https://www.wowhead.com/forever/npc=3188"
       },
       "storyline": [
         2933,
@@ -9394,7 +9494,9 @@
             "y": 74.6,
             "zoneName": "Durotar"
           }
-        ]
+        ],
+        "creatureDisplayID": 4072,
+        "portraitSource": "https://www.wowhead.com/forever/npc=3188"
       },
       "finish": {
         "npcID": 2216,
@@ -9402,7 +9504,9 @@
         "zoneName": "Hillsbrad Foothills",
         "mapID": 1424,
         "x": 61.4,
-        "y": 19.2
+        "y": 19.2,
+        "creatureDisplayID": 1660,
+        "portraitSource": "https://www.wowhead.com/forever/npc=2216"
       },
       "storyline": [
         2933,
@@ -9769,7 +9873,9 @@
         "zoneName": "The Hinterlands",
         "mapID": 1425,
         "x": 33.6,
-        "y": 75.2
+        "y": 75.2,
+        "creatureDisplayID": 6590,
+        "portraitSource": "https://www.wowhead.com/forever/npc=5598"
       },
       "finish": {
         "npcID": 5598,
@@ -9777,7 +9883,9 @@
         "zoneName": "The Hinterlands",
         "mapID": 1425,
         "x": 33.6,
-        "y": 75.2
+        "y": 75.2,
+        "creatureDisplayID": 6590,
+        "portraitSource": "https://www.wowhead.com/forever/npc=5598"
       },
       "objectiveItems": [
         {
@@ -11098,7 +11206,9 @@
         "zoneName": "The Hinterlands",
         "mapID": 1425,
         "x": 33.6,
-        "y": 75.2
+        "y": 75.2,
+        "creatureDisplayID": 6590,
+        "portraitSource": "https://www.wowhead.com/forever/npc=5598"
       },
       "storyline": [
         1424,
@@ -11130,7 +11240,9 @@
         "zoneName": "The Hinterlands",
         "mapID": 1425,
         "x": 33.6,
-        "y": 75.2
+        "y": 75.2,
+        "creatureDisplayID": 6590,
+        "portraitSource": "https://www.wowhead.com/forever/npc=5598"
       },
       "finish": {
         "npcID": 1443,
@@ -12808,7 +12920,9 @@
         "zoneName": "Burning Steppes",
         "mapID": 1428,
         "x": 85.4,
-        "y": 68.8
+        "y": 68.8,
+        "creatureDisplayID": 8694,
+        "portraitSource": "https://www.wowhead.com/forever/npc=9562"
       },
       "finish": {
         "npcID": 9562,
@@ -12816,7 +12930,9 @@
         "zoneName": "Burning Steppes",
         "mapID": 1428,
         "x": 85.4,
-        "y": 68.8
+        "y": 68.8,
+        "creatureDisplayID": 8694,
+        "portraitSource": "https://www.wowhead.com/forever/npc=9562"
       },
       "storyline": [
         4182,
@@ -12846,7 +12962,9 @@
         "zoneName": "Burning Steppes",
         "mapID": 1428,
         "x": 85.4,
-        "y": 68.8
+        "y": 68.8,
+        "creatureDisplayID": 8694,
+        "portraitSource": "https://www.wowhead.com/forever/npc=9562"
       },
       "finish": {
         "npcID": 344,
@@ -13213,7 +13331,9 @@
       "finish": {
         "npcID": 9023,
         "name": "Marshal Windsor",
-        "zoneName": "Blackrock Depths"
+        "zoneName": "Blackrock Depths",
+        "creatureDisplayID": 8707,
+        "portraitSource": "https://www.wowhead.com/forever/npc=9023"
       },
       "storyline": [
         4182,
@@ -13240,7 +13360,9 @@
       "start": {
         "npcID": 9023,
         "name": "Marshal Windsor",
-        "zoneName": "Blackrock Depths"
+        "zoneName": "Blackrock Depths",
+        "creatureDisplayID": 8707,
+        "portraitSource": "https://www.wowhead.com/forever/npc=9023"
       },
       "finish": {
         "npcID": 9560,
@@ -13339,7 +13461,9 @@
       "finish": {
         "npcID": 9023,
         "name": "Marshal Windsor",
-        "zoneName": "Blackrock Depths"
+        "zoneName": "Blackrock Depths",
+        "creatureDisplayID": 8707,
+        "portraitSource": "https://www.wowhead.com/forever/npc=9023"
       },
       "storyline": [
         4264,
@@ -13381,12 +13505,16 @@
       "start": {
         "npcID": 9023,
         "name": "Marshal Windsor",
-        "zoneName": "Blackrock Depths"
+        "zoneName": "Blackrock Depths",
+        "creatureDisplayID": 8707,
+        "portraitSource": "https://www.wowhead.com/forever/npc=9023"
       },
       "finish": {
         "npcID": 9023,
         "name": "Marshal Windsor",
-        "zoneName": "Blackrock Depths"
+        "zoneName": "Blackrock Depths",
+        "creatureDisplayID": 8707,
+        "portraitSource": "https://www.wowhead.com/forever/npc=9023"
       },
       "storyline": [
         4264,
@@ -13532,7 +13660,9 @@
       "start": {
         "npcID": 9023,
         "name": "Marshal Windsor",
-        "zoneName": "Blackrock Depths"
+        "zoneName": "Blackrock Depths",
+        "creatureDisplayID": 8707,
+        "portraitSource": "https://www.wowhead.com/forever/npc=9023"
       },
       "finish": {
         "npcID": 9560,
@@ -14462,7 +14592,9 @@
         "npcID": 16032,
         "name": "Falrin Treeshaper",
         "zoneName": "Dire Maul",
-        "dungeonKey": "dire"
+        "dungeonKey": "dire",
+        "creatureDisplayID": 15996,
+        "portraitSource": "https://www.wowhead.com/forever/npc=16032"
       },
       "finish": {
         "npcID": 16016,
@@ -15237,7 +15369,9 @@
         "zoneName": "Burning Steppes",
         "mapID": 1428,
         "x": 85.4,
-        "y": 68.8
+        "y": 68.8,
+        "creatureDisplayID": 8694,
+        "portraitSource": "https://www.wowhead.com/forever/npc=9562"
       },
       "finish": {
         "npcID": 9562,
@@ -15245,7 +15379,9 @@
         "zoneName": "Burning Steppes",
         "mapID": 1428,
         "x": 85.4,
-        "y": 68.8
+        "y": 68.8,
+        "creatureDisplayID": 8694,
+        "portraitSource": "https://www.wowhead.com/forever/npc=9562"
       },
       "requirementsKnown": false,
       "factions": [
@@ -15639,12 +15775,16 @@
       "start": {
         "npcID": 10182,
         "name": "Rexxar",
-        "zoneName": "Desolace, Feralas, Stonetalon Mountains"
+        "zoneName": "Desolace, Feralas, Stonetalon Mountains",
+        "creatureDisplayID": 11660,
+        "portraitSource": "https://www.wowhead.com/forever/npc=10182"
       },
       "finish": {
         "npcID": 10182,
         "name": "Rexxar",
-        "zoneName": "Desolace, Feralas, Stonetalon Mountains"
+        "zoneName": "Desolace, Feralas, Stonetalon Mountains",
+        "creatureDisplayID": 11660,
+        "portraitSource": "https://www.wowhead.com/forever/npc=10182"
       },
       "requirementsKnown": false,
       "factions": [
@@ -15892,7 +16032,9 @@
         "zoneName": "Burning Steppes",
         "mapID": 1428,
         "x": 65.2,
-        "y": 23.8
+        "y": 23.8,
+        "creatureDisplayID": 9791,
+        "portraitSource": "https://www.wowhead.com/forever/npc=10267"
       },
       "finish": {
         "npcID": 10267,
@@ -15900,7 +16042,9 @@
         "zoneName": "Burning Steppes",
         "mapID": 1428,
         "x": 65.2,
-        "y": 23.8
+        "y": 23.8,
+        "creatureDisplayID": 9791,
+        "portraitSource": "https://www.wowhead.com/forever/npc=10267"
       },
       "requirementsKnown": false,
       "factions": [
@@ -16023,7 +16167,9 @@
         "zoneName": "Western Plaguelands",
         "mapID": 1422,
         "x": 70.4,
-        "y": 74
+        "y": 74,
+        "creatureDisplayID": 10931,
+        "portraitSource": "https://www.wowhead.com/forever/npc=11286"
       },
       "finish": {
         "npcID": 11286,
@@ -16031,7 +16177,9 @@
         "zoneName": "Western Plaguelands",
         "mapID": 1422,
         "x": 70.4,
-        "y": 74
+        "y": 74,
+        "creatureDisplayID": 10931,
+        "portraitSource": "https://www.wowhead.com/forever/npc=11286"
       },
       "storyline": [
         5461,
@@ -16065,7 +16213,9 @@
         "zoneName": "Western Plaguelands",
         "mapID": 1422,
         "x": 70.2,
-        "y": 73.8
+        "y": 73.8,
+        "creatureDisplayID": 10895,
+        "portraitSource": "https://www.wowhead.com/forever/npc=11216"
       },
       "finish": {
         "npcID": 11216,
@@ -16073,7 +16223,9 @@
         "zoneName": "Western Plaguelands",
         "mapID": 1422,
         "x": 70.2,
-        "y": 73.8
+        "y": 73.8,
+        "creatureDisplayID": 10895,
+        "portraitSource": "https://www.wowhead.com/forever/npc=11216"
       },
       "storyline": [
         5382,
@@ -16098,7 +16250,9 @@
         "zoneName": "Western Plaguelands",
         "mapID": 1422,
         "x": 70.2,
-        "y": 73.8
+        "y": 73.8,
+        "creatureDisplayID": 10895,
+        "portraitSource": "https://www.wowhead.com/forever/npc=11216"
       },
       "finish": {
         "npcID": 11216,
@@ -16106,7 +16260,9 @@
         "zoneName": "Western Plaguelands",
         "mapID": 1422,
         "x": 70.2,
-        "y": 73.8
+        "y": 73.8,
+        "creatureDisplayID": 10895,
+        "portraitSource": "https://www.wowhead.com/forever/npc=11216"
       },
       "storyline": [
         5382,
@@ -16269,7 +16425,9 @@
         "zoneName": "Western Plaguelands",
         "mapID": 1422,
         "x": 70.2,
-        "y": 73.8
+        "y": 73.8,
+        "creatureDisplayID": 10895,
+        "portraitSource": "https://www.wowhead.com/forever/npc=11216"
       },
       "finish": {
         "npcID": 11216,
@@ -16277,7 +16435,9 @@
         "zoneName": "Western Plaguelands",
         "mapID": 1422,
         "x": 70.2,
-        "y": 73.8
+        "y": 73.8,
+        "creatureDisplayID": 10895,
+        "portraitSource": "https://www.wowhead.com/forever/npc=11216"
       },
       "storyline": [
         5382,
@@ -16583,7 +16743,9 @@
         "zoneName": "Western Plaguelands",
         "mapID": 1422,
         "x": 70.4,
-        "y": 74
+        "y": 74,
+        "creatureDisplayID": 10931,
+        "portraitSource": "https://www.wowhead.com/forever/npc=11286"
       },
       "finish": {
         "npcID": 11286,
@@ -16591,7 +16753,9 @@
         "zoneName": "Western Plaguelands",
         "mapID": 1422,
         "x": 70.4,
-        "y": 74
+        "y": 74,
+        "creatureDisplayID": 10931,
+        "portraitSource": "https://www.wowhead.com/forever/npc=11286"
       },
       "storyline": [
         5461,
@@ -16619,7 +16783,9 @@
         "zoneName": "Western Plaguelands",
         "mapID": 1422,
         "x": 70.4,
-        "y": 74
+        "y": 74,
+        "creatureDisplayID": 10931,
+        "portraitSource": "https://www.wowhead.com/forever/npc=11286"
       },
       "finish": {
         "npcID": 11036,
@@ -16737,7 +16903,9 @@
         "zoneName": "Western Plaguelands",
         "mapID": 1422,
         "x": 70.4,
-        "y": 74
+        "y": 74,
+        "creatureDisplayID": 10931,
+        "portraitSource": "https://www.wowhead.com/forever/npc=11286"
       },
       "storyline": [
         5461,
@@ -16765,7 +16933,9 @@
         "zoneName": "Burning Steppes",
         "mapID": 1428,
         "x": 65.2,
-        "y": 23.8
+        "y": 23.8,
+        "creatureDisplayID": 9791,
+        "portraitSource": "https://www.wowhead.com/forever/npc=10267"
       },
       "finish": {
         "npcID": 11036,
@@ -17769,7 +17939,9 @@
         "zoneName": "Eastern Plaguelands",
         "mapID": 1423,
         "x": 81.4,
-        "y": 59.8
+        "y": 59.8,
+        "creatureDisplayID": 10468,
+        "portraitSource": "https://www.wowhead.com/forever/npc=11039"
       },
       "storyline": [
         5262,
@@ -17847,7 +18019,9 @@
         "zoneName": "Eastern Plaguelands",
         "mapID": 1423,
         "x": 81.4,
-        "y": 59.8
+        "y": 59.8,
+        "creatureDisplayID": 10468,
+        "portraitSource": "https://www.wowhead.com/forever/npc=11039"
       },
       "finish": {
         "npcID": 11039,
@@ -17855,7 +18029,9 @@
         "zoneName": "Eastern Plaguelands",
         "mapID": 1423,
         "x": 81.4,
-        "y": 59.8
+        "y": 59.8,
+        "creatureDisplayID": 10468,
+        "portraitSource": "https://www.wowhead.com/forever/npc=11039"
       }
     },
     {
@@ -17976,7 +18152,9 @@
         "zoneName": "Eastern Plaguelands",
         "mapID": 1423,
         "x": 81.4,
-        "y": 59.8
+        "y": 59.8,
+        "creatureDisplayID": 10468,
+        "portraitSource": "https://www.wowhead.com/forever/npc=11039"
       },
       "finish": {
         "npcID": 11039,
@@ -17984,7 +18162,9 @@
         "zoneName": "Eastern Plaguelands",
         "mapID": 1423,
         "x": 81.4,
-        "y": 59.8
+        "y": 59.8,
+        "creatureDisplayID": 10468,
+        "portraitSource": "https://www.wowhead.com/forever/npc=11039"
       },
       "storyline": [
         5262,
@@ -18463,7 +18643,9 @@
         "zoneName": "Western Plaguelands",
         "mapID": 1422,
         "x": 50.8,
-        "y": 77.8
+        "y": 77.8,
+        "creatureDisplayID": 11800,
+        "portraitSource": "https://www.wowhead.com/forever/npc=11872"
       },
       "storyline": [
         5742,
@@ -18492,7 +18674,9 @@
         "zoneName": "Western Plaguelands",
         "mapID": 1422,
         "x": 50.8,
-        "y": 77.8
+        "y": 77.8,
+        "creatureDisplayID": 11800,
+        "portraitSource": "https://www.wowhead.com/forever/npc=11872"
       },
       "finish": {
         "npcID": 1842,
@@ -18668,7 +18852,9 @@
         "mapID": 1437,
         "x": 49.6,
         "y": 18.2,
-        "zoneName": "Wetlands"
+        "zoneName": "Wetlands",
+        "creatureDisplayID": 1675,
+        "portraitSource": "https://www.wowhead.com/forever/npc=1074"
       },
       "finish": {
         "npcID": 1074,
@@ -18676,7 +18862,9 @@
         "mapID": 1437,
         "x": 49.6,
         "y": 18.2,
-        "zoneName": "Wetlands"
+        "zoneName": "Wetlands",
+        "creatureDisplayID": 1675,
+        "portraitSource": "https://www.wowhead.com/forever/npc=1074"
       },
       "requirementsKnown": false,
       "source": "https://www.wowhead.com/forever/quest=303"
@@ -18724,7 +18912,9 @@
         "mapID": 1455,
         "x": 76.4,
         "y": 11.4,
-        "zoneName": "Ironforge"
+        "zoneName": "Ironforge",
+        "creatureDisplayID": 3595,
+        "portraitSource": "https://www.wowhead.com/forever/npc=2916"
       },
       "finish": {
         "npcID": 2918,
@@ -18732,7 +18922,9 @@
         "mapID": 1455,
         "x": 76.4,
         "y": 10.8,
-        "zoneName": "Ironforge"
+        "zoneName": "Ironforge",
+        "creatureDisplayID": 3598,
+        "portraitSource": "https://www.wowhead.com/forever/npc=2918"
       },
       "requirementsKnown": false,
       "source": "https://www.wowhead.com/forever/quest=762",
@@ -18936,7 +19128,9 @@
         "mapID": 1455,
         "x": 76.4,
         "y": 11.4,
-        "zoneName": "Ironforge"
+        "zoneName": "Ironforge",
+        "creatureDisplayID": 3595,
+        "portraitSource": "https://www.wowhead.com/forever/npc=2916"
       },
       "finish": {
         "npcID": 2918,
@@ -18944,7 +19138,9 @@
         "mapID": 1455,
         "x": 76.4,
         "y": 10.8,
-        "zoneName": "Ironforge"
+        "zoneName": "Ironforge",
+        "creatureDisplayID": 3598,
+        "portraitSource": "https://www.wowhead.com/forever/npc=2918"
       },
       "requirementsKnown": false,
       "source": "https://www.wowhead.com/forever/quest=725",
@@ -18968,7 +19164,9 @@
         "mapID": 1455,
         "x": 76.4,
         "y": 10.8,
-        "zoneName": "Ironforge"
+        "zoneName": "Ironforge",
+        "creatureDisplayID": 3598,
+        "portraitSource": "https://www.wowhead.com/forever/npc=2918"
       },
       "finish": {
         "npcID": 2916,
@@ -18976,7 +19174,9 @@
         "mapID": 1455,
         "x": 76.4,
         "y": 11.4,
-        "zoneName": "Ironforge"
+        "zoneName": "Ironforge",
+        "creatureDisplayID": 3595,
+        "portraitSource": "https://www.wowhead.com/forever/npc=2916"
       },
       "requirementsKnown": false,
       "source": "https://www.wowhead.com/forever/quest=726",
@@ -19287,7 +19487,9 @@
         "zoneName": "Burning Steppes",
         "mapID": 1428,
         "x": 65.2,
-        "y": 23.8
+        "y": 23.8,
+        "creatureDisplayID": 9791,
+        "portraitSource": "https://www.wowhead.com/forever/npc=10267"
       },
       "start": {
         "npcID": 10468,
@@ -19347,7 +19549,9 @@
         "zoneName": "Burning Steppes",
         "mapID": 1428,
         "x": 65.2,
-        "y": 23.8
+        "y": 23.8,
+        "creatureDisplayID": 9791,
+        "portraitSource": "https://www.wowhead.com/forever/npc=10267"
       },
       "start": {
         "npcID": 10267,
@@ -19355,7 +19559,9 @@
         "zoneName": "Burning Steppes",
         "mapID": 1428,
         "x": 65.2,
-        "y": 23.8
+        "y": 23.8,
+        "creatureDisplayID": 9791,
+        "portraitSource": "https://www.wowhead.com/forever/npc=10267"
       },
       "storyline": [
         4907,
@@ -19378,7 +19584,9 @@
         "zoneName": "Western Plaguelands",
         "mapID": 1422,
         "x": 50.8,
-        "y": 77.8
+        "y": 77.8,
+        "creatureDisplayID": 11800,
+        "portraitSource": "https://www.wowhead.com/forever/npc=11872"
       },
       "start": {
         "npcID": 11872,
@@ -19386,7 +19594,9 @@
         "zoneName": "Western Plaguelands",
         "mapID": 1422,
         "x": 50.8,
-        "y": 77.8
+        "y": 77.8,
+        "creatureDisplayID": 11800,
+        "portraitSource": "https://www.wowhead.com/forever/npc=11872"
       },
       "storyline": [
         6566,
@@ -19535,7 +19745,9 @@
       "finish": {
         "npcID": 10182,
         "name": "Rexxar",
-        "zoneName": "Desolace, Feralas, Stonetalon Mountains"
+        "zoneName": "Desolace, Feralas, Stonetalon Mountains",
+        "creatureDisplayID": 11660,
+        "portraitSource": "https://www.wowhead.com/forever/npc=10182"
       },
       "storyline": [
         6566,
@@ -19558,7 +19770,9 @@
       "start": {
         "npcID": 10182,
         "name": "Rexxar",
-        "zoneName": "Desolace, Feralas, Stonetalon Mountains"
+        "zoneName": "Desolace, Feralas, Stonetalon Mountains",
+        "creatureDisplayID": 11660,
+        "portraitSource": "https://www.wowhead.com/forever/npc=10182"
       },
       "finish": {
         "npcID": 11872,
@@ -19566,7 +19780,9 @@
         "zoneName": "Western Plaguelands",
         "mapID": 1422,
         "x": 50.8,
-        "y": 77.8
+        "y": 77.8,
+        "creatureDisplayID": 11800,
+        "portraitSource": "https://www.wowhead.com/forever/npc=11872"
       },
       "storyline": [
         6566,
@@ -19592,7 +19808,9 @@
         "zoneName": "Western Plaguelands",
         "mapID": 1422,
         "x": 50.8,
-        "y": 77.8
+        "y": 77.8,
+        "creatureDisplayID": 11800,
+        "portraitSource": "https://www.wowhead.com/forever/npc=11872"
       },
       "finish": {
         "npcID": 10321,
@@ -20059,7 +20277,9 @@
       "finish": {
         "npcID": 10182,
         "name": "Rexxar",
-        "zoneName": "Desolace, Feralas, Stonetalon Mountains"
+        "zoneName": "Desolace, Feralas, Stonetalon Mountains",
+        "creatureDisplayID": 11660,
+        "portraitSource": "https://www.wowhead.com/forever/npc=10182"
       },
       "storyline": [
         6585,
@@ -20352,13 +20572,17 @@
         "npcID": 16032,
         "name": "Falrin Treeshaper",
         "zoneName": "Dire Maul",
-        "dungeonKey": "dire"
+        "dungeonKey": "dire",
+        "creatureDisplayID": 15996,
+        "portraitSource": "https://www.wowhead.com/forever/npc=16032"
       },
       "finish": {
         "npcID": 16032,
         "name": "Falrin Treeshaper",
         "zoneName": "Dire Maul",
-        "dungeonKey": "dire"
+        "dungeonKey": "dire",
+        "creatureDisplayID": 15996,
+        "portraitSource": "https://www.wowhead.com/forever/npc=16032"
       },
       "startsInside": true,
       "storylineGroups": [
@@ -21659,13 +21883,17 @@
         "npcID": 16032,
         "name": "Falrin Treeshaper",
         "zoneName": "Dire Maul",
-        "dungeonKey": "dire"
+        "dungeonKey": "dire",
+        "creatureDisplayID": 15996,
+        "portraitSource": "https://www.wowhead.com/forever/npc=16032"
       },
       "finish": {
         "npcID": 16032,
         "name": "Falrin Treeshaper",
         "zoneName": "Dire Maul",
-        "dungeonKey": "dire"
+        "dungeonKey": "dire",
+        "creatureDisplayID": 15996,
+        "portraitSource": "https://www.wowhead.com/forever/npc=16032"
       },
       "requirementsKnown": false,
       "source": "https://www.wowhead.com/forever/quest=8950/the-instigators-enchantment",
@@ -21881,7 +22109,9 @@
         "npcID": 16032,
         "name": "Falrin Treeshaper",
         "zoneName": "Dire Maul",
-        "dungeonKey": "dire"
+        "dungeonKey": "dire",
+        "creatureDisplayID": 15996,
+        "portraitSource": "https://www.wowhead.com/forever/npc=16032"
       },
       "requirementsKnown": false,
       "source": "https://www.wowhead.com/forever/quest=8948/anthions-old-friend",
