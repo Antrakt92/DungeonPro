@@ -775,10 +775,15 @@ function UI:RefreshQuests()
                 end
             end
         end
+        if not current() then return end
+        self.currentPlan.preparationEmpty = preparation and #plan.rows > 0 and #entries == 0
+        if self.currentPlan.preparationEmpty then
+            entries = { { heading = "PREPARATION_EMPTY", argument = addon.L("QUESTS") } }
+        end
         for _, entry in ipairs(entries) do
             local id, state = entry.id, entry.state
             local title, note
-            if entry.heading then title, note = addon.L(entry.heading), ""
+            if entry.heading then title, note = addon.L(entry.heading, entry.argument), ""
             else
                 title = addon.QuestName(id)
                 if not current() then return end
@@ -2368,7 +2373,14 @@ function UI:RefreshDetail()
             line(addon.L("CATALOG_QUESTS", count))
             if count == 0 then line(addon.L("EMPTY")) end
             line(addon.L(renderDungeon.coverage == "reviewed" and "OVERVIEW_REVIEWED" or "PARTIAL"))
-            line(addon.L("OVERVIEW_PICK"))
+            local plan, preparation = self.currentPlan, self.preparation
+            local function promptCurrent()
+                return portraitCardCurrent() and self.currentPlan == plan and self.preparation == preparation
+            end
+            local emptyPreparation = preparation and plan and plan.engine == renderEngine and plan.dungeon == renderDungeon and
+                plan.preparationEmpty == true and #plan.rows > 0
+            local prompt = emptyPreparation and addon.L("PREPARATION_EMPTY", addon.L("QUESTS")) or addon.L("OVERVIEW_PICK")
+            if not promptCurrent() or line(prompt, nil, nil, nil, promptCurrent) == false then return end
         else line(addon.L("PICK")) end
     end
     if renderQuest and self.copyQuest == renderQuest and self.copy then

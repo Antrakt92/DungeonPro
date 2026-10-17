@@ -529,7 +529,9 @@ check("Completed preparation keeps the prepared result instead of empty data war
     for id in pairs(addon.quests) do done[id] = true end
     ui.preparationButton.scripts.OnClick()
     assert(#visibleRows() == 0 and ui.coverage.text == addon.L("PREPARED"))
-    for _, row in ipairs(ui.rows) do assert(not row.shown) end
+    assert(ui.rows[1].shown and not ui.rows[1].enabled and not ui.rows[1].scripts.OnClick)
+    assert(ui.rows[1].title.text == addon.L("PREPARATION_EMPTY", addon.L("QUESTS")))
+    for index = 2, #ui.rows do assert(not ui.rows[index].shown) end
     addon.Context = context
 end)
 check("Completion history cannot hide the current held quest from preparation progress", function()
@@ -6388,4 +6390,79 @@ check("Promoted native label publication preserves current card and native helpe
     assert(detailOccurrences(addon.L("OBJECTIVE_ITEMS"))==1 and detailOccurrences(addon.L("PROVIDED_ITEMS"))==1)
     f:restore()
 end)
+
+local function emptyPreparationFixture()
+    local saved={quests=addon.quests,dungeons=addon.dungeons,context=addon.Context,name=addon.QuestName,dungeon=ui.dungeon,quest=ui.quest,
+        history=ui.detailHistory,search=ui.search,range=ui.range,preparation=ui.preparation,unavailable=ui.includeUnavailable,locale=addon.db.locale}
+    local actual={};assert(loadfile("Database/Catalog.lua"))("DungeonPro",actual)
+    addon.quests,addon.dungeons=actual.quests,actual.dungeons
+    addon.Context=function()return {level=60,faction="Alliance",class="WARRIOR",race=1,active=function()return false end,
+        ready=function()return false end,completed=function()return true end}end
+    addon.QuestName=function(id)return actual.quests[id]and actual.quests[id].name or tostring(id)end
+    for _,d in ipairs(actual.dungeons)do if d.key=="deadmines" or d.key=="dm" then ui.dungeon=d end end
+    ui.quest=nil;ui.detailHistory={};ui.search="";ui.range=false;ui.preparation=true;ui.includeUnavailable=false
+    ui:Refresh()
+    return function()
+        addon.quests,addon.dungeons,addon.Context,addon.QuestName=saved.quests,saved.dungeons,saved.context,saved.name
+        ui.dungeon,ui.quest,ui.detailHistory,ui.search,ui.range,ui.preparation,ui.includeUnavailable=
+            saved.dungeon,saved.quest,saved.history,saved.search,saved.range,saved.preparation,saved.unavailable
+        addon.db.locale=saved.locale;ui:Refresh()
+    end
+end
+check("Actual completed Deadmines preparation gives an explicit route to its listed quests without a completeness claim",function()
+    local finish=emptyPreparationFixture()
+    assert(#ui.currentPlan.rows==6 and #visibleRows()==0 and ui.currentPlan.preparationEmpty)
+    local notice=addon.L("PREPARATION_EMPTY",addon.L("QUESTS"));local row=ui.rows[1]
+    assert(row.shown and row.title.text==notice and not row.enabled and not row.scripts.OnClick)
+    assert(detailHas(notice) and not detailHas(addon.L("OVERVIEW_PICK")) and ui.coverage.text==addon.L("PARTIAL"))
+    assert(not detailHas(addon.L("PREPARED")) and not ui.action and ui.quest==nil and #ui.detailHistory==0)
+    ui.preparationButton.scripts.OnClick(ui.preparationButton,"LeftButton")
+    assert(not ui.preparation and #visibleRows()==6 and not ui.currentPlan.preparationEmpty)
+    assert(detailHas(addon.L("OVERVIEW_PICK")) and not detailHas(notice) and ui.rows[1].enabled)
+    ui.rows[1].scripts.OnClick(ui.rows[1],"LeftButton");assert(ui.quest==ui.rows[1].questID)
+    finish()
+end)
+check("Empty preparation guidance localizes and recycles without replacing genuinely empty or excluded-character notices",function()
+    local finish=emptyPreparationFixture()
+    for code in pairs(addon.locales)do
+        addon.db.locale=code;ui:Refresh();local notice=addon.L("PREPARATION_EMPTY",addon.L("QUESTS"))
+        assert(ui.rows[1].title.text==notice and detailOccurrences(notice)==1 and not ui.rows[1].enabled)
+    end
+    ui.dungeon={key="empty-guidance",name="No target data",minLevel=1,maxLevel=60,coverage="partial",quests={}}
+    ui:Refresh();assert(not ui.currentPlan.preparationEmpty and ui.coverage.text==addon.L("EMPTY") and not ui.rows[1].shown)
+    assert(detailHas(addon.L("EMPTY")) and not detailHas(addon.L("PREPARATION_EMPTY",addon.L("QUESTS"))))
+    addon.quests={[30001]={id=30001,name="Foreign faction",requirementsKnown=true,minLevel=1,factions={"Horde"}}}
+    ui.dungeon={key="foreign-guidance",name="Foreign targets",minLevel=1,maxLevel=60,coverage="reviewed",quests={30001}}
+    ui:Refresh();assert(#ui.currentPlan.rows==0 and not ui.currentPlan.preparationEmpty and ui.coverage.text==addon.L("NO_CHARACTER_QUESTS"))
+    ui.characterButton.scripts.OnClick(ui.characterButton,"LeftButton")
+    assert(#ui.currentPlan.rows==1 and #visibleRows()==0 and ui.currentPlan.preparationEmpty,"completed foreign history is inspectable in all-character view")
+    finish()
+end)
+check("Empty preparation label reentry preserves a newer quest view and its actual clickable rows",function()
+    local finish=emptyPreparationFixture();local original=ui.rows[1].title.SetText;local armed=true
+    ui.rows[1].title.SetText=function(self,value)
+        original(self,value)
+        if armed then armed=false;ui.preparation=false;ui:Refresh()end
+    end
+    ui:Refresh();ui.rows[1].title.SetText=original
+    assert(not ui.preparation and #visibleRows()==6 and not ui.currentPlan.preparationEmpty)
+    assert(ui.rows[1].enabled and ui.rows[1].title.text==addon.QuestName(ui.rows[1].questID))
+    ui.rows[1].scripts.OnClick(ui.rows[1],"LeftButton");assert(ui.quest==ui.rows[1].questID)
+    finish()
+end)
+
+
+check("Empty preparation overview prompt localization cannot overwrite a nested ordinary quest view",function()
+    local finish=emptyPreparationFixture();local original=addon.L;local armed=true
+    addon.L=function(key,...)
+        local value=original(key,...)
+        if key=="PREPARATION_EMPTY" and armed then armed=false;ui.preparation=false;ui:Refresh()end
+        return value
+    end
+    ui:RefreshDetail();addon.L=original
+    assert(not ui.preparation and #visibleRows()==6 and detailHas(addon.L("OVERVIEW_PICK")))
+    assert(not detailHas(addon.L("PREPARATION_EMPTY",addon.L("QUESTS"))))
+    finish()
+end)
+
 print("Preparation UI modeled checks passed: " .. total .. " (no native layout validation)")
