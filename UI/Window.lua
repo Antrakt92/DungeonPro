@@ -646,18 +646,40 @@ function UI:RefreshQuests()
         return self.questListGeneration == generation and self.engine == engine and self.dungeon == d and addon.char == character and
             self.preparation == preparation and self.includeUnavailable == includeUnavailable
     end
-    for _, row in ipairs(self.rows) do row:SetEnabled(false); row:SetScript("OnClick", nil) end
+    local function write(object, method, ...)
+        if not current() then return false end
+        object[method](object, ...)
+        return current()
+    end
+    local function writeText(fs, value)
+        if not current() then return false end
+        local binding = { current = current, value = value }
+        fs.questListText = binding
+        fs:SetText(value)
+        if current() then return true end
+        local newer = fs.questListText
+        if newer ~= binding and newer and newer.current() and not fs.questListTextRepair then
+            fs.questListTextRepair = true
+            if fs.questListText == newer and newer.current() then pcall(fs.SetText, fs, newer.value) end
+            fs.questListTextRepair = nil
+        end
+        return false
+    end
+    for _, row in ipairs(self.rows) do
+        if not write(row, "SetEnabled", false) or not write(row, "SetScript", "OnClick", nil) then return end
+    end
     local heading = d and addon.DungeonName(d) or addon.L("QUESTS")
     if not current() then return end
-    self.heading:SetText(heading)
+    if not writeText(self.heading, heading) then return end
     local n, offset = 0, 0
     if d then
         local plan = engine:Dungeon(d, { includeUnavailable = self.includeUnavailable })
         if not current() then return end
         self.currentPlan = { engine = engine, dungeon = d, rows = plan.rows }
-        self.summary:SetText(addon.L("SUMMARY", (plan.counts.ACTIVE or 0) + (plan.counts.READY or 0),
-            plan.counts.COMPLETED or 0, (plan.counts.LOCKED or 0) + (plan.counts.AVAILABLE or 0), plan.counts.UNKNOWN or 0))
-        self.coverage:SetText(plan.unknown and addon.L("PARTIAL") or addon.L(plan.ready and "PREPARED" or "NOT_PREPARED"))
+        local summary = addon.L("SUMMARY", (plan.counts.ACTIVE or 0) + (plan.counts.READY or 0),
+            plan.counts.COMPLETED or 0, (plan.counts.LOCKED or 0) + (plan.counts.AVAILABLE or 0), plan.counts.UNKNOWN or 0)
+        if not writeText(self.summary, summary) or
+            not writeText(self.coverage, plan.unknown and addon.L("PARTIAL") or addon.L(plan.ready and "PREPARED" or "NOT_PREPARED")) then return end
         local entries = plan.rows
         if self.preparation then
             entries = {}
@@ -706,41 +728,46 @@ function UI:RefreshQuests()
             if not current() then return end
             n = n + 1
             local row = self:MakeRow(self.questList, self.rows, n, 59)
+            if not current() then return end
             row.heading, row.questID = entry.heading, id
-            row.title:SetText(title); row.note:SetText(note)
-            row:SetEnabled(not entry.heading)
+            if not writeText(row.title, title) or not writeText(row.note, note) or
+                not write(row, "SetEnabled", not entry.heading) then return end
             if entry.heading then
-                row.bg:SetColorTexture(0.20, 0.22, 0.26, 1)
-                row:SetScript("OnClick", nil)
+                if not write(row.bg, "SetColorTexture", 0.20, 0.22, 0.26, 1) or
+                    not write(row, "SetScript", "OnClick", nil) then return end
             else
-                row.bg:SetColorTexture(0.13, 0.16, 0.20, 1)
-                row:SetScript("OnClick", function() if current() then self:InspectQuest(id) end end)
+                if not write(row.bg, "SetColorTexture", 0.13, 0.16, 0.20, 1) or
+                    not write(row, "SetScript", "OnClick", function() if current() then self:InspectQuest(id) end end) then return end
             end
             styleRow(row, entry.heading and "section" or "quest", id == self.quest and not entry.heading)
-            offset = self:LayoutRow(row, entry.heading and 32 or 59, offset)
             if not current() then return end
+            offset = self:LayoutRow(row, entry.heading and 32 or 59, offset, current)
+            if not offset then return end
         end
         if #plan.rows == 0 then
-            self.coverage:SetText(addon.L(#d.quests > 0 and "NO_CHARACTER_QUESTS" or "EMPTY"))
+            if not writeText(self.coverage, addon.L(#d.quests > 0 and "NO_CHARACTER_QUESTS" or "EMPTY")) then return end
         end
     else
-        self.summary:SetText(""); self.coverage:SetText(addon.L("PICK"))
+        if not writeText(self.summary, "") or not writeText(self.coverage, addon.L("PICK")) then return end
     end
     local headingHeight = math.max(34, measuredHeight(self.heading, 34))
+    if not current() then return end
     local summaryY = 125 + headingHeight + 8
     local coverageY = summaryY + math.max(20, measuredHeight(self.summary, 20)) + 8
+    if not current() then return end
     local listY = math.max(218, coverageY + math.max(20, measuredHeight(self.coverage, 20)) + 12)
     if not current() then return end
-    self.summary:ClearAllPoints(); self.summary:SetPoint("TOPLEFT", 288, -summaryY)
-    self.coverage:ClearAllPoints(); self.coverage:SetPoint("TOPLEFT", 288, -coverageY)
-    self.questScroll:ClearAllPoints(); self.questScroll:SetPoint("TOPLEFT", 288, -listY)
-    self.questScroll:SetHeight(math.max(80, 643 - listY))
-    hideRest(self.rows, n)
-    self.questList:SetHeight(math.max(1, offset))
+    if not write(self.summary, "ClearAllPoints") or not write(self.summary, "SetPoint", "TOPLEFT", 288, -summaryY) or
+        not write(self.coverage, "ClearAllPoints") or not write(self.coverage, "SetPoint", "TOPLEFT", 288, -coverageY) or
+        not write(self.questScroll, "ClearAllPoints") or not write(self.questScroll, "SetPoint", "TOPLEFT", 288, -listY) or
+        not write(self.questScroll, "SetHeight", math.max(80, 643 - listY)) then return end
+    for index = n + 1, #self.rows do if not write(self.rows[index], "Hide") then return end end
+    if not write(self.questList, "SetHeight", math.max(1, offset)) then return end
     local identity = d and (addon.Clean(d.key, "string") or d)
+    if not current() then return end
     if self.questListDungeon ~= identity then
         self.questListDungeon = identity
-        self.questScroll:SetVerticalScroll(0)
+        write(self.questScroll, "SetVerticalScroll", 0)
     end
 end
 

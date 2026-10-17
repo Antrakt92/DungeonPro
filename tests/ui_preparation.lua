@@ -5917,4 +5917,101 @@ check("Actual95647 event pilot uses its factual task label and has no inferred q
     assert(ui.engine:State(9970).status=="UNKNOWN" and not ui.action)
     f:finish()
 end)
+check("Quest-list text publication preserves the newer note metadata engine and actual click across native setter reentry",function()
+    for _,phase in ipairs({"after","before"})do
+        for _,field in ipairs({"title","note","heading","summary","coverage"})do
+            local old,new,restore=questListReentryFixture();addon.quests[24001].requirementsKnown=false
+            local row=ui.rows[1];local target=(field=="title"or field=="note")and row[field]or ui[field]
+            local setter=target.SetText;local armed=true;local expectedText,expectedNote,newEngine,newClick
+            local function nested()
+                armed=false;ui.dungeon=new;addon.char={};ui:RefreshQuests()
+                expectedText,expectedNote,newEngine,newClick=target.text,row.note.text,ui.engine,row.scripts.OnClick
+            end
+            target.SetText=function(self,value)
+                if armed and phase=="before"then nested()end
+                setter(self,value)
+                if armed and phase=="after"then nested()end
+            end
+            ui:RefreshQuests();target.SetText=setter
+            assert(not armed and ui.dungeon==new and ui.engine==newEngine and row.questID==24002 and row.title.text=="Quest 24002")
+            assert(target.text==expectedText and row.note.text==expectedNote and row.scripts.OnClick==newClick,field..phase)
+            row.scripts.OnClick(row,"LeftButton",false);assert(ui.quest==24002,"the visible replacement row must remain inspectable")
+            restore()
+        end
+    end
+end)
+check("A newer same-dungeon list generation retains ready status summary and real inspection after a native title write",function()
+    local old,new,restore=questListReentryFixture();addon.quests[24001].requirementsKnown=false
+    local context=addon.Context;local held=false
+    addon.Context=function()return{level=60,completed=function()return false end,active=function()return held end,ready=function()return held end}end
+    local row=ui.rows[1];local setter=row.title.SetText;local armed=true;local expectedNote,summary,newEngine
+    row.title.SetText=function(self,value)
+        setter(self,value)
+        if armed then armed=false;held=true;ui:RefreshQuests();expectedNote,summary,newEngine=row.note.text,ui.summary.text,ui.engine end
+    end
+    ui:RefreshQuests();row.title.SetText=setter
+    assert(not armed and ui.dungeon==old and ui.engine==newEngine and row.questID==24001)
+    assert(row.note.text==expectedNote and row.note.text:find(addon.L("READY"),1,true) and ui.summary.text==summary)
+    row.scripts.OnClick();assert(ui.quest==24001 and ui.engine:State(24001).status=="READY")
+    addon.Context=context;restore()
+end)
+check("Quest-list layout and native row state writes stop before touching the newer pooled row",function()
+    for _,mode in ipairs({"enabled","script","color","titlePoint","notePoint","height","summaryPoint","viewport","contentHeight"})do
+        local old,new,restore=questListReentryFixture();addon.quests[24001].requirementsKnown=false
+        local row=ui.rows[1];local target,method=row,"SetEnabled"
+        if mode=="script"then method="SetScript"
+        elseif mode=="color"then target,method=row.bg,"SetColorTexture"
+        elseif mode=="titlePoint"then target,method=row.title,"SetPoint"
+        elseif mode=="notePoint"then target,method=row.note,"SetPoint"
+        elseif mode=="height"then method="SetHeight"
+        elseif mode=="summaryPoint"then target,method=ui.summary,"SetPoint"
+        elseif mode=="viewport"then target,method=ui.questScroll,"SetHeight"
+        elseif mode=="contentHeight"then target,method=ui.questList,"SetHeight"end
+        local original=target[method];local armed=true;local expectedNote,newClick,newHeight,newPoint
+        target[method]=function(self,...)
+            original(self,...)
+            local shouldFire=mode~="enabled"or (...)==true
+            if armed and shouldFire then
+                armed=false;ui.dungeon=new;addon.char={};ui:RefreshQuests()
+                expectedNote,newClick,newHeight,newPoint=row.note.text,row.scripts.OnClick,row.height,row.point
+            end
+        end
+        ui:RefreshQuests();target[method]=original
+        assert(not armed and row.questID==24002 and row.note.text==expectedNote and row.height==newHeight and row.point==newPoint,mode)
+        assert(row.scripts.OnClick==newClick);row.scripts.OnClick();assert(ui.quest==24002,mode)
+        restore()
+    end
+end)
+check("Quest-list hide recycling cannot remove newly rendered longer-list rows or revive old callbacks",function()
+    local old,new,restore=questListReentryFixture()
+    addon.quests[24003]={id=24003,minLevel=1,requirementsKnown=true}
+    old.quests={24001,24003};ui:RefreshQuests();local row=ui.rows[2]
+    local hide=row.Hide;local armed=true
+    old.quests={24001};new.quests={24002,24003}
+    row.Hide=function(self)
+        hide(self)
+        if armed then armed=false;ui.dungeon=new;addon.char={};ui:RefreshQuests()end
+    end
+    ui:RefreshQuests();row.Hide=hide
+    assert(not armed and ui.rows[1].questID==24002 and row.shown and row.questID==24003)
+    row.scripts.OnClick();assert(ui.quest==24003)
+    local stale=ui.rows[1].scripts.OnClick;ui.dungeon=old;ui:RefreshQuests();local selected=ui.quest;stale();assert(ui.quest==selected)
+    addon.quests[24003]=nil;restore()
+end)
+check("A title setter closing and reopening the same window preserves the new session list and live click",function()
+    local old,new,restore=questListReentryFixture();local context=addon.Context;local held=false
+    addon.Context=function()return{level=60,completed=function()return false end,active=function()return held end,ready=function()return held end}end
+    local row=ui.rows[1];local setter=row.title.SetText;local armed=true;local newer,newEngine
+    row.title.SetText=function(self,value)
+        setter(self,value)
+        if armed then
+            armed=false;ui.frame:Hide();ui.frame.scripts.OnHide();held=true;ui.frame:Show();ui.frame.scripts.OnShow()
+            newer,newEngine=row.note.text,ui.engine
+        end
+    end
+    ui:RefreshQuests();row.title.SetText=setter
+    assert(not armed and ui.frame.shown and ui.engine==newEngine and row.note.text==newer and row.note.text:find(addon.L("READY"),1,true))
+    row.scripts.OnClick();assert(ui.quest==24001)
+    addon.Context=context;restore()
+end)
 print("Preparation UI modeled checks passed: " .. total .. " (no native layout validation)")
