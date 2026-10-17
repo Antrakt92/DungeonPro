@@ -3191,7 +3191,19 @@
         "y": 49.2,
         "creatureDisplayID": 3441,
         "portraitSource": "https://www.wowhead.com/forever/npc=1268"
-      }
+      },
+      "objectiveItems": [
+        {
+          "itemID": 9284,
+          "name": "Full Leaden Collection Phial"
+        }
+      ],
+      "providedItems": [
+        {
+          "itemID": 9283,
+          "name": "Empty Leaden Collection Phial"
+        }
+      ]
     },
     {
       "id": 2962,
@@ -3226,6 +3238,18 @@
           "ids": [
             2926
           ]
+        }
+      ],
+      "objectiveItems": [
+        {
+          "itemID": 9365,
+          "name": "High Potency Radioactive Fallout"
+        }
+      ],
+      "providedItems": [
+        {
+          "itemID": 9364,
+          "name": "Heavy Leaden Collection Phial"
         }
       ]
     },
@@ -4538,6 +4562,12 @@
             6522
           ]
         }
+      ],
+      "objectiveItems": [
+        {
+          "itemID": 17009,
+          "name": "Ambassador Malcin's Head"
+        }
       ]
     },
     {
@@ -4621,6 +4651,12 @@
       "storyline": [
         6521,
         6522
+      ],
+      "providedItems": [
+        {
+          "itemID": 17008,
+          "name": "Small Scroll"
+        }
       ]
     },
     {
@@ -4964,7 +5000,13 @@
           }
         ]
       },
-      "requirementsKnown": false
+      "requirementsKnown": false,
+      "objectiveItems": [
+        {
+          "itemID": 273169,
+          "name": "The Lost Magic of the Runemasters"
+        }
+      ]
     },
     {
       "id": 1049,
@@ -19729,7 +19771,13 @@
         "zoneName": "Stormwind City"
       },
       "requirementsKnown": false,
-      "source": "https://www.wowhead.com/forever/quest=373"
+      "source": "https://www.wowhead.com/forever/quest=373",
+      "providedItems": [
+        {
+          "itemID": 2874,
+          "name": "An Unsent Letter"
+        }
+      ]
     },
     {
       "id": 4743,
@@ -21753,7 +21801,13 @@
         "portraitSource": "https://www.wowhead.com/forever/npc=14338"
       },
       "requirementsKnown": false,
-      "source": "https://www.wowhead.com/forever/quest=5525/free-knot"
+      "source": "https://www.wowhead.com/forever/quest=5525/free-knot",
+      "objectiveItems": [
+        {
+          "itemID": 18250,
+          "name": "Gordok Shackle Key"
+        }
+      ]
     },
     {
       "id": 7499,
@@ -22638,7 +22692,13 @@
       },
       "repeatable": true,
       "requirementsKnown": false,
-      "source": "https://www.wowhead.com/forever/quest=7429/free-knot"
+      "source": "https://www.wowhead.com/forever/quest=7429/free-knot",
+      "objectiveItems": [
+        {
+          "itemID": 18250,
+          "name": "Gordok Shackle Key"
+        }
+      ]
     },
     {
       "id": 7484,
