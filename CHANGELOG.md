@@ -23,6 +23,7 @@
 - Added current quest-offer rewards, experience and objective summaries, kept
   separate from quest-log progress and preparation requirements.
 - Clarified prerequisite groups and whether a step needs acceptance or completion.
+- Added separate quest-detail links beside prerequisite alternatives.
 - Added Back navigation for supporting quest cards and optional client-provided
   dungeon images and current-offer portraits.
 - Expanded later dungeon quest lists and sourced quest-giver locations.

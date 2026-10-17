@@ -30,6 +30,7 @@ Level ranges are provisional recommendations.
   Detail cards show the recorded minimum level and any listed class/race limits.
 - Recursive prerequisite planning where acceptance conditions are verified;
   unverified chains remain available for inspection.
+  View any alternative quest separately without changing your preferred branch.
   Known prerequisite work can still be shown while other conditions are unknown.
 - A next-step view collects the dungeon's preparation actions, combines shared
   prerequisites and groups pickups before entry, inside pickups, level gates,

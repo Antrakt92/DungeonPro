@@ -3135,4 +3135,48 @@ do
         restore()
     end)
 end
+check("OR alternatives expose separate inspection without changing preferences or foreign-character availability", function()
+    local context, dungeon, quest, history, choices = addon.Context, ui.dungeon, ui.quest, ui.detailHistory, addon.char.choices
+    local description, locale = addon.Description, addon.db.locale
+    addon.Description = function() return "Long OR inspection text" end
+    measurement = function(fs) return fs.text == "Long OR inspection text" and 900 or 18 end
+    addon.Context = function() local c=context();c.faction="Alliance";return c end
+    addon.quests[19001]={id=19001,minLevel=1,requirementsKnown=true,requires={{ids={19002,19003}}}}
+    addon.quests[19002]={id=19002,minLevel=1,requirementsKnown=true}
+    addon.quests[19003]={id=19003,minLevel=1,requirementsKnown=true,factions={"Horde"}}
+    ui.dungeon={name="Inspection fixture",key="inspection-fixture",quests={19001},coverage="partial"}
+    addon.char.choices={[19001]={[1]=19002}};ui.detailHistory={};showDetail(19001)
+    local button=ui.branchInspectButtons and ui.branchInspectButtons[2]
+    assert(button and button.shown and button.enabled and button.parentID==19003)
+    assert(not ui.branchButtons[3].enabled and ui.action.id==19002)
+    local picked=addon.char.choices
+    ui.detailScroll:SetVerticalScroll(12)
+    button.scripts.OnClick(button,"LeftButton",false)
+    assert(ui.quest==19003 and addon.char.choices==picked and picked[19001][1]==19002)
+    assert(detailHas(addon.L("REASON_faction")) and not ui.action)
+    assert(ui:BackQuest() and ui.quest==19001 and ui.action.id==19002 and ui.detailScroll.verticalScroll==12)
+    local stale=ui.branchInspectButtons[1].scripts.OnClick
+    ui:RefreshDetail();stale();assert(ui.quest==19001)
+    local reused=ui.branchInspectButtons[1]
+    for language in pairs(addon.locales) do
+        addon.db.locale=language;ui:RefreshDetail()
+        assert(reused.label.text==addon.L("BRANCH_INSPECT") and reused.label.text~="BRANCH_INSPECT")
+    end
+    measurement=function(fs)
+        if fs==reused.label then return 54 end
+        if fs.text=="Long OR inspection text" then return 900 end
+        return 72
+    end
+    ui:RefreshDetail()
+    assert(reused.height==64 and reused.point[3]-ui.branchButtons[3].point[3]>=reused.height+6)
+    measurement=function(fs) return fs.text=="Long OR inspection text" and 900 or 18 end
+    ui:RefreshDetail();assert(ui.branchInspectButtons[1]==reused and reused.height==28)
+    local late=ui.branchInspectButtons[1].scripts.OnClick
+    showDetail(19002);late();assert(ui.quest==19002)
+    for _,b in ipairs(ui.branchInspectButtons) do assert(not b.shown and not b.enabled and not b.scripts.OnClick) end
+    addon.Context,addon.char.choices=context,choices
+    addon.Description,addon.db.locale=description,locale;measurement=nil
+    addon.quests[19001],addon.quests[19002],addon.quests[19003]=nil,nil,nil
+    ui.dungeon,ui.quest,ui.detailHistory=dungeon,quest,history;ui:Refresh()
+end)
 print("Preparation UI modeled checks passed: " .. total .. " (no native layout validation)")

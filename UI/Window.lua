@@ -677,6 +677,7 @@ function UI:RefreshDetail()
     end
     for _, b in ipairs(self.chainButtons) do b:Hide(); b:SetEnabled(false); b:SetScript("OnClick", nil) end
     for _, b in ipairs(self.branchButtons) do b:Hide() end
+    for _, b in ipairs(self.branchInspectButtons) do b:Hide(); b:SetEnabled(false); b:SetScript("OnClick", nil) end
     for _, b in ipairs(self.requirementButtons) do b:Hide(); b:SetEnabled(false); b:SetScript("OnClick", nil) end
     for _, b in ipairs(self.materialButtons) do b:Hide(); b:SetEnabled(false); b:SetScript("OnClick", nil) end
     for _, buttons in ipairs({ self.startButtons, self.finishButtons, self.containerButtons }) do
@@ -888,7 +889,7 @@ function UI:RefreshDetail()
         self.action = action
         self.map:SetEnabled(action ~= nil and action.place ~= nil and action.place.mapID ~= nil)
         self.guide:SetEnabled(action ~= nil and action.place ~= nil and action.place.x ~= nil)
-        local branchIndex = 0
+        local branchIndex, branchInspectIndex = 0, 0
         local requirementIndex = 0
         if q.requires and #q.requires > 0 then
             line(addon.L("REQUIREMENT_GROUPS"), "section")
@@ -930,6 +931,25 @@ function UI:RefreshDetail()
                     local parent, parentState = parentID, engine:State(parentID)
                     option(addon.QuestName(parent) .. " — " .. statusLabel(parentState), parent,
                         parentState.status ~= "UNAVAILABLE", parent == selected)
+                    branchInspectIndex = branchInspectIndex + 1
+                    local inspect = self.branchInspectButtons[branchInspectIndex]
+                    if not inspect then
+                        inspect = CreateFrame("Button", nil, self.detail)
+                        inspect:SetWidth(316); inspect.label = label(inspect, "", 7, -5, 302, 12)
+                        inspect:SetHighlightTexture("Interface\\QuestFrame\\UI-QuestTitleHighlight")
+                        self.branchInspectButtons[branchInspectIndex] = inspect
+                    end
+                    inspect.parentID = parent
+                    inspect.label:SetText(addon.L("BRANCH_INSPECT"))
+                    local inspectHeight = math.max(28, measuredHeight(inspect.label, 18) + 10)
+                    inspect:SetHeight(inspectHeight); inspect:ClearAllPoints(); inspect:SetPoint("TOPLEFT", 16, -y)
+                    inspect:SetEnabled(true); styleRow(inspect, "control", false)
+                    inspect:SetScript("OnClick", function()
+                        if self.quest == renderQuest and self.dungeon == renderDungeon and self.rewardGeneration == rewardGeneration then
+                            self:InspectQuest(parent)
+                        end
+                    end)
+                    inspect:Show(); y = y + inspectHeight + 6
                 end
             elseif #group.ids == 1 then
                 requirementIndex = requirementIndex + 1
@@ -1250,7 +1270,7 @@ function UI:Create()
     self.footer = label(frame, "", 22, -668, 640, 11)
     self.frame, self.cards, self.rows, self.details, self.chainButtons, self.branchButtons = frame, {}, {}, {}, {}, {}
     self.materialButtons = {}
-    self.requirementButtons = {}
+    self.requirementButtons, self.branchInspectButtons = {}, {}
     self.startButtons, self.finishButtons, self.containerButtons = {}, {}, {}
     UISpecialFrames[#UISpecialFrames + 1] = "DungeonProWindow"
     for _, d in ipairs(addon.dungeons) do if d.key == addon.char.selectedDungeon then self.dungeon = d end end
