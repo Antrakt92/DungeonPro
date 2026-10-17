@@ -16,6 +16,67 @@ class CatalogTests(unittest.TestCase):
     def setUp(self):
         self.data = json.loads((ROOT / "data/catalog.json").read_text(encoding="utf-8"))
 
+    def test_objective_events_preserve_unknown_task_count_and_independent_roles(self):
+        quest = next(q for q in self.data["quests"] if q["id"] == 95647)
+        quest.pop("objectiveEvents", None)
+        original = copy.deepcopy(quest)
+        baseline = catalog.generate(self.data)
+        quest["objectiveEvents"] = [{"npcID": 262681, "name": "Learn what happened to Ardin Grassman"}]
+        # A typed event credit does not deduplicate or infer another independently listed role.
+        quest["objectiveKills"] = [{"npcID": 262681, "name": "Separate proven slain row", "quantity": 2}]
+        quest["objectiveObjects"] = [{"objectID": 262681, "name": "Separate object task"}]
+        quest["objectiveItems"] = [{"itemID": 262681, "name": "Separate item", "quantity": 3}]
+        before = copy.deepcopy(self.data)
+        generated = catalog.generate(self.data)
+        self.assertEqual(self.data, before)
+        self.assertIn('["objectiveEvents"]', generated)
+        self.assertNotIn("quantity", quest["objectiveEvents"][0])
+        for field in ("requires", "requirementsKnown", "start", "finish", "source", "factions", "races"):
+            self.assertEqual(quest.get(field), original.get(field))
+        self.assertIsNone(quest.get("finish"))
+        for field in ("objectiveEvents", "objectiveKills", "objectiveObjects", "objectiveItems"):
+            del quest[field]
+        self.assertEqual(quest, original)
+        self.assertEqual(catalog.generate(self.data), baseline)
+
+    def test_objective_events_reject_untyped_roles_keys_and_invalid_containers(self):
+        valid = {"npcID": 262681, "name": "Learn what happened"}
+        for rows in (None, {}, [], [None], [False], [1], ["Event"], [valid] * 101,
+                     [{"itemID": 1, "name": "Item"}], [{"objectID": 1, "name": "Object"}],
+                     *[[{**valid, key: 1}] for key in ("itemID", "objectID", "mapID", "x", "action", "required", "creatureDisplayID", "dropNPCID")]):
+            with self.subTest(rows=rows):
+                self.data["quests"][0]["objectiveEvents"] = rows
+                with self.assertRaisesRegex(ValueError, "objective event"):
+                    catalog.validate(self.data)
+        self.data["quests"][0]["objectiveEvents"] = [{"npcID": i + 1, "name": "Event"} for i in range(100)]
+        catalog.validate(self.data)
+
+    def test_objective_events_reject_alias_ids_and_present_invalid_counts(self):
+        for field, maximum in (("npcID", 2 ** 32 - 1), ("quantity", 2 ** 53 - 1)):
+            for value in (None, False, True, 0, -1, 1.0, 1.5, "1", float("nan"), float("inf"), maximum + 1):
+                with self.subTest(field=field, value=repr(value)):
+                    self.data["quests"][0]["objectiveEvents"] = [{"npcID": 1, "name": "Event", field: value}]
+                    with self.assertRaisesRegex(ValueError, "objective event"):
+                        catalog.validate(self.data)
+        self.data["quests"][0]["objectiveEvents"] = [{"npcID": 2 ** 32 - 1, "name": "Event", "quantity": 2 ** 53 - 1}]
+        catalog.validate(self.data)
+
+    def test_objective_events_require_bounded_labels_and_unique_event_identity(self):
+        for name in (None, False, 1, "", " \t\n", "x" * 501, "中" * 167, "😀" * 126, "\ud800"):
+            with self.subTest(name=repr(name)):
+                self.data["quests"][0]["objectiveEvents"] = [{"npcID": 1, "name": name}]
+                with self.assertRaisesRegex(ValueError, "objective event name"):
+                    catalog.validate(self.data)
+        self.data["quests"][0]["objectiveEvents"] = [{"npcID": 1}]
+        with self.assertRaisesRegex(ValueError, "objective event name"):
+            catalog.validate(self.data)
+        for name in ("x" * 500, "中" * 166, "Ж" * 250, "😀" * 125):
+            self.data["quests"][0]["objectiveEvents"] = [{"npcID": 1, "name": name}]
+            catalog.validate(self.data)
+        self.data["quests"][0]["objectiveEvents"] = [{"npcID": 1, "name": "Event A"}, {"npcID": 1, "name": "Event B"}]
+        with self.assertRaisesRegex(ValueError, "Duplicate objective event"):
+            catalog.validate(self.data)
+
     def test_objective_objects_preserve_typed_partial_tasks_and_unknown_quantities(self):
         quest = next(q for q in self.data["quests"] if q["id"] == 5382)
         # Exercise the optional-absent input independently of current catalogue coverage.

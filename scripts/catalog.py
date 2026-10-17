@@ -92,6 +92,8 @@ def validate(data):
                              required_name=True, utf8_name=True)
         validate_named_facts(q, "objectiveObjects", "objectID", 2 ** 32 - 1, "objective object",
                              required_name=True, utf8_name=True)
+        validate_named_facts(q, "objectiveEvents", "npcID", 2 ** 32 - 1, "objective event",
+                             required_name=True, utf8_name=True)
         validate_named_facts(q, "providedItems", "itemID", 2 ** 32 - 1, "provided item",
                              required_name=True, utf8_name=True)
         source = q.get("source")
