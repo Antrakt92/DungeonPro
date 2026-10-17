@@ -1144,8 +1144,30 @@ function UI:RefreshDetail()
         if ownerCurrent and not ownerCurrent() then return false end
         local function write(object, method, ...)
             if ownerCurrent and not ownerCurrent() then return false end
+            local binding
+            if method == "SetText" then
+                binding = { current = ownerCurrent or portraitCardCurrent, value = (...), quest = renderQuest,
+                    dungeon = renderDungeon, engine = renderEngine, character = renderCharacter, generation = rewardGeneration }
+                object.detailTextBinding = binding
+            end
             object[method](object, ...)
-            return not ownerCurrent or ownerCurrent()
+            if ownerCurrent and not ownerCurrent() then
+                local newer = binding and object.detailTextBinding
+                if newer and newer ~= binding and not object.detailTextRepair and addon.Read(newer.current, "boolean") == true and
+                    object.detailTextBinding == newer then
+                    local repair = {}
+                    object.detailTextRepair = repair
+                    local fresh = addon.Read(newer.current, "boolean")
+                    if fresh == true and object.detailTextBinding == newer and object.detailTextRepair == repair and
+                        self.quest == newer.quest and self.dungeon == newer.dungeon and self.engine == newer.engine and
+                        addon.char == newer.character and self.rewardGeneration == newer.generation then
+                        pcall(object.SetText, object, newer.value)
+                    end
+                    if object.detailTextRepair == repair then object.detailTextRepair = nil end
+                end
+                return false
+            end
+            return true
         end
         style = DETAIL_STYLES[style] and style or "body"
         local format = DETAIL_STYLES[style]
@@ -1710,29 +1732,62 @@ function UI:RefreshDetail()
                     line(dialogueObjective, nil, nil, nil, objectivesCurrent) == false then return end
             end
         end
-        local objectiveKills = addon.Clean(q.objectiveKills, "table")
-        local shownKills, seenKills = false, {}
-        for index = 1, math.min(objectiveKills and #objectiveKills or 0, 100) do
-            local entry = addon.Clean(objectiveKills[index], "table")
-            local npcID = entry and addon.Clean(rawget(entry, "npcID"), "number")
-            local name = entry and addon.Clean(rawget(entry, "name"), "string")
-            local rawQuantity = entry and rawget(entry, "quantity")
-            local quantityReadable = true
-            if type(issecretvalue) == "function" then
-                local ok, restricted = pcall(issecretvalue, rawQuantity)
-                quantityReadable = ok and addon.Clean(restricted, "boolean") == false
+        do
+            local killChecker, localize = issecretvalue, addon.L
+            local database, selectedLocale, localeGetter = addon.db, addon.db.locale, GetLocale
+            local gameLocale = addon.Read(localeGetter, "string")
+            local objectiveKills = addon.Clean(rawget(q, "objectiveKills"), "table")
+            local length = objectiveKills and #objectiveKills or 0
+            local function killsCurrent()
+                local language = addon.Read(localeGetter, "string")
+                local ok, same = pcall(function()
+                    return portraitCardCurrent() and addon.quests[id] == definition and rawget(q, "objectiveKills") == objectiveKills and
+                        (not objectiveKills or #objectiveKills == length) and issecretvalue == killChecker and addon.L == localize and
+                        addon.db == database and database.locale == selectedLocale and GetLocale == localeGetter and language == gameLocale
+                end)
+                return ok and same == true
             end
-            local quantityUnknown = quantityReadable and rawQuantity == nil
-            local quantity = quantityReadable and addon.Clean(rawQuantity, "number")
-            if not portraitCardCurrent() or addon.quests[id] ~= q or q.objectiveKills ~= objectiveKills then return end
-            if npcID and npcID > 0 and npcID <= 4294967295 and npcID % 1 == 0 and
-                name and #name <= 500 and name:find("%S") and not seenKills[npcID] and
-                (quantityUnknown or (quantity and quantity > 0 and quantity <= 9007199254740991 and quantity % 1 == 0)) then
-                seenKills[npcID] = true
-                if not shownKills then
-                    line(addon.L("OBJECTIVE_KILLS"), "section"); line(addon.L("OBJECTIVE_KILLS_NOTICE")); shownKills = true
+            if not killsCurrent() then return end
+            local shownKills, seenKills = false, {}
+            for index = 1, math.min(length, 100) do
+                local entry = addon.Clean(rawget(objectiveKills, index), "table")
+                local npcID = entry and addon.Clean(rawget(entry, "npcID"), "number")
+                local name = entry and addon.Clean(rawget(entry, "name"), "string")
+                local rawQuantity = entry and rawget(entry, "quantity")
+                local quantityReadable = true
+                if type(killChecker) == "function" then
+                    local ok, restricted = pcall(killChecker, rawQuantity)
+                    quantityReadable = ok and addon.Clean(restricted, "boolean") == false
                 end
-                line(quantityUnknown and addon.L("OBJECTIVE_ITEM_UNKNOWN", name) or addon.L("OBJECTIVE_ITEM", name, quantity))
+                local quantityUnknown = quantityReadable and rawQuantity == nil
+                local quantity = quantityReadable and addon.Clean(rawQuantity, "number")
+                if not killsCurrent() then return end
+                if npcID and npcID > 0 and npcID <= 4294967295 and npcID % 1 == 0 and
+                    name and #name <= 500 and name:find("%S") and not seenKills[npcID] and
+                    (quantityUnknown or (quantity and quantity > 0 and quantity <= 9007199254740991 and quantity % 1 == 0)) then
+                    local function killCurrent()
+                        if not killsCurrent() then return false end
+                        local ok, same = pcall(function()
+                            return rawget(objectiveKills, index) == entry and rawget(entry, "npcID") == npcID and
+                                rawget(entry, "name") == name and rawget(entry, "quantity") == rawQuantity
+                        end)
+                        return ok and same == true
+                    end
+                    local heading = addon.Read(localize, "string", "OBJECTIVE_KILLS")
+                    local notice = addon.Read(localize, "string", "OBJECTIVE_KILLS_NOTICE")
+                    local text = quantityUnknown and addon.Read(localize, "string", "OBJECTIVE_ITEM_UNKNOWN", name) or
+                        addon.Read(localize, "string", "OBJECTIVE_ITEM", name, quantity)
+                    if not killCurrent() then return end
+                    if heading and notice and text then
+                        seenKills[npcID] = true
+                        if not shownKills then
+                            if line(heading, "section", nil, nil, killCurrent) == false or
+                                line(notice, nil, nil, nil, killCurrent) == false then return end
+                            shownKills = true
+                        end
+                        if line(text, nil, nil, nil, killCurrent) == false then return end
+                    end
+                end
             end
         end
         do

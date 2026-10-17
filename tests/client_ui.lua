@@ -973,4 +973,90 @@ check("An actual sourced objective with unknown quantity shows possession withou
     C_Item, UnitLevel, ui.includeUnavailable = item, level, all
     ui.quest, ui.detailHistory = previous, history; ui:Refresh()
 end)
+
+local function actualKillReentryFixture()
+    local ui=addon.UI
+    issecretvalue=function()return false end;GetLocale=function()return"enUS"end
+    UnitGUID=function(unit)if unit=="player"then return"Player-KillReentry"end end
+    UnitLevel=function()return 60 end;UnitFactionGroup=function()return"Alliance"end
+    UnitClass=function()return"Mage","MAGE",8 end;UnitRace=function()return"Dwarf","Dwarf",3 end
+    C_QuestLog={IsQuestFlaggedCompleted=function()return false end,IsOnQuest=function()return false end,
+        ReadyForTurnIn=function()return false end,GetTitleForQuestID=function(id)return addon.quests[id]and addon.quests[id].name end,GetQuestObjectives=function()return nil end}
+    C_Item={GetItemCount=function()return 0 end,GetItemNameByID=function(id)assert(id==274289);return"Dwarven Heirloom"end,
+        GetItemIconByID=function()return 134400 end,IsItemDataCachedByID=function()return true end}
+    GetQuestID=function()return 0 end;GetQuestLogQuestText=nil;SetPortraitTextureFromCreatureDisplayID=nil
+    addon.char.texts={};addon.DialogueRewardEvent("PLAYER_ENTERING_WORLD");addon.OfferEvent("PLAYER_ENTERING_WORLD")
+    for _,d in ipairs(addon.dungeons)do if d.key=="thanes"then ui.dungeon=d end end
+    ui.quest=96395;ui:Refresh()
+    return ui,addon.L("OBJECTIVE_ITEM_UNKNOWN",addon.quests[96395].objectiveKills[1].name)
+end
+local function visibleDetail(ui,value)
+    for _,fs in ipairs(ui.details)do if fs.shown and fs.text==value then return true end end
+    return false
+end
+check("Actual Hall kill label setter before and after reentry preserves the newer quest card and item goal",function()
+    for _,before in ipairs({true,false})do
+        local ui,goal=actualKillReentryFixture();local original=methods.SetText;local armed=true;local currentEngine
+        methods.SetText=function(self,value)
+            if not before then original(self,value)end
+            if armed and value==goal then armed=false;ui.quest=96403;ui:Refresh();currentEngine=ui.engine end
+            if before then original(self,value)end
+        end
+        ui:RefreshDetail();methods.SetText=original
+        assert(not armed and ui.quest==96403 and ui.engine==currentEngine)
+        assert(not visibleDetail(ui,goal)and visibleDetail(ui,addon.QuestName(96403)))
+        assert(visibleDetail(ui,addon.L("OBJECTIVE_ITEM","Dwarven Heirloom",8)))
+        assert(ui.engine:State(96403).status=="UNKNOWN" and not ui.action and not ui.guide.enabled)
+    end
+end)
+check("Actual kill-row localization cannot publish old headings or labels over a newer Hall card",function()
+    for _,key in ipairs({"OBJECTIVE_KILLS","OBJECTIVE_KILLS_NOTICE","OBJECTIVE_ITEM_UNKNOWN"})do
+        local ui,goal=actualKillReentryFixture();local original=addon.L;local armed=true
+        addon.L=function(code,...)
+            local text=original(code,...)
+            if code==key and armed then armed=false;ui.quest=96403;ui:Refresh()end
+            return text
+        end
+        ui:RefreshDetail();addon.L=original
+        assert(not armed and ui.quest==96403 and not visibleDetail(ui,goal))
+        assert(visibleDetail(ui,addon.L("OBJECTIVE_ITEM","Dwarven Heirloom",8)))
+        assert(not visibleDetail(ui,addon.L("OBJECTIVE_KILLS")))
+    end
+end)
+check("Same-card kill-source replacement during native text publication preserves the fresh generation and quantity",function()
+    local ui,goal=actualKillReentryFixture();local source=addon.quests[96395].objectiveKills;local original=methods.SetText;local armed=true
+    methods.SetText=function(self,value)
+        if armed and value==goal then
+            armed=false;addon.quests[96395].objectiveKills={{npcID=source[1].npcID,name="Fresh recorded kill target",quantity=3}};ui:RefreshDetail()
+        end
+        return original(self,value)
+    end
+    ui:RefreshDetail();methods.SetText=original
+    assert(not armed and ui.quest==96395 and not visibleDetail(ui,goal))
+    assert(visibleDetail(ui,addon.L("OBJECTIVE_ITEM","Fresh recorded kill target",3)))
+    addon.quests[96395].objectiveKills=source;ui:RefreshDetail()
+end)
+
+
+check("Kill-row recovery revalidates raw newer-card ownership after its current-result secret checker reenters a third card",function()
+    local ui,goal=actualKillReentryFixture();local setter=methods.SetText;local checker=issecretvalue
+    local armed,third,recoveryValue,inThirdRender=true,false,nil,false
+    issecretvalue=function(value)
+        if value==true and not third then
+            for _,field in ipairs(ui.details)do if field.detailTextRepair then third=true;ui.quest=96394;inThirdRender=true;ui:Refresh();inThirdRender=false;break end end
+        end
+        return false
+    end
+    methods.SetText=function(self,value)
+        if armed and value==goal then armed=false;ui.quest=96403;ui:Refresh()end
+        if self.detailTextRepair and third and not inThirdRender then recoveryValue=value end
+        return setter(self,value)
+    end
+    ui:RefreshDetail();methods.SetText=setter;issecretvalue=checker
+    assert(not armed and third and ui.quest==96394)
+    assert(recoveryValue==nil,"recovery cannot write after the predicate sanitizer replaces its newer card")
+    assert(not visibleDetail(ui,goal)and not visibleDetail(ui,addon.L("OBJECTIVE_ITEMS_NOTICE")))
+    assert(visibleDetail(ui,addon.QuestName(96394))and ui.engine:State(96394).status=="UNKNOWN")
+end)
+
 print("Client/UI modeled checks passed: " .. total .. " (no pixel or native-client validation)")
