@@ -7643,6 +7643,12 @@
       "storyline": [
         2861,
         2846
+      ],
+      "objectiveItems": [
+        {
+          "itemID": 9234,
+          "name": "Tiara of the Deep"
+        }
       ]
     },
     {
@@ -7789,7 +7795,13 @@
         "mapID": 1446,
         "x": 52.4,
         "y": 28.4
-      }
+      },
+      "objectiveItems": [
+        {
+          "itemID": 8548,
+          "name": "Divino-matic Rod"
+        }
+      ]
     },
     {
       "id": 3042,
@@ -7977,6 +7989,12 @@
           "ids": [
             2990
           ]
+        }
+      ],
+      "objectiveItems": [
+        {
+          "itemID": 9471,
+          "name": "Nekrum's Medallion"
         }
       ]
     },
@@ -8637,7 +8655,13 @@
         "mapID": 1425,
         "x": 33.6,
         "y": 75.2
-      }
+      },
+      "objectiveItems": [
+        {
+          "itemID": 6212,
+          "name": "Head of Jammal'an"
+        }
+      ]
     },
     {
       "id": 3447,
@@ -21469,7 +21493,13 @@
         9051,
         9053
       ],
-      "storylineEvidence": "https://www.wowhead.com/forever/quest=9051/toxic-test"
+      "storylineEvidence": "https://www.wowhead.com/forever/quest=9051/toxic-test",
+      "objectiveItems": [
+        {
+          "itemID": 22444,
+          "name": "Putrid Vine"
+        }
+      ]
     },
     {
       "id": 8417,
@@ -22287,7 +22317,13 @@
         8231,
         8232
       ],
-      "storylineEvidence": "https://www.wowhead.com/forever/quest=8231/wavethrashing"
+      "storylineEvidence": "https://www.wowhead.com/forever/quest=8231/wavethrashing",
+      "objectiveItems": [
+        {
+          "itemID": 20019,
+          "name": "Tooth of Morphaz"
+        }
+      ]
     },
     {
       "id": 8236,
@@ -22345,7 +22381,13 @@
         8235,
         8236
       ],
-      "storylineEvidence": "https://www.wowhead.com/forever/quest=8235/encoded-fragments"
+      "storylineEvidence": "https://www.wowhead.com/forever/quest=8235/encoded-fragments",
+      "objectiveItems": [
+        {
+          "itemID": 20022,
+          "name": "Azure Key"
+        }
+      ]
     },
     {
       "id": 8253,
@@ -22422,7 +22464,13 @@
         8252,
         8253
       ],
-      "storylineEvidence": "https://www.wowhead.com/forever/quest=8252/the-sirens-coral"
+      "storylineEvidence": "https://www.wowhead.com/forever/quest=8252/the-sirens-coral",
+      "objectiveItems": [
+        {
+          "itemID": 20085,
+          "name": "Arcane Shard"
+        }
+      ]
     },
     {
       "id": 8416,
