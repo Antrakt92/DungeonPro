@@ -6465,4 +6465,61 @@ check("Empty preparation overview prompt localization cannot overwrite a nested 
     finish()
 end)
 
+
+local function overviewStateFixture()
+    local finish=emptyPreparationFixture();local dungeons={}
+    for _,d in ipairs(addon.dungeons)do dungeons[d.key]=d end
+    local character={level=60,faction="Alliance",class="WARRIOR",race=1,active=function()return false end,
+        ready=function()return false end,completed=function()return false end}
+    addon.Context=function()return character end
+    ui.preparation=false;ui.includeUnavailable=false
+    return finish,dungeons,character
+end
+check("Actual source-empty Shapers and character-excluded RFC overview prompts explain their distinct lists in every locale",function()
+    local finish,dungeons=overviewStateFixture()
+    for code in pairs(addon.locales)do
+        addon.db.locale=code;ui.dungeon=dungeons.shapers;ui:Refresh()
+        assert(#ui.dungeon.quests==0 and #ui.currentPlan.rows==0 and #visibleRows()==0)
+        assert(detailOccurrences(addon.L("EMPTY"))==1 and not detailHas(addon.L("OVERVIEW_PICK")))
+        assert(ui.coverage.text==addon.L("EMPTY") and not detailHas(addon.L("NO_CHARACTER_QUESTS")))
+        ui.dungeon=dungeons.rfc;ui:Refresh()
+        assert(#ui.dungeon.quests==6 and #ui.currentPlan.rows==0 and #visibleRows()==0)
+        assert(detailHas(addon.L("NO_CHARACTER_QUESTS")) and not detailHas(addon.L("OVERVIEW_PICK")) and not detailHas(addon.L("EMPTY")))
+        assert(ui.coverage.text==addon.L("NO_CHARACTER_QUESTS") and not ui.action and ui.quest==nil and #ui.detailHistory==0)
+    end
+    finish()
+end)
+check("Overview empty guidance recovers through real character toggle and preserves unknown-character and no-match selected contexts",function()
+    local finish,dungeons,character=overviewStateFixture();ui.dungeon=dungeons.rfc;ui:Refresh()
+    ui.characterButton.scripts.OnClick(ui.characterButton,"LeftButton")
+    assert(#visibleRows()==6 and detailHas(addon.L("OVERVIEW_PICK")) and not detailHas(addon.L("NO_CHARACTER_QUESTS")))
+    ui.characterButton.scripts.OnClick(ui.characterButton,"LeftButton")
+    character.faction="Horde";ui:Refresh();assert(#visibleRows()==6 and detailHas(addon.L("OVERVIEW_PICK")))
+    character.faction=nil;ui:Refresh();assert(#visibleRows()==6 and detailHas(addon.L("OVERVIEW_PICK")))
+    local plan=ui.currentPlan;ui.search="NoMatchingDungeonOrQuestXYZ";ui:RefreshDungeons();ui:RefreshDetail()
+    assert(ui.dungeon==dungeons.rfc and ui.currentPlan==plan and ui.catalogNotice.shown and detailHas(addon.L("OVERVIEW_PICK")))
+    assert(not ui.action and ui.quest==nil)
+    ui.dungeon=nil;ui:Refresh();assert(detailHas(addon.L("PICK")) and not detailHas(addon.L("NO_CHARACTER_QUESTS")))
+    finish()
+end)
+check("Excluded-character overview localization and prompt setters cannot overwrite a newer usable overview",function()
+    for _,stage in ipairs({"localization","setter"})do
+        local finish,dungeons=overviewStateFixture();ui.dungeon=dungeons.rfc;ui:Refresh()
+        local originalL=addon.L;local armed=true;local field
+        local function replace()if armed then armed=false;ui.dungeon=dungeons.dm or dungeons.deadmines;ui:Refresh()end end
+        local originalSet
+        if stage=="localization"then
+            addon.L=function(key,...)local text=originalL(key,...);if key=="NO_CHARACTER_QUESTS"then replace()end;return text end
+        else
+            for _,fs in ipairs(ui.details)do if fs.shown and fs.text==addon.L("NO_CHARACTER_QUESTS")then field=fs end end
+            assert(field);originalSet=field.SetText
+            field.SetText=function(self,value)originalSet(self,value);if value==addon.L("NO_CHARACTER_QUESTS")then replace()end end
+        end
+        ui:RefreshDetail();addon.L=originalL;if field then field.SetText=originalSet end
+        assert(ui.dungeon~=dungeons.rfc and #visibleRows()>0 and detailHas(addon.L("OVERVIEW_PICK")))
+        assert(not detailHas(addon.L("NO_CHARACTER_QUESTS")))
+        finish()
+    end
+end)
+
 print("Preparation UI modeled checks passed: " .. total .. " (no native layout validation)")

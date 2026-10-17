@@ -2377,10 +2377,13 @@ function UI:RefreshDetail()
             local function promptCurrent()
                 return portraitCardCurrent() and self.currentPlan == plan and self.preparation == preparation
             end
-            local emptyPreparation = preparation and plan and plan.engine == renderEngine and plan.dungeon == renderDungeon and
-                plan.preparationEmpty == true and #plan.rows > 0
-            local prompt = emptyPreparation and addon.L("PREPARATION_EMPTY", addon.L("QUESTS")) or addon.L("OVERVIEW_PICK")
-            if not promptCurrent() or line(prompt, nil, nil, nil, promptCurrent) == false then return end
+            local ownedPlan = plan and plan.engine == renderEngine and plan.dungeon == renderDungeon
+            local emptyPreparation = preparation and ownedPlan and plan.preparationEmpty == true and #plan.rows > 0
+            if count > 0 then
+                local prompt = emptyPreparation and addon.L("PREPARATION_EMPTY", addon.L("QUESTS")) or
+                    addon.L(ownedPlan and #plan.rows == 0 and "NO_CHARACTER_QUESTS" or "OVERVIEW_PICK")
+                if not promptCurrent() or line(prompt, nil, nil, nil, promptCurrent) == false then return end
+            end
         else line(addon.L("PICK")) end
     end
     if renderQuest and self.copyQuest == renderQuest and self.copy then
