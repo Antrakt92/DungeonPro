@@ -16,6 +16,7 @@ Core\Planner.lua
 Core\Search.lua
 Core\Client.lua
 UI\Theme.lua
+UI\QuestStatus.lua
 UI\Window.lua
 UI\Navigation.lua
 UI\Minimap.lua
