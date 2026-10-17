@@ -41,6 +41,7 @@ function methods:SetHighlightTexture(asset)
 end
 function methods:GetStringHeight() if measurement then return measurement(self) end; return 18 end
 function methods:SetScale(value) self.scale = value end
+function methods:RegisterEvent(event) self.events = self.events or {}; self.events[event] = true end
 function methods:SetVerticalScroll(value) self.verticalScroll = value; self.scrollWrites = (self.scrollWrites or 0) + 1 end
 function methods:GetVerticalScroll() self.scrollReads = (self.scrollReads or 0) + 1; return self.verticalScroll or 0 end
 function methods:GetEffectiveScale() return self.scale or 1 end
@@ -4567,5 +4568,51 @@ check("Acquisition source-list growth during hydration rejects the older staged 
     addon.Navigation={Start=function()calls=calls+1 end}
     container.reportedLocations[3]={mapID=1,x=1,y=4};click();assert(calls==0)
     addon.Navigation=nav;f:finish()
+end)
+check("Open browser refits on display and UI scale events without replacing reading or quest context",function()
+    local width,height,shown=screenWidth,screenHeight,ui.frame.shown
+    local refresh,refreshes=ui.Refresh,0;ui.Refresh=function()refreshes=refreshes+1 end
+    local quest,dungeon,engine,history,char=ui.quest,ui.dungeon,ui.engine,ui.detailHistory,addon.char
+    local position=addon.db.window;local x,y=position.x,position.y
+    local generation,copyRevision=ui.rewardGeneration,ui.copyRevision
+    ui.frame:Show();screenWidth,screenHeight=1920,1080;ui:Fit()
+    ui.detailScroll:SetVerticalScroll(19);ui.questScroll:SetVerticalScroll(23)
+    assert(ui.frame.events.DISPLAY_SIZE_CHANGED and ui.frame.events.UI_SCALE_CHANGED)
+    local function emit(event)
+        if ui.frame.events[event]then ui.frame.scripts.OnEvent(ui.frame,event)end
+    end
+    assert(ui.frame.scale==1)
+    screenWidth,screenHeight=800,480;emit("DISPLAY_SIZE_CHANGED")
+    assert(ui.frame.scale*1100<=800*.92+.001 and ui.frame.scale*700<=480*.92+.001)
+    local maxX=math.max(0,(screenWidth/ui.frame.scale-1100)/2)
+    local maxY=math.max(0,(screenHeight/ui.frame.scale-700)/2)
+    assert(math.abs(ui.frame.point[4])<=maxX and math.abs(ui.frame.point[5])<=maxY)
+    screenWidth,screenHeight=640,360;emit("UI_SCALE_CHANGED")
+    assert(ui.frame.scale*1100<=640*.92+.001 and ui.frame.scale*700<=360*.92+.001)
+    assert(refreshes==0 and ui.quest==quest and ui.dungeon==dungeon and ui.engine==engine and addon.char==char)
+    assert(ui.detailHistory==history and ui.rewardGeneration==generation and ui.copyRevision==copyRevision)
+    assert(ui.detailScroll.verticalScroll==19 and ui.questScroll.verticalScroll==23)
+    assert(addon.db.window==position and position.x==x and position.y==y)
+    ui.Refresh=refresh;screenWidth,screenHeight=width,height;ui:Fit();ui.frame:SetShown(shown)
+end)
+check("Hidden browser ignores resize events and reopens using current geometry without event hydration",function()
+    local width,height,shown=screenWidth,screenHeight,ui.frame.shown
+    local getWidth,getHeight,refresh=GetScreenWidth,GetScreenHeight,ui.Refresh
+    local reads,refreshes=0,0
+    GetScreenWidth=function()reads=reads+1;return screenWidth end
+    GetScreenHeight=function()reads=reads+1;return screenHeight end
+    ui.Refresh=function()refreshes=refreshes+1 end
+    ui.frame:Hide();local scale,point=ui.frame.scale,ui.frame.point
+    screenWidth,screenHeight=600,400
+    ui.frame.scripts.OnEvent(ui.frame,"DISPLAY_SIZE_CHANGED")
+    ui.frame.scripts.OnEvent(ui.frame,"UI_SCALE_CHANGED")
+    assert(not ui.frame.shown and reads==0 and refreshes==0 and ui.frame.scale==scale and ui.frame.point==point)
+    ui.frame:Show();ui.frame.scripts.OnShow(ui.frame)
+    assert(reads==2 and refreshes==1 and ui.frame.scale*1100<=600*.92+.001)
+    reads=0;ui.frame.scripts.OnEvent(ui.frame,"UNRELATED_EVENT");assert(reads==0 and refreshes==1)
+    screenWidth,screenHeight=0,0;scale=ui.frame.scale
+    ui.frame.scripts.OnEvent(ui.frame,"DISPLAY_SIZE_CHANGED");assert(ui.frame.scale==scale)
+    GetScreenWidth,GetScreenHeight,ui.Refresh=getWidth,getHeight,refresh
+    screenWidth,screenHeight=width,height;ui:Fit();ui.frame:SetShown(shown)
 end)
 print("Preparation UI modeled checks passed: " .. total .. " (no native layout validation)")

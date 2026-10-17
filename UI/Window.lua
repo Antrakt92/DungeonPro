@@ -1889,6 +1889,12 @@ function UI:Create()
     self.startButtons, self.finishButtons, self.containerButtons = {}, {}, {}
     UISpecialFrames[#UISpecialFrames + 1] = "DungeonProWindow"
     for _, d in ipairs(addon.dungeons) do if d.key == addon.char.selectedDungeon then self.dungeon = d end end
+    frame:RegisterEvent("DISPLAY_SIZE_CHANGED")
+    frame:RegisterEvent("UI_SCALE_CHANGED")
+    frame:SetScript("OnEvent", function(f, event)
+        if (event == "DISPLAY_SIZE_CHANGED" or event == "UI_SCALE_CHANGED") and
+            addon.Read(f.IsShown, "boolean", f) == true then self:Fit() end
+    end)
     frame:SetScript("OnShow", function() self:Fit(); self:Refresh() end)
     frame:SetScript("OnHide", function() self.detailActionChoice = nil; self.languageMenuRevision = {}; self:ResetHistoryReading(); self:ResetRewardPresentation(); self:CloseCopyLink() end)
     self:ApplyTheme()
