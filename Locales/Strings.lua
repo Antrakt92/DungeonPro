@@ -134,6 +134,8 @@ local strings = {
 addon.locales = strings
 strings.enUS.STORY_SHORT = "Story"
 strings.ruRU.STORY_SHORT = "Сюжет"
+strings.enUS.REPORT_ISSUE, strings.enUS.SUPPORT_AUTHOR, strings.enUS.CLOSE = "Report an issue", "Support the project", "Close"
+strings.ruRU.REPORT_ISSUE, strings.ruRU.SUPPORT_AUTHOR, strings.ruRU.CLOSE = "Сообщить о проблеме", "Поддержать проект", "Закрыть"
 function addon.L(key, ...)
     local locale = addon.db and addon.db.locale or "auto"
     local language = addon.Clean and addon.Clean(addon.Language, "table")

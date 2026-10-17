@@ -29,6 +29,7 @@ function methods:SetTextHeight(size) self.scaledText = true; self.fontSize, self
 function methods:SetFontHeight(size) self.fontSize, self.fontPending = size, true end
 function methods:SetShadowOffset(x,y) self.shadow={x,y} end
 function methods:SetTextColor(...) self.textColor = { ... } end
+function methods:SetTextInsets(...) self.textInsets = { ... } end
 function methods:SetTexture(value) self.texture = value; return true end
 function methods:SetTexCoord(...) self.texCoords={...} end
 function methods:SetAlpha(value) self.alpha=value end
@@ -2055,7 +2056,7 @@ local function rewardPresentationFixture()
 end
 check("Reward icons preserve exact text, measured wrapping and fixed versus choice item IDs", function()
     local f = rewardPresentationFixture()
-    measurement = function(fs) return fs.width == 304 and fs.text == addon.L("REWARD_ITEM", "Fixed reward", 2) and 72 or 18 end
+    measurement = function(fs) return fs.width == ui.detail:GetWidth()-38 and fs.text == addon.L("REWARD_ITEM", "Fixed reward", 2) and 72 or 18 end
     ui:RefreshDetail()
     assert(detailHas(addon.L("REWARD_ITEM", "Fixed reward", 2)) and detailHas(addon.L("REWARD_ITEM", "Choice reward", 1)))
     local first, second = ui.rewardButtons[1], ui.rewardButtons[2]
@@ -2089,24 +2090,24 @@ check("Missing zero failing or restricted icons revert recycled text to ordinary
     local f = rewardPresentationFixture(); local first = ui.rewardButtons[1]
     local decorated
     for _, fs in ipairs(ui.details) do if fs.shown and fs.text == addon.L("REWARD_ITEM", "Fixed reward", 2) then decorated = fs end end
-    assert(decorated.width == 304 and decorated.point[2] == 34)
+    assert(decorated.width == ui.detail:GetWidth()-38 and decorated.point[2] == 34)
     for _, texture in ipairs({ 0, -1, "", false, {} }) do
         f.data.items[1].texture, f.data.choices[1].texture = texture, nil
         ui:RefreshDetail()
-        assert(not first.shown and decorated.width == 334 and decorated.point[2] == 4)
+        assert(not first.shown and decorated.width == ui.detail:GetWidth()-8 and decorated.point[2] == 4)
         assert(detailHas(addon.L("REWARD_ITEM", "Fixed reward", 2)))
     end
     f.data.items[1].texture = nil; ui:RefreshDetail(); assert(not first.shown)
     f.data.items[1].texture = 123
-    first.icon.SetTexture = function() return false end; ui:RefreshDetail(); assert(not first.shown and decorated.width == 334)
-    first.icon.SetTexture = function() error("Texture unavailable") end; ui:RefreshDetail(); assert(not first.shown and decorated.width == 334)
-    first.icon.SetTexture = false; ui:RefreshDetail(); assert(not first.shown and decorated.width == 334)
+    first.icon.SetTexture = function() return false end; ui:RefreshDetail(); assert(not first.shown and decorated.width == ui.detail:GetWidth()-8)
+    first.icon.SetTexture = function() error("Texture unavailable") end; ui:RefreshDetail(); assert(not first.shown and decorated.width == ui.detail:GetWidth()-8)
+    first.icon.SetTexture = false; ui:RefreshDetail(); assert(not first.shown and decorated.width == ui.detail:GetWidth()-8)
     first.icon.SetTexture = methods.SetTexture
     issecretvalue = function(value) return value == 123 end; ui:RefreshDetail(); assert(not first.shown)
     issecretvalue = f.oldSecret
     f.data = nil; ui:RefreshDetail()
     assert(not first.shown and not first.scripts.OnEnter and first.icon.texture == nil)
-    for _, fs in ipairs(ui.details) do if fs.shown then assert(fs.width == 334 and fs.point[2] == 4) end end
+    for _, fs in ipairs(ui.details) do if fs.shown then assert(fs.width == ui.detail:GetWidth()-8 and fs.point[2] == 4) end end
     f:finish()
 end)
 check("Hover freshly rejects changed source hidden dialogue kind slot and item before redraw", function()
@@ -2925,7 +2926,7 @@ do
         assert(detailHas(first.name) and detailHas(addon.L("CATALOG_LEVELS", 12, 24)))
         assert(detailHas(addon.L("CATALOG_QUESTS", 2)) and not detailHas(addon.L("PARTIAL")) and detailHas(addon.L("OVERVIEW_PICK")))
         assert(not detailHas(addon.L("PREPARED")) and not detailHas(addon.L("PICK")))
-        assert(ui.overviewArt and ui.overviewArt.kind ~= "Button" and ui.overviewArt.width <= 334 and ui.overviewArt.shown)
+        assert(ui.overviewArt and ui.overviewArt.kind ~= "Button" and ui.overviewArt.width <= ui.detail:GetWidth()-8 and ui.overviewArt.shown)
         assert(ui.overviewArt.texture == first.key and not ui.source.enabled and not hasDestination(true) and not hasDestination(false) and not ui.giver.enabled)
         local filters = addon.char.filters
         ui.includeUnavailable = true; ui:Refresh()
@@ -2996,7 +2997,7 @@ check("Detail typography uses explicit title section and body styles and resets 
         elseif fs.shown and fs.text == addon.L("REWARD_ITEM", "Body reward", 1) then reward = fs end
     end
     assert(heading and body and heading.fontResetBeforeText and body.fontResetBeforeText, "native prose matching a heading stays body text")
-    assert(reward and reward.fontSize == 15 and reward.fontResetBeforeText and reward.width == 304)
+    assert(reward and reward.fontSize == 15 and reward.fontResetBeforeText and reward.width == ui.detail:GetWidth()-38)
     assert(title.fontPath:find("NotoSans-Regular.ttf",1,true) and heading.fontPath==title.fontPath and body.fontPath==title.fontPath)
     local titleColor = title.textColor[1]
     title.measuredHeight = 90; measurement = function() error("cold measurement after style change") end
@@ -3871,7 +3872,7 @@ check("Noto and probed CJK assets retain actual sizes and unscaled reusable rows
     local old,locale=ChatFontNormal,addon.db.locale
     assert(ui.searchBox.fontSize==14 and not ui.searchBox.scaledText and ui.searchBox.SetFontHeight==false)
     assert(ui.copy and ui.copy.fontSize==14 and ui.copy.SetFontHeight==false)
-    assert(ui.title.fontSize==26 and ui.heading.fontSize==26 and ui.summary==nil and ui.coverage==nil)
+    assert(ui.title.fontSize==22 and ui.heading.fontSize==26 and ui.summary==nil and ui.coverage==nil)
     assert(ui.footer.fontSize==13 and ui.capacityStatus.fontSize==13 and ui.searchPlaceholder.fontSize==13)
     ChatFontNormal={unchanged=true}
     for code in pairs(addon.locales)do
@@ -3893,10 +3894,10 @@ check("Heading reflow aligns both taller viewports without aggregate counter lab
     measurement=function(fs)if fs==ui.heading then return 68 end;return 18 end
     ui.questScroll:SetVerticalScroll(30);ui:RefreshQuests()
     assert(ui.summary==nil and ui.coverage==nil)
-    assert(ui.questScroll.point[3]==-(125+68+8)and ui.detailScroll.point[3]==ui.questScroll.point[3])
+    assert(ui.questScroll.point[3]==-(66+68+8)and ui.detailScroll.point[3]==ui.questScroll.point[3])
     assert(ui.questScroll.height==643+ui.questScroll.point[3]and ui.detailScroll.height==ui.questScroll.height and ui.questScroll.verticalScroll==30)
     assert(ui.dungeon==selected and ui.quest==quest)
-    measurement=nil;ui:RefreshQuests();assert(ui.questScroll.point[3]==-159 and ui.questScroll.height==484)
+    measurement=nil;ui:RefreshQuests();assert(ui.questScroll.point[3]==-100 and ui.questScroll.height==543)
 end)
 local function questListReentryFixture()
     local saved={context=addon.Context,quest=ui.quest,dungeon=ui.dungeon,preparation=ui.preparation,all=ui.includeUnavailable,
@@ -4299,7 +4300,7 @@ check("Optional objective icons retain exact collection text unknown amounts car
     local first,second=ui.objectiveButtons[1],ui.objectiveButtons[2]
     local line=objectiveText(addon.L("OBJECTIVE_ITEM","Objective 801",6))
     assert(first.shown and first.width==24 and first.height==24 and first.icon.texture==1801 and second.icon.texture==1802)
-    assert(line.width==304 and line.point[2]==34 and detailHas(addon.L("OBJECTIVE_ITEM_UNKNOWN","Objective 802")))
+    assert(line.width==ui.detail:GetWidth()-38 and line.point[2]==34 and detailHas(addon.L("OBJECTIVE_ITEM_UNKNOWN","Objective 802")))
     assert(detailHas(addon.L("ITEM_CARRIED",0)) and ui.engine:State(9970).status=="UNKNOWN" and not ui.action)
     local reads=0;addon.DialogueRewards=function()reads=reads+1;return{source="dialogue",hidden=true}end
     ui:RefreshDetail();assert(first.shown and detailHas(addon.L("REWARD_HIDDEN")))
@@ -4313,13 +4314,13 @@ check("Missing cold malformed or failing objective icons leave ordinary text and
     for _,icon in ipairs({false,function()return nil end,function()return"Interface/Icons/no"end,function()return 0 end,
         function()return 4294967296 end,function()error("cold")end})do
         addon.ItemIcon=icon or nil;ui:RefreshDetail()
-        local text=objectiveText(value);assert(text and text.width==334 and text.point[2]==4 and not first.shown and not first.objectiveBinding)
+        local text=objectiveText(value);assert(text and text.width==ui.detail:GetWidth()-8 and text.point[2]==4 and not first.shown and not first.objectiveBinding)
     end
     addon.ItemIcon=function()return 1801 end
     local setter=first.icon.SetTexture
     for _,failure in ipairs({"false","throw"})do
         first.icon.SetTexture=function(self,texture)if texture then if failure=="throw"then error("no texture")end;return false end;return setter(self,texture)end
-        ui:RefreshDetail();assert(not first.shown and objectiveText(value).width==334 and not ui.rewardTextureBusy)
+        ui:RefreshDetail();assert(not first.shown and objectiveText(value).width==ui.detail:GetWidth()-8 and not ui.rewardTextureBusy)
     end
     first.icon.SetTexture=setter;ui:RefreshDetail();assert(first.shown)
     local before=#ui.objectiveButtons;for n=1,20 do ui:RefreshDetail()end;assert(#ui.objectiveButtons==before)
@@ -4394,7 +4395,7 @@ check("Objective icons reject restricted file IDs and keep Lua-safe oversized so
     local f=objectivePresentationFixture();local restricted={};local checker=issecretvalue
     issecretvalue=function(value)return value==restricted end
     addon.ItemIcon=function()return restricted end;ui:RefreshDetail()
-    assert(not ui.objectiveButtons[1].shown and objectiveText(addon.L("OBJECTIVE_ITEM","Objective 801",6)).width==334)
+    assert(not ui.objectiveButtons[1].shown and objectiveText(addon.L("OBJECTIVE_ITEM","Objective 801",6)).width==ui.detail:GetWidth()-8)
     issecretvalue=checker
     local calls=0;addon.ItemIcon=function()calls=calls+1;return 1801 end
     addon.quests[9970].objectiveItems={{itemID=9007199254740991,name="Oversized source ID"}}
@@ -4563,7 +4564,7 @@ end
 check("Direct quest-starting items use a distinct optional icon and tooltip without quantity or item-use actions",function()
     local f,q=starterPresentationFixture();local button=ui.objectiveButtons[1]
     local text=addon.L("START")..": "..addon.L("ITEM_STARTER","Objective 801")
-    assert(detailHas(text) and objectiveText(text).width==304 and button.shown and button.icon.texture==1801)
+    assert(detailHas(text) and objectiveText(text).width==ui.detail:GetWidth()-38 and button.shown and button.icon.texture==1801)
     assert(button.objectiveBinding.role=="starter" and button.objectiveBinding.sourceField=="start" and button.objectiveBinding.id==801)
     assert(not button.objectiveBinding.quantity and not button.scripts.OnClick)
     assert(not detailHas(addon.L("OBJECTIVE_ITEM","Objective 801",1)) and detailHas(addon.L("ITEM_CARRIED",0)))
@@ -4578,11 +4579,11 @@ check("Cold missing invalid and failed starter icon capabilities retain the orig
     local text=addon.L("START")..": "..addon.L("ITEM_STARTER","Objective 801")
     for _,getter in ipairs({false,function()return nil end,function()return"asset"end,function()return 0 end,function()error("cold")end})do
         addon.ItemIcon=getter or nil;ui:RefreshDetail()
-        assert(detailHas(text) and objectiveText(text).width==334 and not button.shown and detailHas(addon.L("ITEM_CARRIED",0)))
+        assert(detailHas(text) and objectiveText(text).width==ui.detail:GetWidth()-8 and not button.shown and detailHas(addon.L("ITEM_CARRIED",0)))
     end
     addon.ItemIcon=function()return 1801 end;local setter=button.icon.SetTexture
     button.icon.SetTexture=function(self,value)if value then return false end;return setter(self,value)end
-    ui:RefreshDetail();assert(not button.shown and objectiveText(text).width==334)
+    ui:RefreshDetail();assert(not button.shown and objectiveText(text).width==ui.detail:GetWidth()-8)
     button.icon.SetTexture=setter;ui:RefreshDetail();assert(button.shown)
     local checker=issecretvalue;local restricted={};issecretvalue=function(v)return v==restricted end
     addon.ItemIcon=function()return restricted end;ui:RefreshDetail();assert(not button.shown and detailHas(text))
@@ -4840,10 +4841,10 @@ check("Filter controls wrap clean oversized native text measurements inside the 
     for i,b in ipairs(buttons)do
         assert(b.height==36 and fonts[i].wordWrap and fonts[i].nonSpaceWrap and fonts[i].maxLines==2)
         assert(fonts[i].width==b.width-16 and fonts[i].height==32)
-        assert(-b.point[3]+b.height<=120) -- y=-84 plus36 ends before the next heading at-125.
+        assert(-b.point[3]+b.height<=60) -- Wrapped header controls stay above the catalogue at66.
     end
     assert(ui.characterButton.point==point and ui.characterButton.width==120 and ui.characterButton.scripts.OnClick==click)
-    assert(fonts[2].fontFamily==font and ui.map==nil and ui.guide==nil and ui.heading.point[2]==288)
+    assert(fonts[2].fontFamily==font and ui.map==nil and ui.guide==nil and ui.heading.point[2]==278)
     fonts[2].GetUnboundedStringWidth=function()return 20 end;ui:FitHeaderControls()
     for i,b in ipairs(buttons)do assert(b.height==25 and fonts[i].height==21)end
     addon.db.locale,ui.includeUnavailable=locale,all;finish()
@@ -4851,7 +4852,7 @@ end)
 check("Filter fit follows ten localized labels and toggle clicks without changing widths or native handlers",function()
     local buttons,fonts,finish=headerFitFixture();local locale=addon.db.locale
     local range,preparation,all=ui.range,ui.preparation,ui.includeUnavailable
-    local x={273,390};local widths={105,120};local handlers={}
+    local x={480,596};local widths={105,120};local handlers={}
     for i,b in ipairs(buttons)do handlers[i]=b.scripts.OnClick end
     for code in pairs(addon.locales)do
         addon.db.locale=code
@@ -5313,7 +5314,7 @@ check("Quest-log control wraps localized labels in detail flow and preserves sam
     measurement=function(fs)return fs==control.label and 54 or 18 end
     for code in pairs(addon.locales)do
         addon.db.locale=code;ui:RefreshDetail()
-        assert(control.label.text==addon.L("OPEN_QUEST_LOG") and control.label.fontSize==14 and control.width==334 and control.height==64)
+        assert(control.label.text==addon.L("OPEN_QUEST_LOG") and control.label.fontSize==14 and control.width==ui.detail:GetWidth()-8 and control.height==64)
         local minimum=objectiveText(addon.L("QUEST_MIN_LEVEL",q.minLevel))
         assert(-minimum.point[3]>=-control.point[3]+control.height+8)
         assert(control.point[2]==4 and ui.detailHistory==history and not ui.action and not ui.giverAction and #f.opens==0)
@@ -7644,7 +7645,7 @@ check("main title is repainted after an existing font setter clears its text",fu
     for _,code in ipairs({"ruRU","zhCN","enUS"})do
         local before=cleared;addon.db.locale=code;ui:Refresh()
         assert(cleared>before,"the actual theme font refresh must hit the pre-existing title")
-        assert(ui.title.text==addon.L("TITLE") and ui.title.fontSize==26,"main title must be restored after font changes")
+        assert(ui.title.text==addon.L("TITLE") and ui.title.fontSize==22,"main title must be restored after font changes")
     end
     methods.SetFont,methods.SetFontObject=asset,family
     addon.db.locale,GetLocale=locale,getter;ui:Refresh()
@@ -7691,7 +7692,7 @@ check("reading profile enlarges body and row text while measured spacing and hea
         addon.db.locale=code;showDetail(2)
         local body=0
         for _,fs in ipairs(ui.details)do if fs.shown and fs.detailStyle=="body"then body=body+1;assert(fs.fontSize==15)end end
-        assert(body>0 and ui.title.fontSize==26 and ui.heading.fontSize==26 and ui.searchBox.fontSize==14)
+        assert(body>0 and ui.title.fontSize==22 and ui.heading.fontSize==26 and ui.searchBox.fontSize==14)
         assert(ui.footer.fontSize==13 and ui.summary==nil and ui.coverage==nil)
     end
     row:Hide();addon.db.locale,ui.quest,ui.dungeon=locale,quest,dungeon;ui:Refresh()
@@ -7997,12 +7998,12 @@ check("Compact overview keeps generic icons small and gives actual or legacy art
     for _,d in ipairs(data.dungeons)do if keys[d.key]then
         genericCount=genericCount+1;ui.quest=nil;ui.dungeon=d
         addon.PaintDungeonArt=function(t)t:SetTexture("generic");t:Show();return true,"generic"end
-        ui:RefreshDetail();assert(ui.overviewArt.width==48 and ui.overviewArt.height==48 and ui.overviewArt.point[2]==147)
+        ui:RefreshDetail();assert(ui.overviewArt.width==48 and ui.overviewArt.height==48 and ui.overviewArt.point[2]==(ui.detail:GetWidth()-56)/2+4)
         local compactHeight=ui.detail.height
         addon.PaintDungeonArt=function(t)t:SetTexture(123);t:Show();return true,"art"end
-        ui:RefreshDetail();assert(ui.overviewArt.width==334 and ui.overviewArt.height==334 and ui.overviewArt.point[2]==4 and ui.detail.height==compactHeight+286)
+        ui:RefreshDetail();assert(ui.overviewArt.width==ui.detail:GetWidth()-8 and ui.overviewArt.height==ui.detail:GetWidth()-8 and ui.overviewArt.point[2]==4 and ui.detail.height==compactHeight+ui.detail:GetWidth()-56)
         addon.PaintDungeonArt=function(t)t:SetTexture("legacy");t:Show();return true end
-        ui:RefreshDetail();assert(ui.overviewArt.width==334 and ui.detail.height==compactHeight+286)
+        ui:RefreshDetail();assert(ui.overviewArt.width==ui.detail:GetWidth()-8 and ui.detail.height==compactHeight+ui.detail:GetWidth()-56)
         addon.PaintDungeonArt=function(t)t:Hide();return false end
         ui:RefreshDetail();assert(not ui.overviewArt.shown and ui.detail.height==compactHeight-56)
     end end
@@ -8173,7 +8174,7 @@ end)
 local function searchScrollFixture()
     local f=targetSearchFixture()
     addon.dungeons={}
-    for index=1,12 do
+    for index=1,16 do
         addon.dungeons[index]={key="reading-"..index,name="Alpha Beta dungeon "..index,minLevel=1,maxLevel=60,quests={}}
     end
     f:search("")
@@ -8184,7 +8185,7 @@ check("Changed committed search starts new catalogue results at top while equiva
     local dungeon,quest,detail=ui.dungeon,ui.quest,ui.detailScroll:GetVerticalScroll()
     ui.catalogScroll:SetVerticalScroll(300)
     f:search("Alpha")
-    assert(#f:cards()==12 and ui.catalogScroll:GetVerticalScrollRange()>300)
+    assert(#f:cards()==16 and ui.catalogScroll:GetVerticalScrollRange()>300)
     assert(ui.catalogScroll:GetVerticalScroll()==0,"a different search must show the beginning of its results")
     ui.catalogScroll:SetVerticalScroll(300)
     f:search("  aLPHa  ")
@@ -8486,24 +8487,24 @@ check("Full-width overview uses a verified painter aspect and reserves matching 
     issecretvalue=function(value)if value==restricted then return true end;return checker and checker(value)or false end
     addon.PaintDungeonArt=function(texture,d,mode)
         calls=calls+1;assert(d==target and mode=="overview")
-        assert(texture.width==334 and texture.height==334 and texture.point[2]==4,"recycled compact geometry cannot reach the painter")
+        assert(texture.width==ui.detail:GetWidth()-8 and texture.height==ui.detail:GetWidth()-8 and texture.point[2]==4,"recycled compact geometry cannot reach the painter")
         texture:SetTexture("overview");texture:Show();return true,kind,aspect
     end
     ui.quest=nil;ui.dungeon=target;ui:RefreshDetail()
     local compact=ui.detail.height
     assert(ui.overviewArt.width==48 and ui.overviewArt.height==48)
     kind,aspect="art",2992/1684;ui:RefreshDetail()
-    local expected=334*1684/2992
-    assert(ui.overviewArt.width==334 and math.abs(ui.overviewArt.height-expected)<.000001 and ui.overviewArt.point[2]==4)
+    local expected=(ui.detail:GetWidth()-8)*1684/2992
+    assert(ui.overviewArt.width==ui.detail:GetWidth()-8 and math.abs(ui.overviewArt.height-expected)<.000001 and ui.overviewArt.point[2]==4)
     assert(math.abs(ui.detail.height-(compact+expected-48))<.000001)
     for _,invalid in ipairs({0,-1,math.huge,0/0,restricted,false,"1.77",1e-320})do
-        aspect=invalid;ui:RefreshDetail();assert(ui.overviewArt.width==334 and ui.overviewArt.height==334 and ui.detail.height==compact+286)
+        aspect=invalid;ui:RefreshDetail();assert(ui.overviewArt.width==ui.detail:GetWidth()-8 and ui.overviewArt.height==ui.detail:GetWidth()-8 and ui.detail.height==compact+ui.detail:GetWidth()-56)
     end
     kind,aspect="generic",2;ui:RefreshDetail()
-    assert(ui.overviewArt.width==48 and ui.overviewArt.height==48 and ui.overviewArt.point[2]==147 and ui.detail.height==compact)
+    assert(ui.overviewArt.width==48 and ui.overviewArt.height==48 and ui.overviewArt.point[2]==(ui.detail:GetWidth()-56)/2+4 and ui.detail.height==compact)
     kind,aspect="art",2;ui:RefreshDetail()
-    assert(ui.overviewArt.width==334 and ui.overviewArt.height==167 and ui.detail.height==compact+119)
-    kind=nil;ui:RefreshDetail();assert(ui.overviewArt.height==334,"legacy helpers cannot claim a verified aspect without art classification")
+    assert(ui.overviewArt.width==ui.detail:GetWidth()-8 and ui.overviewArt.height==(ui.detail:GetWidth()-8)/2 and ui.detail.height==compact+(ui.detail:GetWidth()-8)/2-48)
+    kind=nil;ui:RefreshDetail();assert(ui.overviewArt.height==ui.detail:GetWidth()-8,"legacy helpers cannot claim a verified aspect without art classification")
     assert(calls==13)
     issecretvalue=checker;addon.PaintDungeonArt=paint;ui.quest,ui.dungeon,ui.engine=quest,dungeon,engine;ui:Refresh()
 end)
@@ -8522,7 +8523,7 @@ check("Superseded overview painting cannot resize a newer compact overview or ov
     end
     ui.quest=nil;ui.dungeon=old;ui:RefreshDetail()
     assert(not armed and ui.dungeon==newer and ui.overviewArt.texture=="new generic"and ui.overviewArt.width==48 and ui.overviewArt.height==48)
-    assert(ui.overviewArt.point[2]==147 and ui.detail.height==freshHeight)
+    assert(ui.overviewArt.point[2]==(ui.detail:GetWidth()-56)/2+4 and ui.detail.height==freshHeight)
     addon.PaintDungeonArt=paint;ui.quest,ui.dungeon,ui.engine=quest,dungeon,engine;ui:Refresh()
 end)
 
@@ -8534,7 +8535,7 @@ check("Normal browsing ignores a saved preparation mode and exposes no Back or m
     assert(#visibleRows()==3)
     for _,row in ipairs(visibleRows())do assert(not row.heading and (row.questID==31001 or row.questID==31002))end
     ui.preparation=true;ui:Refresh();assert(not ui.preparation and #visibleRows()==3 and addon.char.filters.preparation==true)
-    assert(ui.characterButton.point[2]==390 and ui.entrance==nil and ui.language.width==64 and not ui.languageChevron)
+    assert(ui.characterButton.point[2]==596 and ui.entrance==nil and ui.language.width==64 and not ui.languageChevron)
     addon.char.filters=filters;f:finish()
 end)
 check("Blocked level navigation explicitly routes to a known giver without claiming the quest available",function()
@@ -9261,7 +9262,7 @@ check("Default detail prioritizes narrative objectives rewards and one named giv
     addon.CachedQuestRewards=function()return{source="cache",items={{name="Selected reward",count=1}},choices={}}end
     f:row(43000,false).scripts.OnClick()
     assert(ui.summary==nil and ui.coverage==nil and type(ui.currentPlan.counts)=="table")
-    assert(ui.questScroll.point[3]==-159 and ui.detailScroll.point[3]==-159 and ui.questScroll.height==484 and ui.detailScroll.height==484)
+    assert(ui.questScroll.point[3]==-100 and ui.detailScroll.point[3]==-100 and ui.questScroll.height==543 and ui.detailScroll.height==543)
     assert(not ui.detailReferencesExpanded and not(ui.storyToggle and ui.storyToggle.shown))
     assert(detailHas("Selected quest narrative"),"default narrative")
     assert(detailIncludes("Selected live objective"),"default progress")
@@ -9290,5 +9291,92 @@ check("No-dungeon PICK notice clears recycled quest decorations and reward owner
     assert(not row.dungeonBadge.shown and not row.statusIcon.shown and not row.completedStrike.shown and clears==1)
     assert(row.width==ui.questList:GetWidth()-4 and row.title.width==ui.questList:GetWidth()-22 and not row.scripts.OnClick)
     addon.QuestListRewards.Clear=clear;addon.Context=context;f:finish()
+end)
+check("Compact header keeps long localized filters beside search and preserves a wider raised reading area",function()
+    local buttons,fonts,finish=headerFitFixture();local locale=addon.db.locale
+    local quest,dungeon,history=ui.quest,ui.dungeon,ui.detailHistory
+    for _,font in ipairs(fonts)do font.GetUnboundedStringWidth=function()return 420 end end
+    for code in pairs(addon.locales)do
+        addon.db.locale=code;ui:Refresh()
+        assert(ui.subtitle==nil and ui.title.fontSize==22 and ui.heading.fontSize==26)
+        assert(ui.title.point[2]+ui.title.width<ui.searchBox.point[2])
+        assert(ui.searchBox.point[2]+ui.searchBox.width<ui.rangeButton.point[2])
+        assert(ui.rangeButton.point[2]+ui.rangeButton.width<ui.characterButton.point[2])
+        assert(ui.characterButton.point[2]+ui.characterButton.width<1100+ui.language.point[2]-ui.language.width)
+        for _,button in ipairs(buttons)do assert(-button.point[3]+button.height<=50)end
+        assert(ui.searchBox.textInsets[2]>=30 and ui.searchPlaceholder.width<=230)
+        assert(ui.catalogScroll.point[2]==12 and ui.catalogScroll.point[3]==-66 and ui.catalogScroll.width==238)
+        assert(ui.questScroll.point[3]==-100 and ui.detailScroll.point[3]==-100 and ui.detailScroll.width==400 and ui.questScroll.width==370)
+        -- The native scrollbar and its thumb extend23px beyond the viewport.
+        assert(ui.catalogScroll.point[2]+ui.catalogScroll.width+23<=ui.questScroll.point[2]-2)
+        assert(ui.questScroll.point[2]+ui.questScroll.width+23<=ui.detailScroll.point[2]-2)
+        assert(ui.detailScroll.point[2]+ui.detailScroll.width+23<=ui.frame:GetWidth()-2)
+        assert(ui.issueLink.width==24 and ui.supportLink.width==24 and ui.issueLink.icon.width==16 and ui.supportLink.icon.width==16)
+        assert(ui.quest==quest and ui.dungeon==dungeon and ui.detailHistory==history)
+    end
+    addon.db.locale=locale;finish();ui:Refresh()
+end)
+local function developerPopupFixture()
+    local f={dialogs=StaticPopupDialogs,show=StaticPopup_Show,hide=StaticPopup_Hide,shown=ui.frame.shown,calls=0}
+    StaticPopupDialogs={};local box=object();local popup=object()
+    function popup:GetEditBox()return box end;function box:GetParent()return popup end
+    f.box,f.popup=box,popup
+    StaticPopup_Hide=function(key)assert(key=="DUNGEONPRO_COPY_DEVELOPER_LINK");popup:Hide()end
+    StaticPopup_Show=function(key,message,unused,data)
+        assert(key=="DUNGEONPRO_COPY_DEVELOPER_LINK"and unused==nil)
+        f.calls=f.calls+1;f.message,f.data,f.definition=message,data,StaticPopupDialogs[key]
+        popup:Show();f.definition.OnShow(popup,data);return popup
+    end
+    ui.frame:Show()
+    function f:finish()
+        ui.developerLinkRequest=nil;StaticPopupDialogs,StaticPopup_Show,StaticPopup_Hide=self.dialogs,self.show,self.hide
+        ui.frame:SetShown(self.shown)
+    end
+    return f
+end
+check("Header issue and support actions expose only verified copy links and close with Enter or Escape",function()
+    local f=developerPopupFixture()
+    ui.issueLink.scripts.OnClick();assert(f.calls==1 and f.box.text=="https://github.com/Antrakt92/DungeonPro/issues"and f.box.focused and f.box.highlighted)
+    assert(f.message:find(addon.L("REPORT_ISSUE"),1,true)and f.message:find(addon.L("COPY"),1,true))
+    local old,data=f.definition,f.data
+    ui.supportLink.scripts.OnClick();assert(f.calls==2 and f.box.text=="https://ko-fi.com/antrakt92")
+    old.OnShow(f.popup,data);old.EditBoxOnEscapePressed(f.box);assert(f.popup.shown and f.box.text=="https://ko-fi.com/antrakt92")
+    f.definition.EditBoxOnEnterPressed(f.box);assert(not f.popup.shown)
+    ui.issueLink.scripts.OnClick();f.definition.EditBoxOnEscapePressed(f.box);assert(not f.popup.shown)
+    local calls=f.calls;assert(not ui:ShowDeveloperLink("https://foreign.invalid"));assert(f.calls==calls)
+    ui.frame:Hide();ui.issueLink.scripts.OnClick();assert(f.calls==calls);ui.frame:Show()
+    local show=StaticPopup_Show;StaticPopup_Show=nil;assert(not ui:ShowDeveloperLink("issue"));StaticPopup_Show=show
+    f:finish()
+end)
+check("A late developer copy setter cannot overwrite a newer support popup",function()
+    local f=developerPopupFixture();local setter=f.box.SetText;local armed=true
+    f.box.SetText=function(self,value)
+        if armed and value=="https://github.com/Antrakt92/DungeonPro/issues"then armed=false;assert(ui:ShowDeveloperLink("support"))end
+        return setter(self,value)
+    end
+    assert(not ui:ShowDeveloperLink("issue"));assert(not armed and f.box.text=="https://ko-fi.com/antrakt92"and f.popup.shown)
+    f.box.SetText=setter;f:finish()
+end)
+check("Retained catalogue language paint refreshes ordinary dungeon and matched quest labels through current resolvers",function()
+    local f=targetSearchFixture();local preview=false
+    addon.DungeonName=function(d)return(preview and "Localized "or"")..d.name end
+    f.cachedNames[31001]="Cached target";f:search("31001")
+    preview=true;f.cachedNames[31001]="Localized cached target"
+    assert(ui:RefreshCatalogLanguage())
+    for _,row in ipairs(f:cards())do
+        assert(row.title.text:find("Localized ",1,true)==1 and row.note.text:find("Localized cached target",1,true))
+    end
+    f:finish()
+end)
+check("Header link tooltip stops after a native setter transfers tooltip ownership",function()
+    local previous=GameTooltip;local tip={};local additions,shows=0,0;local foreign={}
+    function tip:SetOwner(owner)self.owner=owner end;function tip:IsOwned(owner)return self.owner==owner end
+    function tip:SetText()self.owner=foreign;self.shown=false end
+    function tip:AddLine()additions=additions+1 end;function tip:Show()shows=shows+1;self.shown=true end
+    function tip:Hide()self.shown=false end
+    GameTooltip=tip;ui.issueLink.scripts.OnEnter()
+    assert(tip.owner==foreign and not tip.shown and additions==0 and shows==0)
+    ui.issueLink.scripts.OnLeave();assert(tip.owner==foreign and not tip.shown)
+    GameTooltip=previous
 end)
 print("Preparation UI modeled checks passed: " .. total .. " (no native layout validation)")

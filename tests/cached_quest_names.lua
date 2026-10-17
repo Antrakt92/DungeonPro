@@ -5,6 +5,7 @@ local title,locale,player,reads
 local function reset()
  title,locale,player,reads="Cached native title","ruRU","Player-1",0
  addon.char={texts={}};addon.quests={[123]={id=123,name="Source name"}}
+ addon.db,addon.Language,addon.nameTranslations=nil,nil,nil
  issecretvalue=function(v)return v==secret end
  GetLocale=function()return locale end
  UnitGUID=function(unit)assert(unit=="player");return player end
@@ -57,5 +58,56 @@ end)
 check("Results are not cached across player locale or title changes",function()
  assert(addon.CachedQuestName(123)==title);title="Fresh";locale="deDE";player="Player-2"
  assert(addon.CachedQuestName(123)=="Fresh" and reads==2)
+end)
+local function bundle()
+ addon.nameTranslations={ruRU={quests={[123]={source="Source name",name="Русское название"}}},
+ deDE={quests={[123]={source="Source name",name="Deutscher Titel"}}}}
+end
+check("Forced locale names use exact-ID reviewed data without native title capability player or hydration",function()
+ bundle();addon.db={locale="ruRU"};locale="enUS";player=nil;C_QuestLog=nil;UnitGUID=nil
+ assert(addon.CachedQuestName(123)=="Русское название" and addon.QuestName(123)=="Русское название" and reads==0)
+end)
+check("Matching-client native names have priority and reviewed bundles cover cold native data",function()
+ bundle();addon.db={locale="ruRU"}
+ assert(addon.CachedQuestName(123)=="Cached native title" and addon.QuestName(123)=="Cached native title")
+ title=nil;assert(addon.CachedQuestName(123)=="Русское название" and addon.QuestName(123)=="Русское название")
+end)
+check("Forced missing translations fall back to source English without reading a different client language",function()
+ addon.db={locale="enUS"};locale="ruRU"
+ assert(addon.CachedQuestName(123)==nil and addon.QuestName(123)=="Source name" and reads==0)
+ addon.db.locale="koKR";assert(addon.CachedQuestName(123)==nil and addon.QuestName(123)=="Source name" and reads==0)
+end)
+check("English identity drift malformed restricted translations and wrong numeric identity are rejected",function()
+ bundle();addon.db={locale="ruRU"};locale="enUS"
+ for _,v in ipairs({"Other source",secret,false})do addon.nameTranslations.ruRU.quests[123].source=v
+  assert(addon.CachedQuestName(123)==nil and addon.QuestName(123)=="Source name")end
+ bundle();for _,v in ipairs({"",string.rep("x",1025),secret,false})do addon.nameTranslations.ruRU.quests[123].name=v
+  assert(addon.CachedQuestName(123)==nil and addon.QuestName(123)=="Source name")end
+ bundle();addon.quests[123].id=124;assert(addon.CachedQuestName(123)==nil and addon.QuestName(123)=="Source name")
+end)
+check("Language preview and restore switch static quest names without changing saved locale",function()
+ bundle();locale="enUS";addon.db={locale="enUS"};local preview="ruRU"
+ addon.Language={GetSelection=function()return preview end}
+ assert(addon.CachedQuestName(123)=="Русское название" and addon.QuestName(123)=="Русское название")
+ preview="deDE";assert(addon.CachedQuestName(123)=="Deutscher Titel" and addon.QuestName(123)=="Deutscher Titel")
+ preview=nil;assert(addon.CachedQuestName(123)==title and addon.QuestName(123)==title and addon.db.locale=="enUS")
+end)
+check("Locale aliases resolve the same reviewed labels while English forcing keeps catalogue English",function()
+ addon.nameTranslations={esES={quests={[123]={source="Source name",name="Título español"}}}}
+ locale="enUS";addon.db={locale="esMX"}
+ assert(addon.CachedQuestName(123)=="Título español" and addon.QuestName(123)=="Título español" and reads==0)
+ locale="ruRU";addon.db.locale="enGB"
+ assert(addon.CachedQuestName(123)==nil and addon.QuestName(123)=="Source name" and reads==0)
+end)
+check("Static label sanitization rejects changed locale data and definition owners",function()
+ for mode=1,4 do reset();bundle();locale="enUS";addon.db={locale="ruRU"};local wanted="Русское название";local once
+  issecretvalue=function(v)
+   if v==wanted and not once then once=true
+    if mode==1 then addon.db.locale="deDE" elseif mode==2 then addon.nameTranslations={}
+    elseif mode==3 then addon.quests[123]={id=123,name="New source"} else addon.nameTranslations.ruRU.quests[123].name="New label"end
+   end;return v==secret
+  end
+  assert(addon.CachedQuestName(123)==nil,"mode"..mode)
+ end
 end)
 print("Cached quest name modeled checks passed: "..total.." (native client unverified)")

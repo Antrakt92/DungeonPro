@@ -5,6 +5,7 @@ local addon, event = fixture.addon, fixture.eventFrame
 event.scripts.OnEvent(event, "ADDON_LOADED", "DungeonPro")
 SlashCmdList.DUNGEONPRO("")
 local ui = addon.UI
+GetLocale = function() return "enUS" end
 addon.db.locale = "enUS"
 for _, dungeon in ipairs(addon.dungeons) do if dungeon.key == "dm" then ui.dungeon = dungeon end end
 ui.search, ui.range = "", false
@@ -59,9 +60,9 @@ local function retained()
     check(addon.db == database and addon.char == character and ui.dungeon == dungeon, "hover retains current character and selection")
     for index, before in ipairs(cards) do
         local row = ui.cards[index]
-        check(row == before.row and row.scripts.OnClick == before.click and row.title.text == before.title
+        check(row == before.row and row.scripts.OnClick == before.click and row.title.text == addon.DungeonName(addon.dungeons[index])
             and row.art.texture == before.artwork and row.matchQuestID == before.match,
-            "hover retains catalogue row identity, title, artwork and click ownership")
+            "hover translates titles while retaining catalogue row identity, artwork and click ownership")
         check(row.entranceControl == before.entrance and row.entranceBinding == before.entranceBinding and
             (not row.entranceControl or row.entranceControl.scripts.OnClick == before.entranceClick),
             "hover retains per-card entrance controls and route ownership")
@@ -201,8 +202,9 @@ ui.language.scripts.OnEnter()
 session = assert(addon.Language.session)
 local beforeWingHover = ui.catalogGeneration
 reset(); session.rows[3].scripts.OnEnter()
-check(lowerCard.title.text == addon.L("DUNGEON_WING_lower", "Client dungeon")
-    and not lowerCard.title.text:find("Lower wing", 1, true), "Russian hover updates actual client-named wing suffix")
+check(lowerCard.title.text == addon.DungeonName(addon.dungeons[lowerIndex])
+    and lowerCard.title.text ~= addon.locales.enUS.DUNGEON_WING_lower:format("Client dungeon"),
+    "Russian hover replaces the client-language base with the selected-language dungeon name")
 check(ui.catalogGeneration == beforeWingHover and count("catalogArt") == 0,
     "empty-query wing relocalization retains catalogue artwork and results")
 addon.Language:Cancel(ui)

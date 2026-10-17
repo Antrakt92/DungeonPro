@@ -651,7 +651,7 @@ function Theme.Apply(ui)
     if not decoration then
         decoration = {}
         windows[frame] = decoration
-        decoration.header = strip(frame, 1, "TOPLEFT", "TOPRIGHT", -72, palette.amber)
+        decoration.header = strip(frame, 1, "TOPLEFT", "TOPRIGHT", -54, palette.amber)
         decoration.footer = strip(frame, 1, "BOTTOMLEFT", "BOTTOMRIGHT", 46, palette.faint)
     end
     if not decoration.panels then

@@ -18,6 +18,7 @@ def main():
         raise SystemExit("Lua 5.1 and luac5.1 are required; no automatic install is performed")
     run(sys.executable, "scripts/catalog.py", "--check")
     run(sys.executable, "scripts/casefold.py", "--check")
+    run(sys.executable, "scripts/names.py", "--check")
     syntax_paths = [str(path) for path in sorted(ROOT.rglob("*.lua")) if "dist" not in path.parts]
     for offset in range(0, len(syntax_paths), 32):
         run(luac, "-p", *syntax_paths[offset:offset + 32])
@@ -32,6 +33,7 @@ def main():
     run(lua, "tests/search.lua")
     run(lua, "tests/ui_preparation.lua")
     run(lua, "tests/quest_tree_ui.lua")
+    run(lua, "tests/localized_names_ui.lua")
     run(lua, "tests/theme.lua")
     run(lua, "tests/quest_status.lua")
     run(lua, "tests/quest_list_rewards.lua")

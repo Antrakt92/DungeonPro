@@ -4,6 +4,11 @@ local UI = { dungeon = nil, quest = nil, search = "", range = false, preparation
 addon.UI = UI
 local COLOR = { COMPLETED = "66dd99", READY = "ffe066", ACTIVE = "88bfff", AVAILABLE = "ffe9b0",
     LOCKED = "f0b080", UNKNOWN = "b4aacd", UNAVAILABLE = "999999" }
+local DEVELOPER_LINKS = {
+    issue = { label = "REPORT_ISSUE", url = "https://github.com/Antrakt92/DungeonPro/issues" },
+    support = { label = "SUPPORT_AUTHOR", url = "https://ko-fi.com/antrakt92" },
+}
+
 local FONT
 local DETAIL_STYLES = {
     body = { size = 15, minimum = 20, color = { 0.92, 0.91, 0.87 } },
@@ -541,6 +546,83 @@ local function label(parent, value, x, y, width, size)
     return fs
 end
 
+function UI:DeveloperLinkHint(control, key)
+    key = addon.Clean(key, "string")
+    self:HideNavigationHint()
+    local link, frame = DEVELOPER_LINKS[key], self.frame
+    local tip = addon.Clean(GameTooltip, "table") or addon.Clean(GameTooltip, "userdata")
+    local isOwned = tip and addon.Clean(tip.IsOwned, "function")
+    local function current()
+        local shown = addon.Read(frame.IsShown, "boolean", frame)
+        return shown == true and link and GameTooltip == tip and self.frame == frame and tip.IsOwned == isOwned
+    end
+    if not tip or not isOwned or not current() then return end
+    local held = { tip = tip, button = control }; self.navigationTooltip = held
+    for _, call in ipairs({ { "SetOwner", control, "ANCHOR_RIGHT" }, { "SetText", addon.L(link.label) }, { "AddLine", link.url, 1, 1, 1, true }, { "Show" } }) do
+        if not current() or self.navigationTooltip ~= held then return end
+        local method = addon.Clean(tip[call[1]], "function")
+        if not method or not pcall(method, tip, unpack(call, 2)) or not current() or self.navigationTooltip ~= held or
+            addon.Read(isOwned, "boolean", tip, control) ~= true or not current() or self.navigationTooltip ~= held then
+            if self.navigationTooltip == held then self:HideNavigationHint() end
+            return
+        end
+    end
+end
+
+function UI:ShowDeveloperLink(key)
+    key = addon.Clean(key, "string")
+    local link, frame = DEVELOPER_LINKS[key], self.frame
+    local dialogs = addon.Clean(StaticPopupDialogs, "table")
+    local show, hide = addon.Clean(StaticPopup_Show, "function"), addon.Clean(StaticPopup_Hide, "function")
+    if not link or not frame or not dialogs or not show or not hide or addon.Read(frame.IsShown, "boolean", frame) ~= true then return false end
+    local popupKey, request = "DUNGEONPRO_COPY_DEVELOPER_LINK", { link = link }
+    self.developerLinkRequest = request
+    local function current()
+        local shown = addon.Read(frame.IsShown, "boolean", frame)
+        return shown == true and addon.UI == self and self.frame == frame and self.developerLinkRequest == request and
+            StaticPopupDialogs == dialogs and StaticPopup_Show == show and StaticPopup_Hide == hide and DEVELOPER_LINKS[key] == link
+    end
+    request.current = current
+    local function onShow(popup, data)
+        if data ~= request or not current() then return end
+        local ok, value = pcall(function() return popup:GetEditBox() end)
+        local box = ok and (addon.Clean(value, "table") or addon.Clean(value, "userdata"))
+        if not box or not current() then return end
+        for _, call in ipairs({ { "SetText", link.url }, { "HighlightText" }, { "SetFocus" } }) do
+            local method = addon.Clean(box[call[1]], "function")
+            if not method or not current() then return end
+            local bindings = self.developerLinkWrites or {}; self.developerLinkWrites = bindings
+            local binding = { current = current, object = box, method = method, args = call }
+            bindings[call[1]] = binding
+            local written = pcall(method, box, unpack(call, 2))
+            if not written or not current() then
+                local newer = bindings[call[1]]
+                if newer and newer ~= binding and not newer.repairing and newer.current() then
+                    newer.repairing = true
+                    if bindings[call[1]] == newer and newer.current() then pcall(newer.method, newer.object, unpack(newer.args, 2)) end
+                    newer.repairing = nil
+                end
+                return
+            end
+        end
+    end
+    local function close(box)
+        if not current() then return end
+        local getter = addon.Clean(box.GetParent, "function")
+        if not getter then return end
+        local ok, popup = pcall(getter, box)
+        if ok and popup and current() then self.developerLinkRequest = nil; pcall(popup.Hide, popup) end
+    end
+    dialogs[popupKey] = { text = "%s", button1 = addon.L("CLOSE"), hasEditBox = true, editBoxWidth = 340,
+        OnShow = onShow, EditBoxOnEnterPressed = close, EditBoxOnEscapePressed = close,
+        timeout = 0, whileDead = true, hideOnEscape = true, exclusive = true, preferredIndex = 3 }
+    if not current() then return false end
+    pcall(hide, popupKey)
+    if not current() then return false end
+    local ok, popup = pcall(show, popupKey, addon.L(link.label) .. "\n" .. addon.L("COPY"), nil, request)
+    return ok and current() and (addon.Clean(popup, "table") ~= nil or addon.Clean(popup, "userdata") ~= nil)
+end
+
 function UI:CloseCopyLink()
     self.copyRevision = {}
     self.copyQuest, self.copyReturn = nil, nil
@@ -823,9 +905,10 @@ function UI:QueueSearch()
     self:FlushPendingSearch(pending)
 end
 
-function UI:CatalogResultNote(result)
+function UI:CatalogResultNote(result, matchedName)
     local note = addon.L("CATALOG_LEVELS", result.minimum, result.maximum) .. "\n" .. addon.L("CATALOG_QUESTS", result.count)
-    if result.matchedName then note = note .. "\n" .. addon.L("SEARCH_QUEST_MATCH", result.matchedName) end
+    matchedName = matchedName or result.matchedName
+    if matchedName then note = note .. "\n" .. addon.L("SEARCH_QUEST_MATCH", matchedName) end
     if result.sourceMatch then
         note = note .. "\n" .. addon.L(result.sourceMatch.kind == "npc" and "SEARCH_NPC_MATCH" or "SEARCH_PLACE_MATCH", result.sourceMatch.text)
     end
@@ -857,9 +940,10 @@ function UI:RefreshCatalogLanguage()
     for _, result in ipairs(view.results) do
         if not current() then return failed() end
         local row = result.row
-        local title = result.dungeon.wing and addon.DungeonName(result.dungeon) or result.title
-        if not write(row.title, "SetText", title) or
-            not write(row.note, "SetText", self:CatalogResultNote(result)) then return failed() end
+        local title = addon.Read(addon.DungeonName, "string", result.dungeon)
+        local matchedName = result.questID and result.matchedName and addon.Read(addon.CachedQuestName, "string", result.questID)
+        if not current() or not title or not write(row.title, "SetText", title) or
+            not write(row.note, "SetText", self:CatalogResultNote(result, matchedName)) then return failed() end
         offset = self:LayoutRow(row, 64, offset, current, write)
         if not offset then return failed() end
         local inspect = result.inspect
@@ -1236,7 +1320,7 @@ function UI:RefreshDungeons()
             local inspect = self.catalogInspectButtons[inspectIndex]
             if not inspect then
                 inspect = CreateFrame("Button", nil, self.catalog)
-                inspect:SetWidth(218); inspect.label = label(inspect, "", 7, -5, 204, 14)
+                inspect:SetWidth(self.catalog:GetWidth() - 16); inspect.label = label(inspect, "", 7, -5, self.catalog:GetWidth() - 30, 14)
                 inspect.title = inspect.label
                 inspect:SetHighlightTexture("Interface\\QuestFrame\\UI-QuestTitleHighlight")
                 self.catalogInspectButtons[inspectIndex] = inspect
@@ -1643,10 +1727,10 @@ function UI:RefreshQuests()
     end
     local headingHeight = math.max(26, measuredHeight(self.heading, 26))
     if not current() then return end
-    local listY = 125 + headingHeight + 8
-    if not write(self.questScroll, "ClearAllPoints") or not write(self.questScroll, "SetPoint", "TOPLEFT", 288, -listY) or
+    local listY = 66 + headingHeight + 8
+    if not write(self.questScroll, "ClearAllPoints") or not write(self.questScroll, "SetPoint", "TOPLEFT", 278, -listY) or
         not write(self.questScroll, "SetHeight", math.max(80, 643 - listY)) or
-        not write(self.detailScroll, "ClearAllPoints") or not write(self.detailScroll, "SetPoint", "TOPLEFT", 690, -listY) or
+        not write(self.detailScroll, "ClearAllPoints") or not write(self.detailScroll, "SetPoint", "TOPLEFT", 674, -listY) or
         not write(self.detailScroll, "SetHeight", math.max(80, 643 - listY)) then return end
     for index = n + 1, #self.rows do
         local row = self.rows[index]
@@ -1940,6 +2024,9 @@ function UI:RefreshDetail()
     self:RefreshQuestStyles()
     if self.rewardGeneration ~= rewardGeneration or self.quest ~= renderQuest then return end
     local pool, n, y = self.details, 0, 0
+    local detailWidth = addon.Read(self.detail.GetWidth, "number", self.detail)
+    if self.rewardGeneration ~= rewardGeneration or self.quest ~= renderQuest or self.dungeon ~= renderDungeon then return end
+    local contentWidth = detailWidth and detailWidth > 56 and detailWidth < 2000 and detailWidth - 8 or 334
     self.reportedExpanded = self.reportedExpanded or {}
     self.reportedToggles, self.reportedRows = self.reportedToggles or {}, self.reportedRows or {}
     local reportedGeneration, toggleIndex, reportIndex = {}, 0, 0
@@ -2028,7 +2115,7 @@ function UI:RefreshDetail()
         n = n + 1
         local fs = pool[n]
         if not fs then
-            fs = label(self.detail, "", 4, 0, 334, 13)
+            fs = label(self.detail, "", 4, 0, contentWidth, 13)
             if ownerCurrent and not ownerCurrent() then return false end
             pool[n] = fs
         end
@@ -2036,7 +2123,7 @@ function UI:RefreshDetail()
         if ownerCurrent and not ownerCurrent() then return false end
         if fs.detailStyle ~= style or fs.detailFont ~= font then fs.measuredHeight = nil end
         fs.detailStyle, fs.detailFont = style, font
-        if not write(fs, "SetTextColor", unpack(format.color)) or not write(fs, "SetWidth", 334) or
+        if not write(fs, "SetTextColor", unpack(format.color)) or not write(fs, "SetWidth", contentWidth) or
             not write(fs, "ClearAllPoints") or not write(fs, "SetPoint", "TOPLEFT", 4, -y) or
             not write(fs, "SetText", value) or not write(fs, "Show") then return false end
         local itemID = reward and addon.Clean(reward.item.id, "number")
@@ -2064,7 +2151,7 @@ function UI:RefreshDetail()
                     local held = self.rewardTooltip
                     if held and held.binding == binding and b.rewardBinding == binding then self:ReleaseRewardTooltip(held) end
                 end)
-                fs:SetWidth(304); fs:ClearAllPoints(); fs:SetPoint("TOPLEFT", 34, -y)
+                fs:SetWidth(contentWidth - 30); fs:ClearAllPoints(); fs:SetPoint("TOPLEFT", 34, -y)
                 height = math.max(height or 18, 24)
             else
                 b.icon:Hide(); self:SetRewardTexture(b.icon, nil)
@@ -2089,7 +2176,7 @@ function UI:RefreshDetail()
                     local held = self.objectiveTooltip
                     if held and held.binding == objective and button.objectiveBinding == objective then self:ReleaseObjectiveTooltip(held) end
                 end)
-                fs:SetWidth(304); fs:ClearAllPoints(); fs:SetPoint("TOPLEFT", 34, -y)
+                fs:SetWidth(contentWidth - 30); fs:ClearAllPoints(); fs:SetPoint("TOPLEFT", 34, -y)
                 height = math.max(height or 18, 24)
             else
                 button.icon:Hide(); self:SetRewardTexture(button.icon, nil)
@@ -2153,8 +2240,8 @@ function UI:RefreshDetail()
         if canOpen == true and usableOpener then
             local control = self.questLogButton
             if not control then
-                control = CreateFrame("Button", nil, self.detail); control:Hide(); control:SetWidth(334)
-                control.label = label(control, "", 7, -5, 320, 14)
+                control = CreateFrame("Button", nil, self.detail); control:Hide(); control:SetWidth(contentWidth)
+                control.label = label(control, "", 7, -5, contentWidth - 14, 14)
                 control.title = control.label
                 control:SetHighlightTexture("Interface\\QuestFrame\\UI-QuestTitleHighlight")
                 if not logCurrent() then return end
@@ -2466,7 +2553,7 @@ function UI:RefreshDetail()
             local toggle = self.storyToggle
             if not toggle then
                 toggle = CreateFrame("Button", nil, self.detail)
-                toggle:SetWidth(332); toggle.label = label(toggle, "", 7, -5, 318, 14)
+                toggle:SetWidth(contentWidth - 2); toggle.label = label(toggle, "", 7, -5, contentWidth - 16, 14)
                 toggle.title = toggle.label
                 toggle:SetHighlightTexture("Interface\\QuestFrame\\UI-QuestTitleHighlight")
                 self.storyToggle = toggle
@@ -2526,7 +2613,7 @@ function UI:RefreshDetail()
                     local b = self.branchButtons[branchIndex]
                     if not b then
                         b = CreateFrame("Button", nil, self.detail)
-                        b:SetWidth(332); b.label = label(b, "", 3, -3, 326, 14)
+                        b:SetWidth(contentWidth - 2); b.label = label(b, "", 3, -3, contentWidth - 8, 14)
                         b:SetHighlightTexture("Interface\\QuestFrame\\UI-QuestTitleHighlight")
                         self.branchButtons[branchIndex] = b
                     end
@@ -2548,7 +2635,7 @@ function UI:RefreshDetail()
                     local inspect = self.branchInspectButtons[branchInspectIndex]
                     if not inspect then
                         inspect = CreateFrame("Button", nil, self.detail)
-                        inspect:SetWidth(316); inspect.label = label(inspect, "", 7, -5, 302, 14)
+                        inspect:SetWidth(contentWidth - 18); inspect.label = label(inspect, "", 7, -5, contentWidth - 32, 14)
                         inspect:SetHighlightTexture("Interface\\QuestFrame\\UI-QuestTitleHighlight")
                         self.branchInspectButtons[branchInspectIndex] = inspect
                     end
@@ -2607,8 +2694,8 @@ function UI:RefreshDetail()
             local b = self.chainButtons[chainIndex]
             if not b then
                 b = CreateFrame("Button", nil, self.detail)
-                b:SetSize(332, 34)
-                b.label = label(b, "", 3, -2, 326, 14)
+                b:SetSize(contentWidth - 2, 34)
+                b.label = label(b, "", 3, -2, contentWidth - 8, 14)
                 b:SetHighlightTexture("Interface\\QuestFrame\\UI-QuestTitleHighlight")
                 self.chainButtons[chainIndex] = b
             end
@@ -2736,7 +2823,7 @@ function UI:RefreshDetail()
                     local inspect = self.actionInspectButtons[inspectIndex]
                     if not inspect then
                         inspect = CreateFrame("Button", nil, self.detail)
-                        inspect:SetWidth(316); inspect.label = label(inspect, "", 7, -5, 302, 14)
+                        inspect:SetWidth(contentWidth - 18); inspect.label = label(inspect, "", 7, -5, contentWidth - 32, 14)
                         inspect:SetHighlightTexture("Interface\\QuestFrame\\UI-QuestTitleHighlight")
                         self.actionInspectButtons[inspectIndex] = inspect
                     end
@@ -3135,8 +3222,8 @@ function UI:RefreshDetail()
                     if start then
                         local control = self.clientWaypointButton
                         if not control then
-                            control = CreateFrame("Button", nil, self.detail); control:Hide(); control:SetWidth(334)
-                            control.label = label(control, "", 7, -5, 320, 14); control.title = control.label
+                            control = CreateFrame("Button", nil, self.detail); control:Hide(); control:SetWidth(contentWidth)
+                            control.label = label(control, "", 7, -5, contentWidth - 14, 14); control.title = control.label
                             control:SetHighlightTexture("Interface\\QuestFrame\\UI-QuestTitleHighlight")
                             if not previewCurrent() then return end
                             self.clientWaypointButton = control
@@ -3908,8 +3995,8 @@ function UI:RefreshDetail()
         do
             local toggle = self.referenceToggle
             if not toggle then
-                toggle = CreateFrame("Button", nil, self.detail); toggle:SetWidth(332)
-                toggle.label = label(toggle, "", 7, -5, 318, 14); toggle.title = toggle.label
+                toggle = CreateFrame("Button", nil, self.detail); toggle:SetWidth(contentWidth - 2)
+                toggle.label = label(toggle, "", 7, -5, contentWidth - 16, 14); toggle.title = toggle.label
                 toggle:SetHighlightTexture("Interface\\QuestFrame\\UI-QuestTitleHighlight")
                 self.referenceToggle = toggle
             end
@@ -3972,7 +4059,7 @@ function UI:RefreshDetail()
             if not self.overviewArt then
                 self.overviewArt = self.detail:CreateTexture(nil, "ARTWORK")
             end
-            self.overviewArt:SetSize(334, 334)
+            self.overviewArt:SetSize(contentWidth, contentWidth)
             if not portraitCardCurrent() then return end
             self.overviewArt:ClearAllPoints(); self.overviewArt:SetPoint("TOPLEFT", 4, -y)
             if not portraitCardCurrent() then return end
@@ -3984,12 +4071,12 @@ function UI:RefreshDetail()
             if not portraitCardCurrent() or addon.PaintDungeonArt ~= painter then return end
             if painted == true then
                 local compact = kind == "generic"
-                local height = kind == "art" and aspect and aspect > 0 and addon.Clean(334 / aspect, "number") or nil
+                local height = kind == "art" and aspect and aspect > 0 and addon.Clean(contentWidth / aspect, "number") or nil
                 if not portraitCardCurrent() then return end
-                height = height and height > 0 and height or 334
-                self.overviewArt:SetSize(compact and 48 or 334, compact and 48 or height)
+                height = height and height > 0 and height or contentWidth
+                self.overviewArt:SetSize(compact and 48 or contentWidth, compact and 48 or height)
                 if not portraitCardCurrent() then return end
-                self.overviewArt:ClearAllPoints(); self.overviewArt:SetPoint("TOPLEFT", compact and 147 or 4, -y)
+                self.overviewArt:ClearAllPoints(); self.overviewArt:SetPoint("TOPLEFT", compact and (contentWidth - 48) / 2 + 4 or 4, -y)
                 if not portraitCardCurrent() then return end
                 y = y + (compact and 56 or height + 8)
             end
@@ -4060,7 +4147,6 @@ function UI:Refresh(languageOnly)
     if languageOnly ~= true then self.preparation = false end
     if addon.Theme and addon.Theme.RefreshFonts then addon.Theme.RefreshFonts() end
     self.title:SetText(addon.L("TITLE"))
-    self.subtitle:SetText(addon.L("SUBTITLE"))
     if not self:RefreshLanguageLabel() then return end
     self.rangeButton:SetText(addon.L(self.range and "RANGE" or "ALL"))
     self.characterButton:SetText(addon.L(self.includeUnavailable and "ALL_CHARACTERS" or "MY_CHARACTER"))
@@ -4134,16 +4220,16 @@ function UI:Create()
     frame:SetBackdrop({ bgFile = "Interface\\Buttons\\WHITE8X8", edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border", edgeSize = 16 })
     frame:SetBackdropColor(0.045, 0.065, 0.085, 0.98)
     frame:SetBackdropBorderColor(0.7, 0.55, 0.27, 1)
-    self.title = label(frame, addon.L("TITLE"), 22, -16, 360, 26)
-    self.subtitle = label(frame, "", 22, -49, 500, 13)
+    self.title = label(frame, addon.L("TITLE"), 16, -10, 145, 22)
     local close = CreateFrame("Button", nil, frame, "UIPanelCloseButton"); close:SetPoint("TOPRIGHT", -4, -4)
     local closeTheme = addon.Clean(addon.Theme, "table")
     if closeTheme then addon.Read(closeTheme.StyleCloseButton, "boolean", close) end
     local search = CreateFrame("EditBox", nil, frame, "InputBoxTemplate")
-    search:SetSize(200, 25); search:SetPoint("TOPLEFT", 27, -84); search:SetAutoFocus(false)
+    search:SetSize(290, 25); search:SetPoint("TOPLEFT", 172, -14); search:SetAutoFocus(false)
     self.searchBox = search
+    if type(search.SetTextInsets) == "function" then search:SetTextInsets(4, 30, 0, 0) end
     setInputFont(search)
-    self.searchPlaceholder = label(search, "", 5, -5, 188, 13)
+    self.searchPlaceholder = label(search, "", 5, -5, 230, 13)
     search:SetScript("OnTextChanged", function(b, userInput)
         self.search = addon.Read(b.GetText, "string", b) or ""
         if self.searchPlaceholder then self.searchPlaceholder:SetShown(self.search == "") end
@@ -4155,24 +4241,43 @@ function UI:Create()
     self.clearSearch = button(frame, "×", 25, function()
         self.search = ""; self.searchBox:SetText(""); self:RefreshDungeons()
     end)
-    self.clearSearch:SetPoint("TOPLEFT", 233, -84)
+    self.clearSearch:SetPoint("TOPLEFT", 437, -14)
     self.rangeButton = button(frame, "", 105, function() self.range = not self.range; self:SaveFilters(); self:Refresh() end)
-    self.rangeButton:SetPoint("TOPLEFT", 273, -84)
+    self.rangeButton:SetPoint("TOPLEFT", 480, -14)
     self.characterButton = button(frame, "", 120, function()
         self.includeUnavailable = not self.includeUnavailable; self:SaveFilters(); self:Refresh()
     end)
-    self.characterButton:SetPoint("TOPLEFT", 390, -84)
+    self.characterButton:SetPoint("TOPLEFT", 596, -14)
     local language = button(frame, "", 64, function() self:OpenLanguageMenu() end)
     self.language = language
-    language:SetPoint("TOPRIGHT", -44, -45)
+    language:SetPoint("TOPRIGHT", -116, -14)
     local languageModule = addon.Clean(addon.Language, "table")
     if languageModule then addon.Read(languageModule.Attach, "boolean", languageModule, language, self) end
-    self.heading = label(frame, "", 288, -125, 730, 26)
-    self.catalog, self.catalogScroll = scrolling(frame, 22, -125, 235, 518)
-    self.searchHint = label(self.catalog, "", 4, 0, 220, 13)
-    self.catalogNotice = label(self.catalog, "", 4, 0, 220, 13)
-    self.questList, self.questScroll = scrolling(frame, 288, -159, 355, 484)
-    self.detail, self.detailScroll = scrolling(frame, 690, -159, 350, 484)
+    for _, entry in ipairs({ { "issue", -80 }, { "support", -48 } }) do
+        local key = entry[1]
+        local control = CreateFrame("Button", nil, frame); self[key .. "Link"] = control
+        control:SetSize(24, 24); control:SetPoint("TOPRIGHT", entry[2], -14)
+        local icon = control:CreateTexture(nil, "ARTWORK"); control.icon = icon
+        icon:SetSize(16, 16); icon:SetPoint("CENTER", control, "CENTER", 0, key == "support" and 3 or 0)
+        if key == "support" then
+            icon:SetTexture("Interface\\COMMON\\friendship-heart"); icon:SetTexCoord(.21875, .78125, .09375, .6875)
+            if type(icon.SetVertexColor) == "function" then icon:SetVertexColor(1, .36, .35, 1) end
+        else
+            local ok = type(icon.SetAtlas) == "function" and pcall(icon.SetAtlas, icon, "transmog-icon-chat")
+            if not ok or addon.Read(icon.GetAtlas, "string", icon) ~= "transmog-icon-chat" then icon:SetTexture("Interface\\ChatFrame\\UI-ChatIcon-Chat-Up") end
+        end
+        icon:Show()
+        control:SetScript("OnClick", function() self:ShowDeveloperLink(key) end)
+        control:SetScript("OnEnter", function() if type(icon.SetAlpha) == "function" then icon:SetAlpha(1) end; self:DeveloperLinkHint(control, key) end)
+        control:SetScript("OnLeave", function() if type(icon.SetAlpha) == "function" then icon:SetAlpha(.76) end; self:HideNavigationHint() end)
+        if type(icon.SetAlpha) == "function" then icon:SetAlpha(.76) end
+    end
+    self.heading = label(frame, "", 278, -66, 790, 26)
+    self.catalog, self.catalogScroll = scrolling(frame, 12, -66, 238, 577)
+    self.searchHint = label(self.catalog, "", 4, 0, 202, 13)
+    self.catalogNotice = label(self.catalog, "", 4, 0, 202, 13)
+    self.questList, self.questScroll = scrolling(frame, 278, -100, 370, 543)
+    self.detail, self.detailScroll = scrolling(frame, 674, -100, 400, 543)
     self.source = button(frame, "", 36, function() if self.quest then self:CopyLink(self.quest) end end)
     self.source:SetPoint("BOTTOMRIGHT", -43, 19)
     self.giver = button(frame, "", 36, function()
@@ -4257,7 +4362,7 @@ function UI:Create()
             addon.Read(f.IsShown, "boolean", f) == true then self:Fit() end
     end)
     frame:SetScript("OnShow", function(f) raiseWindow(f); self:Fit(); self:Refresh() end)
-    frame:SetScript("OnHide", function() self:HideNavigationHint(); local language = addon.Clean(addon.Language, "table"); if language then addon.Read(language.Cancel, "boolean", language, self) end; self.pendingSearch = nil; self.detailReferencesExpanded, self.detailChainExpanded = false, false; self.storyStates, self.storyOrder = nil, nil; if not self:ResetQuestLogControl() then return end; self.detailActionChoice = nil; self.languageMenuRevision = {}; self:ResetHistoryReading(); self:ResetRewardPresentation(); self:CloseCopyLink() end)
+    frame:SetScript("OnHide", function() local pending = self.developerLinkRequest; self.developerLinkRequest = nil; if pending and type(StaticPopup_Hide) == "function" then pcall(StaticPopup_Hide, "DUNGEONPRO_COPY_DEVELOPER_LINK") end; self:HideNavigationHint(); local language = addon.Clean(addon.Language, "table"); if language then addon.Read(language.Cancel, "boolean", language, self) end; self.pendingSearch = nil; self.detailReferencesExpanded, self.detailChainExpanded = false, false; self.storyStates, self.storyOrder = nil, nil; if not self:ResetQuestLogControl() then return end; self.detailActionChoice = nil; self.languageMenuRevision = {}; self:ResetHistoryReading(); self:ResetRewardPresentation(); self:CloseCopyLink() end)
     self:ApplyTheme()
     frame:Hide()
 end

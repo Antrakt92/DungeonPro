@@ -412,13 +412,75 @@ function addon.Context()
     return result
 end
 
--- Bulk browsing reads only an already available title; it never starts hydration.
+local function nameLocaleScope()
+    local function normalize(value)
+        if value == "enGB" then value = "enUS" elseif value == "esMX" then value = "esES" end
+        if value == "enUS" or value == "ruRU" or value == "deDE" or value == "frFR" or value == "esES" or
+            value == "itIT" or value == "ptBR" or value == "koKR" or value == "zhCN" or value == "zhTW" then return value end
+    end
+    local checker, gameGetter = issecretvalue, GetLocale
+    local database, language = addon.Clean(addon.db, "table"), addon.Clean(addon.Language, "table")
+    local previewGetter = language and addon.Clean(rawget(language, "GetSelection"), "function")
+    local choice = database and addon.Clean(rawget(database, "locale"), "string")
+    local preview = addon.Read(previewGetter, "string", language)
+    local game = addon.Read(gameGetter, "string")
+    local selected = preview or choice or "auto"
+    local locale = normalize(selected == "auto" and game or selected) or "enUS"
+    local function current()
+        if issecretvalue ~= checker or GetLocale ~= gameGetter or addon.db ~= database or addon.Language ~= language then return false end
+        if database and addon.Clean(rawget(database, "locale"), "string") ~= choice then return false end
+        if language and addon.Clean(rawget(language, "GetSelection"), "function") ~= previewGetter then return false end
+        if addon.Read(previewGetter, "string", language) ~= preview or addon.Read(gameGetter, "string") ~= game then return false end
+        return (not database or addon.Clean(rawget(database, "locale"), "string") == choice) and
+            addon.Read(previewGetter, "string", language) == preview and
+            issecretvalue == checker and GetLocale == gameGetter and addon.db == database and addon.Language == language and
+            (not language or rawget(language, "GetSelection") == previewGetter)
+    end
+    if current() then return locale, normalize(game), current end
+end
+
+local function translatedName(kind, key, definition, current, locale)
+    if not definition or not current then return nil end
+    if kind == "quests" and dialogueInteger(rawget(definition, "id"), 1, 9007199254740991) ~= key then return nil end
+    local root = addon.Clean(addon.nameTranslations, "table")
+    local dictionary = root and addon.Clean(rawget(root, locale), "table")
+    local entries = dictionary and addon.Clean(rawget(dictionary, kind), "table")
+    local entry = entries and addon.Clean(rawget(entries, key), "table")
+    local source = addon.Clean(rawget(definition, "name"), "string")
+    local original = entry and addon.Clean(rawget(entry, "source"), "string")
+    local name = entry and addon.Clean(rawget(entry, "name"), "string")
+    if not source or #source > 1024 or not source:find("%S") or source ~= original or
+        not name or #name > 1024 or not name:find("%S") then return nil end
+    local function fresh()
+        if not current() then return false end
+        local same = addon.Clean(addon.nameTranslations, "table") == root and addon.Clean(rawget(root, locale), "table") == dictionary and
+            addon.Clean(rawget(dictionary, kind), "table") == entries and addon.Clean(rawget(entries, key), "table") == entry and
+            addon.Clean(rawget(entry, "source"), "string") == source and addon.Clean(rawget(entry, "name"), "string") == name and
+            addon.Clean(rawget(definition, "name"), "string") == source
+        return same and current()
+    end
+    if fresh() then return name, fresh end
+end
+
+-- Bulk browsing reads an existing native title or a reviewed locale label;
+-- neither route starts quest hydration.
 function addon.CachedQuestName(id)
     local checker = issecretvalue
     id = dialogueInteger(id, 1, 9007199254740991)
     local character = addon.Clean(addon.char, "table")
     local catalogue = addon.Clean(addon.quests, "table")
     local definition = id and catalogue and addon.Clean(rawget(catalogue, id), "table")
+    local locale, clientLocale, localeCurrent = nameLocaleScope()
+    local function sourceCurrent()
+        return localeCurrent and localeCurrent() and addon.char == character and addon.quests == catalogue and
+            catalogue and rawget(catalogue, id) == definition and definition and
+            dialogueInteger(rawget(definition, "id"), 1, 9007199254740991) == id
+    end
+    local translated, translationCurrent
+    if id and definition and sourceCurrent() then
+        translated, translationCurrent = translatedName("quests", id, definition, sourceCurrent, locale)
+        if locale ~= clientLocale then return translated end
+    end
     local quest = addon.Clean(C_QuestLog, "table")
     local getter = quest and addon.Clean(rawget(quest, "GetTitleForQuestID"), "function")
     local playerGetter, localeGetter = addon.Clean(UnitGUID, "function"), GetLocale
@@ -426,10 +488,10 @@ function addon.CachedQuestName(id)
     local player = addon.Read(playerGetter, "string", "player")
     if not id or not character or not definition or not getter or not scope or
         not player or #player > 256 or not player:find("%S") or
-        dialogueInteger(rawget(definition, "id"), 1, 9007199254740991) ~= id then return nil end
+        dialogueInteger(rawget(definition, "id"), 1, 9007199254740991) ~= id then return translationCurrent and translationCurrent() and translated or nil end
     local function current()
         local currentPlayer = addon.Read(playerGetter, "string", "player")
-        if not scope() or currentPlayer ~= player then return false end
+        if not scope() or currentPlayer ~= player or not sourceCurrent() then return false end
         -- Finish with raw comparisons so sanitizer callbacks cannot replace ownership.
         local ok, same = pcall(function()
             return issecretvalue == checker and addon.char == character and addon.quests == catalogue and
@@ -441,18 +503,30 @@ function addon.CachedQuestName(id)
     end
     if not current() then return nil end
     local title = addon.Read(getter, "string", id)
-    if not title or #title > 1024 or not title:find("%S") or not current() then return nil end
+    if not title or #title > 1024 or not title:find("%S") or not current() then return translationCurrent and translationCurrent() and translated or nil end
     return title
 end
 
 function addon.QuestName(id)
     id = dialogueInteger(id, 1)
     if not id then return "#?" end
+    local bundled, bundleCurrent
     local function fallback()
+        if bundled and bundleCurrent and bundleCurrent() then return bundled end
         local quests = addon.Clean(addon.quests, "table")
         local definition = quests and addon.Clean(rawget(quests, id), "table")
         local name = definition and addon.Clean(rawget(definition, "name"), "string")
         return name and #name <= 1024 and name:find("%S") and name or ("#" .. id)
+    end
+    local catalogue = addon.Clean(addon.quests, "table")
+    local definition = catalogue and addon.Clean(rawget(catalogue, id), "table")
+    local locale, clientLocale, localeCurrent = nameLocaleScope()
+    local function sourceCurrent()
+        return localeCurrent and localeCurrent() and addon.quests == catalogue and catalogue and rawget(catalogue, id) == definition
+    end
+    bundled, bundleCurrent = translatedName("quests", id, definition, sourceCurrent, locale)
+    if locale ~= clientLocale then
+        return fallback()
     end
     local quest = addon.Clean(C_QuestLog, "table")
     local scope = restrictionNameScope()
@@ -460,7 +534,7 @@ function addon.QuestName(id)
     local getter, loader = addon.Clean(rawget(quest, "GetTitleForQuestID"), "function"),
         addon.Clean(rawget(quest, "RequestLoadQuestByID"), "function")
     local function current()
-        return scope() and addon.Clean(C_QuestLog, "table") == quest and
+        return sourceCurrent() and scope() and addon.Clean(C_QuestLog, "table") == quest and
             addon.Clean(rawget(quest, "GetTitleForQuestID"), "function") == getter and
             addon.Clean(rawget(quest, "RequestLoadQuestByID"), "function") == loader
     end
@@ -742,7 +816,11 @@ end
 
 function addon.DungeonName(d)
     d = addon.Clean(d, "table") or {}
-    local function fallback() return addon.Clean(d.name, "string") or "" end
+    local bundled, bundleCurrent
+    local function fallback()
+        if bundled and bundleCurrent and bundleCurrent() then return bundled end
+        return addon.Clean(d.name, "string") or ""
+    end
     local function identity()
         local instanceID = rawget(d, "instanceID")
         if type(issecretvalue) == "function" then
@@ -757,6 +835,14 @@ function addon.DungeonName(d)
         if fileID and mapID then return mapID, art, fileID end
     end
     local mapID, art, fileID = identity()
+    local key = addon.Clean(rawget(d, "key"), "string")
+    if not mapID and not key then return fallback() end
+    local locale, clientLocale, localeCurrent = nameLocaleScope()
+    local function sourceCurrent()
+        return localeCurrent and localeCurrent() and addon.Clean(rawget(d, "key"), "string") == key
+    end
+    if key then bundled, bundleCurrent = translatedName("dungeons", key, d, sourceCurrent, locale) end
+    if locale ~= clientLocale then return fallback() end
     local source = addon.Clean(d.name, "string")
     if not mapID then return fallback() end
     local wing = addon.Clean(d.wing, "string")
@@ -765,7 +851,7 @@ function addon.DungeonName(d)
     local choice = database and addon.Clean(database.locale, "string")
     local scope = restrictionNameScope()
     local function current()
-        if not scope or not scope() then return false end
+        if not sourceCurrent() or not scope or not scope() then return false end
         local currentMap, currentArt, currentFile = identity()
         return addon.Clean(GetRealZoneText, "function") == getter and
             currentMap == mapID and currentArt == art and currentFile == fileID and addon.Clean(d.name, "string") == source and

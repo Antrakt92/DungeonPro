@@ -27,7 +27,8 @@ def exercise(root):
             assert args[1] == "-p" and 1 <= len(args[2:]) <= 32
             calls.append(tuple(args[2:]))
             subprocess.run(args, cwd=root, capture_output=True, text=True, check=True)
-        elif args[1:] in (("scripts/catalog.py", "--check"), ("scripts/casefold.py", "--check")):
+        elif args[1:] in (("scripts/catalog.py", "--check"), ("scripts/casefold.py", "--check"),
+                          ("scripts/names.py", "--check")):
             return
         else:
             raise SyntaxFinished()

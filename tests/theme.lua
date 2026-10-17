@@ -69,6 +69,22 @@ test("repeated application uses bounded decoration", function()
     assert(#ui.frame.textures == count and #ui.back.textures == controls)
     assert(count == 8 and controls == 6)
 end)
+
+test("compact header divider stays above the raised catalogue and dungeon heading", function()
+    local ui = { frame = region() }
+    assert(addon.Theme.Apply(ui))
+    local found = false
+    for _, texture in ipairs(ui.frame.textures) do
+        if texture.color and texture.color[1] > .8 and texture.color[2] > .6 and texture.color[3] < .4 then
+            local point = texture.points and texture.points[1]
+            if point and point[1] == "TOPLEFT" then
+                assert(point[5] > -66 and point[5] < -40)
+                found = true
+            end
+        end
+    end
+    assert(found)
+end)
 test("recycled selected dungeon clears accent and restores border", function()
     local r = row()
     assert(addon.Theme.StyleRow(r, {kind="dungeon",selected=true}))

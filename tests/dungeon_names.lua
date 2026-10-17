@@ -11,6 +11,7 @@ local upper = { name = "Upper Blackrock Spire", instanceID = 229, wing = "upper"
 local ordinary = { name = "Source dungeon", instanceID = 230 }
 local function check(label, test)
     addon.db = { locale = "enUS" }
+    addon.Language, addon.nameTranslations = nil, nil
     issecretvalue = function(value) return value == secret end
     GetLocale = function() return "enUS" end
     GetRealZoneText = function(id, ...)
@@ -26,10 +27,11 @@ check("Shared instance retains distinct wing names with the actual client adapte
     assert(addon.DungeonName(lower) ~= addon.DungeonName(upper))
     assert(lower.name == "Lower Blackrock Spire" and upper.name == "Upper Blackrock Spire")
 end)
-check("All ten dictionaries format the unchanged native base with distinct localized wings", function()
+check("All ten dictionaries format matching-client native bases with distinct localized wings", function()
     local count = 0
     for locale, strings in pairs(addon.locales) do
         addon.db.locale = locale
+        GetLocale = function() return locale end
         GetRealZoneText = function() return "Название клиента" end
         assert(type(strings.DUNGEON_WING_lower) == "string")
         assert(type(strings.DUNGEON_WING_upper) == "string")
@@ -44,11 +46,14 @@ end)
 check("Auto locale and unsupported locale fallback keep the native base", function()
     addon.db.locale = "auto"; GetLocale = function() return "ruRU" end
     assert(addon.DungeonName(lower) == "Client dungeon — Нижнее крыло")
+    GetLocale = function() return "enUS" end
     addon.db.locale = "unsupported"
     assert(addon.DungeonName(upper) == "Client dungeon — Upper wing")
     addon.db.locale = "esMX"
+    GetLocale = function() return "esMX" end
     assert(addon.DungeonName(lower) == string.format(addon.locales.esES.DUNGEON_WING_lower, "Client dungeon"))
     addon.db.locale = "enGB"
+    GetLocale = function() return "enGB" end
     assert(addon.DungeonName(upper) == "Client dungeon — Upper wing")
 end)
 check("Missing empty throwing malformed and restricted native names preserve exact source fallback", function()
@@ -205,6 +210,54 @@ check("Art table file map and identity-route drift reject detached names and rec
         assert(addon.DungeonName(dungeon) == "Source", mode)
         GetRealZoneText = function(id) return "Fresh native label " .. id end
         assert(addon.DungeonName(dungeon) == "Fresh native label " .. (mode == "map" and 2999 or 3065))
+    end
+end)
+local function names()
+    addon.nameTranslations = { ruRU = { dungeons = { test = { source = "Source dungeon", name = "Подземелье" } } },
+        deDE = { dungeons = { test = { source = "Source dungeon", name = "Verlies" } } } }
+end
+check("Forced dungeon locale uses exact source labels without native names and keeps identities unchanged",function()
+    names();addon.db.locale="ruRU";local d={key="test",name="Source dungeon",instanceID=230}
+    GetRealZoneText=function()error("different client language must not be queried")end
+    assert(addon.DungeonName(d)=="Подземелье" and d.instanceID==230 and d.name=="Source dungeon")
+    GetLocale=nil;assert(addon.DungeonName({key="test",name="Source dungeon"})=="Подземелье")
+end)
+check("Matching native dungeon names take priority and missing native names use reviewed labels",function()
+    names();addon.db.locale="ruRU";GetLocale=function()return"ruRU"end
+    local d={key="test",name="Source dungeon",instanceID=230}
+    assert(addon.DungeonName(d)=="Client dungeon")
+    GetRealZoneText=nil;assert(addon.DungeonName(d)=="Подземелье")
+end)
+check("Forced missing dungeon data keeps exact English source instead of another client language",function()
+    addon.db.locale="ruRU";GetRealZoneText=function()error("wrong locale")end
+    assert(addon.DungeonName(ordinary)==ordinary.name)
+    GetLocale=function()return"ruRU"end;addon.db.locale="enUS"
+    assert(addon.DungeonName(ordinary)==ordinary.name)
+end)
+check("Dungeon language preview switches and restores complete names without double wing suffixes",function()
+    names();local preview="ruRU";addon.Language={GetSelection=function()return preview end}
+    local d={key="test",name="Source dungeon",instanceID=230,wing="lower"}
+    assert(addon.DungeonName(d)=="Подземелье")
+    preview="deDE";assert(addon.DungeonName(d)=="Verlies")
+    preview=nil;assert(addon.DungeonName(d)=="Client dungeon — Lower wing" and addon.db.locale=="enUS")
+end)
+check("Dungeon source drift and restricted translated labels cannot authorize a wrong name",function()
+    names();addon.db.locale="ruRU";local d={key="test",name="Source dungeon",instanceID=230}
+    d.name="New source";assert(addon.DungeonName(d)=="New source")
+    d.name="Source dungeon";addon.nameTranslations.ruRU.dungeons.test.name=secret
+    assert(addon.DungeonName(d)=="Source dungeon")
+end)
+check("Translated dungeon sanitization cannot leak detached locale data or renamed sources",function()
+    for mode=1,3 do
+        names();addon.db.locale="ruRU";local d={key="test",name="Source dungeon",instanceID=230};local once
+        issecretvalue=function(value)
+            if value=="Подземелье" and not once then once=true
+                if mode==1 then addon.db.locale="deDE" elseif mode==2 then addon.nameTranslations={}
+                else d.name="New source"end
+            end
+            return value==secret
+        end
+        assert(addon.DungeonName(d)==(mode==3 and "New source" or "Source dungeon"))
     end
 end)
 print("Dungeon name checks passed: " .. total)

@@ -936,6 +936,8 @@ check("An unaccepted quest can preview only its explicitly loaded client rewards
 end)
 check("Shared Blackrock map names retain separate wing cards search and selection", function()
     local ui = addon.UI
+    local gameLocale = GetLocale
+    GetLocale = function() return "enUS" end
     local native, locale, search, range = GetRealZoneText, addon.db.locale, ui.search, ui.range
     local dungeon, quest, history, selected = ui.dungeon, ui.quest, ui.detailHistory, addon.char.selectedDungeon
     GetRealZoneText = function(id) if id == 229 then return "Native Spire" end end
@@ -953,7 +955,7 @@ check("Shared Blackrock map names retain separate wing cards search and selectio
     local count = 0
     for _, card in ipairs(ui.cards) do if card.shown then count = count + 1; assert(card.title.text == addon.L("DUNGEON_WING_upper", "Native Spire")) end end
     assert(count == 1)
-    GetRealZoneText, addon.db.locale, ui.search, ui.range = native, locale, search, range
+    GetRealZoneText, addon.db.locale, ui.search, ui.range, GetLocale = native, locale, search, range, gameLocale
     ui.dungeon, ui.quest, ui.detailHistory, addon.char.selectedDungeon = dungeon, quest, history, selected
     ui:Refresh()
 end)

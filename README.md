@@ -18,8 +18,8 @@ Level ranges are provisional recommendations.
   Search by dungeon, listed quest, recorded NPC or source place, or enter an exact
   quest ID. ID searches show only dungeons that directly list that quest. Matches identify
   the related quest on the dungeon card; View quest opens its details directly.
-  Localized quest names are included when already available from the client.
-  Recorded source names keep their original language. An NPC match may be a
+  Search includes bundled translated quest names and names already available from the client.
+  NPC and place references keep their recorded language. An NPC match may be a
   quest giver, turn-in NPC or starter-item drop source; it does not confirm pickup
   availability.
   Search ignores letter case, including
@@ -96,6 +96,8 @@ Level ranges are provisional recommendations.
 - World map, optional TomTom and a built-in direction arrow. The arrow points
   toward a coordinate; it does not find paths around terrain or plan transport.
 - Browse compact quest rows with status icons and cached item reward previews.
+  Search and level/character filters share the header with the language selector.
+  The message and heart icons offer issue-report and project-support links for copying.
   Select a quest to expand its related steps in place, then select any step to
   read its details without losing the opened list. Completed steps remain visible.
   Indented branches connect to their target; a map badge marks quests listed for
@@ -155,8 +157,10 @@ Level ranges are provisional recommendations.
 - Interface dictionaries for English, Russian, German, French, Spanish, Italian,
   Portuguese, Korean, Simplified Chinese and Traditional Chinese. enGB and esMX
   use English and Spanish. Translations and layout still need in-game review.
-  Quest and item names use client data when available. The current NPC can also
-  use its localized name; other quest-giver names use the source catalogue.
+  Dungeon and quest names follow the selected language where a verified title is
+  available. Missing translations retain their source names. Item names follow
+  the game client. The current NPC can also use its localized name; other
+  quest-giver names use the source catalogue.
 
 Unknown prerequisites or incomplete dungeon coverage never produce a green
 preparation result. A quest listed in a storyline is not automatically treated

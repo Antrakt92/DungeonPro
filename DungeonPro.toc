@@ -11,6 +11,7 @@ Core\Namespace.lua
 Locales\Strings.lua
 Locales\Translations.lua
 Database\Catalog.lua
+Database\NameTranslations.lua
 Database\SearchCaseFold.lua
 Core\Planner.lua
 Core\QuestTree.lua
