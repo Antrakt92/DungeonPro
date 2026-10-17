@@ -47,6 +47,8 @@ Level ranges are provisional recommendations.
   and some dungeon associations still need checking.
 - Separate story order and shared story groups for chains whose hard
   prerequisites still need checking.
+  Long story lists start compact and expand to show their quests. Known
+  prerequisites and preparation actions stay visible independently.
 - Item-started quests show the known item and drop dungeon separately, including
   quests whose starter drops in a different dungeon. Multiple starting NPCs,
   objects or item-drop sources stay visible separately; a location visit does
@@ -63,6 +65,8 @@ Level ranges are provisional recommendations.
   reference objectives and do not replace quest-log progress.
 - Sourced creature objectives show the listed targets and any verified counts
   before pickup, separately from live quest-log progress.
+- Other sourced tasks, such as burning remains or an archive, have their own
+  reference section, with live quest-log progress shown separately.
 - Items supplied by a quest have their own section. They may already have been
   used or consumed, so an empty bag count does not mean preparation has failed.
   Starter, collection and supplied items can show native icons and hover tooltips;
