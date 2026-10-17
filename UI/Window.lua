@@ -27,6 +27,32 @@ function UI:CurrentDetailAction()
         action.place == place and action.id == id and action.kind == kind then return action end
 end
 
+function UI:NavigatePrimary(action, mapOnly, giver)
+    if not action then return false end
+    local frame, quest, dungeon, engine, character, generation = self.frame, self.quest, self.dungeon, self.engine, addon.char, self.rewardGeneration
+    local navigation = addon.Clean(addon.Navigation, "table")
+    local method = navigation and addon.Clean(navigation[mapOnly and "Map" or "Start"], "function")
+    if not frame or not method then return false end
+    local hide, shown, getter = frame.Hide, frame.IsShown, engine and engine.Current
+    local place, id, kind = action.place, action.id, action.kind
+    local coordinates, checker = self.giverHasCoordinates, issecretvalue
+    local slot = giver and "giverAction" or "action"
+    local function current()
+        local fresh = not getter or addon.Read(getter, "boolean", engine) == true
+        return fresh and addon.UI == self and self.frame == frame and self.quest == quest and self.dungeon == dungeon and
+            self.engine == engine and addon.char == character and self.rewardGeneration == generation and
+            addon.Navigation == navigation and navigation[mapOnly and "Map" or "Start"] == method and
+            frame.Hide == hide and frame.IsShown == shown and (not engine or engine.Current == getter) and
+            self[slot] == action and action.place == place and action.id == id and action.kind == kind and
+            (not giver or self.giverHasCoordinates == coordinates) and issecretvalue == checker
+    end
+    if not current() or addon.Read(shown, "boolean", frame) ~= true or not current() then return false end
+    -- Map acknowledges a request; Start additionally owns a live guide, not map visibility.
+    local accepted = addon.Read(method, "boolean", mapOnly and place or action)
+    if accepted ~= true or not current() then return false end
+    return pcall(hide, frame)
+end
+
 local LANGUAGE_CHOICES = { { "auto" }, { "enUS", "English" }, { "ruRU", "Русский" }, { "deDE", "Deutsch" },
         { "frFR", "Français" }, { "esES", "Español" }, { "itIT", "Italiano" }, { "ptBR", "Português" },
         { "koKR", "한국어" }, { "zhCN", "简体中文" }, { "zhTW", "繁體中文" } }
@@ -3428,20 +3454,19 @@ function UI:Create()
     self.detail, self.detailScroll = scrolling(frame, 690, -218, 350, 425)
     self.map = button(frame, "", 160, function()
         local action = self:CurrentDetailAction()
-        if action then addon.Navigation.Map(action.place) end
+        if action then self:NavigatePrimary(action, true) end
     end)
     self.map:SetPoint("TOPLEFT", 690, -84)
     self.guide = button(frame, "", 172, function()
         local action = self:CurrentDetailAction()
-        if action then addon.Navigation.Start(action) end
+        if action then self:NavigatePrimary(action, false) end
     end)
     self.guide:SetPoint("TOPLEFT", 856, -84)
     self.source = button(frame, "", 160, function() if self.quest then self:CopyLink(self.quest) end end)
     self.source:SetPoint("BOTTOMRIGHT", -43, 19)
     self.giver = button(frame, "", 195, function()
         if self.giverAction then
-            if self.giverHasCoordinates then addon.Navigation.Start(self.giverAction)
-            else addon.Navigation.Map(self.giverAction.place) end
+            self:NavigatePrimary(self.giverAction, not self.giverHasCoordinates, true)
         end
     end)
     self.giver:SetPoint("BOTTOMLEFT", 690, 19)

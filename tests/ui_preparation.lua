@@ -8041,4 +8041,85 @@ check("Expired and nested search renders cannot reset a newer catalogue reading 
     end
 end)
 
+local function primaryHandoffFixture(mapOnlyGiver)
+    local f={navigation=addon.Navigation,hide=ui.frame.Hide,search=ui.search,quest=ui.quest,dungeon=ui.dungeon,
+        definition=addon.quests[35001],context=addon.Context,character=addon.char,root=addon.UI,hidden=0}
+    addon.Context=function()return{level=60,active=function()return false end,completed=function()return false end}end
+    addon.quests[35001]={id=35001,minLevel=1,requirementsKnown=true,start=mapOnlyGiver and
+        {mapID=1436,name="Known map-only giver"}or{mapID=1436,x=56.3,y=47.5,name="Known giver"}}
+    ui.frame:Show();ui.search="retained navigation query";showDetail(35001)
+    ui.frame.Hide=function(frame)
+        f.hidden=f.hidden+1;f.hide(frame)
+        frame.scripts.OnHide(frame)
+    end
+    function f:finish()
+        ui.frame.Hide=self.hide;addon.Navigation=self.navigation;addon.quests[35001]=self.definition;addon.Context=self.context
+        addon.char=self.character;addon.UI=self.root
+        ui.search,ui.quest,ui.dungeon=self.search,self.quest,self.dungeon
+        ui.frame:Show();ui:Refresh()
+    end
+    return f
+end
+check("Successful primary navigation hands off the planner through its real hide lifecycle and retains selection on reopen",function()
+    for _,route in ipairs({"guide","map","giver","giver-map"})do
+        local f=primaryHandoffFixture(route=="giver-map")
+        local action,giver,dungeon,quest=ui.action,ui.giverAction,ui.dungeon,ui.quest
+        local history=ui.detailHistory;ui.detailOffsets={ [2]=70 };ui.detailOffsetsOwner=history
+        local calls=0
+        addon.Navigation={Start=function(value)
+            calls=calls+1;assert(value==(route=="guide"and action or giver));return true
+        end,Map=function(value)
+            calls=calls+1;assert(value==(route=="map"and action.place or giver.place));return true,false
+        end}
+        ui[route=="giver-map"and"giver"or route].scripts.OnClick()
+        assert(calls==1 and f.hidden==1 and not ui.frame.shown,"accepted primary navigation must expose the destination view")
+        assert(ui.search=="retained navigation query"and ui.dungeon==dungeon and ui.quest==quest)
+        assert(ui.detailOffsets==nil and ui.detailHistory==history,"normal OnHide cleanup remains in effect")
+        ui.frame:Show();ui.frame.scripts.OnShow(ui.frame)
+        assert(ui.frame.shown and ui.search=="retained navigation query"and ui.dungeon==dungeon and ui.quest==quest)
+        assert(calls==1,"reopening cannot start navigation again")
+        f:finish()
+    end
+end)
+check("Failed throwing unavailable and restricted primary navigation acknowledgements leave the planner open",function()
+    for _,mode in ipairs({"false","nil","throw","missing","restricted"})do
+        local f=primaryHandoffFixture();local calls=0;local checker=issecretvalue
+        local result={restricted=true}
+        local method=function()
+            calls=calls+1
+            if mode=="throw"then error("navigation unavailable")end
+            if mode=="false"then return false elseif mode=="restricted"then return result end
+        end
+        if mode=="restricted"then issecretvalue=function(value)if value==result then return true end;return checker and checker(value)or false end end
+        addon.Navigation=mode=="missing"and{}or{Start=method}
+        ui.guide.scripts.OnClick()
+        assert(calls==(mode=="missing"and 0 or 1)and f.hidden==0 and ui.frame.shown)
+        issecretvalue=checker;f:finish()
+    end
+end)
+check("Accepted primary navigation cannot hide a newer card engine owner or helper context",function()
+    for _,mode in ipairs({"quest","engine","character","generation","action","place","helper","navigation","owner","current"})do
+        local f=primaryHandoffFixture();local engine,generation=ui.engine,ui.rewardGeneration
+        local action,place=ui.action,ui.action.place;local getter=engine.Current;local calls=0
+        addon.Navigation={Start=function()
+            calls=calls+1
+            if mode=="quest"then showDetail(3)
+            elseif mode=="engine"then ui.engine={}
+            elseif mode=="character"then addon.char={}
+            elseif mode=="generation"then ui.rewardGeneration={}
+            elseif mode=="action"then ui.action={}
+            elseif mode=="place"then action.place={mapID=1436}
+            elseif mode=="helper"then addon.Navigation.Start=function()return true end
+            elseif mode=="navigation"then addon.Navigation={Start=function()return true end}
+            elseif mode=="owner"then addon.UI={frame=ui.frame}
+            else engine.Current=function()return false end end
+            return true
+        end}
+        ui.guide.scripts.OnClick()
+        assert(calls==1 and f.hidden==0 and ui.frame.shown,"a stale accepted request cannot hide newer preparation")
+        action.place=place;engine.Current=getter;ui.engine=engine;ui.rewardGeneration=generation
+        f:finish()
+    end
+end)
+
 print("Preparation UI modeled checks passed: " .. total .. " (no native layout validation)")

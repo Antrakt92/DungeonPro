@@ -147,9 +147,14 @@ end)
 check("Native map and waypoint use the resolved ancestor from the known graph fixture", function()
     withKnownDefias(function()
         addon.UI.quest = 166; addon.UI:Refresh()
+        local quest, dungeon = addon.UI.quest, addon.UI.dungeon
         addon.UI.guide.scripts.OnClick()
         assert(#waypoints == 1 and waypoints[1].mapID == 1436)
         assert(math.abs(waypoints[1].x - 0.563) < 0.0001 and mapCalls == 1)
+        assert(not addon.UI.frame:IsShown(), "accepted guide must hand off the planner")
+        SlashCmdList.DUNGEONPRO("")
+        assert(addon.UI.frame:IsShown() and addon.UI.quest == quest and addon.UI.dungeon == dungeon,
+            "explicit reopening must preserve the inspected selection")
     end)
 end)
 check("Guidance updates both coordinate components", function()
@@ -728,6 +733,8 @@ check("Hidden Enemies starter visits Neeru while preserving the separate Thrall 
     assert(#waypoints == before + 1 and actual.mapID == 1454)
     assert(actual.x == 0.494 and actual.y == 0.504)
     assert(q.finish.npcID == 4949 and ui.engine:State(5730).status == "UNAVAILABLE")
+    assert(not ui.frame:IsShown(), "accepted giver visit must hand off the planner")
+    ui:Toggle(); assert(ui.frame:IsShown() and ui.quest == 5730 and #waypoints == before + 1)
     addon.Navigation.Stop()
     ui.quest, ui.detailHistory = previous, history; ui:Refresh()
 end)
@@ -749,6 +756,8 @@ check("Actual partial Defias chain keeps held prerequisite work without claiming
     local actual = waypoints[#waypoints]
     assert(#waypoints == before + 1 and actual.mapID == place.mapID)
     assert(actual.x == place.x / 100 and actual.y == place.y / 100)
+    assert(not ui.frame:IsShown(), "accepted prerequisite guide must hand off the planner")
+    ui:Toggle(); assert(ui.frame:IsShown() and ui.quest == 166 and #waypoints == before + 1)
     addon.Navigation.Stop()
     C_QuestLog.IsOnQuest, C_QuestLog.ReadyForTurnIn = active, ready
     ui.quest, ui.detailHistory = previous, history; ui:Refresh()

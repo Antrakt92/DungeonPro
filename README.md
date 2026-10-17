@@ -98,6 +98,8 @@ Level ranges are provisional recommendations.
   and preparation steps remain separate.
 - A separate quest-giver button opens a known zone or guides to a known location.
   Visiting a giver does not confirm that the quest is available to pick up.
+  The main map, guide and quest-giver buttons close the planner after an accepted
+  request, leaving room for the map and arrow. Reopen with `/DP` to continue browsing.
 - Expand reported positions when a giver has several sourced points, then choose
   a point to visit. Movement and quest phases may affect which position is current.
 - Original quest text is saved when you open its quest offer, including
