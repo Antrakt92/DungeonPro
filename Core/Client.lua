@@ -477,6 +477,49 @@ function addon.ItemDataResult(id, success)
     end
 end
 
+-- This explicit action opens native UI and selects a held quest; capability reads never do.
+local function questLogOpener(id)
+    local checker = issecretvalue
+    id = dialogueInteger(id, 1, 9007199254740991)
+    local character = addon.Clean(addon.char, "table")
+    local catalogue = addon.Clean(addon.quests, "table")
+    local definition = id and catalogue and addon.Clean(rawget(catalogue, id), "table")
+    local quest = addon.Clean(C_QuestLog, "table")
+    local held = quest and addon.Clean(quest.IsOnQuest, "function")
+    local logIndex = quest and addon.Clean(quest.GetLogIndexForQuestID, "function")
+    local opener = addon.Clean(QuestMapFrame_OpenToQuestDetails, "function")
+    if not id or not character or not definition or not held or not logIndex or not opener or
+        dialogueInteger(rawget(definition, "id"), 1, 9007199254740991) ~= id then return nil end
+    local function current()
+        -- No sanitizer/native callbacks after these final raw ownership comparisons.
+        local ok, same = pcall(function()
+            return issecretvalue == checker and addon.char == character and addon.quests == catalogue and
+                rawget(catalogue, id) == definition and rawget(definition, "id") == id and
+                C_QuestLog == quest and quest.IsOnQuest == held and quest.GetLogIndexForQuestID == logIndex and
+                QuestMapFrame_OpenToQuestDetails == opener
+        end)
+        return ok and same == true
+    end
+    if not current() then return nil end
+    local active = addon.Read(held, "boolean", id)
+    if not current() or active ~= true then return nil end
+    local index = dialogueInteger(addon.Read(logIndex, "number", id), 1, 9007199254740991)
+    if not current() or not index then return nil end
+    return opener, id
+end
+
+function addon.CanOpenQuestLog(id)
+    return questLogOpener(id) ~= nil
+end
+
+function addon.OpenQuestLogQuest(id)
+    local opener, questID = questLogOpener(id)
+    if not opener then return false end
+    -- A successful call only confirms dispatch, not native panel visibility.
+    local ok = pcall(opener, questID)
+    return ok
+end
+
 function addon.QuestLogCapacity()
     local quest = addon.Clean(C_QuestLog, "table")
     local entries = quest and addon.Clean(quest.GetNumQuestLogEntries, "function")
