@@ -1877,7 +1877,8 @@
           }
         ]
       },
-      "requirementsKnown": false
+      "requirementsKnown": false,
+      "startsInside": true
     },
     {
       "id": 6565,
@@ -1956,7 +1957,8 @@
       "storyline": [
         1198,
         1200
-      ]
+      ],
+      "startsInside": true
     },
     {
       "id": 1198,
@@ -2883,7 +2885,8 @@
             "zoneName": "Stranglethorn Vale"
           }
         ]
-      }
+      },
+      "startsInside": true
     },
     {
       "id": 2926,
@@ -3793,7 +3796,8 @@
         "npcID": 4508,
         "name": "Willix the Importer",
         "zoneName": "Razorfen Kraul"
-      }
+      },
+      "startsInside": true
     },
     {
       "id": 1221,
@@ -3848,7 +3852,8 @@
           "itemID": 5825,
           "name": "Treshala's Pendant"
         }
-      ]
+      ],
+      "startsInside": true
     },
     {
       "id": 1100,
@@ -5565,7 +5570,8 @@
       "storyline": [
         2398,
         2240
-      ]
+      ],
+      "startsInside": true
     },
     {
       "id": 2398,
@@ -6671,7 +6677,8 @@
             2284
           ]
         }
-      ]
+      ],
+      "startsInside": true
     },
     {
       "id": 2201,
@@ -6719,7 +6726,8 @@
           "itemID": 7671,
           "name": "Shattered Necklace Topaz"
         }
-      ]
+      ],
+      "startsInside": true
     },
     {
       "id": 2338,
