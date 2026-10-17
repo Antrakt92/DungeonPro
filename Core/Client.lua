@@ -412,6 +412,39 @@ function addon.Context()
     return result
 end
 
+-- Bulk browsing reads only an already available title; it never starts hydration.
+function addon.CachedQuestName(id)
+    local checker = issecretvalue
+    id = dialogueInteger(id, 1, 9007199254740991)
+    local character = addon.Clean(addon.char, "table")
+    local catalogue = addon.Clean(addon.quests, "table")
+    local definition = id and catalogue and addon.Clean(rawget(catalogue, id), "table")
+    local quest = addon.Clean(C_QuestLog, "table")
+    local getter = quest and addon.Clean(rawget(quest, "GetTitleForQuestID"), "function")
+    local playerGetter, localeGetter = addon.Clean(UnitGUID, "function"), GetLocale
+    local scope = restrictionNameScope()
+    local player = addon.Read(playerGetter, "string", "player")
+    if not id or not character or not definition or not getter or not scope or
+        not player or #player > 256 or not player:find("%S") or
+        dialogueInteger(rawget(definition, "id"), 1, 9007199254740991) ~= id then return nil end
+    local function current()
+        local currentPlayer = addon.Read(playerGetter, "string", "player")
+        if not scope() or currentPlayer ~= player then return false end
+        -- Finish with raw comparisons so sanitizer callbacks cannot replace ownership.
+        local ok, same = pcall(function()
+            return issecretvalue == checker and addon.char == character and addon.quests == catalogue and
+                rawget(catalogue, id) == definition and rawget(definition, "id") == id and
+                C_QuestLog == quest and rawget(quest, "GetTitleForQuestID") == getter and
+                UnitGUID == playerGetter and GetLocale == localeGetter
+        end)
+        return ok and same == true
+    end
+    if not current() then return nil end
+    local title = addon.Read(getter, "string", id)
+    if not title or #title > 1024 or not title:find("%S") or not current() then return nil end
+    return title
+end
+
 function addon.QuestName(id)
     id = dialogueInteger(id, 1)
     if not id then return "#?" end

@@ -43,6 +43,7 @@ def main():
     run(lua, "tests/carried_items.lua")
     run(lua, "tests/quest_log_capacity.lua")
     run(lua, "tests/quest_log_open.lua")
+    run(lua, "tests/cached_quest_names.lua")
     run(lua, "tests/offers.lua")
     run(lua, "tests/offered_rewards.lua")
     run(lua, "tests/offered_objectives.lua")
