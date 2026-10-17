@@ -12158,6 +12158,12 @@
         [
           4024
         ]
+      ],
+      "objectiveItems": [
+        {
+          "itemID": 11230,
+          "name": "Encased Fiery Essence"
+        }
       ]
     },
     {
@@ -12376,7 +12382,24 @@
         ],
         "creatureDisplayID": 8331,
         "portraitSource": "https://www.wowhead.com/forever/npc=9077"
-      }
+      },
+      "objectiveKills": [
+        {
+          "npcID": 8891,
+          "name": "Anvilrage Guardsman",
+          "quantity": 15
+        },
+        {
+          "npcID": 8890,
+          "name": "Anvilrage Warden",
+          "quantity": 10
+        },
+        {
+          "npcID": 8892,
+          "name": "Anvilrage Footman",
+          "quantity": 5
+        }
+      ]
     },
     {
       "id": 4082,
@@ -12431,6 +12454,23 @@
           "ids": [
             4081
           ]
+        }
+      ],
+      "objectiveKills": [
+        {
+          "npcID": 8894,
+          "name": "Anvilrage Medic",
+          "quantity": 10
+        },
+        {
+          "npcID": 8893,
+          "name": "Anvilrage Soldier",
+          "quantity": 10
+        },
+        {
+          "npcID": 8895,
+          "name": "Anvilrage Officer",
+          "quantity": 10
         }
       ]
     },
@@ -12906,7 +12946,13 @@
         ],
         "creatureDisplayID": 8331,
         "portraitSource": "https://www.wowhead.com/forever/npc=9077"
-      }
+      },
+      "objectiveKills": [
+        {
+          "npcID": 9033,
+          "name": "General Angerforge"
+        }
+      ]
     },
     {
       "id": 4133,
@@ -18024,7 +18070,13 @@
         "mapID": 1423,
         "x": 80.4,
         "y": 58
-      }
+      },
+      "objectiveItems": [
+        {
+          "itemID": 13172,
+          "name": "Grimm's Premium Tobacco"
+        }
+      ]
     },
     {
       "id": 8945,
@@ -18201,7 +18253,13 @@
         "y": 59.8,
         "creatureDisplayID": 10468,
         "portraitSource": "https://www.wowhead.com/forever/npc=11039"
-      }
+      },
+      "objectiveKills": [
+        {
+          "npcID": 10811,
+          "name": "Archivist Galford"
+        }
+      ]
     },
     {
       "id": 5243,
@@ -18338,6 +18396,12 @@
       "storyline": [
         5262,
         5263
+      ],
+      "objectiveItems": [
+        {
+          "itemID": 13251,
+          "name": "Head of Baron Rivendare"
+        }
       ]
     },
     {
@@ -18503,7 +18567,13 @@
             "zoneName": "Eastern Plaguelands"
           }
         ]
-      }
+      },
+      "objectiveItems": [
+        {
+          "itemID": 15880,
+          "name": "Head of Ramstein the Gorger"
+        }
+      ]
     },
     {
       "id": 8968,
