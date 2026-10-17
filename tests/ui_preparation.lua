@@ -7323,4 +7323,43 @@ check("Effective menu checkmarks preserve raw aliases and unsupported preference
     restore();addon.db.locale=locale;ui:Refresh()
 end)
 
+
+check("Enter releases search focus without changing query browsing or selection",function()
+    local oldSearch,oldText=ui.search,ui.searchBox:GetText()
+    local function visibleCards()
+        local out={}
+        for _,card in ipairs(ui.cards)do
+            out[#out+1]={card=card,shown=card.shown,title=card.title.text}
+        end
+        return out
+    end
+    for _,query in ipairs({"","  Quest 2  ","Крепость"})do
+        ui.searchBox:SetText(query);ui.searchBox.scripts.OnTextChanged(ui.searchBox)
+        ui.searchBox:SetFocus()
+        local cards=visibleCards()
+        local dungeon,quest,engine=ui.dungeon,ui.quest,ui.engine
+        local saved,filters=addon.char.selectedDungeon,addon.char.filters
+        local range,preparation,unavailable=ui.range,ui.preparation,ui.includeUnavailable
+        local hint,notice,placeholder=ui.searchHint.shown,ui.catalogNotice.shown,ui.searchPlaceholder.shown
+        assert(type(ui.searchBox.scripts.OnEnterPressed)=="function","Search requires explicit Enter focus release")
+        ui.searchBox.scripts.OnEnterPressed(ui.searchBox)
+        assert(not ui.searchBox.focused and ui.search==query and ui.searchBox:GetText()==query)
+        assert(ui.dungeon==dungeon and ui.quest==quest and ui.engine==engine and addon.char.selectedDungeon==saved)
+        assert(addon.char.filters==filters and ui.range==range and ui.preparation==preparation and ui.includeUnavailable==unavailable)
+        assert(ui.searchHint.shown==hint and ui.catalogNotice.shown==notice and ui.searchPlaceholder.shown==placeholder)
+        for i,state in ipairs(cards)do
+            assert(ui.cards[i]==state.card and state.card.shown==state.shown and state.card.title.text==state.title)
+        end
+        ui.searchBox:SetFocus();ui.searchBox.scripts.OnEscapePressed(ui.searchBox)
+        assert(not ui.searchBox.focused and ui.search==query and ui.searchBox:GetText()==query)
+    end
+    ui.searchBox:SetText("Quest");ui.searchBox.scripts.OnTextChanged(ui.searchBox)
+    local handler=ui.searchBox.scripts.OnEnterPressed
+    ui.frame:Hide();ui.frame.scripts.OnHide();ui.frame:Show();ui.frame.scripts.OnShow()
+    assert(ui.searchBox.scripts.OnEnterPressed==handler and ui.search=="Quest")
+    ui.searchBox:SetFocus();handler(ui.searchBox)
+    assert(not ui.searchBox.focused and ui.searchBox:GetText()=="Quest")
+    ui.search=oldSearch;ui.searchBox:SetText(oldText);ui:Refresh()
+end)
+
 print("Preparation UI modeled checks passed: " .. total .. " (no native layout validation)")
