@@ -3,6 +3,7 @@ local methods = {}
 function methods:SetSize(w, h) self.width, self.height = w, h end
 function methods:SetWidth(w) self.width = w end
 function methods:SetHeight(h) self.height = h end
+function methods:SetParent(parent) self.parent = parent end
 function methods:SetVerticalScroll(value) self.verticalScroll = value; self.scrollWrites = (self.scrollWrites or 0) + 1 end
 function methods:GetWidth() return self.width or 340 end
 function methods:GetHeight() return self.height or 100 end
@@ -1384,6 +1385,35 @@ check("Navigation probe rejects malformed restricted hidden and unknown displaye
         for _,line in ipairs(output)do assert(#line<=240 and not line:find("nan",1,true)and not line:find("inf",1,true))end
     end
     addon.Navigation.ProbeGeometry,print,issecretvalue=getter,originalPrint,checker
+end)
+
+check("Actual startup recovers a late minimap and its launcher opens the planner while respecting current hide preferences", function()
+    local native, timer, prefs = Minimap, C_Timer, addon.db.minimap
+    local queue = {}
+    C_Timer = { After = function(delay, fn)
+        if delay == 0.25 then queue[#queue + 1] = fn else timer.After(delay, fn) end
+    end }
+    Minimap = create("Frame"); Minimap:SetWidth(0)
+    local legacy = { hide = true, angle = 180, other = "preserve" }
+    addon.db.minimap = legacy
+    local quest, dungeon, pins = addon.UI.quest, addon.UI.dungeon, #waypoints
+    eventFrame.scripts.OnEvent(eventFrame, "PLAYER_ENTERING_WORLD")
+    local button = assert(addon.Minimap.button)
+    assert(not button:IsShown() and #queue == 1)
+    Minimap:SetWidth(198)
+    table.remove(queue, 1)()
+    assert(button:IsShown() and button.point[2] == Minimap and #queue == 0)
+    assert(legacy.launcherVersion == 1 and legacy.hide == false and legacy.angle == 180 and legacy.other == "preserve")
+    local shown = addon.UI.frame:IsShown()
+    button.scripts.OnMouseDown(button, "LeftButton"); button.scripts.OnClick(button, "LeftButton")
+    assert(addon.UI.frame:IsShown() ~= shown and addon.UI.quest == quest and addon.UI.dungeon == dungeon and #waypoints == pins)
+    SlashCmdList.DUNGEONPRO("minimap")
+    assert(not button:IsShown() and legacy.hide == true and legacy.launcherVersion == 1)
+    eventFrame.scripts.OnEvent(eventFrame, "PLAYER_ENTERING_WORLD")
+    assert(not button:IsShown() and legacy.hide == true and #queue == 0)
+    if addon.UI.frame:IsShown() ~= shown then addon.UI:Toggle() end
+    Minimap, C_Timer, addon.db.minimap = native, timer, prefs
+    addon.Minimap:Initialize()
 end)
 
 print("Client/UI modeled checks passed: " .. total .. " (no pixel or native-client validation)")

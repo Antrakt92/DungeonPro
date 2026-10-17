@@ -11,6 +11,12 @@ function methods:SetParent(parent) self.parent=parent end
 function methods:ClearAllPoints() self.order="clear" end
 function methods:SetPoint(...) assert(self.order=="clear"); self.point={...}; self.order="point" end
 function methods:SetUserPlaced(value) assert(self.order=="point"); self.userPlaced=value end
+function methods:SetFrameStrata(value) self.strata=value end
+function methods:SetFrameLevel(value) self.level=value end
+function methods:GetFrameLevel() return self.level or 2 end
+function methods:SetClampedToScreen(value) self.clamped=value end
+function methods:SetHighlightTexture(value,mode) self.highlight,self.highlightMode=value,mode end
+function methods:AddMaskTexture(mask) self.mask=mask end
 function methods:SetAllPoints() end
 function methods:SetTexture(value) self.texture=value; return textureResult end
 function methods:SetText(value) self.text=value end
@@ -18,9 +24,10 @@ function methods:Show() self.shown=true end
 function methods:Hide() self.shown=false; if self.scripts.OnHide then self.scripts.OnHide(self) end end
 function methods:IsShown() return self.shown end
 local function frame(parent) return setmetatable({parent=parent,scripts={}}, {__index=methods}) end
-function methods:CreateTexture() self.icon=frame(self); return self.icon end
+function methods:CreateTexture() local texture=frame(self);if not self.icon then self.icon=texture end;return texture end
+function methods:CreateMaskTexture() return frame(self) end
 function methods:CreateFontString() self.label=frame(self); return self.label end
-local function reset(config)
+local function reset(config, legacy)
     created, clicks, cursorX, cursorY, scale, cx, cy, width, textureResult=0,0,400,200,2,100,100,200,true
     issecretvalue=function(value) return value==secret end
     GetCursorPosition=function(...) assert(select("#",...)==0); return cursorX,cursorY end
@@ -28,6 +35,8 @@ local function reset(config)
     Minimap.GetEffectiveScale=function() return scale end
     Minimap.GetCenter=function() return cx,cy end
     addon.db={ minimap=config }; addon.UI={Toggle=function() clicks=clicks+1 end}
+    if type(config)=="table" and config~=secret and not legacy then config.launcherVersion=1 end
+    C_Timer=nil
     addon.L=function(key) return key end
     CreateFrame=function(kind,name,parent)
         assert(kind=="Button" and name=="DungeonProMinimapButton" and parent==Minimap)
@@ -192,6 +201,81 @@ check("Unknown visibility and replaced launcher sessions cannot toggle a newer p
         assert(m:ToggleVisibility()==false and config.hide==false and button.shown,kind)
         assert(not newer or newer.hide==false)
     end
+end)
+check("Launcher has a stable raised round presentation without altering click or drag hitbox",function()
+    local m=reset();assert(m:Initialize());local b=m.button
+    assert(b.width==32 and b.height==32 and b.strata=="MEDIUM" and b.level==12 and b.clamped)
+    assert(b.icon.width==26 and b.icon.height==26 and b.icon.mask==b.mask)
+    assert(b.mask.texture=="Interface\\CharacterFrame\\TempPortraitAlphaMask")
+    assert(b.border.width==42 and b.border.height==42 and b.border.texture=="Interface\\Common\\RingBorder")
+    assert(b.highlight=="Interface\\Minimap\\UI-Minimap-ZoomButton-Highlight" and b.highlightMode=="ADD")
+    for i=1,20 do assert(m:Initialize() and b.level==12) end
+    assert(created==1 and not b.scripts.OnUpdate)
+    b.scripts.OnClick(b,"LeftButton");assert(clicks==1)
+end)
+check("Unversioned hidden launchers recover once while current future or malformed revisions retain explicit visibility",function()
+    local config={hide=true,angle=19,other="keep"};local m=reset(config,true)
+    assert(m:Initialize() and m.button.shown and config.hide==false and config.launcherVersion==1 and config.angle==19 and config.other=="keep")
+    assert(m:ToggleVisibility() and config.hide==true);assert(m:Initialize() and not m.button.shown)
+    for _,revision in ipairs({1,2,false,"legacy",secret})do
+        config={hide=true,angle=19,launcherVersion=revision};m=reset(config,true)
+        assert(m:Initialize() and not m.button.shown and config.hide==true and config.launcherVersion==revision)
+    end
+end)
+local function scheduled()
+    local queue={};C_Timer={After=function(delay,fn)assert(delay==.25);queue[#queue+1]=fn end}
+    return queue
+end
+check("Missing parent capabilities and zero startup geometry recover through bounded timers without a ticker",function()
+    for _,kind in ipairs({"missing","getter","width","height"})do
+        local config={hide=true,angle=19};local m=reset(config,true);local queue=scheduled();local native=Minimap
+        local getter=native.GetWidth
+        if kind=="missing"then Minimap=nil elseif kind=="getter"then native.GetWidth=false
+        elseif kind=="width"then width=0 else native.GetHeight=function()return 0 end end
+        assert(not m:Initialize() and #queue==1)
+        Minimap=native;native.GetWidth=getter;native.GetHeight=function()return 200 end;width=200
+        queue[1]();assert(m.button.shown and not m.retry and #queue==1 and not m.button.scripts.OnUpdate)
+        assert(config.launcherVersion==1 and config.hide==false and config.angle==19)
+    end
+end)
+check("Retry budgets finish even with inline or throwing schedulers and stale callbacks have no effects",function()
+    local m=reset();width=0;local calls=0
+    C_Timer={After=function(_,fn)calls=calls+1;fn()end}
+    assert(not m:Initialize() and calls==8 and not m.retry and not m.button.shown)
+    m=reset();width=0;local saved
+    C_Timer={After=function(_,fn)saved=fn;error("queued then failed")end}
+    assert(not m:Initialize() and not m.retry);width=200;saved();assert(not m.button.shown)
+    for _,kind in ipairs({"owner","db","parent","session","timer","hide"})do
+        m=reset();width=0;local queue=scheduled();assert(not m:Initialize() and #queue==1)
+        if kind=="owner"then addon.Minimap={} elseif kind=="db"then addon.db={}
+        elseif kind=="parent"then Minimap=frame() elseif kind=="session"then m.session={}
+        elseif kind=="timer"then C_Timer={}else addon.db.minimap.hide=true end
+        width=200;queue[1]();assert(not m.button.shown and #queue==1,kind)
+    end
+end)
+check("A replacement initialization owns retries and manual hiding remains effective after recovery",function()
+    local config={hide=false,launcherVersion=1};local m=reset(config);width=0;local queue=scheduled()
+    assert(not m:Initialize());local stale=queue[1]
+    assert(not m:Initialize() and #queue==2);width=200
+    stale();assert(not m.button.shown);queue[2]();assert(m.button.shown and not m.retry)
+    assert(m:ToggleVisibility() and not m.button.shown and config.hide)
+    queue[2]();assert(not m.button.shown and config.hide)
+end)
+check("Optional launcher styling failures keep controls usable and reentry cannot place an older session",function()
+    local m=reset();assert(m:Initialize());local b=m.button
+    b.SetFrameStrata=function()error("protected")end;b.SetFrameLevel=false;b.SetClampedToScreen=false
+    Minimap.GetFrameLevel=function()return secret end
+    assert(m:Initialize() and b.shown)
+    b.scripts.OnClick(b,"LeftButton");assert(clicks==1)
+    m=reset({angle=17});assert(m:Initialize());b=m.button
+    local setter=b.SetFrameStrata;local armed=true
+    b.SetFrameStrata=function(self,value)
+        setter(self,value)
+        if armed then armed=false;addon.db.minimap.angle=90;assert(m:Initialize())end
+    end
+    assert(not m:Initialize() and not armed and b.shown)
+    near(m.angle,90);near(b.point[4],0);near(b.point[5],108)
+    assert(not b.scripts.OnUpdate)
 end)
 issecretvalue=nil
 print("Minimap modeled checks passed: "..total.." (native client unverified)")

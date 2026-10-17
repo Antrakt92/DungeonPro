@@ -15,6 +15,65 @@ local function angle(value)
     if value then return value % 360 end
 end
 
+local function legacyConfig(config)
+    local value = rawget(config, "launcherVersion")
+    if type(issecretvalue) == "function" then
+        local ok, restricted = pcall(issecretvalue, value)
+        if not ok or addon.Clean(restricted, "boolean") ~= false then return false end
+    end
+    return type(value) == "nil" and type(rawget(config, "launcherVersion")) == "nil"
+end
+
+function M:RetryPlacement(db, held)
+    if not db or addon.Minimap ~= self or addon.Clean(addon.db, "table") ~= db then return end
+    local config = addon.Clean(rawget(db, "minimap"), "table")
+    if config and addon.Clean(config.hide, "boolean") == true and not legacyConfig(config) then self.retry = nil; return end
+    if not held then
+        local timer = addon.Clean(C_Timer, "table")
+        local after = timer and method(timer, "After")
+        if not after then return end
+        held = { db = db, config = config, parent = cleanFrame(Minimap), session = self.session, timer = timer, after = after, attempts = 0 }
+        self.retry = held
+    end
+    local function current()
+        return addon.Minimap == self and self.retry == held and addon.Clean(addon.db, "table") == db and
+            addon.Clean(rawget(db, "minimap"), "table") == held.config and self.session == held.session and
+            (not held.parent or cleanFrame(Minimap) == held.parent) and C_Timer == held.timer and
+            method(held.timer, "After") == held.after
+    end
+    if not current() or held.attempts >= 8 then if self.retry == held then self.retry = nil end; return end
+    held.attempts = held.attempts + 1
+    local ok = pcall(held.after, .25, function()
+        if not current() then return end
+        if held.config and addon.Clean(held.config.hide, "boolean") == true and not legacyConfig(held.config) then self.retry = nil; return end
+        if current() then self:Initialize(held) end
+    end)
+    if not ok and self.retry == held then self.retry = nil end
+end
+
+function M:StyleLauncher()
+    local button, parent = self.button, self.parent
+    local db, config, session = self.db, self.persisted, self.session
+    local function current()
+        return addon.Minimap == self and self.button == button and self.parent == parent and self.db == db and
+            self.persisted == config and self.session == session and self:Current()
+    end
+    if not current() then return false end
+    local strata = method(button, "SetFrameStrata")
+    if not current() then return false end
+    if strata then pcall(strata, button, "MEDIUM") end
+    if not current() then return false end
+    local level = addon.Read(method(parent, "GetFrameLevel"), "number", parent)
+    local setter = method(button, "SetFrameLevel")
+    if not current() then return false end
+    if level and level >= 0 and level <= 99990 and level % 1 == 0 and setter then pcall(setter, button, level + 10) end
+    if not current() then return false end
+    local clamp = method(button, "SetClampedToScreen")
+    if not current() then return false end
+    if clamp then pcall(clamp, button, true) end
+    return current()
+end
+
 function M:Current()
     return self.button and cleanFrame(Minimap) == self.parent and
         addon.Clean(addon.db, "table") == self.db and
@@ -67,6 +126,10 @@ function M:Place(value)
     if not value or not self:Current() then return false end
     local width = addon.Read(method(parent, "GetWidth"), "number", parent)
     if not width or width <= 0 or not self:Current() or self.parent ~= parent or self.button ~= button then return false end
+    local heightGetter = method(parent, "GetHeight")
+    local height = heightGetter and addon.Read(heightGetter, "number", parent)
+    if heightGetter and (not height or height <= 0) then return false end
+    if not self:Current() or self.parent ~= parent or self.button ~= button then return false end
     local radius = width / 2 + 8
     local radians = math.rad(value)
     local x, y = math.cos(radians) * radius, math.sin(radians) * radius
@@ -129,11 +192,13 @@ function M:StartDrag(mouse)
     end)
 end
 
-function M:Initialize()
+function M:Initialize(retry)
+    if retry then if self.retry ~= retry then return false end else self.retry = nil end
     local parent, db = cleanFrame(Minimap), addon.Clean(addon.db, "table")
     if not parent or not db or not method(parent, "GetWidth") then
         self:StopDrag(false); self:ReleaseTooltip()
         if self.button then self.button:Hide() end
+        self:RetryPlacement(db, retry)
         return false
     end
     self:StopDrag(false)
@@ -146,10 +211,15 @@ function M:Initialize()
         readable = ok and addon.Clean(restricted, "boolean") == false
     end
     if readable and type(original) == "nil" then config = {}; db.minimap = config end
+    if retry and retry.config == nil and type(original) == "nil" and config then retry.config = config end
     local previousParent = self.parent
     self.db, self.parent, self.persisted = db, parent, config
     self.config = config or (self.ephemeral or {})
     if not config then self.ephemeral = self.config end
+    if config and legacyConfig(config) and self.db == db and addon.db == db and addon.Minimap == self and
+        addon.Clean(rawget(db, "minimap"), "table") == config then
+        config.hide, config.launcherVersion = false, 1
+    end
     local button = self.button
     if button then
         if previousParent ~= parent then
@@ -168,7 +238,8 @@ function M:Initialize()
         button:SetSize(32, 32); button:EnableMouse(true); button:RegisterForClicks("LeftButtonUp")
         button:RegisterForDrag("LeftButton")
         local icon = button:CreateTexture(nil, "ARTWORK")
-        icon:SetAllPoints()
+        button.icon = icon
+        icon:SetSize(26, 26); icon:ClearAllPoints(); icon:SetPoint("CENTER", button, "CENTER", 0, 0)
         local rendered, success = pcall(icon.SetTexture, icon, "Interface\\Icons\\INV_Misc_Map_01")
         if rendered and addon.Clean(success, "boolean") == true then icon:Show()
         else
@@ -176,10 +247,27 @@ function M:Initialize()
             local text = button:CreateFontString(nil, "OVERLAY", "GameFontNormal")
             text:SetAllPoints(); text:SetText("DP"); text:Show()
         end
+        pcall(function()
+            local createMask, addMask = method(button, "CreateMaskTexture"), method(icon, "AddMaskTexture")
+            if createMask and addMask then
+                local mask = createMask(button, nil, "ARTWORK")
+                mask:SetTexture("Interface\\CharacterFrame\\TempPortraitAlphaMask", "CLAMPTOBLACKADDITIVE", "CLAMPTOBLACKADDITIVE")
+                mask:SetAllPoints(icon); addMask(icon, mask); button.mask = mask
+            end
+        end)
+        pcall(function()
+            local border = button:CreateTexture(nil, "OVERLAY")
+            border:SetSize(42, 42); border:ClearAllPoints(); border:SetPoint("CENTER", button, "CENTER", 0, 0)
+            if addon.Read(border.SetTexture, "boolean", border, "Interface\\Common\\RingBorder") == true then border:Show() end
+            button.border = border
+        end)
+        local highlight = method(button, "SetHighlightTexture")
+        if highlight then pcall(highlight, button, "Interface\\Minimap\\UI-Minimap-ZoomButton-Highlight", "ADD") end
     end
     local session = {}
     self.session = session
-    local function current() return self.session == session and self.button == button and self:Current() end
+    if retry then retry.session, retry.parent = session, parent end
+    local function current() return addon.Minimap == self and self.session == session and self.button == button and self:Current() end
     button:SetScript("OnMouseDown", function(_, mouse)
         if current() and mouse == "LeftButton" and not self.drag then self.suppressClick = nil end
     end)
@@ -197,7 +285,9 @@ function M:Initialize()
             self:StopDrag(false); self:ReleaseTooltip(); self.suppressClick = nil
         end
     end)
-    if not self:Place(angle(self.config.angle) or 225) then button:Hide(); return false end
+    if not self:StyleLauncher() or not current() then return false end
+    if not self:Place(angle(self.config.angle) or 225) then button:Hide(); self:RetryPlacement(db, retry); return false end
+    self.retry = nil
     if addon.Clean(self.config.hide, "boolean") == true then button:Hide() else button:Show() end
     return true
 end
@@ -212,6 +302,7 @@ function M:ToggleVisibility()
     local shown = addon.Read(method(button, "IsShown"), "boolean", button)
     if not current() or shown == nil then return false end
     if shown then
+        self.retry = nil
         config.hide = true
         button:Hide(); self:StopDrag(false); self:ReleaseTooltip()
     else
