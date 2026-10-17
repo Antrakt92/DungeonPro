@@ -3092,14 +3092,18 @@
         "name": "Councilman Millstipe",
         "mapID": 1431,
         "x": 72,
-        "y": 47.8
+        "y": 47.8,
+        "creatureDisplayID": 1724,
+        "portraitSource": "https://www.wowhead.com/forever/npc=270"
       },
       "finish": {
         "npcID": 270,
         "name": "Councilman Millstipe",
         "mapID": 1431,
         "x": 72,
-        "y": 47.8
+        "y": 47.8,
+        "creatureDisplayID": 1724,
+        "portraitSource": "https://www.wowhead.com/forever/npc=270"
       },
       "requirementsKnown": false,
       "objectiveItems": [
@@ -3165,14 +3169,18 @@
         "name": "Nikova Raskol",
         "mapID": 1453,
         "x": 73.2,
-        "y": 50.4
+        "y": 50.4,
+        "creatureDisplayID": 1815,
+        "portraitSource": "https://www.wowhead.com/forever/npc=1721"
       },
       "finish": {
         "npcID": 1721,
         "name": "Nikova Raskol",
         "mapID": 1453,
         "x": 73.2,
-        "y": 50.4
+        "y": 50.4,
+        "creatureDisplayID": 1815,
+        "portraitSource": "https://www.wowhead.com/forever/npc=1721"
       },
       "requirementsKnown": false,
       "objectiveItems": [
@@ -3197,14 +3205,18 @@
         "name": "Guard Berton",
         "mapID": 1433,
         "x": 26.4,
-        "y": 46.4
+        "y": 46.4,
+        "creatureDisplayID": 3453,
+        "portraitSource": "https://www.wowhead.com/forever/npc=859"
       },
       "finish": {
         "npcID": 859,
         "name": "Guard Berton",
         "mapID": 1433,
         "x": 26.4,
-        "y": 46.4
+        "y": 46.4,
+        "creatureDisplayID": 3453,
+        "portraitSource": "https://www.wowhead.com/forever/npc=859"
       },
       "requirementsKnown": false,
       "objectiveItems": [
@@ -3319,14 +3331,18 @@
         "name": "Master Mechanic Castpipe",
         "mapID": 1455,
         "x": 70,
-        "y": 47.4
+        "y": 47.4,
+        "creatureDisplayID": 7041,
+        "portraitSource": "https://www.wowhead.com/forever/npc=7950"
       },
       "finish": {
         "npcID": 7950,
         "name": "Master Mechanic Castpipe",
         "mapID": 1455,
         "x": 70,
-        "y": 47.4
+        "y": 47.4,
+        "creatureDisplayID": 7041,
+        "portraitSource": "https://www.wowhead.com/forever/npc=7950"
       },
       "storyline": [
         2931,
@@ -3393,14 +3409,18 @@
         "name": "High Tinker Mekkatorque",
         "mapID": 1455,
         "x": 69,
-        "y": 49
+        "y": 49,
+        "creatureDisplayID": 143349,
+        "portraitSource": "https://www.wowhead.com/forever/npc=7937"
       },
       "finish": {
         "npcID": 7937,
         "name": "High Tinker Mekkatorque",
         "mapID": 1455,
         "x": 69,
-        "y": 49
+        "y": 49,
+        "creatureDisplayID": 143349,
+        "portraitSource": "https://www.wowhead.com/forever/npc=7937"
       },
       "objectiveKills": [
         {
@@ -3591,14 +3611,18 @@
         "name": "Tinkmaster Overspark",
         "mapID": 1455,
         "x": 69.4,
-        "y": 50.4
+        "y": 50.4,
+        "creatureDisplayID": 7028,
+        "portraitSource": "https://www.wowhead.com/forever/npc=7944"
       },
       "finish": {
         "npcID": 7944,
         "name": "Tinkmaster Overspark",
         "mapID": 1455,
         "x": 69.4,
-        "y": 50.4
+        "y": 50.4,
+        "creatureDisplayID": 7028,
+        "portraitSource": "https://www.wowhead.com/forever/npc=7944"
       },
       "storyline": [
         2923,
@@ -3746,7 +3770,9 @@
         "name": "Master Mechanic Castpipe",
         "mapID": 1455,
         "x": 70,
-        "y": 47.4
+        "y": 47.4,
+        "creatureDisplayID": 7041,
+        "portraitSource": "https://www.wowhead.com/forever/npc=7950"
       },
       "storyline": [
         2931,
@@ -3808,7 +3834,9 @@
         "name": "Tinkmaster Overspark",
         "mapID": 1455,
         "x": 69.4,
-        "y": 50.4
+        "y": 50.4,
+        "creatureDisplayID": 7028,
+        "portraitSource": "https://www.wowhead.com/forever/npc=7944"
       },
       "storyline": [
         2923,
@@ -4417,7 +4445,24 @@
       "storyline": [
         2949,
         2950
-      ]
+      ],
+      "objectiveItems": [
+        {
+          "itemID": 2842,
+          "name": "Silver Bar"
+        },
+        {
+          "itemID": 1206,
+          "name": "Moss Agate"
+        }
+      ],
+      "providedItems": [
+        {
+          "itemID": 9362,
+          "name": "Brilliant Gold Ring"
+        }
+      ],
+      "requiredMoney": 3000
     },
     {
       "id": 1101,
@@ -4455,7 +4500,9 @@
             "x": 89.6,
             "y": 46.6
           }
-        ]
+        ],
+        "creatureDisplayID": 4201,
+        "portraitSource": "https://www.wowhead.com/forever/npc=4048"
       },
       "finish": {
         "npcID": 4048,
@@ -4483,7 +4530,9 @@
             "x": 89.6,
             "y": 46.6
           }
-        ]
+        ],
+        "creatureDisplayID": 4201,
+        "portraitSource": "https://www.wowhead.com/forever/npc=4048"
       },
       "storyline": [
         1100,
@@ -4518,14 +4567,18 @@
         "name": "Auld Stonespire",
         "mapID": 1456,
         "x": 36.2,
-        "y": 59.8
+        "y": 59.8,
+        "creatureDisplayID": 4568,
+        "portraitSource": "https://www.wowhead.com/forever/npc=4451"
       },
       "finish": {
         "npcID": 4451,
         "name": "Auld Stonespire",
         "mapID": 1456,
         "x": 36.2,
-        "y": 59.8
+        "y": 59.8,
+        "creatureDisplayID": 4568,
+        "portraitSource": "https://www.wowhead.com/forever/npc=4451"
       },
       "objectiveItems": [
         {
@@ -4702,7 +4755,9 @@
             "x": 89.6,
             "y": 46.6
           }
-        ]
+        ],
+        "creatureDisplayID": 4201,
+        "portraitSource": "https://www.wowhead.com/forever/npc=4048"
       },
       "storyline": [
         1100,
@@ -4734,7 +4789,13 @@
             }
           ]
         }
-      }
+      },
+      "providedItems": [
+        {
+          "itemID": 5790,
+          "name": "Lonebrow's Journal"
+        }
+      ]
     },
     {
       "id": 1113,
@@ -14475,7 +14536,9 @@
         "zoneName": "Burning Steppes",
         "mapID": 1428,
         "x": 65.2,
-        "y": 23.8
+        "y": 23.8,
+        "creatureDisplayID": 8656,
+        "portraitSource": "https://www.wowhead.com/forever/npc=9536"
       },
       "finish": {
         "npcID": 9536,
@@ -14483,7 +14546,9 @@
         "zoneName": "Burning Steppes",
         "mapID": 1428,
         "x": 65.2,
-        "y": 23.8
+        "y": 23.8,
+        "creatureDisplayID": 8656,
+        "portraitSource": "https://www.wowhead.com/forever/npc=9536"
       },
       "objectiveItems": [
         {
@@ -14522,7 +14587,9 @@
             "y": 52.6,
             "zoneName": "Dun Morogh"
           }
-        ]
+        ],
+        "creatureDisplayID": 1684,
+        "portraitSource": "https://www.wowhead.com/forever/npc=1267"
       },
       "finish": {
         "npcID": 1267,
@@ -14544,7 +14611,9 @@
             "y": 52.6,
             "zoneName": "Dun Morogh"
           }
-        ]
+        ],
+        "creatureDisplayID": 1684,
+        "portraitSource": "https://www.wowhead.com/forever/npc=1267"
       },
       "storyline": [
         4128,
@@ -14609,7 +14678,9 @@
             "y": 52.6,
             "zoneName": "Dun Morogh"
           }
-        ]
+        ],
+        "creatureDisplayID": 1684,
+        "portraitSource": "https://www.wowhead.com/forever/npc=1267"
       },
       "storyline": [
         4128,
@@ -14812,7 +14883,9 @@
         "zoneName": "Burning Steppes",
         "mapID": 1428,
         "x": 66,
-        "y": 22
+        "y": 22,
+        "creatureDisplayID": 8665,
+        "portraitSource": "https://www.wowhead.com/forever/npc=9544"
       },
       "finish": {
         "npcID": 9544,
@@ -14820,7 +14893,9 @@
         "zoneName": "Burning Steppes",
         "mapID": 1428,
         "x": 66,
-        "y": 22
+        "y": 22,
+        "creatureDisplayID": 8665,
+        "portraitSource": "https://www.wowhead.com/forever/npc=9544"
       },
       "storyline": [
         4324,
@@ -15111,12 +15186,16 @@
       "start": {
         "npcID": 9500,
         "name": "Mistress Nagmara",
-        "zoneName": "Blackrock Depths"
+        "zoneName": "Blackrock Depths",
+        "creatureDisplayID": 2834,
+        "portraitSource": "https://www.wowhead.com/forever/npc=9500"
       },
       "finish": {
         "npcID": 9500,
         "name": "Mistress Nagmara",
-        "zoneName": "Blackrock Depths"
+        "zoneName": "Blackrock Depths",
+        "creatureDisplayID": 2834,
+        "portraitSource": "https://www.wowhead.com/forever/npc=9500"
       },
       "objectiveItems": [
         {
@@ -15337,7 +15416,9 @@
         "zoneName": "Burning Steppes",
         "mapID": 1428,
         "x": 85.4,
-        "y": 70
+        "y": 70,
+        "creatureDisplayID": 8693,
+        "portraitSource": "https://www.wowhead.com/forever/npc=9561"
       },
       "finish": {
         "npcID": 9561,
@@ -15345,7 +15426,9 @@
         "zoneName": "Burning Steppes",
         "mapID": 1428,
         "x": 85.4,
-        "y": 70
+        "y": 70,
+        "creatureDisplayID": 8693,
+        "portraitSource": "https://www.wowhead.com/forever/npc=9561"
       },
       "storyline": [
         4262,
@@ -15368,7 +15451,9 @@
         "zoneName": "Burning Steppes",
         "mapID": 1428,
         "x": 85.4,
-        "y": 70
+        "y": 70,
+        "creatureDisplayID": 8693,
+        "portraitSource": "https://www.wowhead.com/forever/npc=9561"
       },
       "finish": {
         "npcID": 9561,
@@ -15376,7 +15461,9 @@
         "zoneName": "Burning Steppes",
         "mapID": 1428,
         "x": 85.4,
-        "y": 70
+        "y": 70,
+        "creatureDisplayID": 8693,
+        "portraitSource": "https://www.wowhead.com/forever/npc=9561"
       },
       "storyline": [
         4262,
@@ -15514,7 +15601,9 @@
             "y": 68.6,
             "zoneName": "Burning Steppes"
           }
-        ]
+        ],
+        "creatureDisplayID": 8872,
+        "portraitSource": "https://www.wowhead.com/forever/npc=9177"
       },
       "finish": {
         "npcID": 9177,
@@ -15548,7 +15637,9 @@
             "y": 68.6,
             "zoneName": "Burning Steppes"
           }
-        ]
+        ],
+        "creatureDisplayID": 8872,
+        "portraitSource": "https://www.wowhead.com/forever/npc=9177"
       },
       "objectiveItems": [
         {
@@ -15645,7 +15736,9 @@
         "zoneName": "Burning Steppes",
         "mapID": 1428,
         "x": 66,
-        "y": 22
+        "y": 22,
+        "creatureDisplayID": 8665,
+        "portraitSource": "https://www.wowhead.com/forever/npc=9544"
       },
       "storyline": [
         4324,
