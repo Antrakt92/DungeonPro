@@ -79,12 +79,56 @@ function UI:OpenLanguageMenu()
     return cycle()
 end
 
+function UI:FitHeaderControls()
+    local revision, frame, database, checker = {}, self.frame, addon.db, issecretvalue
+    self.headerFitGeneration = revision
+    local locale = database and database.locale
+    local function current()
+        return self.headerFitGeneration == revision and self.frame == frame and addon.db == database and
+            (not database or database.locale == locale) and issecretvalue == checker
+    end
+    local controls, wrapped = {}, false
+    for _, button in ipairs({ self.rangeButton, self.preparationButton, self.characterButton }) do
+        local getter = addon.Clean(button.GetFontString, "function")
+        local ok, value
+        if getter then ok, value = pcall(getter, button) end
+        local fs = ok and (addon.Clean(value, "table") or addon.Clean(value, "userdata"))
+        if not current() then return end
+        if not fs then return end
+        local measure = addon.Clean(fs.GetUnboundedStringWidth, "function")
+        local methods = {}
+        for _, name in ipairs({ "SetWidth", "SetHeight", "SetWordWrap", "SetNonSpaceWrap", "SetMaxLines" }) do
+            methods[name] = addon.Clean(fs[name], "function")
+            if not methods[name] then return end
+        end
+        local width = addon.Read(button.GetWidth, "number", button)
+        local natural = measure and addon.Read(measure, "number", fs)
+        if not current() or button.GetFontString ~= getter or fs.GetUnboundedStringWidth ~= measure then return end
+        if not width or width <= 16 or not natural or natural < 0 or natural > 100000 then return end
+        controls[#controls + 1] = { button = button, fs = fs, methods = methods, width = width - 16 }
+        wrapped = wrapped or natural > width - 16
+    end
+    local height = wrapped and 36 or 25
+    for _, control in ipairs(controls) do
+        if not current() then return end
+        local fs, methods = control.fs, control.methods
+        for _, operation in ipairs({ { "SetWordWrap", true }, { "SetNonSpaceWrap", true },
+            { "SetMaxLines", 2 }, { "SetWidth", control.width }, { "SetHeight", wrapped and 32 or 21 } }) do
+            local ok = pcall(methods[operation[1]], fs, operation[2])
+            if not ok or not current() then return end
+        end
+        local ok = pcall(control.button.SetHeight, control.button, height)
+        if not ok or not current() then return end
+    end
+end
+
 function UI:ApplyTheme()
     local theme = addon.Clean(addon.Theme, "table")
     if theme then addon.Read(theme.Apply, "boolean", self) end
     styleRow(self.rangeButton, "control", self.range)
     styleRow(self.preparationButton, "control", self.preparation)
     styleRow(self.characterButton, "control", self.includeUnavailable)
+    self:FitHeaderControls()
 end
 
 function UI:RefreshQuestStyles()

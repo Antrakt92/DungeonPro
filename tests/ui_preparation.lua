@@ -4615,4 +4615,123 @@ check("Hidden browser ignores resize events and reopens using current geometry w
     GetScreenWidth,GetScreenHeight,ui.Refresh=getWidth,getHeight,refresh
     screenWidth,screenHeight=width,height;ui:Fit();ui.frame:SetShown(shown)
 end)
+local function headerFitFixture()
+    local buttons={ui.rangeButton,ui.preparationButton,ui.characterButton}
+    local saved,fonts={},{}
+    for index,b in ipairs(buttons)do
+        saved[index]={getter=rawget(b,"GetFontString"),height=b.height}
+        local fs=object();fonts[index]=fs
+        fs.GetUnboundedStringWidth=function()return 20 end
+        fs.SetWordWrap=function(self,value)self.wordWrap=value end
+        fs.SetNonSpaceWrap=function(self,value)self.nonSpaceWrap=value end
+        fs.SetMaxLines=function(self,value)self.maxLines=value end
+        b.GetFontString=function()return fs end
+    end
+    return buttons,fonts,function()
+        for index,b in ipairs(buttons)do b.GetFontString=saved[index].getter;b.height=saved[index].height end
+    end
+end
+check("Filter controls wrap clean oversized native text measurements inside the existing header bounds",function()
+    local buttons,fonts,finish=headerFitFixture();local locale,all=addon.db.locale,ui.includeUnavailable
+    local click,point,font=ui.characterButton.scripts.OnClick,ui.characterButton.point,fonts[3].fontFamily
+    fonts[3].GetUnboundedStringWidth=function()return 132 end
+    addon.db.locale="frFR";ui.includeUnavailable=true;ui.frame:Show();ui:Refresh()
+    assert(ui.characterButton.text==addon.locales.frFR.ALL_CHARACTERS)
+    for i,b in ipairs(buttons)do
+        assert(b.height==36 and fonts[i].wordWrap and fonts[i].nonSpaceWrap and fonts[i].maxLines==2)
+        assert(fonts[i].width==b.width-16 and fonts[i].height==32)
+        assert(-b.point[3]+b.height<=120) -- y=-84 plus36 ends before the next heading at-125.
+    end
+    assert(ui.characterButton.point==point and ui.characterButton.width==120 and ui.characterButton.scripts.OnClick==click)
+    assert(fonts[3].fontFamily==font and ui.map.point[2]==690 and ui.heading.point[2]==288)
+    fonts[3].GetUnboundedStringWidth=function()return 20 end;ui:FitHeaderControls()
+    for i,b in ipairs(buttons)do assert(b.height==25 and fonts[i].height==21)end
+    addon.db.locale,ui.includeUnavailable=locale,all;finish()
+end)
+check("Filter fit follows ten localized labels and toggle clicks without changing widths or native handlers",function()
+    local buttons,fonts,finish=headerFitFixture();local locale=addon.db.locale
+    local range,preparation,all=ui.range,ui.preparation,ui.includeUnavailable
+    local x={273,390,564};local widths={105,170,120};local handlers={}
+    for i,b in ipairs(buttons)do handlers[i]=b.scripts.OnClick end
+    for code in pairs(addon.locales)do
+        addon.db.locale=code
+        for i,fs in ipairs(fonts)do
+            local b=buttons[i]
+            fs.GetUnboundedStringWidth=function()return b.text==addon.L("ALL_CHARACTERS")and 150 or 20 end
+        end
+        ui.includeUnavailable=true;ui:Refresh()
+        assert(ui.characterButton.text==addon.L("ALL_CHARACTERS") and ui.characterButton.height==36)
+        ui.characterButton.scripts.OnClick(ui.characterButton,"LeftButton",false)
+        assert(not ui.includeUnavailable and ui.characterButton.text==addon.L("MY_CHARACTER") and ui.characterButton.height==25)
+        for i,b in ipairs(buttons)do assert(b.width==widths[i] and b.point[2]==x[i] and b.scripts.OnClick==handlers[i])end
+    end
+    ui.range,ui.preparation,ui.includeUnavailable=range,preparation,all;ui:SaveFilters()
+    addon.db.locale=locale;finish()
+end)
+check("Missing restricted invalid or throwing filter measurements preserve functional original controls",function()
+    local buttons,fonts,finish=headerFitFixture();local fs=fonts[2]
+    local checker,secret=issecretvalue,{}
+    for _,getter in ipairs({false,function()return nil end,function()return -1 end,function()return 0/0 end,
+        function()return math.huge end,function()return "132"end,function()error("unavailable")end,function()return secret end})do
+        for _,b in ipairs(buttons)do b.height=25 end
+        fs.GetUnboundedStringWidth=getter or nil;issecretvalue=function(value)return value==secret end
+        ui:FitHeaderControls()
+        for _,b in ipairs(buttons)do assert(b.height==25 and b.scripts.OnClick)end
+    end
+    issecretvalue=checker;fs.GetUnboundedStringWidth=function()return 200 end
+    local setter=fs.SetMaxLines;fs.SetMaxLines=false;ui:FitHeaderControls()
+    for _,b in ipairs(buttons)do assert(b.height==25)end
+    fs.SetMaxLines=setter;ui:FitHeaderControls();assert(buttons[1].height==36)
+    finish()
+end)
+check("An older filter measurement pass cannot overwrite a newer locale fit",function()
+    local buttons,fonts,finish=headerFitFixture();local locale=addon.db.locale;local armed=true
+    fonts[1].GetUnboundedStringWidth=function()
+        if armed then
+            armed=false;addon.db.locale="deDE"
+            fonts[1].GetUnboundedStringWidth=function()return 20 end
+            fonts[2].GetUnboundedStringWidth=function()return 20 end
+            fonts[3].GetUnboundedStringWidth=function()return 20 end
+            ui:Refresh()
+        end
+        return 132
+    end
+    addon.db.locale="frFR";ui:FitHeaderControls()
+    assert(not armed and ui.characterButton.text==addon.L(ui.includeUnavailable and"ALL_CHARACTERS"or"MY_CHARACTER"))
+    for _,b in ipairs(buttons)do assert(b.height==25)end
+    addon.db.locale=locale;finish()
+end)
+check("Missing or failed native filter FontString capabilities keep the existing buttons unchanged",function()
+    local buttons,fonts,finish=headerFitFixture();local getter=buttons[2].GetFontString
+    local checker,secret=issecretvalue,{}
+    for _,candidate in ipairs({false,function()return nil end,function()error("missing font string")end,function()return secret end})do
+        issecretvalue=function(value)return value==secret end
+        buttons[2].GetFontString=candidate or nil
+        ui:FitHeaderControls()
+        for _,b in ipairs(buttons)do assert(b.height==25 and b.scripts.OnClick)end
+    end
+    issecretvalue=checker;local reads=0
+    buttons[2].GetFontString=function(...)reads=reads+1;return getter(...)end
+    fonts[2].GetUnboundedStringWidth=function()return 200 end
+    ui:FitHeaderControls();assert(reads==1 and buttons[2].height==36)
+    finish()
+end)
+check("Every filter text setter preserves a newer compact fitting pass before the next old mutation",function()
+    for _,key in ipairs({"SetWordWrap","SetNonSpaceWrap","SetMaxLines","SetWidth","SetHeight"})do
+        local buttons,fonts,finish=headerFitFixture();local fs=fonts[1]
+        fs.GetUnboundedStringWidth=function()return 200 end
+        local setter,armed=fs[key],true
+        fs[key]=function(self,value)
+            setter(self,value)
+            if armed then
+                armed=false;fs.GetUnboundedStringWidth=function()return 20 end
+                ui:FitHeaderControls()
+            end
+        end
+        ui:FitHeaderControls()
+        assert(not armed and buttons[1].height==25 and fonts[1].height==21,key.." overwrote a newer compact pass")
+        for _,b in ipairs(buttons)do assert(b.height==25)end
+        finish()
+    end
+end)
 print("Preparation UI modeled checks passed: " .. total .. " (no native layout validation)")
