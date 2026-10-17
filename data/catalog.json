@@ -12164,6 +12164,12 @@
           "itemID": 11230,
           "name": "Encased Fiery Essence"
         }
+      ],
+      "providedItems": [
+        {
+          "itemID": 11231,
+          "name": "Altered Black Dragonflight Molt"
+        }
       ]
     },
     {
@@ -14305,7 +14311,13 @@
             "zoneName": "Desolace"
           }
         ]
-      }
+      },
+      "objectiveKills": [
+        {
+          "npcID": 12201,
+          "name": "Princess Theradras"
+        }
+      ]
     },
     {
       "id": 7065,
@@ -14360,7 +14372,13 @@
             "zoneName": "Desolace"
           }
         ]
-      }
+      },
+      "objectiveKills": [
+        {
+          "npcID": 12201,
+          "name": "Princess Theradras"
+        }
+      ]
     },
     {
       "id": 7066,
@@ -16432,6 +16450,12 @@
         {
           "npcID": 10506,
           "name": "Kirtonos the Herald"
+        }
+      ],
+      "providedItems": [
+        {
+          "itemID": 13523,
+          "name": "Blood of Innocents"
         }
       ]
     },
@@ -20950,7 +20974,13 @@
             "y": 37.6
           }
         ]
-      }
+      },
+      "objectiveItems": [
+        {
+          "itemID": 18261,
+          "name": "Book of Incantations"
+        }
+      ]
     },
     {
       "id": 5518,
@@ -21086,7 +21116,13 @@
         "creatureDisplayID": 14407,
         "portraitSource": "https://www.wowhead.com/forever/npc=14368"
       },
-      "startsInside": true
+      "startsInside": true,
+      "objectiveItems": [
+        {
+          "itemID": 18299,
+          "name": "Hydrospawn Essence"
+        }
+      ]
     },
     {
       "id": 7502,
@@ -21374,7 +21410,17 @@
         7461,
         7877
       ],
-      "startsInside": true
+      "startsInside": true,
+      "objectiveKills": [
+        {
+          "npcID": 11496,
+          "name": "Immol'thar"
+        },
+        {
+          "npcID": 11486,
+          "name": "Prince Tortheldrin"
+        }
+      ]
     },
     {
       "id": 7483,
@@ -21762,6 +21808,12 @@
       "storyline": [
         7494,
         7488
+      ],
+      "objectiveItems": [
+        {
+          "itemID": 18426,
+          "name": "Lethtendris's Web"
+        }
       ]
     },
     {
@@ -21880,6 +21932,12 @@
       "storyline": [
         7492,
         7489
+      ],
+      "objectiveItems": [
+        {
+          "itemID": 18426,
+          "name": "Lethtendris's Web"
+        }
       ]
     },
     {
@@ -24610,6 +24668,12 @@
           "itemID": 18880,
           "name": "Darkreaver's Head"
         }
+      ],
+      "providedItems": [
+        {
+          "itemID": 18746,
+          "name": "Divination Scryer"
+        }
       ]
     },
     {
@@ -25405,7 +25469,13 @@
         7646,
         7647
       ],
-      "storylineEvidence": "https://www.wowhead.com/forever/quest=7646/the-divination-scryer"
+      "storylineEvidence": "https://www.wowhead.com/forever/quest=7646/the-divination-scryer",
+      "providedItems": [
+        {
+          "itemID": 18804,
+          "name": "Lord Grayson's Satchel"
+        }
+      ]
     },
     {
       "id": 7629,
@@ -25579,6 +25649,12 @@
         {
           "itemID": 18880,
           "name": "Darkreaver's Head"
+        }
+      ],
+      "providedItems": [
+        {
+          "itemID": 18746,
+          "name": "Divination Scryer"
         }
       ]
     },
