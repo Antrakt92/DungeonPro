@@ -30,6 +30,10 @@ function methods:SetFontHeight(size) self.fontSize, self.fontPending = size, tru
 function methods:SetShadowOffset(x,y) self.shadow={x,y} end
 function methods:SetTextColor(...) self.textColor = { ... } end
 function methods:SetTexture(value) self.texture = value; return true end
+function methods:SetTexCoord(...) self.texCoords={...} end
+function methods:SetAlpha(value) self.alpha=value end
+function methods:SetDesaturated(value) self.desaturated=value end
+function methods:SetMotionScriptsWhileDisabled(value) self.disabledMotion=value end
 function methods:GetText() return self.text or "" end
 function methods:SetFocus() self.focused = true end
 function methods:ClearFocus() self.focused = false end
@@ -408,7 +412,7 @@ check("Map-only quest givers open their known zone and missing givers disable vi
         Start = function() started = started + 1 end }
     addon.quests[2].start = { mapID = 1436, name = "Known zone only" }
     showDetail(2)
-    assert(ui.giver.enabled and ui.giver.text == addon.L("GIVER_MAP"))
+    assert(ui.giver.enabled and ui.giver.text == "" and ui.giver.footerLabelKey == "GIVER_MAP")
     ui.giver.scripts.OnClick()
     assert(#mapped == 1 and mapped[1].mapID == 1436 and started == 0)
     addon.quests[2].start = nil; showDetail(2)
@@ -3788,7 +3792,7 @@ check("A replacement unknown map-only giver keeps informational navigation witho
     local mapped,started;addon.Navigation={Map=function(point)mapped=point end,Start=function()started=true end}
     ui:RefreshDetail()
     assert(ui.quest==23002 and ui.engine:State(23002).status=="UNKNOWN" and ui.giver.enabled and not ui.giverHasCoordinates)
-    assert(ui.giver.text==addon.L("GIVER_MAP") and detailHas(addon.L("LOCATION_ONLY")))
+    assert(ui.giver.text=="" and ui.giver.footerLabelKey=="GIVER_MAP" and detailHas(addon.L("LOCATION_ONLY")))
     ui.giver.scripts.OnClick();assert(mapped==addon.quests[23002].start and not started)
     restore()
 end)
@@ -8568,5 +8572,65 @@ check("Real language hover previews the existing window and restores its labels 
     ui.language.scripts.OnEnter();language.session.rows[3].scripts.OnEnter();ui.frame:Hide();ui.frame.scripts.OnHide()
     assert(not language.session and addon.db.locale=="enUS")
     addon.Language=previous;addon.db.locale=locale;ui.quest,ui.dungeon=quest,dungeon;ui.frame:Show();ui:Refresh()
+end)
+check("Footer quest-giver and Wowhead controls retain actions in equal compact icon-only slots",function()
+    local quest,locale,navigation=ui.quest,addon.db.locale,addon.Navigation
+    local called;addon.Navigation={Start=function(action)called=action;return true end}
+    showCompactDetail(3,{level=20,completed=function()return false end,active=function()return false end});local giver,source=ui.giver,ui.source
+    local giverIcon,sourceIcon=giver.footerIcon,source.footerIcon
+    assert(giver.width==36 and giver.height==36 and source.width==36 and source.height==36)
+    assert(giver.point[1]=="BOTTOMRIGHT"and giver.point[2]==-87 and source.point[1]=="BOTTOMRIGHT"and source.point[2]==-43)
+    assert(giver.text==""and source.text==""and giverIcon.width==24 and sourceIcon.height==24)
+    assert(giverIcon.texture=="Interface\\GossipFrame\\AvailableQuestIcon")
+    assert(sourceIcon.texture=="Interface\\AddOns\\DungeonPro\\Media\\Icons\\Wowhead")
+    assert(sourceIcon.texCoords[1]==0 and sourceIcon.texCoords[2]==.75 and sourceIcon.texCoords[3]==0 and sourceIcon.texCoords[4]==.75)
+    assert(giver.disabledMotion and source.disabledMotion)
+    assert(ui.engine:State(3).status=="UNKNOWN"and not ui.action and giver.enabled and source.enabled)
+    giver.scripts.OnClick();assert(called.id==3 and called.kind=="visit"and called.place==addon.quests[3].start)
+    source.scripts.OnClick();assert(ui.copy.shown and ui.copy.text=="https://www.wowhead.com/forever/quest=3"and ui.frame.shown)
+    ui:CloseCopyLink()
+    for code in pairs(addon.locales)do addon.db.locale=code;ui:Refresh()
+        assert(giver.text==""and source.text==""and giver.footerIcon==giverIcon and source.footerIcon==sourceIcon)
+        assert(giverIcon.alpha==.88 and sourceIcon.alpha==.88 and not sourceIcon.desaturated)
+    end
+    ui.quest=nil;ui:RefreshDetail()
+    assert(not giver.enabled and not source.enabled and giverIcon.alpha==.3 and sourceIcon.alpha==.3 and giverIcon.desaturated and sourceIcon.desaturated)
+    addon.Navigation,addon.db.locale=navigation,locale;ui.quest=quest;ui:Refresh()
+end)
+check("Icon-only footer hover localizes purpose and source instructions while press hide and zone-only states stay honest",function()
+    local old,locale,quest=GameTooltip,addon.db.locale,ui.quest;local tip={}
+    function tip:SetOwner(owner)self.owner=owner end
+    function tip:IsOwned(owner)return self.owner==owner end
+    function tip:SetText(value)self.text=value end
+    function tip:AddLine(value)self.line=value end
+    function tip:Show()self.shown=true end
+    function tip:Hide()self.shown=false end
+    GameTooltip=tip;showCompactDetail(3)
+    for code in pairs(addon.locales)do addon.db.locale=code;ui:Refresh()
+        ui.giver.scripts.OnEnter();assert(tip.text==addon.L("VISIT_GIVER")and tip.line:find("Giver 3",1,true)and ui.giver.footerIcon.alpha==1)
+        ui.giver.scripts.OnMouseDown(ui.giver,"LeftButton");assert(ui.giver.footerIcon.alpha==.65)
+        ui.giver.scripts.OnHide();assert(ui.giver.footerIcon.alpha==.88 and not ui.giver.footerPressed and not ui.giver.footerHovered)
+        ui.source.scripts.OnEnter();assert(tip.text==addon.L("SOURCE")and tip.line==addon.L("COPY"))
+        ui.source.scripts.OnLeave();assert(not tip.shown and ui.source.footerIcon.alpha==.88)
+    end
+    local point=addon.quests[3].start;local x,y=point.x,point.y;point.x,point.y=nil,nil;ui:RefreshDetail()
+    ui.giver.scripts.OnEnter();assert(tip.text==addon.L("GIVER_MAP")and not tip.line:find("(",1,true))
+    point.x,point.y=x,y;GameTooltip=old;addon.db.locale=locale;ui.quest=quest;ui:Refresh()
+end)
+check("Refreshing a footer hint clears only owned stale text and reentry cannot resume an older card",function()
+    local old,quest=GameTooltip,ui.quest;local tip={hides=0}
+    function tip:SetOwner(owner)self.owner=owner end
+    function tip:IsOwned(owner)return self.owner==owner end
+    function tip:SetText(value)self.text=value end
+    function tip:AddLine(value)self.line=value end
+    function tip:Show()self.shown=true end
+    function tip:Hide()self.hides=self.hides+1;self.shown=false end
+    GameTooltip=tip;showCompactDetail(3);ui.giver.scripts.OnEnter();assert(tip.shown)
+    ui:RefreshDetail();assert(not tip.shown and not ui.navigationTooltip)
+    ui.giver.scripts.OnEnter();tip.owner={};local hides=tip.hides;ui:RefreshDetail();assert(tip.shown and tip.hides==hides)
+    ui.giver.scripts.OnEnter();local hide=tip.Hide;local armed=true
+    tip.Hide=function(self)hide(self);if armed then armed=false;showCompactDetail(2)end end
+    ui:RefreshDetail();assert(not armed and ui.quest==2 and not detailHas("Quest 3"))
+    GameTooltip=old;ui.quest=quest;ui:Refresh()
 end)
 print("Preparation UI modeled checks passed: " .. total .. " (no native layout validation)")

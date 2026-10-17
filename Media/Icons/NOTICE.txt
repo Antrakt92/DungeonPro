@@ -1,0 +1,4 @@
+Wowhead brand icon belongs to Wowhead.
+Source: https://wow.zamimg.com/images/logos/favicon-live.png
+The icon identifies a link to Wowhead. No affiliation or endorsement is implied.
+The original 48 x 48 pixels are unchanged, with transparent padding to 64 x 64.

@@ -25,6 +25,10 @@ class PackageTests(unittest.TestCase):
                 self.assertIn("DungeonPro/Database/Catalog.lua", names)
                 for resource in ("NotoSans-Regular.ttf", "OFL.txt", "NOTICE.txt"):
                     self.assertIn("DungeonPro/Media/Fonts/" + resource, names)
+                for resource in ("Wowhead.tga", "NOTICE.txt"):
+                    name = "Media/Icons/" + resource
+                    self.assertIn("DungeonPro/" + name, names)
+                    self.assertEqual(archive.read("DungeonPro/" + name), (ROOT / name).read_bytes())
                 self.assertFalse(any("tests/" in p or "scripts/" in p or "data/" in p for p in names))
                 self.assertTrue(all(p.startswith("DungeonPro/") for p in names))
 
@@ -38,6 +42,10 @@ class PackageTests(unittest.TestCase):
             media.mkdir(parents=True)
             for name in ("NotoSans-Regular.ttf", "OFL.txt", "NOTICE.txt"):
                 (media / name).write_bytes(b"fixture")
+            icons = root / "Media" / "Icons"
+            icons.mkdir()
+            for name in ("Wowhead.tga", "NOTICE.txt"):
+                (icons / name).write_bytes(b"fixture")
             path, _ = packager.package(root=root)
             self.assertEqual(path, root / "dist" / "DungeonPro-1.2.3-Forever-dev.zip")
             with zipfile.ZipFile(path) as archive:
@@ -79,6 +87,25 @@ class PackageTests(unittest.TestCase):
                     packager.package(output=output)
             self.assertEqual(output.read_bytes(), original)
             self.assertEqual(list(Path(tmp).iterdir()), [output])
+
+    def test_missing_icon_or_attribution_preserves_previous_verified_archive(self):
+        for missing in ("Media/Icons/Wowhead.tga", "Media/Icons/NOTICE.txt"):
+            with self.subTest(missing=missing), tempfile.TemporaryDirectory() as tmp:
+                output = Path(tmp) / "addon.zip"
+                packager.package(output=output)
+                original = output.read_bytes()
+                native = packager.exact_path
+
+                def omitted(root, name):
+                    if name == missing:
+                        raise ValueError("Missing icon resource")
+                    return native(root, name)
+
+                with mock.patch.object(packager, "exact_path", side_effect=omitted):
+                    with self.assertRaisesRegex(ValueError, "Missing icon resource"):
+                        packager.package(output=output)
+                self.assertEqual(output.read_bytes(), original)
+                self.assertEqual(list(Path(tmp).iterdir()), [output])
 
     def test_failed_final_replace_preserves_previous_archive_and_cleans_staging(self):
         with tempfile.TemporaryDirectory() as tmp:

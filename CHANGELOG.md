@@ -2,6 +2,7 @@
 
 ## 0.1.0 - 16-Oct-2026 — Development preview
 
+- Replaced the quest-giver and Wowhead footer labels with compact icons and hover hints.
 - Simplified the toolbar by removing Back and the preparation-view switch.
 - Added language previews on hover, with click to save and leaving to cancel.
 - Clarified map and guide destinations, including visits to known quest givers

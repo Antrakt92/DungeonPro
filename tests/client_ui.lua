@@ -25,6 +25,7 @@ function methods:Hide() self.shown = false end
 function methods:SetShown(shown) if shown then self:Show() else self:Hide() end end
 function methods:SetTexture(value) self.texture = value; return true end
 function methods:SetRotation(value) assert(type(value) == "number"); self.rotation = value end
+function methods:SetTexCoord(...) self.texCoords = { ... } end
 local function create(kind, name)
     local frame = { kind = kind, name = name, scripts = {}, events = {}, shown = false }
     setmetatable(frame, { __index = methods }); objects[#objects + 1] = frame
@@ -135,6 +136,16 @@ check("Window opens and filters without requiring cached quest titles", function
     assert(addon.UI.frame:IsShown()); assert(#addon.UI.cards == 29)
     for _, d in ipairs(addon.dungeons) do if d.key == "dm" then addon.UI.dungeon = d end end
     addon.UI:Refresh(); assert(#addon.UI.rows == 7)
+end)
+check("Real TOC footer uses separate quest and Wowhead icons without replacing actions", function()
+    local ui = addon.UI
+    ui.quest = 166; ui:Refresh()
+    assert(ui.giver.text == "" and ui.source.text == "" and ui.giver.width == 36 and ui.source.height == 36)
+    assert(ui.giver.footerIcon.texture == "Interface\\GossipFrame\\AvailableQuestIcon")
+    assert(ui.source.footerIcon.texture == "Interface\\AddOns\\DungeonPro\\Media\\Icons\\Wowhead")
+    local uv = ui.source.footerIcon.texCoords
+    assert(uv[1] == 0 and uv[2] == .75 and uv[3] == 0 and uv[4] == .75)
+    assert(ui.giverAction.id == 166 and ui.giverAction.place == addon.quests[166].start)
 end)
 check("Actual Defias data stays uncertain even after every known parent is completed", function()
     local completed = C_QuestLog.IsQuestFlaggedCompleted

@@ -96,6 +96,8 @@ Level ranges are provisional recommendations.
   It may mark a route point, an entrance or a turn-in. Quest-giver locations
   and preparation steps remain separate.
 - A separate quest-giver button opens a known zone or guides to a known location.
+  The compact quest icon visits the giver; the Wowhead icon offers the quest link
+  for copying. Hover over either icon for its action description.
   Visiting a giver does not confirm that the quest is available to pick up.
   Map and guide buttons identify whether they use a preparation step or the giver.
   A low-level character can still visit a known giver without treating the quest

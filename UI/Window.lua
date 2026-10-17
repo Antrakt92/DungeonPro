@@ -120,6 +120,27 @@ function UI:HideNavigationHint()
     end
 end
 
+function UI:RefreshFooterIcon(control)
+    local icon = control.footerIcon
+    if not icon then return end
+    local enabled = control.footerEnabled == true
+    local alpha = enabled and (control.footerPressed and .65 or control.footerHovered and 1 or .88) or .3
+    if type(icon.SetAlpha) == "function" then pcall(icon.SetAlpha, icon, alpha) end
+    if type(icon.SetDesaturated) == "function" then pcall(icon.SetDesaturated, icon, not enabled) end
+end
+
+function UI:SetFooterEnabled(control, enabled)
+    control.footerEnabled = enabled == true
+    if not control.footerEnabled then control.footerPressed, control.footerHovered = false, false end
+    control:SetEnabled(enabled == true)
+    self:RefreshFooterIcon(control)
+end
+
+function UI:SetFooterLabel(control, key)
+    control.footerLabelKey = key
+    control:SetText("")
+end
+
 local LANGUAGE_CHOICES = { { "auto" }, { "enUS", "English" }, { "ruRU", "Русский" }, { "deDE", "Deutsch" },
         { "frFR", "Français" }, { "esES", "Español" }, { "itIT", "Italiano" }, { "ptBR", "Português" },
         { "koKR", "한국어" }, { "zhCN", "简体中文" }, { "zhTW", "繁體中文" } }
@@ -1481,6 +1502,9 @@ function UI:RefreshDetail()
     local renderEngine, renderCharacter, pendingAction, pendingGiver = self.engine, addon.char, nil, nil
     local rewardGeneration = self:ResetRewardPresentation()
     if not rewardGeneration or self.quest ~= renderQuest then return end
+    self:HideNavigationHint()
+    if self.rewardGeneration ~= rewardGeneration or self.quest ~= renderQuest or self.dungeon ~= renderDungeon or
+        self.engine ~= renderEngine or addon.char ~= renderCharacter then return end
     if self.detailReferenceQuest ~= renderQuest or self.detailReferenceDungeon ~= renderDungeon then
         self.detailReferencesExpanded, self.detailChainExpanded = false, false
         self.detailReferenceQuest, self.detailReferenceDungeon = renderQuest, renderDungeon
@@ -1547,8 +1571,8 @@ function UI:RefreshDetail()
     self.action = nil
     self.map:SetEnabled(false); self.guide:SetEnabled(false)
     self.giverAction, self.giverHasCoordinates = nil, false
-    self.giver:SetEnabled(false)
-    self.giver:SetText(addon.L("VISIT_GIVER"))
+    self:SetFooterEnabled(self.giver, false)
+    self:SetFooterLabel(self.giver, "VISIT_GIVER")
     local rewardIndex, objectiveIndex = 0, 0
     local function line(value, style, reward, objective, ownerCurrent)
         if ownerCurrent and not ownerCurrent() then return false end
@@ -3425,9 +3449,9 @@ function UI:RefreshDetail()
         line(description)
         if not narrativeCurrent() then return end
         end
-        self.source:SetEnabled(true)
+        self:SetFooterEnabled(self.source, true)
     else
-        self.map:SetEnabled(false); self.guide:SetEnabled(false); self.source:SetEnabled(false)
+        self.map:SetEnabled(false); self.guide:SetEnabled(false); self:SetFooterEnabled(self.source, false)
         if renderDungeon then
             local name = addon.Read(addon.DungeonName, "string", renderDungeon)
             if self.quest ~= renderQuest or self.dungeon ~= renderDungeon or self.rewardGeneration ~= rewardGeneration then return end
@@ -3499,8 +3523,8 @@ function UI:RefreshDetail()
         addon.Clean(giverPlace.mapID, "number") == pendingGiver.map and addon.Clean(giverPlace.x, "number") == pendingGiver.x and
         addon.Clean(giverPlace.y, "number") == pendingGiver.y then
         self.giverAction, self.giverHasCoordinates = pendingGiver.action, pendingGiver.coordinates
-        self.giver:SetText(addon.L(pendingGiver.coordinates and "VISIT_GIVER" or "GIVER_MAP"))
-        self.giver:SetEnabled(true)
+        self:SetFooterLabel(self.giver, pendingGiver.coordinates and "VISIT_GIVER" or "GIVER_MAP")
+        self:SetFooterEnabled(self.giver, true)
     end
     local mapAction, mapGiver = self:NavigationDestination(false)
     local guideAction, guideGiver = self:NavigationDestination(true)
@@ -3520,7 +3544,7 @@ function UI:Refresh()
     if not self:RefreshLanguageLabel() then return end
     self.rangeButton:SetText(addon.L(self.range and "RANGE" or "ALL"))
     self.characterButton:SetText(addon.L(self.includeUnavailable and "ALL_CHARACTERS" or "MY_CHARACTER"))
-    self.source:SetText(addon.L("SOURCE"))
+    self:SetFooterLabel(self.source, "SOURCE")
     self.footer:SetText(addon.L("DEVELOPMENT"))
     local log = addon.Read(addon.QuestLogCapacity, "table")
     local count = log and addon.Clean(log.count, "number")
@@ -3635,16 +3659,30 @@ function UI:Create()
         if action then self:DispatchDetail(action, false, giver) end
     end)
     self.guide:SetPoint("TOPLEFT", 856, -84)
-    self.source = button(frame, "", 160, function() if self.quest then self:CopyLink(self.quest) end end)
+    self.source = button(frame, "", 36, function() if self.quest then self:CopyLink(self.quest) end end)
     self.source:SetPoint("BOTTOMRIGHT", -43, 19)
-    self.giver = button(frame, "", 195, function()
+    self.giver = button(frame, "", 36, function()
         if self.giverAction then
             self:DispatchDetail(self.giverAction, not self.giverHasCoordinates, true)
         end
     end)
-    self.giver:SetPoint("BOTTOMLEFT", 690, 19)
-    local function navigationHint(control, destination)
+    self.giver:SetPoint("BOTTOMRIGHT", -87, 19)
+    for _, control in ipairs({ self.giver, self.source }) do
+        control:SetHeight(36)
+        if type(control.SetMotionScriptsWhileDisabled) == "function" then pcall(control.SetMotionScriptsWhileDisabled, control, true) end
+        local icon = control:CreateTexture(nil, "ARTWORK"); control.footerIcon = icon
+        icon:SetSize(24, 24); icon:SetPoint("CENTER", control, "CENTER", 0, 0)
+        icon:SetTexture(control == self.giver and "Interface\\GossipFrame\\AvailableQuestIcon" or "Interface\\AddOns\\DungeonPro\\Media\\Icons\\Wowhead")
+        if control == self.source then icon:SetTexCoord(0, .75, 0, .75) end
+        icon:Show()
+        control:SetScript("OnMouseDown", function(_, mouse) if mouse == "LeftButton" then control.footerPressed = true; self:RefreshFooterIcon(control) end end)
+        control:SetScript("OnMouseUp", function() control.footerPressed = false; self:RefreshFooterIcon(control) end)
+        control:SetScript("OnHide", function() control.footerHovered, control.footerPressed = false, false; self:RefreshFooterIcon(control) end)
+    end
+    self:SetFooterLabel(self.source, "SOURCE"); self:SetFooterLabel(self.giver, "VISIT_GIVER")
+    local function navigationHint(control, destination, bodyKey)
         control:SetScript("OnEnter", function()
+            if control.footerIcon then control.footerHovered = true; self:RefreshFooterIcon(control) end
             self:HideNavigationHint()
             local quest, dungeon, generation = self.quest, self.dungeon, self.rewardGeneration
             local tip = addon.Clean(GameTooltip, "table") or addon.Clean(GameTooltip, "userdata")
@@ -3652,14 +3690,14 @@ function UI:Create()
                 return addon.UI == self and self.frame == frame and self.quest == quest and self.dungeon == dungeon and
                     self.rewardGeneration == generation and GameTooltip == tip and addon.Read(frame.IsShown, "boolean", frame) == true
             end
-            local point = destination()
-            if not tip or not point or not current() then return end
-            local text = addon.Read(giverName, "string", point)
-            local zone = addon.Clean(point.zoneName, "string")
-            local x, y = addon.Clean(point.x, "number"), addon.Clean(point.y, "number")
+            local point = destination and destination()
+            if not tip or (not point and not bodyKey) or not current() then return end
+            local text = bodyKey and addon.L(bodyKey) or addon.Read(giverName, "string", point)
+            local zone = point and addon.Clean(point.zoneName, "string")
+            local x, y = point and addon.Clean(point.x, "number"), point and addon.Clean(point.y, "number")
             if text and zone and zone:find("%S") then text = text .. " — " .. zone end
             if text and x and y and x >= 0 and x <= 100 and y >= 0 and y <= 100 then text = text .. string.format(" (%.1f, %.1f)", x, y) end
-            local title = addon.Read(control.GetText, "string", control)
+            local title = control.footerLabelKey and addon.L(control.footerLabelKey) or addon.Read(control.GetText, "string", control)
             if not text or not title or not current() then return end
             local held = { tip = tip, button = control }; self.navigationTooltip = held
             for _, call in ipairs({ { "SetOwner", control, "ANCHOR_RIGHT" }, { "SetText", title }, { "AddLine", text, 1, 1, 1, true }, { "Show" } }) do
@@ -3669,7 +3707,10 @@ function UI:Create()
                 if not current() or addon.Read(tip.IsOwned, "boolean", tip, control) ~= true or not current() then self:HideNavigationHint(); return end
             end
         end)
-        control:SetScript("OnLeave", function() self:HideNavigationHint() end)
+        control:SetScript("OnLeave", function()
+            if control.footerIcon then control.footerHovered, control.footerPressed = false, false; self:RefreshFooterIcon(control) end
+            self:HideNavigationHint()
+        end)
     end
     navigationHint(self.entrance, function()
         local binding = self.entranceBinding
@@ -3677,6 +3718,8 @@ function UI:Create()
     end)
     navigationHint(self.map, function() local action = self:NavigationDestination(false); return action and action.place end)
     navigationHint(self.guide, function() local action = self:NavigationDestination(true); return action and action.place end)
+    navigationHint(self.giver, function() return self.giverAction and self.giverAction.place or {} end)
+    navigationHint(self.source, nil, "COPY")
     self.capacityStatus = label(frame, "", 22, -646, 640, 13)
     self.capacityStatus:Hide()
     self.footer = label(frame, "", 22, -668, 640, 13)
