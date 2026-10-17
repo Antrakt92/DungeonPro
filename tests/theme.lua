@@ -226,6 +226,7 @@ local function scrollFixture()
         button.scripts.OnEnter=function(self)self.entered=(self.entered or 0)+1 end
     end
     bar.scripts.OnValueChanged=function(self,n)self.value=n end
+    bar.scripts.OnMouseDown=function(self,button)self.dragButton=button end
     scroll.scripts.OnMouseWheel=function(self,n)self.wheel=n end
     return scroll,bar
 end
@@ -235,17 +236,18 @@ test("all three native scrollbars receive bounded quiet cosmetics while native g
     local totalTextures=0
     for _,scroll in ipairs({ui.catalogScroll,ui.questScroll,ui.detailScroll})do
         local bar=scroll.ScrollBar;bar.shown=false;bar.ThumbTexture.shown=false
-        local click=bar.ScrollUpButton.scripts.OnClick;local value=bar.scripts.OnValueChanged
+        local click=bar.ScrollUpButton.scripts.OnClick;local value=bar.scripts.OnValueChanged;local drag=bar.scripts.OnMouseDown
         assert(addon.Theme.Apply(ui))
         assert(not bar.shown and not bar.ThumbTexture.shown and not bar.points)
         assert(bar.ThumbTexture.width==18 and bar.ThumbTexture.height==24 and not bar.ThumbTexture.points)
         assert(bar.ThumbTexture.color[2]>bar.ThumbTexture.color[1])
         assert(#bar.textures==1 and bar.textures[1].width==3)
         assert(bar.ScrollUpButton.width==18 and bar.ScrollUpButton.height==16 and not bar.ScrollUpButton.points)
-        assert(bar.ScrollUpButton.scripts.OnClick==click and bar.scripts.OnValueChanged==value)
+        assert(bar.ScrollUpButton.scripts.OnClick==click and bar.scripts.OnValueChanged==value and bar.scripts.OnMouseDown==drag)
         assert(not bar.scripts.OnUpdate and not scroll.scripts.OnUpdate)
         nativeEvent(bar.ScrollUpButton,"OnClick");nativeEvent(bar,"OnValueChanged",30);nativeEvent(scroll,"OnMouseWheel",1)
-        assert(bar.ScrollUpButton.clicked==1 and bar.value==30 and scroll.wheel==1)
+        nativeEvent(bar,"OnMouseDown","LeftButton")
+        assert(bar.ScrollUpButton.clicked==1 and bar.value==30 and scroll.wheel==1 and bar.dragButton=="LeftButton")
         local a,b=bar.ScrollUpButton,bar.ScrollDownButton
         assert(#a.textures==2 and #b.textures==2 and a.textures[1].rotation==-b.textures[1].rotation)
         assert(a.Normal.alpha==0 and a.Pushed.alpha==0 and a.Disabled.alpha==0 and a.Highlight.alpha==0)

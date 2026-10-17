@@ -8,6 +8,7 @@ local palette = {
     row = { 0.059, 0.077, 0.090, 0.96 }, selected = { 0.088, 0.119, 0.132, 1 },
     edge = { 0.20, 0.27, 0.30, 0.55 }, faint = { 0.16, 0.21, 0.24, 0.50 },
     amber = { 0.83, 0.64, 0.34, 0.95 }, teal = { 0.31, 0.67, 0.65, 0.95 },
+    scrollThumb = { 0.39, 0.48, 0.51, 0.65 },
     text = { 0.91, 0.91, 0.86, 1 }, muted = { 0.64, 0.71, 0.73, 1 },
     quiet = { 0.49, 0.59, 0.62, 1 }, heading = { 0.91, 0.77, 0.49, 1 },
 }
@@ -411,7 +412,7 @@ function Theme.StyleScrollBar(scroll)
             end
         end
         -- Native thumb dimensions and anchors remain the slider's drag target.
-        state.thumb = thumb and color(thumb, palette.teal) and thumb or nil
+        state.thumb = thumb and color(thumb, palette.scrollThumb) and thumb or nil
     end
     styleScrollArrow(bar.ScrollUpButton, false)
     styleScrollArrow(bar.ScrollDownButton, true)
