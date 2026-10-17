@@ -4690,6 +4690,18 @@
           "itemID": 5876,
           "name": "Blueleaf Tuber",
           "quantity": 6
+        },
+        {
+          "itemID": 5880,
+          "name": "Crate With Holes"
+        },
+        {
+          "itemID": 5897,
+          "name": "Snufflenose Owner's Manual"
+        },
+        {
+          "itemID": 6684,
+          "name": "Snufflenose Command Stick"
         }
       ]
     },
