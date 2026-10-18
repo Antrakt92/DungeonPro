@@ -52,6 +52,7 @@ def main():
     run(lua, "tests/localized_names_ui.lua")
     run(lua, "tests/header_controls_ui.lua")
     run(lua, "tests/dungeon_cards_ui.lua")
+    run(lua, "tests/dungeon_count_filter_ui.lua")
     run(lua, "tests/theme.lua")
     run(lua, "tests/quest_status.lua")
     run(lua, "tests/quest_list_rewards.lua")

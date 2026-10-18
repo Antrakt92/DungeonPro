@@ -106,7 +106,8 @@ Level ranges are provisional recommendations.
   The level tab beside the app title filters the dungeon catalogue. The larger
   quest filter beside the dungeon heading switches between your character's
   quests and all quests. Mine shows your portrait; All quests is a plain text button.
-  Hover for the current mode and click to switch.
+  Hover for the current mode and click to switch. Dungeon quest counts follow
+  this filter and count main listed quests, rather than expanded story steps.
   The message and heart icons offer issue-report and project-support links for copying.
   Quest-log occupancy sits in the top bar. A compact gold navigation icon appears
   beside the quest giver; hover for the destination or an unavailable reason.

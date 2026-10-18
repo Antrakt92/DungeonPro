@@ -371,11 +371,12 @@ function UI:CatalogStatusHint(row)
     self:HideNavigationHint()
     local frame, dto, owned, result = self.frame, row.dungeonStatusDTO, row.dungeonStatusCurrent, row.catalogResult
     local control = row.dungeonStatusControl
+    local countMode = result and result.includeUnavailable
     local tip = addon.Clean(GameTooltip, "table") or addon.Clean(GameTooltip, "userdata")
     local isOwned = tip and addon.Clean(tip.IsOwned, "function")
     local function current()
         local shown = addon.Read(frame.IsShown, "boolean", frame)
-        return shown == true and addon.Read(row.IsShown, "boolean", row) == true and addon.UI == self and self.frame == frame and row.catalogResult == result and row.dungeonStatusDTO == dto and
+        return self.includeUnavailable == countMode and shown == true and addon.Read(row.IsShown, "boolean", row) == true and addon.UI == self and self.frame == frame and row.catalogResult == result and row.dungeonStatusDTO == dto and
             row.dungeonStatusCurrent == owned and owned and owned() and GameTooltip == tip and tip.IsOwned == isOwned
     end
     if not tip or not isOwned or not dto or not current() then return end
@@ -1263,7 +1264,8 @@ function UI:QueueSearch()
 end
 
 function UI:CatalogResultNote(result, matchedName)
-    local note = addon.L("CATALOG_COMPACT_META", result.minimum, result.maximum, result.count)
+    local note = result.count ~= nil and addon.L("CATALOG_COMPACT_META", result.minimum, result.maximum, result.count) or
+        addon.L("CATALOG_LEVELS", result.minimum, result.maximum)
     matchedName = matchedName or result.matchedName
     if matchedName then note = note .. "\n" .. addon.L("SEARCH_QUEST_MATCH", matchedName) end
     if result.sourceMatch then
@@ -1343,8 +1345,11 @@ function UI:RefreshCatalogLanguage()
         if not current() then return failed() end
         local title = addon.Read(addon.DungeonName, "string", result.dungeon)
         local matchedName = result.questID and result.matchedName and addon.Read(addon.CachedQuestName, "string", result.questID)
+        local function noteCurrent()
+            return current() and (not result.statusCurrent or addon.Read(result.statusCurrent, "boolean") == true)
+        end
         if not current() or not title or not write(row.title, "SetText", title) or
-            not write(row.note, "SetText", self:CatalogResultNote(result, matchedName)) then return failed() end
+            not view.write(noteCurrent, true, row.note, "SetText", self:CatalogResultNote(result, matchedName)) then return failed() end
         offset = self:LayoutRow(row, 64, offset, current, write)
         if not offset then return failed() end
         local inspect = result.inspect
@@ -1377,6 +1382,7 @@ function UI:RefreshDungeons()
     self.catalogGeneration = generation
     local catalogue, definitions, character, database = addon.dungeons, addon.quests, addon.char, addon.db
     local search, range, locale, catalogScroll = self.search, self.range, addon.db.locale, self.catalogScroll
+    local includeUnavailable = self.includeUnavailable
     local getter, dungeonGetter, fold, checker = addon.CachedQuestName, addon.DungeonName, addon.SearchFold, issecretvalue
     local context = addon.Context()
     local contextCurrent = context.current
@@ -1400,7 +1406,7 @@ function UI:RefreshDungeons()
         local ok, valid = pcall(function()
             if context.current ~= contextCurrent or addon.QuestSourceSearchTerms ~= sourceGetter or
                 addon.SearchQuestID ~= idParser then return false end
-            if self.catalogGeneration ~= generation or self.search ~= search or self.range ~= range or self.catalogScroll ~= catalogScroll or
+            if self.catalogGeneration ~= generation or self.search ~= search or self.range ~= range or self.includeUnavailable ~= includeUnavailable or self.catalogScroll ~= catalogScroll or
                 addon.dungeons ~= catalogue or addon.quests ~= definitions or addon.char ~= character or
                 addon.db ~= database or database.locale ~= locale or addon.CachedQuestName ~= getter or
                 addon.DungeonName ~= dungeonGetter or addon.SearchFold ~= fold or issecretvalue ~= checker or
@@ -1624,7 +1630,7 @@ function UI:RefreshDungeons()
             if not current(true) then return end
             if matches or matchedName then
                 local result = { dungeon = dungeon, title = name, questID = matchedID, sourceMatch = sourceMatch,
-                    idMatch = idMatch, minimum = input.minimum, maximum = input.maximum, count = #input.members, matchedName = matchedName }
+                    idMatch = idMatch, includeUnavailable = includeUnavailable, minimum = input.minimum, maximum = input.maximum, count = includeUnavailable == true and #input.members or nil, matchedName = matchedName }
                 result.note = self:CatalogResultNote(result)
                 if not current(true) then return end
                 results[#results + 1] = result
@@ -1643,6 +1649,9 @@ function UI:RefreshDungeons()
         if not current() then return end
         if ok and addon.Clean(dto, "table") and addon.Clean(fresh, "function") then
             result.statusDTO, result.statusCurrent = dto, fresh
+            result.count = includeUnavailable == true and dto.listedRoots or dto.characterRoots
+            result.note = self:CatalogResultNote(result)
+            if not current() or addon.Read(fresh, "boolean") ~= true then return end
         end
     end
     local function write(object, method, ...)
@@ -1754,7 +1763,10 @@ function UI:RefreshDungeons()
         if not write(row.art, "Hide") then return end
         addon.Read(addon.PaintDungeonArt, "boolean", row.art, dungeon)
         if not current() then return end
-        if not write(row.title, "SetText", result.title) or not write(row.note, "SetText", result.note) or
+        local function noteCurrent()
+            return current() and (not result.statusCurrent or addon.Read(result.statusCurrent, "boolean") == true)
+        end
+        if not write(row.title, "SetText", result.title) or not ownedWrite(noteCurrent, false, row.note, "SetText", result.note) or
             not write(row.bg, "SetColorTexture", self.dungeon == dungeon and 0.22 or 0.13, 0.19, 0.23, 1) then return end
         styleRow(row, "dungeon", self.dungeon == dungeon)
         if not current() then return end
@@ -1853,6 +1865,7 @@ function UI:RefreshDungeons()
     end
     self.catalogQueryKey = needle
     for _, result in ipairs(results) do
+        if result.statusCurrent and addon.Read(result.statusCurrent, "boolean") ~= true then return retire() end
         if not write(result.row, "Show") then return retire() end
         if result.inspect and not write(result.inspect, "Show") then return retire() end
     end
@@ -2024,7 +2037,7 @@ function UI:RefreshQuests()
     if d then
         local plan = engine:Dungeon(d, { includeUnavailable = self.includeUnavailable })
         if not current() then return end
-        self.currentPlan = { engine = engine, dungeon = d, rows = plan.rows, counts = plan.counts, unknown = plan.unknown, ready = plan.ready }
+        self.currentPlan = { engine = engine, dungeon = d, includeUnavailable = self.includeUnavailable, rows = plan.rows, counts = plan.counts, unknown = plan.unknown, ready = plan.ready }
         local entries = plan.rows
         if self.preparation then
             entries = {}
@@ -2675,6 +2688,7 @@ end
 
 function UI:RefreshDetail()
     local renderQuest, renderDungeon = self.quest, self.dungeon
+    local renderIncludeUnavailable = self.includeUnavailable
     local renderEngine, renderCharacter, pendingAction, pendingGiver = self.engine, addon.char, nil, nil
     local rewardGeneration = self:ResetRewardPresentation()
     if not rewardGeneration or self.quest ~= renderQuest then return end
@@ -2710,7 +2724,7 @@ function UI:RefreshDetail()
     end
     local function portraitCardCurrent()
         return self.quest == renderQuest and self.dungeon == renderDungeon and self.engine == renderEngine and
-            addon.char == renderCharacter and self.rewardGeneration == rewardGeneration and
+            self.includeUnavailable == renderIncludeUnavailable and addon.char == renderCharacter and self.rewardGeneration == rewardGeneration and
             (self.detailReferencesExpanded == true) == referencesExpanded and
             (self.detailNarrativeExpanded == true) == narrativeExpanded
     end
@@ -4625,17 +4639,50 @@ function UI:RefreshDetail()
             if minimum and maximum and minimum > 0 and maximum >= minimum and minimum % 1 == 0 and maximum % 1 == 0 then
                 line(addon.L("CATALOG_LEVELS", minimum, maximum))
             end
-            local quests = addon.Clean(renderDungeon.quests, "table")
-            local count = quests and #quests or 0
-            line(addon.L("CATALOG_QUESTS", count))
-            if count == 0 then line(addon.L("EMPTY")) end
             local plan, preparation = self.currentPlan, self.preparation
+            local countOwned = plan and plan.engine == renderEngine and plan.dungeon == renderDungeon and
+                plan.includeUnavailable == renderIncludeUnavailable
+            local count, countProof
+            if countOwned then
+                local view = self.catalogLanguageView
+                if view and view.current() then
+                    for _, result in ipairs(view.results) do
+                        if result.dungeon == renderDungeon and result.statusCurrent and result.statusCurrent() then
+                            count, countProof = result.count, result.statusCurrent
+                            break
+                        end
+                    end
+                end
+                if not countProof then
+                    local provider = addon.Clean(addon.DungeonStatus, "table")
+                    local getter = provider and addon.Clean(provider.Get, "function")
+                    local dto, proof
+                    if getter then
+                        local ok; ok, dto, proof = pcall(getter, renderDungeon, renderEngine)
+                        if ok and addon.Clean(dto, "table") and addon.Clean(proof, "function") then
+                            count = renderIncludeUnavailable == true and dto.listedRoots or dto.characterRoots
+                            countProof = proof
+                        end
+                    end
+                end
+            end
+            if count ~= nil and countProof then
+                local function countCurrent()
+                    return portraitCardCurrent() and self.currentPlan == plan and addon.Read(countProof, "boolean") == true
+                end
+                if not countCurrent() or line(addon.L("CATALOG_QUESTS", count), nil, nil, nil, countCurrent) == false then return end
+                if count == 0 then
+                    local roots = addon.Clean(renderDungeon.quests, "table")
+                    local emptyKey = renderIncludeUnavailable ~= true and roots and #roots > 0 and "NO_CHARACTER_QUESTS" or "EMPTY"
+                    if line(addon.L(emptyKey), nil, nil, nil, countCurrent) == false then return end
+                end
+            end
             local function promptCurrent()
                 return portraitCardCurrent() and self.currentPlan == plan and self.preparation == preparation
             end
             local ownedPlan = plan and plan.engine == renderEngine and plan.dungeon == renderDungeon
             local emptyPreparation = preparation and ownedPlan and plan.preparationEmpty == true and #plan.rows > 0
-            if count > 0 then
+            if count and count > 0 then
                 local prompt = emptyPreparation and addon.L("PREPARATION_EMPTY", addon.L("QUESTS")) or
                     addon.L(ownedPlan and #plan.rows == 0 and "NO_CHARACTER_QUESTS" or "OVERVIEW_PICK")
                 if not promptCurrent() or line(prompt, nil, nil, nil, promptCurrent) == false then return end

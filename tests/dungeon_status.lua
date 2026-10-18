@@ -202,4 +202,22 @@ check("Actual catalogue aggregate proofs avoid duplicate sanitization of unchang
     end
     assert(count==29 and checks<68000,"duplicate aggregate binding checks: "..checks)
 end)
+check("Root counts share Planner membership without changing readiness or duplicate handling",function()
+    local f=fixture({{"UNAVAILABLE"},{"LOCKED","level"},{"UNKNOWN"},{"ACTIVE"},{"READY"},{"COMPLETED"}},
+        {{factions={"Horde"}},{minLevel=99},{classes={"MAGE"}},{factions={"Horde"}},{classes={"PALADIN"}},{classes={"PALADIN"}}})
+    f.dungeon.quests[7]=2
+    local dto,fresh=status(f)
+    assert(dto.listedRoots==7 and dto.characterRoots==5 and dto.listed==6 and f.calls()==6)
+    local predicate=addon.Planner.RelevantToCharacter
+    addon.Planner.RelevantToCharacter=function(...)return predicate(...)end
+    assert(not fresh());addon.Planner.RelevantToCharacter=predicate
+    local f2=fixture({{"UNAVAILABLE"}})
+    assert(status(f2).characterRoots==1,"root membership is eligibility, not readiness exclusion")
+end)
+check("Root predicate callback source mutation cannot publish counts",function()
+    local f=fixture({{"AVAILABLE"}});local original=addon.Planner.RelevantToCharacter
+    addon.Planner.RelevantToCharacter=function(...)f.dungeon.quests[1]=2;return original(...)end
+    assert(addon.DungeonStatus.Get(f.dungeon,f.engine)==nil)
+    addon.Planner.RelevantToCharacter=original
+end)
 print("Dungeon status modeled checks passed: "..total)

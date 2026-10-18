@@ -22,6 +22,11 @@ local function prerequisiteSatisfied(state, mode)
         (state.status == "ACTIVE" or state.status == "READY"))
 end
 
+-- Root membership is independent of readiness, level, and prerequisite progress.
+function Planner.RelevantToCharacter(eligible, status)
+    return eligible ~= false or status == "ACTIVE" or status == "READY"
+end
+
 function Planner.Eligible(q, context)
     if not contextCurrent(context) then return nil, "character" end
     local unknown
@@ -203,7 +208,7 @@ function Planner.New(quests, context, choices)
             local eligible = q and Planner.Eligible(q, self.context)
             local state = self:State(id)
             -- Current log evidence outweighs stale catalog restrictions; past history does not.
-            local relevantToCharacter = eligible ~= false or state.status == "ACTIVE" or state.status == "READY"
+            local relevantToCharacter = Planner.RelevantToCharacter(eligible, state.status)
             if relevantToCharacter or (options and options.includeUnavailable == true) then
                 result.rows[#result.rows + 1] = { id = id, state = state }
                 result.counts[state.status] = (result.counts[state.status] or 0) + 1

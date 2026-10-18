@@ -1227,13 +1227,13 @@ check("Missing or unusable dialogue objective summaries leave no recycled headin
     end
     addon.DialogueObjectiveText = previous
 end)
-check("Catalogue labels distinguish listed targets from character eligibility and retain selection", function()
+check("Catalogue labels follow character eligibility and retain selection", function()
     local dungeons, context = addon.dungeons, addon.Context
     local search, range, includeUnavailable = ui.search, ui.range, ui.includeUnavailable
     local selected, quest = ui.dungeon, ui.quest
     local factions = addon.quests[2].factions
     addon.quests[2].factions = { "Horde" }
-    addon.Context = function() return { level = 20, faction = "Alliance" } end
+    addon.Context = function() return { level = 20, faction = "Alliance", completed=function()return false end, active=function()return false end } end
     local listed = { key = "listed", name = "Listed dungeon", minLevel = 10, maxLevel = 30, quests = { 1, 2 } }
     local empty = { key = "empty", name = "Empty dungeon", minLevel = 40, maxLevel = 50, quests = {} }
     addon.dungeons = { listed, empty }
@@ -1241,11 +1241,11 @@ check("Catalogue labels distinguish listed targets from character eligibility an
     measurement = function(fs) return fs.text and fs.text:find("\n", 1, true) and 36 or 18 end
     ui:RefreshDungeons()
     local card = ui.cards[1]
-    assert(card.note.text == addon.L("CATALOG_COMPACT_META", 10, 30, 2))
+    assert(card.note.text == addon.L("CATALOG_COMPACT_META", 10, 30, 1))
     assert(card.height == 76 and ui.cards[2].point[3] == -84, "compact metadata and cover fit cumulative geometry")
     assert(addon.Planner.Eligible(addon.quests[2], addon.Context()) == false)
     ui.includeUnavailable = true; ui:RefreshDungeons()
-    assert(card.note.text==addon.L("CATALOG_COMPACT_META",10,30,2), "listed count is independent of character filtering")
+    assert(card.note.text==addon.L("CATALOG_COMPACT_META",10,30,2), "All counts every listed root")
     ui.search = "Empty"; ui:RefreshDungeons()
     assert(ui.cards[1] == card and card.title.text == "Empty dungeon")
     assert(card.note.text == addon.L("CATALOG_COMPACT_META",40,50,0))
@@ -2951,7 +2951,7 @@ do
         local first, _, restore = overviewFixture()
         assert(ui.quest == nil and #ui.detailHistory == 0 and #visibleRows() == 1)
         assert(detailHas(first.name) and detailHas(addon.L("CATALOG_LEVELS", 12, 24)))
-        assert(detailHas(addon.L("CATALOG_QUESTS", 2)) and not detailHas(addon.L("PARTIAL")) and detailHas(addon.L("OVERVIEW_PICK")))
+        assert(detailHas(addon.L("CATALOG_QUESTS", 1)) and not detailHas(addon.L("PARTIAL")) and detailHas(addon.L("OVERVIEW_PICK")))
         assert(not detailHas(addon.L("PREPARED")) and not detailHas(addon.L("PICK")))
         assert(ui.overviewArt and ui.overviewArt.kind ~= "Button" and ui.overviewArt.width <= ui.detail:GetWidth()-8 and ui.overviewArt.shown)
         assert(ui.overviewArt.texture == first.key and not ui.source.enabled and not hasDestination(true) and not hasDestination(false) and not ui.giver.enabled)
@@ -9244,7 +9244,7 @@ check("Compact dungeon cards separate cover titles metadata entrance actions and
         assert(row.title.point[2]==76 and row.note.point[2]==76 and row.title.width==row:GetWidth()-112 and row.note.fontSize==12)
         assert(row.height>=76 and -row.entranceControl.point[5]+row.entranceControl.height<=-control.point[5]-4)
         assert(-control.point[5]==(row.height-60)/2+32 and control.width==28 and icon.width==20)
-        assert(row.note.text==addon.L("CATALOG_COMPACT_META",10,30,index==9 and 0 or 1))
+        assert(row.note.text==addon.L("CATALOG_COMPACT_META",10,30,(index==9 or (index==8 and not ui.includeUnavailable)) and 0 or 1))
         if index>1 then assert(-row.point[3]>=-ui.cards[index-1].point[3]+ui.cards[index-1].height+8)end
     end
     assert(ui.cards[1].dungeonStatusControl.statusIcon.texture=="Interface\\RaidFrame\\ReadyCheck-Ready")

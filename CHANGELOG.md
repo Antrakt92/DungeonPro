@@ -2,6 +2,9 @@
 
 ## 0.1.0 - 16-Oct-2026 — Development preview
 
+- Made dungeon quest counts follow Mine / All, consistently in cards and quest
+  overviews.
+
 - Added class icons beside faction crests in quest rows to make class restrictions
   visible before opening a quest.
 

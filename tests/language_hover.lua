@@ -114,7 +114,7 @@ source.minLevel = sourceMinimum + 1
 reset(); session.rows[2].scripts.OnEnter()
 check(ui.catalogGeneration ~= beforeSourceChange and count("catalogArt") > 0,
     "changed catalogue member falls back to a fresh validated result scan")
-check(ui.cards[1].note.text:find(addon.L("CATALOG_COMPACT_META", source.minLevel, source.maxLevel, #source.quests), 1, true) ~= nil,
+check(ui.cards[1].note.text:find(addon.L("CATALOG_COMPACT_META", source.minLevel, source.maxLevel, ui.cards[1].catalogResult.count), 1, true) ~= nil,
     "source change refresh publishes the new localized level range")
 source.minLevel = sourceMinimum
 addon.Language:Cancel(ui)
@@ -276,7 +276,7 @@ session.rows[3].scripts.OnEnter()
 ui.cards[1].title.GetText = titleGetter
 check(getterEntered and addon.L("NEXT") == addon.locales.enUS.NEXT,
     "native text getter reentry keeps the newer English preview")
-check(ui.cards[1].note.text:find(addon.L("CATALOG_COMPACT_META", addon.dungeons[1].minLevel, addon.dungeons[1].maxLevel, #addon.dungeons[1].quests), 1, true) ~= nil,
+check(ui.cards[1].note.text:find(addon.L("CATALOG_COMPACT_META", addon.dungeons[1].minLevel, addon.dungeons[1].maxLevel, ui.cards[1].catalogResult.count), 1, true) ~= nil,
     "superseded getter cannot leave older-language catalogue notes")
 addon.Language:Cancel(ui)
 

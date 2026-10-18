@@ -12,10 +12,11 @@ function Status.Get(dungeon, engine)
     local cache = engine and clean(rawget(engine, "states"), "table")
     local planner = clean(addon.Planner, "table")
     local eligible = planner and clean(rawget(planner, "Eligible"), "function")
+    local relevantRoot = planner and clean(rawget(planner, "RelevantToCharacter"), "function")
     local getter = engine and clean(rawget(engine, "State"), "function")
     local fresh = engine and clean(rawget(engine, "Current"), "function")
     local ids = dungeon and clean(rawget(dungeon, "quests"), "table")
-    if not dungeon or not engine or not quests or not context or not eligible or not getter or not fresh or not ids then return nil, "input" end
+    if not dungeon or not engine or not quests or not context or not eligible or not relevantRoot or not getter or not fresh or not ids then return nil, "input" end
     local fieldObjects, fieldKeys, fieldValues, fieldCount = {}, {}, {}, 0
     local building = true
     local function keep(object, key)
@@ -34,7 +35,7 @@ function Status.Get(dungeon, engine)
         return rawequal(rawget(addon, "DungeonStatus"), Status) and rawequal(rawget(Status, "Get"), getterOwner) and
             rawequal(rawget(addon, "Clean"), clean) and rawequal(rawget(addon, "Read"), read) and
             rawequal(rawget(_G, "issecretvalue"), checker) and rawequal(rawget(addon, "Planner"), planner) and
-            rawequal(rawget(planner, "Eligible"), eligible) and rawequal(rawget(engine, "State"), getter) and
+            rawequal(rawget(planner, "Eligible"), eligible) and rawequal(rawget(planner, "RelevantToCharacter"), relevantRoot) and rawequal(rawget(engine, "State"), getter) and
             rawequal(rawget(engine, "Current"), fresh) and rawequal(rawget(engine, "quests"), quests) and
             rawequal(rawget(engine, "context"), context) and rawequal(rawget(engine, "states"), cache)
     end
@@ -73,9 +74,9 @@ function Status.Get(dungeon, engine)
     end
     if count > 200 or count ~= #ids then return nil, "source" end
     keep(ids, count + 1)
-    local result = { listed = 0, eligible = 0, excluded = 0, completed = 0, unfinished = 0, counts = {},
+    local result = { listedRoots = count, characterRoots = 0, listed = 0, eligible = 0, excluded = 0, completed = 0, unfinished = 0, counts = {},
         partial = clean(rawget(dungeon, "coverage"), "string") ~= "reviewed", allLevelBlocked = false }
-    local seen, levelBlocked = {}, 0
+    local seen, rootMembership, levelBlocked = {}, {}, 0
     local sourceSeen, definitions, sourceCount = {}, {}, 0
     local function captureDefinitions(first)
         local pending, queued, nextIndex = { first }, { [first] = true }, 1
@@ -154,6 +155,8 @@ function Status.Get(dungeon, engine)
             local completed = clean(rawget(state, "completedHistory"), "boolean") == true
             local relevant = definition and read(eligible, "boolean", definition, context)
             if not current() then return nil, "expired" end
+            rootMembership[questID] = read(relevantRoot, "boolean", relevant, kind)
+            if rootMembership[questID] == nil then return nil, "expired" end
             local live = kind == "ACTIVE" or kind == "READY"
             if not live and (relevant == false or kind == "UNAVAILABLE") then result.excluded = result.excluded + 1
             else
@@ -169,6 +172,8 @@ function Status.Get(dungeon, engine)
                 end
             end
         end
+        -- Use the validated ID even if a callback replaced the source list.
+        if rootMembership[questID] then result.characterRoots = result.characterRoots + 1 end
     end
     -- The DTO stays private during construction. Validate the complete source
     -- once before publication, then retain that complete proof for every caller.
