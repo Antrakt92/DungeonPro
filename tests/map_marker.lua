@@ -205,4 +205,29 @@ check("Persistent texture allocation failure has a bounded retry budget", functi
     for _ = 1, 20 do tick() end
     assert(calls == 3)
 end)
+check("A closed map avoids geometry reads and repeated hides while preserving reopen",function()
+    local nav,map,canvas,getMarker,tick,_,native=fixture()
+    assert(nav.Map(destination));local marker=getMarker()
+    local mapReads,canvasReads,hides=0,0,0
+    local getMap,getCanvas,hide=map.GetMapID,map.GetCanvas,marker.Hide
+    map.GetMapID=function(self)mapReads=mapReads+1;return getMap(self)end
+    map.GetCanvas=function(self)canvasReads=canvasReads+1;return getCanvas(self)end
+    marker.Hide=function(self)hides=hides+1;return hide(self)end
+    map:Hide()
+    for index=1,600 do tick()end
+    assert(mapReads==0 and canvasReads==0 and hides==1,
+        "closed map repeated geometry work "..mapReads.."/"..canvasReads.."/"..hides)
+    map.zoom,canvas.width=2,1200;map:Show();tick()
+    assert(marker.shown and marker.scale==.5 and math.abs(marker.point[4]-787.2)<.001 and native()==0)
+end)
+check("A closed-map hide cannot erase a newer map request",function()
+    local nav,map,_,getMarker,tick,_,native=fixture()
+    assert(nav.Map(destination));local marker=getMarker();local entered=false
+    map:Hide()
+    marker.beforeHide=function()
+        if not entered then entered=true;assert(nav.Map({mapID=1455,x=80,y=20}))end
+    end
+    tick()
+    assert(entered and marker.shown and marker.point[4]==800 and native()==0)
+end)
 print("Owned map marker checks passed: " .. total .. " (native acceptance pending)")

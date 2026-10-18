@@ -92,6 +92,19 @@ local function refreshMapMarker()
     local map = markerObject(WorldMapFrame)
     local shownGetter, mapGetter, canvasGetter = markerMethod(map, "IsShown"), markerMethod(map, "GetMapID"), markerMethod(map, "GetCanvas")
     local shown = shownGetter and addon.Read(shownGetter, "boolean", map)
+    if shown == false then
+        local function hidden()
+            if not current() or WorldMapFrame ~= map or markerMethod(map, "IsShown") ~= shownGetter then return false end
+            local visible = addon.Read(shownGetter, "boolean", map)
+            return visible == false and current() and WorldMapFrame == map and markerMethod(map, "IsShown") == shownGetter
+        end
+        if mapMarker then
+            local visible = addon.Read(markerMethod(mapMarker, "IsShown"), "boolean", mapMarker)
+            if visible ~= false and hidden() then markerWrite(mapMarker, "Hide", hidden) end
+        end
+        if current() then state.geometry = nil end
+        return
+    end
     local mapID = mapGetter and mapIdentity(addon.Read(mapGetter, "number", map))
     local canvasOK, rawCanvas = pcall(function() return canvasGetter and canvasGetter(map) end)
     local canvas = canvasOK and markerObject(rawCanvas)
