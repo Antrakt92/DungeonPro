@@ -9201,7 +9201,7 @@ check("Actual Toxic Soil first step selects while the exact dungeon target stays
     assert(first.enabled and first.questTreePath and first.questTreeRelation=="story")
     assert(target.questTreeTarget and target.dungeonTarget and target.dungeonTargetLabel.shown and target.dungeonTargetLabel.text==addon.L("DUNGEON_QUEST_SHORT"))
     assert(target.title.text=="Destruction in Deadmines #92753"and later.title.text=="Destruction in Deadmines #92819")
-    assert(target.questTreePath and not later.questTreePath and not later.dungeonTarget and (not later.dungeonTargetLabel or not later.dungeonTargetLabel.shown))
+    assert(target.questTreePath and not later.questTreePath and not later.dungeonTarget and later.dungeonTargetLabel.shown and later.dungeonTargetLabel.text==addon.L("STORY_SHORT"))
     assert(row(92750).title.text:find("#92750",1,true)and row(92751).title.text:find("#92751",1,true))
     local firstY,targetY=-first.point[3],-target.point[3]
     assert(firstY>=-anchor.point[3]+anchor.height+2 and targetY>firstY)

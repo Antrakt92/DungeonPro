@@ -655,7 +655,7 @@ function UI:LayoutRow(row, minimum, offset, ownerCurrent, ownerWrite)
     if row.compact then
         local left = 8 + (row.chainInset or 0) + (row.statusInset or 0)
         local titleHeight = measuredHeight(row.title, 18)
-        local height = math.max(minimum, 12 + titleHeight + (row.audienceExtra or 0))
+        local height = math.max(minimum, 12 + titleHeight + (row.audienceExtra or 0), 12 + (row.relationLabelHeight or 0))
         row.audienceTop = 6 + titleHeight + 4
         if not current() or not write(row.note, "Hide") or not write(row.title, "ClearAllPoints") or
             not write(row.title, "SetPoint", "TOPLEFT", left, -6) or not write(row, "SetHeight", height) or
@@ -1803,23 +1803,32 @@ function UI:RefreshQuests()
             end
             local targetLabel = row.dungeonTargetLabel
             local labelledTarget = row.dungeonTarget and row.questTreeNode
-            if labelledTarget and not targetLabel then
+            local relation, relationKey = entry.tree
+            if labelledTarget then relationKey = "DUNGEON_QUEST_SHORT"
+            elseif relation and relation.relation == "required" and relation.requirementScope ~= "story" then relationKey = "REQUIRED_STEP_SHORT"
+            elseif relation and (relation.relation == "story" or relation.requirementScope == "story") then relationKey = "STORY_SHORT" end
+            if relationKey and not targetLabel then
                 targetLabel = label(row, "", 0, 0, 92, 11)
                 if not current() then return end
                 row.dungeonTargetLabel = targetLabel
             end
             local targetLabelWidth = 0
+            row.relationLabelHeight = 0
             if targetLabel then
                 if not write(targetLabel, "Hide") then return end
-                if labelledTarget then
-                    if not writeText(targetLabel, addon.L("DUNGEON_QUEST_SHORT")) then return end
+                if relationKey then
+                    if not writeText(targetLabel, addon.L(relationKey)) then return end
                     targetLabelWidth = math.min(92, math.max(30, addon.Read(targetLabel.GetStringWidth, "number", targetLabel) or 72))
                     if not current() or not write(targetLabel, "SetWidth", targetLabelWidth) or
-                        not write(targetLabel, "ClearAllPoints") or not write(targetLabel, "SetPoint", "TOPRIGHT", row, "TOPRIGHT", -24 - reserve, -8) or
-                        not write(targetLabel, "SetTextColor", .96, .78, .35) or not write(targetLabel, "Show") then return end
+                        not write(targetLabel, "ClearAllPoints") or not write(targetLabel, "SetPoint", "TOPRIGHT", row, "TOPRIGHT", -(labelledTarget and 24 or 6) - reserve, -8) or
+                        not write(targetLabel, "SetTextColor", .96, .78, .35) or
+                        not write(targetLabel, "Show") then return end
+                    local relationHeight = measuredHeight(targetLabel, 14)
+                    if not current() then return end
+                    row.relationLabelHeight = relationHeight
                 end
             end
-            row.dungeonBadgeReserve = row.dungeonBadgeVisible and (22 + targetLabelWidth) or 0
+            row.dungeonBadgeReserve = relationKey and ((labelledTarget and 22 or 4) + targetLabelWidth) or 0
             local branch = entry.tree and entry.tree.relation == "required" and (entry.tree.alternatives or 0) > 1 and entry.tree or nil
             local branchControl = row.branchControl
             if branch and not branchControl then

@@ -29,7 +29,8 @@ end
 assert(branch[10].questID == 92753 and branch[11].questID == 92819)
 assert(branch[10].dungeonTarget and branch[10].questTreeTarget and branch[10].dungeonTargetLabel:IsShown())
 assert(not branch[11].dungeonTarget and not branch[11].questTreeTarget)
-assert(not branch[11].dungeonTargetLabel or not branch[11].dungeonTargetLabel:IsShown())
+assert(branch[11].dungeonTargetLabel and branch[11].dungeonTargetLabel:IsShown() and
+    branch[11].dungeonTargetLabel.text == addon.L("STORY_SHORT"), "the successor is explicitly story, not a dungeon target")
 for _, id in ipairs({92748, 92752, 92750, 92751, 92753, 92819}) do
     assert(row(id).title.text:find("#" .. id, 1, true), "same-named steps display distinct quest IDs")
 end

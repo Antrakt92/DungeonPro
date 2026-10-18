@@ -4,6 +4,8 @@
 
 ### 18-Oct-2026
 
+- Label expanded quest-chain rows as dungeon targets, known prerequisites or
+  story steps, while keeping alternative requirements and incomplete data distinct.
 - Find quests by recorded containers that supply objective items, including the
   tools for Blueleaf Tubers in Razorfen Kraul.
 - Separate navigation controls from the main window module while preserving

@@ -61,6 +61,7 @@ def main():
     run(lua, "tests/alternative_source_warnings_ui.lua")
     run(lua, "tests/navigation_tooltip_retirement_ui.lua")
     run(lua, "tests/quest_target_path_ui.lua")
+    run(lua, "tests/quest_relation_labels_ui.lua")
     run(lua, "tests/reviewed_quest_sources_ui.lua")
     run(lua, "tests/class_trainer_navigation_ui.lua")
     run(lua, "tests/city_announcer_navigation_ui.lua")
