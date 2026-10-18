@@ -34,7 +34,7 @@ for _,locale in ipairs({"enUS","ruRU","deDE","frFR","esES","ptBR","koKR","zhCN",
   end end
   assert(matched,"actual known-area quest remains listed in All mode")
  end
- render(4867,assert(owners[4742]))
+ render(1486)
  assert(count("GIVER_LOCATION_UNKNOWN")==1 and count("SOURCE_POSITION_UNKNOWN")==0,"wholly unknown NPC location retains its full warning")
  for _,id in ipairs({95189,95204})do
   render(id)

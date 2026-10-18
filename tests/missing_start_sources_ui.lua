@@ -60,8 +60,8 @@ for _,locale in ipairs({"enUS","ruRU","deDE","frFR","esES","ptBR","koKR","zhCN",
    assert(shown,"recorded turn-in is displayed separately from the unknown starting method")
   end
  end
- -- Explicit pane inspection never invents a dungeon association for the standalone NPC quest.
- assert(not owners[4867]);render(4867,assert(owners[4742]))
+ -- Nalpak still has no verified local source area or actionable position.
+ render(1486)
  assert(fields(a.L("GIVER_LOCATION_UNKNOWN"))==1 and fields(a.L("QUEST_START_UNKNOWN"))==0,"typed unknown NPC retains its precise existing warning")
  render(98423)
  assert(fields(a.L("START_ITEM_LOCATION_UNKNOWN"))==1 and fields(a.L("QUEST_START_UNKNOWN"))==0,"item starter retains its own unknown-acquisition warning")

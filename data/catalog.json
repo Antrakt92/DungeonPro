@@ -15568,7 +15568,8 @@
       "startAlternatives": [
         {
           "npcID": 8888,
-          "name": "Franclorn Forgewright"
+          "name": "Franclorn Forgewright",
+          "zoneName": "Burning Steppes"
         },
         {
           "npcID": 184290,
@@ -15578,7 +15579,8 @@
       "finishAlternatives": [
         {
           "npcID": 8888,
-          "name": "Franclorn Forgewright"
+          "name": "Franclorn Forgewright",
+          "zoneName": "Burning Steppes"
         },
         {
           "npcID": 184290,
@@ -15604,7 +15606,8 @@
       "startAlternatives": [
         {
           "npcID": 8888,
-          "name": "Franclorn Forgewright"
+          "name": "Franclorn Forgewright",
+          "zoneName": "Burning Steppes"
         },
         {
           "npcID": 184290,
@@ -18727,7 +18730,8 @@
       },
       "finish": {
         "npcID": 13716,
-        "name": "Celebras the Redeemed"
+        "name": "Celebras the Redeemed",
+        "zoneName": "Maraudon"
       },
       "objectiveItems": [
         {
@@ -18753,11 +18757,13 @@
       "source": "https://www.wowhead.com/forever/quest=7046/the-scepter-of-celebras",
       "start": {
         "npcID": 13716,
-        "name": "Celebras the Redeemed"
+        "name": "Celebras the Redeemed",
+        "zoneName": "Maraudon"
       },
       "finish": {
         "npcID": 13716,
-        "name": "Celebras the Redeemed"
+        "name": "Celebras the Redeemed",
+        "zoneName": "Maraudon"
       }
     },
     {
@@ -18895,7 +18901,8 @@
       "source": "https://www.wowhead.com/forever/quest=7066/seed-of-life",
       "start": {
         "npcID": 12238,
-        "name": "Zaetar's Spirit"
+        "name": "Zaetar's Spirit",
+        "zoneName": "Maraudon"
       },
       "finish": {
         "npcID": 11832,
@@ -20554,11 +20561,13 @@
       "minLevel": 55,
       "start": {
         "npcID": 10799,
-        "name": "Warosh"
+        "name": "Warosh",
+        "zoneName": "Blackrock Spire"
       },
       "finish": {
         "npcID": 10799,
-        "name": "Warosh"
+        "name": "Warosh",
+        "zoneName": "Blackrock Spire"
       },
       "requirementsKnown": false,
       "factions": [
@@ -21104,7 +21113,8 @@
       "minLevel": 57,
       "start": {
         "npcID": 10740,
-        "name": "Awbee"
+        "name": "Awbee",
+        "zoneName": "Blackrock Spire"
       },
       "finish": {
         "npcID": 10929,
@@ -21156,7 +21166,8 @@
       "minLevel": 57,
       "start": {
         "npcID": 10776,
-        "name": "Pip Quickwit"
+        "name": "Pip Quickwit",
+        "zoneName": "Blackrock Spire"
       },
       "finish": {
         "npcID": 10637,
