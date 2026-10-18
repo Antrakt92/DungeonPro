@@ -61,6 +61,7 @@ def main():
     run(lua, "tests/reward_item_hydration.lua")
     run(lua, "tests/quest_rewards_ui.lua")
     run(lua, "tests/quest_detail_ui.lua")
+    run(lua, "tests/detail_scroll_ownership_ui.lua")
     run(lua, "tests/minimal_detail_ui.lua")
     run(lua, "tests/right_pane_ui.lua")
     run(lua, "tests/inline_giver_ui.lua")

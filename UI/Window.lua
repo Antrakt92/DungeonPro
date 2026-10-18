@@ -1039,9 +1039,13 @@ function UI:EscapeCopyLink()
     local generation, scroll, checker = self.rewardGeneration, self.detailScroll, issecretvalue
     local content = addon.Read(self.detail.GetHeight, "number", self.detail)
     local viewport = addon.Read(scroll.GetHeight, "number", scroll)
-    if self.copyRevision ~= revision or self.rewardGeneration ~= generation or self.quest ~= saved.quest or self.copyQuest ~= nil or issecretvalue ~= checker then return end
+    local function current()
+        return self.copyRevision == revision and self.rewardGeneration == generation and self.quest == saved.quest and
+            self.copyQuest == nil and self.detailScroll == scroll and issecretvalue == checker
+    end
+    if not current() then return end
     if content and viewport and content >= 0 and viewport > 0 then
-        scroll:SetVerticalScroll(math.min(saved.offset, math.max(0, content - viewport)))
+        self:WriteDetailScroll(scroll, math.min(saved.offset, math.max(0, content - viewport)), current)
     end
 end
 
@@ -1086,10 +1090,30 @@ function UI:CopyLink(id)
     local viewport = addon.Read(viewportGetter, "number", scroll)
     if not current() then return false end
     if content and viewport and content >= 0 and viewport > 0 then
-        if not pcall(scrollSetter, scroll, math.max(0, content - viewport)) or not current() then return false end
+        if not self:WriteDetailScroll(scroll, math.max(0, content - viewport), current) or not current() then return false end
     end
     if not pcall(focus, box) or not current() then return false end
     return pcall(highlight, box) and current()
+end
+
+-- Share the bounded owned writer with list layout; direct user scrolling stays native.
+function UI:WriteDetailScroll(scroll, value, ownerCurrent)
+    local frame, quest, dungeon, engine, character = self.frame, self.quest, self.dungeon, self.engine, addon.char
+    local generation, revision, checker = self.rewardGeneration, self.detailNavigationRevision, issecretvalue
+    local setter = addon.Clean(scroll.SetVerticalScroll, "function")
+    value = addon.Clean(value, "number")
+    if not setter or not value or value < 0 then return false end
+    local function same()
+        return addon.UI == self and self.frame == frame and self.detailScroll == scroll and self.quest == quest and
+            self.dungeon == dungeon and self.engine == engine and addon.char == character and
+            self.rewardGeneration == generation and self.detailNavigationRevision == revision and
+            scroll.SetVerticalScroll == setter and issecretvalue == checker
+    end
+    local function current()
+        return same() and (not ownerCurrent or ownerCurrent()) and
+            addon.Read(frame.IsShown, "boolean", frame) == true and same()
+    end
+    return self:QuestListWrite(scroll, "SetVerticalScroll", current, value)
 end
 
 function UI:QuestListWrite(object, method, ownerCurrent, ...)
@@ -1268,13 +1292,15 @@ function UI:BackQuest()
     local offset = saved and saved.quest == previous and addon.Clean(saved.offset, "number")
     if previous and offset and offset >= 0 and self.detailNavigationRevision == revision and self.quest == previous and
         self.dungeon == dungeon and self.detailHistory == history and addon.Read(self.frame.IsShown, "boolean", self.frame) == true then
-        local generation, checker = self.rewardGeneration, issecretvalue
+        local generation, checker, scroll = self.rewardGeneration, issecretvalue, self.detailScroll
         local content = addon.Read(self.detail.GetHeight, "number", self.detail)
-        local viewport = addon.Read(self.detailScroll.GetHeight, "number", self.detailScroll)
-        if self.detailNavigationRevision == revision and self.rewardGeneration == generation and issecretvalue == checker and
-            self.quest == previous and self.dungeon == dungeon and self.detailHistory == history and
-            content and viewport and content >= 0 and viewport > 0 then
-            self.detailScroll:SetVerticalScroll(math.min(offset, math.max(0, content - viewport)))
+        local viewport = addon.Read(scroll.GetHeight, "number", scroll)
+        local function current()
+            return self.detailNavigationRevision == revision and self.rewardGeneration == generation and issecretvalue == checker and
+                self.quest == previous and self.dungeon == dungeon and self.detailHistory == history and self.detailScroll == scroll
+        end
+        if current() and content and viewport and content >= 0 and viewport > 0 then
+            self:WriteDetailScroll(scroll, math.min(offset, math.max(0, content - viewport)), current)
         end
     end
     return true
@@ -2767,8 +2793,13 @@ function UI:RefreshDetail()
     if self.renderedQuest ~= self.quest or self.renderedOverview ~= overviewIdentity then
         self:CloseCopyLink()
         self.detailActionChoice = nil
-        self.detailScroll:SetVerticalScroll(0)
-        self.renderedQuest, self.renderedOverview = self.quest, overviewIdentity
+        local function current()
+            return self.quest == renderQuest and self.dungeon == renderDungeon and self.engine == renderEngine and
+                addon.char == renderCharacter and self.rewardGeneration == rewardGeneration and
+                self.includeUnavailable == renderIncludeUnavailable
+        end
+        if not self:WriteDetailScroll(self.detailScroll, 0, current) then return end
+        self.renderedQuest, self.renderedOverview = renderQuest, overviewIdentity
         self.reportedExpanded = {}
     end
     self:RefreshQuestStyles()
@@ -4646,7 +4677,7 @@ function UI:RefreshDetail()
                 local content = addon.Read(self.detail.GetHeight, "number", self.detail)
                 local viewport = addon.Read(scroll.GetHeight, "number", scroll)
                 if fresh() and content and content >= 0 and viewport and viewport > 0 then
-                    scroll:SetVerticalScroll(math.min(offset, math.max(0, content - viewport)))
+                    self:WriteDetailScroll(scroll, math.min(offset, math.max(0, content - viewport)), fresh)
                 end
             end) or not write(toggle, "Show") then return end
             y = y + height + 8
