@@ -296,5 +296,59 @@ check("Malformed supplied metadata does not suppress another independently valid
     addon.quests[68].completionQuests = nil
     assert(addon.CarriedItemCount(20606) == nil and calls == 2)
 end)
+check("Warm source locations recover moved roles and never cache absence", function()
+    assert(addon.CarriedItemCount(5791)==3 and calls==1)
+    addon.quests[65].start=nil
+    addon.quests[67].objectiveItems={{itemID=5791,name="Moved source"}}
+    count=0
+    assert(addon.CarriedItemCount(5791)==0 and calls==2)
+    addon.quests[67].objectiveItems=nil
+    assert(addon.CarriedItemCount(5791)==nil and calls==2)
+    addon.quests[67].providedItems={{itemID=5791,name="New source"}}
+    count=8
+    assert(addon.CarriedItemCount(5791)==8 and calls==3,"an absent relation must not stay negatively cached")
+    addon.quests={[70]={id=70,start={itemID=5791}}}
+    assert(addon.CarriedItemCount(5791)==8 and calls==4,"replacement catalogues establish their own source locations")
+end)
+check("Warm supplied locations revalidate names quantities schemas and native capabilities", function()
+    addon.quests[68]={id=68,providedItems={{itemID=20606,name="Provided",quantity=2}}}
+    assert(addon.CarriedItemCount(20606)==3 and calls==1)
+    local entry=addon.quests[68].providedItems[1]
+    entry.objectID=10
+    assert(addon.CarriedItemCount(20606)==nil and calls==1)
+    entry.objectID=nil;entry.quantity=secret
+    assert(addon.CarriedItemCount(20606)==nil and calls==1)
+    entry.quantity=2;entry.name=" "
+    assert(addon.CarriedItemCount(20606)==nil and calls==1)
+    entry.name="Provided"
+    C_Item.GetItemCount=function()return 17 end
+    assert(addon.CarriedItemCount(20606)==17,"the source-location cache must not retain a native getter")
+end)
+check("Repeated actual-catalogue item reads reuse only positive source ownership, never inventory values", function()
+    assert(loadfile("Database/Catalog.lua"))("DungeonPro", addon)
+    local frequency, ordered = {}, {}
+    for _,quest in next,addon.quests do
+        local ids={}
+        if quest.start and quest.start.itemID then ids[#ids+1]=quest.start.itemID end
+        for _,field in ipairs({"objectiveItems","providedItems","completionQuests"})do
+            for _,entry in ipairs(quest[field] or{})do if entry.itemID then ids[#ids+1]=entry.itemID end end
+        end
+        for _,id in ipairs(ids)do frequency[id]=(frequency[id]or 0)+1;ordered[#ordered+1]=id end
+    end
+    local selected
+    for _,id in ipairs(ordered)do if frequency[id]==1 then selected=id end end
+    assert(selected)
+    local reads,checks,clean=0,0,addon.Clean
+    addon.Clean=function(...)checks=checks+1;return clean(...)end
+    C_Item.GetItemCount=function(id)assert(id==selected);reads=reads+1;return reads==21 and 0 or reads end
+    assert(addon.CarriedItemCount(selected)==1)
+    checks=0
+    for expected=2,20 do assert(addon.CarriedItemCount(selected)==expected)end
+    assert(addon.CarriedItemCount(selected)==0 and reads==21,"inventory counts must stay live")
+    local warmChecks=checks
+    addon.Clean=clean
+    assert(warmChecks<2000,"repainting one known item must not rescan all571quest definitions twice per read: "..warmChecks)
+    print("Actual catalogue repeated item source checks: "..warmChecks.." /20reads")
+end)
 issecretvalue = nil
 print("Carried item count checks passed: " .. total .. " (native client unverified)")

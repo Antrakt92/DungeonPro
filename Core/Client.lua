@@ -1,5 +1,6 @@
 local _, addon = ...
 local requested, requestedItems = {}, {}
+local carriedRelations = setmetatable({}, { __mode = "k" })
 local contextGeneration = {}
 local retryRefreshPending, retryRefreshing
 local offerGeneration, currentOffers = {}, nil
@@ -773,48 +774,65 @@ function addon.CarriedItemCount(id)
             return ok and valid == true
         end
     end
-    local function linked()
-        for ownerKey, value in next, quests do
-            local quest = addon.Clean(value, "table")
-            local start = quest and addon.Clean(quest.start, "table")
-            if start and addon.Clean(start.itemID, "number") == id then
-                local candidate = relation(ownerKey, quest, "start", start, nil, start)
-                if candidate() then return candidate end
-            end
-            for _, field in ipairs({ "objectiveItems", "providedItems" }) do
-                local entries = quest and addon.Clean(quest[field], "table")
-                if entries and #entries >= 1 and #entries <= 100 then
-                    for index = 1, #entries do
-                        local entry = addon.Clean(entries[index], "table")
-                        if entry then
-                            local provided = field == "providedItems"
-                            local itemID = dialogueInteger(rawget(entry, "itemID"), 1, provided and 4294967295 or 9007199254740991)
-                            local name = provided and addon.Clean(rawget(entry, "name"), "string") or nil
-                            local named = not provided or name and #name <= 500 and name:find("%S")
-                            local quantity = rawget(entry, "quantity")
-                            local readable = true
-                            if type(issecretvalue) == "function" then
-                                local ok, restricted = pcall(issecretvalue, quantity)
-                                readable = ok and addon.Clean(restricted, "boolean") == false
-                            end
-                            if named and readable and itemID == id and (type(quantity) == "nil" or
-                                dialogueInteger(quantity, 1, 9007199254740991)) then
-                                local candidate = relation(ownerKey, quest, field, entries, index, entry, quantity, name)
-                                if candidate() then return candidate end
-                            end
+    local function inQuest(ownerKey, value)
+        local quest = addon.Clean(value, "table")
+        local start = quest and addon.Clean(quest.start, "table")
+        if start and addon.Clean(start.itemID, "number") == id then
+            local candidate = relation(ownerKey, quest, "start", start, nil, start)
+            if candidate() then return candidate end
+        end
+        for _, field in ipairs({ "objectiveItems", "providedItems" }) do
+            local entries = quest and addon.Clean(quest[field], "table")
+            if entries and #entries >= 1 and #entries <= 100 then
+                for index = 1, #entries do
+                    local entry = addon.Clean(entries[index], "table")
+                    if entry then
+                        local provided = field == "providedItems"
+                        local itemID = dialogueInteger(rawget(entry, "itemID"), 1, provided and 4294967295 or 9007199254740991)
+                        local name = provided and addon.Clean(rawget(entry, "name"), "string") or nil
+                        local named = not provided or name and #name <= 500 and name:find("%S")
+                        local quantity = rawget(entry, "quantity")
+                        local readable = true
+                        if type(issecretvalue) == "function" then
+                            local ok, restricted = pcall(issecretvalue, quantity)
+                            readable = ok and addon.Clean(restricted, "boolean") == false
+                        end
+                        if named and readable and itemID == id and (type(quantity) == "nil" or
+                            dialogueInteger(quantity, 1, 9007199254740991)) then
+                            local candidate = relation(ownerKey, quest, field, entries, index, entry, quantity, name)
+                            if candidate() then return candidate end
                         end
                     end
                 end
             end
-            local related = quest and addon.Clean(quest.completionQuests, "table")
-            if related then
-                for index = 1, math.min(#related, 100) do
-                    local entry = addon.Clean(related[index], "table")
-                    if entry and addon.Clean(entry.itemID, "number") == id then
-                        local candidate = relation(ownerKey, quest, "completionQuests", related, index, entry)
-                        if candidate() then return candidate end
-                    end
+        end
+        local related = quest and addon.Clean(quest.completionQuests, "table")
+        if related then
+            for index = 1, math.min(#related, 100) do
+                local entry = addon.Clean(related[index], "table")
+                if entry and addon.Clean(entry.itemID, "number") == id then
+                    local candidate = relation(ownerKey, quest, "completionQuests", related, index, entry)
+                    if candidate() then return candidate end
                 end
+            end
+        end
+    end
+    local relations = carriedRelations[quests]
+    if not relations then relations = {}; carriedRelations[quests] = relations end
+    local function linked()
+        -- Reuse a positive source location, never a carried count. Revalidate
+        -- every role field and fall back to the catalogue if that source moved.
+        local saved = relations[id]
+        if saved and rawget(quests, saved.key) == saved.quest then
+            local candidate = inQuest(saved.key, saved.quest)
+            if candidate then return candidate end
+        end
+        relations[id] = nil
+        for ownerKey, value in next, quests do
+            local candidate = inQuest(ownerKey, value)
+            if candidate then
+                relations[id] = { key = ownerKey, quest = value }
+                return candidate
             end
         end
         return false
