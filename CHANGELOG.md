@@ -16,8 +16,9 @@
 
 - Replaced the quest filter's menu-like list symbol with a plain All quests button.
 
-- Highlighted unknown quest-giver locations and added a labelled visit button
-  with an explanation when unavailable. Quest and minimum levels have clear labels.
+- Highlighted unknown quest-giver locations and added compact gold navigation
+  icons beside the giver and quest rows, with explanations when unavailable.
+  Quest and minimum levels have clear labels.
 - Showed starter-item sources directly and removed repeated starter details.
 - Fixed money rewards disappearing when the legacy coin formatter is unavailable.
 

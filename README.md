@@ -108,8 +108,9 @@ Level ranges are provisional recommendations.
   quests and all quests. Mine shows your portrait; All quests is a plain text button.
   Hover for the current mode and click to switch.
   The message and heart icons offer issue-report and project-support links for copying.
-  Quest-log occupancy sits in the top bar. A labelled visit action appears with
-  the quest giver; the Wowhead link sits beside the quest title.
+  Quest-log occupancy sits in the top bar. A compact gold navigation icon appears
+  beside the quest giver; hover for the destination or an unavailable reason.
+  The Wowhead link sits beside the quest title.
   Select a quest to expand its related steps in place, then select any step to
   read its details without losing the opened list. Completed steps remain visible.
   A faction crest follows faction-specific quest names. A chevron identifies

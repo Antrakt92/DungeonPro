@@ -15,8 +15,8 @@ local function fields(text)
     return result
 end
 render()
-assert(ui.giver.caption and ui.giver.caption.text == addon.L("VISIT_GIVER"), "giver action has a visible label")
-assert(ui.giver.width > 200 and ui.giver.height >= 34 and ui.giver:IsShown() and not ui.giver.enabled)
+assert(not ui.giver.caption and ui.giver.navigationGold and #ui.giver.footerIconParts == 3, "giver action is a high-contrast compact navigation icon")
+assert(ui.giver.width == 24 and ui.giver.height == 24 and ui.giver:IsShown() and not ui.giver.enabled)
 local warnings = fields(addon.L("GIVER_LOCATION_UNKNOWN"))
 assert(#warnings == 1 and warnings[1].detailStyle == "warning", "unknown location is an explicit red warning")
 local tip = {}

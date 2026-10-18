@@ -226,9 +226,7 @@ function UI:BindQuestRowNavigation(row, id, ownerCurrent)
         row.navigationControl = control
         control:SetSize(24, 24)
         if type(control.SetMotionScriptsWhileDisabled) == "function" then control:SetMotionScriptsWhileDisabled(true) end
-        control.footerIcon = control:CreateTexture(nil, "ARTWORK")
-        control.footerIcon:SetSize(20, 20); control.footerIcon:SetPoint("CENTER", control, "CENTER", 0, 0)
-        control.footerIcon:SetTexture("Interface\\Minimap\\MinimapArrow"); control.footerIcon:Show()
+        control.footerIcon = self:CreateGoldNavigationIcon(control)
     end
     local catalogue, definition, checker = addon.quests, addon.quests[id], issecretvalue
     local rawStart = definition and rawget(definition, "start")
@@ -446,11 +444,46 @@ end
 
 function UI:RefreshFooterIcon(control)
     local icon = control.footerIcon
-    if not icon then return end
-    local enabled = control.footerEnabled == true
-    local alpha = enabled and (control.footerPressed and .65 or control.footerHovered and 1 or .88) or .3
-    if type(icon.SetAlpha) == "function" then pcall(icon.SetAlpha, icon, alpha) end
-    if type(icon.SetDesaturated) == "function" then pcall(icon.SetDesaturated, icon, not enabled) end
+    if not icon or (control.footerPaintDepth or 0) >= 3 then return end
+    control.footerPaintDepth = (control.footerPaintDepth or 0) + 1
+    local revision = {}; control.footerPaint = revision
+    local enabled, pressed, hovered, gold = control.footerEnabled == true, control.footerPressed, control.footerHovered, control.navigationGold
+    local parts = control.footerIconParts
+    local alpha = gold and (enabled and (pressed and .8 or hovered and 1 or .95) or .6) or
+        (enabled and (pressed and .65 or hovered and 1 or .88) or .3)
+    local function fresh()
+        return control.footerPaint == revision and control.footerIcon == icon and control.footerIconParts == parts and
+            (control.footerEnabled == true) == enabled and control.footerPressed == pressed and control.footerHovered == hovered and control.navigationGold == gold
+    end
+    local function finish() control.footerPaintDepth = control.footerPaintDepth - 1 end
+    local function repair()
+        if not control.footerPaintRepair then
+            control.footerPaintRepair = true; self:RefreshFooterIcon(control); control.footerPaintRepair = nil
+        end
+        finish()
+    end
+    for _, part in ipairs(parts or { icon }) do
+        if type(part.SetAlpha) == "function" then pcall(part.SetAlpha, part, alpha) end
+        if not fresh() then repair(); return end
+        if type(part.SetDesaturated) == "function" then pcall(part.SetDesaturated, part, not gold and not enabled) end
+        if not fresh() then repair(); return end
+    end
+    finish()
+end
+
+function UI:CreateGoldNavigationIcon(control)
+    local parts = {}
+    for index, geometry in ipairs({ { 3, 14, 0, -3, 0 }, { 3, 10, -3, 3, -math.pi / 4 }, { 3, 10, 3, 3, math.pi / 4 } }) do
+        local part = control:CreateTexture(nil, "ARTWORK")
+        part:SetTexture("Interface\\Buttons\\WHITE8X8")
+        part:SetSize(geometry[1], geometry[2]); part:SetPoint("CENTER", control, "CENTER", geometry[3], geometry[4])
+        if type(part.SetRotation) == "function" then part:SetRotation(geometry[5]) end
+        if type(part.SetVertexColor) == "function" then part:SetVertexColor(1, .78, .15, 1)
+        else part:SetColorTexture(1, .78, .15, 1) end
+        part:Show(); parts[index] = part
+    end
+    control.navigationGold, control.footerIconParts = true, parts
+    return parts[1]
 end
 
 function UI:SetFooterEnabled(control, enabled)
@@ -2685,7 +2718,7 @@ function UI:RefreshDetail()
     self.giverUnavailableKey = nil
     self.giver:Hide()
     local rewardIndex, objectiveIndex = 0, 0
-    local function line(value, style, reward, objective, ownerCurrent)
+    local function line(value, style, reward, objective, ownerCurrent, navigation)
         if ownerCurrent and not ownerCurrent() then return false end
         local function write(object, method, ...)
             if ownerCurrent and not ownerCurrent() then return false end
@@ -2727,11 +2760,16 @@ function UI:RefreshDetail()
         end
         local font = setFont(fs, format.size)
         if ownerCurrent and not ownerCurrent() then return false end
-        if fs.detailStyle ~= style or fs.detailFont ~= font then fs.measuredHeight = nil end
-        fs.detailStyle, fs.detailFont = style, font
-        if not write(fs, "SetTextColor", unpack(format.color)) or not write(fs, "SetWidth", style == "title" and contentWidth - 40 or contentWidth) or
-            not write(fs, "ClearAllPoints") or not write(fs, "SetPoint", "TOPLEFT", 4, -y) or
+        local width = navigation and contentWidth - 32 or style == "title" and contentWidth - 40 or contentWidth
+        if fs.detailStyle ~= style or fs.detailFont ~= font or fs.detailWidth ~= width then fs.measuredHeight = nil end
+        fs.detailStyle, fs.detailFont, fs.detailWidth, fs.navigationInset = style, font, width, navigation and 32 or 0
+        if navigation then height = math.max(height, 24) end
+        if not write(fs, "SetTextColor", unpack(format.color)) or not write(fs, "SetWidth", width) or
+            not write(fs, "ClearAllPoints") or not write(fs, "SetPoint", "TOPLEFT", navigation and 36 or 4, -y) or
             not write(fs, "SetText", value) or not write(fs, "Show") then return false end
+        if navigation and (not write(self.giver, "ClearAllPoints") or
+            not write(self.giver, "SetPoint", "TOPLEFT", self.detail, "TOPLEFT", 4, -y) or
+            not write(self.giver, "SetSize", 24, 24) or not write(self.giver, "Show")) then return false end
         local itemID = reward and addon.Clean(reward.item.id, "number")
         local texture = reward and (addon.Clean(reward.item.texture, "string") or addon.Clean(reward.item.texture, "number"))
         local validTexture = type(texture) == "string" and texture ~= "" and #texture <= 1024 or
@@ -3094,8 +3132,8 @@ function UI:RefreshDetail()
         local startItemID = start and addon.Clean(rawget(start, "itemID"), "number")
         local itemStarter = startItemID and startItemID > 0 and startItemID <= 9007199254740991 and startItemID % 1 == 0 and
             rawget(start, "npcID") == nil and rawget(start, "objectID") == nil and q.startAlternatives == nil
-        self.giverUnavailableKey = itemStarter and "START_ITEM_LOCATION_UNKNOWN" or "GIVER_LOCATION_UNKNOWN"
-        if line(addon.L(itemStarter and "DETAIL_START_ITEM" or "DETAIL_GIVER"), "caption", nil, nil, portraitCardCurrent) == false then return end
+        self.giverUnavailableKey = itemStarter and "START_ITEM_LOCATION_UNKNOWN" or q.startAlternatives and "GIVER_CHOICES_REQUIRED" or "GIVER_LOCATION_UNKNOWN"
+        if line(addon.L(itemStarter and "DETAIL_START_ITEM" or "DETAIL_GIVER"), "caption", nil, nil, portraitCardCurrent, not start and q.startAlternatives ~= nil) == false then return end
         if start then
             local giverFields = { "npcID", "objectID", "itemID", "name", "zoneName", "locationName", "mapID", "x", "y" }
             local giverValues, nameGetter, itemGetter, iconGetter, countGetter, mapRoot, checker = {}, addon.GiverName, addon.ItemName, addon.ItemIcon, addon.CarriedItemCount, C_Map, issecretvalue
@@ -3131,13 +3169,14 @@ function UI:RefreshDetail()
                     end
                 end
             end
-            if description and description ~= addon.L("UNKNOWN_PLACE") and line(description, nil, nil, starterBinding, giverCurrent) == false then return end
+            local giverInlinePlaced = description and description ~= addon.L("UNKNOWN_PLACE")
+            if giverInlinePlaced and line(description, nil, nil, starterBinding, giverCurrent, not itemStarter) == false then return end
             if starterCarried and line(starterCarried, "caption", nil, nil, giverCurrent) == false then return end
             if itemStarter and rawget(start, "containerSource") == nil and rawget(start, "dropNPCID") == nil and rawget(start, "dropSources") == nil then
                 if line(addon.L("START_ITEM_LOCATION_UNKNOWN"), "warning", nil, nil, giverCurrent) == false then return end
             end
             if not itemStarter and (not pendingGiver or not pendingGiver.coordinates) then
-                if line(addon.L(pendingGiver and "GIVER_COORDINATES_UNKNOWN" or "GIVER_LOCATION_UNKNOWN"), "warning", nil, nil, giverCurrent) == false then return end
+                if line(addon.L(pendingGiver and "GIVER_COORDINATES_UNKNOWN" or "GIVER_LOCATION_UNKNOWN"), "warning", nil, nil, giverCurrent, not giverInlinePlaced) == false then return end
             end
         elseif q.startAlternatives then
             local alternatives = q.startAlternatives
@@ -3149,20 +3188,7 @@ function UI:RefreshDetail()
                 return portraitCardCurrent()
             end
             if alternativePlaces(preview, self.giverButtons, "START_ALTERNATIVES", "giverAlternative:", giverCurrent) == false then return end
-        elseif line(addon.L("GIVER_LOCATION_UNKNOWN"), "warning", nil, nil, portraitCardCurrent) == false then return end
-        if not itemStarter then
-            if not locationWrite(portraitCardCurrent, self.giver, "ClearAllPoints") or
-                not locationWrite(portraitCardCurrent, self.giver, "SetPoint", "TOPLEFT", self.detail, "TOPLEFT", 4, -y) or
-                not locationWrite(portraitCardCurrent, self.giver, "SetWidth", contentWidth) or
-                not locationWrite(portraitCardCurrent, self.giver.caption, "SetWidth", contentWidth - 50) then return end
-            local caption = addon.L(pendingGiver and not pendingGiver.coordinates and "GIVER_MAP" or "VISIT_GIVER")
-            if not portraitCardCurrent() then return end
-            self.giver.caption:SetText(caption)
-            local height = math.max(34, measuredHeight(self.giver.caption, 20) + 14)
-            if not portraitCardCurrent() or not locationWrite(portraitCardCurrent, self.giver, "SetHeight", height) or
-                not locationWrite(portraitCardCurrent, self.giver, "Show") then return end
-            y = y + height + 8
-        end
+        elseif line(addon.L("GIVER_LOCATION_UNKNOWN"), "warning", nil, nil, portraitCardCurrent, true) == false then return end
         do
             local finish = addon.Clean(q.finish, "table")
             local fields, values, startingValues = { "npcID", "objectID", "itemID", "name", "zoneName", "mapID", "x", "y" }, {}, {}
@@ -4799,18 +4825,19 @@ function UI:Create()
             self:DispatchDetail(self.giverAction, not self.giverHasCoordinates, true)
         end
     end)
-    self.giver.footerCaption = true
-    self.giver.caption = label(self.giver, "", 40, -7, 280, 14)
     self.giver:SetPoint("TOPLEFT", self.detail, "TOPLEFT", 4, -80)
     for _, control in ipairs({ self.giver, self.source }) do
         control:SetHeight(32)
         if type(control.SetMotionScriptsWhileDisabled) == "function" then pcall(control.SetMotionScriptsWhileDisabled, control, true) end
-        local icon = control:CreateTexture(nil, "ARTWORK"); control.footerIcon = icon
-        icon:SetSize(24, 24)
-        icon:SetPoint(control == self.giver and "LEFT" or "CENTER", control, control == self.giver and "LEFT" or "CENTER", control == self.giver and 8 or 0, 0)
-        icon:SetTexture(control == self.giver and "Interface\\Minimap\\MinimapArrow" or "Interface\\AddOns\\DungeonPro\\Media\\Icons\\Wowhead")
-        if control == self.source then icon:SetTexCoord(0, .75, 0, .75) end
-        icon:Show()
+        local icon
+        if control == self.giver then icon = self:CreateGoldNavigationIcon(control)
+        else
+            icon = control:CreateTexture(nil, "ARTWORK")
+            icon:SetSize(24, 24); icon:SetPoint("CENTER", control, "CENTER", 0, 0)
+            icon:SetTexture("Interface\\AddOns\\DungeonPro\\Media\\Icons\\Wowhead")
+            icon:SetTexCoord(0, .75, 0, .75); icon:Show()
+        end
+        control.footerIcon = icon
         control:SetScript("OnMouseDown", function(_, mouse) if mouse == "LeftButton" then control.footerPressed = true; self:RefreshFooterIcon(control) end end)
         control:SetScript("OnMouseUp", function() control.footerPressed = false; self:RefreshFooterIcon(control) end)
         control:SetScript("OnHide", function() control.footerHovered, control.footerPressed = false, false; self:RefreshFooterIcon(control) end)

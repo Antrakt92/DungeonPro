@@ -461,7 +461,7 @@ check("Map-only quest givers open their known zone and missing givers disable vi
         Start = function() started = started + 1 end }
     addon.quests[2].start = { mapID = 1436, name = "Known zone only" }
     showDetail(2)
-    assert(ui.giver.enabled and ui.giver.caption.text == addon.L(ui.giver.footerLabelKey) and ui.giver.footerLabelKey == "GIVER_MAP")
+    assert(ui.giver.enabled and not ui.giver.caption and ui.giver.width==24 and ui.giver.footerLabelKey == "GIVER_MAP")
     ui.giver.scripts.OnClick()
     assert(#mapped == 1 and mapped[1].mapID == 1436 and started == 0)
     addon.quests[2].start = nil; showDetail(2)
@@ -2128,7 +2128,7 @@ check("Missing zero failing or restricted icons revert recycled text to ordinary
     issecretvalue = f.oldSecret
     f.data = nil; ui:RefreshDetail()
     assert(not first.shown and not first.scripts.OnEnter and first.icon.texture == nil)
-    for _, fs in ipairs(ui.details) do if fs.shown then assert(fs.width == ui.detail:GetWidth()-8-(fs.detailStyle=="title"and 40 or 0) and fs.point[2] == 4) end end
+    for _, fs in ipairs(ui.details) do if fs.shown then assert(fs.width == ui.detail:GetWidth()-8-(fs.detailStyle=="title"and 40 or fs.navigationInset or 0) and fs.point[2] == 4+(fs.navigationInset or 0)) end end
     f:finish()
 end)
 check("Hover freshly rejects changed source hidden dialogue kind slot and item before redraw", function()
@@ -8376,17 +8376,17 @@ check("Real language hover previews the existing window and restores its labels 
     assert(not language.session and addon.db.locale=="enUS")
     addon.Language=previous;addon.db.locale=locale;ui.quest,ui.dungeon=quest,dungeon;ui.frame:Show();ui:Refresh()
 end)
-check("Quest-giver action uses a readable strip while Wowhead retains its compact header slot",function()
+check("Quest-giver action shares its location row while Wowhead retains its compact header slot",function()
     local quest,locale,navigation=ui.quest,addon.db.locale,addon.Navigation
     local called;addon.Navigation={Start=function(action)called=action;return true end}
     showCompactDetail(3,{level=20,completed=function()return false end,active=function()return false end});local giver,source=ui.giver,ui.source
     local giverIcon,sourceIcon=giver.footerIcon,source.footerIcon
-    assert(giver.width>200 and giver.height>=34 and source.width==32 and source.height==32)
+    assert(giver.width==24 and giver.height==24 and source.width==32 and source.height==32)
     assert(giver.parent==ui.detail and source.parent==ui.detail)
     assert(giver.point[1]=="TOPLEFT"and giver.point[2]==ui.detail and giver.point[3]=="TOPLEFT"and giver.point[4]==4 and giver.point[5]<0)
     assert(source.point[1]=="TOPRIGHT"and source.point[2]==ui.detail and source.point[3]=="TOPRIGHT"and source.point[4]==-4 and source.point[5]==0)
-    assert(giver.caption.text==addon.L(giver.footerLabelKey)and source.text==""and giverIcon.width==24 and sourceIcon.height==24)
-    assert(giverIcon.texture=="Interface\\Minimap\\MinimapArrow")
+    assert(not giver.caption and source.text==""and giverIcon.width==3 and sourceIcon.height==24)
+    assert(giverIcon.texture=="Interface\\Buttons\\WHITE8X8"and giver.navigationGold and #giver.footerIconParts==3)
     assert(sourceIcon.texture=="Interface\\AddOns\\DungeonPro\\Media\\Icons\\Wowhead")
     assert(sourceIcon.texCoords[1]==0 and sourceIcon.texCoords[2]==.75 and sourceIcon.texCoords[3]==0 and sourceIcon.texCoords[4]==.75)
     assert(giver.disabledMotion and source.disabledMotion)
@@ -8395,11 +8395,11 @@ check("Quest-giver action uses a readable strip while Wowhead retains its compac
     source.scripts.OnClick();assert(ui.copy.shown and ui.copy.text=="https://www.wowhead.com/forever/quest=3"and ui.frame.shown)
     ui:CloseCopyLink()
     for code in pairs(addon.locales)do addon.db.locale=code;ui:Refresh()
-        assert(giver.caption.text==addon.L(giver.footerLabelKey)and source.text==""and giver.footerIcon==giverIcon and source.footerIcon==sourceIcon)
-        assert(giverIcon.alpha==.88 and sourceIcon.alpha==.88 and not sourceIcon.desaturated)
+        assert(not giver.caption and source.text==""and giver.footerIcon==giverIcon and source.footerIcon==sourceIcon)
+        assert(giverIcon.alpha==.95 and sourceIcon.alpha==.88 and not sourceIcon.desaturated)
     end
     ui.quest=nil;ui:RefreshDetail()
-    assert(not giver.enabled and not source.enabled and giverIcon.alpha==.3 and sourceIcon.alpha==.3 and giverIcon.desaturated and sourceIcon.desaturated)
+    assert(not giver.enabled and not source.enabled and giverIcon.alpha==.6 and sourceIcon.alpha==.3 and not giverIcon.desaturated and sourceIcon.desaturated)
     addon.Navigation,addon.db.locale=navigation,locale;ui.quest=quest;ui:Refresh()
 end)
 check("Icon-only footer hover localizes purpose and source instructions while press hide and zone-only states stay honest",function()
@@ -8413,8 +8413,8 @@ check("Icon-only footer hover localizes purpose and source instructions while pr
     GameTooltip=tip;showCompactDetail(3)
     for code in pairs(addon.locales)do addon.db.locale=code;ui:Refresh()
         ui.giver.scripts.OnEnter();assert(tip.text==addon.L("VISIT_GIVER")and tip.line:find("Giver 3",1,true)and ui.giver.footerIcon.alpha==1)
-        ui.giver.scripts.OnMouseDown(ui.giver,"LeftButton");assert(ui.giver.footerIcon.alpha==.65)
-        ui.giver.scripts.OnHide();assert(ui.giver.footerIcon.alpha==.88 and not ui.giver.footerPressed and not ui.giver.footerHovered)
+        ui.giver.scripts.OnMouseDown(ui.giver,"LeftButton");assert(ui.giver.footerIcon.alpha==.8)
+        ui.giver.scripts.OnHide();assert(ui.giver.footerIcon.alpha==.95 and not ui.giver.footerPressed and not ui.giver.footerHovered)
         ui.source.scripts.OnEnter();assert(tip.text==addon.L("SOURCE")and tip.line==addon.L("COPY"))
         ui.source.scripts.OnLeave();assert(not tip.shown and ui.source.footerIcon.alpha==.88)
     end

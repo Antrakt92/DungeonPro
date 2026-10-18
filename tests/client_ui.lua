@@ -151,12 +151,12 @@ check("Window opens and filters without requiring cached quest titles", function
     for _, d in ipairs(addon.dungeons) do if d.key == "dm" then addon.UI.dungeon = d end end
     addon.UI:Refresh(); assert(#addon.UI.rows == 7)
 end)
-check("Real TOC details show a labelled giver action and separate Wowhead icon", function()
+check("Real TOC details show an inline gold giver action and separate Wowhead icon", function()
     local ui = addon.UI
     ui.quest = 166; ui:Refresh()
-    assert(ui.giver.caption.text == addon.L("VISIT_GIVER") and ui.giver.width > 200 and ui.giver.height >= 34)
+    assert(not ui.giver.caption and ui.giver.width == 24 and ui.giver.height == 24)
     assert(ui.source.text == "" and ui.source.width == 32 and ui.source.height == 32)
-    assert(ui.giver.footerIcon.texture == "Interface\\Minimap\\MinimapArrow")
+    assert(ui.giver.navigationGold and #ui.giver.footerIconParts == 3 and ui.giver.footerIcon.texture == "Interface\\Buttons\\WHITE8X8")
     assert(ui.source.footerIcon.texture == "Interface\\AddOns\\DungeonPro\\Media\\Icons\\Wowhead")
     local uv = ui.source.footerIcon.texCoords
     assert(uv[1] == 0 and uv[2] == .75 and uv[3] == 0 and uv[4] == .75)
