@@ -1,6 +1,8 @@
 import copy
 import importlib.util
 import json
+import shutil
+import subprocess
 import tempfile
 import unittest
 from pathlib import Path
@@ -15,6 +17,106 @@ SPEC.loader.exec_module(catalog)
 class CatalogTests(unittest.TestCase):
     def setUp(self):
         self.data = json.loads((ROOT / "data/catalog.json").read_text(encoding="utf-8"))
+
+    def test_schema_requires_exact_integer_version(self):
+        for version in (True, False, 1.0, "1", None, 0, 2):
+            data = self.minimal_catalog()
+            data["schema"] = version
+            with self.subTest(version=repr(version)), self.assertRaisesRegex(ValueError, "schema"):
+                catalog.validate(data)
+
+    def test_optional_quest_level_is_a_positive_safe_integer(self):
+        for value in (None, True, False, 0, -1, 1.0, "1", float("nan"),
+                      float("inf"), 2 ** 53, 10 ** 400):
+            data = self.minimal_catalog()
+            data["quests"][0]["level"] = value
+            with self.subTest(value=repr(value)), self.assertRaisesRegex(ValueError, "level"):
+                catalog.generate(data)
+        for value in (1, 60, 2 ** 53 - 1):
+            data = self.minimal_catalog()
+            data["quests"][0]["level"] = value
+            self.assertIn(f'["level"] = {value}', catalog.generate(data))
+
+    def test_unknown_schema_fields_cannot_silently_drop_restrictions_or_facts(self):
+        for field in ("faction", "class", "requirementKnown", "minimumLevel", "questID", "storyLine"):
+            data = self.minimal_catalog()
+            data["quests"][0][field] = ["Horde"]
+            with self.subTest(field=field), self.assertRaisesRegex(ValueError, "quest fields"):
+                catalog.generate(data)
+        for field in ("quest", "minimumLevel", "instanceId", "entrances", "artwork"):
+            data = self.minimal_catalog()
+            data["dungeons"][0][field] = 1
+            with self.subTest(field=field), self.assertRaisesRegex(ValueError, "dungeon fields"):
+                catalog.generate(data)
+        data = self.minimal_catalog()
+        data["quests"][0]["storylineEvidence"] = "Recorded order, not proven prerequisites"
+        self.assertIn('["storylineEvidence"]', catalog.generate(data))
+
+    def test_lua_serializer_rejects_nonfinite_numbers_in_all_positions(self):
+        for value in (float("nan"), float("inf"), -float("inf")):
+            for payload in (value, [value], {"metadata": value}, {value: "metadata"}):
+                with self.subTest(payload=repr(payload)), self.assertRaisesRegex(ValueError, "finite"):
+                    catalog.lua(payload)
+        self.assertEqual(catalog.lua([0, 1.5, -2.25]), "{ 0, 1.5, -2.25 }")
+
+    def test_lua_serializer_rejects_unsafe_integers_even_in_optional_metadata(self):
+        for value in (2 ** 53, 2 ** 53 + 1, 10 ** 400, -(2 ** 53), -(2 ** 53 + 1), -(10 ** 400)):
+            for payload in (value, [value], {"metadata": value}, {value: "metadata"}):
+                with self.subTest(payload=repr(payload)), self.assertRaisesRegex(ValueError, "integer"):
+                    catalog.lua(payload)
+            data = self.minimal_catalog()
+            data["quests"][0]["storylineEvidence"] = value
+            with self.subTest(metadata=value), self.assertRaisesRegex(ValueError, "integer"):
+                catalog.generate(data)
+        maximum = 2 ** 53 - 1
+        lua = shutil.which("lua5.1")
+        self.assertIsNotNone(lua, "Lua 5.1 is required for catalogue identity verification")
+        script = ('local values=' + catalog.lua([-maximum, 0, maximum, True, False]) +
+                  '\nassert(string.format("%.0f",values[1])=="-9007199254740991")\n'
+                  'assert(values[2]==0 and string.format("%.0f",values[3])=="9007199254740991")\n'
+                  'assert(values[4]==true and values[5]==false)\n')
+        result = subprocess.run([lua, "-"], input=script, text=True, capture_output=True)
+        self.assertEqual(result.returncode, 0, result.stderr)
+
+    def test_base_integer_fields_reject_lua_precision_overflow(self):
+        for value in (2 ** 53, 2 ** 53 + 1, 10 ** 400):
+            for field in ("id", "minLevel", "npcID", "mapID", "races", "instanceID"):
+                data = self.minimal_catalog()
+                quest = data["quests"][0]
+                if field == "id":
+                    quest.update(id=value, source=f"https://www.wowhead.com/forever/quest={value}")
+                elif field == "races":
+                    quest[field] = [value]
+                elif field in ("npcID", "mapID"):
+                    quest["start"] = {field: value}
+                elif field == "instanceID":
+                    data["dungeons"][0][field] = value
+                else:
+                    quest[field] = value
+                with self.subTest(value=value, field=field), self.assertRaises(ValueError):
+                    catalog.generate(data)
+
+    def test_maximum_safe_integer_roundtrips_through_lua_without_identity_loss(self):
+        maximum = 2 ** 53 - 1
+        data = self.minimal_catalog()
+        data["quests"] = [dict(id=value, name=str(value), minLevel=1, requirementsKnown=True,
+                               source=f"https://www.wowhead.com/forever/quest={value}")
+                          for value in (maximum - 1, maximum)]
+        data["dungeons"][0]["quests"] = [maximum - 1, maximum]
+        before = copy.deepcopy(data)
+        content = catalog.generate(data)
+        self.assertEqual(data, before)
+        lua = shutil.which("lua5.1")
+        self.assertIsNotNone(lua, "Lua 5.1 is required for catalogue identity verification")
+        script = ('local addon={}\nlocal function load(...)\n' + content +
+                  '\nend\nload("DungeonPro",addon)\n'
+                  'local count=0 for _ in pairs(addon.quests) do count=count+1 end\n'
+                  'assert(count==2)\n'
+                  f'for _,id in ipairs(addon.dungeons[1].quests) do '
+                  f'assert(addon.quests[id].id==id and '
+                  f'addon.quests[id].name==string.format("%.0f",id)) end\n')
+        result = subprocess.run([lua, "-"], input=script, text=True, capture_output=True)
+        self.assertEqual(result.returncode, 0, result.stderr)
 
     def test_required_money_is_optional_copper_amount_without_mutation_or_role_promotion(self):
         quest = next(q for q in self.data["quests"] if q["id"] == 2945)

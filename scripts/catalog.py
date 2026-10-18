@@ -13,10 +13,19 @@ CLASSES = frozenset({
     "WARRIOR", "PALADIN", "HUNTER", "ROGUE", "PRIEST", "DEATHKNIGHT", "SHAMAN",
     "MAGE", "WARLOCK", "MONK", "DRUID", "DEMONHUNTER", "EVOKER",
 })
+QUEST_FIELDS = frozenset({
+    "id", "name", "level", "minLevel", "requirementsKnown", "source", "factions", "classes", "races",
+    "start", "finish", "startAlternatives", "finishAlternatives", "startsInside", "repeatable", "requiredMoney",
+    "objectiveItems", "objectiveKills", "objectiveObjects", "objectiveEvents", "objectiveItemSources", "providedItems",
+    "requires", "storyline", "storylineGroups", "storylineEvidence", "completionQuests",
+})
+DUNGEON_FIELDS = frozenset({
+    "key", "name", "minLevel", "maxLevel", "coverage", "quests", "source", "instanceID", "wing", "entrance", "art",
+})
 
 
 def integer(value):
-    return type(value) is int and value > 0
+    return type(value) is int and 0 < value <= 2 ** 53 - 1
 
 
 def unique_fields(pairs):
@@ -95,15 +104,19 @@ def objective_item_source_places(quest):
 
 
 def validate(data):
-    if data.get("schema") != 1:
+    if type(data.get("schema")) is not int or data["schema"] != 1:
         raise ValueError("Unsupported catalogue schema")
     quests = {}
     for q in data["quests"]:
+        if set(q) - QUEST_FIELDS:
+            raise ValueError("Unknown quest fields")
         if not integer(q["id"]) or q["id"] in quests:
             raise ValueError("Invalid or duplicate quest ID")
         quests[q["id"]] = q
         if not nonempty_string(q.get("name")) or not integer(q.get("minLevel")):
             raise ValueError(f"Missing quest name/level: {q['id']}")
+        if "level" in q and not integer(q["level"]):
+            raise ValueError(f"Invalid quest level: {q['id']}")
         if type(q.get("requirementsKnown")) is not bool:
             raise ValueError(f"Explicit requirements evidence needed: {q['id']}")
         for field, tokens in (("factions", FACTIONS), ("classes", CLASSES), ("races", None)):
@@ -328,6 +341,8 @@ def validate(data):
         visit(qid)
     keys, instance_wings = set(), {}
     for d in data["dungeons"]:
+        if set(d) - DUNGEON_FIELDS:
+            raise ValueError("Unknown dungeon fields")
         if not nonempty_string(d.get("key")) or not nonempty_string(d.get("name")):
             raise ValueError("Invalid dungeon key/name")
         if d["key"] in keys:
@@ -423,6 +438,10 @@ def lua(value):
     if isinstance(value, str):
         return '"' + value.replace("\\", "\\\\").replace('"', '\\"').replace("\n", "\\n").replace("\r", "\\r").replace("\t", "\\t") + '"'
     if isinstance(value, (int, float)):
+        if isinstance(value, int) and abs(value) > 2 ** 53 - 1:
+            raise ValueError("Lua integer exceeds exact numeric range")
+        if isinstance(value, float) and not math.isfinite(value):
+            raise ValueError("Lua numbers must be finite")
         return str(value)
     if isinstance(value, list):
         return "{ " + ", ".join(map(lua, value)) + " }"
