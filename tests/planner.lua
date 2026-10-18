@@ -595,6 +595,49 @@ check("Actual partial Ragefire groups guide held outside work without granting i
     local plan = e:Dungeon({ quests = { 5724 }, coverage = "reviewed" })
     eq(plan.ready, false); eq(plan.unknown, true); eq(plan.actions[1].id, 5722)
 end)
+check("Shared OR preparation subgraphs resolve once per request instead of expanding every route", function()
+    local quests, checks = {}, 0
+    for id = 1, 26 do
+        quests[id] = q(id)
+        if id < 25 then quests[id].requires = {{ids = {id + 1, id + 2}}}
+        elseif id == 25 then quests[id].requires = {{ids = {26}}} end
+    end
+    local c = ctx(); c.current = function() checks = checks + 1; return true end
+    local e = P.New(quests, c)
+    local actions, unknown = e:Next(1)
+    eq(#actions, 1); eq(actions[1].id, 26); eq(unknown, false)
+    assert(checks < 2000, "shared graph work grows with route combinations: " .. checks)
+    local first = actions[1]; first.id = 999
+    actions = e:Next(1); eq(actions[1].id, 26)
+end)
+check("Request-local preparation memo preserves cycle alternatives and fresh branch preferences", function()
+    local quests = {
+        [1] = q(1, {{ids = {2, 3}}}), [2] = q(2, {{ids = {1, 4}}}),
+        [3] = q(3, {{ids = {5}}}), [4] = q(4), [5] = q(5)
+    }
+    local choices = {[1] = {[1] = 2}}
+    local engine = P.New(quests, ctx(), choices)
+    local actions, unknown = engine:Next(1)
+    eq(#actions, 1); eq(actions[1].id, 4); eq(unknown, false)
+    choices[1][1] = 3
+    actions, unknown = engine:Next(1)
+    eq(#actions, 1); eq(actions[1].id, 5); eq(unknown, false)
+    choices[1][1] = 2
+    actions, unknown = engine:Next(1)
+    eq(#actions, 1); eq(actions[1].id, 4); eq(unknown, false)
+end)
+check("Shared preparation cache never publishes actions after its character context expires", function()
+    local current, checks = true, 0
+    local context = ctx(); context.current = function()
+        checks = checks + 1
+        if checks >= 40 then current = false end
+        return current
+    end
+    local quests = {}
+    for id = 1, 12 do quests[id] = q(id, id < 11 and {{ids = {id + 1, id + 2}}} or nil) end
+    local actions, unknown = P.New(quests, context):Next(1)
+    eq(#actions, 0); eq(unknown, true); eq(current, false)
+end)
 check("Future schema is preserved", function()
     GetLocale = function() return "enUS" end
     assert(loadfile("Core/Client.lua"))("DungeonPro", addon)

@@ -118,12 +118,21 @@ local function scopedGraph()
 end
 check("A later prerequisite cannot leave accumulated actions from an invalid context", function()
     local engine, invalidate = scopedGraph()
-    local native = engine.Next
-    engine.Next = function(self, id, path)
-        if id == 2 then invalidate(); return {}, true end
-        return native(self, id, path)
+    local place, firstPickupBuilt, laterPrerequisiteRead = engine.quests[1].start, false, false
+    engine.quests[1].start = nil
+    setmetatable(engine.quests[1], {__index = function(_, key)
+        if key == "start" then firstPickupBuilt = true; return place end
+    end})
+    local native = engine.State
+    engine.State = function(self, id)
+        -- The initial state walk reads both ancestors before any pickup exists.
+        -- This later read belongs to the second AND group, after the first
+        -- pickup has been built, validated and accumulated by Next.
+        if id == 2 and firstPickupBuilt then laterPrerequisiteRead = true; invalidate() end
+        return native(self, id)
     end
     local actions, unknown = engine:Next(3)
+    assert(firstPickupBuilt and laterPrerequisiteRead, "invalidation must follow the first safe pickup")
     assert(#actions == 0 and unknown)
 end)
 check("Dungeon invalidation cannot retain earlier completed counts actions or readiness", function()
