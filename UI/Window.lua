@@ -208,6 +208,7 @@ function UI:QuestRowNavigationHint(row, binding)
             return
         end
     end
+    self:RetainNavigationHint(held, current)
 end
 
 function UI:BindQuestRowNavigation(row, id, ownerCurrent)
@@ -349,6 +350,7 @@ function UI:CatalogEntranceHint(row)
             return
         end
     end
+    self:RetainNavigationHint(held, current)
 end
 
 function UI:VisitEntrance()
@@ -359,11 +361,66 @@ function UI:VisitEntrance()
     return pcall(binding.start, binding.dungeon, binding.point)
 end
 
-function UI:HideNavigationHint()
+-- Only completed hints may be restored after an older native Hide returns late.
+function UI:RetainNavigationHint(held, ownerCurrent)
+    local tip, button = held.tip, held.button
+    local show, owned = addon.Clean(tip.Show, "function"), addon.Clean(tip.IsOwned, "function")
+    local function current()
+        return self.navigationTooltip == held and GameTooltip == tip and ownerCurrent() and
+            addon.Read(button.IsShown, "boolean", button) == true and
+            self.navigationTooltip == held and tip.Show == show and tip.IsOwned == owned
+    end
+    if not show or not owned or not current() then return end
+    local snapshots = {}
+    local function remember(object, keys)
+        object = addon.Clean(object, "table")
+        if not object then return end
+        for _, key in ipairs(keys) do
+            snapshots[#snapshots + 1] = { object, key, rawget(object, key) }
+        end
+    end
+    remember(addon, { "UI", "char", "db", "quests", "dungeons", "L", "Clean", "Read", "Language" })
+    remember(self, { "frame", "quest", "dungeon", "engine", "rewardGeneration", "catalogGeneration", "questListGeneration",
+        "range", "includeUnavailable", "detailNavigationRevision", "languageLabelRevision" })
+    remember(addon.db, { "locale" })
+    local engine = addon.Clean(self.engine, "table")
+    remember(engine, { "invalid", "context", "quests", "states", "Current" })
+    remember(engine and rawget(engine, "context"), { "current", "level", "faction", "class", "completed", "active", "ready" })
+    if not current() then return end
+    local function unchanged()
+        for _, snapshot in ipairs(snapshots) do
+            if not rawequal(rawget(snapshot[1], snapshot[2]), snapshot[3]) then return false end
+        end
+        return true
+    end
+    held.restore = function()
+        -- Complete source and visibility reads before the final native ownership
+        -- check; finish with callback-free view proofs before showing anything.
+        if not current() then return end
+        local ours = addon.Read(owned, "boolean", tip, button) == true
+        local ok, fresh = pcall(unchanged)
+        if ours and ok and fresh and self.navigationTooltip == held and GameTooltip == tip and tip.Show == show and tip.IsOwned == owned then
+            pcall(show, tip)
+        end
+    end
+end
+
+function UI:HideNavigationHint(expected)
     local held = self.navigationTooltip
+    if not held or (expected and expected ~= held and expected ~= held.button) then return end
     self.navigationTooltip = nil
-    if held and GameTooltip == held.tip and addon.Read(held.tip.IsOwned, "boolean", held.tip, held.button) == true then
-        pcall(held.tip.Hide, held.tip)
+    local tip = held.tip
+    local owned, hide = addon.Clean(tip.IsOwned, "function"), addon.Clean(tip.Hide, "function")
+    local ours = GameTooltip == tip and addon.Read(owned, "boolean", tip, held.button) == true
+    -- Ownership inspection can open another hint on the shared native tooltip.
+    if ours and not self.navigationTooltip and GameTooltip == tip and tip.IsOwned == owned and tip.Hide == hide and hide then
+        pcall(hide, tip)
+        local newer = self.navigationTooltip
+        if newer and newer ~= held and newer.restore and not self.navigationTooltipRepair then
+            self.navigationTooltipRepair = true
+            pcall(newer.restore)
+            self.navigationTooltipRepair = nil
+        end
     end
 end
 
@@ -406,6 +463,7 @@ function UI:CatalogStatusHint(row)
             return
         end
     end
+    self:RetainNavigationHint(held, current)
 end
 
 function UI:QuestListHint(row)
@@ -441,6 +499,7 @@ function UI:QuestListHint(row)
             return
         end
     end
+    self:RetainNavigationHint(held, current)
 end
 
 function UI:RefreshFooterIcon(control)
@@ -878,6 +937,7 @@ function UI:DeveloperLinkHint(control, key)
             return
         end
     end
+    self:RetainNavigationHint(held, current)
 end
 
 function UI:FilterHint(control)
@@ -905,6 +965,7 @@ function UI:FilterHint(control)
             return
         end
     end
+    self:RetainNavigationHint(held, current)
 end
 
 function UI:ShowDeveloperLink(key)
@@ -1701,8 +1762,8 @@ function UI:RefreshDungeons()
             if not loaded or addon.Read(icon.GetAtlas, "string", icon) ~= atlas then icon:SetTexture("Interface\\Icons\\INV_Misc_Map_01") end
             icon:Show()
             control:SetScript("OnEnter", function() control.footerHovered = true; self:RefreshFooterIcon(control); self:CatalogEntranceHint(row) end)
-            control:SetScript("OnLeave", function() control.footerHovered = false; self:RefreshFooterIcon(control); self:HideNavigationHint() end)
-            control:SetScript("OnHide", function() control.footerHovered = false; self:RefreshFooterIcon(control); self:HideNavigationHint() end)
+            control:SetScript("OnLeave", function() control.footerHovered = false; self:RefreshFooterIcon(control); self:HideNavigationHint(control) end)
+            control:SetScript("OnHide", function() control.footerHovered = false; self:RefreshFooterIcon(control); self:HideNavigationHint(control) end)
         end
         -- The separate icon rail never overlaps title or metadata wrapping.
         local textWidth = math.max(1, row:GetWidth() - 76 - 36)
@@ -1734,8 +1795,8 @@ function UI:RefreshDungeons()
             local statusIcon = statusControl:CreateTexture(nil, "ARTWORK"); statusControl.statusIcon = statusIcon
             statusIcon:SetSize(20, 20); statusIcon:SetPoint("CENTER", statusControl, "CENTER", 0, 0)
             statusControl:SetScript("OnEnter", function() self:CatalogStatusHint(row) end)
-            statusControl:SetScript("OnLeave", function() self:HideNavigationHint() end)
-            statusControl:SetScript("OnHide", function() self:HideNavigationHint() end)
+            statusControl:SetScript("OnLeave", function() self:HideNavigationHint(statusControl) end)
+            statusControl:SetScript("OnHide", function() self:HideNavigationHint(statusControl) end)
         end
         local dto, statusCurrent = result.statusDTO, result.statusCurrent
         local function statusOwned()
@@ -2205,7 +2266,8 @@ function UI:RefreshQuests()
             row.questListCurrent = interactionCurrent
             if not self:BindQuestRowNavigation(row, not entry.heading and (id or entry.anchorID), current) then return end
             if not write(row, "SetScript", "OnEnter", function() if interactionCurrent() then self:QuestListHint(row) end end) or
-                not write(row, "SetScript", "OnLeave", function() self:HideNavigationHint() end) then return end
+                not write(row, "SetScript", "OnLeave", function() self:HideNavigationHint(row) end) or
+                not write(row, "SetScript", "OnHide", function() self:HideNavigationHint(row) end) then return end
             local rewards = addon.Clean(addon.QuestListRewards, "table")
             local rewardPaint = rewards and addon.Clean(rewards.Paint, "function")
             local reserve = id and not entry.heading and rewardPaint and addon.Read(rewardPaint, "number", row, id, current) or 0
@@ -2283,7 +2345,7 @@ function UI:RefreshQuests()
                             else self:ChooseBranch(branch.parentID, branch.group, id) end
                         end) or not write(branchControl, "SetScript", "OnEnter", function()
                             if branchCurrent() then self:QuestListHint(row) end
-                        end) or not write(branchControl, "SetScript", "OnLeave", function() self:HideNavigationHint() end) or
+                        end) or not write(branchControl, "SetScript", "OnLeave", function() self:HideNavigationHint(row) end) or
                         not write(branchControl, "Show") then return end
                 end
             end
@@ -4859,7 +4921,7 @@ function UI:Create()
     characterControl.filterList = {}
     for _, control in ipairs({ rangeControl, characterControl }) do
         control:SetScript("OnEnter", function() self:FilterHint(control) end)
-        control:SetScript("OnLeave", function() self:HideNavigationHint() end)
+        control:SetScript("OnLeave", function() self:HideNavigationHint(control) end)
     end
     local language = button(frame, "", 64, function() self:OpenLanguageMenu() end)
     self.language = language
@@ -4882,7 +4944,7 @@ function UI:Create()
         icon:Show()
         control:SetScript("OnClick", function() self:ShowDeveloperLink(key) end)
         control:SetScript("OnEnter", function() if type(icon.SetAlpha) == "function" then icon:SetAlpha(1) end; self:DeveloperLinkHint(control, key) end)
-        control:SetScript("OnLeave", function() if type(icon.SetAlpha) == "function" then icon:SetAlpha(.76) end; self:HideNavigationHint() end)
+        control:SetScript("OnLeave", function() if type(icon.SetAlpha) == "function" then icon:SetAlpha(.76) end; self:HideNavigationHint(control) end)
         if type(icon.SetAlpha) == "function" then icon:SetAlpha(.76) end
     end
     self.heading = label(frame, "", 278, -66, 226, 26)
@@ -4925,7 +4987,7 @@ function UI:Create()
         control.footerIcon = icon
         control:SetScript("OnMouseDown", function(_, mouse) if mouse == "LeftButton" then control.footerPressed = true; self:RefreshFooterIcon(control) end end)
         control:SetScript("OnMouseUp", function() control.footerPressed = false; self:RefreshFooterIcon(control) end)
-        control:SetScript("OnHide", function() control.footerHovered, control.footerPressed = false, false; self:RefreshFooterIcon(control) end)
+        control:SetScript("OnHide", function() control.footerHovered, control.footerPressed = false, false; self:RefreshFooterIcon(control); self:HideNavigationHint(control) end)
     end
     self:SetFooterLabel(self.source, "SOURCE"); self:SetFooterLabel(self.giver, "VISIT_GIVER")
     local function navigationHint(control, destination, bodyKey)
@@ -4963,13 +5025,14 @@ function UI:Create()
             for _, call in ipairs({ { "SetOwner", control, "ANCHOR_RIGHT" }, { "SetText", title }, { "AddLine", text, 1, 1, 1, true }, { "Show" } }) do
                 if not current() or self.navigationTooltip ~= held then return end
                 local fn = addon.Clean(tip[call[1]], "function")
-                if not fn or not pcall(fn, tip, unpack(call, 2)) then self:HideNavigationHint(); return end
-                if not current() or addon.Read(tip.IsOwned, "boolean", tip, control) ~= true or not current() then self:HideNavigationHint(); return end
+                if not fn or not pcall(fn, tip, unpack(call, 2)) then self:HideNavigationHint(held); return end
+                if not current() or addon.Read(tip.IsOwned, "boolean", tip, control) ~= true or not current() then self:HideNavigationHint(held); return end
             end
+            self:RetainNavigationHint(held, current)
         end)
         control:SetScript("OnLeave", function()
             if control.footerIcon then control.footerHovered, control.footerPressed = false, false; self:RefreshFooterIcon(control) end
-            self:HideNavigationHint()
+            self:HideNavigationHint(control)
         end)
     end
     navigationHint(self.giver, function() local action = self:NavigationDestination(false); return action and action.place end)
