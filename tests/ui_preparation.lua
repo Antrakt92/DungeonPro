@@ -153,6 +153,7 @@ assert(loadfile("Core/QuestTree.lua"))("DungeonPro", addon)
 assert(loadfile("Core/QuestRowInfo.lua"))("DungeonPro", addon)
 assert(loadfile("Core/DungeonStatus.lua"))("DungeonPro", addon)
 assert(loadfile("UI/QuestListRewards.lua"))("DungeonPro", addon)
+assert(loadfile("UI/QuestNavigation.lua"))("DungeonPro", addon)
 assert(loadfile("UI/Window.lua"))("DungeonPro", addon)
 function methods:SetToplevel(value) self.topLevel=value end
 function methods:Raise() self.raises=(self.raises or 0)+1 end
