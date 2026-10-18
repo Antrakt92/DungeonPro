@@ -1674,7 +1674,13 @@
         "zoneName": "Orgrimmar",
         "creatureDisplayID": 4527,
         "portraitSource": "https://www.wowhead.com/forever/npc=4949"
-      }
+      },
+      "objectiveItems": [
+        {
+          "itemID": 14544,
+          "name": "Lieutenant's Insignia"
+        }
+      ]
     },
     {
       "id": 5727,
@@ -1711,6 +1717,18 @@
           "ids": [
             5726
           ]
+        }
+      ],
+      "providedItems": [
+        {
+          "itemID": 14544,
+          "name": "Lieutenant's Insignia"
+        }
+      ],
+      "objectiveEvents": [
+        {
+          "npcID": 3216,
+          "name": "Gauge Neeru Fireblade's reaction"
         }
       ]
     },
@@ -1783,14 +1801,52 @@
         "portraitSource": "https://www.wowhead.com/forever/npc=4949"
       },
       "finish": {
-        "name": "Thrall",
-        "mapID": 1454,
-        "x": 32,
-        "y": 37.8,
-        "npcID": 4949,
+        "name": "Neeru Fireblade",
+        "npcID": 3216,
         "zoneName": "Orgrimmar",
-        "creatureDisplayID": 4527,
-        "portraitSource": "https://www.wowhead.com/forever/npc=4949"
+        "mapID": 1454,
+        "x": 49.4,
+        "y": 50.4,
+        "reportedLocations": [
+          {
+            "mapID": 1454,
+            "x": 49.4,
+            "y": 50.4,
+            "zoneName": "Orgrimmar"
+          },
+          {
+            "mapID": 1454,
+            "x": 49.4,
+            "y": 50.6,
+            "zoneName": "Orgrimmar"
+          },
+          {
+            "mapID": 1454,
+            "x": 49.4,
+            "y": 51.6,
+            "zoneName": "Orgrimmar"
+          },
+          {
+            "mapID": 1454,
+            "x": 49.6,
+            "y": 50.4,
+            "zoneName": "Orgrimmar"
+          },
+          {
+            "mapID": 1454,
+            "x": 49.6,
+            "y": 50.6,
+            "zoneName": "Orgrimmar"
+          },
+          {
+            "mapID": 1454,
+            "x": 49.6,
+            "y": 51.6,
+            "zoneName": "Orgrimmar"
+          }
+        ],
+        "creatureDisplayID": 3754,
+        "portraitSource": "https://www.wowhead.com/forever/npc=3216"
       },
       "requires": [
         {
@@ -3253,6 +3309,18 @@
             870
           ]
         }
+      ],
+      "providedItems": [
+        {
+          "itemID": 5068,
+          "name": "Dried Seeds"
+        }
+      ],
+      "objectiveObjects": [
+        {
+          "objectID": 3737,
+          "name": "Test the Dried Seeds"
+        }
       ]
     },
     {
@@ -3290,6 +3358,13 @@
           "ids": [
             877
           ]
+        }
+      ],
+      "objectiveItems": [
+        {
+          "itemID": 5098,
+          "name": "Altered Snapjaw Shell",
+          "quantity": 8
         }
       ]
     },
@@ -7248,6 +7323,16 @@
             1149
           ]
         }
+      ],
+      "objectiveItems": [
+        {
+          "itemID": 5843,
+          "name": "Grenka's Claw"
+        },
+        {
+          "itemID": 5845,
+          "name": "Flank of Meat"
+        }
       ]
     },
     {
@@ -7285,6 +7370,12 @@
           "ids": [
             1150
           ]
+        }
+      ],
+      "objectiveItems": [
+        {
+          "itemID": 5844,
+          "name": "Fragments of Rok'Alim"
         }
       ]
     },
@@ -7361,6 +7452,12 @@
           "ids": [
             1152
           ]
+        }
+      ],
+      "objectiveItems": [
+        {
+          "itemID": 5860,
+          "name": "Legacy of the Aspects"
         }
       ]
     },
@@ -7590,6 +7687,13 @@
         6141,
         261,
         1052
+      ],
+      "objectiveKills": [
+        {
+          "npcID": 11561,
+          "name": "Undead Ravager",
+          "quantity": 30
+        }
       ]
     },
     {
@@ -7632,6 +7736,12 @@
           "ids": [
             261
           ]
+        }
+      ],
+      "providedItems": [
+        {
+          "itemID": 5539,
+          "name": "Letter of Commendation"
         }
       ]
     },

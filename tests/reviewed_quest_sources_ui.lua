@@ -45,10 +45,11 @@ local function contains(text)
     end
     return false
 end
-local function render(id, turnin)
+local function render(id, turnin, inspectionDungeon)
     selected, ready = id, turnin == true
-    ui.dungeon, ui.quest = assert(owners[id]), id
-    ui.questTreeRoot, ui.questTreeDungeon = 92819, ui.dungeon
+    ui.dungeon, ui.quest = assert(inspectionDungeon or owners[id]), id
+    if inspectionDungeon then ui.questTreeRoot, ui.questTreeDungeon = nil, nil
+    else ui.questTreeRoot, ui.questTreeDungeon = 92819, ui.dungeon end
     ui:Refresh()
     assert(ui.quest==id and ui.renderedQuest==id, "render keeps inspected quest identity")
 end
@@ -63,8 +64,8 @@ local function giver(id, npc)
     assert(#visits==before+1 and visits[#visits].id==id and visits[#visits].place==definition.start,
         "native giver click visits its own recorded endpoint")
 end
-local function finish(id, npc)
-    render(id,true)
+local function finish(id, npc, inspectionDungeon)
+    render(id,true,inspectionDungeon)
     local definition=addon.quests[id]
     assert(ui.action and ui.action.id==id and ui.action.kind=="turnin" and ui.action.place and
         ui.action.place==definition.finish and ui.action.place.npcID==npc,
@@ -186,7 +187,7 @@ for _,sample in ipairs({{8990,22050},{7647,18804}}) do
     end end
     assert(found,"existing supplied tools remain separate from the newly listed collection goals")
 end
-local reviewedClassRoles = {
+local reviewedItemRoles = {
     {1954,"objectiveItems",{{7291}}}, {8255,"objectiveItems",{{20027,4}}},
     {8419,"objectiveItems",{{14256}}}, {8420,"objectiveItems",{{14256}}},
     {8421,"objectiveItems",{{20613,10},{20614,4}}}, {9052,"objectiveItems",{{22435,8},{22434,8}}},
@@ -196,27 +197,31 @@ local reviewedClassRoles = {
     {7646,"objectiveItems",{{12800},{18335}}}, {7624,"objectiveItems",{{18719}}},
     {7625,"objectiveItems",{{18687}}}, {7667,"objectiveItems",{{12800},{18335}}},
     {9051,"providedItems",{{22432}}}, {8416,"providedItems",{{20612}}}, {7644,"providedItems",{{18792}}},
+    {5726,"objectiveItems",{{14544}}}, {5727,"providedItems",{{14544}}},
+    {877,"providedItems",{{5068}}}, {880,"objectiveItems",{{5098,8}}},
+    {1150,"objectiveItems",{{5843},{5845}}}, {1151,"objectiveItems",{{5844}}},
+    {1154,"objectiveItems",{{5860}}}, {1052,"providedItems",{{5539}}},
 }
-for _,sample in ipairs(reviewedClassRoles) do
+for _,sample in ipairs(reviewedItemRoles) do
     render(sample[1])
     for _,item in ipairs(sample[3]) do
         local found=false
         for _,button in ipairs(ui.objectiveButtons) do if button:IsShown() then
             local binding=button.objectiveBinding
             if binding.id==item[1] then
-                assert(binding.sourceField==sample[2] and binding.current(), "reviewed class item role is current")
+                assert(binding.sourceField==sample[2] and binding.current(), "reviewed item role is current")
                 assert(binding.role==(sample[2]=="providedItems" and "provided" or "objective"))
                 found=true
             end
         end end
         assert(found and contains("Recorded item "..item[1].." ×"..(item[2] or "?")),
-            "new class goal/supply has exact known quantity or explicit unknown")
+            "reviewed goal/supply has exact known quantity or explicit unknown")
     end
-    for _,button in ipairs(ui.rewardButtons) do assert(not button:IsShown(), "new class role is not a reward") end
+    for _,button in ipairs(ui.rewardButtons) do assert(not button:IsShown(), "reviewed source role is not a reward") end
     assert(addon.quests[sample[1]].requirementsKnown==false)
 end
 for _,sample in ipairs({{1955,{{6549}}},{1957,{{6550,12}}},{8423,{{5993,7}}},
-    {8424,{{6006,20},{6004,10},{6005,20}}}}) do
+    {8424,{{6006,20},{6004,10},{6005,20}}},{261,{{11561,30}}}}) do
     render(sample[1])
     local goals=assert(addon.quests[sample[1]].objectiveKills)
     assert(#goals==#sample[2])
@@ -229,4 +234,17 @@ for _,sample in ipairs({{1955,{{6549}}},{1957,{{6550,12}}},{8423,{{5993,7}}},
 end
 assert(addon.quests[7631].providedItems[1].itemID==18818 and not addon.quests[7631].objectiveItems,
     "existing mount supply remains supplied rather than a collection goal")
+-- A continuation definition is inspected in an explicit context without adding a dungeon target.
+for _,id in ipairs(owners[5728].quests) do assert(id~=5729, "inspection context does not invent a dungeon target") end
+finish(5729,3216,assert(owners[5728]))
+render(5727)
+assert(contains("Gauge Neeru Fireblade's reaction"), "reaction task is visible as a non-kill event")
+assert(addon.quests[5727].objectiveEvents[1].npcID==3216 and not addon.quests[5727].objectiveKills,
+    "talking to Neeru is not a slain objective or an invented quantity")
+render(877)
+assert(contains("Test the Dried Seeds"), "typed world object task is visible")
+assert(addon.quests[877].objectiveObjects[1].objectID==3737 and not addon.quests[877].objectiveKills)
+for _,id in ipairs({5726,5727,5729,877,880,1150,1151,1154,1052,261}) do
+    assert(addon.quests[id].requirementsKnown==false, "new source roles do not authorize availability")
+end
 print("Reviewed quest sources UI: PASS (actual TOC; modeled routing and roles, no native acceptance)")
