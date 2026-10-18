@@ -5,6 +5,7 @@ local selected, logIndex, fixedCount, choiceCount, money = 65, 1, 1, 1, 12345
 local fixed, choice = {}, {}
 local secret = {}
 local function reset()
+    GetLocale = function() return "enUS" end
     selected, logIndex, fixedCount, choiceCount, money = 65, 1, 1, 1, 12345
     GetQuestLogRewardXP, HaveQuestRewardData = nil, nil
     fixed = { "Reward", 123, 2, 3, false, 7001 }

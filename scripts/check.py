@@ -72,6 +72,7 @@ def main():
     run(lua, "tests/held_quest_waypoint.lua")
     run(lua, "tests/quest_details.lua")
     run(lua, "tests/text_capture_ownership.lua")
+    run(lua, "tests/selected_log_locale.lua")
     run(lua, "tests/dialogue_text.lua")
     run(lua, "tests/rewards.lua")
     run(lua, "tests/cached_rewards.lua")

@@ -1203,6 +1203,7 @@ local function selectedLogReadScope(id)
     local localeGetter, checker = addon.Clean(GetLocale, "function"), issecretvalue
     local character = addon.Clean(addon.char, "table")
     local locale = addon.Read(localeGetter, "string")
+    if not locale or #locale > 32 or not locale:find("%S") then return nil end
     local index = dialogueInteger(addon.Read(logIndex, "number", id), 1)
     local function unchanged()
         return addon.Clean(C_QuestLog, "table") == quest and
@@ -1255,7 +1256,7 @@ function addon.Description(id)
     character = addon.Clean(addon.char, "table")
     texts = character and addon.Clean(character.texts, "table")
     local data = texts and addon.Clean(texts[id], "table")
-    if data and locale and addon.Clean(data.locale, "string") == locale then
+    if data and locale and #locale <= 32 and locale:find("%S") and addon.Clean(data.locale, "string") == locale then
         local text = addon.Clean(data.text, "string")
         if text and #text <= 30000 and text:find("%S") and
             addon.Read(localeGetter, "string") == locale and addon.Clean(GetLocale, "function") == localeGetter and

@@ -3,6 +3,7 @@ assert(loadfile("Core/Namespace.lua"))("DungeonPro", addon)
 assert(loadfile("Core/Client.lua"))("DungeonPro", addon)
 local secret, selected, index, display, name, calls, writes = {}, nil, nil, nil, nil, 0, 0
 local function reset()
+    GetLocale = function() return "enUS" end
     selected, index, display, name, calls, writes = 95036, 7, 12345, "Native Portrait", 0, 0
     issecretvalue = function(v) return v == secret end
     C_QuestLog = {
