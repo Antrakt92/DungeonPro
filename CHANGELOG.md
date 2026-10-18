@@ -4,6 +4,8 @@
 
 ### 18-Oct-2026
 
+- Keep live quest progress prominent and make recorded kill, object and event
+  objectives available through a compact inline disclosure.
 - Match pasted curly apostrophes and common non-breaking or ideographic spaces
   in text searches without changing displayed names or exact quest-ID syntax.
 - Label expanded quest-chain rows as dungeon targets, known prerequisites or

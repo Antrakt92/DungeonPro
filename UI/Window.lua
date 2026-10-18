@@ -2294,10 +2294,16 @@ function UI:RefreshDetail(sourceFocus)
         self.detailReferencesExpanded, self.detailNarrativeExpanded = false, false
         self.detailReferenceQuest, self.detailReferenceDungeon = renderQuest, renderDungeon
     end
+    if self.detailObjectivesQuest ~= renderQuest or self.detailObjectivesDungeon ~= renderDungeon or
+        self.detailObjectivesCharacter ~= renderCharacter then
+        self.detailObjectivesExpanded = false
+        self.detailObjectivesQuest, self.detailObjectivesDungeon, self.detailObjectivesCharacter = renderQuest, renderDungeon, renderCharacter
+    end
     if sourceFocus == true then self.detailReferencesExpanded = true end
     local sourceFocusOffset, sourceFocusCurrent = 0, nil
     local referencesExpanded = self.detailReferencesExpanded == true
     local narrativeExpanded = self.detailNarrativeExpanded == true
+    local objectivesExpanded = self.detailObjectivesExpanded == true
     local overviewIdentity = not renderQuest and renderDungeon and (addon.Clean(renderDungeon.key, "string") or renderDungeon) or nil
     if self.renderedQuest ~= self.quest or self.renderedOverview ~= overviewIdentity then
         self:CloseCopyLink()
@@ -2328,7 +2334,14 @@ function UI:RefreshDetail(sourceFocus)
         return self.quest == renderQuest and self.dungeon == renderDungeon and self.engine == renderEngine and
             self.includeUnavailable == renderIncludeUnavailable and addon.char == renderCharacter and self.rewardGeneration == rewardGeneration and
             (self.detailReferencesExpanded == true) == referencesExpanded and
-            (self.detailNarrativeExpanded == true) == narrativeExpanded
+            (self.detailNarrativeExpanded == true) == narrativeExpanded and
+            (self.detailObjectivesExpanded == true) == objectivesExpanded
+    end
+    if self.recordedObjectivesToggle then
+        local toggle = self.recordedObjectivesToggle
+        local function current() return portraitCardCurrent() and self.recordedObjectivesToggle == toggle end
+        if not self:QuestListWrite(toggle, "Hide", current) or not self:QuestListWrite(toggle, "SetEnabled", current, false) or
+            not self:QuestListWrite(toggle, "SetScript", current, "OnClick", nil) then return end
     end
     self.clientWaypointBinding = nil
     if self.clientWaypointButton then
@@ -3216,8 +3229,10 @@ function UI:RefreshDetail(sourceFocus)
         end
         return true
         end
+        local recordedGoals
         do
             local progressGetter, dialogueGetter, objectiveChecker = addon.QuestObjectives, addon.DialogueObjectiveText, issecretvalue
+            local clean, reader = addon.Clean, addon.Read
             local function objectivesCurrent()
                 return portraitCardCurrent() and addon.quests[id] == definition and
                     addon.QuestObjectives == progressGetter and addon.DialogueObjectiveText == dialogueGetter and issecretvalue == objectiveChecker
@@ -3230,6 +3245,53 @@ function UI:RefreshDetail(sourceFocus)
             for _, objective in ipairs(objectives or {}) do
                 local text = "|cff" .. (objective.finished and COLOR.COMPLETED or COLOR.ACTIVE) .. objective.text .. "|r"
                 if line(text, nil, nil, nil, objectivesCurrent) == false then return end
+            end
+            if objectives and #objectives > 0 and #objectives <= 100 then
+                local snapshots, meaningful = {}, false
+                for index = 1, #objectives do
+                    local entry = addon.Clean(rawget(objectives, index), "table")
+                    local text = entry and addon.Clean(rawget(entry, "text"), "string")
+                    local finished = entry and addon.Clean(rawget(entry, "finished"), "boolean")
+                    if not entry or not text or #text > 30000 or finished == nil then snapshots = nil; break end
+                    snapshots[index] = { entry = entry, text = text, finished = finished }
+                    meaningful = meaningful or text:find("%S") ~= nil
+                end
+                if snapshots and meaningful then
+                    local nativeRoot = C_QuestLog
+                    local native = addon.Clean(nativeRoot, "table")
+                    local nativeGetter = native and rawget(native, "GetQuestObjectives")
+                    local localize, database, localeGetter = addon.L, addon.db, GetLocale
+                    local locale = database and rawget(database, "locale")
+                    local gameLocale = addon.Read(localeGetter, "string")
+                    local function rawCurrent()
+                        if addon.Clean ~= clean or addon.Read ~= reader or addon.L ~= localize or addon.db ~= database or (database and rawget(database, "locale") ~= locale) or
+                            GetLocale ~= localeGetter or C_QuestLog ~= nativeRoot or
+                            (native and rawget(native, "GetQuestObjectives") ~= nativeGetter) or #objectives ~= #snapshots then return false end
+                        for index, snapshot in ipairs(snapshots) do
+                            if rawget(objectives, index) ~= snapshot.entry or not rawequal(rawget(snapshot.entry, "text"), snapshot.text) or
+                                not rawequal(rawget(snapshot.entry, "finished"), snapshot.finished) then return false end
+                        end
+                        return true
+                    end
+                    local function liveCurrent()
+                        if not objectivesCurrent() or addon.Read(localeGetter, "string") ~= gameLocale then return false end
+                        local ok, same = pcall(rawCurrent)
+                        return ok and same == true and objectivesCurrent()
+                    end
+                    local function readCurrentLive()
+                        if not liveCurrent() then return false end
+                        local fresh = addon.Read(progressGetter, "table", id)
+                        if not liveCurrent() or not fresh or #fresh ~= #snapshots then return false end
+                        for index, snapshot in ipairs(snapshots) do
+                            local entry = addon.Clean(rawget(fresh, index), "table")
+                            if not entry or addon.Clean(rawget(entry, "text"), "string") ~= snapshot.text or
+                                addon.Clean(rawget(entry, "finished"), "boolean") ~= snapshot.finished then return false end
+                        end
+                        return liveCurrent()
+                    end
+                    if not liveCurrent() then return end
+                    recordedGoals = { current = liveCurrent, readCurrent = readCurrentLive }
+                end
             end
             do
                 local getter, checker, localize = addon.HeldQuestPayment, issecretvalue, addon.L
@@ -3388,6 +3450,44 @@ function UI:RefreshDetail(sourceFocus)
                 end
             end
         end
+        if recordedGoals then
+            local snapshots = {}
+            local function capture(object, keys, length)
+                local values = {}; for _, key in ipairs(keys) do values[key] = rawget(object, key) end
+                snapshots[#snapshots + 1] = { object = object, keys = keys, values = values, length = length }
+            end
+            for _, field in ipairs({ "objectiveKills", "objectiveObjects", "objectiveEvents" }) do
+                capture(q, { field })
+                local rows = addon.Clean(rawget(q, field), "table")
+                if rows then
+                    local indexes = {}; for index = 1, math.min(#rows, 100) do indexes[index] = index end
+                    capture(rows, indexes, #rows)
+                    for _, index in ipairs(indexes) do
+                        local row = addon.Clean(rawget(rows, index), "table")
+                        if row then capture(row, { "npcID", "objectID", "itemID", "name", "quantity" }) end
+                    end
+                end
+            end
+            recordedGoals.sourceSame = function()
+                local ok, same = pcall(function()
+                    for _, snapshot in ipairs(snapshots) do
+                        if snapshot.length and #snapshot.object ~= snapshot.length then return false end
+                        for _, key in ipairs(snapshot.keys) do
+                            if not rawequal(rawget(snapshot.object, key), snapshot.values[key]) then return false end
+                        end
+                    end
+                    return true
+                end)
+                return ok and same == true
+            end
+        end
+        local function recordedLine(value, style, reward, objective, ownerCurrent)
+            if not recordedGoals then return line(value, style, nil, nil, ownerCurrent) end
+            if not recordedGoals.current() or not ownerCurrent() then return false end
+            if #recordedGoals >= 302 then return false end
+            recordedGoals[#recordedGoals + 1] = { value = value, style = style, current = ownerCurrent }
+            return true
+        end
         do
             local killChecker, localize = issecretvalue, addon.L
             local database, selectedLocale, localeGetter = addon.db, addon.db.locale, GetLocale
@@ -3437,10 +3537,10 @@ function UI:RefreshDetail(sourceFocus)
                     if heading and notice and text then
                         seenKills[npcID] = true
                         if not shownKills then
-                            if line(heading, "caption", nil, nil, killCurrent) == false then return end
+                            if recordedLine(heading, "caption", nil, nil, killCurrent) == false then return end
                             shownKills = true
                         end
-                        if line(text, nil, nil, nil, killCurrent) == false then return end
+                        if recordedLine(text, nil, nil, nil, killCurrent) == false then return end
                     end
                 end
             end
@@ -3504,13 +3604,77 @@ function UI:RefreshDetail(sourceFocus)
                                 if not entryCurrent() then return end
                                 seen[identity] = true
                                 if not shown then
-                                    if line(heading, "caption", nil, nil, entryCurrent) == false then return end
+                                    if recordedLine(heading, "caption", nil, nil, entryCurrent) == false then return end
                                     shown = true
                                 end
-                                if line(text, nil, nil, nil, entryCurrent) == false then return end
+                                if recordedLine(text, nil, nil, nil, entryCurrent) == false then return end
                             elseif not listsCurrent() then return end
                         end
                     end
+                end
+            end
+        end
+        if recordedGoals and #recordedGoals > 0 then
+            local toggle = self.recordedObjectivesToggle
+            if not toggle then
+                toggle = CreateFrame("Button", nil, self.detail); toggle:Hide()
+                toggle.label = label(toggle, "", 4, -3, contentWidth - 8, 13)
+                toggle:SetHighlightTexture("Interface\\QuestFrame\\UI-QuestTitleHighlight")
+                if not portraitCardCurrent() then return end
+                self.recordedObjectivesToggle = toggle
+            end
+            local frame, refresh = self.frame, self.RefreshDetail
+            local function current()
+                return recordedGoals.current() and portraitCardCurrent() and self.frame == frame and
+                    self.RefreshDetail == refresh and self.recordedObjectivesToggle == toggle
+            end
+            local function sourcesCurrent()
+                if not current() then return false end
+                for _, goal in ipairs(recordedGoals) do if not goal.current() then return false end end
+                return current() and recordedGoals.sourceSame()
+            end
+            local function write(object, method, ...) return self:QuestListWrite(object, method, current, ...) end
+            setFont(toggle.label, 13)
+            if not sourcesCurrent() then return end
+            local caption = addon.Read(addon.L, "string", "DETAIL_RECORDED_OBJECTIVES")
+            if not current() or not caption or not caption:find("%S") then return end
+            if not write(toggle.label, "SetText", (objectivesExpanded and "− " or "+ ") .. caption) or
+                not write(toggle.label, "SetTextColor", .64, .73, .74) then return end
+            local width = math.min(contentWidth, math.max(40, (addon.Read(toggle.label.GetStringWidth, "number", toggle.label) or 180) + 8))
+            if not current() or not write(toggle.label, "SetWidth", width - 8) then return end
+            local height = math.max(22, measuredHeight(toggle.label, 16) + 6)
+            if not current() or not write(toggle, "SetSize", width, height) or not write(toggle, "ClearAllPoints") or
+                not write(toggle, "SetPoint", "TOPLEFT", 4, -y) or not write(toggle, "SetEnabled", true) or
+                not write(toggle, "SetScript", "OnClick", function()
+                    if not sourcesCurrent() or addon.Read(frame.IsShown, "boolean", frame) ~= true or
+                        addon.Read(toggle.IsShown, "boolean", toggle) ~= true or not sourcesCurrent() or
+                        not recordedGoals.readCurrent() or not sourcesCurrent() then return end
+                    local scroll, getter, checker = self.detailScroll, self.detailScroll.GetVerticalScroll, issecretvalue
+                    local offset = addon.Read(getter, "number", scroll)
+                    if not sourcesCurrent() or self.detailScroll ~= scroll or scroll.GetVerticalScroll ~= getter or issecretvalue ~= checker then return end
+                    self.detailObjectivesExpanded = not objectivesExpanded
+                    local generation = refresh(self)
+                    local function fresh()
+                        return generation and self.rewardGeneration == generation and self.quest == renderQuest and self.dungeon == renderDungeon and
+                            self.engine == renderEngine and addon.char == renderCharacter and self.frame == frame and self.RefreshDetail == refresh and
+                            self.detailScroll == scroll and scroll.GetVerticalScroll == getter and issecretvalue == checker and
+                            (self.detailObjectivesExpanded == true) ~= objectivesExpanded
+                    end
+                    if not fresh() or not offset or offset < 0 then return end
+                    local content = addon.Read(self.detail.GetHeight, "number", self.detail)
+                    local viewport = addon.Read(scroll.GetHeight, "number", scroll)
+                    if fresh() and content and content >= 0 and viewport and viewport > 0 then
+                        self:WriteDetailScroll(scroll, math.min(offset, math.max(0, content - viewport)), fresh)
+                    end
+                end) or not write(toggle, "Show") then return end
+            if not sourcesCurrent() then
+                if current() then write(toggle, "Hide") end
+                return
+            end
+            y = y + height + 4
+            if objectivesExpanded then
+                for _, goal in ipairs(recordedGoals) do
+                    if line(goal.value, goal.style, nil, nil, goal.current) == false then return end
                 end
             end
         end
@@ -4722,7 +4886,7 @@ function UI:Create()
             addon.Read(f.IsShown, "boolean", f) == true then self:Fit() end
     end)
     frame:SetScript("OnShow", function(f) raiseWindow(f); self:Fit(); self.preparation = false; self:Refresh(nil, true) end)
-    frame:SetScript("OnHide", function() local pending = self.developerLinkRequest; self.developerLinkRequest = nil; if pending and type(StaticPopup_Hide) == "function" then pcall(StaticPopup_Hide, "DUNGEONPRO_COPY_DEVELOPER_LINK") end; self:HideNavigationHint(); local language = addon.Clean(addon.Language, "table"); if language then addon.Read(language.Cancel, "boolean", language, self) end; self.pendingSearch = nil; self.detailReferencesExpanded, self.detailNarrativeExpanded = false, false; if not self:ResetQuestLogControl() then return end; self.detailActionChoice = nil; self.languageMenuRevision = {}; self:ResetHistoryReading(); self:ResetRewardPresentation(); self:CloseCopyLink() end)
+    frame:SetScript("OnHide", function() local pending = self.developerLinkRequest; self.developerLinkRequest = nil; if pending and type(StaticPopup_Hide) == "function" then pcall(StaticPopup_Hide, "DUNGEONPRO_COPY_DEVELOPER_LINK") end; self:HideNavigationHint(); local language = addon.Clean(addon.Language, "table"); if language then addon.Read(language.Cancel, "boolean", language, self) end; self.pendingSearch = nil; self.detailReferencesExpanded, self.detailNarrativeExpanded, self.detailObjectivesExpanded = false, false, false; if not self:ResetQuestLogControl() then return end; self.detailActionChoice = nil; self.languageMenuRevision = {}; self:ResetHistoryReading(); self:ResetRewardPresentation(); self:CloseCopyLink() end)
     self:ApplyTheme()
     frame:Hide()
 end

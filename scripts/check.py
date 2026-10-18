@@ -48,6 +48,7 @@ def main():
     run(lua, "tests/search_typography_ui.lua")
     run(lua, "tests/quest_id_search_localization_ui.lua")
     run(lua, "tests/ui_preparation.lua")
+    run(lua, "tests/recorded_objectives_ui.lua")
     run(lua, "tests/quest_tree_ui.lua")
     run(lua, "tests/hidden_enemies_storyline_ui.lua")
     run(lua, "tests/quest_row_markers_ui.lua")

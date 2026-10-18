@@ -352,6 +352,8 @@ local function showDetail(id, context)
     -- checks exercise the real collapsed-to-expanded user interaction.
     ui.detailReferenceQuest,ui.detailReferenceDungeon=id,ui.dungeon
     ui.detailReferencesExpanded,ui.detailChainExpanded,ui.detailNarrativeExpanded=true,true,true
+    ui.detailObjectivesQuest,ui.detailObjectivesDungeon,ui.detailObjectivesCharacter=id,ui.dungeon,addon.char
+    ui.detailObjectivesExpanded=true
     local generation = showCompactDetail(id, context)
     if generation and ui.rewardGeneration == generation then expandDetail() end
 end
