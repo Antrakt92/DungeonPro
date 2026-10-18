@@ -86,13 +86,20 @@ function M:ReleaseTooltip(expected)
     local owned = addon.Read(held.owned, "boolean", held.tip, held.button)
     if self.tooltip ~= held then return end
     self.tooltip = nil
-    if owned == true and method(held.tip, "Hide") == held.hide then pcall(held.hide, held.tip) end
+    if addon.TooltipLease then addon.TooltipLease.Retire(held.tip, held) end
+    if owned == true and method(held.tip, "Hide") == held.hide then
+        pcall(held.hide, held.tip)
+        if addon.TooltipLease then addon.TooltipLease.Restore(held.tip, held) end
+    end
 end
 
 function M:Tooltip()
     if not self:Current() or self.drag or addon.Read(self.button.IsShown, "boolean", self.button) ~= true then return end
     local tip = cleanFrame(GameTooltip)
     if not tip then return end
+    local db, config, session, localize = self.db, self.persisted, self.session, addon.L
+    local rawConfig = rawget(db, "minimap")
+    local locale, checker = rawget(db, "locale"), issecretvalue
     local held = { tip = tip, button = self.button, parent = self.parent,
         owner = method(tip, "SetOwner"), text = method(tip, "SetText"), line = method(tip, "AddLine"),
         show = method(tip, "Show"), owned = method(tip, "IsOwned"), hide = method(tip, "Hide") }
@@ -105,6 +112,8 @@ function M:Tooltip()
     end)
     local function current()
         return self.tooltip == held and self.button == held.button and self.parent == held.parent and
+            self.db == db and self.persisted == config and self.session == session and addon.L == localize and
+            rawequal(rawget(db, "locale"), locale) and issecretvalue == checker and
             self:Current() and cleanFrame(GameTooltip) == tip and
             addon.Read(held.button.IsShown, "boolean", held.button) == true and
             method(tip, "SetOwner") == held.owner and method(tip, "SetText") == held.text and
@@ -117,7 +126,22 @@ function M:Tooltip()
     end
     if not call(held.owner, held.button, "ANCHOR_LEFT") or
         not call(held.text, addon.L("TITLE")) or not call(held.line, addon.L("MINIMAP_OPEN")) or
-        not call(held.line, addon.L("MINIMAP_DRAG")) or not call(held.show) then self:ReleaseTooltip(held) end
+        not call(held.line, addon.L("MINIMAP_DRAG")) or not call(held.show) then self:ReleaseTooltip(held); return end
+    if addon.TooltipLease then
+        local function restore()
+            if not current() then return end
+            local ours = addon.Read(held.owned, "boolean", tip, held.button) == true
+            local ok, same = pcall(function()
+                return addon.Minimap == self and self.tooltip == held and self.button == held.button and
+                    self.parent == held.parent and Minimap == held.parent and self.db == db and addon.db == db and
+                    self.persisted == config and rawequal(rawget(db, "minimap"), rawConfig) and self.session == session and
+                    addon.L == localize and rawequal(rawget(db, "locale"), locale) and issecretvalue == checker and
+                    GameTooltip == tip and tip.Show == held.show and tip.IsOwned == held.owned
+            end)
+            if ours and ok and same then pcall(held.show, tip) end
+        end
+        addon.TooltipLease.Retain(tip, held, restore)
+    end
 end
 
 function M:Place(value)

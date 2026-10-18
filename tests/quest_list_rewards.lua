@@ -41,6 +41,7 @@ local function reset()
     function tooltip:SetText(value) self.text = value end
     function tooltip:SetItemByID() error("hover must not load items") end
     GameTooltip = tooltip
+    assert(loadfile("UI/TooltipLease.lua"))("DungeonPro", addon)
     assert(loadfile("UI/QuestListRewards.lua"))("DungeonPro", addon)
     return addon.QuestListRewards
 end

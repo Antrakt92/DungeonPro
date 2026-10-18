@@ -362,13 +362,13 @@ function UI:VisitEntrance()
 end
 
 -- Only completed hints may be restored after an older native Hide returns late.
-function UI:RetainNavigationHint(held, ownerCurrent)
-    local tip, button = held.tip, held.button
+function UI:RetainTooltipHint(held, ownerCurrent, slot)
+    local tip, button = held.tip or held.tooltip, held.button
     local show, owned = addon.Clean(tip.Show, "function"), addon.Clean(tip.IsOwned, "function")
     local function current()
-        return self.navigationTooltip == held and GameTooltip == tip and ownerCurrent() and
+        return self[slot] == held and GameTooltip == tip and ownerCurrent() and
             addon.Read(button.IsShown, "boolean", button) == true and
-            self.navigationTooltip == held and tip.Show == show and tip.IsOwned == owned
+            self[slot] == held and tip.Show == show and tip.IsOwned == owned
     end
     if not show or not owned or not current() then return end
     local snapshots = {}
@@ -383,6 +383,8 @@ function UI:RetainNavigationHint(held, ownerCurrent)
     remember(self, { "frame", "quest", "dungeon", "engine", "rewardGeneration", "catalogGeneration", "questListGeneration",
         "range", "includeUnavailable", "detailNavigationRevision", "languageLabelRevision" })
     remember(addon.db, { "locale" })
+    remember(button, { "rewardBinding", "objectiveBinding" })
+    remember(held.binding, { "quest", "generation", "id", "origin", "source", "kind", "index", "current", "context" })
     local engine = addon.Clean(self.engine, "table")
     remember(engine, { "invalid", "context", "quests", "states", "Current" })
     remember(engine and rawget(engine, "context"), { "current", "level", "faction", "class", "completed", "active", "ready" })
@@ -399,10 +401,15 @@ function UI:RetainNavigationHint(held, ownerCurrent)
         if not current() then return end
         local ours = addon.Read(owned, "boolean", tip, button) == true
         local ok, fresh = pcall(unchanged)
-        if ours and ok and fresh and self.navigationTooltip == held and GameTooltip == tip and tip.Show == show and tip.IsOwned == owned then
+        if ours and ok and fresh and self[slot] == held and GameTooltip == tip and tip.Show == show and tip.IsOwned == owned then
             pcall(show, tip)
         end
     end
+    if addon.TooltipLease then addon.TooltipLease.Retain(tip, held, held.restore) end
+end
+
+function UI:RetainNavigationHint(held, ownerCurrent)
+    self:RetainTooltipHint(held, ownerCurrent, "navigationTooltip")
 end
 
 function UI:HideNavigationHint(expected)
@@ -410,11 +417,13 @@ function UI:HideNavigationHint(expected)
     if not held or (expected and expected ~= held and expected ~= held.button) then return end
     self.navigationTooltip = nil
     local tip = held.tip
+    if addon.TooltipLease then addon.TooltipLease.Retire(tip, held) end
     local owned, hide = addon.Clean(tip.IsOwned, "function"), addon.Clean(tip.Hide, "function")
     local ours = GameTooltip == tip and addon.Read(owned, "boolean", tip, held.button) == true
     -- Ownership inspection can open another hint on the shared native tooltip.
     if ours and not self.navigationTooltip and GameTooltip == tip and tip.IsOwned == owned and tip.Hide == hide and hide then
         pcall(hide, tip)
+        if addon.TooltipLease then addon.TooltipLease.Restore(tip, held); return end
         local newer = self.navigationTooltip
         if newer and newer ~= held and newer.restore and not self.navigationTooltipRepair then
             self.navigationTooltipRepair = true
@@ -2605,8 +2614,10 @@ function UI:ReleaseRewardTooltip(expected)
     local owned = addon.Read(held.isOwned, "boolean", held.tooltip, held.button)
     if self.rewardTooltip ~= held then return end
     self.rewardTooltip = nil
+    if addon.TooltipLease then addon.TooltipLease.Retire(held.tooltip, held) end
     if owned == true and tooltipMethod(held.tooltip, "Hide") == held.hide then
         pcall(held.hide, held.tooltip)
+        if addon.TooltipLease then addon.TooltipLease.Restore(held.tooltip, held) end
     end
 end
 
@@ -2694,7 +2705,8 @@ function UI:EnterReward(button, binding)
     shown = addon.Clean(shown, "boolean")
     if not ok or shown ~= true or not current() then self:ReleaseRewardTooltip(held); return end
     owned = addon.Read(held.isOwned, "boolean", tooltip, button)
-    if owned ~= true or not current() then self:ReleaseRewardTooltip(held) end
+    if owned ~= true or not current() then self:ReleaseRewardTooltip(held); return end
+    self:RetainTooltipHint(held, current, "rewardTooltip")
 end
 
 function UI:ReleaseObjectiveTooltip(expected)
@@ -2703,7 +2715,11 @@ function UI:ReleaseObjectiveTooltip(expected)
     local owned = addon.Read(held.isOwned, "boolean", held.tooltip, held.button)
     if self.objectiveTooltip ~= held then return end
     self.objectiveTooltip = nil
-    if owned == true and tooltipMethod(held.tooltip, "Hide") == held.hide then pcall(held.hide, held.tooltip) end
+    if addon.TooltipLease then addon.TooltipLease.Retire(held.tooltip, held) end
+    if owned == true and tooltipMethod(held.tooltip, "Hide") == held.hide then
+        pcall(held.hide, held.tooltip)
+        if addon.TooltipLease then addon.TooltipLease.Restore(held.tooltip, held) end
+    end
 end
 
 function UI:ObjectiveBindingCurrent(button, binding)
@@ -2757,8 +2773,9 @@ function UI:EnterObjective(button, binding)
         if not ok or owned ~= true or not current() then self:ReleaseObjectiveTooltip(held); return end
         ok = pcall(held.show, tooltip)
         owned = addon.Read(held.isOwned, "boolean", tooltip, button)
-        if not ok or owned ~= true or not current() then self:ReleaseObjectiveTooltip(held) end
+        if not ok or owned ~= true or not current() then self:ReleaseObjectiveTooltip(held); return end
     end
+    self:RetainTooltipHint(held, current, "objectiveTooltip")
 end
 
 function UI:ResetQuestLogControl()

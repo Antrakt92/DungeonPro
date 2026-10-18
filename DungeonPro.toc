@@ -23,6 +23,7 @@ Core\DialogueText.lua
 Core\QuestPayment.lua
 Core\HeldQuestPayment.lua
 Core\HeldQuestWaypoint.lua
+UI\TooltipLease.lua
 UI\Theme.lua
 UI\Language.lua
 UI\QuestStatus.lua

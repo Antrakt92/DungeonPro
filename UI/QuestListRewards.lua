@@ -15,13 +15,16 @@ local function release(expected)
     if not value or (expected and value ~= expected) then return end
     if value.tooltip.IsOwned ~= value.isOwned then
         if held == value then held = nil end
+        if addon.TooltipLease then addon.TooltipLease.Retire(value.tooltip, value) end
         return
     end
     local owned = addon.Read(value.tooltip.IsOwned, "boolean", value.tooltip, value.button)
     if held and held ~= value then return end
     held = nil
+    if addon.TooltipLease then addon.TooltipLease.Retire(value.tooltip, value) end
     if owned == true and value.tooltip.Hide == value.hide then
         pcall(value.hide, value.tooltip)
+        if addon.TooltipLease then addon.TooltipLease.Restore(value.tooltip, value); return end
         local newest = held
         if newest and newest ~= value and newest.current() then showTooltip(newest) end
     end
@@ -85,7 +88,24 @@ showTooltip = function(value)
                     if not apply(value.addLine, line) then painted = false; break end
                 end
             end
-            if painted then apply(value.show) else release(value) end
+            if painted then
+                if apply(value.show) and value.current() and addon.TooltipLease then
+                    addon.TooltipLease.Retain(value.tooltip, value, function()
+                        if not value.current() or addon.Read(value.state.localeGetter, "string") ~= value.state.locale or
+                            not value.current() then return end
+                        local ours = addon.Read(value.isOwned, "boolean", value.tooltip, value.button) == true
+                        local ok, same = pcall(function()
+                            local state = value.state
+                            return held == value and states[state.row] == state and
+                                addon.CachedQuestRewards == state.provider and addon.char == state.character and
+                                addon.quests == state.catalogue and rawget(state.catalogue, state.id) == state.quest and
+                                GetLocale == state.localeGetter and issecretvalue == state.checker and
+                                GameTooltip == value.tooltip and value.tooltip.Show == value.show and value.tooltip.IsOwned == value.isOwned
+                        end)
+                        if ours and ok and same then pcall(value.show, value.tooltip) end
+                    end)
+                end
+            else release(value) end
         end
     else release(value) end
     tooltipDepth = tooltipDepth - 1
@@ -256,7 +276,7 @@ function Rewards.Paint(row, id, ownerCurrent)
     if not insetOK then return 0 end
     local rightInset = addon.Clean(rawInset, "number")
     if not (rightInset and rightInset >= 0 and rightInset <= 1000 and rightInset % 1 == 0) then rightInset = 0 end
-    local state = { items = {}, fixed = {}, choices = {}, total = 0, buttons = prior and prior.buttons or {}, id = integer(id), owner = ownerCurrent,
+    local state = { row = row, items = {}, fixed = {}, choices = {}, total = 0, buttons = prior and prior.buttons or {}, id = integer(id), owner = ownerCurrent,
         rawInset = rawInset, rightInset = rightInset,
         provider = addon.CachedQuestRewards, character = addon.char, catalogue = addon.quests,
         localeGetter = GetLocale, checker = issecretvalue }

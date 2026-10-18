@@ -49,6 +49,7 @@ local function reset(config, legacy)
     function GameTooltip:AddLine(value) self.lines[#self.lines+1]=value end
     function GameTooltip:Show() self.shown=true end
     function GameTooltip:Hide() self.hides=self.hides+1; self.shown=false end
+    assert(loadfile("UI/TooltipLease.lua"))("DungeonPro",addon)
     assert(loadfile("UI/Minimap.lua"))("DungeonPro",addon)
     return addon.Minimap
 end
