@@ -5,6 +5,7 @@ from pathlib import Path
 import shutil
 import subprocess
 import sys
+import tempfile
 import unicodedata
 import unittest
 
@@ -56,6 +57,34 @@ assert(loadfile('Core/Search.lua'))('DungeonPro',addon)
                 data[key] = value
                 with self.assertRaises(ValueError):
                     casefold.generate(data)
+
+    def test_cli_rejects_duplicate_root_and_mapping_keys_before_writing(self):
+        data = copy.deepcopy(self.data)
+        data["mappings"] = {"65": "a"}
+        original = json.dumps(data)
+        duplicates = [original.replace('"unicodeVersion": "16.0.0"',
+                                       '"unicodeVersion": "16.0.0", "unicodeVersion": "16.0.0"'),
+                      original.replace('"65": "a"', '"65": "z", "65": "a"'),
+                      original.replace('"65": "a"', '"6\\u0035": "z", "65": "a"')]
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            for directory in ("scripts", "data", "Database"):
+                (root / directory).mkdir()
+            shutil.copy2(ROOT / "scripts/casefold.py", root / "scripts/casefold.py")
+            source = root / "data/search_casefold.json"
+            output = root / "Database/SearchCaseFold.lua"
+            expected = casefold.generate(data).encode("utf-8")
+            for index, content in enumerate(duplicates):
+                for args in (["--check"], []):
+                    with self.subTest(case=index, args=args):
+                        self.assertNotEqual(content, original)
+                        source.write_text(content, encoding="utf-8")
+                        output.write_bytes(expected)
+                        result = subprocess.run([sys.executable, "scripts/casefold.py", *args], cwd=root,
+                                                capture_output=True, timeout=30)
+                        self.assertNotEqual(result.returncode, 0)
+                        self.assertIn(b"Duplicate", result.stderr)
+                        self.assertEqual(output.read_bytes(), expected)
 
     def test_generator_rejects_noncanonical_points_and_invalid_mapping_values(self):
         for mappings in [None, False, [], {}]:

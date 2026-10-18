@@ -8,6 +8,15 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 
 
+def unique_fields(pairs):
+    fields = {}
+    for key, value in pairs:
+        if key in fields:
+            raise ValueError(f"Duplicate case-fold input key: {key!r}")
+        fields[key] = value
+    return fields
+
+
 def generate(data):
     if (data.get("unicodeVersion") != "16.0.0" or
             data.get("source") != "https://www.unicode.org/Public/16.0.0/ucd/CaseFolding.txt"):
@@ -41,7 +50,8 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--check", action="store_true")
     args = parser.parse_args()
-    data = json.loads((ROOT / "data/search_casefold.json").read_text(encoding="utf-8"))
+    data = json.loads((ROOT / "data/search_casefold.json").read_text(encoding="utf-8"),
+                      object_pairs_hook=unique_fields)
     generated = generate(data)
     output = ROOT / "Database/SearchCaseFold.lua"
     if args.check:
