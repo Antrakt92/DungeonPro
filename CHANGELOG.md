@@ -4,6 +4,8 @@
 
 ### 18-Oct-2026
 
+- Find quests by recorded containers that supply objective items, including the
+  tools for Blueleaf Tubers in Razorfen Kraul.
 - Separate navigation controls from the main window module while preserving
   existing quest-giver, entrance and source-inspection behavior.
 - Keep reward loading moving through the whole quest list when item arrivals

@@ -113,7 +113,7 @@ function addon.QuestSourceSearchTerms(quest)
     local fields = { "npcID", "objectID", "itemID", "mapID", "name", "zoneName", "locationName",
         "dropNPCID", "dropName", "dropSources", "containerSource", "reportedLocations" }
     local visit
-    local function list(value, starter)
+    local function list(value, starter, objectOnly)
         value = clean(value, "table")
         if not value then return end
         local indexes = {}
@@ -121,10 +121,10 @@ function addon.QuestSourceSearchTerms(quest)
         capture(value, indexes, true)
         for _, index in ipairs(indexes) do
             if nodes >= 1024 or #terms >= 1024 then break end
-            visit(rawget(value, index), starter)
+            visit(rawget(value, index), starter, objectOnly)
         end
     end
-    visit = function(place, starter)
+    visit = function(place, starter, objectOnly)
         place = clean(place, "table")
         if not place or visited[place] or nodes >= 1024 or #terms >= 1024 then return end
         visited[place], nodes = true, nodes + 1
@@ -148,13 +148,14 @@ function addon.QuestSourceSearchTerms(quest)
         local object = positive(rawObject, 4294967295) and absent(rawNPC) and absent(rawItem)
         local item = positive(rawItem, 4294967295) and absent(rawNPC) and absent(rawObject)
         local map = positive(rawget(place, "mapID"), 9007199254740991)
+        if objectOnly and not object then return end
         if npc then add(rawget(place, "name"), "npc")
         elseif object then add(rawget(place, "name"), "place") end
         if npc or object or map then
             add(rawget(place, "zoneName"), "place")
             add(rawget(place, "locationName"), "place")
             -- A source may name its area only on its reported position records.
-            list(rawget(place, "reportedLocations"), false)
+            if not objectOnly then list(rawget(place, "reportedLocations"), false) end
         end
         if starter and item then
             if positive(rawget(place, "dropNPCID"), 4294967295) then add(rawget(place, "dropName"), "npc") end
@@ -162,11 +163,43 @@ function addon.QuestSourceSearchTerms(quest)
             list(rawget(place, "dropSources"), false)
         end
     end
-    capture(quest, { "start", "finish", "startAlternatives", "finishAlternatives" })
+    capture(quest, { "start", "finish", "startAlternatives", "finishAlternatives", "objectiveItems", "objectiveItemSources" })
     visit(rawget(quest, "start"), true)
     visit(rawget(quest, "finish"), true)
     list(rawget(quest, "startAlternatives"), true)
     list(rawget(quest, "finishAlternatives"), true)
+    local function objectiveSources()
+        local items = clean(rawget(quest, "objectiveItems"), "table")
+        local sources = clean(rawget(quest, "objectiveItemSources"), "table")
+        if not items or not sources or #items > 100 or #sources > 100 then return end
+        local function indexes(value)
+            local result = {}; for index = 1, #value do result[index] = index end
+            capture(value, result, true)
+            return result
+        end
+        local bound, seenItems, routes = {}, {}, {}
+        for _, index in ipairs(indexes(items)) do
+            local entry = clean(rawget(items, index), "table")
+            if entry then
+                capture(entry, { "itemID" })
+                local id = positive(rawget(entry, "itemID"), 9007199254740991)
+                if id then bound[id] = bound[id] == nil end
+            end
+        end
+        for _, index in ipairs(indexes(sources)) do
+            local entry = clean(rawget(sources, index), "table")
+            if not entry then return end
+            capture(entry, { "itemID", "containerSources" })
+            local id = positive(rawget(entry, "itemID"), 9007199254740991)
+            local containers = clean(rawget(entry, "containerSources"), "table")
+            if not id or not bound[id] or seenItems[id] or not containers then return end
+            seenItems[id], routes[#routes + 1] = true, containers
+        end
+        -- Search only the typed object labels tied to this quest's listed items.
+        -- Coordinates and source URLs remain the responsibility of their consumers.
+        for _, containers in ipairs(routes) do list(containers, false, true) end
+    end
+    objectiveSources()
     local indexes = {}
     for index = 1, #terms do indexes[index] = index end
     capture(terms, indexes, true, true)
