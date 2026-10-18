@@ -60,6 +60,43 @@ class PackageTests(unittest.TestCase):
             _, b = packager.package(output=Path(tmp) / "b.zip")
             self.assertEqual(a, b)
 
+    def test_toc_changes_during_build_cannot_publish_inconsistent_membership_or_version(self):
+        for mutation in ("append", "remove", "version"):
+            with self.subTest(mutation=mutation), tempfile.TemporaryDirectory() as tmp:
+                root = Path(tmp)
+                toc = root / "DungeonPro.toc"
+                original_toc = "## Version: 1.2.3\nCore.lua\n"
+                toc.write_text(original_toc, encoding="utf-8")
+                for name in ("README.md", "CHANGELOG.md", "LICENSE", "Core.lua", "Extra.lua",
+                             "Media/Fonts/NotoSans-Regular.ttf", "Media/Fonts/OFL.txt", "Media/Fonts/NOTICE.txt",
+                             "Media/Icons/Wowhead.tga", "Media/Icons/Language.tga", "Media/Icons/NOTICE.txt"):
+                    path = root / name
+                    path.parent.mkdir(parents=True, exist_ok=True)
+                    path.write_bytes(b"fixture")
+                output = root / "dist" / "addon.zip"
+                packager.package(root=root, output=output)
+                previous = output.read_bytes()
+                native, reads, changed = packager.exact_path, 0, False
+
+                def mutate_before_toc_archive_read(base, name):
+                    nonlocal reads, changed
+                    if name == "DungeonPro.toc":
+                        reads += 1
+                        if reads == 2:
+                            changed = True
+                            replacement = (original_toc + "Extra.lua\n" if mutation == "append" else
+                                           "## Version: 1.2.3\n" if mutation == "remove" else
+                                           original_toc.replace("1.2.3", "1.2.4"))
+                            toc.write_text(replacement, encoding="utf-8")
+                    return native(base, name)
+
+                with mock.patch.object(packager, "exact_path", side_effect=mutate_before_toc_archive_read):
+                    with self.assertRaisesRegex(ValueError, "source changed"):
+                        packager.package(root=root, output=output)
+                self.assertTrue(changed, "exercise the parse-to-archive TOC mutation")
+                self.assertEqual(output.read_bytes(), previous)
+                self.assertEqual(list(output.parent.iterdir()), [output])
+
     def test_failed_rebuild_preserves_previous_archive_and_removes_temporary_output(self):
         with tempfile.TemporaryDirectory() as tmp:
             output = Path(tmp) / "addon.zip"

@@ -22,7 +22,8 @@ def exact_path(root, name):
 
 def package(root=ROOT, output=None):
     toc_name = f"{ADDON_NAME}.toc"
-    toc = exact_path(root, toc_name).read_text(encoding="utf-8")
+    toc_bytes = exact_path(root, toc_name).read_bytes()
+    toc = toc_bytes.decode("utf-8").replace("\r\n", "\n").replace("\r", "\n")
     version = re.search(r"^## Version: ([0-9]+\.[0-9]+\.[0-9]+)$", toc, re.MULTILINE).group(1)
     names = [toc_name, "README.md", "CHANGELOG.md", "LICENSE"]
     names += ["Media/Fonts/NotoSans-Regular.ttf", "Media/Fonts/OFL.txt", "Media/Fonts/NOTICE.txt"]
@@ -43,7 +44,7 @@ def package(root=ROOT, output=None):
                     raise ValueError("Package path escapes project")
                 info = zipfile.ZipInfo(f"{ADDON_NAME}/" + name, (2026, 1, 1, 0, 0, 0))
                 info.compress_type = zipfile.ZIP_DEFLATED
-                archive.writestr(info, path.read_bytes())
+                archive.writestr(info, toc_bytes if name == toc_name else path.read_bytes())
         with zipfile.ZipFile(staged) as archive:
             if archive.testzip() is not None or len(archive.namelist()) != len(set(archive.namelist())) or len(archive.namelist()) != len(names):
                 raise ValueError("Package integrity or entry identity failed")
