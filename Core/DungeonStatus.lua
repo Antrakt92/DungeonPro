@@ -30,12 +30,18 @@ function Status.Get(dungeon, engine)
         if type(checker) == "function" and read(checker, "boolean", value) ~= false then return false end
         return value == previous
     end
+    local function ownsBindings()
+        return rawequal(rawget(addon, "DungeonStatus"), Status) and rawequal(rawget(Status, "Get"), getterOwner) and
+            rawequal(rawget(addon, "Clean"), clean) and rawequal(rawget(addon, "Read"), read) and
+            rawequal(rawget(_G, "issecretvalue"), checker) and rawequal(rawget(addon, "Planner"), planner) and
+            rawequal(rawget(planner, "Eligible"), eligible) and rawequal(rawget(engine, "State"), getter) and
+            rawequal(rawget(engine, "Current"), fresh) and rawequal(rawget(engine, "quests"), quests) and
+            rawequal(rawget(engine, "context"), context) and rawequal(rawget(engine, "states"), cache)
+    end
     local function current()
-        if addon.DungeonStatus ~= Status or Status.Get ~= getterOwner or addon.Clean ~= clean or addon.Read ~= read or issecretvalue ~= checker or
-            not same(addon.Planner, planner) or not same(rawget(planner, "Eligible"), eligible) or
-            not same(rawget(engine, "State"), getter) or not same(rawget(engine, "Current"), fresh) or
-            not same(rawget(engine, "quests"), quests) or not same(rawget(engine, "context"), context) or
-            not same(rawget(engine, "states"), cache) then return false end
+        -- Reject changed bindings before invoking the captured context predicate.
+        -- Sanitize once after it returns, then finish with callback-free proofs.
+        if not ownsBindings() then return false end
         if read(fresh, "boolean", engine) ~= true then return false end
         if addon.DungeonStatus ~= Status or Status.Get ~= getterOwner or addon.Clean ~= clean or addon.Read ~= read or issecretvalue ~= checker or
             not same(addon.Planner, planner) or not same(rawget(planner, "Eligible"), eligible) or
@@ -47,12 +53,7 @@ function Status.Get(dungeon, engine)
                 if not same(rawget(fieldObjects[index], fieldKeys[index]), fieldValues[index]) then return false end
             end
         end
-        if not rawequal(rawget(addon, "DungeonStatus"), Status) or not rawequal(rawget(Status, "Get"), getterOwner) or not rawequal(rawget(addon, "Clean"), clean) or
-            not rawequal(rawget(addon, "Read"), read) or not rawequal(rawget(_G, "issecretvalue"), checker) or
-            not rawequal(rawget(addon, "Planner"), planner) or not rawequal(rawget(planner, "Eligible"), eligible) or
-            not rawequal(rawget(engine, "State"), getter) or not rawequal(rawget(engine, "Current"), fresh) or
-            not rawequal(rawget(engine, "quests"), quests) or not rawequal(rawget(engine, "context"), context) or
-            not rawequal(rawget(engine, "states"), cache) then return false end
+        if not ownsBindings() then return false end
         if not building then
             for index = 1, fieldCount do
                 if not rawequal(rawget(fieldObjects[index], fieldKeys[index]), fieldValues[index]) then return false end

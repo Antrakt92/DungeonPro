@@ -190,4 +190,16 @@ check("Later state callbacks cannot publish mutations to an earlier completed ag
         assert(addon.DungeonStatus.Get(f.dungeon,f.engine)==nil,mode)
     end
 end)
+check("Actual catalogue aggregate proofs avoid duplicate sanitization of unchanged engine bindings",function()
+    local actual={};assert(loadfile("Database/Catalog.lua"))("DungeonPro",actual)
+    local checks=0;issecretvalue=function()checks=checks+1;return false end
+    local engine=addon.Planner.New(actual.quests,{level=60,faction="Alliance",class="MAGE",
+        completed=function()return false end,active=function()return false end,current=function()return true end},{})
+    local count=0
+    for _,d in ipairs(actual.dungeons)do
+        local result,current=addon.DungeonStatus.Get(d,engine)
+        assert(result and current()and result.listed==#d.quests);count=count+1
+    end
+    assert(count==29 and checks<68000,"duplicate aggregate binding checks: "..checks)
+end)
 print("Dungeon status modeled checks passed: "..total)
