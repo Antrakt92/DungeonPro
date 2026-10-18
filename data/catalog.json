@@ -10435,7 +10435,11 @@
       },
       "finish": {
         "objectID": 112877,
-        "name": "Talvash's Scrying Bowl"
+        "name": "Talvash's Scrying Bowl",
+        "summonItem": {
+          "itemID": 7667,
+          "name": "Talvash's Phial of Scrying"
+        }
       },
       "storyline": [
         2198,
@@ -10563,7 +10567,11 @@
       "source": "https://www.wowhead.com/forever/quest=2204/restoring-the-necklace",
       "start": {
         "objectID": 112877,
-        "name": "Talvash's Scrying Bowl"
+        "name": "Talvash's Scrying Bowl",
+        "summonItem": {
+          "itemID": 7667,
+          "name": "Talvash's Phial of Scrying"
+        }
       },
       "finish": {
         "npcID": 6826,

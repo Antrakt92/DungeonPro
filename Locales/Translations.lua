@@ -308,3 +308,19 @@ local unknownSourcePositions = {
     zhTW = "確切位置尚不明確。",
 }
 for locale, value in pairs(unknownSourcePositions) do addon.locales[locale].SOURCE_POSITION_UNKNOWN = value end
+
+local summonSourceLabels = {
+    enUS = { "Use %s to create %s.", "Use the listed item to create this object." },
+    ruRU = { "Используйте %s — появится %s.", "Используйте указанный предмет, чтобы создать этот объект." },
+    deDE = { "Verwende %s, um %s zu erschaffen.", "Verwende den angezeigten Gegenstand, um dieses Objekt zu erschaffen." },
+    frFR = { "Utilisez %s pour créer %s.", "Utilisez l'objet indiqué pour créer cet objet." },
+    esES = { "Usa %s para crear %s.", "Usa el objeto indicado para crear este objeto." },
+    itIT = { "Usa %s per creare %s.", "Usa l'oggetto indicato per creare questo oggetto." },
+    ptBR = { "Use %s para criar %s.", "Use o item indicado para criar este objeto." },
+    koKR = { "%s 아이템을 사용하여 %s 생성", "표시된 아이템을 사용하여 이 오브젝트를 생성하세요." },
+    zhCN = { "使用%s召唤%s。", "使用所示物品召唤此物体。" },
+    zhTW = { "使用%s召喚%s。", "使用所示物品召喚此物件。" },
+}
+for locale, values in pairs(summonSourceLabels) do
+    addon.locales[locale].SOURCE_SUMMON_ITEM, addon.locales[locale].SOURCE_SUMMON_HINT = values[1], values[2]
+end

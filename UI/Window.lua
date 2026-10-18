@@ -211,6 +211,47 @@ function UI:QuestRowNavigationHint(row, binding)
     self:RetainNavigationHint(held, current)
 end
 
+function UI:HasSummonSource(endpoint)
+    endpoint = addon.Clean(endpoint, "table")
+    if not endpoint then return false end
+    local objectID = addon.Clean(rawget(endpoint, "objectID"), "number")
+    if not objectID or objectID <= 0 or objectID % 1 ~= 0 then return false end
+    local relation = rawget(endpoint, "summonItem")
+    if type(issecretvalue) == "function" and addon.Read(issecretvalue, "boolean", relation) ~= false then return true end
+    return relation ~= nil
+end
+
+-- Informational use-item relation for a mapless object endpoint, never a travel destination.
+function UI:SummonSource(endpoint)
+    local clean, reader, checker = addon.Clean, addon.Read, issecretvalue
+    endpoint = clean(endpoint, "table")
+    if not endpoint then return nil end
+    local relation = clean(rawget(endpoint, "summonItem"), "table")
+    if not relation then return nil end
+    local fields = { "objectID", "npcID", "itemID", "mapID", "x", "y", "name", "summonItem", "reportedLocations" }
+    local values = {}; for _,field in ipairs(fields) do values[field] = rawget(endpoint, field) end
+    local itemID, name = clean(rawget(relation, "itemID"), "number"), clean(rawget(relation, "name"), "string")
+    local objectID, objectName = clean(values.objectID, "number"), clean(values.name, "string")
+    local function same()
+        if addon.Clean ~= clean or addon.Read ~= reader or issecretvalue ~= checker or values.summonItem ~= relation then return false end
+        for _,field in ipairs(fields) do if not rawequal(rawget(endpoint, field), values[field]) then return false end end
+        return rawequal(rawget(relation, "itemID"), itemID) and rawequal(rawget(relation, "name"), name)
+    end
+    local function current()
+        if not same() then return false end
+        if type(checker)=="function" then
+            for _,field in ipairs(fields) do if reader(checker,"boolean",rawget(endpoint,field))~=false then return false end end
+            if reader(checker,"boolean",rawget(relation,"itemID"))~=false or reader(checker,"boolean",rawget(relation,"name"))~=false then return false end
+        end
+        return same()
+    end
+    if not current() then return nil end
+    if not itemID or itemID<=0 or itemID>4294967295 or itemID%1~=0 or not objectID or objectID<=0 or objectID>4294967295 or objectID%1~=0 or
+        not name or #name>500 or not name:find("%S") or not objectName or not objectName:find("%S") or
+        values.npcID~=nil or values.itemID~=nil or values.mapID~=nil or values.x~=nil or values.y~=nil or values.reportedLocations~=nil or not current() then return nil end
+    return { itemID=itemID, name=name, objectID=objectID, objectName=objectName, current=current, same=same }
+end
+
 function UI:BindQuestRowNavigation(row, id, ownerCurrent)
     local control = row.navigationControl
     local function write(object, method, ...) return self:QuestListWrite(object, method, ownerCurrent, ...) end
@@ -254,12 +295,18 @@ function UI:BindQuestRowNavigation(row, id, ownerCurrent)
     local mapOnly = not (values.x and values.y and values.x >= 0 and values.x <= 100 and values.y >= 0 and values.y <= 100)
     local rawMethod = navigation and rawget(navigation, mapOnly and "Map" or "Start")
     local method = addon.Clean(rawMethod, "function")
+    local summonGetter = self.SummonSource
+    local declarationGetter = self.HasSummonSource
+    local declaredSummon = addon.Read(declarationGetter,"boolean",self,start) ~= false
+    local rawSummon = start and rawget(start,"summonItem")
+    local summon = addon.Read(summonGetter, "table", self, start)
     local inspector = self.InspectQuest
     local inspectMethod = addon.Clean(inspector, "function")
     local binding = { mapOnly = mapOnly, map = values.mapID, x = values.x, y = values.y }
     local function current()
         if not ownerCurrent() or row.navigationBinding ~= binding or addon.quests ~= catalogue or catalogue[id] ~= definition or
             addon.Navigation ~= navigationRoot or issecretvalue ~= checker or row.navigationControl ~= control or
+            self.SummonSource ~= summonGetter or self.HasSummonSource ~= declarationGetter or not rawequal(start and rawget(start,"summonItem"),rawSummon) or (summon and not summon.current()) or
             (binding.inspect and self.InspectQuest ~= inspector) then return false end
         local ok, same = pcall(function()
             if not definition or rawget(definition, "start") ~= rawStart or rawget(definition, "startAlternatives") ~= alternatives or rawget(definition, "id") ~= sourceID then return false end
@@ -278,13 +325,16 @@ function UI:BindQuestRowNavigation(row, id, ownerCurrent)
             return ownerCurrent() and row.navigationBinding == binding and addon.quests == catalogue and catalogue[id] == definition and
                 addon.Navigation == navigationRoot and issecretvalue == checker and
                 (not navigation or rawget(navigation, mapOnly and "Map" or "Start") == rawMethod) and
+                self.SummonSource == summonGetter and self.HasSummonSource == declarationGetter and rawequal(start and rawget(start,"summonItem"),rawSummon) and (not summon or summon.same()) and
                 (not binding.inspect or self.InspectQuest == inspector)
         end)
         return ok and same == true
     end
     binding.current = current
     local itemOnly = values.itemID and not values.npcID and not values.objectID
-    if itemOnly then
+    if summon then binding.inspect, binding.reason = true, "SOURCE_DETAILS_HINT"
+    elseif declaredSummon then binding.reason = "GIVER_LOCATION_UNKNOWN"
+    elseif itemOnly then
         if readable and values.itemID > 0 and values.itemID <= 4294967295 and values.itemID % 1 == 0 then
             binding.inspect, binding.reason = true, "START_ITEM_NAVIGATION"
         else binding.reason = "GIVER_LOCATION_UNKNOWN" end
@@ -3233,7 +3283,7 @@ function UI:RefreshDetail(sourceFocus)
         if offeredNow then line(addon.L("OFFERED_NOW")) end
         local start = addon.Clean(q.start, "table")
         local map = start and addon.Clean(start.mapID, "number")
-        if map and map > 0 then
+        if map and map > 0 and addon.Read(self.HasSummonSource,"boolean",self,start) == false then
             local x, gy = addon.Clean(start.x, "number"), addon.Clean(start.y, "number")
             pendingGiver = { action = { id = id, kind = "visit", place = start }, source = q, map = map, x = x, y = gy,
                 coordinates = x ~= nil and gy ~= nil and x >= 0 and x <= 100 and gy >= 0 and gy <= 100 }
@@ -3262,6 +3312,8 @@ function UI:RefreshDetail(sourceFocus)
         local function reported(parent, key, ownerCurrent)
             local function current() return locationCurrent() and (not ownerCurrent or ownerCurrent()) end
             if not current() then return false end
+            -- Created objects have no fixed spawn route, even if stale endpoint facts survive a refresh.
+            if addon.Read(self.HasSummonSource,"boolean",self,parent) ~= false then return end
             local places = reportedPlaces(parent)
             if not current() then return false end
             if not places then return end
@@ -3373,6 +3425,46 @@ function UI:RefreshDetail(sourceFocus)
                 if reported(destination, slot .. index, ownerCurrent) == false or not current() then return false end
             end
         end
+        local summonGetter = self.SummonSource
+        local declaredSummon = addon.Read(self.HasSummonSource,"boolean",self,start) ~= false
+        local startSummon = addon.Read(summonGetter, "table", self, start)
+        if not locationCurrent() or self.SummonSource ~= summonGetter then return end
+        local function summonInstruction(endpoint, sourceField, ownerCurrent, source)
+            source = source or addon.Read(summonGetter, "table", self, endpoint)
+            if not source then return true end
+            local itemGetter, iconGetter, countGetter, localize = addon.ItemName, addon.ItemIcon, addon.CarriedItemCount, addon.L
+            local objectGetter = addon.GiverName
+            local database = addon.db; local locale = database and rawget(database,"locale")
+            local function current(binding)
+                return locationCurrent() and portraitCardCurrent() and addon.quests[id] == definition and q[sourceField] == endpoint and
+                    self.SummonSource == summonGetter and source.current() and (not ownerCurrent or ownerCurrent()) and
+                    addon.ItemName == itemGetter and addon.ItemIcon == iconGetter and addon.CarriedItemCount == countGetter and addon.L == localize and
+                    addon.db == database and (not database or rawget(database,"locale")==locale) and
+                    (not binding or (binding.id==source.itemID and binding.role=="source-tool" and binding.sourceField==sourceField..".summonItem")) and
+                    addon.GiverName == objectGetter and source.same()
+            end
+            local name = addon.Read(itemGetter,"string",source.itemID)
+            if not current() then return false end
+            if not name or #name>1024 or not name:find("%S") then name=source.name end
+            local objectName = addon.Read(objectGetter,"string",endpoint)
+            if not current() then return false end
+            if not objectName or #objectName>1024 or not objectName:find("%S") then objectName=source.objectName end
+            local text = addon.Read(localize,"string","SOURCE_SUMMON_ITEM",name,objectName)
+            if not current() or not text or not text:find("%S") then return false end
+            local texture = addon.Read(iconGetter,"number",source.itemID)
+            if not current() then return false end
+            local count = addon.Read(countGetter,"number",source.itemID)
+            if not current() then return false end
+            local binding = texture and texture>0 and texture<=4294967295 and texture%1==0 and
+                {id=source.itemID,texture=texture,role="source-tool",sourceField=sourceField..".summonItem",current=current}
+            sourceFocusOffset,sourceFocusCurrent=y,current
+            if text and text:find("%S") and line(text,nil,nil,binding,current)==false then return false end
+            if count and count>=0 and count<=9007199254740991 and count%1==0 then
+                local carriedText=addon.Read(localize,"string","ITEM_CARRIED",count)
+                if not current() or line(carriedText,"caption",nil,nil,current)==false then return false end
+            end
+            return current()
+        end
         local startItemID = start and addon.Clean(rawget(start, "itemID"), "number")
         local itemStarter = startItemID and startItemID > 0 and startItemID <= 9007199254740991 and startItemID % 1 == 0 and
             rawget(start, "npcID") == nil and rawget(start, "objectID") == nil and q.startAlternatives == nil
@@ -3414,12 +3506,16 @@ function UI:RefreshDetail(sourceFocus)
                 end
             end
             local giverInlinePlaced = description and description ~= addon.L("UNKNOWN_PLACE")
-            if giverInlinePlaced and line(description, nil, nil, starterBinding, giverCurrent, not itemStarter) == false then return end
+            if giverInlinePlaced and line(description, nil, nil, starterBinding, giverCurrent, not itemStarter and not declaredSummon) == false then return end
             if starterCarried and line(starterCarried, "caption", nil, nil, giverCurrent) == false then return end
             if itemStarter and rawget(start, "containerSource") == nil and rawget(start, "dropNPCID") == nil and rawget(start, "dropSources") == nil then
                 if line(addon.L("START_ITEM_LOCATION_UNKNOWN"), "warning", nil, nil, giverCurrent) == false then return end
             end
-            if not itemStarter and (not pendingGiver or not pendingGiver.coordinates) then
+            if startSummon then
+                self.giverUnavailableKey = "SOURCE_SUMMON_HINT"
+                if not summonInstruction(start,"start",giverCurrent,startSummon) then return end
+            end
+            if not itemStarter and not startSummon and (not pendingGiver or not pendingGiver.coordinates) then
                 local area = addon.Clean(rawget(start, "zoneName"), "string")
                 if not area or not area:find("%S") then area = addon.Clean(rawget(start, "locationName"), "string") end
                 if not giverCurrent() then return end
@@ -3467,6 +3563,12 @@ function UI:RefreshDetail(sourceFocus)
                     if ending and ending ~= addon.L("UNKNOWN_PLACE") then
                         if line(addon.L("DETAIL_TURNIN") .. ": " .. ending, "caption", nil, nil, endingCurrent) == false then return end
                     end
+                end
+                local finishSummon = addon.Read(summonGetter,"table",self,finish)
+                if not endingCurrent() or self.SummonSource~=summonGetter or (startSummon and not startSummon.current()) or
+                    (finishSummon and not finishSummon.current()) then return end
+                if finishSummon and not (startSummon and startSummon.objectID==finishSummon.objectID and startSummon.itemID==finishSummon.itemID) then
+                    if not summonInstruction(finish,"finish",endingCurrent,finishSummon) then return end
                 end
             end
         end

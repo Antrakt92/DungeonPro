@@ -26,7 +26,7 @@ DUNGEON_FIELDS = frozenset({
 PLACE_FIELDS = frozenset({
     "name", "npcID", "objectID", "itemID", "mapID", "x", "y", "zoneName", "locationName",
     "dungeonKey", "reportedLocations", "creatureDisplayID", "portraitSource", "dropNPCID", "dropName",
-    "dropSources", "containerSource", "itemClasses", "itemMinLevel", "source",
+    "dropSources", "containerSource", "itemClasses", "itemMinLevel", "source", "summonItem",
 })
 
 
@@ -221,6 +221,20 @@ def validate(data):
                 raise ValueError(f"Unknown quest {key} place fields: {q['id']}")
             if "source" in p and not web_source(p["source"]):
                 raise ValueError(f"Invalid place source: {q['id']}")
+            if "summonItem" in p:
+                tool = p["summonItem"]
+                if (key not in {"start", "finish"} or not integer(p.get("objectID")) or p["objectID"] > 2 ** 32 - 1 or
+                        {"mapID", "x", "y", "reportedLocations"}.intersection(p) or
+                        type(tool) is not dict or set(tool) != {"itemID", "name"} or
+                        not integer(tool.get("itemID")) or tool["itemID"] > 2 ** 32 - 1):
+                    raise ValueError(f"Invalid summoned object source: {q['id']}")
+                name = tool["name"]
+                try:
+                    valid_name = nonempty_string(name) and len(name.encode("utf-8")) <= 500
+                except UnicodeEncodeError:
+                    valid_name = False
+                if not valid_name:
+                    raise ValueError(f"Invalid summoned object tool name: {q['id']}")
             if "containerSource" in p:
                 container = p["containerSource"]
                 if (key != "start" or "itemID" not in p or type(container) is not dict or
