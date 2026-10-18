@@ -4588,7 +4588,9 @@ function UI:Create()
     search:SetScript("OnEscapePressed", function(b) b:ClearFocus() end)
     search:SetScript("OnEnterPressed", function(b) self:FlushPendingSearch(); b:ClearFocus() end)
     self.clearSearch = button(frame, "×", 25, function()
-        self.search = ""; self.searchBox:SetText(""); self:RefreshDungeons()
+        local generation = self.catalogGeneration
+        self.search = ""; self.searchBox:SetText("")
+        if self.catalogGeneration == generation then self:RefreshDungeons() end
     end)
     self.clearSearch:SetSize(24, 24); self.clearSearch:SetPoint("RIGHT", search, "RIGHT", -3, 0)
     local function filterCurrent(control, field)

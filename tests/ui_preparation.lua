@@ -9768,4 +9768,20 @@ check("Late inspection publication cannot resurrect old siblings over a newer un
     for _,control in ipairs(ui.catalogInspectButtons)do assert(not control.shown)end
     inspect.Show=native;f:finish()
 end)
+check("Clearing a native EditBox search rebuilds the catalogue only once and expires the pending edit",function()
+    local f=targetSearchFixture();ui.search="Source target";ui.searchBox.text=ui.search;ui:RefreshDungeons()
+    local refresh,setText=ui.RefreshDungeons,ui.searchBox.SetText
+    local calls,selected,quest=0,ui.dungeon,ui.quest
+    ui.RefreshDungeons=function(self,...)calls=calls+1;return refresh(self,...)end
+    ui.searchBox.SetText=function(self,value)
+        local prior=self:GetText();setText(self,value)
+        if prior~=value then self.scripts.OnTextChanged(self,false)end
+    end
+    ui.pendingSearch={frame=ui.frame,query=ui.search,refresh=ui.RefreshDungeons};local pending=ui.pendingSearch
+    ui.clearSearch.scripts.OnClick()
+    assert(calls==1,"native SetText already renders through OnTextChanged")
+    assert(ui.search==""and ui.pendingSearch==nil and #f:cards()==3 and ui.dungeon==selected and ui.quest==quest)
+    assert(not ui:FlushPendingSearch(pending)and calls==1)
+    ui.RefreshDungeons,ui.searchBox.SetText=refresh,setText;f:finish()
+end)
 print("Preparation UI modeled checks passed: " .. total .. " (no native layout validation)")
