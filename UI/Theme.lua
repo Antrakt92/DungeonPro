@@ -106,14 +106,18 @@ local function compatibleSource(context, source)
     return false
 end
 
-local function matchingFont(region, path, size, font)
+local function matchingFontAsset(region, path, size)
     if not path then return false end
-    if type(font) ~= "string" and objectResult(region, "GetFontObject") ~= font then return false end
     local ok, currentPath, height, flags = invoke(region, "GetFont")
     currentPath, height = addon.Clean(currentPath, "string"), addon.Clean(height, "number")
     flags = addon.Clean(flags, "string")
     return ok and currentPath and #currentPath <= 4096 and height == size and flags == "" and
         currentPath:gsub(string.char(92), "/"):lower() == path:gsub(string.char(92), "/"):lower()
+end
+
+local function matchingFont(region, path, size, font)
+    if type(font) ~= "string" and objectResult(region, "GetFontObject") ~= font then return false end
+    return matchingFontAsset(region, path, size)
 end
 
 local fontCaches, cacheFamily, cacheCreator
@@ -176,6 +180,9 @@ local function paintTextFont(region, size, locale)
     if creator then
         local fonts = sourceCache(context, creator).text
         local font = fonts[size]
+        if font and fonts["path" .. size] and not matchingFontAsset(font, fonts["path" .. size], size) then
+            fonts[size], font = nil, nil
+        end
         if not font then
             fontSerial = fontSerial + 1
             local ok, value = pcall(creator, "DungeonProTextFont" .. fontSerial)
@@ -239,6 +246,10 @@ local function paintInputFont(region)
     end
     local cache = sourceCache(context, creator)
     local inputFont = cache.input
+    if inputFont and inputFont.font and inputFont.path and
+        not matchingFontAsset(inputFont.font, inputFont.path, 14) then
+        cache.input, inputFont = nil, nil
+    end
     if not inputFont then
         inputFont = { family = context.family, creator = creator }
         cache.input = inputFont
@@ -273,6 +284,14 @@ function Theme.ApplyInputFont(region)
     return applyInputFont(region)
 end
 
+local function matchingControlFonts(button, fonts)
+    for _, role in ipairs({ "Normal", "Highlight", "Disabled" }) do
+        if objectResult(button, "Get" .. role .. "FontObject") ~= fonts[role] or
+            (fonts["path" .. role] and not matchingFontAsset(fonts[role], fonts["path" .. role], 14)) then return false end
+    end
+    return true
+end
+
 local function paintButtonFonts(button, _, locale)
     button = cleanObject(button)
     local context, creator = fontContext(locale), addon.Clean(CreateFont, "function")
@@ -287,6 +306,15 @@ local function paintButtonFonts(button, _, locale)
     end
     local cache = sourceCache(context, creator)
     local controlFonts = cache.controls
+    if controlFonts and not controlFonts.failed then
+        for _, role in ipairs(roles) do
+            local path = controlFonts["path" .. role[1]]
+            if path and not matchingFontAsset(controlFonts[role[1]], path, 14) then
+                cache.controls, controlFonts = nil, nil
+                break
+            end
+        end
+    end
     if not controlFonts then
         controlFonts = { family = family, creator = creator, failed = true, compatible = true }
         cache.controls = controlFonts
@@ -299,6 +327,7 @@ local function paintButtonFonts(button, _, locale)
                 not invoke(font, "SetTextColor", unpack(role[2])) then return false end
             invoke(font, "SetShadowOffset", 0, 0)
             controlFonts[role[1]] = font
+            controlFonts["path" .. role[1]] = type(source) == "string" and source or nil
             if not compatibleSource(context, source) then controlFonts.compatible = false end
         end
         controlFonts.failed = nil
@@ -407,15 +436,26 @@ end
 function Theme.RefreshFonts()
     local context, creator = fontContext(), addon.Clean(CreateFont, "function")
     for region, previous in pairs(fontRegions) do
+        local intent = fontUpdates[region]
         local target = previous.locale and fontContext(previous.locale) or context
-        if previous.key ~= target.key or previous.family ~= target.family or previous.creator ~= creator then applyTextFont(region, previous.size, previous.locale) end
+        local repair = previous.key ~= target.key or previous.family ~= target.family or previous.creator ~= creator or
+            (previous.path and not matchingFont(region, previous.path, previous.size, previous.applied))
+        if repair and fontUpdates[region] == intent and fontRegions[region] == previous then
+            applyTextFont(region, previous.size, previous.locale)
+        end
     end
     for region, previous in pairs(inputRegions) do
-        if previous.key ~= context.key or previous.family ~= context.family or previous.creator ~= creator then Theme.ApplyInputFont(region) end
+        local intent = fontUpdates[region]
+        local repair = previous.key ~= context.key or previous.family ~= context.family or previous.creator ~= creator or
+            (previous.path and not matchingFont(region, previous.path, 14, previous.applied))
+        if repair and fontUpdates[region] == intent and inputRegions[region] == previous then Theme.ApplyInputFont(region) end
     end
     for button, previous in pairs(styledButtons) do
+        local intent = fontUpdates[button]
         local target = previous.locale and fontContext(previous.locale) or context
-        if previous.key ~= target.key or previous.family ~= target.family or previous.creator ~= creator then styleButtonFonts(button, previous.locale) end
+        local repair = previous.key ~= target.key or previous.family ~= target.family or previous.creator ~= creator or
+            not matchingControlFonts(button, previous.fonts)
+        if repair and fontUpdates[button] == intent and styledButtons[button] == previous then styleButtonFonts(button, previous.locale) end
     end
     for _, state in pairs(closeButtons) do
         if state.active then invoke(state.glyph, "SetText", "×"); state.refresh() end
