@@ -324,3 +324,17 @@ local summonSourceLabels = {
 for locale, values in pairs(summonSourceLabels) do
     addon.locales[locale].SOURCE_SUMMON_ITEM, addon.locales[locale].SOURCE_SUMMON_HINT = values[1], values[2]
 end
+
+local unknownQuestStarts = {
+    enUS = "How to start this quest is not yet known.",
+    ruRU = "Способ начала этого задания пока неизвестен.",
+    deDE = "Wie diese Quest beginnt, ist noch nicht bekannt.",
+    frFR = "La façon de commencer cette quête n'est pas encore connue.",
+    esES = "Aún no se sabe cómo iniciar esta misión.",
+    itIT = "Non è ancora noto come iniziare questa missione.",
+    ptBR = "Ainda não se sabe como iniciar esta missão.",
+    koKR = "이 퀘스트를 시작하는 방법은 아직 알려지지 않았습니다.",
+    zhCN = "此任务的开始方式尚不明确。",
+    zhTW = "此任務的開始方式尚不明確。",
+}
+for locale, value in pairs(unknownQuestStarts) do addon.locales[locale].QUEST_START_UNKNOWN = value end

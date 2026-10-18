@@ -180,7 +180,7 @@ function UI:QuestRowNavigationHint(row, binding)
             addon.Read(row.IsShown, "boolean", row) == true and addon.Read(self.frame.IsShown, "boolean", self.frame) == true
     end
     if not tip or not current() then return end
-    local title = addon.Read(localize, "string", binding.inspect and "SOURCE_DETAILS" or binding.action and (binding.mapOnly and "GIVER_MAP" or "VISIT_GIVER") or "DETAIL_GIVER")
+    local title = addon.Read(localize, "string", (binding.inspect or binding.reason == "QUEST_START_UNKNOWN") and "SOURCE_DETAILS" or binding.action and (binding.mapOnly and "GIVER_MAP" or "VISIT_GIVER") or "DETAIL_GIVER")
     local text = binding.reason and addon.Read(localize, "string", binding.reason)
     if not text and binding.action then
         local point = binding.action.place
@@ -334,6 +334,7 @@ function UI:BindQuestRowNavigation(row, id, ownerCurrent)
     local itemOnly = values.itemID and not values.npcID and not values.objectID
     if summon then binding.inspect, binding.reason = true, "SOURCE_DETAILS_HINT"
     elseif declaredSummon then binding.reason = "GIVER_LOCATION_UNKNOWN"
+    elseif definition and rawequal(rawStart, nil) and rawequal(alternatives, nil) then binding.reason = "QUEST_START_UNKNOWN"
     elseif itemOnly then
         if readable and values.itemID > 0 and values.itemID <= 4294967295 and values.itemID % 1 == 0 then
             binding.inspect, binding.reason = true, "START_ITEM_NAVIGATION"
@@ -3468,8 +3469,14 @@ function UI:RefreshDetail(sourceFocus)
         local startItemID = start and addon.Clean(rawget(start, "itemID"), "number")
         local itemStarter = startItemID and startItemID > 0 and startItemID <= 9007199254740991 and startItemID % 1 == 0 and
             rawget(start, "npcID") == nil and rawget(start, "objectID") == nil and q.startAlternatives == nil
-        self.giverUnavailableKey = itemStarter and "START_ITEM_LOCATION_UNKNOWN" or q.startAlternatives and "GIVER_CHOICES_REQUIRED" or "GIVER_LOCATION_UNKNOWN"
-        if not itemStarter and line(addon.L("DETAIL_GIVER"), "caption", nil, nil, portraitCardCurrent, not start and q.startAlternatives ~= nil) == false then return end
+        local missingStart = rawequal(rawget(q, "start"), nil) and rawequal(rawget(q, "startAlternatives"), nil)
+        local function missingStartCurrent()
+            return metadataCurrent() and portraitCardCurrent() and addon.quests[id] == definition and
+                rawequal(rawget(q, "start"), nil) and rawequal(rawget(q, "startAlternatives"), nil)
+        end
+        self.giverUnavailableKey = missingStart and "QUEST_START_UNKNOWN" or itemStarter and "START_ITEM_LOCATION_UNKNOWN" or q.startAlternatives and "GIVER_CHOICES_REQUIRED" or "GIVER_LOCATION_UNKNOWN"
+        if missingStart then self:SetFooterLabel(self.giver, "SOURCE_DETAILS") end
+        if not itemStarter and line(addon.L(missingStart and "SOURCE_DETAILS" or "DETAIL_GIVER"), "caption", nil, nil, missingStart and missingStartCurrent or portraitCardCurrent, not start and q.startAlternatives ~= nil) == false then return end
         if start then
             local giverFields = { "npcID", "objectID", "itemID", "name", "zoneName", "locationName", "mapID", "x", "y" }
             local giverValues, nameGetter, itemGetter, iconGetter, countGetter, mapRoot, checker = {}, addon.GiverName, addon.ItemName, addon.ItemIcon, addon.CarriedItemCount, C_Map, issecretvalue
@@ -3534,7 +3541,7 @@ function UI:RefreshDetail(sourceFocus)
                 return portraitCardCurrent()
             end
             if alternativePlaces(preview, self.giverButtons, "START_ALTERNATIVES", "giverAlternative:", giverCurrent) == false then return end
-        elseif line(addon.L("GIVER_LOCATION_UNKNOWN"), "warning", nil, nil, portraitCardCurrent, true) == false then return end
+        elseif line(addon.L(missingStart and "QUEST_START_UNKNOWN" or "GIVER_LOCATION_UNKNOWN"), "warning", nil, nil, missingStart and missingStartCurrent or portraitCardCurrent, true) == false then return end
         do
             local finish = addon.Clean(q.finish, "table")
             local fields, values, startingValues = { "npcID", "objectID", "itemID", "name", "zoneName", "mapID", "x", "y" }, {}, {}

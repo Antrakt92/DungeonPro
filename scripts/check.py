@@ -53,6 +53,7 @@ def main():
     run(lua, "tests/quest_row_sources_ui.lua")
     run(lua, "tests/source_location_warnings_ui.lua")
     run(lua, "tests/summon_sources_ui.lua")
+    run(lua, "tests/missing_start_sources_ui.lua")
     run(lua, "tests/navigation_tooltip_retirement_ui.lua")
     run(lua, "tests/quest_target_path_ui.lua")
     run(lua, "tests/reviewed_quest_sources_ui.lua")
