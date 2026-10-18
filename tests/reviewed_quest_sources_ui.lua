@@ -187,6 +187,16 @@ for _,sample in ipairs({{8990,22050},{7647,18804}}) do
     end end
     assert(found,"existing supplied tools remain separate from the newly listed collection goals")
 end
+-- Standalone definitions are inspected in an explicit pane context, without adding dungeon targets.
+local roleInspection = {
+    [2203]=assert(owners[2201]), [2440]=assert(owners[2439]), [2501]=assert(owners[2500]),
+    [3374]=assert(owners[1424]), [4701]=assert(owners[4742]),
+    [4724]=assert(owners[4742]), [4729]=assert(owners[4742]),
+}
+for id,dungeon in pairs(roleInspection)do
+    assert(not owners[id], "standalone definition has no invented natural dungeon association")
+    for _,target in ipairs(dungeon.quests)do assert(target~=id,"inspection does not add a dungeon target")end
+end
 local reviewedItemRoles = {
     {1954,"objectiveItems",{{7291}}}, {8255,"objectiveItems",{{20027,4}}},
     {8419,"objectiveItems",{{14256}}}, {8420,"objectiveItems",{{14256}}},
@@ -258,9 +268,32 @@ local reviewedItemRoles = {
     {7498,"providedItems",{{18356}}},
     {7483,"objectiveItems",{{18332},{18335,1},{14344,2},{12938,2}}},
     {7499,"providedItems",{{18357}}},
+    {1424,"objectiveItems",{{6175,10}}},
+    {1429,"providedItems",{{6193}}},
+    {1452,"objectiveItems",{{6257,3},{6258,3},{6259,3}}},
+    {1469,"providedItems",{{6287}}},
+    {2201,"providedItems",{{7668}}},
+    {2203,"objectiveItems",{{7867,3}}},
+    {2203,"providedItems",{{7870}}},
+    {2258,"objectiveItems",{{7847,5},{7846,10},{7848,5}}},
+    {2279,"providedItems",{{6064}}},
+    {2280,"providedItems",{{6064}}},
+    {2318,"providedItems",{{7886}}},
+    {2338,"providedItems",{{7886}}},
+    {2339,"providedItems",{{7668}}},
+    {2439,"providedItems",{{8070}}},
+    {2440,"providedItems",{{8070}}},
+    {2500,"objectiveItems",{{7847,5},{7846,10},{7848,5}}},
+    {2501,"objectiveItems",{{7867,3}}},
+    {2501,"providedItems",{{7870}}},
+    {3374,"providedItems",{{10589}}},
+    {4141,"objectiveItems",{{11316,15}}},
+    {4142,"providedItems",{{11316}}},
+    {4729,"objectiveItems",{{12263}}},
+    {4729,"providedItems",{{12262}}},
 }
 for _,sample in ipairs(reviewedItemRoles) do
-    render(sample[1])
+    render(sample[1],false,roleInspection[sample[1]])
     for _,item in ipairs(sample[3]) do
         local found=false
         for _,button in ipairs(ui.objectiveButtons) do if button:IsShown() then
@@ -282,8 +315,9 @@ for _,sample in ipairs({{1955,{{6549}}},{1957,{{6550,12}}},{8423,{{5993,7}}},
     {3906,{{9026}}},{4003,{{9019}}},{4182,{{7047,15},{7040,10},{7044,1},{7041,4}}},
     {4262,{{9026}}},{4362,{{9019}}},
     {303,{{1051,15},{1053,5},{1052,5},{1054,5}}},{739,{{2945},{2893,12}}},
-    {8992,{{16118}}},{8989,{{16080}}},{8995,{{16042}}},{8966,{{16080}}}}) do
-    render(sample[1])
+    {8992,{{16118}}},{8989,{{16080}}},{8995,{{16042}}},{8966,{{16080}}},
+    {4145,{{6509,5},{6512,5},{6510,5},{6511,5}}},{4701,{{10220}}},{4724,{{10220}}}}) do
+    render(sample[1],false,roleInspection[sample[1]])
     local goals=assert(addon.quests[sample[1]].objectiveKills)
     assert(#goals==#sample[2])
     for index,expected in ipairs(sample[2]) do
@@ -383,4 +417,16 @@ assert(addon.quests[5461].objectiveItems[1].itemID==13585 and not addon.quests[5
 assert(addon.quests[5462].providedItems[1].itemID==13585 and not addon.quests[5462].objectiveItems)
 assert(addon.quests[8994].providedItems[1].itemID==22048 and addon.quests[8995].objectiveItems[1].itemID==22048,
     "the amulet changes supplied and collected roles between separate quests")
+render(3374,false,roleInspection[3374])
+local oathstoneRoles={}
+for _,button in ipairs(ui.objectiveButtons)do if button:IsShown()then
+    local binding=button.objectiveBinding
+    assert(binding.id~=10455,"an unverified item reference is not invented as a quest role")
+    if binding.id==10589 and binding.current()then oathstoneRoles[binding.role]=binding.sourceField end
+end end
+assert(oathstoneRoles.starter=="start" and oathstoneRoles.provided=="providedItems",
+    "the oathstone retains both its actual starter and supplied-item bindings")
+assert(addon.quests[4141].objectiveItems[1].itemID==11316 and not addon.quests[4141].providedItems)
+assert(addon.quests[4142].providedItems[1].itemID==11316 and not addon.quests[4142].objectiveItems,
+    "the collected bloodpetal becomes an explicit supplied item only in its delivery quest")
 print("Reviewed quest sources UI: PASS (actual TOC; modeled routing and roles, no native acceptance)")
