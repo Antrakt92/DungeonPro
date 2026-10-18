@@ -8681,6 +8681,11 @@ check("Level-only cards show concise level metadata and giver location without a
 end)
 check("Mapped alternative giver areas remain explicit compact choices and stale choice callbacks expire",function()
     local actual={};assert(loadfile("Database/Catalog.lua"))("DungeonPro",actual)
+    -- Keep this area-only/unknown fixture independent of later precise source data.
+    local unknown=actual.quests[7492].startAlternatives[2]
+    actual.quests[7492].startAlternatives[2]={npcID=unknown.npcID,name=unknown.name}
+    local area=actual.quests[7494].startAlternatives[1]
+    actual.quests[7494].startAlternatives[1]={npcID=area.npcID,name=area.name,zoneName=area.zoneName,mapID=area.mapID}
     local quest,dungeon,navigation=ui.quest,ui.dungeon,addon.Navigation
     local first,second=addon.quests[7492],addon.quests[7494]
     addon.quests[7492],addon.quests[7494]=actual.quests[7492],actual.quests[7494]

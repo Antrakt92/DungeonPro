@@ -54,6 +54,8 @@ def main():
     run(lua, "tests/quest_target_path_ui.lua")
     run(lua, "tests/reviewed_quest_sources_ui.lua")
     run(lua, "tests/class_trainer_navigation_ui.lua")
+    run(lua, "tests/city_announcer_navigation_ui.lua")
+    run(lua, "tests/windsor_navigation_ui.lua")
     run(lua, "tests/localized_names_ui.lua")
     run(lua, "tests/header_controls_ui.lua")
     run(lua, "tests/dungeon_cards_ui.lua")
