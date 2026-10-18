@@ -23,4 +23,3 @@ assignees: ''
 - Character level, class and faction, if relevant:
 
 **Screenshot or Lua error, if available**
-

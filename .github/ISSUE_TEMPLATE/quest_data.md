@@ -23,4 +23,3 @@ Please distinguish an in-game observation from information in a guide.
 - WoW Forever client version:
 - Interface language:
 - Character level, class and faction, if relevant:
-
