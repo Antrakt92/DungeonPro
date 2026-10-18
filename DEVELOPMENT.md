@@ -71,6 +71,7 @@ normal checks or packaging. A generated preview is not an in-game screenshot.
 ## Reports and permissions
 
 Report incorrect data with the quest ID, dungeon, client language and supporting
-evidence. The repository being public does not change its reuse permissions;
-see [LICENSE](LICENSE) before distributing modified copies. Third-party notices
-retain their separate terms.
+evidence. Original code uses the Antrakt Attribution and CurseForge Rewards
+License 1.2. Forks and substantial reuse require attribution, with reward-sharing
+conditions for derivatives that earn CurseForge Reward Points; see the
+[full license](LICENSE). Third-party material retains its separate terms.
