@@ -1658,7 +1658,10 @@ function addon.RestoreDB()
         if not schema or schema < 1 or schema % 1 ~= 0 or schema > 1 then return false end
     end
     db.schema = 1
-    db.locale = type(db.locale) == "string" and db.locale or "auto"
+    local locale = addon.Clean(db.locale, "string")
+    local supported = { auto = true, enUS = true, enGB = true, ruRU = true, deDE = true, frFR = true,
+        esES = true, esMX = true, itIT = true, ptBR = true, koKR = true, zhCN = true, zhTW = true }
+    db.locale = supported[locale or ""] and locale or "auto"
     if type(db.window) ~= "table" then db.window = {} end
     if type(char.texts) ~= "table" then char.texts = {} end
     if type(char.filters) ~= "table" then char.filters = {} end

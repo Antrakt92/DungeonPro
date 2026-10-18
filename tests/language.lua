@@ -364,4 +364,27 @@ check("Late language checkmark writes preserve the newer committed selection on 
     assert(once and latest~=old and addon.db.locale=="ruRU")
     assert(latest.rows[3].languageMark.shown and not latest.rows[2].languageMark.shown,"only the new committed locale stays checked")
 end)
+check("Restored unsupported locale strings recover to a coherent native language", function()
+    local savedDB, savedChar = DungeonProDB, DungeonProCharDB
+    for _,native in ipairs({"ruRU","zhCN","enUS"}) do
+        for _,choice in ipairs({"xxXX","","   ","enGB","esMX","auto","enUS","ruRU","deDE","frFR","esES","itIT","ptBR","koKR","zhCN","zhTW"}) do
+            local addon,ui=fixture()
+            assert(loadfile("Core/Client.lua"))("DungeonPro",addon)
+            GetLocale=function()return native end
+            local window,filters={},{}
+            DungeonProDB={schema=1,locale=choice,window=window}
+            DungeonProCharDB={texts={},filters=filters}
+            assert(addon.RestoreDB() and addon.Language:Refresh(ui))
+            local valid=choice~="xxXX" and choice~="" and choice~="   "
+            local selected=valid and choice or "auto"
+            local resolved=selected=="auto" and native or selected
+            if resolved=="enGB" then resolved="enUS" elseif resolved=="esMX" then resolved="esES" end
+            assert(ui.language.languageLocale==resolved and addon.L("NEXT")==addon.locales[resolved].NEXT,
+                "restored selection caption and actual localized text agree")
+            assert(addon.db.locale==selected,"only unsupported saved locale strings recover")
+            assert(addon.db.window==window and addon.char.filters==filters)
+        end
+    end
+    DungeonProDB,DungeonProCharDB=savedDB,savedChar
+end)
 print("Language preview modeled checks passed: " .. total .. " (native pointer and font acceptance pending)")
