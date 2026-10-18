@@ -32,6 +32,10 @@ function methods:SetTextColor(...) self.textColor = { ... } end
 function methods:SetTextInsets(...) self.textInsets = { ... } end
 function methods:SetTexture(value) self.texture = value; return true end
 function methods:SetTexCoord(...) self.texCoords={...} end
+function methods:SetAtlas(value)self.atlas=value end
+function methods:GetAtlas()return self.atlas end
+function methods:SetRotation(value)self.rotation=value end
+function methods:GetStringWidth()return #(self.text or "")*5 end
 function methods:SetAlpha(value) self.alpha=value end
 function methods:SetDesaturated(value) self.desaturated=value end
 function methods:SetMotionScriptsWhileDisabled(value) self.disabledMotion=value end
@@ -146,6 +150,7 @@ addon.dungeons = { { key = "fixture", name = "Dungeon", minLevel = 10, maxLevel 
 assert(loadfile("UI/Theme.lua"))("DungeonPro", addon)
 assert(loadfile("UI/QuestStatus.lua"))("DungeonPro", addon)
 assert(loadfile("Core/QuestTree.lua"))("DungeonPro", addon)
+assert(loadfile("Core/QuestRowInfo.lua"))("DungeonPro", addon)
 assert(loadfile("Core/DungeonStatus.lua"))("DungeonPro", addon)
 assert(loadfile("UI/QuestListRewards.lua"))("DungeonPro", addon)
 assert(loadfile("UI/Window.lua"))("DungeonPro", addon)
@@ -6169,11 +6174,11 @@ check("Native ACTIVE and READY glyphs decorate only quest titles while original 
         local row=ui.rows[index]
         assert(row.statusIcon and row.statusIcon.shown and row.statusIcon.atlas==expected and not row.art)
         assert(row.statusIcon.width==16 and row.statusIcon.height==16 and row.statusInset==20)
-        assert(row.title.point[2]==28 and row.note.point[2]==8 and row.title.width==row.statusBaseWidth-20)
+        assert(row.title.point[2]==8+(row.chainInset or 0)+row.statusInset and row.note.point[2]==8 and row.title.width==row.statusBaseWidth-20)
         assert(row.title.fontSize==17 and row.note.fontSize==14)
         assert(row.note.text:find(addon.L(index==1 and "ACTIVE"or"READY"),1,true))
     end
-    for index=3,6 do local row=ui.rows[index];assert(row.statusIcon and row.statusIcon.shown and row.statusInset==20 and row.title.point[2]==28 and row.title.width==row.statusBaseWidth-20 and not row.note.shown)end
+    for index=3,6 do local row=ui.rows[index];assert(row.statusIcon and row.statusIcon.shown and row.statusInset==20 and row.title.point[2]==8+(row.chainInset or 0)+row.statusInset and row.title.width==row.statusBaseWidth-20 and not row.note.shown)end
     assert(#f.calls==2)
     ui.rows[2].scripts.OnClick(ui.rows[2],"LeftButton",false);assert(ui.quest==32002 and ui.engine:State(32002).status=="READY")
     f:finish()
@@ -6181,7 +6186,7 @@ end)
 check("Quest glyphs clear on state and heading recycling and never indent note text or dungeon artwork",function()
     local f=statusGlyphFixture();local row=ui.rows[1];local width=row.statusBaseWidth
     f.active[32001]=false;ui:RefreshQuests()
-    assert(row.questID==32001 and row.statusIcon.shown and row.statusInset==20 and row.title.width==width-20 and row.title.point[2]==28 and not row.note.shown)
+    assert(row.questID==32001 and row.statusIcon.shown and row.statusInset==20 and row.title.width==width-20 and row.title.point[2]==8+(row.chainInset or 0)+row.statusInset and not row.note.shown)
     ui.preparation=true;ui:RefreshQuests();assert(ui.rows[1].heading and not ui.rows[1].statusIcon.shown and ui.rows[1].title.width==ui.rows[1]:GetWidth()-22)
     ui.preparation=false;f.active[32001]=true;ui:RefreshQuests();assert(row.statusIcon.shown and row.title.width==width-20)
     ui:RefreshDungeons();for _,card in ipairs(ui.cards)do if card.shown then assert(card.title.point[2]==72 and card.note.point[2]==72)end end
@@ -6191,7 +6196,7 @@ check("Optional glyph painter failures and missing capabilities preserve textual
     local f=statusGlyphFixture();local row=ui.rows[1];local actual=addon.PaintQuestStatus
     for _,painter in ipairs({false,function()return false end,function(texture)texture:Show();error("native failed")end,function()return{}end})do
         addon.PaintQuestStatus=painter;ui:RefreshQuests()
-        assert(row.questID==32001 and row.enabled and row.statusInset==0 and row.title.width==row.statusBaseWidth and row.title.point[2]==8 and not row.statusIcon.shown)
+        assert(row.questID==32001 and row.enabled and row.statusInset==0 and row.title.width==row.statusBaseWidth and row.title.point[2]==8+(row.chainInset or 0) and not row.statusIcon.shown)
         row.scripts.OnClick();assert(ui.quest==32001)
     end
     addon.PaintQuestStatus=nil;ui:RefreshQuests();assert(row.statusInset==0 and not row.statusIcon.shown)
@@ -6231,7 +6236,7 @@ check("Glyph atlas getter and native setter reentry preserve newer pooled status
         end
         ui:RefreshQuests();object[method]=original
         assert(not armed and row.questID==32002 and row.statusIcon.shown and row.statusIcon.atlas=="UI-QuestIcon-TurnIn-Normal")
-        assert(row.statusInset==20 and row.title.width==row.statusBaseWidth-20 and row.title.point[2]==28 and row.note.point[2]==8)
+        assert(row.statusInset==20 and row.title.width==row.statusBaseWidth-20 and row.title.point[2]==8+(row.chainInset or 0)+row.statusInset and row.note.point[2]==8)
         row.scripts.OnClick();assert(ui.quest==32002)
         f:finish()
     end
@@ -6253,7 +6258,7 @@ check("Glyph caller rejects changed producer checker engine and source ownership
         ui:RefreshQuests();assert(not armed)
         local callback=ui.rows[1].scripts.OnClick;assert(callback==nil or not ui.rows[1].enabled)
         addon.PaintQuestStatus=painter;issecretvalue=checker;ui:RefreshQuests()
-        assert(ui.rows[1].statusIcon.shown and ui.rows[1].title.point[2]==28)
+        assert(ui.rows[1].statusIcon.shown and ui.rows[1].title.point[2]==8+(ui.rows[1].chainInset or 0)+ui.rows[1].statusInset)
         ui.rows[1].scripts.OnClick();assert(ui.quest==32001)
         f:finish()
     end
@@ -6272,7 +6277,7 @@ check("Status width getters and before-original setters preserve the newer compa
         end
         ui:RefreshQuests();object[method]=original
         assert(not armed and row.questID==32003 and row.title.width==width-20 and row.statusInset==20 and row.statusIcon.shown)
-        assert(row.title.point[2]==28 and not row.note.shown);row.scripts.OnClick();assert(ui.quest==32003)
+        assert(row.title.point[2]==8+(row.chainInset or 0)+row.statusInset and not row.note.shown);row.scripts.OnClick();assert(ui.quest==32003)
         f:finish()
     end
 end)
@@ -9045,7 +9050,7 @@ check("Compact inline chains preserve the root while inspecting completed parent
     assert(parent.title.textColor[1]<.7);ui:ApplyTheme();assert(parent.title.textColor[1]<.7)
     parent.scripts.OnClick();assert(ui.quest==43001 and ui.questTreeRoot==43000 and f:row(43002,true))
     f:row(43002,true).scripts.OnClick();assert(ui.quest==43002 and ui.questTreeRoot==43000)
-    f:anchor(43000).scripts.OnClick();assert(ui.quest==43000 and ui.questTreeRoot==43000 and f:row(43001,true)and #ui.detailHistory>=3)
+    f:row(43000,true).scripts.OnClick();assert(ui.quest==43000 and ui.questTreeRoot==43000 and f:row(43001,true)and #ui.detailHistory>=3)
     f:anchor(43000).scripts.OnClick();assert(ui.questTreeRoot==nil and not f:row(43001,true))
     f:finish()
 end)
@@ -9088,7 +9093,7 @@ check("Compact reward space is reserved before wrapped title measurement without
     addon.QuestListRewards={Paint=function()return 70 end,Clear=function()end}
     measurement=function(fs)
         for _,row in ipairs(ui.rows)do if fs==row.title and row.questID==43000 then
-            assert(fs.width==row:GetWidth()-22-70-(row.statusInset or 0)-(row.dungeonBadgeReserve or 0));measured=measured+1;return 54
+            assert(fs.width==row:GetWidth()-22-70-(row.statusInset or 0)-(row.dungeonBadgeReserve or 0)-(row.chainInset or 0)-(row.factionReserve or 0));measured=measured+1;return 54
         end end
         return 18
     end
@@ -9585,5 +9590,89 @@ check("Late native filter captions and glyph visibility preserve the newest mode
         for _,strip in ipairs(ui.characterButton.filterList)do assert(strip.shown==ui.includeUnavailable,kind)end
     end
     addon.db.locale,ui.range,ui.includeUnavailable=locale,range,all;ui:SaveFilters();ui:Refresh()
+end)
+local function questMarkerFixture()
+    local f={quest=ui.quest,dungeon=ui.dungeon,name=addon.QuestName,context=addon.Context,all=ui.includeUnavailable,
+        root=ui.questTreeRoot,treeDungeon=ui.questTreeDungeon,history=ui.detailHistory}
+    for id=54001,54006 do addon.quests[id]={id=id,name="Marker quest "..id,minLevel=1,requirementsKnown=true}end
+    addon.quests[54001].factions={"Alliance"};addon.quests[54001].requires={{ids={54005}}}
+    addon.quests[54002].factions={"Horde"};addon.quests[54003].factions={"Alliance","Horde"}
+    addon.quests[54004].factions={"Neutral"};addon.quests[54005].factions={"Horde"}
+    addon.QuestName=function(id)return addon.quests[id]and addon.quests[id].name or f.name(id)end
+    addon.Context=function()return{level=60,faction="Alliance",completed=function()return false end,active=function()return false end}end
+    ui.dungeon={key="quest-markers",name="Quest markers",quests={54001,54002,54003,54004,54006}}
+    ui.quest,ui.questTreeRoot,ui.questTreeDungeon=nil,nil,nil;ui.detailHistory={};ui.includeUnavailable=true;ui:Refresh()
+    function f:row(id)
+        for _,row in ipairs(ui.rows)do if row.shown and row.questID==id then return row end end
+    end
+    function f:anchor()
+        for _,row in ipairs(ui.rows)do if row.shown and row.anchorQuestID==54001 then return row end end
+    end
+    function f:finish()
+        for id=54001,54006 do addon.quests[id]=nil end
+        addon.QuestName,addon.Context=self.name,self.context
+        ui.quest,ui.dungeon,ui.includeUnavailable,ui.detailHistory=self.quest,self.dungeon,self.all,self.history
+        ui.questTreeRoot,ui.questTreeDungeon=self.root,self.treeDungeon;ui:Refresh()
+    end
+    return f
+end
+check("Separate faction markers follow literal names while chain slots align roots and single-step disclosure controls children",function()
+    local f=questMarkerFixture();local root,single=f:row(54001),f:row(54002)
+    for _,entry in ipairs({{54001,"Alliance"},{54002,"Horde"}})do
+        local row=f:row(entry[1]);assert(row.title.text==addon.quests[entry[1]].name and row.factionReserve==18)
+        assert(row.factionIcon.shown and row.factionIcon.width==14 and row.factionIcon.height==14)
+        assert(row.factionIcon.atlas=="UI-HUD-UnitFrame-Player-PVP-"..entry[2].."Icon")
+        assert(row.factionIcon.point[2]==row.title and row.factionIcon.point[4]==math.min(#row.title.text*5,row.title.width)+4)
+        assert(row.title.point[2]+row.title.width+18<=row:GetWidth()-14)
+    end
+    for _,id in ipairs({54003,54004,54006})do local row=f:row(id);assert(row.factionReserve==0 and(not row.factionIcon or not row.factionIcon.shown))end
+    assert(root.chainInset==14 and single.chainInset==14 and root.title.point[2]==single.title.point[2])
+    assert(root.chainExpandable and not root.chainExpanded and not single.chainExpandable)
+    for _,segment in ipairs(root.chainChevron)do assert(segment.shown and segment.texture=="Interface\\Buttons\\WHITE8X8")end
+    for _,segment in ipairs(single.chainChevron or {})do assert(not segment.shown)end
+    root.scripts.OnClick();local anchor=f:anchor();local child=f:row(54005)
+    assert(anchor.chainExpandable and anchor.chainExpanded and anchor.title.text==addon.quests[54001].name and anchor.chainChevron[1].point[4]==10)
+    assert(child.chainInset==0 and not child.chainExpandable and child.factionIcon.shown)
+    for _,segment in ipairs(child.chainChevron or {})do assert(not segment.shown)end
+    child.scripts.OnClick();assert(ui.quest==54005 and ui.questTreeRoot==54001)
+    f:anchor().scripts.OnClick();assert(ui.quest==54001 and ui.questTreeRoot==nil and not f:anchor())
+    f:finish()
+end)
+check("Faction name measurements reject restricted widths and cap long names before reserved reward space",function()
+    local f=questMarkerFixture();local row=f:row(54001);local getter=row.title.GetStringWidth
+    for _,value in ipairs({-1,0/0,math.huge,"90",777})do
+        local checker=issecretvalue;issecretvalue=function(v)return v==777 end
+        row.title.GetStringWidth=function()return value end;ui:RefreshQuests()
+        assert(row.shown and not row.factionIcon.shown and row.factionReserve==18)
+        issecretvalue=checker
+    end
+    row.title.GetStringWidth=function()return 100000 end;ui:RefreshQuests()
+    assert(row.factionIcon.shown and row.factionIcon.point[4]==row.title.width+4)
+    row.title.GetStringWidth=function()return 12 end;ui:RefreshQuests()
+    assert(row.factionIcon.point[4]==16)
+    row.title.GetStringWidth=getter;f:finish()
+end)
+check("Late faction and chevron writes cannot replace newer row glyph ownership or revive PICK decorations",function()
+    for _,mode in ipairs({"factionPoint","atlasRead","chevronPoint"})do
+        local f=questMarkerFixture();local row=f:row(54001)
+        local object=mode=="chevronPoint"and row.chainChevron[1]or row.factionIcon
+        local method=mode=="atlasRead"and "GetAtlas"or "SetPoint";local original,armed=object[method],true
+        object[method]=function(self,...)
+            if armed then
+                armed=false
+                if mode=="chevronPoint"then ui.questTreeRoot,ui.questTreeDungeon=54001,ui.dungeon;ui:RefreshQuests()
+                else ui.dungeon,ui.quest=nil,nil;ui:RefreshQuests()end
+            end
+            return original(self,...)
+        end
+        ui:RefreshQuests();object[method]=original
+        assert(not armed,mode)
+        if mode=="chevronPoint"then assert(f:anchor()and f:anchor().chainChevron[1].shown and f:anchor().chainChevron[1].point[4]==10)
+        else
+            assert(row.heading=="PICK"and row.shown and row.title.text==addon.L("PICK")and not row.factionIcon.shown)
+            for _,segment in ipairs(row.chainChevron)do assert(not segment.shown)end
+        end
+        f:finish()
+    end
 end)
 print("Preparation UI modeled checks passed: " .. total .. " (no native layout validation)")

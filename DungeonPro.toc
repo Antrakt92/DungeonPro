@@ -16,6 +16,7 @@ Database\SearchCaseFold.lua
 Core\Planner.lua
 Core\DungeonStatus.lua
 Core\QuestTree.lua
+Core\QuestRowInfo.lua
 Core\Search.lua
 Core\Client.lua
 Core\DialogueText.lua

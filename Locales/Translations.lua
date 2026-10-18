@@ -188,3 +188,19 @@ local filterKeys = { "FILTER_LEVEL_ALL", "FILTER_LEVEL_CURRENT", "FILTER_QUEST_M
 for locale, values in pairs(filterStrings) do
     for index, key in ipairs(filterKeys) do addon.locales[locale][key] = values[index] end
 end
+
+local chainStrings = {
+    enUS = { "Expand quest chain", "Collapse quest chain" },
+    ruRU = { "Развернуть цепочку", "Свернуть цепочку" },
+    deDE = { "Questreihe öffnen", "Questreihe schließen" },
+    frFR = { "Afficher la suite", "Réduire la suite" },
+    esES = { "Expandir cadena", "Contraer cadena" },
+    itIT = { "Espandi catena", "Comprimi catena" },
+    ptBR = { "Expandir cadeia", "Recolher cadeia" },
+    koKR = { "퀘스트 연계 펼치기", "퀘스트 연계 접기" },
+    zhCN = { "展开任务链", "收起任务链" },
+    zhTW = { "展開任務鏈", "收起任務鏈" },
+}
+for locale, values in pairs(chainStrings) do
+    addon.locales[locale].CHAIN_EXPAND, addon.locales[locale].CHAIN_COLLAPSE = values[1], values[2]
+end

@@ -108,6 +108,8 @@ Level ranges are provisional recommendations.
   the detail pane, leaving the full bottom area for scrolling content.
   Select a quest to expand its related steps in place, then select any step to
   read its details without losing the opened list. Completed steps remain visible.
+  A faction crest follows faction-specific quest names. A chevron identifies
+  expandable quest chains and changes direction while their steps are open.
   Indented branches connect to their target; inside an expanded branch, a map
   badge identifies quests listed for the selected dungeon.
   The target stays at its recorded story position and has a dungeon label.
