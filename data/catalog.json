@@ -1778,7 +1778,14 @@
           "npcID": 11518,
           "name": "Jergosh the Invoker"
         }
-      ]
+      ],
+      "storyline": [
+        5727,
+        5728,
+        5729,
+        5730
+      ],
+      "storylineEvidence": "https://www.wowhead.com/forever/quest=5728/hidden-enemies"
     },
     {
       "id": 5729,
