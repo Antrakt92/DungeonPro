@@ -77,8 +77,49 @@ class CatalogTests(unittest.TestCase):
             with self.subTest(field=field), self.assertRaisesRegex(ValueError, "dungeon fields"):
                 catalog.generate(data)
         data = self.minimal_catalog()
-        data["quests"][0]["storylineEvidence"] = "Recorded order, not proven prerequisites"
+        data["quests"][0]["storylineEvidence"] = "https://example.org/recorded-story-order"
         self.assertIn('["storylineEvidence"]', catalog.generate(data))
+
+    def test_optional_storyline_evidence_is_a_bounded_absolute_web_source(self):
+        valid = ("https://www.wowhead.com/forever/quest=5728",
+                 "https://www.wowhead.com/forever/storyline/hidden-enemies-1",
+                 "http://example.org/故事?view=series#step", "https://example.org:8443/path",
+                 "https://example.org/" + "a" * (2048 - len("https://example.org/")))
+        for value in valid:
+            data = self.minimal_catalog()
+            data["quests"][0]["storylineEvidence"] = value
+            before = copy.deepcopy(data)
+            catalog.generate(data)
+            self.assertEqual(data, before)
+        invalid = (None, False, 1, {}, [], "", " ", "Recorded story order", "javascript:invalid",
+                   "/relative", "https:///path", "https://", "https://[broken/path",
+                   "https://example.org:bad/path", "https://example.org:65536/path",
+                   "https://user:password@example.org/path", "https://user@example.org/path",
+                   " https://example.org/path", "https://example.org/a b", "https://example.org/\npath",
+                   "https://example.org/\tpath", "https://example.org/\x00path", "https://example.org/\x7fpath",
+                   "https://example.org/\x85path", "https://example.org/" + "a" * 2048)
+        for value in invalid:
+            with self.subTest(value=repr(value)):
+                data = self.minimal_catalog()
+                data["quests"][0]["storylineEvidence"] = value
+                with self.assertRaisesRegex(ValueError, "storyline evidence"):
+                    catalog.generate(data)
+        catalog.validate(self.minimal_catalog())
+
+    def test_ordered_storyline_has_one_to_one_hundred_unique_existing_ids(self):
+        for value in ([], [1, 1], [1] * 101, [999999], [True], [1.0], ["1"]):
+            with self.subTest(value=value):
+                data = self.minimal_catalog()
+                data["quests"][0]["storyline"] = value
+                with self.assertRaisesRegex(ValueError, "storyline"):
+                    catalog.generate(data)
+        data = self.minimal_catalog()
+        template = data["quests"][0]
+        data["quests"] = [dict(template, id=i, source=f"https://www.wowhead.com/forever/quest={i}")
+                          for i in range(1, 101)]
+        for length in (1, 100):
+            data["quests"][0]["storyline"] = list(range(1, length + 1))
+            catalog.validate(data)
 
     def test_lua_serializer_rejects_nonfinite_numbers_in_all_positions(self):
         for value in (float("nan"), float("inf"), -float("inf")):
@@ -129,7 +170,7 @@ class CatalogTests(unittest.TestCase):
                     catalog.lua(payload)
             data = self.minimal_catalog()
             data["quests"][0]["storylineEvidence"] = value
-            with self.subTest(metadata=value), self.assertRaisesRegex(ValueError, "integer"):
+            with self.subTest(metadata=value), self.assertRaisesRegex(ValueError, "storyline evidence"):
                 catalog.generate(data)
         maximum = 2 ** 53 - 1
         lua = shutil.which("lua5.1")
@@ -1183,10 +1224,10 @@ class CatalogTests(unittest.TestCase):
         data = self.minimal_catalog()
         catalog.validate(data)
         target = data["quests"][1]
-        target.update(requires=[], storyline=[], start={}, finish={})
+        target.update(requires=[], start={}, finish={})
         data["dungeons"][0]["quests"] = []
         catalog.validate(data)
-        self.assertIn('["storyline"] = {  }', catalog.generate(data))
+        self.assertNotIn('["storyline"]', catalog.generate(data))
         target["requires"] = [{"ids": [1], "mode": "active"}]
         target["storyline"] = [1, 2]
         data["dungeons"][0]["quests"] = [1, 2]

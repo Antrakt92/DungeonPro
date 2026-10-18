@@ -6,6 +6,7 @@ import json
 import math
 import re
 from pathlib import Path
+from urllib.parse import urlsplit
 
 ROOT = Path(__file__).resolve().parents[1]
 FACTIONS = frozenset({"Alliance", "Horde", "Neutral"})
@@ -59,6 +60,19 @@ def validate_unicode(value):
 
 def nonempty_string(value):
     return type(value) is str and bool(value.strip())
+
+
+def web_source(value):
+    if (type(value) is not str or not 1 <= len(value) <= 2048 or
+            re.search(r"[\s\x00-\x1f\x7f-\x9f]", value)):
+        return False
+    try:
+        source = urlsplit(value)
+        source.port  # Reading the property validates bracketed hosts and port syntax/range.
+        return (source.scheme in {"http", "https"} and bool(source.hostname) and
+                source.username is None and source.password is None)
+    except ValueError:
+        return False
 
 
 def validate_named_facts(quest, field, identity, maximum, label, *, required_name=False, utf8_name=False):
@@ -298,6 +312,8 @@ def validate(data):
                 if all(field in p for field in ("mapID", "x", "y")) and (p["mapID"], p["x"], p["y"]) not in seen_points:
                     raise ValueError(f"Primary point missing from reported locations: {q['id']}")
     for q in quests.values():
+        if "storylineEvidence" in q and not web_source(q["storylineEvidence"]):
+            raise ValueError(f"Invalid storyline evidence: {q['id']}")
         for field in ("requires", "storyline"):
             if field in q and type(q[field]) is not list:
                 raise ValueError(f"Invalid {field} list: {q['id']}")
@@ -317,8 +333,12 @@ def validate(data):
                     if qid in seen_story:
                         raise ValueError("Duplicate grouped storyline quest")
                     seen_story.add(qid)
+        if "storyline" in q and not 1 <= len(q["storyline"]) <= 100:
+            raise ValueError(f"Invalid storyline length: {q['id']}")
         if any(not integer(qid) for qid in q.get("storyline", [])):
             raise ValueError("Invalid storyline quest ID")
+        if "storyline" in q and len(q["storyline"]) != len(set(q["storyline"])):
+            raise ValueError(f"Duplicate storyline quest: {q['id']}")
         if any(qid not in quests for qid in q.get("storyline", [])):
             raise ValueError("Missing storyline quest")
         if "completionQuests" in q:
