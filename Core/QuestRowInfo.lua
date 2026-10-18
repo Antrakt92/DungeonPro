@@ -83,7 +83,14 @@ function Info.Get(quests, questID)
             if value ~= field.value then return false end
         end
         for _, length in ipairs(lengths) do if #length.object ~= length.length then return false end end
-        return addon.QuestRowInfo == Info and Info.Get == getter and addon.Clean == clean and addon.Read == read and issecretvalue == checker
+        if not rawequal(rawget(addon, "QuestRowInfo"), Info) or not rawequal(rawget(Info, "Get"), getter) or
+            not rawequal(rawget(addon, "Clean"), clean) or not rawequal(rawget(addon, "Read"), read) or
+            not rawequal(rawget(_G, "issecretvalue"), checker) or not rawequal(rawget(quests, questID), definition) then return false end
+        for _, field in ipairs(fields) do
+            if not rawequal(rawget(field.object, field.key), field.value) then return false end
+        end
+        for _, length in ipairs(lengths) do if #length.object ~= length.length then return false end end
+        return true
     end
     if not current() then return nil end
     return { faction = faction, chain = valid and found and true or false }, current

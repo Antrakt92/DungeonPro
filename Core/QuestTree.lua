@@ -3,7 +3,7 @@ local Tree = {}
 addon.QuestTree = Tree
 
 function Tree.Build(quests, engine, rootID)
-    local clean, read, checker = addon.Clean, addon.Read, issecretvalue
+    local clean, read, checker, builder = addon.Clean, addon.Read, issecretvalue, Tree.Build
     local function id(value)
         value = clean(value, "number")
         if value and value > 0 and value <= 9007199254740991 and value % 1 == 0 then return value end
@@ -12,6 +12,7 @@ function Tree.Build(quests, engine, rootID)
     local stateGetter, contextGetter = clean(engine.State, "function"), clean(engine.Current, "function")
     if not stateGetter then return nil, "engine" end
     local engineQuests, engineContext, engineChoices = rawget(engine, "quests"), rawget(engine, "context"), rawget(engine, "choices")
+    local rawStateGetter, rawContextGetter = rawget(engine, "State"), rawget(engine, "Current")
     if engineQuests ~= nil and engineQuests ~= quests then return nil, "engine" end
     local nodes, sources, states, seen, visiting, byID = {}, {}, {}, {}, {}, {}
     local failed, edges = nil, 0
@@ -20,11 +21,11 @@ function Tree.Build(quests, engine, rootID)
         return value == previous
     end
     local function current()
-        if addon.QuestTree ~= Tree or addon.Clean ~= clean or addon.Read ~= read or issecretvalue ~= checker or
+        if addon.QuestTree ~= Tree or Tree.Build ~= builder or addon.Clean ~= clean or addon.Read ~= read or issecretvalue ~= checker or
             engine.State ~= stateGetter or engine.Current ~= contextGetter or not same(rawget(engine, "quests"), engineQuests) or
             not same(rawget(engine, "context"), engineContext) or not same(rawget(engine, "choices"), engineChoices) then return false end
         if contextGetter and read(contextGetter, "boolean", engine) ~= true then return false end
-        if addon.QuestTree ~= Tree or addon.Clean ~= clean or addon.Read ~= read or issecretvalue ~= checker or
+        if addon.QuestTree ~= Tree or Tree.Build ~= builder or addon.Clean ~= clean or addon.Read ~= read or issecretvalue ~= checker or
             engine.State ~= stateGetter or engine.Current ~= contextGetter or not same(rawget(engine, "quests"), engineQuests) or
             not same(rawget(engine, "context"), engineContext) or not same(rawget(engine, "choices"), engineChoices) then return false end
         for _, source in ipairs(sources) do
@@ -37,6 +38,24 @@ function Tree.Build(quests, engine, rootID)
             for _, key in ipairs({ "status", "reason", "completedHistory" }) do
                 if not same(rawget(state.value, key), state[key]) then return false end
             end
+        end
+        -- Sanitizers and the context predicate can reenter after an earlier
+        -- field was inspected. Finish with a callback-free snapshot check.
+        if not rawequal(rawget(addon, "QuestTree"), Tree) or not rawequal(rawget(Tree, "Build"), builder) or not rawequal(rawget(addon, "Clean"), clean) or
+            not rawequal(rawget(addon, "Read"), read) or not rawequal(rawget(_G, "issecretvalue"), checker) or
+            not rawequal(rawget(engine, "State"), rawStateGetter) or not rawequal(rawget(engine, "Current"), rawContextGetter) or
+            not rawequal(rawget(engine, "quests"), engineQuests) or not rawequal(rawget(engine, "context"), engineContext) or
+            not rawequal(rawget(engine, "choices"), engineChoices) then return false end
+        for _, source in ipairs(sources) do
+            if not rawequal(rawget(quests, source.id), source.quest) then return false end
+            for _, field in ipairs(source.fields) do
+                if not rawequal(rawget(field.object, field.key), field.value) then return false end
+            end
+        end
+        for _, state in ipairs(states) do
+            if not rawequal(rawget(state.value, "status"), state.status) or
+                not rawequal(rawget(state.value, "reason"), state.reason) or
+                not rawequal(rawget(state.value, "completedHistory"), state.completedHistory) then return false end
         end
         return true
     end

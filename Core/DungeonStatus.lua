@@ -5,7 +5,7 @@ addon.DungeonStatus = Status
 -- This describes the character's eligible listed quests, never every quest
 -- available in the game. Optional inspection filters do not affect the result.
 function Status.Get(dungeon, engine)
-    local clean, read, checker = addon.Clean, addon.Read, issecretvalue
+    local clean, read, checker, getterOwner = addon.Clean, addon.Read, issecretvalue, Status.Get
     dungeon, engine = clean(dungeon, "table"), clean(engine, "table")
     local quests = engine and clean(rawget(engine, "quests"), "table")
     local context = engine and clean(rawget(engine, "context"), "table")
@@ -30,19 +30,28 @@ function Status.Get(dungeon, engine)
         return value == previous
     end
     local function current()
-        if addon.DungeonStatus ~= Status or addon.Clean ~= clean or addon.Read ~= read or issecretvalue ~= checker or
+        if addon.DungeonStatus ~= Status or Status.Get ~= getterOwner or addon.Clean ~= clean or addon.Read ~= read or issecretvalue ~= checker or
             not same(addon.Planner, planner) or not same(rawget(planner, "Eligible"), eligible) or
             not same(rawget(engine, "State"), getter) or not same(rawget(engine, "Current"), fresh) or
             not same(rawget(engine, "quests"), quests) or not same(rawget(engine, "context"), context) or
             not same(rawget(engine, "states"), cache) then return false end
         if read(fresh, "boolean", engine) ~= true then return false end
-        if addon.DungeonStatus ~= Status or addon.Clean ~= clean or addon.Read ~= read or issecretvalue ~= checker or
+        if addon.DungeonStatus ~= Status or Status.Get ~= getterOwner or addon.Clean ~= clean or addon.Read ~= read or issecretvalue ~= checker or
             not same(addon.Planner, planner) or not same(rawget(planner, "Eligible"), eligible) or
             not same(rawget(engine, "State"), getter) or not same(rawget(engine, "Current"), fresh) or
             not same(rawget(engine, "quests"), quests) or not same(rawget(engine, "context"), context) or
             not same(rawget(engine, "states"), cache) then return false end
         for index = 1, fieldCount do
             if not same(rawget(fieldObjects[index], fieldKeys[index]), fieldValues[index]) then return false end
+        end
+        if not rawequal(rawget(addon, "DungeonStatus"), Status) or not rawequal(rawget(Status, "Get"), getterOwner) or not rawequal(rawget(addon, "Clean"), clean) or
+            not rawequal(rawget(addon, "Read"), read) or not rawequal(rawget(_G, "issecretvalue"), checker) or
+            not rawequal(rawget(addon, "Planner"), planner) or not rawequal(rawget(planner, "Eligible"), eligible) or
+            not rawequal(rawget(engine, "State"), getter) or not rawequal(rawget(engine, "Current"), fresh) or
+            not rawequal(rawget(engine, "quests"), quests) or not rawequal(rawget(engine, "context"), context) or
+            not rawequal(rawget(engine, "states"), cache) then return false end
+        for index = 1, fieldCount do
+            if not rawequal(rawget(fieldObjects[index], fieldKeys[index]), fieldValues[index]) then return false end
         end
         return true
     end
