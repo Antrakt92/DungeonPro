@@ -45,6 +45,7 @@ def main():
     run(lua, "tests/search.lua")
     run(lua, "tests/overnight_search_reported_places.lua")
     run(lua, "tests/objective_source_search_ui.lua")
+    run(lua, "tests/search_typography_ui.lua")
     run(lua, "tests/quest_id_search_localization_ui.lua")
     run(lua, "tests/ui_preparation.lua")
     run(lua, "tests/quest_tree_ui.lua")

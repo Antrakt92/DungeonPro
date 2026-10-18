@@ -326,7 +326,12 @@ local function reportedPlaces(parent)
 end
 
 local function searchText(value)
-    if type(addon.SearchFold) == "function" then return addon.SearchFold(value) or value end
+    if type(addon.SearchFold) == "function" then
+        local folded = addon.SearchFold(value)
+        if not folded then return value end
+        -- Normalize common pasted typography in search keys, never displayed names.
+        return folded:gsub("’", "'"):gsub("\194\160", " "):gsub("\227\128\128", " "):gsub("^%s+", ""):gsub("%s+$", "")
+    end
     return value:gsub("[A-Z]", function(letter) return string.char(letter:byte() + 32) end)
 end
 
