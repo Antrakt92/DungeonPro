@@ -657,4 +657,3 @@ function UI:SetFooterLabel(control, key)
     control:SetText("")
     if control.caption then control.caption:SetText(addon.L(key)) end
 end
-
