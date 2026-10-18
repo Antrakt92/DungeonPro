@@ -2,7 +2,7 @@ local _, addon = ...
 local N = {}
 addon.Navigation = N
 local target, frame, elapsed = nil, nil, 0
-local tomtomOwner, tomtomUID, nativePoint
+local tomtomOwner, tomtomUID, nativePoint, pendingNativeCleanup
 local navigationGeneration = {}
 local presentation, contextElapsed = nil, 0
 local presentationWrite, guideUpdate
@@ -342,16 +342,48 @@ local function releaseNativePoint(pin, generation)
     if C_Map ~= owner then return end
     local getter, clearer = addon.Clean(owner.GetUserWaypoint, "function"), addon.Clean(owner.ClearUserWaypoint, "function")
     if not getter or not clearer then return end
-    local current = addon.Read(getter, "table")
-    local pos = current and addon.Clean(current.position, "table")
-    local map = current and addon.Clean(current.uiMapID, "number")
-    local x, y = pos and addon.Clean(pos.x, "number"), pos and addon.Clean(pos.y, "number")
-    if navigationGeneration == generation and not nativePoint and C_Map == owner and issecretvalue == checker and
-        addon.Clean(owner.GetUserWaypoint, "function") == getter and addon.Clean(owner.ClearUserWaypoint, "function") == clearer and
+    if pin.cleanupGetter and (pin.cleanupGetter ~= getter or pin.cleanupClearer ~= clearer or pin.cleanupChecker ~= checker) then return end
+    pin.cleanupGetter, pin.cleanupClearer, pin.cleanupChecker = getter, clearer, checker
+    local function currentOwner()
+        return navigationGeneration == generation and not nativePoint and C_Map == owner and issecretvalue == checker and
+            rawequal(rawget(owner, "GetUserWaypoint"), getter) and rawequal(rawget(owner, "ClearUserWaypoint"), clearer)
+    end
+    local function readPoint()
+        local ok, value = pcall(getter)
+        if not ok then return "unknown" end
+        if type(checker) == "function" then
+            local checked, secret = pcall(checker, value)
+            if not checked or secret ~= false then return "unknown" end
+        end
+        if value == nil then return "empty" end
+        local point = addon.Clean(value, "table")
+        local pos = point and addon.Clean(point.position, "table")
+        local map = point and addon.Clean(point.uiMapID, "number")
+        local x, y = pos and addon.Clean(pos.x, "number"), pos and addon.Clean(pos.y, "number")
+        if not map or not x or not y or x < 0 or x > 1 or y < 0 or y > 1 then return "unknown" end
         -- Native vector readback may round normalized coordinates to float precision.
-        map == pin.mapID and x and y and x >= 0 and x <= 1 and y >= 0 and y <= 1 and
-        math.abs(x - pin.x) <= 0.0000001 and math.abs(y - pin.y) <= 0.0000001 then
+        if map == pin.mapID and math.abs(x - pin.x) <= 0.0000001 and math.abs(y - pin.y) <= 0.0000001 then return "owned" end
+        return "foreign"
+    end
+    local state = readPoint()
+    if not currentOwner() then return end
+    local attempts = pin.cleanupAttempts or 0
+    if state == "owned" and attempts < 3 then
+        pin.cleanupAttempts = attempts + 1
         pcall(clearer)
+        if not currentOwner() then
+            -- A nested cancellation may leave no guide to own a failed cleanup.
+            -- Transfer only dormant authority; never clear again in this invocation.
+            if navigationGeneration == generation or target or nativePoint or pendingNativeCleanup then return end
+            generation = navigationGeneration
+            if not currentOwner() then return end
+        end
+        -- Clearing has no success return contract; only fresh readback proves removal.
+        state = readPoint()
+    end
+    if currentOwner() and (state == "owned" or state == "unknown") and (pin.cleanupAttempts or 0) < 3 then
+        -- Dormant ownership is retried only by a later explicit Start/Stop, never a timer.
+        pendingNativeCleanup = pin
     end
 end
 
@@ -384,9 +416,9 @@ end
 function N.Stop()
     local generation = {}
     navigationGeneration = generation
-    local owner, uid, pin = tomtomOwner, tomtomUID, nativePoint
+    local owner, uid, pin = tomtomOwner, tomtomUID, nativePoint or pendingNativeCleanup
     -- Release ownership before third-party cleanup can invoke callbacks.
-    tomtomOwner, tomtomUID, nativePoint, target = nil, nil, nil, nil
+    tomtomOwner, tomtomUID, nativePoint, pendingNativeCleanup, target = nil, nil, nil, nil, nil
     presentation, contextElapsed = nil, 0
     clearMapMarker()
     if frame then setVisible(false, nil, generation) end
@@ -708,7 +740,7 @@ function N.Start(action)
                         releaseNativePoint(pin, generation)
                         owned = false
                     end
-                    if owned then nativePoint = pin end
+                    if owned then nativePoint, pendingNativeCleanup = pin, nil end
                     if owned and C_SuperTrack and C_SuperTrack.SetSuperTrackedUserWaypoint then
                         pcall(C_SuperTrack.SetSuperTrackedUserWaypoint, true)
                         if not current() then return false end

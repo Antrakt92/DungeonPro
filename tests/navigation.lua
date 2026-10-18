@@ -1472,4 +1472,129 @@ check("Stationary guide skips repeated text measurement and layout while live be
     card.arrow.SetRotation=nil;card.title.fontSize,card.title.measured,card.note.scale,card.title.width=nil,nil,nil,nil
     methods.GetText,methods.GetFont,methods.GetWidth,methods.GetEffectiveScale=oldText,oldFont,oldWidth,oldScale
 end)
+check("Transient native clear failure retries only on the next explicit stop", function()
+    local original, attempts = C_Map.ClearUserWaypoint, 0
+    C_Map.ClearUserWaypoint = function()
+        attempts = attempts + 1
+        if attempts == 1 then error("temporary cleanup failure") end
+        return original()
+    end
+    assert(nav.Start(action)); nav.Stop()
+    assert(current and attempts == 1)
+    nav.Stop(); assert(current == nil and attempts == 2)
+    nav.Stop(); assert(attempts == 2)
+end)
+check("Native clear readback wins over false nil and throwing return paths", function()
+    for _, mode in ipairs({ "false", "nil", "throw", "noop" }) do
+        reset()
+        local attempts = 0
+        C_Map.ClearUserWaypoint = function()
+            attempts = attempts + 1
+            if mode == "noop" and attempts == 1 then return end
+            current = nil
+            if mode == "throw" then error("already cleared") end
+            if mode == "false" then return false end
+        end
+        assert(nav.Start(action)); nav.Stop()
+        if mode == "noop" then assert(current and attempts == 1); nav.Stop() end
+        assert(current == nil and attempts == (mode == "noop" and 2 or 1))
+        local previous = attempts; nav.Stop(); assert(attempts == previous)
+    end
+end)
+check("Persistent native cleanup failure has three actual clear attempts and no tick retries", function()
+    local attempts = 0
+    C_Map.ClearUserWaypoint = function() attempts = attempts + 1; error("not ready") end
+    assert(nav.Start(action)); nav.Stop()
+    for _, card in ipairs(frames) do
+        if card.scripts.OnUpdate then card.scripts.OnUpdate(card, .1) end
+    end
+    assert(attempts == 1)
+    for _ = 1, 12 do nav.Stop() end
+    assert(current and attempts == 3)
+end)
+check("Temporarily unreadable native cleanup retains dormant identity without clearing unknown points", function()
+    for _, phase in ipairs({ "before", "after" }) do
+        reset()
+        local attempts, unreadable = 0, false
+        C_Map.GetUserWaypoint = function() if unreadable then error("read not ready") end; return current end
+        C_Map.ClearUserWaypoint = function()
+            attempts = attempts + 1
+            if attempts == 1 then unreadable = true; return false end
+            current = nil
+        end
+        assert(nav.Start(action))
+        if phase == "before" then unreadable = true end
+        nav.Stop(); assert(current and attempts == (phase == "before" and 0 or 1))
+        nav.Stop(); assert(attempts == (phase == "before" and 0 or 1))
+        unreadable = false; nav.Stop()
+        if current then unreadable = false; nav.Stop() end
+        assert(current == nil and attempts == 2)
+    end
+end)
+check("Pending native cleanup preserves manual replacements and retires changed API authority", function()
+    for _, mode in ipairs({ "manual", "getter", "clearer", "owner" }) do
+        reset()
+        local attempts = 0
+        C_Map.ClearUserWaypoint = function() attempts = attempts + 1; return false end
+        assert(nav.Start(action)); nav.Stop(); assert(attempts == 1)
+        local manual = { uiMapID = 2, position = { x = .12, y = .34 } }
+        if mode == "manual" then current = manual
+        elseif mode == "getter" then C_Map.GetUserWaypoint = function() return current end
+        elseif mode == "clearer" then C_Map.ClearUserWaypoint = function() error("foreign clearer") end
+        else local newer = {}; for k, v in pairs(C_Map) do newer[k] = v end; C_Map = newer end
+        nav.Stop(); nav.Stop(); assert(attempts == 1)
+        if mode == "manual" then assert(current == manual) end
+    end
+end)
+check("Replacing a guide retries the old pin once and preserves the newer cleanup owner", function()
+    local original, attempts = C_Map.ClearUserWaypoint, 0
+    C_Map.ClearUserWaypoint = function()
+        attempts = attempts + 1
+        if attempts == 1 then error("temporary") end
+        return original()
+    end
+    assert(nav.Start(action)); nav.Stop(); assert(current and attempts == 1)
+    assert(nav.Start({ id = 2, place = { mapID = 2, x = 20, y = 30 } }))
+    assert(current and current.uiMapID == 2 and nativeCalls == 2 and attempts == 2)
+    nav.Stop(); assert(current == nil and attempts == 3)
+end)
+check("A reentrant native clear cannot republish stale pending ownership over a newer guide", function()
+    local original, attempts = C_Map.ClearUserWaypoint, 0
+    C_Map.ClearUserWaypoint = function()
+        attempts = attempts + 1
+        if attempts == 1 then
+            current = nil
+            assert(nav.Start({ id = 2, place = { mapID = 2, x = 20, y = 30 } }))
+            error("old clear completed late")
+        end
+        return original()
+    end
+    assert(nav.Start(action)); nav.Stop()
+    assert(current and current.uiMapID == 2 and attempts == 1)
+    nav.QuestChanged(1); assert(current and current.uiMapID == 2)
+    nav.QuestChanged(2); assert(current == nil and attempts == 2)
+    nav.Stop(); assert(attempts == 2)
+end)
+check("Nested cancellation retains only dormant old pin ownership without taking over another guide", function()
+    for _, mode in ipairs({ "empty", "manual", "guide" }) do
+        reset()
+        local original, attempts = C_Map.ClearUserWaypoint, 0
+        local manual = { uiMapID = 2, position = { x = .15, y = .25 } }
+        C_Map.ClearUserWaypoint = function()
+            attempts = attempts + 1
+            if attempts == 1 then
+                nav.Stop()
+                if mode == "manual" then current = manual end
+                if mode == "guide" then assert(nav.Start({ id = 2, place = { mapID = 2, x = 20, y = 30 } })) end
+                error("transient clear after nested cancellation")
+            end
+            return original()
+        end
+        assert(nav.Start(action)); nav.Stop()
+        assert(current and attempts == 1, "nested Stop must not retry recursively")
+        nav.Stop()
+        if mode == "empty" then assert(current == nil and attempts == 2)
+        else assert(current and attempts == 1); if mode == "manual" then assert(current == manual) end end
+    end
+end)
 print("Navigation modeled checks passed: " .. total .. " (no native map validation)")
