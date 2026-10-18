@@ -180,7 +180,7 @@ function UI:QuestRowNavigationHint(row, binding)
             addon.Read(row.IsShown, "boolean", row) == true and addon.Read(self.frame.IsShown, "boolean", self.frame) == true
     end
     if not tip or not current() then return end
-    local title = addon.Read(localize, "string", binding.mapOnly and "GIVER_MAP" or "VISIT_GIVER")
+    local title = addon.Read(localize, "string", binding.inspect and "SOURCE_DETAILS" or binding.action and (binding.mapOnly and "GIVER_MAP" or "VISIT_GIVER") or "DETAIL_GIVER")
     local text = binding.reason and addon.Read(localize, "string", binding.reason)
     if not text and binding.action then
         local point = binding.action.place
@@ -228,12 +228,16 @@ function UI:BindQuestRowNavigation(row, id, ownerCurrent)
         control:SetSize(24, 24)
         if type(control.SetMotionScriptsWhileDisabled) == "function" then control:SetMotionScriptsWhileDisabled(true) end
         control.footerIcon = self:CreateGoldNavigationIcon(control)
+        control.sourceInspect = false
     end
     local catalogue, definition, checker = addon.quests, addon.quests[id], issecretvalue
     local rawStart = definition and rawget(definition, "start")
     local start = addon.Clean(rawStart, "table")
     local sourceID = definition and rawget(definition, "id")
     local alternatives = definition and rawget(definition, "startAlternatives")
+    local alternativeList = addon.Clean(alternatives, "table")
+    local alternativeCount, alternativeMembers = alternativeList and #alternativeList or 0, {}
+    for index = 1, math.min(alternativeCount, 100) do alternativeMembers[index] = rawget(alternativeList, index) end
     local fields = { npcID = "number", objectID = "number", itemID = "number", name = "string", zoneName = "string", locationName = "string", mapID = "number", x = "number", y = "number" }
     local values, rawValues, readable = {}, {}, true
     for field, kind in pairs(fields) do
@@ -250,12 +254,21 @@ function UI:BindQuestRowNavigation(row, id, ownerCurrent)
     local mapOnly = not (values.x and values.y and values.x >= 0 and values.x <= 100 and values.y >= 0 and values.y <= 100)
     local rawMethod = navigation and rawget(navigation, mapOnly and "Map" or "Start")
     local method = addon.Clean(rawMethod, "function")
+    local inspector = self.InspectQuest
+    local inspectMethod = addon.Clean(inspector, "function")
     local binding = { mapOnly = mapOnly, map = values.mapID, x = values.x, y = values.y }
     local function current()
         if not ownerCurrent() or row.navigationBinding ~= binding or addon.quests ~= catalogue or catalogue[id] ~= definition or
-            addon.Navigation ~= navigationRoot or issecretvalue ~= checker or row.navigationControl ~= control then return false end
+            addon.Navigation ~= navigationRoot or issecretvalue ~= checker or row.navigationControl ~= control or
+            (binding.inspect and self.InspectQuest ~= inspector) then return false end
         local ok, same = pcall(function()
             if not definition or rawget(definition, "start") ~= rawStart or rawget(definition, "startAlternatives") ~= alternatives or rawget(definition, "id") ~= sourceID then return false end
+            if alternativeList then
+                if #alternativeList ~= alternativeCount then return false end
+                for index = 1, math.min(alternativeCount, 100) do
+                    if rawget(alternativeList, index) ~= alternativeMembers[index] then return false end
+                end
+            end
             for field, kind in pairs(fields) do
                 local raw = start and rawget(start, field)
                 if type(checker) == "function" and addon.Read(checker, "boolean", raw) ~= false then return false end
@@ -264,30 +277,39 @@ function UI:BindQuestRowNavigation(row, id, ownerCurrent)
             for field in pairs(fields) do if (start and rawget(start, field)) ~= rawValues[field] then return false end end
             return ownerCurrent() and row.navigationBinding == binding and addon.quests == catalogue and catalogue[id] == definition and
                 addon.Navigation == navigationRoot and issecretvalue == checker and
-                (not navigation or rawget(navigation, mapOnly and "Map" or "Start") == rawMethod)
+                (not navigation or rawget(navigation, mapOnly and "Map" or "Start") == rawMethod) and
+                (not binding.inspect or self.InspectQuest == inspector)
         end)
         return ok and same == true
     end
     binding.current = current
     local itemOnly = values.itemID and not values.npcID and not values.objectID
-    if itemOnly then binding.reason = "START_ITEM_NAVIGATION"
-    elseif not start and alternatives then binding.reason = "GIVER_CHOICES_REQUIRED"
+    if itemOnly then
+        if readable and values.itemID > 0 and values.itemID <= 4294967295 and values.itemID % 1 == 0 then
+            binding.inspect, binding.reason = true, "START_ITEM_NAVIGATION"
+        else binding.reason = "GIVER_LOCATION_UNKNOWN" end
+    elseif not start and alternativeList and alternativeCount > 0 and alternativeCount <= 100 then binding.inspect, binding.reason = true, "SOURCE_DETAILS_HINT"
     elseif not readable or not start or not values.mapID or values.mapID <= 0 or values.mapID > 9007199254740991 or values.mapID % 1 ~= 0 then binding.reason = "GIVER_LOCATION_UNKNOWN"
     elseif not method then binding.reason = "NAVIGATION_UNAVAILABLE"
     else binding.action = { id = id, kind = "visit", place = start } end
+    if binding.inspect and not inspectMethod then binding.reason = "NAVIGATION_UNAVAILABLE" end
+    local enabled = binding.action ~= nil or (binding.inspect == true and inspectMethod ~= nil)
     row.navigationReserve, row.navigationBinding = 32, binding
     local function leave()
         local held = self.navigationTooltip
         if held and held.button == control and row.navigationBinding == binding then self:HideNavigationHint() end
     end
-    control.footerEnabled = binding.action ~= nil
+    if not self:PaintQuestRowSourceIcon(control, binding.inspect == true, ownerCurrent) then return false end
+    control.footerEnabled = enabled
     self:RefreshFooterIcon(control)
     if not ownerCurrent() or not write(control, "ClearAllPoints") or
         not write(control, "SetPoint", "TOPRIGHT", row, "TOPRIGHT", -4, -3) or
-        not write(control, "SetEnabled", binding.action ~= nil) or
+        not write(control, "SetEnabled", enabled) or
         not write(control, "SetScript", "OnClick", function()
-            if not binding.action or not current() or addon.Read(row.IsShown, "boolean", row) ~= true or not current() then return end
-            self:DispatchDetail(binding.action, mapOnly, false, current)
+            if not current() or addon.Read(row.IsShown, "boolean", row) ~= true or
+                addon.Read(self.frame.IsShown, "boolean", self.frame) ~= true or not current() then return end
+            if binding.inspect and inspectMethod then pcall(inspectMethod, self, id, true, true)
+            elseif binding.action then self:DispatchDetail(binding.action, mapOnly, false, current) end
         end) or not write(control, "SetScript", "OnEnter", function() self:QuestRowNavigationHint(row, binding) end) or
         not write(control, "SetScript", "OnLeave", leave) or not write(control, "SetScript", "OnHide", leave) or
         not write(control, "Show") then return false end
@@ -553,6 +575,46 @@ function UI:CreateGoldNavigationIcon(control)
     end
     control.navigationGold, control.footerIconParts = true, parts
     return parts[1]
+end
+
+function UI:PaintQuestRowSourceIcon(control, inspect, current)
+    local depth = control.sourceIconDepth or 0
+    if depth >= 3 then return false end
+    local nested = depth > 0
+    control.sourceIconDepth = depth + 1
+    -- Nested paints must claim visibility even when the final glyph is unchanged.
+    local ok, result = pcall(function()
+        local arrow = control.navigationIconParts or control.footerIconParts
+        control.navigationIconParts = arrow
+        local book = control.sourceIconParts
+        if not nested and control.sourceInspect == inspect and control.footerIconParts == (inspect and book or arrow) then return current() end
+        if inspect and not book then
+            book = {}
+            for _, geometry in ipairs({ {2,16,-8,0}, {2,16,8,0}, {2,16,0,0},
+                {8,2,-4,7}, {8,2,4,7}, {8,2,-4,-7}, {8,2,4,-7} }) do
+                local part = control:CreateTexture(nil, "ARTWORK")
+                if not current() then return false end
+                book[#book + 1] = part
+                for _, operation in ipairs({ {"Hide"}, {"SetTexture", "Interface\\Buttons\\WHITE8X8"},
+                    {"SetSize", geometry[1], geometry[2]}, {"SetPoint", "CENTER", control, "CENTER", geometry[3], geometry[4]},
+                    {type(part.SetVertexColor) == "function" and "SetVertexColor" or "SetColorTexture", 1, .78, .15, 1} }) do
+                    if not self:QuestListWrite(part, operation[1], current, unpack(operation, 2)) then return false end
+                end
+            end
+            control.sourceIconParts = book
+        end
+        for _, part in ipairs(inspect and arrow or book or {}) do
+            if not self:QuestListWrite(part, "Hide", current) then return false end
+        end
+        local parts = inspect and book or arrow
+        for _, part in ipairs(parts) do if not self:QuestListWrite(part, "Show", current) then return false end end
+        if not current() then return false end
+        control.footerIconParts, control.footerIcon = parts, parts[1]
+        control.sourceInspect = inspect
+        return true
+    end)
+    control.sourceIconDepth = control.sourceIconDepth - 1
+    return ok and result == true
 end
 
 function UI:SetFooterEnabled(control, enabled)
@@ -1247,7 +1309,7 @@ function UI:HistoryOffsets()
     return self.detailOffsets
 end
 
-function UI:InspectQuest(id, refreshList)
+function UI:InspectQuest(id, refreshList, sourceFocus)
     id = addon.Clean(id, "number")
     if not id or id <= 0 or id % 1 ~= 0 then return false end
     local history, dungeon = self.detailHistory, self.dungeon
@@ -1277,7 +1339,7 @@ function UI:InspectQuest(id, refreshList)
         self:RefreshQuests()
         if self.quest ~= id or self.dungeon ~= dungeon or self.detailHistory ~= history or self.detailNavigationRevision ~= revision then return false end
     end
-    self:RefreshDetail()
+    self:RefreshDetail(sourceFocus)
     return true
 end
 
@@ -2804,7 +2866,7 @@ function UI:ResetQuestLogControl()
     return true
 end
 
-function UI:RefreshDetail()
+function UI:RefreshDetail(sourceFocus)
     local renderQuest, renderDungeon = self.quest, self.dungeon
     local renderIncludeUnavailable = self.includeUnavailable
     local renderEngine, renderCharacter, pendingAction, pendingGiver = self.engine, addon.char, nil, nil
@@ -2817,6 +2879,8 @@ function UI:RefreshDetail()
         self.detailReferencesExpanded, self.detailNarrativeExpanded = false, false
         self.detailReferenceQuest, self.detailReferenceDungeon = renderQuest, renderDungeon
     end
+    if sourceFocus == true then self.detailReferencesExpanded = true end
+    local sourceFocusOffset, sourceFocusCurrent = 0, nil
     local referencesExpanded = self.detailReferencesExpanded == true
     local narrativeExpanded = self.detailNarrativeExpanded == true
     local overviewIdentity = not renderQuest and renderDungeon and (addon.Clean(renderDungeon.key, "string") or renderDungeon) or nil
@@ -4523,7 +4587,9 @@ function UI:RefreshDetail()
                 end
             end
             if not acquisitionCurrent() then return end
-            if #routes > 0 then line(addon.L("ITEM_ACQUISITION"), "caption")
+            if #routes > 0 then
+                sourceFocusOffset, sourceFocusCurrent = y, acquisitionCurrent
+                line(addon.L("ITEM_ACQUISITION"), "caption")
             elseif rawget(starterSource, "containerSource") ~= nil or rawget(starterSource, "dropNPCID") ~= nil or rawget(starterSource, "dropSources") ~= nil then
                 line(addon.L("START_ITEM_LOCATION_UNKNOWN"), "warning")
             end
@@ -4845,6 +4911,17 @@ function UI:RefreshDetail()
         self:SetFooterEnabled(self.giver, true)
     end
     if not portraitCardCurrent() then return end
+    if sourceFocus == true then
+        local scroll = self.detailScroll
+        local viewport = addon.Read(scroll.GetHeight, "number", scroll)
+        local function focusCurrent()
+            return portraitCardCurrent() and self.detailScroll == scroll and
+                (not sourceFocusCurrent or sourceFocusCurrent())
+        end
+        if not focusCurrent() then return end
+        if viewport and viewport > 0 and not self:WriteDetailScroll(scroll,
+            math.min(sourceFocusOffset, math.max(0, y + 12 - viewport)), focusCurrent) then return end
+    end
     return portraitCardCurrent() and rewardGeneration or nil
 end
 

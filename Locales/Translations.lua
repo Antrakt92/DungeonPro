@@ -263,18 +263,34 @@ local requirementOwners = { enUS = "Required for: %s", ruRU = "Нужно для
 for locale, value in pairs(requirementOwners) do addon.locales[locale].REQUIREMENT_FOR = value end
 
 local directNavigationHints = {
-    enUS = { "Choose a quest giver in the quest details.", "Navigation is currently unavailable.", "Starts from an item. See quest details for its source." },
-    ruRU = { "Выберите квестодателя в подробностях задания.", "Навигация сейчас недоступна.", "Задание начинается предметом. Источник указан в подробностях задания." },
-    deDE = { "Wähle einen Questgeber in den Questdetails.", "Navigation ist derzeit nicht verfügbar.", "Beginnt durch einen Gegenstand. Die Quelle steht in den Questdetails." },
-    frFR = { "Choisissez un donneur dans les détails de la quête.", "La navigation est actuellement indisponible.", "Cette quête commence par un objet. Consultez sa source dans les détails." },
-    esES = { "Elige un dador en los detalles de la misión.", "La navegación no está disponible en este momento.", "Se inicia con un objeto. Consulta su origen en los detalles de la misión." },
-    itIT = { "Scegli un personaggio nei dettagli della missione.", "La navigazione non è al momento disponibile.", "Inizia con un oggetto. Consulta la sua provenienza nei dettagli della missione." },
-    ptBR = { "Escolha quem oferece a missão nos detalhes.", "A navegação está indisponível no momento.", "Começa com um item. Veja sua origem nos detalhes da missão." },
-    koKR = { "퀘스트 상세 정보에서 제공자를 선택하세요.", "현재 길 안내를 사용할 수 없습니다.", "아이템으로 시작하는 퀘스트입니다. 상세 정보에서 획득처를 확인하세요." },
-    zhCN = { "请在任务详情中选择任务给予者。", "导航暂时不可用。", "此任务由物品触发。请在任务详情中查看来源。" },
-    zhTW = { "請在任務詳情中選擇任務給予者。", "導航暫時無法使用。", "此任務由物品觸發。請在任務詳情中查看來源。" },
+    enUS = { "Choose a quest giver in the quest details.", "Navigation is currently unavailable.", "Starts from an item. Click to see its source details." },
+    ruRU = { "Выберите квестодателя в подробностях задания.", "Навигация сейчас недоступна.", "Задание начинается предметом. Нажмите, чтобы узнать его источник." },
+    deDE = { "Wähle einen Questgeber in den Questdetails.", "Navigation ist derzeit nicht verfügbar.", "Beginnt durch einen Gegenstand. Klicken, um die Quelle anzuzeigen." },
+    frFR = { "Choisissez un donneur dans les détails de la quête.", "La navigation est actuellement indisponible.", "Cette quête commence par un objet. Cliquez pour voir sa source." },
+    esES = { "Elige un dador en los detalles de la misión.", "La navegación no está disponible en este momento.", "Se inicia con un objeto. Haz clic para ver su origen." },
+    itIT = { "Scegli un personaggio nei dettagli della missione.", "La navigazione non è al momento disponibile.", "Inizia con un oggetto. Clicca per vedere la sua provenienza." },
+    ptBR = { "Escolha quem oferece a missão nos detalhes.", "A navegação está indisponível no momento.", "Começa com um item. Clique para ver sua origem." },
+    koKR = { "퀘스트 상세 정보에서 제공자를 선택하세요.", "현재 길 안내를 사용할 수 없습니다.", "아이템으로 시작하는 퀘스트입니다. 클릭하여 획득처를 확인하세요." },
+    zhCN = { "请在任务详情中选择任务给予者。", "导航暂时不可用。", "此任务由物品触发。点击查看物品来源。" },
+    zhTW = { "請在任務詳情中選擇任務給予者。", "導航暫時無法使用。", "此任務由物品觸發。點擊查看物品來源。" },
 }
 for locale, values in pairs(directNavigationHints) do
     addon.locales[locale].GIVER_CHOICES_REQUIRED, addon.locales[locale].NAVIGATION_UNAVAILABLE,
         addon.locales[locale].START_ITEM_NAVIGATION = values[1], values[2], values[3]
+end
+
+local sourceInspectionLabels = {
+    enUS = { "Quest sources", "Click to view this quest's starting sources." },
+    ruRU = { "Где взять задание", "Нажмите, чтобы посмотреть источники задания." },
+    deDE = { "Questquellen", "Klicken, um die Startquellen dieser Quest anzuzeigen." },
+    frFR = { "Sources de la quête", "Cliquez pour voir les sources de départ de cette quête." },
+    esES = { "Origen de la misión", "Haz clic para ver dónde se inicia esta misión." },
+    itIT = { "Origine della missione", "Clicca per vedere dove inizia questa missione." },
+    ptBR = { "Origem da missão", "Clique para ver onde esta missão começa." },
+    koKR = { "퀘스트 시작 정보", "클릭하여 이 퀘스트의 시작 경로를 확인하세요." },
+    zhCN = { "任务来源", "点击查看此任务的起始来源。" },
+    zhTW = { "任務來源", "點擊查看此任務的起始來源。" },
+}
+for locale, values in pairs(sourceInspectionLabels) do
+    addon.locales[locale].SOURCE_DETAILS, addon.locales[locale].SOURCE_DETAILS_HINT = values[1], values[2]
 end

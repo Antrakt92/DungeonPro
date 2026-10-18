@@ -53,12 +53,15 @@ function tip:AddLine(text)self.body=text end
 function tip:Show()self.shown=true end
 function tip:Hide()self.shown=false end
 GameTooltip=tip
-for _,case in ipairs({{990103,"GIVER_LOCATION_UNKNOWN"},{990104,"START_ITEM_NAVIGATION"},{990105,"GIVER_CHOICES_REQUIRED"}})do
+for _,case in ipairs({{990103,"GIVER_LOCATION_UNKNOWN"},{990104,"START_ITEM_NAVIGATION"},{990105,"SOURCE_DETAILS_HINT"}})do
     local button=row(case[1]).navigationControl
-    assert(not button.enabled and button:IsShown())
+    assert(button:IsShown()and button.enabled==(case[1]~=990103))
     button.scripts.OnEnter();assert(tip.shown and tip.owner==button and tip.body==addon.L(case[2]))
+    assert(tip.title==addon.L(case[1]==990103 and "DETAIL_GIVER"or"SOURCE_DETAILS"),"source inspection is not labelled as map navigation")
     button.scripts.OnClick();assert(#routed==1 and #mapped==1)
+    if case[1]~=990103 then assert(ui.quest==case[1]and ui.renderedQuest==case[1],"manual sources open their own details")end
 end
+assert(ui:InspectQuest(selected,true));first=row(990101)
 local mapReads=0
 C_Map={GetMapInfo=function(id)mapReads=mapReads+1;assert(id==1453);return{name="Stormwind City"}end}
 first.navigationControl.scripts.OnEnter()
