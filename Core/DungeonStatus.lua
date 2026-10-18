@@ -28,8 +28,13 @@ function Status.Get(dungeon, engine)
         fieldObjects[fieldCount], fieldKeys[fieldCount], fieldValues[fieldCount] = object, key, value
         return value, true
     end
+    local function ordinaryValue(value) return checker(value) == false end
     local function same(value, previous)
-        if type(checker) == "function" and read(checker, "boolean", value) ~= false then return false end
+        if type(checker) == "function" then
+            -- The native check returns an ordinary boolean; still protect both its call and comparison.
+            local ok, ordinary = pcall(ordinaryValue, value)
+            if not ok or ordinary ~= true then return false end
+        end
         return value == previous
     end
     local function ownsBindings()

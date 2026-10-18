@@ -260,4 +260,60 @@ check("Retained root-array proofs preserve the initially validated key shape",fu
     dto,current=status(f);armed=true
     assert(not current()and not armed,"late sanitizer cannot append an unowned key")
 end)
+check("Warm catalogue source proofs avoid sanitizing the checker's ordinary boolean twice",function()
+    local actual={};assert(loadfile("Database/Catalog.lua"))("DungeonPro",actual)
+    local checks=0;issecretvalue=function()checks=checks+1;return false end
+    local engine=addon.Planner.New(actual.quests,{level=60,faction="Alliance",class="MAGE",
+        completed=function()return false end,active=function()return false end,current=function()return true end},{})
+    local proofs={}
+    for _,d in ipairs(actual.dungeons)do
+        local dto,current=addon.DungeonStatus.Get(d,engine);assert(dto and current())
+        proofs[#proofs+1]=current
+    end
+    checks=0
+    for _,current in ipairs(proofs)do assert(current())end
+    assert(#proofs==29 and checks>5000 and checks<7000,"actual checker calls in one warm catalogue proof: "..checks)
+end)
+check("Direct retained source checks reject malformed checker results and exceptions",function()
+    for _,mode in ipairs({"true","nil","string","table","throw"})do
+        local armed=false
+        issecretvalue=function(value)
+            if armed and value=="direct-proof-field"then
+                if mode=="throw"then error("unreadable checker result")end
+                if mode=="nil"then return nil end
+                if mode=="string"then return "false"end
+                if mode=="table"then return secret end
+                return true
+            end
+            return false
+        end
+        local f=fixture({{"AVAILABLE","direct-proof-field"}})
+        local _,current=status(f);armed=true
+        assert(not current(),mode.." checker result authorized old state")
+    end
+end)
+check("Direct checker callbacks cannot retain changed source or capability ownership",function()
+    for _,mode in ipairs({"definition","rootkeys","arraybounds","provider","checker","clean","read"})do
+        local f=fixture({{"AVAILABLE","direct-proof-tail"}},{{minLevel=1,classes={"MAGE",nil,nil,nil}}})
+        local armed=false
+        local provider,clean,read=addon.DungeonStatus.Get,addon.Clean,addon.Read
+        issecretvalue=function(value)
+            if armed and value=="direct-proof-tail"then
+                armed=false
+                if mode=="definition"then f.engine.quests[1].minLevel=99
+                elseif mode=="rootkeys"then f.dungeon.quests.extra=2
+                elseif mode=="arraybounds"then f.engine.quests[1].classes[4]="WARRIOR"
+                elseif mode=="provider"then addon.DungeonStatus.Get=function()error("replacement must not run")end
+                elseif mode=="checker"then issecretvalue=function()return false end
+                elseif mode=="clean"then addon.Clean=function()error("replacement must not run")end
+                else addon.Read=function()error("replacement must not run")end end
+            end
+            return false
+        end
+        local _,current=status(f);armed=true
+        local ok,value=pcall(current)
+        addon.DungeonStatus.Get,addon.Clean,addon.Read=provider,clean,read
+        assert(ok and value==false and not armed,mode.." checker reentry retained its old source")
+    end
+end)
 print("Dungeon status modeled checks passed: "..total)
