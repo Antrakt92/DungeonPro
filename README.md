@@ -119,10 +119,18 @@ release ZIP.
 
 ## License and credits
 
-The addon is all rights reserved; official downloads may be installed and used
-under [LICENSE](LICENSE). Noto Sans has its own SIL Open Font License, and Unicode
-data retains its separate notice. See `Media/Fonts/`, `Media/Icons/NOTICE.txt` and
-`Database/SearchCaseFold.lua` for third-party attribution.
+Free to use. Public forks, ports and substantial reuse of my original code
+require credit and a link to **Dungeon Pro**. If the derivative earns CurseForge
+Reward Points, share at least **10% of that project's points** with `antrakt92`;
+one share covers all my projects reused in it. No points earned means no payment.
+
+See the [full license](LICENSE). This is the Antrakt Attribution and CurseForge
+Rewards License 1.2, based on MIT with additional conditions; it is not the
+standard MIT License. Earlier copies retain their original license grants.
+
+Noto Sans retains its SIL Open Font License, and Unicode data retains its separate
+notice. See [font credits](Media/Fonts/NOTICE.txt), [icon credits](Media/Icons/NOTICE.txt)
+and [Unicode attribution](Database/SearchCaseFold.lua). Game assets belong to Blizzard.
 
 ## More by antrakt92
 

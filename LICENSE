@@ -1,16 +1,88 @@
-Copyright (c) 2026 Antrakt92. All rights reserved.
+Antrakt Attribution and CurseForge Rewards License 1.2
+Custom license based on MIT; not the standard MIT License.
 
-Permission is granted to download, install and use unmodified copies of Dungeon Pro
-obtained from the author's official GitHub repository, GitHub Releases or CurseForge
-project for personal use. No fee is required for this permission.
+Copyright (c) 2026 Antrakt92
+Project: Dungeon Pro
+Original project: https://www.curseforge.com/wow/addons/dungeon-pro
+Source: https://github.com/Antrakt92/DungeonPro
+CurseForge rewards recipient: antrakt92
 
-All other rights are reserved. Except as permitted by applicable law or by the
-separate third-party licenses below, redistribution, modification and publication
-of modified or unmodified copies require prior written permission from the author.
+You may use, copy, modify, merge, publish, distribute, sublicense and sell
+the original code and accompanying material owned by Antrakt/Antrakt92
+in this project under these conditions. No prior contact or approval is needed.
+Third-party material carrying its own notice or identified below is
+excluded and retains its own license.
 
-Dungeon Pro is provided "as is", without warranties of any kind. To the extent
-permitted by applicable law, the author is not liable for damages arising from its
-use.
+1. Notices and credit
+
+Keep this license and the applicable copyright notices in copies or
+substantial portions of the covered work. When publicly distributing a
+project that substantially reuses it, credit antrakt92, name Dungeon Pro,
+link to the original project above and identify your changes. Keep these
+conditions when redistributing or sublicensing the covered work.
+
+2. Substantial reuse
+
+Substantial reuse means redistributing the project as a whole, including
+a fork or port, or incorporating or adapting its original implementation
+of a meaningful user-facing feature. Functionality, rather than a line
+count or percentage of your code, determines this.
+
+Isolated lines, incidental helpers, standard programming constructs and
+API calls require no reward share or additional public credit. Source
+credit is appreciated where appropriate.
+
+3. CurseForge Reward Points
+
+If such a derivative project earns CurseForge Reward Points, allocate
+at least 10% of that project's points to antrakt92 through CurseForge's
+Members reward allocation. Maintain the share while it uses the covered
+work and earns points. A single 10% share to antrakt92 per derivative
+project satisfies the reward-sharing requirement for all Antrakt/Antrakt92
+projects reused in it. Reusing several source projects does not increase
+the required share. Each separate derivative project is assessed separately.
+The share concerns that derivative project only, not account earnings,
+other projects, donations or other revenue. No points earned means no payment.
+
+Send the member invitation required by CurseForge and enable the required
+share when it is accepted and the platform permits it. A pending invitation
+awaiting the author's acceptance does not by itself breach this condition.
+No separate permission request or negotiated agreement is needed.
+CurseForge's own rules still apply.
+
+4. Uses that require no share
+
+Installation, gameplay, recommendations, links, dependency references and
+collections that reference the original download require no reward share.
+Independently written implementations, translations and compatibility
+patches also require no reward share or additional public credit unless
+they substantially reuse the covered implementation.
+
+Third-party licenses and their source-access obligations remain in force.
+These terms do not restrict replacing or modifying LGPL libraries, or
+reverse engineering for debugging those modifications. They grant no
+rights in third-party trademarks, game assets or data.
+
+Version 1.2 applies only to copies explicitly distributed with it.
+Earlier copies, including MIT and versions 1.0 and 1.1, and material
+obtained from them retain their original grants. Editing a page or this
+file does not change those grants. New original contributions first
+offered solely under version 1.2 are covered by these terms.
+
+As an additional permission from Antrakt/Antrakt92, the single-share rule
+in section 3 also satisfies this author's reward-sharing requirements
+under earlier custom-license versions, including 1.0 and 1.1. It imposes
+no new conditions on MIT copies or third-party material.
+
+THE COVERED MATERIAL IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
+DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
+OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE COVERED MATERIAL
+OR THE USE OR OTHER DEALINGS IN THE COVERED MATERIAL.
+
+--- Third-party notices ---
 
 World of Warcraft names and game-provided assets belong to Blizzard Entertainment.
 
