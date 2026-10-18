@@ -11,10 +11,14 @@ local function integer(value)
 end
 
 local function release(expected)
-    local value = held
+    local value = held or expected
     if not value or (expected and value ~= expected) then return end
+    if value.tooltip.IsOwned ~= value.isOwned then
+        if held == value then held = nil end
+        return
+    end
     local owned = addon.Read(value.tooltip.IsOwned, "boolean", value.tooltip, value.button)
-    if held ~= value then return end
+    if held and held ~= value then return end
     held = nil
     if owned == true and value.tooltip.Hide == value.hide then
         pcall(value.hide, value.tooltip)

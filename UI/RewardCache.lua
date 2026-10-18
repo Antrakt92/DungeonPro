@@ -2,6 +2,7 @@ local _, addon = ...
 local Cache = {}
 addon.RewardCache = Cache
 local owners = setmetatable({}, { __mode = "k" })
+local requests = setmetatable({}, { __mode = "k" })
 local delays = { .2, .6, 1.2 }
 
 local function snapshot()
@@ -113,11 +114,15 @@ end
 
 function Cache.Watch(owner, coldIDs, ownerCurrent, refreshCallback)
     owner = addon.Clean(owner, "table") or addon.Clean(owner, "userdata")
+    if not owner then return end
+    local request = {}; requests[owner] = request
     coldIDs = addon.Clean(coldIDs, "table")
     if not owner or not coldIDs or not addon.Clean(ownerCurrent, "function") or
         not addon.Clean(refreshCallback, "function") then return end
     local context = snapshot()
+    if requests[owner] ~= request then return end
     if not addon.Clean(context.quests, "table") or not addon.Clean(context.provider, "function") or not context.locale then return end
+    if requests[owner] ~= request then return end
     local state = owners[owner]
     if not state then
         state = { context = context, entries = {} }; owners[owner] = state
@@ -128,11 +133,14 @@ function Cache.Watch(owner, coldIDs, ownerCurrent, refreshCallback)
         state.context = context
     end
     local binding = { ids = {}, current = ownerCurrent, refresh = refreshCallback, frame = owner.frame or owner }
+    if requests[owner] ~= request then return end
     state.binding = binding
     local seen = {}
     for index = 1, math.min(#coldIDs, 600) do
         local id = addon.Clean(coldIDs[index], "number")
-        if id and id > 0 and id % 1 == 0 and not seen[id] and addon.Clean(context.quests[id], "table") then
+        local quest = id and addon.Clean(context.quests[id], "table")
+        if requests[owner] ~= request then return end
+        if id and id > 0 and id % 1 == 0 and not seen[id] and quest then
             seen[id] = true; binding.ids[#binding.ids + 1] = id
             local entry = state.entries[id]
             if not entry or entry.quest ~= context.quests[id] then

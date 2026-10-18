@@ -72,6 +72,50 @@ local function current(state)
     return shown == true and owned(state) and method(state.frame, "IsShown") == state.shown and owned(state)
 end
 
+local function popupVisibility(state, shown)
+    local popup = state.popup
+    local binding = { state = state, shown = shown }
+    popup.languageVisibility = binding
+    local function apply(value)
+        local previous = popup.languageVisibilityWriting
+        popup.languageVisibilityWriting = value
+        local ok = invoke(popup, value.shown and "Show" or "Hide")
+        if popup.languageVisibilityWriting == value then popup.languageVisibilityWriting = previous end
+        return ok
+    end
+    local ok = apply(binding)
+    local newer = popup.languageVisibility
+    if newer and newer ~= binding and not popup.languageVisibilityRepair then
+        local valid = newer.shown and current(newer.state) or
+            (not newer.shown and Language.session == nil and addon.Language == Language)
+        if valid and popup.languageVisibility == newer then
+            popup.languageVisibilityRepair = true
+            apply(newer)
+            popup.languageVisibilityRepair = nil
+        end
+    end
+    return ok
+end
+
+local function rowWrite(owner, key, check, ...)
+    if not check() then return false end
+    local writes = owner.languageWrites or {}; owner.languageWrites = writes
+    local slot = (key == "Show" or key == "Hide") and "visibility" or key
+    local binding = { check = check, key = key, args = { ... }, count = select("#", ...) }
+    writes[slot] = binding
+    local ok = invoke(owner, key, ...)
+    if check() then return ok end
+    local newer = writes[slot]
+    if newer and newer ~= binding and not newer.repairing then
+        newer.repairing = true
+        if newer.check() and owner.languageWrites == writes and writes[slot] == newer then
+            invoke(owner, newer.key, unpack(newer.args, 1, newer.count))
+        end
+        newer.repairing = nil
+    end
+    return false
+end
+
 -- Only transient UI selection is exposed; committed settings remain untouched.
 function Language:GetSelection()
     local state = self.session
@@ -149,13 +193,11 @@ function Language:RefreshRows(state)
                 addon.Read(font, "boolean", row, locale)
                 if not same() then return false end
             end
-            invoke(row, "SetText", label)
-            if not same() then return false end
+            if not rowWrite(row, "SetText", same, label) then return false end
             if theme then addon.Read(theme.StyleRow, "boolean", row, { selected = preview }) end
             if not same() then return false end
             if row.languageMark then
-                invoke(row.languageMark, selected and "Show" or "Hide")
-                if not same() then return false end
+                if not rowWrite(row.languageMark, selected and "Show" or "Hide", same) then return false end
             end
             row.languageSelected, row.languagePreview = selected, preview
         end
@@ -169,7 +211,7 @@ function Language:Cancel(ui, expected)
     self.session = nil
     state.leave = nil
     invoke(state.popup, "SetScript", "OnUpdate", nil)
-    invoke(state.popup, "Hide")
+    popupVisibility(state, false)
     if state.preview and addon.UI == state.ui and addon.db == state.db and state.ui.frame == state.frame then
         local theme = addon.Clean(addon.Theme, "table")
         if theme then addon.Read(theme.RefreshFonts, "boolean") end
@@ -203,7 +245,7 @@ function Language:Commit(state, value)
     self.session = nil
     state.leave = nil
     invoke(state.popup, "SetScript", "OnUpdate", nil)
-    invoke(state.popup, "Hide")
+    popupVisibility(state, false)
     if addon.UI == state.ui and addon.db == state.db and state.ui.frame == state.frame then pcall(state.refresh, state.ui) end
     return true
 end
@@ -308,10 +350,14 @@ function Language:Open(ui)
     end
     invoke(popup, "SetScript", "OnLeave", function() self:Leave(state) end)
     invoke(popup, "SetScript", "OnEnter", function() if current(state) then state.leave = nil; invoke(popup, "SetScript", "OnUpdate", nil) end end)
-    invoke(popup, "SetScript", "OnHide", function() if self.session == state then self:Cancel(ui, state) end end)
+    invoke(popup, "SetScript", "OnHide", function()
+        local writing, latest = popup.languageVisibilityWriting, popup.languageVisibility
+        if writing and latest and writing ~= latest and latest.state == state and latest.shown then return end
+        if self.session == state then self:Cancel(ui, state) end
+    end)
     if not current(state) then self:Cancel(ui, state); return false end
     if not self:RefreshRows(state) then self:Cancel(ui, state); return false end
-    if not invoke(popup, "Show") or not current(state) then self:Cancel(ui, state); return false end
+    if not popupVisibility(state, true) or not current(state) then self:Cancel(ui, state); return false end
     return true
 end
 

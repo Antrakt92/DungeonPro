@@ -348,4 +348,23 @@ check("Late native item and appended lines preserve newer hover while foreign ow
         else assert(tooltip.shown and tooltip.link=="item:11"and tooltip.text=="Stats"and calls==2)end
     end
 end)
+check("Late native tooltip Show cannot resurrect a cleared row or hide a foreign takeover",function()
+    for _,foreign in ipairs({false,true})do
+        local r=reset();r.Paint(row,1);local native,once=tooltip.Show
+        tooltip.Show=function(self)
+            if not once then once=true;r.Clear(row);if foreign then self.owner={}end end
+            return native(self)
+        end
+        buttons[1].scripts.OnEnter()
+        assert(once and not buttons[1].shown)
+        assert(tooltip.shown==foreign,"only a foreign tooltip may survive the expired native Show")
+    end
+end)
+check("Replacing native ownership helpers releases stale tooltip bookkeeping without hiding the foreign adapter",function()
+    local r=reset();r.Paint(row,1);buttons[1].scripts.OnEnter();assert(tooltip.shown)
+    local original=tooltip.IsOwned;tooltip.IsOwned=function(self,button)return original(self,button)end
+    r.Clear(row);assert(tooltip.shown,"changed native adapter cannot authorize old cleanup")
+    r.Paint(row,2);tooltip.shown=false;buttons[1].scripts.OnEnter()
+    assert(tooltip.shown,"stale bookkeeping cannot block the newly captured native helper")
+end)
 print("Quest list reward checks passed: " .. total .. " (modeled, no native layout proof)")

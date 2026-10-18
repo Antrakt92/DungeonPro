@@ -330,4 +330,38 @@ check("Popup requests screen clamping and each row keeps its own script across p
     assert(addon.db.locale == "zhCN", "native labels retain the real language choice")
 end)
 
+check("A late popup hide cannot cancel the language session reopened inside that native setter",function()
+    local addon,ui=fixture();assert(addon.Language:Open(ui))
+    local old=addon.Language.session;local popup=old.popup;local native,once=popup.Hide
+    popup.Hide=function(self)
+        if not once then once=true;assert(addon.Language:Open(ui))end
+        return native(self)
+    end
+    addon.Language:Cancel(ui)
+    local newest=addon.Language.session
+    assert(once and newest and newest~=old and newest.popup==popup and popup.shown,"newly reopened popup owns visibility")
+    newest.rows[3].scripts.OnEnter();assert(addon.Language:GetSelection()=="ruRU")
+end)
+check("A late popup Show respects a newer cancellation instead of resurrecting the closed chooser",function()
+    local addon,ui=fixture();assert(addon.Language:Open(ui));local popup=addon.Language.session.popup
+    addon.Language:Cancel(ui);local native,once=popup.Show
+    popup.Show=function(self)
+        if not once then once=true;addon.Language:Cancel(ui)end
+        return native(self)
+    end
+    assert(not addon.Language:Open(ui))
+    assert(once and not addon.Language.session and not popup.shown and addon.db.locale=="enUS")
+end)
+check("Late language checkmark writes preserve the newer committed selection on reused menu rows",function()
+    local addon,ui=fixture();assert(addon.Language:Open(ui));local old=addon.Language.session
+    local mark=old.rows[2].languageMark;local native,once=mark.Show
+    mark.Show=function(self)
+        if not once then once=true;old.rows[3].scripts.OnClick();assert(addon.Language:Open(ui))end
+        return native(self)
+    end
+    assert(not addon.Language:RefreshRows(old))
+    local latest=addon.Language.session
+    assert(once and latest~=old and addon.db.locale=="ruRU")
+    assert(latest.rows[3].languageMark.shown and not latest.rows[2].languageMark.shown,"only the new committed locale stays checked")
+end)
 print("Language preview modeled checks passed: " .. total .. " (native pointer and font acceptance pending)")

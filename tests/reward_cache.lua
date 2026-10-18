@@ -149,4 +149,18 @@ test("Foreign and malformed DTOs remain cold and bounded", function()
     addon.CachedQuestRewards = function() return {source="dialogue",items={},choices={}} end
     watch(); tick(); tick(); tick(); assert(notices == 0 and #queue == 0)
 end)
+test("Snapshot getter reentry preserves the newest watcher membership and notification", function()
+    for _,phase in ipairs({"locale","selection","member"})do
+        reset();local once
+        local function newer()if not once then once=true;watch({2},function()notices=notices+10 end)end end
+        if phase=="locale"then GetLocale=function()newer();return locale end
+        elseif phase=="selection"then addon.Language={GetSelection=function()newer();return "enUS"end}
+        else
+            issecretvalue=function(value)if value==1 then newer()end;return false end
+        end
+        watch({1});ready[1],ready[2]=true,true
+        assert(#queue==1);tick()
+        assert(reads[1]==nil and reads[2]==1 and notices==10,"older "..phase.." snapshot must not replace the later watch")
+    end
+end)
 print("Reward cache: " .. total .. " checks passed")
