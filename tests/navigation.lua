@@ -1427,4 +1427,49 @@ check("Invalid elapsed values cannot poison navigation ticking or query position
     assert(reads==0)
     card.scripts.OnUpdate(card,.2);assert(reads==1 and card.arrow.shown)
 end)
+check("Stationary guide skips repeated text measurement and layout while live bearing remains current",function()
+    local oldText,oldFont,oldWidth,oldScale=methods.GetText,methods.GetFont,methods.GetWidth,methods.GetEffectiveScale
+    methods.GetText=function(self)return self.text end
+    methods.GetFont=function(self)return "Fonts\\ARIALN.TTF",self.fontSize or 14,""end
+    methods.GetWidth=function(self)return self.width or 258 end
+    methods.GetEffectiveScale=function(self)return self.scale or 1 end
+    assert(nav.Start(action));local card=hud()
+    local writes,measures,anchors,rotations,positions=0,0,0,0,0
+    local saved={}
+    for _,region in ipairs({card.title,card.note,card.label})do
+        saved[region]={SetText=region.SetText,GetStringHeight=region.GetStringHeight,SetPoint=region.SetPoint}
+        region.SetText=function(self,...)writes=writes+1;return saved[self].SetText(self,...)end
+        region.GetStringHeight=function(self,...)measures=measures+1;return saved[self].GetStringHeight(self,...)end
+        region.SetPoint=function(self,...)anchors=anchors+1;return saved[self].SetPoint(self,...)end
+    end
+    local rotate,locate=card.arrow.SetRotation,C_Map.GetPlayerMapPosition
+    card.arrow.SetRotation=function(self,...)rotations=rotations+1;return rotate(self,...)end
+    C_Map.GetPlayerMapPosition=function(...)positions=positions+1;return locate(...)end
+    -- Establish signatures for the instrumented measurement methods themselves.
+    card.scripts.OnUpdate(card,.1);writes,measures,anchors,rotations,positions=0,0,0,0,0
+    for _=1,600 do card.scripts.OnUpdate(card,.1)end
+    assert(writes==0 and measures==0 and anchors==0,"unchanged values do not require another native text/layout write")
+    assert(rotations==600 and positions==600,"bearing keeps its live position and facing cadence")
+    C_Map.GetPlayerMapPosition=function()return {GetXY=function()return .4,.3 end}end
+    card.scripts.OnUpdate(card,.1);assert(writes==1 and measures==1,"changed distance is repainted and measured")
+    card.title.fontSize,card.title.measured,card.title.text=18,36,""
+    card.scripts.OnUpdate(card,.1)
+    assert(card.title.text=="Quest"and measures==2 and anchors>=2,"font resets restore title and invalidate layout")
+    card.note.scale=2;card.scripts.OnUpdate(card,.1);assert(measures==3,"scale change invalidates measurement")
+    card.title.width=200;card.scripts.OnUpdate(card,.1);assert(measures==4,"width change invalidates wrapping")
+    local originalPoint,armed,snapshot=card.note.SetPoint,true
+    card.note.SetPoint=function(self,...)
+        if armed then
+            armed=false;card.title.measured=80
+            assert(nav.Start({id=902,place={mapID=1,x=20,y=30}}));snapshot=card.note.point[3]
+        end
+        return originalPoint(self,...)
+    end
+    card.title.fontSize,card.title.measured=22,54
+    card.scripts.OnUpdate(card,.1)
+    assert(snapshot and card.note.point[3]==snapshot and snapshot==-97,"cached geometry repairs a newer guide after a late old anchor write")
+    for region,values in pairs(saved)do region.SetText,region.GetStringHeight,region.SetPoint=nil,nil,nil end
+    card.arrow.SetRotation=nil;card.title.fontSize,card.title.measured,card.note.scale,card.title.width=nil,nil,nil,nil
+    methods.GetText,methods.GetFont,methods.GetWidth,methods.GetEffectiveScale=oldText,oldFont,oldWidth,oldScale
+end)
 print("Navigation modeled checks passed: " .. total .. " (no native map validation)")

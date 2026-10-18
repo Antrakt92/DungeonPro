@@ -531,31 +531,68 @@ local function present(action, generation, status)
         local newer = object[key]
         if newer ~= binding and newer and newer.current() and not newer.repairing then
             newer.repairing = true
-            if object[key] == newer and newer.current() then pcall(newer.apply, object, newer.value, newer.current) end
+            if object[key] == newer and newer.current() then pcall(newer.apply, object, newer.value, newer.current, true) end
             newer.repairing = nil
         end
         return false
     end
     local function text(region, value, isCurrent)
         if not isCurrent() then return end
+        local getter = addon.Clean(region.GetText, "function")
+        local actual = addon.Read(getter, "string", region)
+        if not isCurrent() then return end
+        if getter and actual == value and region.GetText == getter then return end
         region:SetText(value)
     end
-    local function anchor(region, y, isCurrent)
+    local layoutCacheable = true
+    local function anchor(region, y, isCurrent, force)
         if not isCurrent() then return end
+        local previous = region.guideAnchorPaint
+        local setter, clearer = region.SetPoint, region.ClearAllPoints
+        if not force and layoutCacheable and previous and previous.generation == generation and previous.value == y and
+            previous.setter == setter and previous.clearer == clearer then return end
         region:ClearAllPoints()
         if not isCurrent() then return end
         region:SetPoint("TOPLEFT", 66, y)
+        if isCurrent() then region.guideAnchorPaint = { value = y, generation = generation, setter = setter, clearer = clearer } end
     end
-    local function resize(region, value, isCurrent)
-        if isCurrent() then region:SetHeight(value) end
+    local function resize(region, value, isCurrent, force)
+        if not isCurrent() then return end
+        local previous, setter = region.guideHeightPaint, region.SetHeight
+        if not force and layoutCacheable and previous and previous.generation == generation and previous.value == value and previous.setter == setter then return end
+        region:SetHeight(value)
+        if isCurrent() then region.guideHeightPaint = { value = value, generation = generation, setter = setter } end
     end
     if not ownedWrite(frame.title, "guideText", shown and shown.title or "", text) or
         not ownedWrite(frame.note, "guideText", shown and shown.destination or "", text) or
         not ownedWrite(frame.label, "guideText", status, text) then return end
     if not shown then return end
     local function height(region, fallback)
-        local measured = addon.Read(region.GetStringHeight, "number", region)
-        return measured and measured > 0 and measured <= 4096 and measured or fallback
+        local font, widthGetter, scaleGetter = addon.Clean(region.GetFont, "function"),
+            addon.Clean(region.GetWidth, "function"), addon.Clean(region.GetEffectiveScale, "function")
+        local ok, path, size, flags = pcall(function() if font then return font(region) end end)
+        path, size, flags = addon.Clean(path, "string"), addon.Clean(size, "number"), addon.Clean(flags, "string")
+        local width, scale = addon.Read(widthGetter, "number", region), addon.Read(scaleGetter, "number", region)
+        if not current() then return fallback end
+        local cacheable = ok and path and size and size > 0 and flags and width and width > 0 and scale and scale > 0 and
+            region.GetFont == font and region.GetWidth == widthGetter and region.GetEffectiveScale == scaleGetter
+        layoutCacheable = layoutCacheable and cacheable and true or false
+        local previous, getter = region.guideMeasurement, region.GetStringHeight
+        local value = region.guideText and region.guideText.value
+        if not cacheable then region.guideMeasurement = nil end
+        if cacheable and previous and previous.generation == generation and previous.value == value and previous.path == path and previous.size == size and
+            previous.flags == flags and previous.width == width and previous.scale == scale and previous.getter == getter and
+            previous.font == font and previous.widthGetter == widthGetter and previous.scaleGetter == scaleGetter then return previous.height end
+        local measured = addon.Read(getter, "number", region)
+        if not current() then return fallback end
+        if measured and measured > 0 and measured <= 4096 then
+            if cacheable then region.guideMeasurement = { generation = generation, value = value, path = path, size = size, flags = flags,
+                width = width, scale = scale, getter = getter, height = measured,
+                font = font, widthGetter = widthGetter, scaleGetter = scaleGetter } end
+            return measured
+        end
+        region.guideMeasurement = nil
+        return fallback
     end
     local titleHeight = height(frame.title, 22)
     if not current() then return end
