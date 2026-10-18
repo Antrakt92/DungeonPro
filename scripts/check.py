@@ -61,6 +61,7 @@ def main():
     run(lua, "tests/tooltip_lease.lua")
     run(lua, "tests/shared_tooltip_retirement_ui.lua")
     run(lua, "tests/quest_status.lua")
+    run(lua, "tests/quest_status_retirement_ui.lua")
     run(lua, "tests/quest_list_rewards.lua")
     run(lua, "tests/reward_cache.lua")
     run(lua, "tests/reward_item_hydration.lua")
