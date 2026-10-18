@@ -241,6 +241,11 @@ function UI:QuestListHint(row)
         note = note .. "\n" .. dungeonName .. " — " .. addon.L("QUESTS")
     end
     if row.chainExpandable then note = note .. "\n" .. addon.L(row.chainExpanded and "CHAIN_COLLAPSE" or "CHAIN_EXPAND") end
+    local branchControl = row.branchControl
+    if branchControl and addon.Read(branchControl.IsShown, "boolean", branchControl) == true then
+        note = note .. "\n" .. addon.L("BRANCH_GROUP", branchControl.branchGroup) .. "\n" ..
+            addon.L(branchControl.branchSelected and "BRANCH_RESET" or "BRANCH_PREFER")
+    end
     if not current() then return end
     local held = { tip = tip, button = row }; self.navigationTooltip = held
     for _, call in ipairs({ { "SetOwner", row, "ANCHOR_RIGHT" }, { "SetText", title }, { "AddLine", note, 1, 1, 1, true }, { "Show" } }) do
@@ -1858,6 +1863,12 @@ function UI:RefreshQuests()
                 if not current() then return end
                 note = "|cff" .. COLOR[state.status] .. statusLabel(state, note) .. "|r"
                 if entry.tree and not entry.tree.root then
+                    if entry.tree.requirementScope == "story" then
+                        local parentName = addon.Read(addon.QuestName, "string", entry.tree.parentID)
+                        if not current() then return end
+                        parentName = parentName or ("#" .. entry.tree.parentID)
+                        note = note .. "\n" .. addon.L("REQUIREMENT_FOR", parentName) .. " · " .. addon.L("REQUIREMENT_GROUP", entry.tree.group or 1)
+                    end
                     note = note .. "\n" .. addon.L(entry.tree.relation == "story" and "STORY_GROUP_NOTICE" or "REQUIREMENT_NOTICE")
                     if entry.tree.alternatives and entry.tree.alternatives > 1 then note = note .. "\n" .. addon.L(entry.tree.mode == "active" and "REQUIREMENT_ACTIVE" or "REQUIREMENT_COMPLETE") end
                 end
@@ -1933,7 +1944,47 @@ function UI:RefreshQuests()
                 end
             end
             row.dungeonBadgeReserve = row.dungeonBadgeVisible and (22 + targetLabelWidth) or 0
-            row.statusBaseWidth = math.max(24, row:GetWidth() - 22 - reserve - row.dungeonBadgeReserve - row.factionReserve - row.chainInset)
+            local branch = entry.tree and entry.tree.relation == "required" and (entry.tree.alternatives or 0) > 1 and entry.tree or nil
+            local branchControl = row.branchControl
+            if branch and not branchControl then
+                branchControl = CreateFrame("Button", nil, row)
+                branchControl.icon = branchControl:CreateTexture(nil, "ARTWORK")
+                branchControl.icon:SetAllPoints()
+                if not current() then return end
+                row.branchControl = branchControl
+            end
+            row.branchReserve = branch and 22 or 0
+            if branchControl then
+                if not write(branchControl, "Hide") or not write(branchControl, "SetScript", "OnClick", nil) or
+                    not write(branchControl, "SetScript", "OnEnter", nil) then return end
+                if branch then
+                    local choices = addon.Clean(character.choices, "table")
+                    local groupChoices = choices and addon.Clean(choices[branch.parentID], "table")
+                    local choice = groupChoices and addon.Clean(groupChoices[branch.group], "number")
+                    local selected = choice == id
+                    local function branchCurrent()
+                        return interactionCurrent() and character.choices == choices and
+                            (not choices or choices[branch.parentID] == groupChoices) and
+                            (not groupChoices or addon.Clean(groupChoices[branch.group], "number") == choice) and interactionCurrent()
+                    end
+                    branchControl.branchChild, branchControl.branchGroup, branchControl.branchParent = branch.parentID, branch.group, id
+                    branchControl.branchSelected = selected
+                    if addon.Clean(branchControl.icon.SetAlpha, "function") and not write(branchControl.icon, "SetAlpha", selected and 1 or .25) then return end
+                    if not write(branchControl, "SetSize", 18, 18) or not write(branchControl, "ClearAllPoints") or
+                        not write(branchControl, "SetPoint", "TOPRIGHT", row, "TOPRIGHT", -6 - reserve - row.dungeonBadgeReserve, -6) or
+                        not write(branchControl.icon, "SetTexture", selected and "Interface\\RaidFrame\\ReadyCheck-Ready" or "Interface\\Buttons\\WHITE8X8") or
+                        not write(branchControl, "SetEnabled", state.status ~= "UNAVAILABLE") or
+                        not write(branchControl, "SetScript", "OnClick", function()
+                            if addon.Read(self.frame.IsShown, "boolean", self.frame) ~= true or not branchCurrent() or state.status == "UNAVAILABLE" then return end
+                            if selected then self:ChooseBranch(branch.parentID, branch.group, nil)
+                            else self:ChooseBranch(branch.parentID, branch.group, id) end
+                        end) or not write(branchControl, "SetScript", "OnEnter", function()
+                            if branchCurrent() then self:QuestListHint(row) end
+                        end) or not write(branchControl, "SetScript", "OnLeave", function() self:HideNavigationHint() end) or
+                        not write(branchControl, "Show") then return end
+                end
+            end
+            row.statusBaseWidth = math.max(24, row:GetWidth() - 22 - reserve - row.dungeonBadgeReserve - row.factionReserve - row.chainInset - row.branchReserve)
             if not current() then return end
             if not self:PaintQuestRowStatus(row, entry, engine, current) then return end
             if not writeText(row.title, title) or not writeText(row.note, note) or
@@ -2044,13 +2095,13 @@ function UI:RefreshQuests()
         row.questTreeNode, row.questTreeIndent, row.questTreeInset = false, 0, 0
         row.questTreeAnchor, row.anchorQuestID, row.questTreeSelected, row.questTreePath, row.questTreeTarget = false, nil, false, false, false
         row.dungeonTarget, row.dungeonBadgeVisible, row.dungeonBadgeReserve, row.statusInset, row.questCompleted = false, false, 0, 0, false
-        row.rowInfo, row.rowInfoCurrent, row.chainExpandable, row.chainExpanded, row.chainInset, row.factionReserve = nil, nil, false, false, 0, 0
+        row.rowInfo, row.rowInfoCurrent, row.chainExpandable, row.chainExpanded, row.chainInset, row.factionReserve, row.branchReserve = nil, nil, false, false, 0, 0, 0
         row.questListCurrent = current
         local rewards = addon.Clean(addon.QuestListRewards, "table")
         if rewards then addon.Read(rewards.Clear, "nil", row) end
         if not current() then return end
         for _, segment in ipairs(row.chainChevron or {}) do if not write(segment, "Hide") then return end end
-        for _, field in ipairs({ "factionIcon", "dungeonBadge", "dungeonTargetLabel", "statusIcon", "completedStrike", "treeRail", "treeElbow" }) do
+        for _, field in ipairs({ "factionIcon", "dungeonBadge", "dungeonTargetLabel", "statusIcon", "completedStrike", "treeRail", "treeElbow", "branchControl" }) do
             if row[field] and not write(row[field], "Hide") then return end
         end
         if not write(row, "SetWidth", self.questList:GetWidth() - 4) or not write(row.title, "SetWidth", self.questList:GetWidth() - 22) then return end
@@ -2253,6 +2304,7 @@ function UI:EnterObjective(button, binding)
     if not tooltip then return end
     local held = { tooltip = tooltip, button = button, binding = binding,
         setOwner = tooltipMethod(tooltip, "SetOwner"), setItem = tooltipMethod(tooltip, "SetItemByID"),
+        addLine = tooltipMethod(tooltip, "AddLine"), show = tooltipMethod(tooltip, "Show"),
         isOwned = tooltipMethod(tooltip, "IsOwned"), hide = tooltipMethod(tooltip, "Hide") }
     if not held.setOwner or not held.setItem or not held.isOwned or not held.hide then return end
     local priorReward, priorObjective = self.rewardTooltip, self.objectiveTooltip
@@ -2265,6 +2317,7 @@ function UI:EnterObjective(button, binding)
         return self.objectiveTooltip == held and GameTooltip == tooltip and
             tooltipMethod(tooltip, "SetOwner") == held.setOwner and tooltipMethod(tooltip, "SetItemByID") == held.setItem and
             tooltipMethod(tooltip, "IsOwned") == held.isOwned and tooltipMethod(tooltip, "Hide") == held.hide and
+            tooltipMethod(tooltip, "AddLine") == held.addLine and tooltipMethod(tooltip, "Show") == held.show and
             self:ObjectiveBindingCurrent(button, binding) and self.objectiveTooltip == held
     end
     button:SetScript("OnLeave", function()
@@ -2278,7 +2331,16 @@ function UI:EnterObjective(button, binding)
     ok, shown = pcall(held.setItem, tooltip, binding.id)
     if not ok or addon.Clean(shown, "boolean") ~= true or not current() then self:ReleaseObjectiveTooltip(held); return end
     owned = addon.Read(held.isOwned, "boolean", tooltip, button)
-    if owned ~= true or not current() then self:ReleaseObjectiveTooltip(held) end
+    if owned ~= true or not current() then self:ReleaseObjectiveTooltip(held); return end
+    local context = addon.Clean(binding.context, "string")
+    if context and held.addLine and held.show then
+        ok = pcall(held.addLine, tooltip, context, .7, .75, .8, true)
+        owned = addon.Read(held.isOwned, "boolean", tooltip, button)
+        if not ok or owned ~= true or not current() then self:ReleaseObjectiveTooltip(held); return end
+        ok = pcall(held.show, tooltip)
+        owned = addon.Read(held.isOwned, "boolean", tooltip, button)
+        if not ok or owned ~= true or not current() then self:ReleaseObjectiveTooltip(held) end
+    end
 end
 
 function UI:ResetQuestLogControl()
@@ -2504,7 +2566,7 @@ function UI:RefreshDetail()
             rewardIndex = rewardIndex + 1
             local b = self.rewardButtons[rewardIndex]
             if not b then
-                b = CreateFrame("Button", nil, self.detail); b:SetSize(24, 24)
+                b = CreateFrame("Button", nil, self.detail); b:SetSize(32, 32)
                 b.icon = b:CreateTexture(nil, "ARTWORK"); b.icon:SetAllPoints()
                 self.rewardButtons[rewardIndex] = b
             end
@@ -2521,8 +2583,9 @@ function UI:RefreshDetail()
                     local held = self.rewardTooltip
                     if held and held.binding == binding and b.rewardBinding == binding then self:ReleaseRewardTooltip(held) end
                 end)
-                fs:SetWidth(contentWidth - 30); fs:ClearAllPoints(); fs:SetPoint("TOPLEFT", 34, -y)
-                height = math.max(height or 18, 24)
+                b:SetSize(32, 32)
+                fs:SetWidth(contentWidth - 40); fs:ClearAllPoints(); fs:SetPoint("TOPLEFT", 44, -y)
+                height = math.max(height or 18, 32)
             else
                 b.icon:Hide(); self:SetRewardTexture(b.icon, nil)
                 if self.rewardGeneration ~= rewardGeneration or self.quest ~= renderQuest then return false end
@@ -2646,6 +2709,8 @@ function UI:RefreshDetail()
         local metadataLocale = metadataDB and rawget(metadataDB, "locale")
         local minimum = addon.Clean(rawget(q, "minLevel"), "number")
         local questLevel = addon.Clean(rawget(q, "level"), "number")
+        local rawRepeatable = rawget(q, "repeatable")
+        local repeatable = addon.Clean(rawRepeatable, "boolean")
         if not (questLevel and questLevel > 0 and questLevel <= 9007199254740991 and questLevel % 1 == 0) then questLevel = nil end
         if not (minimum and minimum > 0 and minimum % 1 == 0) then minimum = nil end
         local metadataParts = {}
@@ -2653,19 +2718,20 @@ function UI:RefreshDetail()
             local ok, same = pcall(function()
                 return portraitCardCurrent() and addon.quests[id] == definition and addon.L == metadataLocalize and
                     addon.db == metadataDB and (not metadataDB or rawget(metadataDB, "locale") == metadataLocale) and
-                    (not questLevel or rawget(q, "level") == questLevel) and (not minimum or rawget(q, "minLevel") == minimum)
+                    (not questLevel or rawget(q, "level") == questLevel) and (not minimum or rawget(q, "minLevel") == minimum) and
+                    rawequal(rawget(q, "repeatable"), rawRepeatable)
             end)
             return ok and same == true
         end
         if minimum or questLevel then
             if not metadataCurrent() then return end
             if questLevel then
-                local value = addon.Read(metadataLocalize, "string", referencesExpanded and "QUEST_LEVEL" or "DETAIL_LEVEL", questLevel)
+                local value = addon.Read(metadataLocalize, "string", "DETAIL_LEVEL", questLevel)
                 if value and value:find("%S") then metadataParts[#metadataParts + 1] = value end
             end
             if not metadataCurrent() then return end
             if minimum then
-                local value = addon.Read(metadataLocalize, "string", referencesExpanded and "QUEST_MIN_LEVEL" or "DETAIL_MIN_LEVEL", minimum)
+                local value = addon.Read(metadataLocalize, "string", "DETAIL_MIN_LEVEL", minimum)
                 if value and value:find("%S") then metadataParts[#metadataParts + 1] = value end
             end
             if not metadataCurrent() then return end
@@ -2674,7 +2740,7 @@ function UI:RefreshDetail()
             return self.quest == renderQuest and self.dungeon == renderDungeon and self.rewardGeneration == rewardGeneration and addon.char == renderCharacter
         end)
         if factions == false then return end
-        if factions then metadataParts[#metadataParts + 1] = referencesExpanded and addon.L("QUEST_FACTIONS", factions) or factions end
+        if factions then metadataParts[#metadataParts + 1] = factions end
         for _, rule in ipairs({ { "classes", "string", "QUEST_CLASSES", addon.ClassName } }) do
             local entries = addon.Clean(q[rule[1]], "table")
             local names, seen = {}, {}
@@ -2691,9 +2757,14 @@ function UI:RefreshDetail()
                     names[#names + 1] = audienceName(rule[1], value, name)
                 end
             end
-            if #names > 0 then metadataParts[#metadataParts + 1] = referencesExpanded and addon.L(rule[3], table.concat(names, ", ")) or table.concat(names, ", ") end
+            if #names > 0 then metadataParts[#metadataParts + 1] = table.concat(names, ", ") end
         end
-        if #metadataParts > 0 and line(table.concat(metadataParts, " · "), referencesExpanded and "body" or "caption", nil, nil, metadataCurrent) == false then return end
+        if repeatable == true then
+            local value = addon.Read(metadataLocalize, "string", "REPEATABLE")
+            if not metadataCurrent() then return end
+            if value and value:find("%S") then metadataParts[#metadataParts + 1] = value end
+        end
+        if #metadataParts > 0 and line(table.concat(metadataParts, " · "), "caption", nil, nil, metadataCurrent) == false then return end
         local offerGetter = addon.CurrentOffer
         local offer = addon.Read(offerGetter, "table", id)
         local offeredNow = offer and addon.Clean(offer.offeredNow, "boolean") == true
@@ -2839,7 +2910,7 @@ function UI:RefreshDetail()
                 if reported(destination, slot .. index, ownerCurrent) == false or not current() then return false end
             end
         end
-        if line(addon.L(referencesExpanded and "QUEST_GIVER" or "DETAIL_GIVER"), referencesExpanded and "section" or "caption", nil, nil, portraitCardCurrent) == false then return end
+        if line(addon.L("DETAIL_GIVER"), "caption", nil, nil, portraitCardCurrent) == false then return end
         if start then
             local giverFields = { "npcID", "objectID", "itemID", "name", "zoneName", "locationName", "mapID", "x", "y" }
             local giverValues, nameGetter, itemGetter, mapRoot, checker = {}, addon.GiverName, addon.ItemName, C_Map, issecretvalue
@@ -2875,6 +2946,37 @@ function UI:RefreshDetail()
             end
             if alternativePlaces(preview, self.giverButtons, "START_ALTERNATIVES", "giverAlternative:", giverCurrent) == false then return end
         elseif line(addon.L("GIVER_LOCATION_UNKNOWN"), nil, nil, nil, portraitCardCurrent) == false then return end
+        do
+            local finish = addon.Clean(q.finish, "table")
+            local fields, values, startingValues = { "npcID", "objectID", "itemID", "name", "zoneName", "mapID", "x", "y" }, {}, {}
+            local endpointChecker = issecretvalue
+            if finish then
+                local same = start ~= nil
+                for _, field in ipairs(fields) do
+                    values[field], startingValues[field] = rawget(finish, field), start and rawget(start, field)
+                    if type(endpointChecker) == "function" and (addon.Read(endpointChecker, "boolean", values[field]) ~= false or
+                        addon.Read(endpointChecker, "boolean", startingValues[field]) ~= false) then return end
+                    if not rawequal(values[field], startingValues[field]) then same = false end
+                end
+                local function endingCurrent()
+                    if not portraitCardCurrent() or addon.quests[id] ~= definition or q.finish ~= finish or q.start ~= start or issecretvalue ~= endpointChecker then return false end
+                    for _, field in ipairs(fields) do
+                        local ending, starting = rawget(finish, field), start and rawget(start, field)
+                        if type(endpointChecker) == "function" and (addon.Read(endpointChecker, "boolean", ending) ~= false or
+                            addon.Read(endpointChecker, "boolean", starting) ~= false) then return false end
+                        if not rawequal(ending, values[field]) or not rawequal(starting, startingValues[field]) then return false end
+                    end
+                    return portraitCardCurrent()
+                end
+                if not same then
+                    local ending = addon.Read(place, "string", finish)
+                    if not endingCurrent() then return end
+                    if ending and ending ~= addon.L("UNKNOWN_PLACE") then
+                        if line(addon.L("DETAIL_TURNIN") .. ": " .. ending, "caption", nil, nil, endingCurrent) == false then return end
+                    end
+                end
+            end
+        end
         local actions, uncertain = engine:Next(id)
         local action = actions[1]
         local character = addon.char
@@ -2894,10 +2996,10 @@ function UI:RefreshDetail()
                 self.engine == engine and addon.char == character
         end
         pendingAction = action
-        if not referencesExpanded and (state.status == "ACTIVE" or state.status == "READY" or state.status == "COMPLETED" or state.status == "AVAILABLE") then
+        if (state.status == "ACTIVE" or state.status == "READY" or state.status == "COMPLETED" or state.status == "AVAILABLE") then
             if line("|cff" .. COLOR[state.status] .. statusLabel(state) .. "|r", nil, nil, nil, portraitCardCurrent) == false then return end
         end
-        if not referencesExpanded and state.reason and state.reason ~= "level" then
+        if state.reason and state.reason ~= "level" then
             local key = state.reason == "requirements" and state.status == "UNKNOWN" and "REASON_requirementsUnknown" or "REASON_" .. state.reason
             if line(addon.L(key), nil, nil, nil, portraitCardCurrent) == false then return end
         end
@@ -2907,347 +3009,8 @@ function UI:RefreshDetail()
             if not current() then return nil end
             return addon.L(candidate.kind) .. ": " .. title .. (candidate.level and (" (" .. candidate.level .. ")") or "")
         end
-        if referencesExpanded then
-        do
-        local source = self:SourceStory(id, q, portraitCardCurrent)
-        if not portraitCardCurrent() then return end
-        local states = self.storyStates
-        local showChain = (source and source.count > 1) or (q.requires and #q.requires > 0)
-        if source then source.expanded = chainExpanded end
-        local function storyCurrent()
-            return portraitCardCurrent() and addon.quests[id] == definition and
-                (not source or (self.storyStates == states and states[id] == source and source.same()))
-        end
-        local function write(row, method, ...)
-            if not storyCurrent() then return false end
-            local ok = pcall(row[method], row, ...)
-            return ok and storyCurrent()
-        end
-        if showChain then
-            line(addon.L((q.storyline or q.storylineGroups) and "STORY_SHORT" or "CHAIN"), "section")
-            local toggle = self.storyToggle
-            if not toggle then
-                toggle = CreateFrame("Button", nil, self.detail)
-                toggle:SetWidth(contentWidth - 2); toggle.label = label(toggle, "", 7, -5, contentWidth - 16, 14)
-                toggle.title = toggle.label
-                toggle:SetHighlightTexture("Interface\\QuestFrame\\UI-QuestTitleHighlight")
-                self.storyToggle = toggle
-            end
-            local value = (chainExpanded and "- " or "+ ") .. (source and addon.L("STORY_SOURCE_QUESTS", source.count) or addon.L("DETAIL_CHAIN"))
-            if not write(toggle.label, "SetText", value) then return end
-            local height = math.max(30, measuredHeight(toggle.label, 18) + 10)
-            if not write(toggle, "SetHeight", height) or not write(toggle, "ClearAllPoints") or
-                not write(toggle, "SetPoint", "TOPLEFT", 4, -y) or not write(toggle, "SetEnabled", true) then return end
-            styleRow(toggle, "control", chainExpanded)
-            if not storyCurrent() then return end
-            if not write(toggle, "SetScript", "OnClick", function()
-                if not storyCurrent() then return end
-                local scroll, getter, checker = self.detailScroll, self.detailScroll.GetVerticalScroll, issecretvalue
-                local offset = addon.Read(getter, "number", scroll)
-                if not storyCurrent() or self.detailScroll ~= scroll or scroll.GetVerticalScroll ~= getter or issecretvalue ~= checker then return end
-                self.detailChainExpanded = not chainExpanded
-                if source then source.expanded = self.detailChainExpanded end
-                local generation = self:RefreshDetail()
-                local function fresh()
-                    if not generation then return false end
-                    return self.detailScroll == scroll and scroll.GetVerticalScroll == getter and self.quest == renderQuest and self.dungeon == renderDungeon and self.engine == renderEngine and
-                        addon.char == renderCharacter and self.detailChainExpanded ~= chainExpanded and
-                        (not source or (self.storyStates == states and states[id] == source and source.same())) and self.rewardGeneration == generation and issecretvalue == checker
-                end
-                if not fresh() or not offset or offset < 0 then return end
-                local content = addon.Read(self.detail.GetHeight, "number", self.detail)
-                local viewport = addon.Read(scroll.GetHeight, "number", scroll)
-                if fresh() and self.detailScroll == scroll and content and content >= 0 and viewport and viewport > 0 then
-                    scroll:SetVerticalScroll(math.min(offset, math.max(0, content - viewport)))
-                end
-            end) or not write(toggle, "Show") then return end
-            y = y + height + 6
-        end
-        if chainExpanded then
-        local branchIndex, branchInspectIndex = 0, 0
-        local requirementIndex = 0
-        if q.requires and #q.requires > 0 then
-            line(addon.L("REQUIREMENT_GROUPS"), "section")
-            line(addon.L("REQUIREMENT_NOTICE"))
-        end
-        for groupIndex, group in ipairs(q.requires or {}) do
-            line(addon.L("REQUIREMENT_GROUP", groupIndex), "section")
-            line(addon.L(group.mode == "active" and "REQUIREMENT_ACTIVE" or "REQUIREMENT_COMPLETE"))
-            if #group.ids > 1 then
-                local index = groupIndex
-                local choices = addon.Clean(addon.char.choices, "table")
-                local saved = choices and addon.Clean(choices[id], "table")
-                local selected = saved and addon.Clean(saved[index], "number")
-                local valid = false
-                for _, parent in ipairs(group.ids) do
-                    if parent == selected and engine:State(parent).status ~= "UNAVAILABLE" then valid = true end
-                end
-                if not valid then selected = nil end
-                local function option(value, parent, enabled, chosen)
-                    branchIndex = branchIndex + 1
-                    local b = self.branchButtons[branchIndex]
-                    if not b then
-                        b = CreateFrame("Button", nil, self.detail)
-                        b:SetWidth(contentWidth - 2); b.label = label(b, "", 3, -3, contentWidth - 8, 14)
-                        b:SetHighlightTexture("Interface\\QuestFrame\\UI-QuestTitleHighlight")
-                        self.branchButtons[branchIndex] = b
-                    end
-                    b.questID, b.groupIndex, b.parentID = id, index, parent
-                    b.label:SetText(chosen and addon.L("BRANCH_SELECTED", value) or value)
-                    local height = math.max(30, measuredHeight(b.label, 18) + 6)
-                    b:SetHeight(height); b:ClearAllPoints(); b:SetPoint("TOPLEFT", 4, -y)
-                    b:SetEnabled(enabled)
-                    styleRow(b, "quest", chosen)
-                    b:SetScript("OnClick", enabled and function() self:ChooseBranch(id, index, parent) end or nil)
-                    b:Show(); y = y + height + 3
-                end
-                option(addon.L("BRANCH_AUTO"), nil, true, selected == nil)
-                for _, parentID in ipairs(group.ids) do
-                    local parent, parentState = parentID, engine:State(parentID)
-                    option(addon.QuestName(parent) .. " — " .. statusLabel(parentState), parent,
-                        parentState.status ~= "UNAVAILABLE", parent == selected)
-                    branchInspectIndex = branchInspectIndex + 1
-                    local inspect = self.branchInspectButtons[branchInspectIndex]
-                    if not inspect then
-                        inspect = CreateFrame("Button", nil, self.detail)
-                        inspect:SetWidth(contentWidth - 18); inspect.label = label(inspect, "", 7, -5, contentWidth - 32, 14)
-                        inspect:SetHighlightTexture("Interface\\QuestFrame\\UI-QuestTitleHighlight")
-                        self.branchInspectButtons[branchInspectIndex] = inspect
-                    end
-                    inspect.parentID = parent
-                    inspect.label:SetText(addon.L("BRANCH_INSPECT"))
-                    local inspectHeight = math.max(28, measuredHeight(inspect.label, 18) + 10)
-                    inspect:SetHeight(inspectHeight); inspect:ClearAllPoints(); inspect:SetPoint("TOPLEFT", 16, -y)
-                    inspect:SetEnabled(true); styleRow(inspect, "control", false)
-                    inspect:SetScript("OnClick", function()
-                        if self.quest == renderQuest and self.dungeon == renderDungeon and self.rewardGeneration == rewardGeneration then
-                            self:InspectQuest(parent)
-                        end
-                    end)
-                    inspect:Show(); y = y + inspectHeight + 6
-                end
-            elseif #group.ids == 1 then
-                requirementIndex = requirementIndex + 1
-                local parent = group.ids[1]
-                local row = self:MakeRow(self.detail, self.requirementButtons, requirementIndex, 59)
-                row.questID = parent
-                row.title:SetText(addon.QuestName(parent))
-                local parentState = engine:State(parent)
-                row.note:SetText("|cff" .. COLOR[parentState.status] .. statusLabel(parentState) .. "|r")
-                row:SetEnabled(true)
-                row:SetScript("OnClick", function() self:InspectQuest(parent) end)
-                y = self:LayoutRow(row, 59, y)
-            end
-        end
-        end
-        local seen, chainIndex = {}, 0
-        local nearby, pending = { [id] = true }, { id }
-        local nextIndex = 1
-        while nextIndex <= #pending and #pending < 3 do
-            local definition = addon.quests[pending[nextIndex]]
-            for _, group in ipairs(definition and definition.requires or {}) do
-                for _, parent in ipairs(group.ids) do
-                    if not nearby[parent] then nearby[parent] = true; pending[#pending + 1] = parent end
-                    if #pending >= 3 then break end
-                end
-                if #pending >= 3 then break end
-            end
-            nextIndex = nextIndex + 1
-        end
-        local function visit(qid, depth, grouped)
-            if not storyCurrent() or seen[qid] or depth > 50 then return end
-            seen[qid] = true
-            local def = addon.quests[qid]
-            if not grouped then
-                for _, group in ipairs(def and def.requires or {}) do
-                    for _, parent in ipairs(group.ids) do visit(parent, depth + 1) end
-                end
-            end
-            if not storyCurrent() then return end
-            if not chainExpanded and chainIndex >= 3 and not nearby[qid] then return end
-            chainIndex = chainIndex + 1
-            local b = self.chainButtons[chainIndex]
-            if not b then
-                b = CreateFrame("Button", nil, self.detail)
-                b:SetSize(contentWidth - 2, 34)
-                b.label = label(b, "", 3, -2, contentWidth - 8, 14)
-                b:SetHighlightTexture("Interface\\QuestFrame\\UI-QuestTitleHighlight")
-                self.chainButtons[chainIndex] = b
-            end
-            local questState = engine:State(qid)
-            local value = "|cff" .. COLOR[questState.status] .. (grouped and "• " or (chainIndex .. ". ")) ..
-                statusLabel(questState, addon.QuestName(qid) .. (not chainExpanded and (" (#" .. qid .. ")") or "")) .. "|r"
-            if not write(b.label, "SetText", value) or not write(b, "ClearAllPoints") or not write(b, "SetPoint", "TOPLEFT", 4, -y) then return end
-            local height = math.max(34, measuredHeight(b.label, 18) + 6)
-            if not write(b, "SetHeight", height) or not write(b, "SetEnabled", true) then return end
-            styleRow(b, "quest", qid == self.quest)
-            if not write(b, "SetScript", "OnClick", function() if storyCurrent() then self:InspectQuest(qid) end end) or
-                not write(b, "Show") then return end
-            y = y + height + 3
-        end
-        if showChain and chainExpanded then
-        if q.storylineGroups then
-            line(addon.L("STORY_GROUP_NOTICE"))
-            for groupIndex, group in ipairs(q.storylineGroups) do
-                line(addon.L("STORY_GROUP", groupIndex), "section")
-                for _, stepID in ipairs(group) do visit(stepID, 0, true) end
-            end
-        elseif q.storyline then
-            for _, stepID in ipairs(q.storyline) do visit(stepID, 0) end
-        else visit(id, 0) end
-        elseif showChain then
-            if q.requires and #q.requires > 0 then line(addon.L("REQUIREMENT_NOTICE")) end
-            local previous
-            if q.storyline then
-                for index, stepID in ipairs(q.storyline) do if stepID == id then previous = q.storyline[index - 1]; break end end
-            elseif not q.storylineGroups then
-                for _, group in ipairs(q.requires or {}) do
-                    if #group.ids == 1 then previous = addon.Clean(group.ids[1], "number"); break end
-                end
-            end
-            if not q.storyline and not q.storylineGroups and q.requires and #q.requires > 0 then
-                line(addon.L("CHAIN_PREVIEW_NOTICE"))
-                visit(id, 0)
-            else
-                if previous and previous ~= id then visit(previous, 0, true) end
-                visit(id, 0, true)
-            end
-        end
-        if not storyCurrent() then return end
-        end
-        end
         if not metadataCurrent() then return end
-        if referencesExpanded then
-        if not action or action.kind ~= "level" then line(addon.L("NEXT"), "section") end
-        if action and action.kind ~= "level" then
-            local title = actionText(action)
-            if not title then return end
-            line("|cff" .. COLOR[state.status] .. statusLabel(state) .. "|r · " .. title)
-        elseif not action then line("|cff" .. COLOR[state.status] .. statusLabel(state) .. "|r") end
-        if uncertain and state.status ~= "UNKNOWN" and (action or state.status == "COMPLETED") then line(addon.L("UNKNOWN")) end
-        do
-            local destination = #actions == 1 and action and addon.Clean(action.place, "table")
-            if destination then
-                local actionID, kind = action.id, action.kind
-                local source = addon.quests[actionID]
-                local endpoint = kind == "turnin" and "finish" or "start"
-                local fields = { npcID = "number", objectID = "number", itemID = "number", name = "string",
-                    zoneName = "string", mapID = "number", x = "number", y = "number" }
-                local values, readable, destinationChecker = {}, true, issecretvalue
-                local mapRoot = C_Map
-                local mapLibrary = addon.Clean(mapRoot, "table")
-                local mapGetter = mapLibrary and rawget(mapLibrary, "GetMapInfo")
-                local nameGetter, itemGetter = addon.GiverName, addon.ItemName
-                for field, expected in pairs(fields) do
-                    local value = rawget(destination, field)
-                    if type(destinationChecker) == "function" and addon.Read(destinationChecker, "boolean", value) ~= false then readable = false; break end
-                    if value ~= nil then
-                        local clean = addon.Clean(value, expected)
-                        if clean == nil then readable = false; break end
-                        values[field] = clean
-                    end
-                end
-                local function destinationCurrent()
-                    if not current() then return false end
-                    local ok, same = pcall(function()
-                        if self.quest ~= renderQuest or self.dungeon ~= renderDungeon or self.engine ~= engine or
-                            addon.char ~= character or self.rewardGeneration ~= rewardGeneration or issecretvalue ~= destinationChecker or
-                            action.id ~= actionID or action.kind ~= kind or action.place ~= destination or
-                            addon.quests[actionID] ~= source or not source or source[endpoint] ~= destination or
-                            addon.GiverName ~= nameGetter or addon.ItemName ~= itemGetter or C_Map ~= mapRoot or
-                            (mapLibrary and mapLibrary.GetMapInfo ~= mapGetter) then return false end
-                        for field in pairs(fields) do if rawget(destination, field) ~= values[field] then return false end end
-                        return true
-                    end)
-                    return ok and same == true
-                end
-                if not current() then return end
-                if readable then
-                    if not destinationCurrent() then return end
-                    local description = addon.Read(place, "string", destination)
-                    local unknown = addon.L("UNKNOWN_PLACE")
-                    if not destinationCurrent() then return end
-                    if description and description ~= unknown then
-                        line(description)
-                        if not destinationCurrent() then return end
-                    end
-                end
-            end
-        end
-        if #actions > 1 then
-            local inspectIndex = 0
-            for index, candidate in ipairs(actions) do
-                local title = actionText(candidate)
-                if not title then return end
-                local description = candidate.place and place(candidate.place) or ""
-                if not current() then return end
-                local row = self:MakeRow(self.detail, self.actionButtons, index, 59)
-                row.actionID, row.actionKind = candidate.id, candidate.kind
-                row.title:SetText(candidate == action and addon.L("BRANCH_SELECTED", title) or title)
-                row.note:SetText(description); row:SetEnabled(true)
-                styleRow(row, "quest", candidate == action)
-                local actionID, kind = candidate.id, candidate.kind
-                row:SetScript("OnClick", function()
-                    if not current() then return end
-                    self.detailActionChoice = { quest = id, id = actionID, kind = kind, dungeon = renderDungeon, character = addon.char }
-                    self:RefreshDetail()
-                end)
-                y = self:LayoutRow(row, 59, y)
-                if actionID ~= id then
-                    inspectIndex = inspectIndex + 1
-                    local inspect = self.actionInspectButtons[inspectIndex]
-                    if not inspect then
-                        inspect = CreateFrame("Button", nil, self.detail)
-                        inspect:SetWidth(contentWidth - 18); inspect.label = label(inspect, "", 7, -5, contentWidth - 32, 14)
-                        inspect:SetHighlightTexture("Interface\\QuestFrame\\UI-QuestTitleHighlight")
-                        self.actionInspectButtons[inspectIndex] = inspect
-                    end
-                    inspect.actionID = actionID; inspect.label:SetText(addon.L("BRANCH_INSPECT"))
-                    local height = math.max(28, measuredHeight(inspect.label, 18) + 10)
-                    inspect:SetHeight(height); inspect:ClearAllPoints(); inspect:SetPoint("TOPLEFT", 16, -y)
-                    inspect:SetEnabled(true); styleRow(inspect, "control", false)
-                    inspect:SetScript("OnClick", function() if current() then self:InspectQuest(actionID) end end)
-                    inspect:Show(); y = y + height + 6
-                end
-            end
-        end
-        local plan = self.currentPlan
-        if plan and plan.engine == engine and plan.dungeon == renderDungeon then
-            local related, seen = {}, {}
-            for index = 1, math.min(#plan.rows, 100) do
-                local entry = plan.rows[index]
-                local targetID = addon.Clean(entry.id, "number")
-                if targetID and targetID > 0 and targetID % 1 == 0 and targetID ~= id and not seen[targetID] then
-                    seen[targetID] = true
-                    local nextActions = engine:Next(targetID)
-                    if not current() or self.currentPlan ~= plan then return end
-                    for _, nextAction in ipairs(nextActions) do
-                        if nextAction.id == id then related[#related + 1] = targetID; break end
-                    end
-                end
-            end
-            if #related > 0 then
-                line(addon.L("PREPARATION_FOR"), "section")
-                line(addon.L("PREPARATION_FOR_NOTICE"))
-                for index, targetID in ipairs(related) do
-                    local targetName = addon.QuestName(targetID)
-                    local targetState = engine:State(targetID)
-                    if not current() or self.currentPlan ~= plan then return end
-                    local row = self:MakeRow(self.detail, self.preparationForButtons, index, 59)
-                    row.questID = targetID
-                    row.title:SetText(targetName)
-                    row.note:SetText("|cff" .. COLOR[targetState.status] .. statusLabel(targetState) .. "|r")
-                    row:SetEnabled(true); styleRow(row, "quest", false)
-                    local other = targetID
-                    row:SetScript("OnClick", function()
-                        if current() and self.currentPlan == plan then self:InspectQuest(other) end
-                    end)
-                    y = self:LayoutRow(row, 59, y)
-                end
-            end
-        end
-        end
-        if referencesExpanded then
+        local function acquisitionPortraits(sourceOnly)
         local portraitSetter, portraitChecker = addon.Clean(SetPortraitTextureFromCreatureDisplayID, "function"), issecretvalue
         local function renderPortrait(field, displayID, caption, current)
             if not displayID or displayID <= 0 or displayID > 4294967295 or displayID % 1 ~= 0 or self.portraitRenderBusy then return true end
@@ -3308,6 +3071,7 @@ function UI:RefreshDetail()
             end
             return true
         end
+        if not sourceOnly then
         local completionProvider, dialoguePortrait, questPortrait = addon.DialogueTurnInPortrait, addon.DialoguePortrait, addon.QuestPortrait
         local completionCapability = addon.Clean(completionProvider, "function")
         local completionDB, completionLocaleGetter = addon.db, GetLocale
@@ -3371,6 +3135,8 @@ function UI:RefreshDetail()
         local nativeCaption = addon.L("QUEST_PORTRAIT")
         if validCompletion and not completionCurrent() then return end
         if not renderPortrait("portrait", displayID, nativeCaption, nativeCurrent) then return end
+        end
+        if sourceOnly then
         local producer = addon.GiverPortrait
         local fieldTypes = { npcID = "number", objectID = "number", itemID = "number", dropNPCID = "number",
             creatureDisplayID = "number", portraitSource = "string", name = "string", mapID = "number", x = "number", y = "number", zoneName = "string" }
@@ -3451,20 +3217,8 @@ function UI:RefreshDetail()
         if not referenceShown then
             if not sourceReference(start, "start", "GIVER_REFERENCE_PORTRAIT", false) then return end
         end
-        if addon.Clean(q.repeatable, "boolean") == true then line(addon.L("REPEATABLE")) end
-        if state.reason then
-            local reason = "REASON_" .. state.reason
-            if state.reason == "requirements" and state.status == "UNKNOWN" then
-                reason = "REASON_requirementsUnknown"
-            end
-            if state.reason == "level" then
-                local required = addon.Clean(q.minLevel, "number")
-                local current = addon.Clean(engine.context.level, "number")
-                if required and current then line(addon.L("REASON_level_current", required, current))
-                elseif required then line(addon.L("REASON_level", required)); line(addon.L("REASON_levelUnknown"))
-                else line(addon.L("REASON_levelUnknown")) end
-            else line(addon.L(reason)) end
         end
+        return true
         end
         do
             local progressGetter, dialogueGetter, objectiveChecker = addon.QuestObjectives, addon.DialogueObjectiveText, issecretvalue
@@ -3475,7 +3229,7 @@ function UI:RefreshDetail()
             local objectives = addon.Read(progressGetter, "table", id)
             if not objectivesCurrent() then return end
             if objectives and #objectives > 0 then
-                if line(addon.L("OBJECTIVE_PROGRESS"), "section", nil, nil, objectivesCurrent) == false then return end
+                if line(addon.L("OBJECTIVE_PROGRESS"), "caption", nil, nil, objectivesCurrent) == false then return end
             end
             for _, objective in ipairs(objectives or {}) do
                 local text = "|cff" .. (objective.finished and COLOR.COMPLETED or COLOR.ACTIVE) .. objective.text .. "|r"
@@ -3681,14 +3435,13 @@ function UI:RefreshDetail()
                     end
                     local heading = addon.Read(localize, "string", "OBJECTIVE_KILLS")
                     local notice = addon.Read(localize, "string", "OBJECTIVE_KILLS_NOTICE")
-                    local text = quantityUnknown and addon.Read(localize, "string", "OBJECTIVE_ITEM_UNKNOWN", name) or
+                    local text = quantityUnknown and (name .. " ×?") or
                         addon.Read(localize, "string", "OBJECTIVE_ITEM", name, quantity)
                     if not killCurrent() then return end
                     if heading and notice and text then
                         seenKills[npcID] = true
                         if not shownKills then
-                            if line(heading, "section", nil, nil, killCurrent) == false or
-                                line(notice, nil, nil, nil, killCurrent) == false then return end
+                            if line(heading, "caption", nil, nil, killCurrent) == false then return end
                             shownKills = true
                         end
                         if line(text, nil, nil, nil, killCurrent) == false then return end
@@ -3751,12 +3504,11 @@ function UI:RefreshDetail()
                             end
                             if entryCurrent() then
                                 local heading, notice = addon.L("OBJECTIVE_OBJECTS"), addon.L("OBJECTIVE_OBJECTS_NOTICE")
-                                local text = unknown and addon.L("OBJECTIVE_ITEM_UNKNOWN", name) or addon.L("OBJECTIVE_ITEM", name, quantity)
+                                local text = unknown and (name .. " ×?") or addon.L("OBJECTIVE_ITEM", name, quantity)
                                 if not entryCurrent() then return end
                                 seen[identity] = true
                                 if not shown then
-                                    if line(heading, "section", nil, nil, entryCurrent) == false or
-                                        line(notice, nil, nil, nil, entryCurrent) == false then return end
+                                    if line(heading, "caption", nil, nil, entryCurrent) == false then return end
                                     shown = true
                                 end
                                 if line(text, nil, nil, nil, entryCurrent) == false then return end
@@ -3830,19 +3582,21 @@ function UI:RefreshDetail()
                     if not entryCurrent() then return end
                     local binding
                     if icon and icon > 0 and icon <= 4294967295 and icon % 1 == 0 then
-                        binding = { id = itemID, texture = icon, role = sourceRole, sourceField = sourceField }
+                        binding = { id = itemID, texture = icon, role = sourceRole, sourceField = sourceField, context = addon.L(notice) .. (quantityUnknown and ("\n" .. addon.L("OBJECTIVE_ITEM_UNKNOWN", name)) or "") }
                         binding.current = function() return entryCurrent(binding) end
                         if not binding.current() then return end
                     end
                     if not shownObjectives then
-                        line(addon.L(heading), "section"); line(addon.L(notice)); shownObjectives = true
+                        line(addon.L(sourceRole == "objective" and "DETAIL_OBJECTIVES" or heading), "caption"); shownObjectives = true
                     end
-                    if line(quantityUnknown and addon.L("OBJECTIVE_ITEM_UNKNOWN", name) or addon.L("OBJECTIVE_ITEM", name, quantity), nil, nil, binding) == false then return end
-                    if count then line(count) end
+                    local text = quantityUnknown and (name .. " ×?") or addon.L("OBJECTIVE_ITEM", name, quantity)
+                    if count then text = text .. " · " .. count end
+                    if line(text, nil, nil, binding) == false then return end
                 end
             end
         end
 
+        local function acquisitionObjectives()
         do
             local sources = addon.Clean(rawget(q, "objectiveItemSources"), "table")
             local items = addon.Clean(rawget(q, "objectiveItems"), "table")
@@ -3994,6 +3748,8 @@ function UI:RefreshDetail()
             end
         end
 
+        return true
+        end
         do
             local paymentGetter, paymentChecker, localize = addon.QuestPayment, issecretvalue, addon.L
             local currencyRoot = C_CurrencyInfo
@@ -4035,7 +3791,7 @@ function UI:RefreshDetail()
                         if not paymentCurrent() then return end
                         if title and title:find("%S") and notice and notice:find("%S") then
                             if line(title, nil, nil, nil, paymentCurrent) == false or
-                                line(notice, nil, nil, nil, paymentCurrent) == false then return end
+                                (referencesExpanded and line(notice, nil, nil, nil, paymentCurrent) == false) then return end
                         end
                     end
                 elseif not paymentCurrent() then return end
@@ -4048,41 +3804,60 @@ function UI:RefreshDetail()
         local xp = rewards and addon.Clean(rewards.xp, "number")
         local money = rewards and addon.Clean(rewards.money, "number")
         local validXP = xp and xp >= 0 and xp % 1 == 0
-        if referencesExpanded then
-            if rewards and addon.Clean(rewards.source, "string") == "dialogue" then line(addon.L("REWARD_DIALOGUE"), "section")
-            elseif rewards and addon.Clean(rewards.source, "string") == "cache" then line(addon.L("REWARD_PREVIEW"), "section") end
-        elseif not hidden and items and choices and (#items > 0 or #choices > 0 or validXP or (money and money > 0)) then
+        if not hidden and items and choices and (#items > 0 or #choices > 0 or validXP or (money and money > 0)) then
             line(addon.L("DETAIL_REWARDS"), "caption")
         end
-        if hidden then
-            if referencesExpanded then line(addon.L("REWARD_HIDDEN")) end
-        elseif items and choices then
-            if #items > 0 then
-                if referencesExpanded then line(addon.L("REWARD_ITEMS"), "section") end
-                for index, item in ipairs(items) do
-                    if line(addon.L("REWARD_ITEM", item.name, item.count), nil,
-                        { item = item, origin = rewardOrigin, source = addon.Clean(rewards.source, "string"), kind = "items", index = index }) == false then return end
+        if not hidden and items and choices then
+            local function lootGroup(entries, kind, heading)
+                if #entries == 0 then return true end
+                if line(addon.L(heading), "caption") == false then return false end
+                local columns = contentWidth >= 340 and 2 or 1
+                local tileWidth = (contentWidth - (columns - 1) * 8) / columns
+                local top, rowHeight = y, 0
+                for index, item in ipairs(entries) do
+                    local column = (index - 1) % columns
+                    y = top
+                    local rewardText = addon.Clean(item.count, "number") == 1 and item.name or addon.L("REWARD_ITEM", item.name, item.count)
+                    if line(rewardText, nil,
+                        { item = item, origin = rewardOrigin, source = addon.Clean(rewards.source, "string"), kind = kind, index = index }) == false then return false end
+                    if not portraitCardCurrent() then return false end
+                    local field, button = pool[n], self.rewardButtons[rewardIndex]
+                    local binding = button and button.rewardBinding
+                    local function tileCurrent()
+                        return portraitCardCurrent() and (not binding or button.rewardBinding == binding)
+                    end
+                    local function write(object, method, ...) return self:QuestListWrite(object, method, tileCurrent, ...) end
+                    local x = 4 + column * (tileWidth + 8)
+                    local hasIcon = binding and binding.kind == kind and binding.index == index and button:IsShown()
+                    if hasIcon then
+                        button.rewardLabel, button.rewardTileWidth = field, tileWidth
+                        if not write(button, "ClearAllPoints") or not write(button, "SetPoint", "TOPLEFT", x, -top) then return false end
+                    end
+                    if not write(field, "SetWidth", tileWidth - (hasIcon and 40 or 0)) or not write(field, "ClearAllPoints") or
+                        not write(field, "SetPoint", "TOPLEFT", x + (hasIcon and 40 or 0), -top) then return false end
+                    local height = measuredHeight(field, 20)
+                    if not tileCurrent() then return false end
+                    rowHeight = math.max(rowHeight, hasIcon and 32 or 20, height)
+                    if column == columns - 1 or index == #entries then
+                        top, rowHeight = top + rowHeight + 8, 0
+                    end
                 end
+                y = top
+                return true
             end
-            if #choices > 0 then
-                line(addon.L("REWARD_CHOICES"), referencesExpanded and "section" or "caption")
-                for index, item in ipairs(choices) do
-                    if line(addon.L("REWARD_ITEM", item.name, item.count), nil,
-                        { item = item, origin = rewardOrigin, source = addon.Clean(rewards.source, "string"), kind = "choices", index = index }) == false then return end
-                end
-            end
-            if referencesExpanded and #items == 0 and #choices == 0 then line(addon.L("REWARD_NO_ITEMS")) end
+            if not lootGroup(items, "items", "DETAIL_GUARANTEED") or not lootGroup(choices, "choices", "REWARD_CHOICES") then return end
+
             local gains = {}
             if validXP then
-                if referencesExpanded then line(addon.L("REWARD_XP", xp)) else gains[#gains + 1] = addon.L("REWARD_XP", xp) end
+                gains[#gains + 1] = addon.L("REWARD_XP", xp)
             end
             if money and money > 0 then
                 local formatted = addon.Read(GetCoinTextureString, "string", money)
                 local gain = formatted and (addon.L("REWARD_MONEY") .. ": " .. formatted) or addon.L("REWARD_MONEY_UNKNOWN")
-                if referencesExpanded then line(gain) else gains[#gains + 1] = gain end
+                gains[#gains + 1] = gain
             end
             if #gains > 0 then line(table.concat(gains, " · "), "caption") end
-        elseif referencesExpanded then line(addon.L("REWARD_UNAVAILABLE")) end
+        end
         do
             local getter, checker, localize = addon.Clean(addon.DialogueText, "function"), issecretvalue, addon.L
             if getter then
@@ -4131,7 +3906,7 @@ function UI:RefreshDetail()
                 end
             end
         end
-        if referencesExpanded then
+        local function acquisitionItems()
         local starterSource = addon.Clean(q.start, "table")
         local starterID = starterSource and addon.Clean(rawget(starterSource, "itemID"), "number")
         local starterName = starterSource and addon.Clean(rawget(starterSource, "name"), "string")
@@ -4164,7 +3939,20 @@ function UI:RefreshDetail()
             return ok and same == true
         end
         if q.startAlternatives then
-            if alternativePlaces(q.startAlternatives, self.startButtons, "START_ALTERNATIVES", "startAlternative:") == false then return end
+            local alternatives, remaining, snapshot = q.startAlternatives, {}, {}
+            local count = #alternatives
+            local previewCount = not start and math.min(count, 2) or 0
+            for index, point in ipairs(alternatives) do
+                snapshot[index] = point
+                if index > previewCount then remaining[#remaining + 1] = point end
+            end
+            local function alternativesCurrent()
+                if not locationCurrent() or addon.quests[id] ~= definition or q.startAlternatives ~= alternatives or
+                    #alternatives ~= count or addon.Clean(q.start, "table") ~= start then return false end
+                for index, point in ipairs(snapshot) do if alternatives[index] ~= point then return false end end
+                return locationCurrent()
+            end
+            if #remaining > 0 and alternativePlaces(remaining, self.startButtons, "START_ALTERNATIVES", "startAlternative:", alternativesCurrent) == false then return end
         else
             if typedStarter and not starterCurrent() then return end
             local starting = place(q.start)
@@ -4180,7 +3968,7 @@ function UI:RefreshDetail()
                     starterBinding.current = function() return starterCurrent(starterBinding) end
                 end
             end
-            if line(addon.L("START") .. ": " .. starting, nil, nil, starterBinding) == false then return end
+            if starterBinding and line(starting, nil, nil, starterBinding) == false then return end
             if reported(q.start, "start") == false then return end
         end
         local start = q.start
@@ -4321,13 +4109,9 @@ function UI:RefreshDetail()
             end
             if #mappedDrops > 0 and alternativePlaces(mappedDrops, self.dropButtons, "ITEM_DROP_LOCATIONS", "dropSource:", acquisitionCurrent) == false then return end
         end
-        if pendingGiver and state.status ~= "AVAILABLE" then line(addon.L("LOCATION_ONLY")) end
         if q.finishAlternatives then
             if alternativePlaces(q.finishAlternatives, self.finishButtons, "POSSIBLE_TURNINS", "finishAlternative:") == false then return end
-        else
-            local ending = place(q.finish)
-            if not ending then return end
-            line(addon.L("ENDING") .. ": " .. ending)
+        elseif q.finish and q.finish ~= q.start then
             if reported(q.finish, "finish") == false then return end
         end
         local materialSource, materialGetter = q.completionQuests, engine.CompletionSteps
@@ -4362,6 +4146,7 @@ function UI:RefreshDetail()
                 y = self:LayoutRow(row, 59, y)
             end
         end
+        return true
         end
         local descriptionGetter, descriptionChecker = addon.Description, issecretvalue
         local description = addon.Read(descriptionGetter, "string", id)
@@ -4375,9 +4160,7 @@ function UI:RefreshDetail()
         end
         if not narrativeCurrent() then return end
         if not description or #description > 30000 or not description:find("%S") then description = placeholder end
-        if description == placeholder then
-            if line(addon.L(referencesExpanded and "NO_TEXT" or "DETAIL_STORY_EMPTY"), referencesExpanded and "body" or "caption", nil, nil, narrativeCurrent) == false then return end
-        else
+        if description ~= placeholder then
             local excerpt, long = description, false
             -- Native markup stays intact. Plain prose can safely use a character-bound excerpt.
             if not description:find("|", 1, true) then
@@ -4394,7 +4177,7 @@ function UI:RefreshDetail()
                 long = position <= #description
                 if long and not narrativeExpanded then excerpt = description:sub(1, position - 1) .. "…" end
             end
-            if line(addon.L(referencesExpanded and "QUEST_TEXT" or "DETAIL_STORY"), referencesExpanded and "section" or "caption", nil, nil, narrativeCurrent) == false or
+            if line(addon.L("DETAIL_STORY"), "caption", nil, nil, narrativeCurrent) == false or
                 line(excerpt, "story", nil, nil, narrativeCurrent) == false then return end
             if long then
                 local toggle = self.narrativeToggle
@@ -4420,6 +4203,28 @@ function UI:RefreshDetail()
             end
         end
         if not narrativeCurrent() then return end
+        if not acquisitionPortraits(false) then return end
+        local function nonemptySource(value)
+            local list = addon.Clean(value, "table")
+            return list and #list > 0 and #list <= 100
+        end
+        local sourceStart, sourceFinish = addon.Clean(q.start, "table"), addon.Clean(q.finish, "table")
+        local starterID = sourceStart and addon.Clean(rawget(sourceStart, "itemID"), "number")
+        local itemOnly = false
+        if starterID and starterID > 0 and starterID <= 9007199254740991 and starterID % 1 == 0 then
+            local ok, typed = pcall(function()
+                return rawget(sourceStart, "npcID") == nil and rawget(sourceStart, "objectID") == nil and q.startAlternatives == nil
+            end)
+            itemOnly = ok and typed == true
+        end
+        local alternativeSource = addon.Clean(q.startAlternatives, "table")
+        local extraStarters = alternativeSource and #alternativeSource > (sourceStart and 0 or 2) and #alternativeSource <= 100
+        local acquisition = extraStarters or nonemptySource(q.finishAlternatives) or
+            nonemptySource(q.completionQuests) or nonemptySource(q.objectiveItemSources) or itemOnly or
+            (sourceStart and nonemptySource(sourceStart.reportedLocations)) or
+            (sourceFinish and nonemptySource(sourceFinish.reportedLocations))
+        if not narrativeCurrent() then return end
+        if acquisition then
         do
             local toggle = self.referenceToggle
             if not toggle then
@@ -4441,7 +4246,7 @@ function UI:RefreshDetail()
                 local ok = pcall(object[method], object, ...)
                 return ok and referencesCurrent()
             end
-            if not write(toggle.label, "SetText", (referencesExpanded and "- " or "+ ") .. addon.L(referencesExpanded and "DETAIL_LESS" or "DETAIL_MORE")) then return end
+            if not write(toggle.label, "SetText", (referencesExpanded and "− " or "+ ") .. addon.L(referencesExpanded and "DETAIL_ACQUISITION_HIDE" or "DETAIL_ACQUISITION")) then return end
             local height = math.max(30, measuredHeight(toggle.label, 18) + 10)
             if not write(toggle, "SetHeight", height) or not write(toggle, "ClearAllPoints") or
                 not write(toggle, "SetPoint", "TOPLEFT", 4, -y) or not write(toggle, "SetEnabled", true) then return end
@@ -4465,6 +4270,10 @@ function UI:RefreshDetail()
                 end
             end) or not write(toggle, "Show") then return end
             y = y + height + 8
+        end
+            if referencesExpanded then
+                if not acquisitionPortraits(true) or not acquisitionObjectives() or not acquisitionItems() then return end
+            end
         end
         self:SetFooterEnabled(self.source, true)
     else

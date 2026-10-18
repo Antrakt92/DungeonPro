@@ -42,9 +42,9 @@ Level ranges are provisional recommendations.
   unverified chains remain available for inspection.
   View any alternative quest separately without changing your preferred branch.
   Known prerequisite work can still be shown while other conditions are unknown.
-- Each quest card shows its giver and known prerequisites before other details.
-  Inspect supporting quests without changing the dungeon target. Long related
-  story lists have a short preview and can be expanded separately.
+- The middle quest list expands related steps in place. Inspect supporting
+  quests without changing the dungeon target; the right card keeps the selected
+  quest's giver, objectives, rewards and story together.
 - Hover the language button (globe and language code) in the top corner to open the language menu.
   Hover a language to preview immediately, click to save, or move away to cancel.
 - Switch between quests for your character and all character restrictions.
@@ -57,8 +57,9 @@ Level ranges are provisional recommendations.
   and some dungeon associations still need checking.
 - Separate story order and shared story groups for chains whose hard
   prerequisites still need checking.
-  Long story lists start compact and expand to show their quests. Known
-  prerequisites and preparation actions stay visible independently.
+  Story lists expand in the middle tree. Known prerequisites and preparation
+  actions stay visible independently; alternative prerequisite routes can be
+  selected or reset there without adding a second quest list to the detail card.
 - Item-started quests show the known item and drop dungeon separately, including
   quests whose starter drops in a different dungeon. Multiple starting NPCs,
   objects or item-drop sources stay visible separately; a location visit does
@@ -70,8 +71,8 @@ Level ranges are provisional recommendations.
   requirements. Their completion does not confirm you still hold the item.
 - Starter and material items show a current carried count when the client
   provides it, excluding bank storage. Possession does not confirm quest eligibility.
-- Sourced objective items show confirmed quantities; an unverified amount is
-  labeled explicitly. Current carried counts appear separately from these
+- Sourced objective items show confirmed quantities; ×? marks an unverified amount.
+  Hover the item icon for context. Current carried counts appear alongside these
   reference objectives and do not replace objectives reported by the game.
 - Sourced creature objectives show the listed targets and any verified counts
   before pickup, separately from objectives reported by the game.
@@ -120,11 +121,13 @@ Level ranges are provisional recommendations.
   Required prerequisites and source-listed story quests are labelled separately.
   The detail pane keeps the giver, objectives and rewards together with compact
   level information. Story text has its own reading section; long passages expand
-  on demand. More details opens full conditions, availability notes and references.
+  on demand. Acquisition details appears when there are additional sources,
+  locations or starter-item facts. Reward tiles distinguish guaranteed items
+  from choices; hover an icon for the full native item tooltip.
 - When available, follow the game's next waypoint for a quest in your log.
   It may mark a route point, an entrance or a turn-in. Quest-giver locations
   and preparation steps remain separate.
-- The quest icon opens the giver's known zone or guides to a known location.
+- The navigation arrow opens the giver's known zone or guides to a known location.
   Known coordinates appear as a Dungeon Pro marker on the map, even without native waypoint support.
   The Wowhead icon offers the quest link for copying. Hover over either icon
   for its action description.
@@ -157,7 +160,7 @@ Level ranges are provisional recommendations.
   A ready quest can instead show its known distinct turn-in NPC, with a separate
   caption. Missing or ambiguous finish portraits keep any known starter portrait.
 - Item rewards, choices and experience for the currently selected active quest,
-  when the client provides them. Unknown reward data is shown explicitly.
+  when the client provides them.
 - Reward previews for other quests when the client confirms their reward data
   is loaded. Visible lists make a bounded preload attempt when supported;
   missing data stays unknown.

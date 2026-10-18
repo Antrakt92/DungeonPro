@@ -98,7 +98,7 @@ function Tree.Build(quests, engine, rootID)
         end
         return source
     end
-    local function append(qid, source, depth, relation, edge, root)
+    local function append(qid, source, depth, relation, edge, root, storyOwner)
         if not current() then failed = "expired"; return end
         local state = read(stateGetter, "table", engine, qid)
         if not state or not clean(rawget(state, "status"), "string") or not current() then failed = "expired"; return end
@@ -106,6 +106,7 @@ function Tree.Build(quests, engine, rootID)
             completedHistory = rawget(state, "completedHistory") }
         local node = { id = qid, state = state, depth = depth, relation = relation, root = root or nil, links = {},
             missing = not source.quest or nil }
+        if storyOwner and relation=="required" then node.requirementScope, node.storyOwnerID = "story", storyOwner end
         if edge then
             node.group, node.mode, node.alternatives, node.parentID = edge.group, edge.mode, edge.alternatives, edge.parentID
             node.storyIndex = edge.storyIndex
@@ -115,16 +116,23 @@ function Tree.Build(quests, engine, rootID)
         byID[qid] = node
     end
     local rootSource
-    local storyNodes, storySeen = {}, {}
+    local storyNodes, storySeen, storyRequirements = {}, {}, {}
     local rootStoryIndex, rootStoryGroup
-    local function visit(qid, depth, edge)
+    local function visit(qid, depth, edge, storyOwner, order, storyMember)
         if failed then return end
         if seen[qid] then
             local node = byID[qid]
-            if node and edge then
+            if node and edge and edge.parentID then
                 node.links[#node.links + 1] = edge
                 node.depth = math.min(node.depth, depth)
+                if node.relation=="story" and storyOwner then
+                    -- A story slot may be encountered before another member
+                    -- proves it is an alternative prerequisite of that member.
+                    node.relation, node.requirementScope, node.storyOwnerID = "required", "story", storyOwner
+                    node.group, node.mode, node.alternatives, node.parentID = edge.group, edge.mode, edge.alternatives, edge.parentID
+                end
             end
+            if node and order then order[#order + 1] = node end
             return
         end
         if visiting[qid] then nodes.cycle = true; return end
@@ -136,12 +144,14 @@ function Tree.Build(quests, engine, rootID)
         for _, group in ipairs(source.groups) do
             for _, parent in ipairs(group.ids) do
                 if not nodes.truncated then visit(parent, depth + 1, { group = group.index, mode = group.mode,
-                    alternatives = #group.ids, parentID = qid }) end
+                    alternatives = #group.ids, parentID = qid, scope = storyOwner and "story" or nil,
+                    storyOwnerID = storyOwner }, storyOwner, order) end
                 if failed then return end
             end
         end
         visiting[qid], seen[qid] = nil, true
-        append(qid, source, depth, "required", edge, qid == rootID)
+        append(qid, source, depth, storyMember and "story" or "required", edge, qid == rootID, storyOwner)
+        if byID[qid] and order then order[#order + 1] = byID[qid] end
     end
     if not current() then return nil, "expired" end
     visit(rootID, 0)
@@ -151,10 +161,9 @@ function Tree.Build(quests, engine, rootID)
         local node = byID[qid]
         if not seen[qid] then
             if #nodes >= 80 then nodes.truncated = true; return end
-            local source = capture(qid)
-            if not source or failed then return end
-            seen[qid] = true
-            append(qid, source, 1, "story", { group = group, storyIndex = index })
+            local order = {}
+            storyRequirements[qid] = order
+            visit(qid, 1, { group = group, storyIndex = index }, qid, order, true)
             node = byID[qid]
         end
         if not node or failed or storySeen[qid] then return end
@@ -162,6 +171,7 @@ function Tree.Build(quests, engine, rootID)
         -- Story position also belongs to an already-emitted target or required
         -- node. Its dependency relation and OR-group identity stay unchanged.
         node.storyIndex, node.storyGroup = index, group
+        if node.requirementScope=="story" then node.depth=math.min(node.depth,1) end
         storyNodes[#storyNodes + 1] = node
         if qid == rootID then rootStoryIndex, rootStoryGroup = index, group end
     end
@@ -187,19 +197,24 @@ function Tree.Build(quests, engine, rootID)
     -- Actual requirements retain topological order and are never inferred from
     -- the optional story. The target itself appears at its recorded story slot.
     for _, node in ipairs(nodes) do
-        node.onTargetPath = node.root == true or node.relation == "required"
+        node.onTargetPath = node.root == true or (node.relation == "required" and node.requirementScope ~= "story")
         node.presentationRelation = node.relation
-        if node.relation == "required" and not node.root then present(node) end
+        if node.relation == "required" and node.requirementScope ~= "story" and not node.root then present(node) end
     end
     local target = byID[rootID]
     if target and not storySeen[rootID] then present(target) end
     for _, node in ipairs(storyNodes) do
-        if node.relation == "story" or node.root then
+        if node.relation == "story" or node.root or node.requirementScope=="story" then
             node.presentationRelation = "story"
-            if not node.root and rootStoryIndex then
+            if not node.root and node.requirementScope~="story" and rootStoryIndex then
                 -- Parallel peers in the target's group have no recorded order.
                 node.onTargetPath = rootStoryGroup and node.storyGroup < rootStoryGroup or
                     (not rootStoryGroup and node.storyGroup == nil and node.storyIndex < rootStoryIndex) or false
+            end
+            for _, ancestor in ipairs(storyRequirements[node.id] or {}) do
+                -- Listed story members retain their explicit slots even when
+                -- their recorded requirement edges imply another order.
+                if not storySeen[ancestor.id] then present(ancestor) end
             end
             present(node)
         end

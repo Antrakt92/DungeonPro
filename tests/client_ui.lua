@@ -79,7 +79,7 @@ end
 if ... == "fixture" then
     return { addon = addon, objects = objects, eventFrame = objects[#objects], methods = methods }
 end
--- The existing data integration cases intentionally inspect the expanded reference view.
+-- Source-data cases explicitly open the conditional acquisition disclosure.
 local expandedReferenceFixture, expandingReference = true, false
 local detailRefresh = addon.UI.RefreshDetail
 addon.UI.RefreshDetail = function(self, ...)
@@ -97,7 +97,16 @@ addon.UI.RefreshDetail = function(self, ...)
 end
 local function expandKnownChain()
     local ui = addon.UI
-    if ui.storyToggle and ui.storyToggle:IsShown() and ui.detailChainExpanded ~= true then ui.storyToggle.scripts.OnClick() end
+    if ui.questTreeDungeon == ui.dungeon and ui.questTreeRoot == ui.quest then return end
+    for _, row in ipairs(ui.rows) do
+        if row:IsShown() and row.questID == ui.quest and not row.questTreeNode then row.scripts.OnClick(); return end
+    end
+    error("Missing selected quest target in the middle tree")
+end
+local function visibleChain()
+    local result = {}
+    for _, row in ipairs(addon.UI.rows) do if row:IsShown() and row.questTreeNode then result[#result+1]=row end end
+    return result
 end
 local function check(name, fn)
     local ok, err = pcall(fn); assert(ok, name .. ": " .. tostring(err)); total = total + 1; print("PASS " .. name)
@@ -160,7 +169,7 @@ check("Actual Defias data stays uncertain even after every known parent is compl
     assert(addon.quests[166].requirementsKnown == false)
     assert(addon.UI.engine:State(166).status == "UNKNOWN" and not addon.UI.action)
     explicitGiverVisit(addon.UI, 166)
-    assert(#addon.UI.chainButtons == 7, "uncertain acceptance still retains source narrative")
+    assert(#visibleChain() == 7, "uncertain acceptance still retains the source narrative in the middle tree")
     C_QuestLog.IsQuestFlaggedCompleted = completed; addon.UI:Refresh()
 end)
 check("Default compact quest card retains the real next step and explicit giver action", function()
@@ -168,7 +177,7 @@ check("Default compact quest card retains the real next step and explicit giver 
     expandedReferenceFixture = false
     ui:InspectQuest(373); ui:InspectQuest(166)
     assert(ui.detailReferencesExpanded == false and ui.detailChainExpanded == false)
-    assert(ui.referenceToggle:IsShown() and ui.giver.enabled and ui.giverAction.place == addon.quests[166].start)
+    assert((not ui.referenceToggle or not ui.referenceToggle:IsShown()) and ui.giver.enabled and ui.giverAction.place == addon.quests[166].start)
     assert(ui.engine:State(166).status == "UNKNOWN" and not ui.action)
     withKnownDefias(function()
         ui:Refresh()
@@ -183,7 +192,7 @@ check("Known graph fixture guides to the initial Defias step", function()
         addon.UI.quest = 166; addon.UI:Refresh()
         expandKnownChain()
         assert(addon.UI.action.id == 65 and addon.UI.giver.enabled)
-        assert(#addon.UI.chainButtons == 7)
+        assert(#visibleChain() == 7)
     end)
     assert(addon.UI.engine:State(166).status == "UNKNOWN" and not addon.UI.action)
 end)
@@ -192,15 +201,11 @@ check("Storyline renders separately without inventing dependency readiness", fun
     assert(not addon.UI.action)
     explicitGiverVisit(addon.UI, 92753)
     local ui = addon.UI
-    assert(ui.storyToggle and ui.storyToggle:IsShown())
-    assert(ui.storyToggle.label.text == "+ " .. addon.L("STORY_SOURCE_QUESTS", 11))
-    local compact, current = 0, false
-    for _, row in ipairs(ui.chainButtons) do if row:IsShown() then compact=compact+1;current=current or row.label.text:find("(#92753)",1,true)~=nil end end
-    assert(compact<=2 and current, "collapsed narrative keeps only the current quest and nearest known prior")
-    ui.storyToggle.scripts.OnClick()
-    local visible = 0
-    for _, row in ipairs(ui.chainButtons) do if row:IsShown() then visible = visible + 1 end end
-    assert(visible == 11 and not ui.action)
+    assert(not ui.storyToggle or not ui.storyToggle:IsShown(), "the detail pane does not duplicate the middle tree")
+    expandKnownChain()
+    local chain = visibleChain()
+    assert(#chain == 11 and not ui.action)
+    for index, id in ipairs(addon.quests[92753].storyline) do assert(chain[index].questID == id, "source chronology remains exact") end
     explicitGiverVisit(ui, 92753)
 end)
 check("Quest title hydration is requested only once per ID", function()
@@ -434,8 +439,8 @@ check("Alternative map-only starters pass a direct place to the actual navigatio
         { objectID = 123, name = "Unknown object" } }
     ui.quest = 166; ui:Refresh()
     local before = mapCalls
-    assert(ui.startButtons[1].enabled and not ui.startButtons[2].enabled)
-    ui.startButtons[1].scripts.OnClick()
+    assert(ui.giverButtons[1].enabled and not ui.giverButtons[2].enabled)
+    ui.giverButtons[1].scripts.OnClick()
     assert(mapCalls == before + 1)
     assert(ui.frame:IsShown() and ui.quest == 166 and mapCalls == before + 1, "accepted alternative map requests leave preparation open")
     q.start, q.startAlternatives = start, alternatives; ui:Refresh()
@@ -604,16 +609,26 @@ check("Native dialogue events render offered rewards and item refreshes without 
         for _, fs in ipairs(addon.UI.details) do if fs.shown and fs.text == text then return true end end
         return false
     end
+    local function visibleRewards(origin)
+        local count = 0
+        for _, button in ipairs(addon.UI.rewardButtons) do
+            if button:IsShown() then
+                count = count + 1
+                assert(button.rewardBinding and button.rewardBinding.origin == origin, "reward tiles retain their real provider")
+            end
+        end
+        return count
+    end
     local function event(name)
         assert(eventFrame.events[name], name .. " must be registered")
         eventFrame.scripts.OnEvent(eventFrame, name)
     end
     event("QUEST_FINISHED")
     addon.UI.quest = 65; addon.UI:Refresh()
-    assert(shown(addon.L("REWARD_UNAVAILABLE")) and not shown(addon.L("REWARD_DIALOGUE")))
+    assert(not shown(addon.L("REWARD_UNAVAILABLE")) and visibleRewards() == 0, "empty rewards stay quiet")
     fallbackCalls = 0
     event("QUEST_DETAIL")
-    assert(shown(addon.L("REWARD_DIALOGUE")) and shown(addon.L("REWARD_ITEMS")))
+    assert(shown(addon.L("DETAIL_REWARDS")) and shown(addon.L("DETAIL_GUARANTEED")) and visibleRewards("dialogue") == 2)
     assert(shown(addon.L("REWARD_ITEM", rewardName, 2)))
     assert(shown(addon.L("REWARD_CHOICES")) and shown(addon.L("REWARD_ITEM", "Native choice reward", 4)))
     assert(shown(addon.L("REWARD_XP", 730)) and fallbackCalls == 0 and forbiddenCalls == 0)
@@ -622,12 +637,12 @@ check("Native dialogue events render offered rewards and item refreshes without 
     assert(shown(addon.L("REWARD_ITEM", rewardName, 3)) and shown(addon.L("REWARD_XP", 810)))
     assert(not shown(addon.L("REWARD_ITEM", "Native fixed reward", 2)) and not shown(addon.L("REWARD_XP", 730)))
     allowed = false; event("QUEST_ITEM_UPDATE")
-    assert(shown(addon.L("REWARD_DIALOGUE")) and shown(addon.L("REWARD_HIDDEN")))
+    assert(not shown(addon.L("REWARD_HIDDEN")) and visibleRewards() == 0)
     assert(not shown(addon.L("REWARD_NO_ITEMS")) and not shown(addon.L("REWARD_UNAVAILABLE")))
     assert(not shown(addon.L("REWARD_ITEM", rewardName, 3)) and not shown(addon.L("REWARD_XP", 810)))
     assert(fallbackCalls == 0 and forbiddenCalls == 0, "hidden rewards must not fall back to selected-log data")
     allowed = true; event("QUEST_FINISHED")
-    assert(shown(addon.L("REWARD_UNAVAILABLE")) and not shown(addon.L("REWARD_DIALOGUE")))
+    assert(not shown(addon.L("REWARD_UNAVAILABLE")) and visibleRewards() == 0)
     assert(not shown(addon.L("REWARD_HIDDEN")) and not shown(addon.L("REWARD_ITEM", rewardName, 3)))
     assert(forbiddenCalls == 0)
     for _, key in ipairs(keys) do _G[key] = saved[key] end
@@ -662,7 +677,7 @@ check("Real dialogue events keep objective prose separate and clear it on every 
     local status, action = addon.UI.engine:State(id).status, addon.UI.action
     assert(not shown(text) and calls == 0)
     event("QUEST_DETAIL")
-    assert(shown(text) and shown(addon.L("OBJECTIVE_DIALOGUE")) and shown(addon.L("REWARD_HIDDEN")))
+    assert(shown(text) and shown(addon.L("OBJECTIVE_DIALOGUE")) and not shown(addon.L("REWARD_HIDDEN")))
     assert(not shown(addon.L("OBJECTIVE_PROGRESS")))
     assert(addon.UI.engine:State(id).status == status)
     assert((not action and not addon.UI.action) or (action and addon.UI.action.id == action.id))
@@ -765,10 +780,10 @@ check("Gossip refresh localizes only the actual matching NPC and closing restore
     local function event(value) eventFrame.scripts.OnEvent(eventFrame, value) end
     for _, dungeon in ipairs(addon.dungeons) do if dungeon.key == "dm" then ui.dungeon = dungeon end end
     ui.quest, ui.preparation = 65, true; ui:Refresh()
-    assert(shown(addon.L("START") .. ": " .. originalName) and not shown(name))
+    assert(shown(originalName) and not shown(name))
     local state, nativeNameInAction = ui.engine:State(65).status, false
     guid = "Creature-npc-name-integration"; event("GOSSIP_SHOW")
-    assert(shown(name) and not shown(addon.L("START") .. ": " .. originalName))
+    assert(shown(name) and not shown(originalName))
     assert(state == "UNKNOWN" and not ui.action)
     -- A separate pickup-model scope verifies the localized current step without
     -- converting the real NPC's partial acceptance record into an available quest.
@@ -780,9 +795,9 @@ check("Gossip refresh localizes only the actual matching NPC and closing restore
     end)
     assert(ui.engine:State(65).status == state and not ui.action)
     id = 266; name = "Other matching finish NPC (fixture)"; event("QUEST_GREETING")
-    assert(shown(addon.L("START") .. ": " .. originalName) and shown(name))
+    assert(shown(originalName) and shown(name))
     guid = nil; event("GOSSIP_CLOSED")
-    assert(shown(addon.L("START") .. ": " .. originalName) and not shown(name))
+    assert(shown(originalName) and not shown(name))
     assert(q.start.name == originalName and addon.db.npcNames == nil and addon.char.npcNames == nil)
     for _, key in ipairs(keys) do _G[key] = saved[key] end
     ui.quest, ui.dungeon, ui.preparation = previousQuest, previousDungeon, preparation
@@ -925,11 +940,14 @@ check("An unaccepted quest can preview only its explicitly loaded client rewards
     end
     local before = #waypoints
     ui:InspectQuest(373); ui:Refresh()
-    assert(shown(addon.L("REWARD_PREVIEW")) and shown(addon.L("REWARD_ITEM", "Loaded letter reward", 2)))
+    assert(shown(addon.L("DETAIL_REWARDS")) and shown(addon.L("REWARD_ITEM", "Loaded letter reward", 2)))
+    local preview
+    for _, button in ipairs(ui.rewardButtons) do if button:IsShown() and button.rewardBinding.id == 7001 then preview=button.rewardBinding end end
+    assert(preview and preview.origin == "cache", "an unaccepted quest retains its explicit loaded-cache provenance")
     assert(shown(addon.L("REWARD_XP", 90)) and ui.engine:State(373).status == "UNKNOWN")
     assert(not ui.action and #waypoints == before and addon.quests[373].requirementsKnown == false)
     loaded = false; eventFrame.scripts.OnEvent(eventFrame, "QUEST_LOG_UPDATE")
-    assert(not shown(addon.L("REWARD_PREVIEW")) and shown(addon.L("REWARD_UNAVAILABLE")))
+    assert(not shown(addon.L("DETAIL_REWARDS")) and not shown(addon.L("REWARD_UNAVAILABLE")))
     assert(not shown(addon.L("REWARD_ITEM", "Loaded letter reward", 2)))
     for _, key in ipairs(keys) do _G[key] = saved[key] end
     ui.quest, ui.detailHistory = previous, history; ui:Refresh()
@@ -1058,13 +1076,13 @@ check("All-character inspection retains paladin class and level limits without r
     end
     local pins = #waypoints
     ui.includeUnavailable = true; ui:InspectQuest(7647); ui:Refresh()
-    assert(shown(addon.L("QUEST_LEVEL", 60) .. " · " .. addon.L("QUEST_MIN_LEVEL", 60)))
-    assert(shown(addon.L("QUEST_CLASSES", "Native Paladin")))
+    assert(shown(addon.L("DETAIL_LEVEL", 60) .. " · " .. addon.L("DETAIL_MIN_LEVEL", 60)))
+    assert(shown("Native Paladin"))
     assert(not shown(addon.L("QUEST_RACES", "Native Human, Native Dwarf")))
     assert(ui.engine:State(7647).status == "UNAVAILABLE" and not ui.action and #waypoints == pins)
     LOCALIZED_CLASS_NAMES_MALE, C_CreatureInfo = classes, creatures
     ui.quest, ui.detailHistory, ui.includeUnavailable = previous, history, all; ui:Refresh()
-    assert(not shown(addon.L("QUEST_CLASSES", "Native Paladin")))
+    assert(not shown("Native Paladin"))
 end)
 check("A Human sees actual Destruction in Deadmines without racial exclusion or invented pickup readiness", function()
     local ui = addon.UI
@@ -1105,6 +1123,7 @@ check("Sourced objective quantities and current carried counts remain separate f
     local item, count = C_Item, 0
     C_Item = {
         GetItemNameByID = function(id) if id == 6443 then return "Native Deviate Hide" end end,
+        GetItemIconByID = function(id) if id == 6443 then return 134400 end end,
         GetItemCount = function(id, bank, uses, reagent, account)
             assert(id == 6443 and bank == false and uses == false and reagent == false and account == false)
             return count
@@ -1116,15 +1135,18 @@ check("Sourced objective quantities and current carried counts remain separate f
     end
     local pins = #waypoints
     ui:InspectQuest(1486); ui:Refresh()
-    assert(shown(addon.L("OBJECTIVE_ITEMS")) and shown(addon.L("OBJECTIVE_ITEM", "Native Deviate Hide", 20)))
-    assert(shown(addon.L("ITEM_CARRIED", 0)) and shown(addon.L("OBJECTIVE_ITEMS_NOTICE")))
+    local objective = addon.L("OBJECTIVE_ITEM", "Native Deviate Hide", 20)
+    assert(shown(addon.L("DETAIL_OBJECTIVES")) and shown(objective .. " · " .. addon.L("ITEM_CARRIED", 0)))
+    local context
+    for _, button in ipairs(ui.objectiveButtons) do if button:IsShown() and button.objectiveBinding.id == 6443 then context=button.objectiveBinding.context end end
+    assert(context and context:find(addon.L("OBJECTIVE_ITEMS_NOTICE"),1,true), "the source-only caution remains accessible on the item hover")
     for _, value in ipairs({ 20, 25 }) do
         count = value; eventFrame.scripts.OnEvent(eventFrame, "BAG_UPDATE_DELAYED")
-        assert(shown(addon.L("ITEM_CARRIED", value)) and not shown(addon.L("ITEM_CARRIED", 0)))
+        assert(shown(objective .. " · " .. addon.L("ITEM_CARRIED", value)) and not shown(objective .. " · " .. addon.L("ITEM_CARRIED", 0)))
         assert(ui.engine:State(1486).status == "UNKNOWN" and not ui.action and #waypoints == pins)
     end
     count = nil; eventFrame.scripts.OnEvent(eventFrame, "BAG_UPDATE_DELAYED")
-    assert(shown(addon.L("OBJECTIVE_ITEM", "Native Deviate Hide", 20)) and not shown(addon.L("ITEM_CARRIED", 25)))
+    assert(shown(objective) and not shown(objective .. " · " .. addon.L("ITEM_CARRIED", 25)))
     C_Item = item; ui.quest, ui.detailHistory = previous, history; ui:Refresh()
 end)
 check("Native minimap arrival initializes the launcher and commands persist only its own preferences", function()
@@ -1164,6 +1186,7 @@ check("An actual sourced objective with unknown quantity shows possession withou
     UnitLevel = function() return 60 end
     C_Item = {
         GetItemNameByID = function(id) if id == 9316 then return "Native Prismatic Card" end end,
+        GetItemIconByID = function(id) if id == 9316 then return 134400 end end,
         GetItemCount = function(id, bank, uses, reagent, account)
             assert(id == 9316 and bank == false and uses == false and reagent == false and account == false)
             return count
@@ -1176,14 +1199,16 @@ check("An actual sourced objective with unknown quantity shows possession withou
     local q, pins = addon.quests[2930], #waypoints
     assert(q.objectiveItems[1].itemID == 9316 and q.objectiveItems[1].quantity == nil)
     ui.includeUnavailable = true; ui:InspectQuest(2930); ui:Refresh()
-    assert(shown(addon.L("OBJECTIVE_ITEM_UNKNOWN", "Native Prismatic Card")))
-    assert(shown(addon.L("ITEM_CARRIED", 0)) and not shown(addon.L("OBJECTIVE_ITEM", "Native Prismatic Card", 1)))
+    local objective = "Native Prismatic Card ×?"
+    assert(shown(objective .. " · " .. addon.L("ITEM_CARRIED", 0)) and not shown(addon.L("OBJECTIVE_ITEM", "Native Prismatic Card", 1)))
+    local context
+    for _, button in ipairs(ui.objectiveButtons) do if button:IsShown() and button.objectiveBinding.id == 9316 then context=button.objectiveBinding.context end end
+    assert(context and context:find(addon.L("OBJECTIVE_ITEM_UNKNOWN", "Native Prismatic Card"),1,true), "unknown quantity remains explicit in hover context")
     count = 3; eventFrame.scripts.OnEvent(eventFrame, "BAG_UPDATE_DELAYED")
-    assert(shown(addon.L("ITEM_CARRIED", 3)) and not shown(addon.L("ITEM_CARRIED", 0)))
-    assert(shown(addon.L("OBJECTIVE_ITEM_UNKNOWN", "Native Prismatic Card")))
+    assert(shown(objective .. " · " .. addon.L("ITEM_CARRIED", 3)) and not shown(objective .. " · " .. addon.L("ITEM_CARRIED", 0)))
     assert(ui.engine:State(2930).status == "UNKNOWN" and not ui.action and #waypoints == pins)
     count = nil; eventFrame.scripts.OnEvent(eventFrame, "BAG_UPDATE_DELAYED")
-    assert(not shown(addon.L("ITEM_CARRIED", 3)) and shown(addon.L("OBJECTIVE_ITEM_UNKNOWN", "Native Prismatic Card")))
+    assert(not shown(objective .. " · " .. addon.L("ITEM_CARRIED", 3)) and shown(objective))
     C_Item, UnitLevel, ui.includeUnavailable = item, level, all
     ui.quest, ui.detailHistory = previous, history; ui:Refresh()
 end)
@@ -1202,7 +1227,7 @@ local function actualKillReentryFixture()
     addon.char.texts={};addon.DialogueRewardEvent("PLAYER_ENTERING_WORLD");addon.OfferEvent("PLAYER_ENTERING_WORLD")
     for _,d in ipairs(addon.dungeons)do if d.key=="thanes"then ui.dungeon=d end end
     ui.quest=96395;ui:Refresh()
-    return ui,addon.L("OBJECTIVE_ITEM_UNKNOWN",addon.quests[96395].objectiveKills[1].name)
+    return ui,addon.quests[96395].objectiveKills[1].name.." ×?"
 end
 local function visibleDetail(ui,value)
     for _,fs in ipairs(ui.details)do if fs.shown and fs.text==value then return true end end
@@ -1219,22 +1244,31 @@ check("Actual Hall kill label setter before and after reentry preserves the newe
         ui:RefreshDetail();methods.SetText=original
         assert(not armed and ui.quest==96403 and ui.engine==currentEngine)
         assert(not visibleDetail(ui,goal)and visibleDetail(ui,addon.QuestName(96403)))
-        assert(visibleDetail(ui,addon.L("OBJECTIVE_ITEM","Dwarven Heirloom",8)))
+        assert(visibleDetail(ui,addon.L("OBJECTIVE_ITEM","Dwarven Heirloom",8).." · "..addon.L("ITEM_CARRIED",0)))
         assert(ui.engine:State(96403).status=="UNKNOWN" and not ui.action)
         explicitGiverVisit(ui, 96403)
     end
 end)
 check("Actual kill-row localization cannot publish old headings or labels over a newer Hall card",function()
-    for _,key in ipairs({"OBJECTIVE_KILLS","OBJECTIVE_KILLS_NOTICE","OBJECTIVE_ITEM_UNKNOWN"})do
+    for _,key in ipairs({"OBJECTIVE_KILLS","OBJECTIVE_KILLS_NOTICE","OBJECTIVE_ITEM"})do
         local ui,goal=actualKillReentryFixture();local original=addon.L;local armed=true
+        local kills=addon.quests[96395].objectiveKills
+        if key=="OBJECTIVE_ITEM"then
+            -- Unknown amounts use the compact literal marker; exercise the
+            -- remaining localized amount formatter with an explicit test quantity.
+            addon.quests[96395].objectiveKills={{npcID=kills[1].npcID,name=kills[1].name,quantity=2}}
+            goal=addon.L("OBJECTIVE_ITEM",kills[1].name,2)
+            ui:RefreshDetail()
+        end
         addon.L=function(code,...)
             local text=original(code,...)
             if code==key and armed then armed=false;ui.quest=96403;ui:Refresh()end
             return text
         end
         ui:RefreshDetail();addon.L=original
+        addon.quests[96395].objectiveKills=kills
         assert(not armed and ui.quest==96403 and not visibleDetail(ui,goal))
-        assert(visibleDetail(ui,addon.L("OBJECTIVE_ITEM","Dwarven Heirloom",8)))
+        assert(visibleDetail(ui,addon.L("OBJECTIVE_ITEM","Dwarven Heirloom",8).." · "..addon.L("ITEM_CARRIED",0)))
         assert(not visibleDetail(ui,addon.L("OBJECTIVE_KILLS")))
     end
 end)
@@ -1253,8 +1287,11 @@ check("Same-card kill-source replacement during native text publication preserve
 end)
 
 
-check("Kill-row recovery revalidates raw newer-card ownership after its current-result secret checker reenters a third card",function()
+check("Detail text recovery revalidates raw newer-card ownership after its current-result secret checker reenters a third card",function()
     local ui,goal=actualKillReentryFixture();local setter=methods.SetText;local checker=issecretvalue
+    local metadata
+    for _,field in ipairs(ui.details)do if field:IsShown()and field.detailStyle=="caption"then metadata=field.text;break end end
+    assert(metadata)
     local armed,third,recoveryValue,inThirdRender=true,false,nil,false
     issecretvalue=function(value)
         if value==true and not third then
@@ -1263,7 +1300,9 @@ check("Kill-row recovery revalidates raw newer-card ownership after its current-
         return false
     end
     methods.SetText=function(self,value)
-        if armed and value==goal then armed=false;ui.quest=96403;ui:Refresh()end
+        -- Metadata reuses the same owned field across compact cards;
+        -- the removed reference sections no longer guarantee equal kill-row indices.
+        if armed and value==metadata then armed=false;ui.quest=96403;ui:Refresh()end
         if self.detailTextRepair and third and not inThirdRender then recoveryValue=value end
         return setter(self,value)
     end
@@ -1285,7 +1324,7 @@ check("Actual native title hydration after a completed replacement-card render c
     ui:RefreshDetail()
     assert(not armed and ui.quest==96403)
     assert(not visibleDetail(ui,addon.quests[96395].name)and visibleDetail(ui,addon.quests[96403].name))
-    assert(visibleDetail(ui,addon.L("OBJECTIVE_ITEM","Dwarven Heirloom",8)))
+    assert(visibleDetail(ui,addon.L("OBJECTIVE_ITEM","Dwarven Heirloom",8).." · "..addon.L("ITEM_CARRIED",0)))
 end)
 check("Same-card native title reentry preserves the newer generation's title and unchanged source fallback",function()
     local ui=actualKillReentryFixture();local armed=true;local fresh="Fresh native Hall title";local old="Old native Hall title"
@@ -1309,7 +1348,7 @@ check("Owned native title SetText before and after replacement reentry preserves
         end
         ui:RefreshDetail();methods.SetText=setter
         assert(not armed and ui.quest==96403 and not visibleDetail(ui,title)and visibleDetail(ui,addon.quests[96403].name))
-        assert(visibleDetail(ui,addon.L("OBJECTIVE_ITEM","Dwarven Heirloom",8)))
+        assert(visibleDetail(ui,addon.L("OBJECTIVE_ITEM","Dwarven Heirloom",8).." · "..addon.L("ITEM_CARRIED",0)))
     end
 end)
 

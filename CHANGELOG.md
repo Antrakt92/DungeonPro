@@ -2,6 +2,10 @@
 
 ## 0.1.0 - 16-Oct-2026 — Development preview
 
+- Simplified quest details with compact objectives, larger reward icons and a
+  separate story section. Quest chains stay in the quest list; additional sources
+  open only when needed.
+
 - Replaced national flags with a neutral language button and language names in the menu.
 
 - Improved language-menu fonts and Chinese/Korean font selection. Hover previews keep the saved language checked, cancel cleanly, and stay within the screen.

@@ -65,7 +65,7 @@ for _,value in ipairs(ui.details)do if value:IsShown() then
     if value.text and value.text:find("Cached reward",1,true)then rewardLine=true end
 end end
 assert(description and giverLines==1 and rewardLine,"default details keep the actual selected description giver and rewards without duplicated references")
-assert(ui.referenceToggle:IsShown() and ui.referenceToggle.point[3]<description.point[3],"extra factual references stay available after the main quest information")
+assert(not ui.referenceToggle or not ui.referenceToggle:IsShown(),"NPC-only facts do not invent an empty acquisition disclosure")
 assert(target.title:GetWidth()<=target:GetWidth()-22-26-20-18,"cached reward and status icons reserve real title space")
 local reward
 for _,object in ipairs(fixture.objects)do

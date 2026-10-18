@@ -41,12 +41,72 @@ check("AND groups and OR alternatives preserve source group semantics without ch
     assert(tree[1].group==1 and tree[2].group==1 and tree[1].alternatives==2 and tree[2].alternatives==2)
     assert(tree[1].mode=="active" and tree[3].group==2 and tree[3].alternatives==1 and tree[3].mode=="completed")
 end)
-check("Story order is optional context and never turns story-only prerequisites into mandatory nodes", function()
+check("Optional story prerequisites stay inspectable without becoming mandatory target requirements", function()
     local quests = {[1]={requires={{ids={2}}},storyline={3,2,1,4}},[2]={},[3]={requires={{ids={5}}}},[4]={},[5]={}}
     local engine = fixture(quests)
     local tree = assert(addon.QuestTree.Build(quests,engine,1))
-    assert(ids(tree)=="2,1,3,4" and tree[3].relation=="story" and tree[4].relation=="story")
-    assert(tree[1].relation=="required" and tree[3].storyIndex==1 and tree[4].storyIndex==4)
+    assert(ids(tree)=="2,1,5,3,4" and tree[4].relation=="story" and tree[5].relation=="story")
+    assert(tree[1].relation=="required" and tree[4].storyIndex==1 and tree[5].storyIndex==4)
+    assert(tree[3].relation=="required" and tree[3].requirementScope=="story" and tree[3].storyOwnerID==3 and not tree[3].onTargetPath)
+end)
+check("A source story member exposes its proven ancestors with exact OR active-mode links",function()
+    local quests={[92819]={storyline={92742,92819}},[92742]={requires={{ids={9971,9972},mode="active"},{ids={9973}}}},
+        [9971]={requires={{ids={9973}}}},[9972]={},[9973]={}}
+    local engine,calls=fixture(quests)
+    local tree=assert(addon.QuestTree.Build(quests,engine,92819))
+    assert(ids(tree.presentation)=="9973,9971,9972,92742,92819")
+    local first,second,third=tree.presentation[1],tree.presentation[2],tree.presentation[3]
+    assert(first.requirementScope=="story" and #first.links==2 and not first.onTargetPath)
+    assert(second.parentID==92742 and second.group==1 and second.mode=="active" and second.alternatives==2)
+    assert(third.parentID==92742 and third.group==1 and third.mode=="active" and third.alternatives==2)
+    for _,node in ipairs({first,second,third})do
+        assert(node.storyOwnerID==92742 and not node.onTargetPath)
+        for _,edge in ipairs(node.links)do assert(edge.scope=="story" and edge.storyOwnerID==92742)end
+    end
+    assert(#calls==5 and tree.current())
+    quests[9971].requires[1].ids[1]=9972;assert(not tree.current(),"retained story dependency sources remain guarded")
+end)
+check("Explicit story slots outrank conflicting optional dependency order without inventing target requirements",function()
+    local quests={[1]={storyline={2,1,3}},[2]={requires={{ids={3}}}},[3]={requires={{ids={4}}}},[4]={}}
+    local engine=fixture(quests)
+    local tree=assert(addon.QuestTree.Build(quests,engine,1))
+    assert(ids(tree.presentation)=="4,2,1,3")
+    assert(tree.presentation[1].id==4 and not tree.presentation[1].onTargetPath)
+    assert(tree.presentation[4].id==3 and tree.presentation[4].links[1].parentID==2)
+    assert(tree.presentation[4].presentationRelation=="story" and not tree.presentation[4].onTargetPath)
+end)
+check("Shared target and optional-story requirements retain distinct exact edges and bounded cycles",function()
+    local quests={[1]={requires={{ids={2}}},storyline={3,1}},[2]={},[3]={requires={{ids={2,4},mode="active"}}},
+        [4]={requires={{ids={3}}}}}
+    local engine,calls=fixture(quests)
+    local tree=assert(addon.QuestTree.Build(quests,engine,1))
+    assert(ids(tree.presentation)=="2,4,3,1" and tree.cycle and #calls==4)
+    local shared,optional=tree.presentation[1],tree.presentation[2]
+    assert(shared.onTargetPath and shared.requirementScope==nil and #shared.links==2)
+    assert(shared.links[1].parentID==1 and shared.links[1].scope==nil)
+    assert(shared.links[2].parentID==3 and shared.links[2].scope=="story" and shared.links[2].mode=="active")
+    assert(not optional.onTargetPath and optional.requirementScope=="story")
+    optional.state.status="COMPLETED";assert(not tree.current(),"optional ancestor state snapshots remain owned")
+    quests={[1]={storyline={2,1}}}
+    for index=2,100 do quests[index]={requires=index<100 and{{ids={index+1}}}or nil}end
+    engine=fixture(quests);tree=assert(addon.QuestTree.Build(quests,engine,1))
+    assert(tree.truncated and #tree<=80 and tree.current())
+    for _,node in ipairs(tree)do assert(node.depth<=50);if node.id~=1 then assert(not node.root)end end
+    local rootCount=0;for _,node in ipairs(tree.presentation)do if node.root then rootCount=rootCount+1 end end
+    assert(rootCount==1)
+end)
+check("An earlier story member retains both OR alternatives when it later becomes a proven story prerequisite",function()
+    local quests={[1]={storyline={2,3,1}},[2]={},[3]={requires={{ids={2,4},mode="active"}}},[4]={}}
+    local engine=fixture(quests)
+    local tree=assert(addon.QuestTree.Build(quests,engine,1))
+    assert(ids(tree.presentation)=="2,4,3,1")
+    local first,second=tree.presentation[1],tree.presentation[2]
+    for _,node in ipairs({first,second})do
+        assert(node.relation=="required" and node.requirementScope=="story" and node.storyOwnerID==3)
+        assert(node.parentID==3 and node.group==1 and node.alternatives==2 and node.mode=="active")
+        assert(not node.onTargetPath and #node.links==1 and node.links[1].scope=="story")
+    end
+    assert(first.storyIndex==1 and first.presentationRelation=="story" and tree.current())
 end)
 check("Grouped story entries preserve parallel group metadata and deduplicate the root", function()
     local quests = {[1]={storylineGroups={{2,3},{1,4}}},[2]={},[3]={},[4]={}}

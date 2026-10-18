@@ -312,8 +312,30 @@ local function audienceText(value)
     return (value:gsub("|A:[^|]+|a ", ""))
 end
 local function detailHas(value)
-    for _, fs in ipairs(ui.details) do if fs.shown and audienceText(fs.text) == value then return true end end
+    for _, fs in ipairs(ui.details) do if fs.shown then
+        local text=audienceText(fs.text)
+        if text==value then return true end
+        -- Compact metadata and inventory counts share a line. Keep exact
+        -- component matching rather than matching arbitrary name substrings.
+        local start=1
+        while start<=#text do
+            local first,last=text:find(value,start,true)
+            if not first then break end
+            if (first==1 or text:sub(first-#" · ",first-1)==" · ") and
+                (last==#text or text:sub(last+1,last+#" · ")==" · ") then return true end
+            start=first+1
+        end
+    end end
     return false
+end
+local function unknownObjective(name) return name .. " ×?" end
+local function startButton(index)
+    local q=addon.quests[ui.quest]
+    if q and not q.start and q.startAlternatives then
+        if index<=2 then return ui.giverButtons[index]end
+        return ui.startButtons[index-2]
+    end
+    return ui.startButtons[index]
 end
 local function showCompactDetail(id, context)
     ui.quest = id; ui.engine = addon.Planner.New(addon.quests, context or addon.Context()); return ui:RefreshDetail()
@@ -332,7 +354,7 @@ local function showDetail(id, context)
     local generation = showCompactDetail(id, context)
     if generation and ui.rewardGeneration == generation then expandDetail() end
 end
-check("Quest cards show mandatory prerequisites before next guidance and keep references optional", function()
+check("Mandatory prerequisites live in the middle tree without a duplicate right-pane chain", function()
     local dungeon = ui.dungeon
     for _, id in ipairs({ 99220, 99221, 99222 }) do
         addon.quests[id] = { id = id, name = "Same title", minLevel = 1, requirementsKnown = true,
@@ -342,20 +364,14 @@ check("Quest cards show mandatory prerequisites before next guidance and keep re
     addon.quests[99221].requires = { { ids = { 99222 } } }
     ui.dungeon = { key = "compact", quests = { 99220 } }
     showCompactDetail(99220)
-    assert(not ui.detailReferencesExpanded and ui.detailChainExpanded and ui.giver.enabled)
-    assert(ui.action.id == 99222 and ui.referenceToggle.shown and not(ui.storyToggle and ui.storyToggle.shown))
-    for _,row in ipairs(ui.chainButtons)do assert(not row.shown)end
-    ui.referenceToggle.scripts.OnClick();assert(ui.detailReferencesExpanded and ui.storyToggle.shown)
-    local rows = {}; for _, row in ipairs(ui.chainButtons) do if row.shown then rows[#rows + 1] = row end end
-    assert(#rows == 3)
-    assert(rows[1].label.text:find("Quest 99222", 1, true) and rows[3].label.text:find("Quest 99220", 1, true))
-    assert(-ui.referenceToggle.point[3] > -rows[3].point[3])
-    assert(not detailHas(addon.L("START")))
-    ui.storyToggle.scripts.OnClick()
-    local count = 0; for _, row in ipairs(ui.chainButtons) do if row.shown then count = count + 1 end end
-    assert(count == 3 and ui.action.id == 99222 and ui.detailReferencesExpanded)
+    assert(ui.giver.enabled and ui.action.id == 99222)
+    assert(not(ui.referenceToggle and ui.referenceToggle.shown) and not(ui.storyToggle and ui.storyToggle.shown))
+    ui.questTreeRoot,ui.questTreeDungeon=99220,ui.dungeon;ui:RefreshQuests()
+    local seen={};for _,row in ipairs(ui.rows)do if row.shown and row.questTreeNode and row.questID then seen[row.questID]=true end end
+    assert(seen[99220] and seen[99221] and seen[99222],"all exact prerequisite IDs remain inspectable in the middle pane")
+    assert(not detailHas(addon.L("NEXT")) and not detailHas(addon.L("DETAIL_CHAIN")))
     for _, id in ipairs({ 99220, 99221, 99222 }) do addon.quests[id] = nil end
-    ui.dungeon = dungeon; showDetail(2)
+    ui.questTreeRoot,ui.questTreeDungeon=nil,nil;ui.dungeon = dungeon; showDetail(2)
 end)
 check("Compact OR context never selects an arbitrary mandatory predecessor and disclosures retain actions", function()
     local dungeon = ui.dungeon
@@ -363,18 +379,18 @@ check("Compact OR context never selects an arbitrary mandatory predecessor and d
     addon.quests[99230].requires = { { ids = { 99231, 99232 } } }
     addon.quests[99230].start = { mapID = 1, x = 20, y = 30 }
     ui.dungeon = { key = "compact-or", quests = { 99230 } }; showCompactDetail(99230)
-    local count = 0; for _, row in ipairs(ui.chainButtons) do if row.shown then count = count + 1 end end
-    assert(count == 0 and not(ui.branchButtons[1]and ui.branchButtons[1].shown))
+    assert(not(ui.branchButtons[1]and ui.branchButtons[1].shown))
     local action, status = ui.action, ui.engine:State(99230).status
-    ui.referenceToggle.scripts.OnClick()
-    assert(ui.detailReferencesExpanded and ui.giver.enabled and ui.action.id == action.id and ui.action.kind == action.kind and ui.engine:State(99230).status == status)
-    ui.storyToggle.scripts.OnClick(); assert(not ui.branchButtons[1].shown)
-    ui.storyToggle.scripts.OnClick(); assert(ui.branchButtons[1].shown)
-    ui.referenceToggle.scripts.OnClick(); assert(not ui.detailReferencesExpanded and ui.detailChainExpanded and not ui.branchButtons[1].shown)
+    ui.questTreeRoot,ui.questTreeDungeon=99230,ui.dungeon;ui:RefreshQuests();ui:RefreshDetail()
+    local seen={};for _,row in ipairs(ui.rows)do if row.shown and row.questTreeNode and row.questID then seen[row.questID]=true end end
+    assert(seen[99231] and seen[99232] and ui.giver.enabled and ui.action.id == action.id and ui.action.kind == action.kind and ui.engine:State(99230).status == status)
+    assert(not(ui.referenceToggle and ui.referenceToggle.shown) and not(ui.storyToggle and ui.storyToggle.shown))
     for _, id in ipairs({ 99230, 99231, 99232 }) do addon.quests[id] = nil end
-    ui.dungeon = dungeon; showDetail(2)
+    ui.questTreeRoot,ui.questTreeDungeon=nil,nil;ui.dungeon = dungeon; showDetail(2)
 end)
 check("Reference disclosure resets on a different card and stale callbacks cannot expand its successor", function()
+    local first,second=addon.quests[1].startAlternatives,addon.quests[2].startAlternatives
+    addon.quests[1].startAlternatives={addon.quests[1].start};addon.quests[2].startAlternatives={addon.quests[2].start}
     showCompactDetail(1); local old = ui.referenceToggle.scripts.OnClick
     ui.referenceToggle.scripts.OnClick(); assert(ui.detailReferencesExpanded)
     ui:RefreshDetail(); assert(ui.detailReferencesExpanded)
@@ -382,35 +398,37 @@ check("Reference disclosure resets on a different card and stale callbacks canno
     old(); assert(ui.quest == 2 and not ui.detailReferencesExpanded)
     local current = ui.referenceToggle.scripts.OnClick
     ui.frame.scripts.OnHide(); current(); assert(not ui.detailReferencesExpanded)
-    ui.frame.scripts.OnShow(); showDetail(2)
+    ui.frame.scripts.OnShow();addon.quests[1].startAlternatives,addon.quests[2].startAlternatives=first,second;showDetail(2)
 end)
 check("Disclosure offset getters cannot transfer a toggle or restoration to a replaced scroll owner", function()
-    for _, chain in ipairs({ false, true }) do
+    local alternatives=addon.quests[100].startAlternatives;addon.quests[100].startAlternatives={addon.quests[100].start}
+    do
         showDetail(100)
-        if chain then ui.storyToggle.scripts.OnClick() else ui.referenceToggle.scripts.OnClick() end
-        local scroll, expanded = ui.detailScroll, chain and ui.detailChainExpanded or ui.detailReferencesExpanded
+        ui.referenceToggle.scripts.OnClick()
+        local scroll, expanded = ui.detailScroll, ui.detailReferencesExpanded
         local getter = scroll.GetVerticalScroll
         local replacement = object("ScrollFrame"); replacement:SetHeight(425)
         scroll.GetVerticalScroll = function() ui.detailScroll = replacement; return 125 end
-        local toggle = chain and ui.storyToggle or ui.referenceToggle
+        local toggle = ui.referenceToggle
         toggle.scripts.OnClick()
-        assert((chain and ui.detailChainExpanded or ui.detailReferencesExpanded) == expanded and not replacement.scrollWrites)
+        assert(ui.detailReferencesExpanded == expanded and not replacement.scrollWrites)
         scroll.GetVerticalScroll, ui.detailScroll = getter, scroll
     end
-    showDetail(2)
+    addon.quests[100].startAlternatives=alternatives;showDetail(2)
 end)
-check("Owned chain styling that replaces settings aborts reference setup without indexing stale settings", function()
+check("Owned acquisition styling that replaces settings aborts without indexing stale settings", function()
+    local alternatives=addon.quests[100].startAlternatives;addon.quests[100].startAlternatives={addon.quests[100].start}
     showDetail(100)
     local database, style, armed = addon.db, addon.Theme.StyleRow, true
     addon.Theme.StyleRow = function(row, ...)
         local result = style(row, ...)
-        if armed and row == ui.storyToggle then armed = false; addon.db = nil end
+        if armed and row == ui.referenceToggle then armed = false; addon.db = nil end
         return result
     end
     local ok = pcall(ui.RefreshDetail, ui)
     addon.db, addon.Theme.StyleRow = database, style
     assert(ok and not armed and not ui.referenceToggle.shown)
-    showDetail(2)
+    addon.quests[100].startAlternatives=alternatives;showDetail(2)
 end)
 check("Unknown quests allow an explicit location visit without claiming availability", function()
     local started, mapped = {}, {}
@@ -418,7 +436,7 @@ check("Unknown quests allow an explicit location visit without claiming availabi
         Map = function(place) mapped[#mapped + 1] = place end }
     showDetail(3)
     assert(ui.engine:State(3).status == "UNKNOWN" and not ui.action and hasDestination(true))
-    assert(ui.giver.enabled and detailHas(addon.L("LOCATION_ONLY")) and #started == 0 and #mapped == 0)
+    assert(ui.giver.enabled and ui.giver.footerLabelKey=="VISIT_GIVER" and not detailHas(addon.L("AVAILABLE")) and #started == 0 and #mapped == 0)
     ui.giver.scripts.OnClick()
     assert(#started == 1 and started[1].kind == "visit" and started[1].id == 3)
     assert(started[1].place == addon.quests[3].start and not ui.action)
@@ -431,7 +449,7 @@ check("Quest-giver visits keep prerequisite guidance on its original action", fu
     addon.Navigation.Start = function(action) started[#started + 1] = action end
     showDetail(100)
     local prerequisite = ui.action
-    assert(prerequisite.id == 2 and ui.giverAction.id == 100 and detailHas(addon.L("LOCATION_ONLY")))
+    assert(prerequisite.id == 2 and ui.giverAction.id == 100 and ui.giver.footerLabelKey=="VISIT_GIVER")
     ui.giver.scripts.OnClick()
     assert(started[1].id == 100 and started[1].kind == "visit" and ui.action == prerequisite)
     assert(ui.giver.footerLabelKey == "VISIT_GIVER")
@@ -459,13 +477,14 @@ check("Detail distinguishes unfinished prerequisites from unverified requirement
     assert(ui.engine:State(3).status == "UNKNOWN" and detailHas(addon.L("REASON_requirementsUnknown")))
     assert(not detailHas(addon.L("REASON_requirements")) and not ui.action and hasDestination(true))
 end)
-check("Level reason shows required and current levels without inventing a missing level", function()
+check("Compact level metadata preserves required levels without inventing a missing character level", function()
     showDetail(5)
-    assert(detailHas(addon.L("REASON_level_current", 30, 20)))
+    local function contains(value)for _,fs in ipairs(ui.details)do if fs.shown and fs.text:find(value,1,true)then return true end end end
+    assert(contains(addon.L("DETAIL_MIN_LEVEL",30)) and ui.engine:State(5).reason=="level")
     local context = addon.Context(); context.level = nil
     showDetail(5, context)
     assert(ui.engine:State(5).status == "UNKNOWN")
-    assert(detailHas(addon.L("REASON_level", 30)) and detailHas(addon.L("REASON_levelUnknown")))
+    assert(contains(addon.L("DETAIL_MIN_LEVEL",30)) and ui.engine:State(5).reason=="level")
     assert(not detailHas(addon.L("REASON_level_current", 30, 20)) and not ui.action)
 end)
 check("Missing catalogue records display an honest reason instead of a selection prompt", function()
@@ -587,30 +606,35 @@ check("Wrapped catalogue, quest and giver text expands cumulative rows without o
         end
     end
     assert(sawLongNote and ui.questList.height == totalHeight)
-    showDetail(100)
-    assert(ui.chainButtons[1].height == 78)
-    assert(ui.chainButtons[1].point[3] - ui.chainButtons[2].point[3] >= 81)
+    ui.preparation=false;ui.questTreeRoot,ui.questTreeDungeon=100,ui.dungeon;ui:RefreshQuests();showDetail(100)
+    local previous
+    for _,row in ipairs(ui.rows)do if row.shown and row.questTreeNode then
+        assert(row.height>=84)
+        if previous then assert(-row.point[3]>=-previous.point[3]+previous.height)end
+        previous=row
+    end end
+    assert(previous)
     addon.QuestName, addon.DungeonName, addon.quests[2].start.name = questName, dungeonName, giver
-    measurement = nil; ui.preparation = false; ui:Refresh(); showDetail(100)
+    measurement = nil;ui.questTreeRoot,ui.questTreeDungeon=nil,nil; ui.preparation = false; ui:Refresh(); showDetail(100)
     assert(visibleRows()[1] == first and first.height == 30 and ui.cards[1].height == 84)
-    assert(not first.note.shown and ui.chainButtons[1].height == 34)
+    assert(not first.note.shown and not(ui.storyToggle and ui.storyToggle.shown))
 end)
 check("Invalid and restricted text measurements reuse clean geometry safely", function()
     ui.preparation = false; ui:Refresh(); showDetail(100)
-    local height, chainHeight = visibleRows()[1].height, ui.chainButtons[1].height
+    local height, detailHeight = visibleRows()[1].height, ui.detail.height
     for _, value in ipairs({ math.huge, -1, 0 / 0, 777 }) do
         measurement = function() return value end
         issecretvalue = function(v) return type(v) == "number" and v == 777 end
         ui:Refresh(); showDetail(100)
-        assert(visibleRows()[1].height == height and ui.chainButtons[1].height == chainHeight)
+        assert(visibleRows()[1].height == height and ui.detail.height == detailHeight)
         assert(ui.questList.height < math.huge and ui.detail.height < math.huge)
     end
     measurement = function() error("height unavailable") end
     ui:Refresh(); showDetail(100)
-    assert(visibleRows()[1].height == height and ui.chainButtons[1].height == chainHeight)
+    assert(visibleRows()[1].height == height and ui.detail.height == detailHeight)
     measurement, issecretvalue = nil, nil
 end)
-check("OR alternatives support explicit persisted choices, automatic reset and safe stale fallback", function()
+check("Middle OR controls preserve persisted choices automatic reset and safe stale fallback", function()
     local originalContext, originalDungeon, originalChoices = addon.Context, ui.dungeon, addon.char.choices
     addon.Context = function() local c = originalContext(); c.faction = "Alliance"; return c end
     for _, id in ipairs({ 400, 401, 402, 403, 404 }) do
@@ -623,15 +647,15 @@ check("OR alternatives support explicit persisted choices, automatic reset and s
     local choices = addon.char.choices
     ui.dungeon = { name = "Branch fixture", coverage = "reviewed", quests = { 400 } }
     ui.preparation, ui.quest = false, 400; ui:Refresh();expandDetail()
-    assert(ui.detailChainExpanded, "mandatory alternatives are visible on first open")
+    ui.questTreeRoot,ui.questTreeDungeon=400,ui.dungeon;ui:RefreshQuests()
     local function option(parent)
-        for _, b in ipairs(ui.branchButtons) do
-            if b.shown and b.questID == 400 and b.groupIndex == 1 and b.parentID == parent then return b end
+        for _,row in ipairs(ui.rows)do local b=row.branchControl
+            if row.shown and b and b.shown and b.branchChild==400 and b.branchGroup==1 and b.branchParent==parent then return b end
         end
-        error("Missing branch option")
+        error("Missing middle alternative control "..tostring(parent))
     end
-    assert(ui.action.id == 401 and option(nil).label.text == addon.L("BRANCH_SELECTED", addon.L("BRANCH_AUTO")))
-    assert(not option(403).enabled and not option(403).scripts.OnClick)
+    assert(ui.action.id == 401)
+    assert(not option(403).enabled);option(403).scripts.OnClick();assert(choices[400][1]==nil)
     assert(not ui:ChooseBranch(400, 1, 403) and not ui:ChooseBranch(400, 1, 999))
     assert(not ui:ChooseBranch(math.huge, 1, 401) and choices[400][1] == nil)
     option(402).scripts.OnClick()
@@ -640,18 +664,19 @@ check("OR alternatives support explicit persisted choices, automatic reset and s
     ui:Refresh(); assert(ui.action.id == 402)
     option(404).scripts.OnClick()
     assert(choices[400][1] == 404 and not ui.action and hasDestination(true) and ui.giver.footerLabelKey=="VISIT_GIVER")
-    option(nil).scripts.OnClick()
+    assert(option(404).branchSelected);option(404).scripts.OnClick()
     assert(choices[400][1] == nil and ui.action.id == 401)
-    option(402).scripts.OnClick()
+    option(402).scripts.OnClick();local stale=option(402).scripts.OnClick
     addon.quests[400].requires[1].ids = { 401, 403, 404 }
     ui:Refresh()
+    stale();assert(choices[400][1]==402)
     assert(ui.action.id == 401 and choices[400][1] == 402)
-    assert(option(nil).label.text == addon.L("BRANCH_SELECTED", addon.L("BRANCH_AUTO")))
+    assert(ui.action.id==401,"a removed saved preference must fall back to the current automatic route")
     ui.quest = 2; ui:RefreshDetail()
     for _, b in ipairs(ui.branchButtons) do assert(not b.shown) end
     for _, id in ipairs({ 400, 401, 402, 403, 404 }) do addon.quests[id] = nil end
     addon.Context, addon.char.choices, ui.dungeon = originalContext, originalChoices, originalDungeon
-    ui.quest = nil; ui:Refresh()
+    ui.questTreeRoot,ui.questTreeDungeon=nil,nil;ui.quest = nil; ui:Refresh()
 end)
 check("Completed preparation keeps the prepared result instead of empty data warning", function()
     local context = addon.Context
@@ -707,25 +732,26 @@ check("Reward details distinguish fixed items from choices and show their counts
     end
     GetCoinTextureString = function(value) assert(value == 150); moneyCalls = moneyCalls + 1; return "Native coin texture" end
     showDetail(2)
-    assert(detailHas(addon.L("REWARD_ITEMS")) and detailHas(addon.L("REWARD_CHOICES")))
+    assert(detailHas(addon.L("DETAIL_GUARANTEED")) and detailHas(addon.L("REWARD_CHOICES")))
     assert(detailHas(addon.L("REWARD_ITEM", "Reward token", 3)))
-    assert(detailHas(addon.L("REWARD_ITEM", "Choice blade", 1)) and detailHas(addon.L("REWARD_ITEM", "Choice robe", 2)))
+    assert(detailHas("Choice blade") and detailHas(addon.L("REWARD_ITEM", "Choice robe", 2)))
     assert(not detailHas(addon.L("REWARD_NO_ITEMS")) and not detailHas(addon.L("REWARD_UNAVAILABLE")))
     assert(detailHas(addon.L("REWARD_MONEY") .. ": Native coin texture") and moneyCalls == 1)
 end)
-check("Known zero item rewards differ from unavailable reward data", function()
+check("Empty and unavailable reward data remain quiet without invented items or currency", function()
     local moneyCalls = 0
     GetCoinTextureString = function() moneyCalls = moneyCalls + 1; error("zero must not be formatted") end
     addon.QuestRewards = function() return { items = {}, choices = {}, money = 0 } end
     showDetail(2)
-    assert(detailHas(addon.L("REWARD_NO_ITEMS")) and not detailHas(addon.L("REWARD_UNAVAILABLE")))
-    assert(not detailHas(addon.L("REWARD_ITEMS")) and not detailHas(addon.L("REWARD_CHOICES")))
+    assert(not detailHas(addon.L("REWARD_NO_ITEMS")) and not detailHas(addon.L("REWARD_UNAVAILABLE")))
+    assert(not detailHas(addon.L("DETAIL_GUARANTEED")) and not detailHas(addon.L("REWARD_CHOICES")))
     assert(not detailHas(addon.L("REWARD_MONEY_UNKNOWN")) and moneyCalls == 0)
     addon.QuestRewards = function() return nil end
     showDetail(2)
-    assert(detailHas(addon.L("REWARD_UNAVAILABLE")) and not detailHas(addon.L("REWARD_NO_ITEMS")))
+    assert(not detailHas(addon.L("REWARD_UNAVAILABLE")) and not detailHas(addon.L("REWARD_NO_ITEMS")))
     addon.QuestRewards = nil; showDetail(2)
-    assert(detailHas(addon.L("REWARD_UNAVAILABLE")))
+    assert(not detailHas(addon.L("REWARD_UNAVAILABLE")))
+    for _,button in ipairs(ui.rewardButtons)do assert(not button.shown)end
 end)
 check("Reward redraw clears another quest's items and money text", function()
     addon.QuestRewards = function(id)
@@ -734,11 +760,11 @@ check("Reward redraw clears another quest's items and money text", function()
     end
     GetCoinTextureString = function() return "Selected coin texture" end
     showDetail(2)
-    assert(detailHas(addon.L("REWARD_CHOICES")) and not detailHas(addon.L("REWARD_ITEMS")))
+    assert(detailHas(addon.L("REWARD_CHOICES")) and not detailHas(addon.L("DETAIL_GUARANTEED")))
     assert(not detailHas(addon.L("REWARD_NO_ITEMS")))
     showDetail(3)
-    assert(detailHas(addon.L("REWARD_UNAVAILABLE")))
-    assert(not detailHas(addon.L("REWARD_ITEM", "Only selected quest robe", 1)))
+    assert(not detailHas(addon.L("REWARD_UNAVAILABLE")))
+    assert(not detailHas("Only selected quest robe"))
     assert(not detailHas(addon.L("REWARD_MONEY") .. ": Selected coin texture"))
 end)
 check("Unavailable money formatter never produces a guessed currency value", function()
@@ -747,7 +773,7 @@ check("Unavailable money formatter never produces a guessed currency value", fun
     assert(detailHas(addon.L("REWARD_MONEY_UNKNOWN")))
     addon.QuestRewards = function() error("reward API unavailable") end
     showDetail(2)
-    assert(detailHas(addon.L("REWARD_UNAVAILABLE")) and not detailHas(addon.L("REWARD_MONEY_UNKNOWN")))
+    assert(not detailHas(addon.L("REWARD_UNAVAILABLE")) and not detailHas(addon.L("REWARD_MONEY_UNKNOWN")))
     addon.QuestRewards = nil
 end)
 check("Search matches localized and source names literally while preserving selection", function()
@@ -853,11 +879,11 @@ check("Native quest portrait renders a display ID in its own measured flow space
     assert(detailHas(addon.L("QUEST_PORTRAIT")))
     assert(ui.detail.height == beforeHeight + 54 + 8 + 64 + 8)
     local portraitBottom = -ui.portrait.point[3] + 64
-    local following
+    local narrative
     for _, fs in ipairs(ui.details) do
-        if fs.shown and fs.text:find(addon.L("START"), 1, true) then following = -fs.point[3] end
+        if fs.shown and fs.text=="Description" then narrative = -fs.point[3]+fs:GetStringHeight() end
     end
-    assert(following and following >= portraitBottom + 8)
+    assert(narrative and -ui.portrait.point[3]>=narrative and ui.detail.height>=portraitBottom)
     measurement = nil
 end)
 check("Portrait redraw reuses one texture and clears it when switching quests", function()
@@ -905,12 +931,12 @@ check("Item starters show their actual source dungeon without invented giver coo
     addon.dungeons = { { key = "rfk", name = "Razorfen Kraul" } }
     addon.ItemName = function(id) assert(id == 17008); return "Localized scroll" end
     showDetail(2, { level = 20, completed = function() return false end, active = function() return false end })
-    assert(detailHas(addon.L("START") .. ": " .. addon.L("ITEM_STARTER", "Localized scroll")))
+    assert(detailHas("" .. addon.L("ITEM_STARTER", "Localized scroll")))
     assert(detailHas(addon.L("ITEM_DROP_SOURCE", "Charlga", "Razorfen Kraul")))
     assert(not ui.giver.enabled and not ui.giverAction and not hasDestination(true))
     assert(ui.engine:State(2).status == "AVAILABLE" and ui.action.kind == "pickup")
     addon.ItemName = nil; showDetail(2, { level = 20, completed = function() return false end, active = function() return false end })
-    assert(detailHas(addon.L("START") .. ": " .. addon.L("ITEM_STARTER", "Small Scroll")))
+    assert(detailHas("" .. addon.L("ITEM_STARTER", "Small Scroll")))
     showDetail(3)
     assert(not detailHas(addon.L("ITEM_DROP_SOURCE", "Charlga", "Razorfen Kraul")))
     addon.quests[2].start, addon.dungeons, addon.ItemName = start, dungeons, itemName
@@ -957,12 +983,12 @@ check("Alternative starters remain uncertain and navigate only the explicitly se
     assert(detailHas(addon.L("START_ALTERNATIVES")))
     assert(ui.engine:State(2861).status == "UNKNOWN" and ui.action == nil)
     assert(not ui.giver.enabled and not hasDestination(true) and #visited == 0 and #mapped == 0)
-    assert(ui.startButtons[1].title.text == "Anastasia" and ui.startButtons[1].height > 59)
-    assert(ui.startButtons[2].title.text == "Bottle" and ui.startButtons[2].note.text == "Known zone")
-    assert(not ui.startButtons[2].enabled and not ui.startButtons[2].scripts.OnClick)
-    ui.startButtons[1].scripts.OnClick()
+    assert(startButton(1).title.text == "Anastasia" and startButton(1).height > 59)
+    assert(startButton(2).title.text == "Bottle" and startButton(2).note.text == "Known zone")
+    assert(not startButton(2).enabled and not startButton(2).scripts.OnClick)
+    startButton(1).scripts.OnClick()
     assert(#visited == 1 and visited[1].kind == "visit" and visited[1].place.npcID == 4568)
-    ui.startButtons[3].scripts.OnClick()
+    startButton(3).scripts.OnClick()
     assert(#mapped == 1 and mapped[1].npcID == 5144 and mapped[1].mapID == 2 and mapped[1].place == nil)
     assert(ui.engine:State(2861).status == "UNKNOWN" and ui.action == nil)
     assert(not addon.quests[2861].classes and not addon.quests[2861].start)
@@ -974,15 +1000,15 @@ check("Alternative starters remain uncertain and navigate only the explicitly se
     assert(not detailHas(addon.L("START_ALTERNATIVES")))
     addon.quests[2861].startAlternatives = { { npcID = 10, name = "Short" }, { objectID = 11, name = "Other" } }
     showDetail(2861)
-    assert(ui.startButtons[1].title.text == "Short" and ui.startButtons[1].height == 59)
-    assert(not ui.startButtons[3].shown and not ui.startButtons[3].scripts.OnClick)
+    assert(startButton(1).title.text == "Short" and startButton(1).height == 59)
+    assert(not startButton(3).shown and not startButton(3).scripts.OnClick)
     addon.quests[2861].requirementsKnown = true
     addon.quests[2861].requires = { { ids = { 1 } } }
     addon.quests[2861].startAlternatives[1] = { npcID = 10, name = "Known", mapID = 3, x = 40, y = 50 }
     showDetail(2861, { level = 20, completed = function() return false end, active = function() return false end })
     local prerequisite = ui.action
     assert(ui.engine:State(2861).status == "LOCKED" and prerequisite.id == 1)
-    ui.startButtons[1].scripts.OnClick()
+    startButton(1).scripts.OnClick()
     assert(ui.action == prerequisite and visited[#visited].place.npcID == 10)
     assert(ui.engine:State(2861).status == "LOCKED")
     addon.quests[2861] = nil
@@ -992,53 +1018,46 @@ check("Known source zones display without inventing a client map or navigation",
     addon.quests[2].start = { npcID = 1, name = "Olvek", zoneName = "Alterac Mountains" }
     addon.quests[2].finish = { npcID = 2, name = "Other", zoneName = "Known finish" }
     showDetail(2)
-    assert(detailHas(addon.L("START") .. ": Olvek — Alterac Mountains"))
-    assert(detailHas(addon.L("ENDING") .. ": Other — Known finish"))
+    assert(detailHas("Olvek — Alterac Mountains"))
+    assert(detailHas(addon.L("DETAIL_TURNIN")..": Other — Known finish"))
     assert(not ui.giver.enabled and not hasDestination(true) and not hasDestination(false))
     addon.quests[2].start.mapID = 1
     C_Map = { GetMapInfo = function() return { name = "Native zone" } end }
     showDetail(2)
-    assert(detailHas(addon.L("START") .. ": Olvek — Native zone"))
+    assert(detailHas("Olvek — Native zone"))
     assert(ui.giver.enabled and not ui.giverHasCoordinates)
     addon.quests[2].start, addon.quests[2].finish, C_Map = start, finish, maps
 end)
-check("Narrative groups show shared bullets without expanding acceptance prerequisites", function()
-    addon.quests[910] = { id = 910, minLevel = 1, requirementsKnown = false,
-        storylineGroups = { { 911, 912 }, { 910 } } }
-    addon.quests[911] = { id = 911, minLevel = 1, requirementsKnown = true, requires = { { ids = { 1 } } } }
-    addon.quests[912] = { id = 912, minLevel = 1, requirementsKnown = true, factions = { "Horde" } }
-    local context = { level = 20, faction = "Alliance", completed = function() return false end,
-        active = function() return false end }
-    showDetail(910, context)
-    assert(ui.engine:State(910).status == "UNKNOWN" and ui.action == nil)
-    assert(detailHas(addon.L("STORY_GROUP_NOTICE")))
-    assert(detailHas(addon.L("STORY_GROUP", 1)) and detailHas(addon.L("STORY_GROUP", 2)))
-    local labels = {}
-    for _, b in ipairs(ui.chainButtons) do if b.shown then labels[#labels + 1] = b.label.text end end
-    assert(#labels == 3, "an unlisted acceptance prerequisite must not enter the narrative groups")
-    assert(labels[1]:find("• Quest 911", 1, true) and labels[2]:find("• Quest 912", 1, true))
-    assert(not labels[1]:find("1. ", 1, true) and not labels[2]:find("2. ", 1, true))
-    assert(ui.engine:State(912).status == "UNAVAILABLE")
-    ui.chainButtons[2].scripts.OnClick()
-    assert(ui.quest == 912 and ui.engine:State(912).status == "UNAVAILABLE" and ui.action == nil)
+check("Grouped middle stories keep source grouping separate from acceptance requirements",function()
+    local dungeon,context=ui.dungeon,addon.Context
+    addon.quests[910]={id=910,minLevel=1,requirementsKnown=false,storylineGroups={{911,912},{910}}}
+    addon.quests[911]={id=911,minLevel=1,requirementsKnown=true,requires={{ids={1}}}}
+    addon.quests[912]={id=912,minLevel=1,requirementsKnown=true,factions={"Horde"}}
+    addon.Context=function()return {level=20,faction="Alliance",completed=function()return false end,active=function()return false end}end
+    ui.dungeon={key="grouped",quests={910}};ui.quest,ui.questTreeRoot,ui.questTreeDungeon=910,910,ui.dungeon
+    ui:RefreshQuests();ui:RefreshDetail()
+    assert(ui.engine:State(910).status=="UNKNOWN" and not ui.action)
+    local byID={};for _,row in ipairs(ui.rows)do if row.shown and row.questTreeNode and row.questID then byID[row.questID]=row end end
+    assert(byID[911] and byID[912] and byID[910] and byID[1],"optional source ancestors remain inspectable")
+    assert(byID[1].questTreeRelation=="required" and not byID[1].questTreePath)
+    assert(byID[911].questTreeRelation=="story" and byID[912].questTreeRelation=="story")
+    byID[912].scripts.OnClick();assert(ui.quest==912 and ui.engine:State(912).status=="UNAVAILABLE" and not ui.action)
     assert(not detailHas(addon.L("STORY_GROUP_NOTICE")))
-    addon.quests[910], addon.quests[911], addon.quests[912] = nil, nil, nil
+    addon.quests[910],addon.quests[911],addon.quests[912]=nil,nil,nil
+    addon.Context,ui.dungeon=context,dungeon;ui.questTreeRoot,ui.questTreeDungeon=nil,nil;showDetail(2);ui:RefreshQuests()
 end)
-check("Narrative group rows wrap, recycle, and preserve ordinary ordered story labels", function()
-    addon.quests[910] = { id = 910, minLevel = 1, requirementsKnown = false,
-        storylineGroups = { { 911, 910 } } }
-    addon.quests[911] = { id = 911, minLevel = 1, requirementsKnown = false }
-    measurement = function(fs) if fs.text and fs.text:find("Quest 911", 1, true) then return 72 end; return 18 end
-    showDetail(910)
-    assert(ui.chainButtons[1].height == 78)
-    assert(-ui.chainButtons[2].point[3] >= -ui.chainButtons[1].point[3] + 78)
-    measurement = nil
-    addon.quests[910].storylineGroups = nil
-    addon.quests[910].storyline = { 910 }
-    showDetail(910)
-    assert(not ui.chainButtons[1].shown, "a single inspected story entry needs no repeated chain row")
-    assert(not ui.chainButtons[2].shown and not detailHas(addon.L("STORY_GROUP", 1)))
-    addon.quests[910], addon.quests[911] = nil, nil
+check("Grouped middle rows wrap recycle and avoid duplicating a single source target",function()
+    local dungeon=ui.dungeon
+    addon.quests[910]={id=910,minLevel=1,requirementsKnown=false,storylineGroups={{911,910}}}
+    addon.quests[911]={id=911,minLevel=1,requirementsKnown=false}
+    ui.dungeon={key="group-wrap",quests={910}};ui.quest,ui.questTreeRoot,ui.questTreeDungeon=910,910,ui.dungeon
+    measurement=function(fs)return fs.text and fs.text:find("Quest 911",1,true) and 72 or 18 end
+    ui:RefreshQuests();local long,following
+    for _,row in ipairs(ui.rows)do if row.shown and row.questID==911 then long=row elseif row.shown and row.questTreeNode and row.questID==910 then following=row end end
+    assert(long and long.height>=84 and following and -following.point[3]>=-long.point[3]+long.height)
+    measurement=nil;addon.quests[910].storylineGroups=nil;addon.quests[910].storyline={910};ui:RefreshQuests()
+    for _,row in ipairs(ui.rows)do assert(not(row.shown and row.questID==911))end
+    addon.quests[910],addon.quests[911]=nil,nil;ui.dungeon=dungeon;ui.questTreeRoot,ui.questTreeDungeon=nil,nil;showDetail(2);ui:RefreshQuests()
 end)
 check("Alternative turn-ins are explicit location visits without readiness or action changes", function()
     local started, mapped
@@ -1140,7 +1159,7 @@ check("Open dialogue rewards take precedence and display experience without read
     end
     showDetail(2)
     assert(detailHas(addon.L("REWARD_ITEM", "Offered token", 2)))
-    assert(detailHas(addon.L("REWARD_DIALOGUE")) and detailHas(addon.L("REWARD_XP", 1234)))
+    assert(not detailHas(addon.L("REWARD_DIALOGUE")) and detailHas(addon.L("REWARD_XP", 1234)))
     assert(logReads == 0)
     addon.DialogueRewards = function() return nil end
     showDetail(2)
@@ -1152,11 +1171,11 @@ check("Hidden dialogue rewards never become an empty list or fall through to que
     addon.DialogueRewards = function() return { source = "dialogue", hidden = true } end
     addon.QuestRewards = function() error("hidden dialogue must not use log fallback") end
     showDetail(2)
-    assert(detailHas(addon.L("REWARD_HIDDEN")))
+    assert(not detailHas(addon.L("REWARD_HIDDEN")))
     assert(not detailHas(addon.L("REWARD_NO_ITEMS")) and not detailHas(addon.L("REWARD_UNAVAILABLE")))
     addon.DialogueRewards = function() return { source = "dialogue", items = {}, choices = {}, xp = 0 } end
     showDetail(2)
-    assert(detailHas(addon.L("REWARD_NO_ITEMS")) and detailHas(addon.L("REWARD_XP", 0)))
+    assert(not detailHas(addon.L("REWARD_NO_ITEMS")) and detailHas(addon.L("REWARD_XP", 0)))
     assert(not detailHas(addon.L("REWARD_HIDDEN")))
     addon.DialogueRewards, addon.QuestRewards = nil, nil
 end)
@@ -1183,7 +1202,7 @@ check("Live dialogue objective prose stays separate from accepted progress and h
         if fs.shown and fs.text == addon.L("OBJECTIVE_PROGRESS") then progressIndex = i end
         if fs.shown and fs.text:find("Report delivered: 0/1", 1, true) then progressText = true end
     end
-    assert(progressIndex < summaryIndex and progressText and detailHas(addon.L("REWARD_HIDDEN")))
+    assert(progressIndex < summaryIndex and progressText and not detailHas(addon.L("REWARD_HIDDEN")))
     assert(ui.engine:State(2).status == previousState and (ui.action and ui.action.kind) == previousKind)
     showDetail(1)
     assert(not detailHas(addon.L("OBJECTIVE_DIALOGUE")) and not detailHas(addon.L("OBJECTIVE_PROGRESS")))
@@ -1192,7 +1211,7 @@ check("Live dialogue objective prose stays separate from accepted progress and h
     assert(detailHas(addon.L("OBJECTIVE_DIALOGUE")) and calls == 3)
     open = false; ui:Refresh()
     assert(not detailHas(addon.L("OBJECTIVE_DIALOGUE")) and not detailHas("Bring the sealed report to its recipient."))
-    assert(detailHas(addon.L("OBJECTIVE_PROGRESS")) and detailHas(addon.L("REWARD_HIDDEN")))
+    assert(detailHas(addon.L("OBJECTIVE_PROGRESS")) and not detailHas(addon.L("REWARD_HIDDEN")))
     addon.DialogueObjectiveText, addon.QuestObjectives, addon.DialogueRewards = oldObjective, oldProgress, oldRewards
 end)
 check("Missing or unusable dialogue objective summaries leave no recycled heading or text", function()
@@ -1238,43 +1257,31 @@ check("Catalogue labels distinguish listed targets from character eligibility an
     ui.search, ui.range, ui.includeUnavailable, ui.dungeon, ui.quest = search, range, includeUnavailable, selected, quest
     ui:Refresh()
 end)
-check("Prerequisite groups expose AND and OR structure and distinguish acceptance from completion", function()
-    local context = { level = 20, faction = "Alliance", active = function(id) return id == 971 end,
-        completed = function(id) return id == 972 end }
-    addon.quests[970] = { id = 970, minLevel = 1, requirementsKnown = true,
-        requires = { { ids = { 971 } }, { ids = { 972, 973 }, mode = "active" } } }
-    addon.quests[971] = { id = 971, minLevel = 1, requirementsKnown = true }
-    addon.quests[972] = { id = 972, minLevel = 1, requirementsKnown = true }
-    addon.quests[973] = { id = 973, minLevel = 1, requirementsKnown = true, factions = { "Horde" } }
-    measurement = function(fs) return fs.text == "Quest 971" and 72 or 18 end
-    showDetail(970, context)
-    assert(detailHas(addon.L("REQUIREMENT_GROUPS")) and detailHas(addon.L("REQUIREMENT_NOTICE")))
-    assert(detailHas(addon.L("REQUIREMENT_GROUP", 1)) and detailHas(addon.L("REQUIREMENT_GROUP", 2)))
-    assert(detailHas(addon.L("REQUIREMENT_COMPLETE")) and detailHas(addon.L("REQUIREMENT_ACTIVE")))
-    assert(ui.engine:State(970).status == "LOCKED" and ui.action.id == 971 and ui.action.kind == "complete")
-    local row = ui.requirementButtons[1]
-    assert(row.shown and row.questID == 971 and row.title.text == "Quest 971" and row.height == 108)
-    assert(row.note.text:find(addon.L("ACTIVE"), 1, true))
-    local unavailable
-    for _, b in ipairs(ui.branchButtons) do if b.shown and b.parentID == 973 then unavailable = b end end
-    assert(unavailable and not unavailable.enabled and not unavailable.scripts.OnClick)
-    row.scripts.OnClick()
-    assert(ui.quest == 971 and ui.engine:State(971).status == "ACTIVE")
-    assert(not row.shown and not row.enabled and not row.scripts.OnClick)
-    showDetail(970, context)
-    assert(ui.requirementButtons[1] == row and row.shown)
-    addon.quests[970].requirementsKnown = false
-    addon.quests[970].requires = { { ids = { 974 } } }
-    showDetail(970, context)
-    assert(ui.engine:State(970).status == "UNKNOWN" and ui.action == nil)
-    assert(row.questID == 974 and row.height == 59 and row.note.text:find(addon.L("UNKNOWN"), 1, true))
-    row.scripts.OnClick()
-    if ui.referenceToggle.shown and not ui.detailReferencesExpanded then ui.referenceToggle.scripts.OnClick() end
-    assert(ui.quest == 974 and detailHas(addon.L("REASON_missing")))
-    assert(not detailHas(addon.L("REQUIREMENT_GROUPS")) and not row.shown and not row.scripts.OnClick)
-    for _, id in ipairs({ 970, 971, 972, 973 }) do addon.quests[id] = nil end
-    measurement = nil
-    showDetail(2)
+check("Middle prerequisites expose AND and OR structure and distinguish acceptance from completion",function()
+    local oldContext,dungeon=addon.Context,ui.dungeon
+    local context={level=20,faction="Alliance",active=function(id)return id==971 end,completed=function(id)return id==972 end}
+    addon.Context=function()return context end
+    addon.quests[970]={id=970,minLevel=1,requirementsKnown=true,requires={{ids={971}},{ids={972,973},mode="active"}}}
+    addon.quests[971]={id=971,minLevel=1,requirementsKnown=true}
+    addon.quests[972]={id=972,minLevel=1,requirementsKnown=true}
+    addon.quests[973]={id=973,minLevel=1,requirementsKnown=true,factions={"Horde"}}
+    ui.dungeon={key="requirements",quests={970}};ui.quest,ui.questTreeRoot,ui.questTreeDungeon=970,970,ui.dungeon
+    measurement=function(fs)return fs.text=="Quest 971" and 72 or 18 end
+    ui:RefreshQuests();ui:RefreshDetail()
+    assert(ui.engine:State(970).status=="LOCKED" and ui.action.id==971 and ui.action.kind=="complete")
+    local function rowFor(id)for _,row in ipairs(ui.rows)do if row.shown and row.questTreeNode and row.questID==id then return row end end end
+    local row=rowFor(971);assert(row and row.title.text=="Quest 971" and row.height>=84 and row.questTreeRelation=="required")
+    assert(row.note.text:find(addon.L("ACTIVE"),1,true))
+    assert(rowFor(972).note.text:find(addon.L("REQUIREMENT_ACTIVE"),1,true))
+    local unavailable=rowFor(973).branchControl;assert(unavailable and not unavailable.enabled)
+    local click=row.scripts.OnClick;click();assert(ui.quest==971 and ui.engine:State(971).status=="ACTIVE" and ui.questTreeRoot==970)
+    ui.quest=970;ui:RefreshQuests();ui:RefreshDetail();click();assert(ui.quest==970,"old middle-row callbacks expire after publication")
+    addon.quests[970].requirementsKnown=false;addon.quests[970].requires={{ids={974}}}
+    ui:RefreshQuests();ui:RefreshDetail();assert(ui.engine:State(970).status=="UNKNOWN" and not ui.action)
+    row=rowFor(974);assert(row and row.note.text:find(addon.L("UNKNOWN"),1,true));row.scripts.OnClick()
+    assert(ui.quest==974 and detailHas(addon.L("REASON_missing")) and not ui.action)
+    for _,id in ipairs({970,971,972,973})do addon.quests[id]=nil end
+    measurement=nil;addon.Context,ui.dungeon=oldContext,dungeon;ui.questTreeRoot,ui.questTreeDungeon=nil,nil;showDetail(2);ui:RefreshQuests()
 end)
 check("Explicit supporting-card inspection can go back without recording refreshes or branch choices", function()
     local dungeons, selected, quest, preparation = addon.dungeons, ui.dungeon, ui.quest, ui.preparation
@@ -1292,15 +1299,17 @@ check("Explicit supporting-card inspection can go back without recording refresh
     addon.dungeons, ui.dungeon, ui.quest, ui.preparation, ui.detailHistory = { dungeon, other }, dungeon, 980, false, {}
     ui:Refresh()
     assert(canGoBack() and ui.back == nil, "a root quest can now return to its selected dungeon overview")
+    ui.questTreeRoot,ui.questTreeDungeon=980,dungeon;ui:RefreshQuests()
+    local function parentRow()for _,row in ipairs(ui.rows)do if row.shown and row.questTreeNode and row.questID==981 then return row end end end
     expandDetail()
-    local singleton = ui.requirementButtons[1]
+    local singleton = parentRow()
     singleton.scripts.OnClick()
     assert(ui.quest == 981 and #ui.detailHistory == 1 and ui.detailHistory[1] == 980 and canGoBack())
-    assert(not singleton.shown and not singleton.scripts.OnClick)
+    assert(ui.questTreeRoot==980,"supporting inspection preserves the middle context")
     ui:BackQuest()
     assert(ui.quest == 980 and #ui.detailHistory == 0 and canGoBack(), "history is exhausted; overview remains reachable")
     expandDetail()
-    ui.chainButtons[1].scripts.OnClick()
+    parentRow().scripts.OnClick()
     assert(ui.quest == 981 and #ui.detailHistory == 1)
     ui:BackQuest()
     expandDetail()
@@ -1308,7 +1317,7 @@ check("Explicit supporting-card inspection can go back without recording refresh
     material.scripts.OnClick()
     assert(ui.quest == 984 and #ui.detailHistory == 1 and not material.scripts.OnClick)
     ui:BackQuest()
-    ui.rows[2].scripts.OnClick()
+    parentRow().scripts.OnClick()
     assert(ui.quest == 981 and #ui.detailHistory == 1)
     ui:BackQuest()
     ui:Refresh(); ui:RefreshDetail(); ui:InspectQuest(980)
@@ -1323,6 +1332,7 @@ check("Explicit supporting-card inspection can go back without recording refresh
     for _, id in ipairs({ 980, 981, 982, 983, 984 }) do addon.quests[id] = nil end
     addon.char.choices, addon.char.selectedDungeon = choices, selectedDungeon
     addon.dungeons, ui.dungeon, ui.quest, ui.preparation, ui.detailHistory = dungeons, selected, quest, preparation, {}
+    ui.questTreeRoot,ui.questTreeDungeon=nil,nil
     ui:Refresh()
 end)
 check("Back history caps clean IDs at twenty and supports unknown cards without repushing", function()
@@ -1388,14 +1398,18 @@ check("Held quests with past completion show history consistently without implyi
     assert(headerContains(addon.L("READY") .. " — " .. marker) and ui.action.kind == "turnin")
     showDetail(990, context(true))
     assert(ui.engine:State(990).status == "AVAILABLE" and ui.action.id == 990)
-    assert(ui.requirementButtons[1].note.text:find(addon.L("ACTIVE") .. " — " .. marker, 1, true))
-    local branchMarked, chainMarked = false, 0
-    for _, b in ipairs(ui.branchButtons) do
-        if b.shown and b.parentID == 992 then branchMarked = b.label.text:find(addon.L("READY") .. " — " .. marker, 1, true) end
-        if b.shown and b.parentID == 993 then assert(not b.label.text:find(marker, 1, true)) end
-    end
-    for _, b in ipairs(ui.chainButtons) do if b.shown and b.label.text:find(marker, 1, true) then chainMarked = chainMarked + 1 end end
+    local previousContext,dungeon=addon.Context,ui.dungeon
+    addon.Context=function()return context(true)end
+    ui.dungeon={key="history-status",quests={990}};ui.questTreeRoot,ui.questTreeDungeon=990,ui.dungeon;ui:RefreshQuests()
+    local branchMarked,chainMarked=false,0
+    for _,row in ipairs(ui.rows)do if row.shown and row.questTreeNode then
+        if row.questID==991 then assert(row.note.text:find(addon.L("ACTIVE").." — "..marker,1,true))end
+        if row.questID==992 then branchMarked=row.note.text:find(addon.L("READY").." — "..marker,1,true)end
+        if row.questID==993 then assert(not row.note.text:find(marker,1,true))end
+        if row.note.text:find(marker,1,true)then chainMarked=chainMarked+1 end
+    end end
     assert(branchMarked and chainMarked == 2 and ui.materialButtons[1].note.text:find(marker, 1, true))
+    addon.Context,ui.dungeon=previousContext,dungeon;ui.questTreeRoot,ui.questTreeDungeon=nil,nil
     showDetail(993, context(true))
     assert(ui.engine:State(993).status == "COMPLETED" and not headerContains(marker))
     showDetail(991, context(false))
@@ -1423,7 +1437,7 @@ check("Current NPC names refresh start finish and preparation without changing p
     local current = 101
     addon.GiverName = function(place) return place.npcID == current and ("Native " .. current) or nil end
     showDetail(2)
-    assert(detailIncludes(addon.L("START") .. ": Native 101") and detailIncludes("Catalog finish"))
+    assert(detailIncludes("Native 101") and detailIncludes("Catalog finish"))
     assert(ui.action.place == start and start.name == "Catalog start" and finish.name == "Catalog finish")
     ui.preparation = true; ui:RefreshQuests(); ui:RefreshDetail()
     local marked = false
@@ -1432,7 +1446,7 @@ check("Current NPC names refresh start finish and preparation without changing p
     end end
     assert(marked, "preparation uses same fresh giver name")
     current = 102; ui:RefreshDetail()
-    assert(detailIncludes("Catalog start") and detailIncludes(addon.L("ENDING") .. ": Native 102"))
+    assert(detailIncludes("Catalog start") and detailIncludes(addon.L("DETAIL_TURNIN")..": Native 102"))
     current = nil; ui:RefreshDetail()
     assert(not detailIncludes("Native 101") and not detailIncludes("Native 102") and detailIncludes("Catalog finish"))
     addon.quests[2].start, addon.quests[2].finish, addon.GiverName = oldStart, oldFinish, producer
@@ -1445,13 +1459,13 @@ check("Missing throwing invalid and restricted NPC names retain safe catalogue l
     issecretvalue = function(value) return value == restricted end
     for _, value in ipairs({ "", false, 123, {}, restricted, string.rep("x", 1025) }) do
         addon.GiverName = function() return value end; showDetail(2)
-        assert(detailIncludes(addon.L("START") .. ": Catalog fallback"))
+        assert(detailIncludes("Catalog fallback"))
     end
     addon.GiverName = function() error("unavailable") end; showDetail(2)
-    assert(detailIncludes(addon.L("START") .. ": Catalog fallback"))
+    assert(detailIncludes("Catalog fallback"))
     addon.GiverName = nil; showDetail(2); assert(detailIncludes("Catalog fallback"))
     addon.quests[2].start.name = nil; showDetail(2)
-    assert(detailIncludes(addon.L("START") .. ": " .. addon.L("UNKNOWN_PLACE")))
+    assert(detailIncludes(addon.L("GIVER_LOCATION_UNKNOWN")) and not ui.giver.enabled)
     issecretvalue = nil
     addon.quests[2].start, addon.GiverName = old, producer; ui:Refresh()
 end)
@@ -1470,11 +1484,11 @@ check("Alternative NPC rows refresh while object labels and item names keep sepa
     addon.quests[2].startAlternatives = { npc, object }
     addon.quests[2].finishAlternatives = { npc, object }
     showDetail(2)
-    assert(ui.startButtons[1].title.text == native and ui.finishButtons[1].title.text == native)
-    assert(ui.startButtons[2].title.text == "Catalog object" and ui.finishButtons[2].title.text == "Catalog object")
-    assert(npc.name == "Catalog alternative" and ui.startButtons[1].enabled)
+    assert(startButton(1).title.text == native and ui.finishButtons[1].title.text == native)
+    assert(startButton(2).title.text == "Catalog object" and ui.finishButtons[2].title.text == "Catalog object")
+    assert(npc.name == "Catalog alternative" and startButton(1).enabled)
     current = nil; ui:RefreshDetail()
-    assert(ui.startButtons[1].title.text == "Catalog alternative")
+    assert(startButton(1).title.text == "Catalog alternative")
     assert(ui.finishButtons[1].title.text == "Catalog alternative")
     addon.quests[2].startAlternatives, addon.quests[2].finishAlternatives = nil, nil
     addon.quests[2].start = { itemID = 999, name = "Catalog item", dropNPCID = 101, dropName = "Catalog drop",
@@ -1483,7 +1497,7 @@ check("Alternative NPC rows refresh while object labels and item names keep sepa
     current = 101; native = "Native drop"; showDetail(2)
     assert(detailIncludes(addon.L("ITEM_STARTER", "Native item")))
     assert(detailIncludes(addon.L("ITEM_DROP_SOURCE", native, "Source zone")))
-    assert(not ui.startButtons[1].shown and not ui.finishButtons[1].shown)
+    assert(not startButton(1).shown and not ui.finishButtons[1].shown)
     assert(addon.quests[2].start.dropName == "Catalog drop")
     current = nil; ui:RefreshDetail()
     assert(not detailIncludes("Native drop") and detailIncludes("Catalog multi drop"))
@@ -1556,7 +1570,7 @@ check("Each alternative endpoint owns its own reported-position expansion and or
     reportToggle("startAlternative:2").scripts.OnClick()
     assert(#reportRows() == 2 and reportRows()[1].destination.mapID == 3)
     assert(not ui.reportedExpanded["startAlternative:1"] and not ui.reportedExpanded["finishAlternative:1"])
-    ui.startButtons[1].scripts.OnClick()
+    startButton(1).scripts.OnClick()
     assert(actions[1].place == a and actions[1].place.x == 10, "ordinary location visit retains actual primary")
     reportRows()[2].scripts.OnClick()
     assert(actions[2].place.npcID == 101 and actions[2].place.x == 51 and actions[2].place.mapID == 3)
@@ -1699,10 +1713,10 @@ check("Alternative-place callbacks from an older detail generation cannot visit 
         startAlternatives = { { npcID = 1, name = "Located", mapID = 1, x = 10, y = 20 }, { npcID = 2, name = "Unknown" } },
         finishAlternatives = { { objectID = 1, name = "Map only", mapID = 1 }, { objectID = 2, name = "Unknown" } } }
     showDetail(9932)
-    local startClick, finishClick = ui.startButtons[1].scripts.OnClick, ui.finishButtons[1].scripts.OnClick
+    local startClick, finishClick = startButton(1).scripts.OnClick, ui.finishButtons[1].scripts.OnClick
     ui:RefreshDetail(); startClick(); finishClick(); assert(calls == 0)
-    ui.startButtons[1].scripts.OnClick(); ui.finishButtons[1].scripts.OnClick(); assert(calls == 2)
-    startClick, finishClick = ui.startButtons[1].scripts.OnClick, ui.finishButtons[1].scripts.OnClick
+    startButton(1).scripts.OnClick(); ui.finishButtons[1].scripts.OnClick(); assert(calls == 2)
+    startClick, finishClick = startButton(1).scripts.OnClick, ui.finishButtons[1].scripts.OnClick
     showDetail(2); startClick(); finishClick(); assert(calls == 2)
     addon.quests[9932], addon.Navigation = nil, nav
 end)
@@ -1727,19 +1741,19 @@ end)
 check("Requirement wording does not replace other unknown reasons or explicit storyline titles", function()
     showDetail(3, { level = 20, active = function() return false end, completed = function() return nil end })
     assert(ui.engine:State(3).reason == "character")
-    assert(detailHas("|cffb4aacd" .. addon.L("UNKNOWN") .. "|r") and not ui.action)
+    assert(detailHas(addon.L("REASON_character")) and not ui.action)
     for _, reason in ipairs({ "character", "missing", "cycle", "level" }) do
         ui.quest = 3
         ui.engine = { context = {}, State = function() return { status = "UNKNOWN", reason = reason } end,
             Next = function() return {}, true end }
         ui:RefreshDetail()
-        assert(detailHas("|cffb4aacd" .. addon.L("UNKNOWN") .. "|r"))
+        if reason~="level" then assert(detailHas(addon.L("REASON_"..reason)))end
         assert(not detailHas("|cffb4aacd" .. addon.L("UNKNOWN_REQUIREMENTS") .. "|r") and not ui.action)
     end
     local story = addon.quests[3].storyline
     addon.quests[3].storyline = { 3 }
     showDetail(3, { level = 20, active = function() return false end, completed = function() return false end })
-    assert(not ui.chainButtons[1].shown and not ui.storyToggle.shown, "the inspected quest is not repeated as a one-entry story")
+    assert(not(ui.chainButtons[1] and ui.chainButtons[1].shown) and not(ui.storyToggle and ui.storyToggle.shown), "the inspected quest is not repeated as a one-entry story")
     addon.quests[3].storyline = story; showDetail(2)
 end)
 check("Requirement label is translated in every locale and held or completed evidence keeps its status", function()
@@ -1749,7 +1763,7 @@ check("Requirement label is translated in every locale and held or completed evi
         assert(strings.UNKNOWN_REQUIREMENTS ~= strings.UNKNOWN)
         addon.db.locale = key
         showDetail(3, { level = 20, active = function() return false end, completed = function() return false end })
-        assert(detailHas("|cffb4aacd" .. strings.UNKNOWN_REQUIREMENTS .. "|r")); count = count + 1
+        assert(detailHas(strings.REASON_requirementsUnknown) and not detailHas("|cffb4aacd" .. strings.UNKNOWN_REQUIREMENTS .. "|r")); count = count + 1
     end
     assert(count == 10); addon.db.locale = locale
     local context = addon.Context()
@@ -1838,10 +1852,10 @@ check("Cached rewards preview an unaccepted unknown quest without changing its a
     end
     local formatter = GetCoinTextureString; GetCoinTextureString = function(value) return "coin:" .. value end
     showDetail(9950, context)
-    assert(detailHas(addon.L("REWARD_PREVIEW")) and not detailHas(addon.L("REWARD_UNAVAILABLE")))
+    assert(not detailHas(addon.L("REWARD_PREVIEW")) and not detailHas(addon.L("REWARD_UNAVAILABLE")))
     assert(detailHas(addon.L("REWARD_ITEM", "Cached fixed item", 2)))
-    assert(detailHas(addon.L("REWARD_ITEM", "Cached choice item", 1)))
-    assert(detailHas(addon.L("REWARD_XP", 123)) and detailHas(addon.L("REWARD_MONEY") .. ": coin:500"))
+    assert(detailHas("Cached choice item"))
+    assert(detailIncludes(addon.L("REWARD_XP",123)) and detailIncludes(addon.L("REWARD_MONEY")..": coin:500"))
     assert(dialogue == 1 and log == 1 and cached == 1)
     assert(ui.engine:State(9950).status == "UNKNOWN" and not ui.action and not hasDestination(true) and not ui.giverAction)
     assert(addon.quests[9950].requirementsKnown == false)
@@ -1853,7 +1867,7 @@ check("Dialogue including explicit hide wins before selected log and cached rewa
     addon.QuestRewards = function() logReads = logReads + 1; return { items = {}, choices = {}, xp = 222 } end
     addon.DialogueRewards = function() return { source = "dialogue", hidden = true } end
     showDetail(9950, context)
-    assert(detailHas(addon.L("REWARD_HIDDEN")) and not detailHas(addon.L("REWARD_PREVIEW")))
+    assert(not detailHas(addon.L("REWARD_HIDDEN")) and not detailHas(addon.L("REWARD_PREVIEW")))
     assert(logReads == 0 and cacheReads == 0 and not detailHas(addon.L("REWARD_NO_ITEMS")))
     addon.DialogueRewards = function() return { source = "dialogue", items = {}, choices = {}, xp = 333 } end
     ui:RefreshDetail(); assert(detailHas(addon.L("REWARD_XP", 333)) and cacheReads == 0 and logReads == 0)
@@ -1863,7 +1877,7 @@ check("Dialogue including explicit hide wins before selected log and cached rewa
     addon.DialogueRewards = function() error("offer unavailable") end
     addon.QuestRewards = function() logReads = logReads + 1; error("log unavailable") end
     ui:RefreshDetail(); assert(detailHas(addon.L("REWARD_XP", 111)) and cacheReads == 1)
-    assert(detailHas(addon.L("REWARD_PREVIEW")))
+    assert(not detailHas(addon.L("REWARD_PREVIEW")))
     endCachedRewards()
 end)
 check("Missing throwing invalid and restricted cache producers stay unknown instead of empty rewards", function()
@@ -1872,11 +1886,11 @@ check("Missing throwing invalid and restricted cache producers stay unknown inst
     issecretvalue = function(value) return value == restricted end
     for _, value in ipairs({ false, true, 0, "bad", restricted, {}, { source = "cache", items = false, choices = {} } }) do
         addon.CachedQuestRewards = function() return value end; showDetail(9950, context)
-        assert(detailHas(addon.L("REWARD_UNAVAILABLE")) and not detailHas(addon.L("REWARD_NO_ITEMS")))
+        assert(not detailHas(addon.L("REWARD_UNAVAILABLE")) and not detailHas(addon.L("REWARD_NO_ITEMS")))
     end
     addon.CachedQuestRewards = function() error("cache unavailable") end; ui:RefreshDetail()
-    assert(detailHas(addon.L("REWARD_UNAVAILABLE")))
-    addon.CachedQuestRewards = nil; ui:RefreshDetail(); assert(detailHas(addon.L("REWARD_UNAVAILABLE")))
+    assert(not detailHas(addon.L("REWARD_UNAVAILABLE")))
+    addon.CachedQuestRewards = nil; ui:RefreshDetail(); assert(not detailHas(addon.L("REWARD_UNAVAILABLE")))
     issecretvalue = nil; endCachedRewards()
 end)
 check("Cached preview refreshes the same card and clears recycled reward fields on another card", function()
@@ -1886,14 +1900,14 @@ check("Cached preview refreshes the same card and clears recycled reward fields 
         if id == 9950 then return { source = "cache", items = { { name = name, count = 1 } }, choices = {}, xp = xp } end
     end
     showDetail(9950, context); ui.detailScroll:SetVerticalScroll(83)
-    assert(detailHas(addon.L("REWARD_ITEM", name, 1)))
+    assert(detailHas(name))
     name, xp = "Updated cached item", 20; ui:RefreshDetail()
     assert(reads == 2 and ui.detailScroll.verticalScroll == 83)
-    assert(detailHas(addon.L("REWARD_ITEM", name, 1)) and detailHas(addon.L("REWARD_XP", 20)))
-    assert(not detailHas(addon.L("REWARD_ITEM", "First cached item", 1)) and not detailHas(addon.L("REWARD_XP", 10)))
+    assert(detailHas(name) and detailHas(addon.L("REWARD_XP", 20)))
+    assert(not detailHas("First cached item") and not detailHas(addon.L("REWARD_XP", 10)))
     showDetail(9951, context)
-    assert(not detailHas(addon.L("REWARD_PREVIEW")) and detailHas(addon.L("REWARD_UNAVAILABLE")))
-    assert(not detailHas(addon.L("REWARD_ITEM", name, 1)) and not detailHas(addon.L("REWARD_XP", 20)))
+    assert(not detailHas(addon.L("REWARD_PREVIEW")) and not detailHas(addon.L("REWARD_UNAVAILABLE")))
+    assert(not detailHas(name) and not detailHas(addon.L("REWARD_XP", 20)))
     assert(not ui.action and ui.engine:State(9951).status == "UNKNOWN")
     endCachedRewards()
 end)
@@ -1901,7 +1915,7 @@ check("Confirmed empty cached rewards preserve real zero experience and all prev
     local context = cachedRewardFixture()
     addon.CachedQuestRewards = function() return { source = "cache", items = {}, choices = {}, xp = 0, money = 0 } end
     showDetail(9950, context)
-    assert(detailHas(addon.L("REWARD_PREVIEW")) and detailHas(addon.L("REWARD_NO_ITEMS")))
+    assert(not detailHas(addon.L("REWARD_PREVIEW")) and not detailHas(addon.L("REWARD_NO_ITEMS")))
     assert(detailHas(addon.L("REWARD_XP", 0)) and not detailHas(addon.L("REWARD_UNAVAILABLE")))
     local count = 0
     for locale, strings in pairs(addon.locales) do
@@ -2062,11 +2076,11 @@ local function rewardPresentationFixture()
 end
 check("Reward icons preserve exact text, measured wrapping and fixed versus choice item IDs", function()
     local f = rewardPresentationFixture()
-    measurement = function(fs) return fs.width == ui.detail:GetWidth()-38 and fs.text == addon.L("REWARD_ITEM", "Fixed reward", 2) and 72 or 18 end
+    measurement = function(fs) return fs.text == addon.L("REWARD_ITEM", "Fixed reward", 2) and 72 or 18 end
     ui:RefreshDetail()
-    assert(detailHas(addon.L("REWARD_ITEM", "Fixed reward", 2)) and detailHas(addon.L("REWARD_ITEM", "Choice reward", 1)))
+    assert(detailHas(addon.L("REWARD_ITEM", "Fixed reward", 2)) and detailHas("Choice reward"))
     local first, second = ui.rewardButtons[1], ui.rewardButtons[2]
-    assert(first.shown and first.icon.texture == 123 and first.width == 24 and first.height == 24)
+    assert(first.shown and first.icon.texture == 123 and first.width == 32 and first.height == 32)
     assert(second.shown and second.icon.texture == "Interface\\Icons\\Reward")
     assert(first.rewardBinding.kind == "items" and second.rewardBinding.kind == "choices")
     assert(first.point[3] - second.point[3] >= 72 + 8)
@@ -2096,18 +2110,19 @@ check("Missing zero failing or restricted icons revert recycled text to ordinary
     local f = rewardPresentationFixture(); local first = ui.rewardButtons[1]
     local decorated
     for _, fs in ipairs(ui.details) do if fs.shown and fs.text == addon.L("REWARD_ITEM", "Fixed reward", 2) then decorated = fs end end
-    assert(decorated.width == ui.detail:GetWidth()-38 and decorated.point[2] == 34)
+    local content=ui.detail:GetWidth()-8;local tileWidth=content>=340 and (content-8)/2 or content
+    assert(decorated.width == tileWidth-40 and decorated.point[2] == 44)
     for _, texture in ipairs({ 0, -1, "", false, {} }) do
         f.data.items[1].texture, f.data.choices[1].texture = texture, nil
         ui:RefreshDetail()
-        assert(not first.shown and decorated.width == ui.detail:GetWidth()-8 and decorated.point[2] == 4)
+        assert(not first.shown and decorated.width == tileWidth and decorated.point[2] == 4)
         assert(detailHas(addon.L("REWARD_ITEM", "Fixed reward", 2)))
     end
     f.data.items[1].texture = nil; ui:RefreshDetail(); assert(not first.shown)
     f.data.items[1].texture = 123
-    first.icon.SetTexture = function() return false end; ui:RefreshDetail(); assert(not first.shown and decorated.width == ui.detail:GetWidth()-8)
-    first.icon.SetTexture = function() error("Texture unavailable") end; ui:RefreshDetail(); assert(not first.shown and decorated.width == ui.detail:GetWidth()-8)
-    first.icon.SetTexture = false; ui:RefreshDetail(); assert(not first.shown and decorated.width == ui.detail:GetWidth()-8)
+    first.icon.SetTexture = function() return false end; ui:RefreshDetail(); assert(not first.shown and decorated.width == tileWidth)
+    first.icon.SetTexture = function() error("Texture unavailable") end; ui:RefreshDetail(); assert(not first.shown and decorated.width == tileWidth)
+    first.icon.SetTexture = false; ui:RefreshDetail(); assert(not first.shown and decorated.width == tileWidth)
     first.icon.SetTexture = methods.SetTexture
     issecretvalue = function(value) return value == 123 end; ui:RefreshDetail(); assert(not first.shown)
     issecretvalue = f.oldSecret
@@ -2223,7 +2238,7 @@ check("Texture reentry aborts the old card while nested cards keep text and rebu
         for _, row in ipairs(ui.rewardButtons) do
             assert(not row.shown and not row.rewardBinding and not row.scripts.OnEnter, "outer renderer revived an old reward")
         end
-        if mode > 1 then assert(detailHas(addon.L("REWARD_ITEM", "New reward", 1))) end
+        if mode > 1 then assert(detailHas("New reward")) end
         first.icon.SetTexture = original; ui:RefreshDetail()
         if mode > 1 then
             assert(ui.rewardButtons[1].shown and ui.rewardButtons[1].rewardBinding.id == 799)
@@ -2253,14 +2268,14 @@ check("All-character inspection explains class and minimum level without racial 
     ui.includeUnavailable, ui.quest = true, 9980; ui:Refresh()
     assert(ui.engine:State(9980).status == "UNAVAILABLE" and not ui.action and not hasDestination(true))
     assert(detailIncludes(addon.L("DETAIL_MIN_LEVEL",40))and detailIncludes("Native mage"))
-    ui.referenceToggle.scripts.OnClick()
-    assert(detailIncludes(addon.L("QUEST_MIN_LEVEL", 40)))
-    assert(detailIncludes(addon.L("QUEST_CLASSES", "Native mage")) and not detailIncludes(addon.L("QUEST_RACES", "Native new race")))
+    assert(not(ui.referenceToggle and ui.referenceToggle.shown),"class and level facts do not create an empty acquisition disclosure")
+    assert(detailIncludes(addon.L("DETAIL_MIN_LEVEL",40)))
+    assert(detailIncludes("Native mage") and not detailIncludes(addon.L("QUEST_RACES", "Native new race")))
     local found = false
     for _, row in ipairs(visibleRows()) do if row.title.text == "Quest 9980" then found = true end end
     assert(found)
     addon.ClassName, addon.RaceName = nil, nil; ui:RefreshDetail()
-    assert(detailIncludes(addon.L("QUEST_CLASSES", "MAGE")) and not detailIncludes(addon.L("QUEST_RACES", addon.L("RACE_ID", 95))))
+    assert(detailIncludes("MAGE") and not detailIncludes(addon.L("QUEST_RACES", addon.L("RACE_ID", 95))))
     assert(not detailIncludes(addon.L("QUEST_RACES", "Native new race")) and ui.engine:State(9980).status == "UNAVAILABLE" and not ui.action)
     addon.Context, addon.ClassName, addon.RaceName = oldContext, className, raceName
     addon.quests[9980] = nil; ui.dungeon, ui.includeUnavailable, ui.quest = dungeon, include, quest; ui:Refresh()
@@ -2278,7 +2293,7 @@ check("Restriction display cleans deduplicates and bounds entries without guessi
     showDetail(9981, context)
     classReads, raceReads = 0, 0; ui:RefreshDetail()
     assert(classReads == 1 and raceReads == 0)
-    assert(detailIncludes(addon.L("QUEST_CLASSES", "MAGE")))
+    assert(detailIncludes("MAGE"))
     assert(not detailIncludes(addon.L("QUEST_RACES", addon.L("RACE_ID", 95) .. ", " .. addon.L("RACE_ID", 1))))
     assert(ui.engine:State(9981).status == "ACTIVE")
     local many = {}; for i = 1, 101 do many[i] = i end
@@ -2286,7 +2301,7 @@ check("Restriction display cleans deduplicates and bounds entries without guessi
     ui:RefreshDetail(); assert(raceReads == 0)
     for _, minimum in ipairs({ 0, -1, 1.5, "35", math.huge, restricted }) do
         addon.quests[9981].minLevel = minimum; ui:RefreshDetail()
-        assert(not detailIncludes(addon.L("QUEST_MIN_LEVEL", 35)))
+        assert(not detailIncludes(addon.L("DETAIL_MIN_LEVEL", 35)))
     end
     addon.quests[9981].classes, addon.quests[9981].races = nil, nil; ui:RefreshDetail()
     for _, fs in ipairs(ui.details) do
@@ -2303,15 +2318,15 @@ check("Restriction labels refresh all locales and recycled cards omit absent lim
     local dictionaries = 0
     for code in pairs(addon.locales) do
         addon.db.locale = code; showDetail(9982)
-        assert(detailIncludes(addon.L("QUEST_MIN_LEVEL", 50)))
-        assert(detailIncludes(addon.L("QUEST_CLASSES", "Client class")))
+        assert(detailIncludes(addon.L("DETAIL_MIN_LEVEL", 50)))
+        assert(detailIncludes("Client class"))
         assert(not detailIncludes(addon.L("QUEST_RACES", addon.L("RACE_ID", 95))))
         assert(ui.engine:State(9982).status == "UNKNOWN" and not ui.action)
         dictionaries = dictionaries + 1
     end
     assert(dictionaries == 10)
     addon.db.locale = locale; showDetail(2)
-    assert(not detailIncludes(addon.L("QUEST_MIN_LEVEL", 50)) and not detailIncludes(addon.L("QUEST_CLASSES", "Client class")))
+    assert(not detailIncludes(addon.L("DETAIL_MIN_LEVEL", 50)) and not detailIncludes("Client class"))
     assert(not detailIncludes(addon.L("QUEST_RACES", addon.L("RACE_ID", 95))))
     addon.ClassName, addon.RaceName = className, raceName; addon.quests[9982] = nil
 end)
@@ -2337,12 +2352,12 @@ check("Restriction name reentry cannot append old labels after quest or generati
             showDetail(9984)
             assert(not armed and ui.quest == (sameQuest and 9984 or 2))
             assert(ui.detail.height == nestedHeight, "stale restriction loop changed the newer card geometry")
-            assert(not detailIncludes(addon.L("QUEST_CLASSES", "Stale outer restriction")))
+            assert(not detailIncludes("Stale outer restriction"))
             assert(not detailIncludes(addon.L("QUEST_RACES", "Stale outer restriction")))
             if sameQuest then
-                assert(detailIncludes(addon.L("QUEST_CLASSES", "Current class")) and not detailIncludes(addon.L("QUEST_RACES", "Current race")))
+                assert(detailIncludes("Current class") and not detailIncludes(addon.L("QUEST_RACES", "Current race")))
             else
-                assert(not detailIncludes(addon.L("QUEST_CLASSES", "Current class")) and not detailIncludes(addon.L("QUEST_RACES", "Current race")))
+                assert(not detailIncludes("Current class") and not detailIncludes(addon.L("QUEST_RACES", "Current race")))
             end
             assert(addon[helper] == getter and addon.quests[9984].classes == classes and addon.quests[9984].races == races)
             assert(addon.quests[9984].requirementsKnown == false)
@@ -2358,9 +2373,9 @@ check("Listed item objectives remain separate from native progress and informati
     addon.CarriedItemCount = function(id) return id == 81001 and 0 or 8 end
     addon.QuestObjectives = function() return { { text = "Native progress remains separate", finished = false } } end
     showDetail(9985)
-    assert(detailHas(addon.L("OBJECTIVE_ITEMS")) and detailHas(addon.L("OBJECTIVE_ITEMS_NOTICE")))
-    assert(detailHas(addon.L("OBJECTIVE_ITEM", "Native feather", 2)) and detailHas(addon.L("OBJECTIVE_ITEM", "#81002", 3)))
-    assert(detailHas(addon.L("ITEM_CARRIED", 0)) and detailHas(addon.L("ITEM_CARRIED", 8)))
+    assert(detailHas(addon.L("DETAIL_OBJECTIVES")) and not detailHas(addon.L("OBJECTIVE_ITEMS_NOTICE")))
+    assert(detailHas(addon.L("OBJECTIVE_ITEM","Native feather",2).." · "..addon.L("ITEM_CARRIED",0)) and detailHas(addon.L("OBJECTIVE_ITEM","#81002",3).." · "..addon.L("ITEM_CARRIED",8)))
+    assert(detailHas(addon.L("ITEM_CARRIED",0)) and detailHas(addon.L("ITEM_CARRIED",8)))
     assert(detailHas(addon.L("OBJECTIVE_PROGRESS")))
     assert(ui.engine:State(9985).status == "UNKNOWN" and not ui.action and not hasDestination(true))
     addon.ItemName = function() return nil end; addon.CarriedItemCount = function() return nil end; ui:RefreshDetail()
@@ -2368,7 +2383,7 @@ check("Listed item objectives remain separate from native progress and informati
     assert(not detailHas(addon.L("ITEM_CARRIED", 0)) and not detailHas(addon.L("ITEM_CARRIED", 8)))
     addon.ItemName, addon.CarriedItemCount, addon.QuestObjectives = itemName, count, objectives
     addon.quests[9985] = nil; showDetail(2)
-    assert(not detailHas(addon.L("OBJECTIVE_ITEMS")) and not detailHas(addon.L("OBJECTIVE_ITEMS_NOTICE")))
+    assert(not detailHas(addon.L("DETAIL_OBJECTIVES")) and not detailHas(addon.L("OBJECTIVE_ITEMS_NOTICE")))
 end)
 check("Objective entries skip malformed duplicates and restricted names with safe integer quantities", function()
     local itemName, count, checker = addon.ItemName, addon.CarriedItemCount, issecretvalue
@@ -2389,8 +2404,8 @@ check("Objective entries skip malformed duplicates and restricted names with saf
     local entries = {}; for i = 1, 101 do entries[i] = { itemID = i + 82000, quantity = 1 } end
     addon.quests[9986].objectiveItems = entries; reads = 0; ui:RefreshDetail(); assert(reads == 100)
     addon.quests[9986].objectiveItems = { false, { itemID = 0, quantity = 2 } }; ui:RefreshDetail()
-    assert(not detailHas(addon.L("OBJECTIVE_ITEMS")) and not detailHas(addon.L("OBJECTIVE_ITEMS_NOTICE")))
-    addon.quests[9986].objectiveItems = {}; ui:RefreshDetail(); assert(not detailHas(addon.L("OBJECTIVE_ITEMS")))
+    assert(not detailHas(addon.L("DETAIL_OBJECTIVES")) and not detailHas(addon.L("OBJECTIVE_ITEMS_NOTICE")))
+    addon.quests[9986].objectiveItems = {}; ui:RefreshDetail(); assert(not detailHas(addon.L("DETAIL_OBJECTIVES")))
     addon.ItemName, addon.CarriedItemCount, issecretvalue = itemName, count, checker
     addon.quests[9986] = nil; showDetail(2)
 end)
@@ -2404,14 +2419,14 @@ check("Objective headings translate while client names hydrate and recycled text
     local dictionaries = 0
     for code in pairs(addon.locales) do
         addon.db.locale = code; showDetail(9987)
-        assert(detailHas(addon.L("OBJECTIVE_ITEMS")) and detailHas(addon.L("OBJECTIVE_ITEMS_NOTICE")))
+        assert(detailHas(addon.L("DETAIL_OBJECTIVES")) and not detailHas(addon.L("OBJECTIVE_ITEMS_NOTICE")))
         assert(detailHas(addon.L("OBJECTIVE_ITEM", "Client feather", 2)))
         assert(ui.engine:State(9987).status == "UNKNOWN" and not ui.action)
         dictionaries = dictionaries + 1
     end
     assert(dictionaries == 10)
     addon.db.locale = locale; addon.quests[9987].objectiveItems = nil; ui:RefreshDetail()
-    assert(not detailHas(addon.L("OBJECTIVE_ITEMS")) and not detailHas(addon.L("OBJECTIVE_ITEM", "Client feather", 2)))
+    assert(not detailHas(addon.L("DETAIL_OBJECTIVES")) and not detailHas(addon.L("OBJECTIVE_ITEM", "Client feather", 2)))
     addon.ItemName, addon.CarriedItemCount = itemName, count; addon.quests[9987] = nil; showDetail(2)
 end)
 check("Optional objective name and count reads cannot append stale outer rows after reentry", function()
@@ -2435,7 +2450,7 @@ check("Optional objective name and count reads cannot append stale outer rows af
             addon[helper] = getter; showDetail(9988)
             assert(not armed and ui.quest == (sameQuest and 9988 or 2) and ui.detail.height == nestedHeight)
             assert(not detailHas(addon.L("OBJECTIVE_ITEM", "Stale item", 2)) and not detailHas(addon.L("ITEM_CARRIED", 9)))
-            assert(detailHas(addon.L("OBJECTIVE_ITEMS")) == sameQuest)
+            assert(detailHas(addon.L("DETAIL_OBJECTIVES")) == sameQuest)
             if sameQuest then assert(detailHas(addon.L("OBJECTIVE_ITEM", "Current item", 2)) and detailHas(addon.L("ITEM_CARRIED", 1))) end
             assert(addon[helper] == getter and addon.quests[9988].objectiveItems == entries and addon.quests[9988].requirementsKnown == false)
         end
@@ -2591,21 +2606,21 @@ check("Unknown objective quantity remains explicit through known and unknown red
     addon.quests[9991] = { id = 9991, minLevel = 1, requirementsKnown = false, objectiveItems = { entry } }
     addon.ItemName = function() return "Native relic" end; addon.CarriedItemCount = function() return 0 end
     showDetail(9991)
-    assert(detailHas(addon.L("OBJECTIVE_ITEM_UNKNOWN", "Native relic")) and detailHas(addon.L("ITEM_CARRIED", 0)))
+    assert(detailHas(unknownObjective( "Native relic")) and detailHas(addon.L("ITEM_CARRIED", 0)))
     assert(ui.engine:State(9991).status == "UNKNOWN" and not ui.action and not hasDestination(true))
     entry.quantity = 2; ui:RefreshDetail()
-    assert(detailHas(addon.L("OBJECTIVE_ITEM", "Native relic", 2)) and not detailHas(addon.L("OBJECTIVE_ITEM_UNKNOWN", "Native relic")))
+    assert(detailHas(addon.L("OBJECTIVE_ITEM", "Native relic", 2)) and not detailHas(unknownObjective( "Native relic")))
     entry.quantity = nil; addon.ItemName = nil; addon.CarriedItemCount = nil
     local dictionaries = 0
     for code, strings in pairs(addon.locales) do
         assert(type(strings.OBJECTIVE_ITEM_UNKNOWN) == "string" and strings.OBJECTIVE_ITEM_UNKNOWN:find("%%s"))
         addon.db.locale = code; ui:RefreshDetail(); dictionaries = dictionaries + 1
-        assert(detailHas(addon.L("OBJECTIVE_ITEM_UNKNOWN", "Source relic")) and not detailHas(addon.L("ITEM_CARRIED", 0)))
+        assert(detailHas(unknownObjective( "Source relic")) and not detailHas(addon.L("ITEM_CARRIED", 0)))
         assert(not detailHas(addon.L("OBJECTIVE_ITEM", "Native relic", 2)) and ui.engine:State(9991).status == "UNKNOWN" and not ui.action)
     end
     assert(dictionaries == 10)
     addon.ItemName, addon.CarriedItemCount, addon.db.locale = itemName, count, locale
-    addon.quests[9991] = nil; showDetail(2); assert(not detailHas(addon.L("OBJECTIVE_ITEMS")))
+    addon.quests[9991] = nil; showDetail(2); assert(not detailHas(addon.L("DETAIL_OBJECTIVES")))
 end)
 check("Present malformed or restricted objective quantity never becomes unknown", function()
     local checker, itemName = issecretvalue, addon.ItemName
@@ -2615,7 +2630,7 @@ check("Present malformed or restricted objective quantity never becomes unknown"
     addon.quests[9992] = { id = 9992, minLevel = 1, requirementsKnown = false, objectiveItems = {} }
     for _, value in ipairs({ false, 0, -1, 1.5, "2", {}, restricted, math.huge, 9007199254740992 }) do
         addon.quests[9992].objectiveItems = { { itemID = 83002, quantity = value } }; showDetail(9992)
-        assert(not detailHas(addon.L("OBJECTIVE_ITEMS")) and reads == 0)
+        assert(not detailHas(addon.L("DETAIL_OBJECTIVES")) and reads == 0)
     end
     addon.ItemName, issecretvalue = itemName, checker; addon.quests[9992] = nil; showDetail(2)
 end)
@@ -2638,9 +2653,9 @@ check("Unknown objective quantity retains stale-render protection for both optio
             end
             showDetail(9993)
             assert(not armed and ui.quest == (sameQuest and 9993 or 2) and ui.detail.height == nestedHeight)
-            assert(not detailHas(addon.L("OBJECTIVE_ITEM_UNKNOWN", "Stale relic")) and not detailHas(addon.L("ITEM_CARRIED", 9)))
-            assert(detailHas(addon.L("OBJECTIVE_ITEMS")) == sameQuest)
-            if sameQuest then assert(detailHas(addon.L("OBJECTIVE_ITEM_UNKNOWN", "Fresh relic")) and detailHas(addon.L("ITEM_CARRIED", 0))) end
+            assert(not detailHas(unknownObjective( "Stale relic")) and not detailHas(addon.L("ITEM_CARRIED", 9)))
+            assert(detailHas(addon.L("DETAIL_OBJECTIVES")) == sameQuest)
+            if sameQuest then assert(detailHas(unknownObjective( "Fresh relic")) and detailHas(addon.L("ITEM_CARRIED", 0))) end
             assert(entries[1].quantity == nil and addon.quests[9993].requirementsKnown == false)
         end
     end
@@ -2994,19 +3009,20 @@ check("Detail typography uses explicit title section and body styles and resets 
     local description, rewards = addon.Description, addon.QuestRewards
     addon.quests[17001] = { id = 17001, minLevel = 1, requirementsKnown = true, requires = { { ids = { 17002 } } } }
     addon.quests[17002] = { id = 17002, minLevel = 1, requirementsKnown = true }
-    addon.Description = function() return addon.L("NEXT") end
+    addon.Description = function() return addon.L("DETAIL_STORY") end
     addon.QuestRewards = function() return { items = { { id = 701, name = "Body reward", count = 1, texture = 123 } }, choices = {}, money = 0 } end
     showDetail(17001)
     local title = ui.details[1]
     assert(title.text == addon.QuestName(17001) and title.fontSize == 22 and title.fontSizeAtText == 22 and title.fontResetBeforeText)
     local heading, body, reward
     for _, fs in ipairs(ui.details) do
-        if fs.shown and fs.text == addon.L("NEXT") then
-            if fs.fontSize == 20 then heading = fs elseif fs.fontSize == 14 then body = fs end
-        elseif fs.shown and fs.text == addon.L("REWARD_ITEM", "Body reward", 1) then reward = fs end
+        if fs.shown and fs.text == addon.L("DETAIL_STORY") then
+            if fs.fontSize == 13 then heading = fs elseif fs.fontSize == 14 then body = fs end
+        elseif fs.shown and fs.text == "Body reward" then reward = fs end
     end
     assert(heading and body and heading.fontResetBeforeText and body.fontResetBeforeText, "native prose matching a heading stays body text")
-    assert(reward and reward.fontSize == 15 and reward.fontResetBeforeText and reward.width == ui.detail:GetWidth()-38)
+    local content=ui.detail:GetWidth()-8;local tile=content>=340 and (content-8)/2 or content
+    assert(reward and reward.fontSize == 15 and reward.fontResetBeforeText and reward.width == tile-40)
     assert(title.fontPath:find("NotoSans-Regular.ttf",1,true) and heading.fontPath==title.fontPath and body.fontPath==title.fontPath)
     local titleColor = title.textColor[1]
     title.measuredHeight = 90; measurement = function() error("cold measurement after style change") end
@@ -3235,25 +3251,27 @@ check("A copy close during reentrant same-quest reopen invalidates the older Esc
 end)
 do
     local function historyReadingFixture()
-        local old = { quest = ui.quest, history = ui.detailHistory, dungeon = ui.dungeon, description = addon.Description }
+        local old = { quest = ui.quest, history = ui.detailHistory, dungeon = ui.dungeon, description = addon.Description,root=ui.questTreeRoot,treeDungeon=ui.questTreeDungeon }
         addon.quests[18001] = { id = 18001, minLevel = 1, requirementsKnown = true, requires = { { ids = { 18002 } } } }
         addon.quests[18002] = { id = 18002, minLevel = 1, requirementsKnown = true }
         addon.quests[18003] = { id = 18003, minLevel = 1, requirementsKnown = true }
         local long = "Long related quest reading text"
         addon.Description = function() return long end
         -- Keep every inspected card scrollable independently of disclosure defaults.
-        measurement = function(fs) return (fs.text == long or fs.text == addon.L("QUEST_MIN_LEVEL", 1)) and 900 or 18 end
-        ui.detailHistory = {}; showDetail(18001)
+        measurement = function(fs) return (fs.text == long or fs.text == addon.L("DETAIL_MIN_LEVEL", 1)) and 900 or 18 end
+        ui.dungeon={key="reading-tree",quests={18001}};ui.questTreeRoot,ui.questTreeDungeon=18001,ui.dungeon;ui:RefreshQuests()
+        ui.detailHistory = {};showDetail(18001);ui:RefreshQuests();ui:RefreshDetail()
         return function()
             addon.quests[18001], addon.quests[18002], addon.quests[18003] = nil, nil, nil
             measurement = nil; addon.Description = old.description
             ui.quest, ui.detailHistory, ui.dungeon = old.quest, old.history, old.dungeon; ui:Refresh()
+            ui.questTreeRoot,ui.questTreeDungeon=old.root,old.treeDungeon
         end
     end
     check("Back from a clicked prerequisite returns to the original reading location", function()
         local restore = historyReadingFixture()
         ui.detailScroll:SetVerticalScroll(480)
-        local row = ui.requirementButtons[1]
+        local row;for _,candidate in ipairs(ui.rows)do if candidate.shown and candidate.questTreeNode and candidate.questID==18002 then row=candidate end end
         assert(row.questID == 18002 and row.enabled)
         row.scripts.OnClick(row, "LeftButton", false)
         assert(ui.quest == 18002 and ui.detailScroll.verticalScroll == 0 and ui.detailHistory[1] == 18001)
@@ -3351,51 +3369,35 @@ do
         restore()
     end)
 end
-check("OR alternatives expose separate inspection without changing preferences or foreign-character availability", function()
-    local context, dungeon, quest, history, choices = addon.Context, ui.dungeon, ui.quest, ui.detailHistory, addon.char.choices
-    local description, locale = addon.Description, addon.db.locale
-    addon.Description = function() return "Long OR inspection text" end
-    measurement = function(fs) return fs.text == "Long OR inspection text" and 900 or 18 end
-    addon.Context = function() local c=context();c.faction="Alliance";return c end
+check("Middle OR inspection remains separate from preference and foreign-character availability",function()
+    local context,dungeon,quest,history,choices=addon.Context,ui.dungeon,ui.quest,ui.detailHistory,addon.char.choices
+    local description,locale=addon.Description,addon.db.locale
+    addon.Description=function()return "Long OR inspection text"end
+    measurement=function(fs)return fs.text=="Long OR inspection text" and 900 or 18 end
+    addon.Context=function()local c=context();c.faction="Alliance";return c end
     addon.quests[19001]={id=19001,minLevel=1,requirementsKnown=true,requires={{ids={19002,19003}}}}
     addon.quests[19002]={id=19002,minLevel=1,requirementsKnown=true}
     addon.quests[19003]={id=19003,minLevel=1,requirementsKnown=true,factions={"Horde"}}
     ui.dungeon={name="Inspection fixture",key="inspection-fixture",quests={19001},coverage="partial"}
     addon.char.choices={[19001]={[1]=19002}};ui.detailHistory={};showDetail(19001)
-    local button=ui.branchInspectButtons and ui.branchInspectButtons[2]
-    assert(button and button.shown and button.enabled and button.parentID==19003)
-    assert(not ui.branchButtons[3].enabled and ui.action.id==19002)
-    local picked=addon.char.choices
-    ui.detailScroll:SetVerticalScroll(12)
-    button.scripts.OnClick(button,"LeftButton",false)
-    expandDetail()
+    ui.questTreeRoot,ui.questTreeDungeon=19001,ui.dungeon;ui:RefreshQuests();ui:RefreshDetail()
+    local function rowFor(id)for _,row in ipairs(ui.rows)do if row.shown and row.questTreeNode and row.questID==id then return row end end end
+    local button=rowFor(19003);assert(button and button.enabled and not button.branchControl.enabled and ui.action.id==19002)
+    local picked=addon.char.choices;ui.detailScroll:SetVerticalScroll(12);button.scripts.OnClick()
     assert(ui.quest==19003 and addon.char.choices==picked and picked[19001][1]==19002)
     assert(detailHas(addon.L("REASON_faction")) and not ui.action)
     assert(ui:BackQuest() and ui.quest==19001 and ui.action.id==19002 and ui.detailScroll.verticalScroll==math.min(12,math.max(0,ui.detail.height-ui.detailScroll:GetHeight())))
-    expandDetail()
-    local stale=ui.branchInspectButtons[1].scripts.OnClick
-    ui:RefreshDetail();stale();assert(ui.quest==19001)
-    local reused=ui.branchInspectButtons[1]
-    for language in pairs(addon.locales) do
-        addon.db.locale=language;ui:RefreshDetail()
-        assert(reused.label.text==addon.L("BRANCH_INSPECT") and reused.label.text~="BRANCH_INSPECT")
+    local stale=rowFor(19002).scripts.OnClick;ui:RefreshQuests();stale();assert(ui.quest==19001)
+    for language in pairs(addon.locales)do
+        addon.db.locale=language;ui:RefreshQuests();assert(rowFor(19002).note.text:find(addon.L("REQUIREMENT_NOTICE"),1,true))
     end
-    measurement=function(fs)
-        if fs==reused.label then return 54 end
-        if fs.text=="Long OR inspection text" then return 900 end
-        return 72
-    end
-    ui:RefreshDetail()
-    assert(reused.height==64 and reused.point[3]-ui.branchButtons[3].point[3]>=reused.height+6)
-    measurement=function(fs) return fs.text=="Long OR inspection text" and 900 or 18 end
-    ui:RefreshDetail();assert(ui.branchInspectButtons[1]==reused and reused.height==28)
-    local late=ui.branchInspectButtons[1].scripts.OnClick
-    showDetail(19002);late();assert(ui.quest==19002)
-    for _,b in ipairs(ui.branchInspectButtons) do assert(not b.shown and not b.enabled and not b.scripts.OnClick) end
-    addon.Context,addon.char.choices=context,choices
-    addon.Description,addon.db.locale=description,locale;measurement=nil
+    local reused=rowFor(19002)
+    measurement=function(fs)if fs==reused.title then return 54 end;if fs.text=="Long OR inspection text"then return 900 end;return 18 end
+    ui:RefreshQuests();assert(reused.height>=66)
+    local late=rowFor(19002).scripts.OnClick;showDetail(19002);late();assert(ui.quest==19002 and picked[19001][1]==19002)
+    addon.Context,addon.char.choices=context,choices;addon.Description,addon.db.locale=description,locale;measurement=nil
     addon.quests[19001],addon.quests[19002],addon.quests[19003]=nil,nil,nil
-    ui.dungeon,ui.quest,ui.detailHistory=dungeon,quest,history;ui:Refresh()
+    ui.dungeon,ui.quest,ui.detailHistory=dungeon,quest,history;ui.questTreeRoot,ui.questTreeDungeon=nil,nil;ui:Refresh()
 end)
 check("Native font families retain alphabet fallback while detail sizes and pooled styles stay explicit", function()
     local previous, family, getter = ChatFontNormal, {}, GetLocale
@@ -3495,141 +3497,85 @@ check("Old language menu callbacks cannot edit a replacement database closed win
     ui.frame:Show();ui.frame.scripts.OnShow(ui.frame);hidden();assert(addon.db.locale=="enUS")
     restore();addon.db.locale=locale;ui:Refresh()
 end)
+local function actionTreeRow(id)
+    for _,row in ipairs(ui.rows)do if row.shown and row.questTreeNode and row.questID==id then return row end end
+end
 local function multiActionFixture()
-    local saved={context=addon.Context,quest=ui.quest,dungeon=ui.dungeon,history=ui.detailHistory,nav=addon.Navigation}
+    local saved={context=addon.Context,quest=ui.quest,dungeon=ui.dungeon,history=ui.detailHistory,nav=addon.Navigation,root=ui.questTreeRoot,treeDungeon=ui.questTreeDungeon}
     addon.Context=function()return {level=60,active=function()return false end,completed=function()return false end}end
     addon.quests[20001]={id=20001,minLevel=1,requirementsKnown=true,requires={{ids={20002}},{ids={20003}}}}
     for _,id in ipairs({20002,20003})do addon.quests[id]={id=id,minLevel=1,requirementsKnown=true,start={mapID=1,x=20,y=30,name="Giver "..id}}end
-    ui.detailHistory={};showDetail(20001)
+    ui.dungeon={key="independent-steps",quests={20001}};ui.questTreeRoot,ui.questTreeDungeon=20001,ui.dungeon
+    ui.detailHistory={};showDetail(20001);ui:RefreshQuests();ui:RefreshDetail()
     return function()
         addon.Context,addon.Navigation=saved.context,saved.nav
         addon.quests[20001],addon.quests[20002],addon.quests[20003]=nil,nil,nil
-        ui.quest,ui.dungeon,ui.detailHistory=saved.quest,saved.dungeon,saved.history;ui:Refresh()
+        ui.quest,ui.dungeon,ui.detailHistory=saved.quest,saved.dungeon,saved.history
+        ui.questTreeRoot,ui.questTreeDungeon=saved.root,saved.treeDungeon;ui:Refresh()
     end
 end
-check("Independent prerequisite actions open their own giver before header navigation",function()
-    local restore=multiActionFixture()
-    local routed={};addon.Navigation={Start=function(action)routed[#routed+1]=action end,Map=function(point)routed[#routed+1]=point end}
-    assert(ui.actionButtons and ui.actionButtons[1].shown and ui.actionButtons[2].shown)
-    assert(ui.action.id==20002)
-    ui.actionButtons[2].scripts.OnClick(ui.actionButtons[2],"LeftButton",false)
-    assert(ui.quest==20001 and ui.action.id==20003 and #ui.detailHistory==0 and #routed==0)
+check("Independent middle prerequisites open their own giver before explicit navigation",function()
+    local restore=multiActionFixture();local routed={}
+    addon.Navigation={Start=function(action)routed[#routed+1]=action end,Map=function(point)routed[#routed+1]=point end}
+    assert(actionTreeRow(20002) and actionTreeRow(20003) and ui.action.id==20002)
     ui.giver.scripts.OnClick();dispatchGiverMap();assert(#routed==0 and not ui.giverAction)
-    ui.actionInspectButtons[2].scripts.OnClick();assert(ui.quest==20003)
-    ui.giver.scripts.OnClick(ui.giver,"LeftButton",false)
-    assert(routed[1].id==20003 and routed[1].place==addon.quests[20003].start)
+    actionTreeRow(20003).scripts.OnClick();assert(ui.quest==20003 and ui.action.id==20003)
+    ui.giver.scripts.OnClick();assert(routed[1].id==20003 and routed[1].place==addon.quests[20003].start)
     dispatchGiverMap();assert(routed[2]==addon.quests[20003].start)
-    ui:RefreshDetail();assert(ui.action.id==20003)
-    local fresh={mapID=9,x=70,y=80,name="Moved giver"};local old=addon.quests[20003].start
-    addon.quests[20003].start=fresh;ui:RefreshDetail()
-    assert(ui.action.id==20003 and ui.action.place==fresh)
+    local old=addon.quests[20003].start;local fresh={mapID=9,x=70,y=80,name="Moved giver"}
+    addon.quests[20003].start=fresh;ui:RefreshDetail();assert(ui.action.place==fresh)
     addon.quests[20003].start=old;restore()
 end)
-check("Preparation action choice disappears with its step and never authorizes unknown or level navigation",function()
+check("Middle unknown and level prerequisites allow inspection without authorizing quest availability",function()
     local restore=multiActionFixture()
-    ui.actionButtons[2].scripts.OnClick();assert(ui.action.id==20003)
-    addon.quests[20003].requirementsKnown=false;ui:Refresh()
-    assert(ui.action.id==20002 and not ui.detailActionChoice and not ui.actionButtons[2].shown)
-    assert(detailIncludes(addon.L("UNKNOWN_REQUIREMENTS")))
-    addon.quests[20003].requirementsKnown=true;ui:Refresh()
-    assert(ui.action.id==20002)
-    addon.quests[20003].minLevel=80;ui:Refresh()
-    assert(ui.actionButtons[2].actionKind=="level")
-    ui.actionButtons[2].scripts.OnClick()
-    assert(ui.quest==20001 and ui.action.kind=="level" and not hasDestination(false) and not hasDestination(true))
-    ui.actionInspectButtons[2].scripts.OnClick()
-    assert(ui.quest==20003 and hasDestination(false) and hasDestination(true) and ui.action.kind=="level")
-    restore()
+    addon.quests[20003].requirementsKnown=false;ui:RefreshQuests();ui:RefreshDetail()
+    actionTreeRow(20003).scripts.OnClick();assert(ui.quest==20003 and not ui.action and ui.giverAction.kind=="visit")
+    assert(detailHas(addon.L("REASON_requirementsUnknown")))
+    addon.quests[20003].requirementsKnown=true;addon.quests[20003].minLevel=80
+    ui:RefreshQuests();ui:RefreshDetail();assert(ui.action.kind=="level" and ui.giverAction.kind=="visit")
+    assert(ui.engine:State(20003).status=="LOCKED");restore()
 end)
-check("Action inspection returns to its reading section while stale and recycled action callbacks remain inert",function()
-    local restore=multiActionFixture()
-    local description=addon.Description
+check("Middle action inspection restores reading while stale row callbacks remain inert",function()
+    local restore=multiActionFixture();local description=addon.Description
     addon.Description=function()return "Long action source reading"end
     measurement=function(fs)return fs.text=="Long action source reading" and 900 or 18 end
     ui:RefreshDetail();ui.detailScroll:SetVerticalScroll(200)
-    local inspect=ui.actionInspectButtons[2]
-    inspect.scripts.OnClick(inspect,"LeftButton",false)
-    assert(ui.quest==20003 and #ui.detailHistory==1)
+    actionTreeRow(20003).scripts.OnClick();assert(ui.quest==20003 and #ui.detailHistory==1)
     assert(ui:BackQuest() and ui.quest==20001 and ui.detailScroll.verticalScroll==math.min(200,math.max(0,ui.detail.height-ui.detailScroll:GetHeight())))
-    expandDetail()
-    local staleChoice,staleInspect=ui.actionButtons[2].scripts.OnClick,ui.actionInspectButtons[2].scripts.OnClick
-    ui:RefreshDetail();staleChoice();staleInspect()
-    assert(ui.quest==20001 and ui.action.id==20002 and not ui.detailActionChoice)
-    showDetail(20002);staleChoice();staleInspect()
-    assert(ui.quest==20002)
-    for _,pool in ipairs({ui.actionButtons,ui.actionInspectButtons})do
-        for _,row in ipairs(pool)do assert(not row.shown and not row.enabled and row.scripts.OnClick==nil)end
-    end
+    local stale=actionTreeRow(20003).scripts.OnClick;ui:RefreshQuests();stale();assert(ui.quest==20001)
+    showDetail(20002);stale();assert(ui.quest==20002)
     addon.Description=description;measurement=nil;restore()
 end)
-check("Preparation action rows wrap and recycle while session and character changes reset their preference",function()
-    local restore=multiActionFixture()
-    local first,inspect=ui.actionButtons[1],ui.actionInspectButtons[1]
-    measurement=function(fs)
-        if fs==first.title then return 72 end
-        if fs==first.note then return 54 end
-        if fs==inspect.label then return 54 end
-        return 18
-    end
-    ui:RefreshDetail()
-    assert(first.height==144 and inspect.height==64)
-    assert(first.point[3]-ui.actionButtons[2].point[3]>=first.height+4+inspect.height+6)
-    measurement=nil;ui:RefreshDetail();assert(ui.actionButtons[1]==first and first.height==59 and inspect.height==28)
-    ui.actionButtons[2].scripts.OnClick();assert(ui.action.id==20003)
-    local character=addon.char;addon.char={};ui:RefreshDetail()
-    assert(ui.action.id==20002 and not ui.detailActionChoice)
-    addon.char=character;ui.actionButtons[2].scripts.OnClick()
-    ui.frame:Hide();ui.frame.scripts.OnHide(ui.frame);ui.frame:Show();ui.frame.scripts.OnShow(ui.frame)
-    assert(ui.action.id==20002 and not ui.detailActionChoice)
-    restore()
+check("Middle prerequisite rows wrap and stale character or session callbacks cannot select an old step",function()
+    local restore=multiActionFixture();local first=actionTreeRow(20002)
+    measurement=function(fs)return fs==first.title and 72 or 18 end
+    ui:RefreshQuests();assert(actionTreeRow(20002).height>=84)
+    local stale=actionTreeRow(20003).scripts.OnClick;local character=addon.char
+    addon.char={};stale();assert(ui.quest==20001);addon.char=character
+    ui.frame:Hide();ui.frame.scripts.OnHide();stale();assert(ui.quest==20001)
+    ui.frame:Show();ui.frame.scripts.OnShow();measurement=nil;restore()
 end)
-check("Hydrating an action name cannot finish rendering obsolete action controls after card reentry",function()
-    local restore=multiActionFixture()
-    local name,armed=addon.QuestName,true
-    addon.QuestName=function(id)
-        if armed and id==20003 then armed=false;ui:InspectQuest(20002)end
-        return name(id)
-    end
-    ui:RefreshDetail()
-    assert(not armed and ui.quest==20002 and ui.action.id==20002 and hasDestination(false) and hasDestination(true))
-    for _,pool in ipairs({ui.actionButtons,ui.actionInspectButtons})do
-        for _,row in ipairs(pool)do assert(not row.shown and not row.enabled and row.scripts.OnClick==nil)end
-    end
+check("Hydrating a middle action title cannot overwrite a newer selected supporting card",function()
+    local restore=multiActionFixture();local name,armed=addon.QuestName,true
+    addon.QuestName=function(id)if armed and id==20003 then armed=false;ui:InspectQuest(20002)end;return name(id)end
+    ui:RefreshQuests();assert(not armed and ui.quest==20002 and ui.action.id==20002 and hasDestination(true))
     addon.QuestName=name;restore()
 end)
-check("Action name hydration cannot bind a previous character's prepared actions",function()
-    local restore=multiActionFixture()
-    local character,name=addon.char,addon.QuestName
-    local armed=true
-    addon.QuestName=function(id)
-        if armed and id==20002 then armed=false;addon.char={}end
-        return name(id)
-    end
-    ui:RefreshDetail()
-    assert(not armed and ui.action==nil)
-    for _,row in ipairs(ui.actionButtons)do assert(not row.shown and not row.enabled and row.scripts.OnClick==nil)end
+check("Middle title hydration cannot leave actionable rows for a former character",function()
+    local restore=multiActionFixture();local character,name=addon.char,addon.QuestName;local armed=true
+    local stale=actionTreeRow(20003).scripts.OnClick
+    addon.QuestName=function(id)if armed and id==20002 then armed=false;addon.char={}end;return name(id)end
+    ui:RefreshQuests();assert(not armed);stale();assert(ui.quest==20001)
+    for _,row in ipairs(ui.rows)do assert(not row.shown,"a former character's staged middle rows stay hidden")end
     addon.char,addon.QuestName=character,name;restore()
 end)
-check("Later action hydration cannot leave earlier action or navigation controls published for a former character",function()
-    for _,mode in ipairs({"name","place"})do
-        local restore=multiActionFixture()
-        local character,name,map=addon.char,addon.QuestName,C_Map
-        local armed=true
-        if mode=="name"then
-            addon.QuestName=function(id)
-                if armed and id==20003 then armed=false;addon.char={}end
-                return name(id)
-            end
-        else
-            C_Map={GetMapInfo=function()
-                if armed then armed=false;addon.char={}end
-                return {name="Clean zone"}
-            end}
-        end
-        ui:RefreshDetail()
-        assert(not armed and ui.action==nil and not hasDestination(false) and not hasDestination(true),mode)
-        addon.char,addon.QuestName,C_Map=character,name,map;restore()
-    end
+check("Right details never hydrate a duplicate prepared-action name or giver list",function()
+    local restore=multiActionFixture();local name,map=addon.QuestName,C_Map;local reads=0
+    addon.QuestName=function(id)if id==20002 or id==20003 then reads=reads+1 end;return name(id)end
+    C_Map={GetMapInfo=function()error("unselected supporting giver must not be queried")end}
+    ui:RefreshDetail();assert(reads==0 and ui.action.id==20002 and not ui.giverAction)
+    assert(not detailHas(addon.L("NEXT")))
+    addon.QuestName,C_Map=name,map;restore()
 end)
 check("Guidance is published only after a current engine finishes later detail hydration",function()
     local restore=multiActionFixture()
@@ -3682,99 +3628,60 @@ local function preparationForFixture()
         ui.quest,ui.dungeon,ui.detailHistory=saved.quest,saved.dungeon,saved.history;ui:Refresh()
     end
 end
-check("A support card identifies only targets whose current preparation actions contain that quest",function()
-    local restore=preparationForFixture()
-    ui.preparation=true;ui.quest=nil;ui:RefreshQuests();ui:RefreshDetail()
-    local clicked=false
-    for _,row in ipairs(ui.rows)do
-        if row.shown and row.questID==21003 then row.scripts.OnClick(row,"LeftButton",false);clicked=true;break end
-    end
-    assert(clicked and ui.quest==21003)
-    expandDetail()
-    assert(ui.preparationForButtons and ui.preparationForButtons[1].shown and ui.preparationForButtons[2].shown)
-    assert(ui.preparationForButtons[1].questID==21001 and ui.preparationForButtons[2].questID==21002)
-    assert(detailHas(addon.L("PREPARATION_FOR")) and detailHas(addon.L("PREPARATION_FOR_NOTICE")))
-    addon.char.choices[21002]={[1]=21004};ui:Refresh()
-    assert(ui.preparationForButtons[1].questID==21001 and not ui.preparationForButtons[2].shown)
-    assert(ui.engine:Next(21002)[1].id==21004 and ui.action.id==21003)
-    local button=ui.preparationForButtons[1]
-    button.scripts.OnClick(button,"LeftButton",false)
-    assert(ui.quest==21001 and ui.detailHistory[#ui.detailHistory]==21003)
-    assert(ui:BackQuest() and ui.quest==21003)
-    restore()
-end)
-check("Preparation target associations deduplicate wrap translate and clear stale links without altering choices",function()
-    local restore=preparationForFixture()
-    local first,second=ui.preparationForButtons[1],ui.preparationForButtons[2]
-    local locale,description=addon.db.locale,addon.Description
-    local preferences=addon.char.choices
-    ui.currentPlan.rows[#ui.currentPlan.rows+1]=ui.currentPlan.rows[1]
-    measurement=function(fs)
-        if fs==first.title then return 72 end
-        if fs==first.note then return 54 end
-        return 18
-    end
-    ui:RefreshDetail()
-    assert(first.height==144 and first.point[3]-second.point[3]>=148)
-    assert(not ui.preparationForButtons[3] or not ui.preparationForButtons[3].shown)
-    measurement=nil
-    for localeCode in pairs(addon.locales)do
-        addon.db.locale=localeCode;ui:RefreshDetail()
-        assert(detailHas(addon.L("PREPARATION_FOR")) and detailHas(addon.L("PREPARATION_FOR_NOTICE")))
-    end
-    assert(ui.preparationForButtons[1]==first and first.height==59 and addon.char.choices==preferences)
-    addon.Description=function()return "Long support reading"end
-    measurement=function(fs)return fs.text=="Long support reading" and 900 or 18 end
-    ui:RefreshDetail();ui.detailScroll:SetVerticalScroll(200)
-    first.scripts.OnClick(first,"LeftButton",false)
-    assert(ui.quest==21001 and ui:BackQuest() and ui.quest==21003 and ui.detailScroll.verticalScroll==math.min(200,math.max(0,ui.detail.height-ui.detailScroll:GetHeight())))
-    expandDetail()
-    local old=ui.preparationForButtons[2].scripts.OnClick
-    addon.char.choices[21002]={[1]=21004};ui:Refresh();old();assert(ui.quest==21003)
-    showDetail(21005);old();assert(ui.quest==21005)
-    for _,row in ipairs(ui.preparationForButtons)do assert(not row.shown and not row.enabled and row.scripts.OnClick==nil)end
-    addon.db.locale,addon.Description=locale,description;measurement=nil;restore()
-end)
-check("Preparation targets require a current selected-dungeon plan and never derive links from story or unknown-only data",function()
-    local restore=preparationForFixture()
-    showDetail(21005)
+check("Shared supporting steps stay deduplicated in preparation while exact targets remain in the middle pane",function()
+    local restore=preparationForFixture();ui.preparation=true;ui.quest=nil;ui:RefreshQuests();ui:RefreshDetail()
+    local matches,sharedRow=0,nil
+    for _,row in ipairs(ui.rows)do if row.shown and row.questID==21003 then matches=matches+1;sharedRow=row end end
+    assert(matches==1 and sharedRow);sharedRow.scripts.OnClick()
+    assert(matches==1 and ui.quest==21003)
+    assert(ui.engine:Next(21001)[1].id==21003 and ui.engine:Next(21002)[1].id==21003)
     assert(not detailHas(addon.L("PREPARATION_FOR")))
+    addon.char.choices[21002]={[1]=21004};ui:Refresh();assert(ui.engine:Next(21002)[1].id==21004 and ui.action.id==21003)
+    ui.preparation=false;ui.questTreeRoot,ui.questTreeDungeon=21001,ui.dungeon;ui:RefreshQuests()
+    local root;for _,row in ipairs(ui.rows)do if row.shown and row.anchorQuestID==21001 then root=row end end
+    assert(root);root.scripts.OnClick();assert(ui.quest==21001 and ui.detailHistory[#ui.detailHistory]==21003)
+    assert(ui:BackQuest() and ui.quest==21003);ui.questTreeRoot,ui.questTreeDungeon=nil,nil;restore()
+end)
+check("Middle target context wraps and refreshes locales without reviving duplicate right-side associations",function()
+    local restore=preparationForFixture();local locale=addon.db.locale;local preferences=addon.char.choices
+    ui.currentPlan.rows[#ui.currentPlan.rows+1]=ui.currentPlan.rows[1];ui:RefreshDetail()
+    assert(not detailHas(addon.L("PREPARATION_FOR")))
+    ui.questTreeRoot,ui.questTreeDungeon=21001,ui.dungeon
+    measurement=function(fs)return fs.text=="Quest 21003" and 72 or 18 end
+    for code in pairs(addon.locales)do
+        addon.db.locale=code;ui:RefreshQuests();local count=0
+        for _,row in ipairs(ui.rows)do if row.shown and row.questTreeNode and row.questID==21003 then count=count+1;assert(row.height>=84)end end
+        assert(count==1 and addon.char.choices==preferences)
+    end
+    local stale;for _,row in ipairs(ui.rows)do if row.shown and row.questTreeNode and row.questID==21003 then stale=row.scripts.OnClick end end
+    addon.db.locale=addon.db.locale=="ruRU"and"enUS"or"ruRU";ui:RefreshQuests()
+    ui:InspectQuest(21005);local reading,history=ui.detailScroll.verticalScroll,#ui.detailHistory
+    stale();assert(ui.quest==21005 and ui.detailScroll.verticalScroll==reading and #ui.detailHistory==history)
+    measurement=nil;addon.db.locale=locale;ui.questTreeRoot,ui.questTreeDungeon=nil,nil;restore()
+end)
+check("Story-only unknown or absent-dungeon cards never invent preparation target links",function()
+    local restore=preparationForFixture()
+    showDetail(21005);assert(not detailHas(addon.L("PREPARATION_FOR")))
     showDetail(21006);assert(not detailHas(addon.L("PREPARATION_FOR")))
-    ui.quest=21003;ui.dungeon=nil;ui:Refresh()
-    assert(not ui.currentPlan and not detailHas(addon.L("PREPARATION_FOR")))
-    for _,row in ipairs(ui.preparationForButtons)do assert(not row.shown and not row.enabled and row.scripts.OnClick==nil)end
+    ui.quest=21003;ui.dungeon=nil;ui:Refresh();assert(not ui.currentPlan and not detailHas(addon.L("PREPARATION_FOR")))
+    for _,row in ipairs(ui.preparationForButtons or {})do assert(not row.shown and not row.scripts.OnClick)end
     restore()
 end)
-check("Preparation target hydration cannot expose actionable links from a changed character or obsolete card",function()
-    for _,mode in ipairs({"character","card","engine"})do
-        local restore=preparationForFixture()
-        local character,name=addon.char,addon.QuestName
-        local armed=true
-        addon.QuestName=function(id)
-            if armed and id==21002 then
-                armed=false
-                if mode=="character"then addon.char={}
-                elseif mode=="engine"then ui.engine.Current=function()return false end
-                else ui:InspectQuest(21005)end
-            end
-            return name(id)
-        end
-        ui:RefreshDetail();assert(not armed)
-        if mode=="card"then assert(ui.quest==21005 and ui.action.id==21005)
-        else assert(ui.action==nil and not hasDestination(false) and not hasDestination(true))end
-        for _,row in ipairs(ui.preparationForButtons)do
-            if row.shown and row.scripts.OnClick then row.scripts.OnClick();assert(ui.quest==(mode=="card" and 21005 or 21003))end
-        end
-        addon.char,addon.QuestName=character,name;restore()
-    end
+check("Supporting detail no longer hydrates unrelated target names or publishes links from an expired engine",function()
+    local restore=preparationForFixture();local name=addon.QuestName;local reads=0
+    addon.QuestName=function(id)if id==21001 or id==21002 then reads=reads+1 end;return name(id)end
+    ui:RefreshDetail();assert(reads==0 and ui.quest==21003 and not detailHas(addon.L("PREPARATION_FOR")))
+    ui.engine.Current=function()return false end;ui:RefreshDetail()
+    assert(not ui.action and not hasDestination(false) and not hasDestination(true))
+    addon.QuestName=name;restore()
 end)
-check("Unavailable targets never become preparation associations even when all characters are visible",function()
-    local restore=preparationForFixture()
-    addon.quests[21002].factions={"Horde"}
+check("Foreign-character targets remain inspectable without adding their steps to character preparation",function()
+    local restore=preparationForFixture();addon.quests[21002].factions={"Horde"};addon.char.choices[21002]={[1]=21004}
     for _,all in ipairs({false,true})do
-        ui.includeUnavailable=all;ui:Refresh()
-        assert(ui.engine:State(21002).status=="UNAVAILABLE")
-        assert(ui.preparationForButtons[1].questID==21001 and not ui.preparationForButtons[2].shown)
+        ui.includeUnavailable=all;ui:Refresh();assert(ui.engine:State(21002).status=="UNAVAILABLE")
+        local plan=ui.engine:Dungeon(ui.dungeon,{includeUnavailable=all});local shared=0
+        for _,action in ipairs(plan.actions)do assert(action.id~=21004);if action.id==21003 then shared=shared+1 end end
+        assert(shared==1 and not detailHas(addon.L("PREPARATION_FOR")))
     end
     restore()
 end)
@@ -3839,7 +3746,7 @@ check("A replacement unknown map-only giver keeps informational navigation witho
     local mapped,started;addon.Navigation={Map=function(point)mapped=point end,Start=function()started=true end}
     ui:RefreshDetail()
     assert(ui.quest==23002 and ui.engine:State(23002).status=="UNKNOWN" and ui.giver.enabled and not ui.giverHasCoordinates)
-    assert(ui.giver.text=="" and ui.giver.footerLabelKey=="GIVER_MAP" and detailHas(addon.L("LOCATION_ONLY")))
+    assert(ui.giver.text=="" and ui.giver.footerLabelKey=="GIVER_MAP" and ui.giverAction.kind=="visit" and not ui.action)
     ui.giver.scripts.OnClick();assert(mapped==addon.quests[23002].start and not started)
     restore()
 end)
@@ -3999,9 +3906,9 @@ check("All-character detail records the actual faction requirement without chang
     ui.includeUnavailable=true;ui.quest=25001;ui:Refresh()
     assert(ui.engine:State(25001).status=="UNAVAILABLE" and ui.engine:State(25001).reason=="faction")
     assert(detailIncludes(addon.L("FACTION_Horde"))and detailIncludes("PALADIN"))
-    ui.referenceToggle.scripts.OnClick()
-    assert(detailIncludes(addon.L("QUEST_FACTIONS",addon.L("FACTION_Horde"))))
-    assert(detailIncludes(addon.L("QUEST_CLASSES","PALADIN")) and not ui.action and not hasDestination(false) and not hasDestination(true))
+    assert(not(ui.referenceToggle and ui.referenceToggle.shown))
+    assert(detailIncludes(addon.L("FACTION_Horde")))
+    assert(detailIncludes("PALADIN") and not ui.action and not hasDestination(false) and not hasDestination(true))
     addon.quests[25001]=nil;addon.Context=context
     ui.quest,ui.dungeon,ui.includeUnavailable=quest,dungeon,all;ui:Refresh()
 end)
@@ -4012,7 +3919,7 @@ check("Faction detail labels localize deduplicated recorded audiences and clear 
     local context={level=60,faction="Alliance",class="WARRIOR",race=1,completed=function()return false end,active=function()return false end}
     for code in pairs(addon.locales)do
         addon.db.locale=code;showDetail(25002,context)
-        local expected=addon.L("QUEST_FACTIONS",table.concat({addon.L("FACTION_Alliance"),addon.L("FACTION_Horde"),addon.L("FACTION_Neutral")},", "))
+        local expected=table.concat({addon.L("FACTION_Alliance"),addon.L("FACTION_Horde"),addon.L("FACTION_Neutral")},", ")
         assert(detailIncludes(expected) and ui.engine:State(25002).status=="AVAILABLE")
         showDetail(25003,context)
         assert(not detailIncludes(expected) and ui.engine:State(25003).status=="AVAILABLE")
@@ -4025,6 +3932,10 @@ local function giverPortraitFixture()
     local producer,journal,dialogue,setter=addon.GiverPortrait,addon.QuestPortrait,addon.DialoguePortrait,SetPortraitTextureFromCreatureDisplayID
     addon.quests[26001]={id=26001,minLevel=1,requirementsKnown=true,start={npcID=4001,creatureDisplayID=5001,name="Reference One",portraitSource="https://www.wowhead.com/forever/npc=4001"}}
     addon.quests[26002]={id=26002,minLevel=1,requirementsKnown=true,start={npcID=4002,creatureDisplayID=5002,name="Reference Two",portraitSource="https://www.wowhead.com/forever/npc=4002"}}
+    -- Reference art is optional inside practical acquisition details. A listed
+    -- completion-material source keeps this fixture on that presentation path
+    -- without changing its start/finish identity or ordinary requirements.
+    for _,id in ipairs({26001,26002})do addon.quests[id].completionQuests={{id=26003,itemID=7000}}end
     addon.GiverPortrait=function(place)return{npcID=place.npcID,displayID=place.creatureDisplayID,source=place.portraitSource,name=place.name}end
     addon.QuestPortrait,addon.DialoguePortrait=nil,nil
     SetPortraitTextureFromCreatureDisplayID=function(texture,id)texture:SetTexture("display:"..id)end
@@ -4134,14 +4045,14 @@ check("Sourced kill objectives show known and unknown quantities separately from
     addon.ItemName=function()error("kill objective must not request item names")end
     addon.GiverPortrait=function()error("kill objective must not derive an NPC portrait")end
     showDetail(27001)
-    assert(detailHas(addon.L("OBJECTIVE_KILLS")) and detailHas(addon.L("OBJECTIVE_KILLS_NOTICE")))
-    assert(detailHas(addon.L("OBJECTIVE_ITEM","Known target",6)) and detailHas(addon.L("OBJECTIVE_ITEM_UNKNOWN","Unknown target")))
+    assert(detailHas(addon.L("OBJECTIVE_KILLS")) and not detailHas(addon.L("OBJECTIVE_KILLS_NOTICE")))
+    assert(detailHas(addon.L("OBJECTIVE_ITEM","Known target",6)) and detailHas(unknownObjective("Unknown target")))
     local live=false;for _,fs in ipairs(ui.details)do if fs.shown and fs.text:find("Native progress 1/9",1,true)then live=true end end
     assert(calls==1 and live and detailHas(addon.L("OBJECTIVE_PROGRESS")))
     assert(ui.engine:State(27001).status=="UNKNOWN" and not ui.action and not hasDestination(false) and not hasDestination(true))
     addon.QuestObjectives,addon.ItemName,addon.GiverPortrait=objectives,itemName,giverPortrait
     addon.quests[27001]=nil;showDetail(2)
-    assert(not detailHas(addon.L("OBJECTIVE_KILLS")) and not detailHas(addon.L("OBJECTIVE_ITEM_UNKNOWN","Unknown target")))
+    assert(not detailHas(addon.L("OBJECTIVE_KILLS")) and not detailHas(unknownObjective("Unknown target")))
 end)
 check("Kill objective counts remain explicit through known unknown locale and recycled-card changes",function()
     local locale=addon.db.locale
@@ -4149,9 +4060,9 @@ check("Kill objective counts remain explicit through known unknown locale and re
     addon.quests[27002]={id=27002,minLevel=1,requirementsKnown=true,objectiveKills={row}}
     for code in pairs(addon.locales)do
         addon.db.locale=code;showDetail(27002)
-        assert(detailHas(addon.L("OBJECTIVE_ITEM_UNKNOWN",row.name)))
+        assert(detailHas(unknownObjective(row.name)))
         row.quantity=2;ui:RefreshDetail()
-        assert(detailHas(addon.L("OBJECTIVE_ITEM",row.name,2)) and not detailHas(addon.L("OBJECTIVE_ITEM_UNKNOWN",row.name)))
+        assert(detailHas(addon.L("OBJECTIVE_ITEM",row.name,2)) and not detailHas(unknownObjective(row.name)))
         row.quantity=nil;ui:RefreshDetail()
         assert(not detailHas(addon.L("OBJECTIVE_ITEM",row.name,2)) and ui.engine:State(27002).status=="AVAILABLE")
         addon.quests[27002].objectiveKills=nil;ui:RefreshDetail();assert(not detailHas(addon.L("OBJECTIVE_KILLS")))
@@ -4173,8 +4084,8 @@ check("Malformed restricted duplicate and over-bound kill entries cannot become 
     q.objectiveKills={{npcID=3004,name="First"},{npcID=3004,name="Duplicate"}}
     for index=3,101 do q.objectiveKills[index]={npcID=3004+index,name="Target "..index}end
     showDetail(27003)
-    assert(detailHas(addon.L("OBJECTIVE_ITEM_UNKNOWN","First")) and not detailHas(addon.L("OBJECTIVE_ITEM_UNKNOWN","Duplicate")))
-    assert(detailHas(addon.L("OBJECTIVE_ITEM_UNKNOWN","Target 100")) and not detailHas(addon.L("OBJECTIVE_ITEM_UNKNOWN","Target 101")))
+    assert(detailHas(unknownObjective("First")) and not detailHas(unknownObjective("Duplicate")))
+    assert(detailHas(unknownObjective("Target 100")) and not detailHas(unknownObjective("Target 101")))
     issecretvalue=checker;addon.quests[27003]=nil;showDetail(2)
 end)
 check("Kill objective sanitization cannot continue an old card or generation after reentrant ownership changes",function()
@@ -4192,7 +4103,7 @@ check("Kill objective sanitization cannot continue an old card or generation aft
         end
         showDetail(27004)
         assert(not armed and ui.detail.height==nestedHeight and not detailHas(addon.L("OBJECTIVE_ITEM","Old kill target",3)))
-        if sameQuest then assert(detailHas(addon.L("OBJECTIVE_ITEM_UNKNOWN","Fresh kill target")))else assert(ui.quest==2 and not detailHas(addon.L("OBJECTIVE_KILLS")))end
+        if sameQuest then assert(detailHas(unknownObjective("Fresh kill target")))else assert(ui.quest==2 and not detailHas(addon.L("OBJECTIVE_KILLS")))end
         issecretvalue=checker;addon.quests[27004]=nil;showDetail(2)
     end
 end)
@@ -4304,17 +4215,20 @@ local function objectivePresentationFixture()
     ui:RefreshDetail();return f
 end
 local function objectiveText(value)
-    for _,fs in ipairs(ui.details)do if fs.shown and fs.text==value then return fs end end
+    local result
+    for _,fs in ipairs(ui.details)do if fs.shown and
+        (fs.text==value or fs.text:sub(1,#value+#" · ")==value.." · ") then result=fs end end
+    return result
 end
 check("Optional objective icons retain exact collection text unknown amounts carried zero and source-only tooltips",function()
     local f=objectivePresentationFixture()
     local first,second=ui.objectiveButtons[1],ui.objectiveButtons[2]
     local line=objectiveText(addon.L("OBJECTIVE_ITEM","Objective 801",6))
     assert(first.shown and first.width==24 and first.height==24 and first.icon.texture==1801 and second.icon.texture==1802)
-    assert(line.width==ui.detail:GetWidth()-38 and line.point[2]==34 and detailHas(addon.L("OBJECTIVE_ITEM_UNKNOWN","Objective 802")))
+    assert(line.width==ui.detail:GetWidth()-38 and line.point[2]==34 and detailHas(unknownObjective("Objective 802")))
     assert(detailHas(addon.L("ITEM_CARRIED",0)) and ui.engine:State(9970).status=="UNKNOWN" and not ui.action)
     local reads=0;addon.DialogueRewards=function()reads=reads+1;return{source="dialogue",hidden=true}end
-    ui:RefreshDetail();assert(first.shown and detailHas(addon.L("REWARD_HIDDEN")))
+    ui:RefreshDetail();assert(first.shown and not detailHas(addon.L("REWARD_HIDDEN")))
     local before=reads;first.scripts.OnEnter();assert(reads==before and f.tip.owner==first and f.tip.items[#f.tip.items]==801)
     first.scripts.OnLeave();assert(not f.tip.shown and not ui.objectiveTooltip)
     f:finish()
@@ -4411,7 +4325,7 @@ check("Objective icons reject restricted file IDs and keep Lua-safe oversized so
     local calls=0;addon.ItemIcon=function()calls=calls+1;return 1801 end
     addon.quests[9970].objectiveItems={{itemID=9007199254740991,name="Oversized source ID"}}
     ui:RefreshDetail()
-    assert(calls==0 and not ui.objectiveButtons[1].shown and detailHas(addon.L("OBJECTIVE_ITEM_UNKNOWN","Objective "..tostring(9007199254740991))))
+    assert(calls==0 and not ui.objectiveButtons[1].shown and detailHas(unknownObjective("Objective "..tostring(9007199254740991))))
     f:finish()
 end)
 check("Cross-kind tooltip cleanup never consumes a newer reentrant objective or reward hover",function()
@@ -4452,8 +4366,8 @@ check("Quest-provided items remain a separate informational role with unknown qu
     local f=objectivePresentationFixture();local q=addon.quests[9970]
     q.objectiveItems=nil;q.providedItems={{itemID=801,name="Provided tool"}};f.data={source="dialogue",hidden=true}
     ui:RefreshDetail()
-    assert(detailHas(addon.L("PROVIDED_ITEMS")) and detailHas(addon.L("PROVIDED_ITEMS_NOTICE")))
-    assert(not detailHas(addon.L("OBJECTIVE_ITEMS")) and detailHas(addon.L("OBJECTIVE_ITEM_UNKNOWN","Objective 801")))
+    assert(detailHas(addon.L("PROVIDED_ITEMS")) and not detailHas(addon.L("PROVIDED_ITEMS_NOTICE")))
+    assert(not detailHas(addon.L("DETAIL_OBJECTIVES")) and detailHas(unknownObjective("Objective 801")))
     assert(detailHas(addon.L("ITEM_CARRIED",0)) and not detailHas(addon.L("OBJECTIVE_ITEM","Objective 801",1)))
     local button=ui.objectiveButtons[1]
     assert(button.shown and button.objectiveBinding.role=="provided" and button.objectiveBinding.sourceField=="providedItems")
@@ -4467,8 +4381,8 @@ check("Identical item IDs in provided and objective roles keep separate source b
     local f=objectivePresentationFixture();local q=addon.quests[9970]
     q.objectiveItems={{itemID=801,name="Objective source",quantity=6}};q.providedItems={{itemID=801,name="Provided source"}}
     ui:RefreshDetail();local objective,provided=ui.objectiveButtons[1],ui.objectiveButtons[2]
-    assert(detailHas(addon.L("OBJECTIVE_ITEMS")) and detailHas(addon.L("PROVIDED_ITEMS")))
-    assert(detailHas(addon.L("OBJECTIVE_ITEM","Objective 801",6)) and detailHas(addon.L("OBJECTIVE_ITEM_UNKNOWN","Objective 801")))
+    assert(detailHas(addon.L("DETAIL_OBJECTIVES")) and detailHas(addon.L("PROVIDED_ITEMS")))
+    assert(detailHas(addon.L("OBJECTIVE_ITEM","Objective 801",6)) and detailHas(unknownObjective("Objective 801")))
     assert(objective.objectiveBinding.role=="objective" and provided.objectiveBinding.role=="provided")
     assert(objective.objectiveBinding~=provided.objectiveBinding)
     provided.scripts.OnEnter();local oldLeave=provided.scripts.OnLeave;objective.scripts.OnEnter();local hides=f.tip.hides
@@ -4486,7 +4400,7 @@ check("Provided item labels translate independently and recycle known unknown an
         addon.db.locale=code;ui:RefreshDetail()
         assert(detailHas(addon.L("PROVIDED_ITEMS")) and detailHas(addon.L("OBJECTIVE_ITEM","Objective 801",2)))
         q.providedItems[1].quantity=nil;ui:RefreshDetail()
-        assert(detailHas(addon.L("OBJECTIVE_ITEM_UNKNOWN","Objective 801")) and not detailHas(addon.L("OBJECTIVE_ITEM","Objective 801",2)))
+        assert(detailHas(unknownObjective("Objective 801")) and not detailHas(addon.L("OBJECTIVE_ITEM","Objective 801",2)))
         assert(detailHas(addon.L("OBJECTIVE_PROGRESS")))
         q.providedItems=nil;ui:RefreshDetail();assert(not detailHas(addon.L("PROVIDED_ITEMS")) and not ui.objectiveButtons[1].shown)
         q.providedItems={{itemID=801,name="Provided source",quantity=2}}
@@ -4521,7 +4435,7 @@ check("Provided item hydration preserves newer cards and same-card generations w
                 return original(id)
             end
             showDetail(9970);assert(not armed and ui.detail.height==nestedHeight)
-            if sameQuest then assert(detailHas(addon.L("OBJECTIVE_ITEM_UNKNOWN","Objective 802")))
+            if sameQuest then assert(detailHas(unknownObjective("Objective 802")))
             else assert(ui.quest==9971 and not detailHas(addon.L("PROVIDED_ITEMS")))end
             assert(not detailHas(addon.L("OBJECTIVE_ITEM","Objective 801",2)))
             addon[helper]=original
@@ -4574,20 +4488,20 @@ local function starterPresentationFixture()
 end
 check("Direct quest-starting items use a distinct optional icon and tooltip without quantity or item-use actions",function()
     local f,q=starterPresentationFixture();local button=ui.objectiveButtons[1]
-    local text=addon.L("START")..": "..addon.L("ITEM_STARTER","Objective 801")
+    local text=""..addon.L("ITEM_STARTER","Objective 801")
     assert(detailHas(text) and objectiveText(text).width==ui.detail:GetWidth()-38 and button.shown and button.icon.texture==1801)
     assert(button.objectiveBinding.role=="starter" and button.objectiveBinding.sourceField=="start" and button.objectiveBinding.id==801)
     assert(not button.objectiveBinding.quantity and not button.scripts.OnClick)
     assert(not detailHas(addon.L("OBJECTIVE_ITEM","Objective 801",1)) and detailHas(addon.L("ITEM_CARRIED",0)))
     assert(detailHas(addon.L("ITEM_CLASSES","PALADIN")) and detailHas(addon.L("ITEM_MIN_LEVEL",10)))
-    assert(not detailHas(addon.L("OBJECTIVE_ITEMS")) and not detailHas(addon.L("PROVIDED_ITEMS")))
+    assert(not detailHas(addon.L("DETAIL_OBJECTIVES")) and not detailHas(addon.L("PROVIDED_ITEMS")))
     button.scripts.OnEnter();assert(f.tip.owner==button and f.tip.items[#f.tip.items]==801)
     assert(ui.engine:State(9970).status=="UNKNOWN" and not ui.action and q.start.itemID==801)
     f:finish()
 end)
 check("Cold missing invalid and failed starter icon capabilities retain the original starter line and carried zero",function()
     local f,q=starterPresentationFixture();local button=ui.objectiveButtons[1]
-    local text=addon.L("START")..": "..addon.L("ITEM_STARTER","Objective 801")
+    local text=""..addon.L("ITEM_STARTER","Objective 801")
     for _,getter in ipairs({false,function()return nil end,function()return"asset"end,function()return 0 end,function()error("cold")end})do
         addon.ItemIcon=getter or nil;ui:RefreshDetail()
         assert(detailHas(text) and objectiveText(text).width==ui.detail:GetWidth()-8 and not button.shown and detailHas(addon.L("ITEM_CARRIED",0)))
@@ -4609,7 +4523,7 @@ check("Starter icons never promote alternate finish NPC object or oversized sour
     q.start=nil;q.startAlternatives={{npcID=4001,name="Alternative"}};ui:RefreshDetail();assert(not button.shown)
     q.startAlternatives=nil;q.start={itemID=9007199254740991,name="Large source ID"}
     local calls=0;addon.ItemIcon=function()calls=calls+1;return 1801 end;ui:RefreshDetail()
-    assert(calls==0 and not button.shown and detailHas(addon.L("START")..": "..addon.L("ITEM_STARTER","Objective "..tostring(9007199254740991))))
+    assert(calls==0 and not button.shown and detailHas(""..addon.L("ITEM_STARTER","Objective "..tostring(9007199254740991))))
     q.start=original;f:finish()
 end)
 check("Starter source changes during name count or icon hydration invalidate the old binding on plain fallback",function()
@@ -4637,7 +4551,7 @@ check("Starter source changes during name count or icon hydration invalidate the
     showDetail(9971)
     addon.ItemName=function(id)q.start={itemID=802,name="Plain replacement"};return names(id)end
     showDetail(9970);assert(not ui.objectiveButtons[1].shown)
-    assert(not detailHas(addon.L("START")..": "..addon.L("ITEM_STARTER","Objective 801")))
+    assert(not detailHas(""..addon.L("ITEM_STARTER","Objective 801")))
     addon.ItemName=names;f:finish()
 end)
 check("Starter hydration and texture reentry retain the new card or same-card generation and recover on refresh",function()
@@ -4658,7 +4572,7 @@ check("Starter hydration and texture reentry retain the new card or same-card ge
             end
             showDetail(9970);assert(not armed and ui.detail.height==nestedHeight and not ui.rewardTextureBusy)
             if not sameQuest then assert(ui.quest==9971 and not button.shown)
-            else assert(detailHas(addon.L("START")..": "..addon.L("ITEM_STARTER","Objective 802")))end
+            else assert(detailHas(""..addon.L("ITEM_STARTER","Objective 802")))end
             owner[key]=getter;q.start={itemID=801,name="Recovered"};showDetail(9970)
             assert(button.shown and button.objectiveBinding.id==801)
         end
@@ -4696,7 +4610,7 @@ check("Real starter catalogue records show separate known acquisition routes or 
         q.start=real.quests[qid].start;ui:RefreshDetail()
         assert(detailHas(addon.L("ITEM_ACQUISITION")))
         assert(detailHas(addon.L("ITEM_ACQUISITION_UNKNOWN"))==(qid==4903))
-        assert(detailHas(addon.L("START")..": "..addon.L("ITEM_STARTER",q.start.name)))
+        assert(detailHas(""..addon.L("ITEM_STARTER",q.start.name)))
         assert(ui.engine:State(9970).status=="UNKNOWN" and not ui.action)
         if qid==1100 then
             assert(detailHas(addon.L("CONTAINER_SOURCE")) and ui.containerButtons[1].shown)
@@ -5091,7 +5005,7 @@ check("Description read reentry cannot publish an older narrative over a new que
         showDetail(9970)
         assert(not armed and ui.quest==(same and 9970 or 9971) and ui.detail.height==nestedHeight)
         assert(detailHas("Fresh card narrative marker") and not detailHas("Old card narrative marker"))
-        assert(detailHas(addon.L("QUEST_TEXT")))
+        assert(detailHas(addon.L("DETAIL_STORY")))
     end
     addon.Description=getter;f:finish()
 end)
@@ -5099,14 +5013,14 @@ check("Actual quest narrative has a separate readable heading while missing-text
     local f=starterPresentationFixture();local getter,locale=addon.Description,addon.db.locale
     for code in pairs(addon.locales)do
         addon.db.locale=code;addon.Description=function()return"Actual narrative paragraph"end;ui:RefreshDetail()
-        assert(detailHas(addon.L("QUEST_TEXT")) and detailHas("Actual narrative paragraph"))
-        assert(objectiveText(addon.L("QUEST_TEXT")).fontSize==20 and objectiveText("Actual narrative paragraph").fontSize==14)
+        assert(detailHas(addon.L("DETAIL_STORY")) and detailHas("Actual narrative paragraph"))
+        assert(objectiveText(addon.L("DETAIL_STORY")).fontSize==13 and objectiveText("Actual narrative paragraph").fontSize==14)
         addon.Description=function()return addon.L("NO_TEXT")end;ui:RefreshDetail()
-        assert(detailHas(addon.L("NO_TEXT")) and not detailHas(addon.L("QUEST_TEXT")) and not detailHas("Actual narrative paragraph"))
+        assert(not detailHas(addon.L("NO_TEXT")) and not detailHas(addon.L("DETAIL_STORY")) and not detailHas("Actual narrative paragraph"))
     end
     for _,missing in ipairs({false,function()return nil end,function()return" "end,function()return string.rep("x",30001)end,function()error("unavailable")end})do
         addon.Description=missing or nil;ui:RefreshDetail()
-        assert(detailHas(addon.L("NO_TEXT")) and not detailHas(addon.L("QUEST_TEXT")))
+        assert(not detailHas(addon.L("NO_TEXT")) and not detailHas(addon.L("DETAIL_STORY")))
     end
     addon.Description,addon.db.locale=getter,locale;f:finish()
 end)
@@ -5134,12 +5048,12 @@ check("Narrative heading does not merge dialogue objectives log counters or hidd
     addon.QuestObjectives=function()return{{text="Live counter 2/6",finished=false}}end
     addon.DialogueRewards=function()return{hidden=true,items={},choices={}}end
     ui:RefreshDetail()
-    assert(detailHas(addon.L("QUEST_TEXT")) and detailHas("Narrative only"))
+    assert(detailHas(addon.L("DETAIL_STORY")) and detailHas("Narrative only"))
     assert(detailHas(addon.L("OBJECTIVE_DIALOGUE")) and detailHas("Dialogue objective only"))
     assert(detailHas(addon.L("OBJECTIVE_PROGRESS")) and detailHas("|cff88bfffLive counter 2/6|r"))
-    assert(detailHas(addon.L("REWARD_HIDDEN")))
+    assert(not detailHas(addon.L("REWARD_HIDDEN")))
     addon.Description=function()return addon.L("NO_TEXT")end;ui:RefreshDetail()
-    assert(not detailHas(addon.L("QUEST_TEXT")) and detailHas(addon.L("NO_TEXT")))
+    assert(not detailHas(addon.L("DETAIL_STORY")) and not detailHas(addon.L("NO_TEXT")))
     assert(detailHas("Dialogue objective only") and detailHas("|cff88bfffLive counter 2/6|r"))
     addon.Description,addon.DialogueObjectiveText,addon.QuestObjectives,addon.DialogueRewards=getter,dialogue,objectives,rewards
     f:finish()
@@ -5243,7 +5157,7 @@ check("Quest-log control wraps localized labels in detail flow and preserves sam
     for code in pairs(addon.locales)do
         addon.db.locale=code;ui:RefreshDetail()
         assert(control.label.text==addon.L("OPEN_QUEST_LOG") and control.label.fontSize==14 and control.width==ui.detail:GetWidth()-8 and control.height==64)
-        local minimum=objectiveText(addon.L("QUEST_MIN_LEVEL",q.minLevel))
+        local minimum=objectiveText(addon.L("DETAIL_MIN_LEVEL",q.minLevel))
         assert(-minimum.point[3]>=-control.point[3]+control.height+8)
         assert(control.point[2]==4 and ui.detailHistory==history and not ui.action and not ui.giverAction and #f.opens==0)
     end
@@ -5292,9 +5206,9 @@ end
 check("Recorded object tasks keep unknown and known amounts separate from native progress and quest readiness",function()
     local f,q=objectObjectivesFixture()
     q.objectiveObjects[3]={objectID=11,name="Recorded object task",quantity=2};ui:RefreshDetail()
-    assert(detailHas(addon.L("OBJECTIVE_OBJECTS")) and detailHas(addon.L("OBJECTIVE_OBJECTS_NOTICE")))
-    assert(detailHas(addon.L("OBJECTIVE_ITEM_UNKNOWN","Remains of Eva Sarkhoff Burned")))
-    assert(detailHas(addon.L("OBJECTIVE_ITEM_UNKNOWN","Remains of Lucien Sarkhoff Burned")))
+    assert(detailHas(addon.L("OBJECTIVE_OBJECTS")) and not detailHas(addon.L("OBJECTIVE_OBJECTS_NOTICE")))
+    assert(detailHas(unknownObjective("Remains of Eva Sarkhoff Burned")))
+    assert(detailHas(unknownObjective("Remains of Lucien Sarkhoff Burned")))
     assert(detailHas(addon.L("OBJECTIVE_ITEM","Recorded object task",2)))
     assert(detailHas(addon.L("OBJECTIVE_PROGRESS")) and detailHas("|cff88bfffNative objective 0/1|r"))
     assert(not detailHas(addon.L("OBJECTIVE_ITEM","Remains of Eva Sarkhoff Burned",1)))
@@ -5308,12 +5222,12 @@ check("Object tasks translate recycle and distinguish absent quantities from kno
         addon.db.locale=code;q.objectiveObjects={{objectID=1,name="Burned archive",quantity=2}};ui:RefreshDetail()
         assert(detailHas(addon.L("OBJECTIVE_OBJECTS")) and detailHas(addon.L("OBJECTIVE_ITEM","Burned archive",2)))
         q.objectiveObjects[1].quantity=nil;ui:RefreshDetail()
-        assert(detailHas(addon.L("OBJECTIVE_ITEM_UNKNOWN","Burned archive")) and not detailHas(addon.L("OBJECTIVE_ITEM","Burned archive",2)))
+        assert(detailHas(unknownObjective("Burned archive")) and not detailHas(addon.L("OBJECTIVE_ITEM","Burned archive",2)))
         q.objectiveObjects=nil;ui:RefreshDetail();assert(not detailHas(addon.L("OBJECTIVE_OBJECTS")))
         assert(detailHas("|cff88bfffNative objective 0/1|r"))
     end
     q.objectiveObjects={{objectID=1,name="Old object"}};ui:RefreshDetail();showDetail(9971)
-    assert(not detailHas(addon.L("OBJECTIVE_OBJECTS")) and not detailHas(addon.L("OBJECTIVE_ITEM_UNKNOWN","Old object")))
+    assert(not detailHas(addon.L("OBJECTIVE_OBJECTS")) and not detailHas(unknownObjective("Old object")))
     addon.db.locale=locale;f:finish()
 end)
 check("Malformed object tasks and present invalid quantities cannot become unknown collection goals",function()
@@ -5328,7 +5242,7 @@ check("Malformed object tasks and present invalid quantities cannot become unkno
     end
     for _,quantity in ipairs({false,true,0,-1,1.5,"2",{},secret,math.huge,0/0,9007199254740992})do
         q.objectiveObjects={{objectID=1,name="Invalid amount",quantity=quantity}};ui:RefreshDetail()
-        assert(not detailHas(addon.L("OBJECTIVE_OBJECTS")) and not detailHas(addon.L("OBJECTIVE_ITEM_UNKNOWN","Invalid amount")))
+        assert(not detailHas(addon.L("OBJECTIVE_OBJECTS")) and not detailHas(unknownObjective("Invalid amount")))
     end
     for _,list in ipairs({false,"invalid",{}, {false}})do q.objectiveObjects=list;ui:RefreshDetail();assert(not detailHas(addon.L("OBJECTIVE_OBJECTS")))end
     q.objectiveObjects={};for index=1,101 do q.objectiveObjects[index]={objectID=index,name="Over bound"}end
@@ -5343,7 +5257,7 @@ check("Object task names retain the 500 UTF-8 byte budget and identities dedupli
         assert(detailHas(addon.L("OBJECTIVE_ITEM",sample[1],9007199254740991))==sample[2])
     end
     q.objectiveObjects={{objectID=1,name="First task"},{objectID=1,name="Duplicate task"}};ui:RefreshDetail()
-    assert(detailHas(addon.L("OBJECTIVE_ITEM_UNKNOWN","First task")) and not detailHas(addon.L("OBJECTIVE_ITEM_UNKNOWN","Duplicate task")))
+    assert(detailHas(unknownObjective("First task")) and not detailHas(unknownObjective("Duplicate task")))
     f:finish()
 end)
 check("Object sanitization cannot publish an older card or newer same-card source generation",function()
@@ -5360,7 +5274,7 @@ check("Object sanitization cannot publish an older card or newer same-card sourc
         end
         showDetail(9970);assert(not armed and ui.detail.height==nestedHeight)
         assert(not detailHas(addon.L("OBJECTIVE_ITEM","Old staged task",6)))
-        if same then assert(detailHas(addon.L("OBJECTIVE_ITEM_UNKNOWN","Fresh task")))else assert(not detailHas(addon.L("OBJECTIVE_OBJECTS")))end
+        if same then assert(detailHas(unknownObjective("Fresh task")))else assert(not detailHas(addon.L("OBJECTIVE_OBJECTS")))end
     end
     issecretvalue=checker;f:finish()
 end)
@@ -5372,176 +5286,125 @@ check("Final object entry proof rejects source replacement during quantity clean
         return false
     end
     ui:RefreshDetail();assert(not armed and not detailHas(addon.L("OBJECTIVE_ITEM","Old entry",6)))
-    issecretvalue=checker;ui:RefreshDetail();assert(detailHas(addon.L("OBJECTIVE_ITEM_UNKNOWN","Replacement task")))
+    issecretvalue=checker;ui:RefreshDetail();assert(detailHas(unknownObjective("Replacement task")))
     q.objectiveObjects={{objectID=777,name="Burn object"}}
     q.objectiveKills={{npcID=777,name="Defeat NPC",quantity=2}}
     q.objectiveItems={{itemID=777,name="Collect item",quantity=3}}
     f.api.name,f.api.icon,f.api.count=0,0,0;ui:RefreshDetail()
-    assert(detailHas(addon.L("OBJECTIVE_ITEM_UNKNOWN","Burn object")) and detailHas(addon.L("OBJECTIVE_ITEM","Defeat NPC",2)))
+    assert(detailHas(unknownObjective("Burn object")) and detailHas(addon.L("OBJECTIVE_ITEM","Defeat NPC",2)))
     assert(detailHas(addon.L("OBJECTIVE_ITEM","Native item 777",3)) and detailHas(addon.L("ITEM_CARRIED",0)))
     assert(f.api.name==1 and f.api.icon==1 and f.api.count==1 and f.api.navigation==0)
     assert(ui.engine:State(9970).status=="UNKNOWN" and q.objectiveObjects[1].quantity==nil)
     f:finish()
 end)
-local function storyCollapseFixture(actualID)
-    local f = rewardPresentationFixture()
-    local actual = {}; assert(loadfile("Database/Catalog.lua"))("DungeonPro", actual)
-    local q = addon.quests[9970]
-    local record = actual.quests[actualID or 8950]
-    q.storyline, q.storylineGroups = record.storyline, record.storylineGroups
-    q.objectiveKills = { { npcID = 42, name = "Visible independent goal" } }
-    ui.storyStates, ui.storyOrder = nil, nil
-    ui:RefreshDetail()
-    if not ui.detailReferencesExpanded then ui.referenceToggle.scripts.OnClick() end
-    if ui.detailChainExpanded then ui.storyToggle.scripts.OnClick() end
-    return f, q
-end
 local function visibleStory()
-    local rows = {}
-    for _, row in ipairs(ui.chainButtons) do if row.shown then rows[#rows + 1] = row end end
+    local rows={};for _,row in ipairs(ui.rows)do if row.shown and row.questTreeNode and row.questID then rows[#rows+1]=row end end
     return rows
 end
-check("Long actual grouped source stories default closed and expand all24 source rows with original group order", function()
-    local f,q = storyCollapseFixture(8950)
-    assert(ui.storyToggle.shown and ui.storyToggle.enabled and #visibleStory() == 1)
-    assert(ui.storyToggle.label.text == "+ " .. addon.L("STORY_SOURCE_QUESTS",24))
-    assert(not detailHas(addon.L("STORY_GROUP_NOTICE")))
-    assert(detailHas(addon.L("OBJECTIVE_ITEM_UNKNOWN","Visible independent goal")))
+local function storyCollapseFixture(actualID)
+    local f=rewardPresentationFixture();local actual={};assert(loadfile("Database/Catalog.lua"))("DungeonPro",actual)
+    local q=addon.quests[9970];local record=actual.quests[actualID or 8950]
+    q.storyline,q.storylineGroups=record.storyline,record.storylineGroups
+    q.objectiveKills={{npcID=42,name="Visible independent goal"}}
+    local oldDungeon,oldRoot,oldTree=ui.dungeon,ui.questTreeRoot,ui.questTreeDungeon
+    ui.dungeon={key="middle-story",name="Story fixture",minLevel=1,maxLevel=60,quests={9970}}
+    ui.questTreeRoot,ui.questTreeDungeon=nil,nil;ui:RefreshQuests();showDetail(9970)
+    function f:expand()ui.questTreeRoot,ui.questTreeDungeon=9970,ui.dungeon;ui:RefreshQuests()end
+    function f:collapse()ui.questTreeRoot,ui.questTreeDungeon=nil,nil;ui:RefreshQuests()end
+    local finish=f.finish
+    function f:finish()
+        ui.dungeon,ui.questTreeRoot,ui.questTreeDungeon=oldDungeon,oldRoot,oldTree
+        finish(self);ui:RefreshQuests()
+    end
+    return f,q
+end
+check("Actual grouped stories keep all24 source IDs in the middle tree without duplicating the right pane",function()
+    local f,q=storyCollapseFixture(8950)
+    assert(#visibleStory()==0 and not(ui.storyToggle and ui.storyToggle.shown))
     assert(detailHas(addon.L("REWARD_ITEM","Fixed reward",2)))
-    local state, action = ui.engine:State(9970).status, ui.action
-    ui.storyToggle.scripts.OnClick()
-    local rows=visibleStory();assert(#rows==24 and detailHas(addon.L("STORY_GROUP_NOTICE")))
-    assert(detailHas(addon.L("STORY_GROUP",8)))
-    assert(rows[1].label.text:find("• Quest 8926",1,true) and rows[24].label.text:find("• Quest 8950",1,true))
-    assert(ui.engine:State(9970).status==state and (not action or (ui.action.id==action.id and ui.action.kind==action.kind)))
-    local click=rows[1].scripts.OnClick
-    ui.storyToggle.scripts.OnClick();assert(#visibleStory()==1)
-    click();assert(ui.quest==9970,"captured expanded rows must not inspect after collapse")
+    local state,action=ui.engine:State(9970).status,ui.action
+    f:expand();local rows=visibleStory();assert(#rows==25)
+    local seen={};for _,row in ipairs(rows)do assert(not seen[row.questID]);seen[row.questID]=true end
+    assert(seen[8926] and seen[8950] and seen[9970])
+    assert(ui.engine:State(9970).status==state and not action)
+    local click=rows[1].scripts.OnClick;f:collapse();click()
+    assert(ui.quest==9970 and #visibleStory()==0,"collapsed hierarchy callbacks cannot inspect old rows")
     f:finish()
 end)
-check("Actual eleven-listed source story preserves expanded ordinary ancestor traversal and short/fallback chains",function()
-    local f,q=storyCollapseFixture(92819)
-    assert(ui.storyToggle.label.text=="+ "..addon.L("STORY_SOURCE_QUESTS",11) and #visibleStory()==1)
-    local old=addon.quests[92742]
+check("Actual eleven-listed story traverses ancestors and keeps short and required-only trees distinct",function()
+    local f,q=storyCollapseFixture(92819);local old=addon.quests[92742]
     addon.quests[92742]={id=92742,minLevel=1,requirementsKnown=false,requires={{ids={9971}}}}
-    ui.storyToggle.scripts.OnClick();assert(#visibleStory()==12)
-    assert(visibleStory()[1].label.text:find("Quest 9971",1,true))
-    q.storyline={9971,9970};q.storylineGroups=nil;ui:RefreshDetail()
-    assert(ui.storyToggle.shown and #visibleStory()==2)
-    q.storyline=nil;q.requires={{ids={9971}}};ui:RefreshDetail()
-    assert(ui.storyToggle.shown and #visibleStory()==2 and detailHas(addon.L("CHAIN")))
+    f:expand();local seen={};for _,row in ipairs(visibleStory())do seen[row.questID]=true end
+    assert(seen[9971] and seen[92742] and seen[92819] and seen[9970])
+    q.storyline,q.storylineGroups={9971,9970},nil;ui:RefreshQuests();assert(#visibleStory()==2)
+    q.storyline,q.requires=nil,{{ids={9971}}};ui:RefreshQuests();assert(#visibleStory()==2)
+    for _,row in ipairs(visibleStory())do if row.questID==9971 then assert(row.questTreeRelation=="required")end end
     addon.quests[92742]=old;f:finish()
 end)
-check("Story expansion survives all locale refreshes and actual inspection Back but resets on source and session changes",function()
-    local f,q=storyCollapseFixture();local locale=addon.db.locale
-    ui.storyToggle.scripts.OnClick()
-    for code in pairs(addon.locales)do
-        addon.db.locale=code;ui:RefreshDetail()
-        assert(#visibleStory()==24 and ui.storyToggle.label.text=="- "..addon.L("STORY_SOURCE_QUESTS",24))
-    end
-    local history=ui.detailHistory;ui.detailHistory={}
-    visibleStory()[1].scripts.OnClick();assert(ui.quest==8926)
-    assert(ui:BackQuest() and ui.quest==9970 and #visibleStory()==0)
-    ui.referenceToggle.scripts.OnClick();assert(#visibleStory()==1)
-    ui.storyToggle.scripts.OnClick();assert(#visibleStory()==24)
-    local old=ui.storyToggle.scripts.OnClick
-    q.storylineGroups={unpack(q.storylineGroups)};ui:RefreshDetail()
-    assert(#visibleStory()==24);old();assert(#visibleStory()==24)
-    ui.frame.scripts.OnHide();ui.frame.scripts.OnShow();assert(#visibleStory()==0)
-    ui.referenceToggle.scripts.OnClick();assert(#visibleStory()==1)
-    ui.detailHistory=history;addon.db.locale=locale;f:finish()
+check("Middle source trees survive locale refreshes while replaced source and hidden callbacks expire",function()
+    local f,q=storyCollapseFixture();local locale=addon.db.locale;f:expand()
+    for code in pairs(addon.locales)do addon.db.locale=code;ui:RefreshQuests();assert(#visibleStory()==25)end
+    local child=visibleStory()[1];local click=child.scripts.OnClick
+    q.storylineGroups={unpack(q.storylineGroups)};ui:RefreshQuests();click();assert(ui.quest==9970)
+    click=visibleStory()[1].scripts.OnClick;ui.frame:Hide();ui.frame.scripts.OnHide();click();assert(ui.quest==9970)
+    ui.frame:Show();ui.frame.scripts.OnShow();assert(ui.quest==9970)
+    addon.db.locale=locale;f:finish()
 end)
-check("Source story counts deduplicate only listed IDs and prerequisites and completion materials stay independent",function()
-    local f,q=storyCollapseFixture()
-    q.storylineGroups={{9971,9971},{41,42,43,44},{9970}}
+check("Middle stories deduplicate exact IDs while prerequisites and completion materials stay independent",function()
+    local f,q=storyCollapseFixture();q.storylineGroups={{9971,9971},{41,42,43,44},{9970}}
     q.requires={{ids={9971}}};q.completionQuests={{id=9971,itemID=555}}
-    ui:RefreshDetail()
-    assert(ui.storyToggle.label.text=="+ "..addon.L("STORY_SOURCE_QUESTS",6))
-    assert(not ui.requirementButtons[1].shown and ui.materialButtons[1].shown and #visibleStory()==1)
-    ui.storyToggle.scripts.OnClick();assert(#visibleStory()==6)
-    assert(ui.requirementButtons[1].shown and ui.materialButtons[1].shown)
-    local old=ui.storyToggle.scripts.OnClick
-    q.storylineGroups[2][1]=45;old();assert(#visibleStory()==6)
-    ui:RefreshDetail();assert(#visibleStory()==6)
-    f:finish()
+    f:expand();showDetail(9970)
+    assert(#visibleStory()==6 and ui.materialButtons[1].shown)
+    local count=0;for _,row in ipairs(visibleStory())do if row.questID==9971 then count=count+1;assert(row.questTreeRelation=="required")end end
+    assert(count==1)
+    local click=visibleStory()[1].scripts.OnClick;q.storylineGroups[2][1]=45;click();assert(ui.quest==9970)
+    ui:RefreshQuests();assert(#visibleStory()==6);f:finish()
 end)
-check("Story title hydration and native label setters preserve a newer card or same-card source render",function()
-    for _,sameCard in ipairs({false,true})do
+check("Middle story title hydration and native setters preserve a newer source publication",function()
+    for _,same in ipairs({false,true})do
         local f,q=storyCollapseFixture();local getter=addon.QuestName;local armed=true
         addon.QuestName=function(id)
             if armed and id==8926 then
                 armed=false
-                if sameCard then q.storylineGroups={{9971,9970}};ui:RefreshDetail() else ui:InspectQuest(9971) end
+                if same then q.storylineGroups={{9971,9970}}
+                else ui.questTreeRoot,ui.questTreeDungeon,ui.quest=nil,nil,9971 end
+                ui:RefreshQuests();ui:RefreshDetail()
             end
             return getter(id)
         end
-        ui.storyToggle.scripts.OnClick()
-        assert(ui.quest==(sameCard and 9970 or 9971) and (sameCard or not ui.storyToggle.shown))
-        assert(#visibleStory()==(sameCard and 2 or 0))
-        addon.QuestName=getter;f:finish()
+        f:expand();assert(not armed and ui.quest==(same and 9970 or 9971))
+        assert(#visibleStory()==(same and 2 or 0));addon.QuestName=getter;f:finish()
     end
-    local f,q=storyCollapseFixture();local row=ui.chainButtons[1];local setter=row.label.SetText;local armed=true
-    row.label.SetText=function(self,value)
-        setter(self,value)
-        if armed then armed=false;q.storylineGroups={{9971,9970}};ui:RefreshDetail() end
-    end
-    ui.storyToggle.scripts.OnClick();assert(#visibleStory()==2 and visibleStory()[1].label.text:find("Quest 9971",1,true))
-    row.label.SetText=setter;f:finish()
+    local f,q=storyCollapseFixture();f:expand();local row=visibleStory()[1];local setter,armed=row.title.SetText,true
+    row.title.SetText=function(self,value)setter(self,value);if armed then armed=false;q.storylineGroups={{9971,9970}};ui:RefreshQuests()end end
+    ui:RefreshQuests();assert(not armed and #visibleStory()==2)
+    row.title.SetText=setter;f:finish()
 end)
-check("Story collapse retains valid reading offsets and clamps long expanded content without saving preferences",function()
-    local f,q=storyCollapseFixture();local prefs=addon.char
-    ui.storyToggle.scripts.OnClick()
-    local expanded=ui.detail.height
-    ui.detailScroll:SetVerticalScroll(expanded)
-    ui.storyToggle.scripts.OnClick()
-    local range=math.max(0,ui.detail.height-ui.detailScroll:GetHeight())
-    assert(ui.detailScroll.verticalScroll==range and ui.detail.height<expanded)
-    ui.detailScroll:SetVerticalScroll(0);ui.storyToggle.scripts.OnClick();assert(ui.detailScroll.verticalScroll==0)
-    local cb=ui.storyToggle.scripts.OnClick;local getter=ui.detailScroll.GetVerticalScroll
-    ui.detailScroll.GetVerticalScroll=function()return nil end
-    cb();assert(#visibleStory()==1)
-    ui.detailScroll.GetVerticalScroll=getter
-    assert(addon.char==prefs and addon.char.storyStates==nil)
+check("Middle chain expansion changes only its own reading surface and never saves a disclosure preference",function()
+    local f=storyCollapseFixture();local prefs=addon.char
+    ui.detailScroll:SetVerticalScroll(37);local detailHeight=ui.detail.height
+    f:expand();local expanded=ui.questList.height
+    assert(ui.detailScroll.verticalScroll==37 and ui.detail.height==detailHeight)
+    f:collapse();assert(ui.questList.height<expanded and ui.detailScroll.verticalScroll==37)
+    assert(addon.char==prefs and addon.char.storyStates==nil);f:finish()
+end)
+check("Middle hierarchy stale clicks cannot overwrite a newer detail reader position or selected quest",function()
+    local f=storyCollapseFixture();f:expand();local click=visibleStory()[1].scripts.OnClick
+    showDetail(9971);ui.detailScroll:SetVerticalScroll(7);click()
+    assert(ui.quest==9971 and ui.detailScroll.verticalScroll==7)
     f:finish()
 end)
-check("Story scroll restoration never replaces a newer same-card reading position or reopened session",function()
-    for _,reopen in ipairs({false,true})do
-        local f,q=storyCollapseFixture();local description=addon.Description;local armed=true
-        ui.storyToggle.scripts.OnClick();ui.detailScroll:SetVerticalScroll(95)
-        addon.Description=function(id)
-            if armed then
-                armed=false
-                if reopen then ui.frame.scripts.OnHide();ui.frame.scripts.OnShow() else ui:RefreshDetail() end
-                ui.detailScroll:SetVerticalScroll(7)
-            end
-            return description(id)
-        end
-        ui.storyToggle.scripts.OnClick()
-        assert(ui.detailScroll.verticalScroll==7,"a newer reader session owns its offset")
-        addon.Description=description;f:finish()
-    end
-end)
-check("Story controls wrap measured locale labels and reject changed context list membership and session callbacks",function()
-    local f,q=storyCollapseFixture();local locale=addon.db.locale
-    measurement=function(fs)
-        if fs==ui.storyToggle.label then return 64 end
-        return 18
-    end
-    for code in pairs(addon.locales)do addon.db.locale=code;ui:RefreshDetail();assert(ui.storyToggle.height==74) end
-    measurement=nil;addon.db.locale=locale;ui:RefreshDetail();assert(ui.storyToggle.height==30)
-    local old=ui.storyToggle.scripts.OnClick;local char=addon.char
-    addon.char={};old();assert(#visibleStory()==1);addon.char=char
-    local engine=ui.engine;ui.engine={};old();assert(#visibleStory()==1);ui.engine=engine
-    local checker=issecretvalue;issecretvalue=function()return false end;old();assert(#visibleStory()==1);issecretvalue=checker
-    q.storylineGroups[1][#q.storylineGroups[1]+1]=9971;old();assert(#visibleStory()==1)
-    ui:RefreshDetail();assert(ui.storyToggle.label.text=="+ "..addon.L("STORY_SOURCE_QUESTS",25))
-    old=ui.storyToggle.scripts.OnClick;ui.frame.scripts.OnHide();old();assert(#visibleStory()==1)
-    ui.frame.scripts.OnShow();assert(#visibleStory()==0)
-    ui.referenceToggle.scripts.OnClick();assert(#visibleStory()==1)
-    q.storylineGroups=nil;q.storyline={9970,9971,41,42};ui:RefreshDetail()
-    assert(ui.storyToggle.shown and #visibleStory()==1)
-    q.storyline[5]=43;ui:RefreshDetail();assert(ui.storyToggle.shown and #visibleStory()==1)
-    f:finish()
+check("Middle story rows wrap locale labels and reject replaced character engine and relation ownership",function()
+    local f,q=storyCollapseFixture();f:expand();local locale=addon.db.locale
+    measurement=function()return 64 end
+    for code in pairs(addon.locales)do addon.db.locale=code;ui:RefreshQuests();for _,row in ipairs(visibleStory())do assert(row.height>=76)end end
+    measurement=nil;addon.db.locale=locale;ui:RefreshQuests()
+    local click=visibleStory()[1].scripts.OnClick;local character,engine,checker=addon.char,ui.engine,issecretvalue
+    addon.char={};click();assert(ui.quest==9970);addon.char=character
+    ui.engine={};click();assert(ui.quest==9970);ui.engine=engine
+    issecretvalue=function()return false end;click();assert(ui.quest==9970);issecretvalue=checker
+    q.storylineGroups[1][#q.storylineGroups[1]+1]=9971;click();assert(ui.quest==9970)
+    ui:RefreshQuests();assert(#visibleStory()==26);f:finish()
 end)
 local function targetSearchFixture()
     local f={dungeons=addon.dungeons,quests=addon.quests,dungeonName=addon.DungeonName,cached=addon.CachedQuestName,
@@ -5694,87 +5557,61 @@ end)
 local function detailSectionY(value)
     for _,fs in ipairs(ui.details)do if fs.shown and fs.text==value then return -fs.point[3] end end
 end
-check("Next preparation appears before all twelve actual2933 starting references without hiding any source facts",function()
+check("All twelve source locations remain unique below compact giver and acquisition sections",function()
     local f=rewardPresentationFixture();local actual={};assert(loadfile("Database/Catalog.lua"))("DungeonPro",actual)
     local q=addon.quests[9970];q.startAlternatives=actual.quests[2933].startAlternatives
     local nav=addon.Navigation;local calls=0;addon.Navigation={Start=function()calls=calls+1 end,Map=function()calls=calls+1 end}
-    ui:RefreshDetail();local nextY=detailSectionY(addon.L("NEXT"));local starts=0
-    for index,row in ipairs(ui.startButtons)do if row.shown then
-        starts=starts+1;assert(nextY < -row.point[3] and row.title.text==q.startAlternatives[index].name)
-    end end
-    assert(starts==12 and nextY<ui.detailScroll:GetHeight() and ui.engine:State(9970).status=="UNKNOWN")
-    assert(not ui.action and not hasDestination(false) and not hasDestination(true) and calls==0)
-    assert(detailSectionY(addon.L("START_ALTERNATIVES"))<nextY and ui.giverButtons[1].shown and ui.giverButtons[2].shown)
-    assert(not ui.giverButtons[3] or not ui.giverButtons[3].shown, "giver preview remains bounded while references retain all twelve sources")
+    ui:RefreshDetail();local seen={}
+    for index=1,12 do local row=startButton(index);assert(row and row.shown and row.title.text==q.startAlternatives[index].name);assert(not seen[row]);seen[row]=true end
+    assert(not ui.giverButtons[3]or not ui.giverButtons[3].shown)
+    assert(ui.engine:State(9970).status=="UNKNOWN" and not ui.action and calls==0)
+    assert(not detailHas(addon.L("NEXT")) and ui.referenceToggle.shown)
     assert(detailHas(addon.L("REWARD_ITEM","Fixed reward",2)))
     addon.Navigation=nav;f:finish()
 end)
-check("Promoted multi-action selection and inspection precede reference locations while explicit guidance keeps its real target",function()
+check("Middle prerequisite inspection keeps source locations and explicit selected-quest guidance distinct",function()
     local restore=multiActionFixture();local actual={};assert(loadfile("Database/Catalog.lua"))("DungeonPro",actual)
     addon.quests[20001].startAlternatives=actual.quests[2933].startAlternatives
     local calls={};addon.Navigation={Start=function(action)calls[#calls+1]=action end,Map=function(point)calls[#calls+1]=point end}
-    ui:RefreshDetail();local firstReference=-ui.startButtons[1].point[3]
-    for _,row in ipairs(ui.actionButtons)do if row.shown then assert(-row.point[3]<firstReference) end end
-    for _,row in ipairs(ui.actionInspectButtons)do if row.shown then assert(-row.point[3]<firstReference) end end
-    local status=ui.engine:State(20001).status
-    ui.actionButtons[2].scripts.OnClick(ui.actionButtons[2],"LeftButton",false)
-    assert(ui.action.id==20003 and ui.quest==20001 and ui.engine:State(20001).status==status and #calls==0)
-    ui.giver.scripts.OnClick();dispatchGiverMap()
-    assert(#calls==0, "selected target has alternatives, not the chosen prerequisite's giver")
-    ui.actionInspectButtons[2].scripts.OnClick();assert(ui.quest==20003)
-    assert(ui:BackQuest() and ui.quest==20001); expandDetail(); assert(ui.startButtons[12].shown)
+    ui:RefreshQuests();ui:RefreshDetail();local status=ui.engine:State(20001).status
+    ui.giver.scripts.OnClick();dispatchGiverMap();assert(#calls==0)
+    local row=actionTreeRow(20003);assert(row and row.shown);row.scripts.OnClick(row,"LeftButton",false)
+    assert(ui.quest==20003 and #calls==0)
+    assert(ui:BackQuest()and ui.quest==20001);expandDetail()
+    assert(ui.engine:State(20001).status==status and startButton(12).shown)
     restore()
 end)
-check("Promoted Next block retains starter container and mapped drop reference visit controls below guidance",function()
+check("Practical acquisition retains container and mapped drop visit controls without automatic guidance",function()
     local actual={};assert(loadfile("Database/Catalog.lua"))("DungeonPro",actual)
     for _,id in ipairs({1100,96391})do
         local f,q=starterPresentationFixture();q.start=actual.quests[id].start
         local nav=addon.Navigation;local visits={};addon.Navigation={Start=function(a)visits[#visits+1]=a end,Map=function(p)visits[#visits+1]=p end}
-        ui:RefreshDetail();local nextY=detailSectionY(addon.L("NEXT"))
-        assert(nextY<detailSectionY(addon.L("ITEM_ACQUISITION")) and #visits==0)
-        if id==1100 then
-            local row=ui.containerButtons[1];assert(row.shown and nextY < -row.point[3]);row.scripts.OnClick()
-            assert(#visits==1 and (visits[1].place or visits[1])==q.start.containerSource)
-        else
-            assert(ui.dropButtons[1].shown and ui.dropButtons[2].shown and nextY < -ui.dropButtons[1].point[3])
-            ui.dropButtons[2].scripts.OnClick();assert(#visits==1 and visits[1].place==q.start.dropSources[2])
-        end
-        assert(ui.engine:State(9970).status=="UNKNOWN" and not ui.action)
+        ui:RefreshDetail();assert(ui.referenceToggle.shown and #visits==0 and not detailHas(addon.L("NEXT")))
+        if id==1100 then local row=ui.containerButtons[1];assert(row.shown);row.scripts.OnClick();assert(#visits==1 and(visits[1].place or visits[1])==q.start.containerSource)
+        else assert(ui.dropButtons[1].shown and ui.dropButtons[2].shown);ui.dropButtons[2].scripts.OnClick();assert(#visits==1 and visits[1].place==q.start.dropSources[2])end
+        assert(ui.engine:State(9970).status=="UNKNOWN"and not ui.action)
         addon.Navigation=nav;f:finish()
     end
 end)
-check("Next priority keeps unknown unavailable and completed text honest and clears long reference controls when recycled",function()
+check("Localized compact source locations retain unknown unavailable completed truth and recycle every control",function()
     local f=rewardPresentationFixture();local actual={};assert(loadfile("Database/Catalog.lua"))("DungeonPro",actual)
-    local q=addon.quests[9970];q.startAlternatives=actual.quests[2933].startAlternatives
-    local locale=addon.db.locale
-    for code in pairs(addon.locales)do
-        addon.db.locale=code;ui:RefreshDetail();assert(detailSectionY(addon.L("NEXT")) < -ui.startButtons[1].point[3])
-        assert(ui.engine:State(9970).status=="UNKNOWN" and not ui.action)
-    end
+    local q=addon.quests[9970];q.startAlternatives=actual.quests[2933].startAlternatives;local locale=addon.db.locale
+    for code in pairs(addon.locales)do addon.db.locale=code;ui:RefreshDetail();assert(startButton(12).shown and ui.engine:State(9970).status=="UNKNOWN"and not ui.action)end
     q.factions={"Horde"};showDetail(9970,{level=60,faction="Alliance",completed=function()return false end,active=function()return false end})
-    assert(ui.engine:State(9970).status=="UNAVAILABLE" and not ui.action and not hasDestination(true) and ui.startButtons[12].shown)
-    q.factions=nil;showDetail(9970,{level=60,completed=function(id)return id==9970 end,active=function()return false end})
-    assert(ui.engine:State(9970).status=="COMPLETED" and not ui.action)
-    showDetail(9971);assert(detailSectionY(addon.L("NEXT")) and not ui.startButtons[1].shown)
-    assert(not detailHas(addon.L("START_ALTERNATIVES")))
+    assert(ui.engine:State(9970).status=="UNAVAILABLE"and not ui.action and not hasDestination(true)and startButton(12).shown)
+    q.factions=nil;showDetail(9970,{level=60,completed=function(id)return id==9970 end,active=function()return false end});assert(ui.engine:State(9970).status=="COMPLETED"and not ui.action)
+    showDetail(9971);for _,pool in ipairs({ui.giverButtons,ui.startButtons})do for _,row in ipairs(pool)do assert(not row.shown)end end
     addon.db.locale=locale;f:finish()
 end)
-check("Long promoted action text reflows before references while later giver hydration cannot resurrect an older selected action",function()
+check("Long middle prerequisite titles wrap and giver hydration cannot resurrect an obsolete selected quest",function()
     local restore=multiActionFixture();local getter=addon.QuestName
     addon.QuestName=function(id)if id==20002 then return string.rep("Long actual action name ",20)end;return getter(id)end
     measurement=function(fs)if fs.text and fs.text:find("Long actual action name",1,true)then return 90 end;return 18 end
     addon.quests[20001].start={mapID=91,x=1,y=2,name="Reference giver"}
-    ui:RefreshDetail();assert(ui.actionButtons[1].height>=126)
-    assert(-ui.actionButtons[2].point[3]>=-ui.actionButtons[1].point[3]+ui.actionButtons[1].height)
-    local referenceY;for _,fs in ipairs(ui.details)do if fs.shown and fs.text:find(addon.L("START")..": Reference giver",1,true)then referenceY=-fs.point[3]end end
-    assert(referenceY and referenceY > -ui.actionButtons[2].point[3])
+    ui:RefreshQuests();ui:RefreshDetail();local row=actionTreeRow(20002);assert(row and row.height>=90)
     local maps=C_Map;local armed=true
-    C_Map={GetMapInfo=function(id)
-        if armed and id==91 then armed=false;ui:InspectQuest(20002)end
-        return {name="Native reference zone"}
-    end}
+    C_Map={GetMapInfo=function(id)if armed and id==91 then armed=false;ui:InspectQuest(20002)end;return{name="Native reference zone"}end}
     ui:RefreshDetail();assert(not armed and ui.quest==20002 and ui.action.id==20002)
-    for _,row in ipairs(ui.actionButtons)do assert(not row.shown)end
     measurement=nil;addon.QuestName=getter;C_Map=maps;restore()
 end)
 local function singleDestinationFixture()
@@ -5787,8 +5624,9 @@ local function singleDestinationFixture()
     addon.quests=copy;addon.QuestName=function(id)return copy[id]and copy[id].name or saved.name(id)end
     C_Map={GetMapInfo=function(id)return{name=id==1433 and "Redridge Mountains" or "Westfall"}end}
     f.visits={};addon.Navigation={Start=function(a)f.visits[#f.visits+1]=a end,Map=function(p)f.visits[#f.visits+1]=p end}
-    showDetail(166,{level=60,faction="Alliance",class="WARRIOR",race=1,completed=function()return false end,
-        active=function(id)return id==65 end,ready=function(id)return id==65 end})
+    f.context={level=60,faction="Alliance",class="WARRIOR",race=1,completed=function()return false end,
+        active=function(id)return id==65 end,ready=function(id)return id==65 end}
+    showDetail(166,f.context)
     function f:restore()
         addon.quests,addon.QuestName,C_Map,addon.Navigation=saved.quests,saved.name,saved.maps,saved.nav
         self:finish()
@@ -5798,32 +5636,23 @@ end
 local function destinationLine(prefix)
     for _,fs in ipairs(ui.details)do if fs.shown and fs.text:find(prefix,1,true)==1 then return fs end end
 end
-check("A single real ancestor turn-in names Wiley in Redridge separately from inspected quest166 giver Gryan",function()
+check("An ancestor turn-in stays distinct from the selected quest giver until explicitly inspected",function()
     local f,quests=singleDestinationFixture()
     assert(ui.action.id==65 and ui.action.kind=="turnin" and ui.action.place==quests[65].finish and #f.visits==0)
-    local target=destinationLine("Wiley the Black — Redridge Mountains")
-    assert(target and -target.point[3]>detailSectionY(addon.L("NEXT")))
-    assert(destinationLine(addon.L("START")..": Gryan Stoutmantle — Westfall"))
-    assert(-target.point[3]<-destinationLine(addon.L("START")..": Gryan Stoutmantle").point[3])
+    assert(not destinationLine("Wiley the Black — Redridge Mountains") and destinationLine("Gryan Stoutmantle — Westfall"))
     ui.giver.scripts.OnClick();dispatchGiverMap()
     assert(f.visits[1].id==166 and f.visits[1].kind=="visit" and f.visits[1].place==quests[166].start and f.visits[2]==quests[166].start)
     assert(ui.engine:State(166).status=="LOCKED")
+    showDetail(65,f.context);assert(detailIncludes("Wiley the Black")and detailIncludes("Redridge Mountains")and destinationLine("Gryan Stoutmantle"))
     f:restore()
 end)
-check("Single-action destination translates wraps and recycles without duplicating existing multi-action location notes",function()
+check("Selected turn-in metadata translates wraps and no unrelated prerequisite destinations are hydrated",function()
     local f,quests=singleDestinationFixture();local locale=addon.db.locale
     local long=string.rep("Long Wiley destination ",15);local old=quests[65].finish.name;quests[65].finish.name=long
     measurement=function(fs)if fs.text and fs.text:find(long,1,true)then return 88 end;return 18 end
-    for code in pairs(addon.locales)do
-        addon.db.locale=code;ui:RefreshDetail();local line=destinationLine(long.." — Redridge Mountains")
-        assert(line and line.fontSize==15)
-        local start=destinationLine(addon.L("START")..": Gryan Stoutmantle");assert(-start.point[3]>=-line.point[3]+88)
-    end
+    for code in pairs(addon.locales)do addon.db.locale=code;showDetail(65,f.context);assert(detailIncludes(long)and destinationLine("Gryan Stoutmantle"))end
     measurement=nil;quests[65].finish.name=old;addon.db.locale=locale;f:restore()
-    local restore=multiActionFixture();local standalone=0
-    for _,fs in ipairs(ui.details)do if fs.shown and fs.text:find("Giver 20002",1,true)==1 then standalone=standalone+1 end end
-    assert(standalone==0 and ui.actionButtons[1].note.text:find("Giver 20002",1,true))
-    restore()
+    local restore=multiActionFixture();assert(not detailIncludes("Giver 20002"));restore()
 end)
 check("Single pickup map-only and zone-only names remain informational while nil level and completion places add no placeholder",function()
     local f=rewardPresentationFixture();local q=addon.quests[9970];local maps=C_Map
@@ -5841,17 +5670,17 @@ check("Single pickup map-only and zone-only names remain informational while nil
 end)
 check("Single destination map and name hydration reject changed endpoints helpers and source fields before publication",function()
     for _,mode in ipairs({"map","name","endpoint","coordinates","helper"})do
-        local f,quests=singleDestinationFixture();local getter=C_Map.GetMapInfo;local names=addon.GiverName;local armed=true
+        local f,quests=singleDestinationFixture();showDetail(65,f.context);local getter=C_Map.GetMapInfo;local names=addon.GiverName;local armed=true
         if mode=="name"then
             addon.GiverName=function(p)
-                if armed and p==quests[65].finish then armed=false;ui:InspectQuest(65)end
+                if armed and p==quests[65].finish then armed=false;ui:InspectQuest(132)end
                 return nil
             end
         else
             C_Map.GetMapInfo=function(id)
                 if armed and id==1433 then
                     armed=false
-                    if mode=="map"then ui:InspectQuest(65)
+                    if mode=="map"then ui:InspectQuest(132)
                     elseif mode=="endpoint"then local old=quests[65].finish;local fresh={};for k,v in pairs(old)do fresh[k]=v end;fresh.name="Fresh turn-in";quests[65].finish=fresh
                     elseif mode=="coordinates"then quests[65].finish.x=27
                     else addon.GiverName=function()return "Changed helper"end end
@@ -5860,7 +5689,8 @@ check("Single destination map and name hydration reject changed endpoints helper
             end
         end
         ui:RefreshDetail();assert(not armed)
-        if mode=="map"or mode=="name"then assert(ui.quest==65 and ui.action.id==65)
+        if mode=="map"or mode=="name"then assert(ui.quest==132 and ui.action.id==65)
+        elseif mode=="helper"then assert(ui.action.id==65 and detailIncludes("Changed helper")and not detailIncludes("Wiley the Black"))
         else assert(not ui.action and not hasDestination(false) and not hasDestination(true))end
         C_Map.GetMapInfo=getter;addon.GiverName=names;ui:RefreshDetail()
         assert(ui.action and ui.action.id==65)
@@ -5869,7 +5699,7 @@ check("Single destination map and name hydration reject changed endpoints helper
 end)
 check("Single destination hydration preserves newer same-card and replacement-card narratives and raw source ownership",function()
     for _,sameCard in ipairs({false,true})do
-        local f,quests=singleDestinationFixture();local getter=C_Map.GetMapInfo;local armed=true
+        local f,quests=singleDestinationFixture();showDetail(65,f.context);local getter=C_Map.GetMapInfo;local armed=true
         C_Map.GetMapInfo=function(id)
             if armed and id==1433 then
                 armed=false
@@ -5879,8 +5709,8 @@ check("Single destination hydration preserves newer same-card and replacement-ca
             return getter(id)
         end
         ui:RefreshDetail()
-        assert(ui.quest==(sameCard and 166 or 132) and ui.action.id==65)
-        if sameCard then assert(destinationLine("Current destination — Redridge Mountains") and not destinationLine("Wiley the Black — Redridge Mountains"))end
+        assert(ui.quest==(sameCard and 65 or 132) and ui.action.id==65)
+        if sameCard then assert(detailIncludes("Current destination — Redridge Mountains") and not detailIncludes("Wiley the Black — Redridge Mountains"))end
         C_Map.GetMapInfo=getter;f:restore()
     end
 end)
@@ -5893,7 +5723,7 @@ check("Consecutive unknown action placeholders collapse to one while explicit un
     end end
     assert(repeated==0 and ui.engine:State(9970).status=="UNKNOWN")
     local restore=multiActionFixture();addon.quests[20003].requirementsKnown=false;ui:Refresh()
-    assert(ui.action.id==20002 and detailIncludes(addon.L("UNKNOWN_REQUIREMENTS")))
+    assert(ui.action.id==20002 and not detailIncludes(addon.L("NEXT")))
     restore();f:finish()
 end)
 check("Single starter-item destination hydration preserves new and same-card source identity without fabricating item actions",function()
@@ -5925,9 +5755,9 @@ local function detailOccurrences(value)
 end
 check("Event credit labels share neutral objectives without becoming slain NPC names item counts portraits or navigation",function()
     local f,q=eventObjectivesFixture()
-    assert(detailOccurrences(addon.L("OBJECTIVE_OBJECTS"))==1 and detailOccurrences(addon.L("OBJECTIVE_OBJECTS_NOTICE"))==1)
-    assert(detailHas(addon.L("OBJECTIVE_ITEM_UNKNOWN",q.objectiveEvents[1].name)) and q.objectiveEvents[1].quantity==nil)
-    assert(not detailHas(addon.L("OBJECTIVE_KILLS")) and not detailHas(addon.L("OBJECTIVE_ITEMS")))
+    assert(detailOccurrences(addon.L("OBJECTIVE_OBJECTS"))==1 and detailOccurrences(addon.L("OBJECTIVE_OBJECTS_NOTICE"))==0)
+    assert(detailHas(unknownObjective(q.objectiveEvents[1].name)) and q.objectiveEvents[1].quantity==nil)
+    assert(not detailHas(addon.L("OBJECTIVE_KILLS")) and not detailHas(addon.L("DETAIL_OBJECTIVES")))
     assert(detailHas(addon.L("OBJECTIVE_PROGRESS")) and detailHas("|cff88bfffNative objective 0/1|r"))
     assert(not q.finish and ui.engine:State(9970).status=="UNKNOWN" and not ui.action)
     assert(f.api.name==0 and f.api.icon==0 and f.api.count==0 and f.api.navigation==0)
@@ -5940,10 +5770,10 @@ check("Mixed object and event namespaces retain independent same-number facts on
     q.objectiveKills={{npcID=777,name="Separate slain row",quantity=3}}
     q.objectiveItems={{itemID=777,name="Real item",quantity=4}}
     ui:RefreshDetail()
-    assert(detailOccurrences(addon.L("OBJECTIVE_OBJECTS"))==1 and detailOccurrences(addon.L("OBJECTIVE_OBJECTS_NOTICE"))==1)
-    assert(detailHas(addon.L("OBJECTIVE_ITEM","Object task",2)) and detailHas(addon.L("OBJECTIVE_ITEM_UNKNOWN","Event task")))
-    assert(not detailHas(addon.L("OBJECTIVE_ITEM_UNKNOWN","Duplicate event")))
-    assert(detailSectionY(addon.L("OBJECTIVE_ITEM","Object task",2))<detailSectionY(addon.L("OBJECTIVE_ITEM_UNKNOWN","Event task")))
+    assert(detailOccurrences(addon.L("OBJECTIVE_OBJECTS"))==1 and detailOccurrences(addon.L("OBJECTIVE_OBJECTS_NOTICE"))==0)
+    assert(detailHas(addon.L("OBJECTIVE_ITEM","Object task",2)) and detailHas(unknownObjective("Event task")))
+    assert(not detailHas(unknownObjective("Duplicate event")))
+    assert(detailSectionY(addon.L("OBJECTIVE_ITEM","Object task",2))<detailSectionY(unknownObjective("Event task")))
     assert(detailHas(addon.L("OBJECTIVE_ITEM","Separate slain row",3)) and detailHas(addon.L("OBJECTIVE_ITEM","Native item 777",4)))
     assert(detailHas(addon.L("ITEM_CARRIED",0)) and f.api.name==1 and f.api.icon==1 and f.api.count==1 and f.api.navigation==0)
     assert(detailHas("|cff88bfffNative objective 0/1|r") and ui.engine:State(9970).status=="UNKNOWN")
@@ -5971,13 +5801,13 @@ check("Event-only and mixed factual goals translate reuse one section and disapp
     local f,q=eventObjectivesFixture();local locale=addon.db.locale
     for code in pairs(addon.locales)do
         addon.db.locale=code;q.objectiveObjects={};q.objectiveEvents={{npcID=1,name="Task"}};ui:RefreshDetail()
-        assert(detailOccurrences(addon.L("OBJECTIVE_OBJECTS"))==1 and detailHas(addon.L("OBJECTIVE_ITEM_UNKNOWN","Task")))
+        assert(detailOccurrences(addon.L("OBJECTIVE_OBJECTS"))==1 and detailHas(unknownObjective("Task")))
         q.objectiveObjects={{objectID=1,name="Object"}};q.objectiveEvents[1].quantity=2;ui:RefreshDetail()
         assert(detailOccurrences(addon.L("OBJECTIVE_OBJECTS"))==1 and detailHas(addon.L("OBJECTIVE_ITEM","Task",2)))
         q.objectiveObjects=nil;q.objectiveEvents=nil;ui:RefreshDetail();assert(not detailHas(addon.L("OBJECTIVE_OBJECTS")))
     end
     q.objectiveEvents={{npcID=1,name="Old task"}};ui:RefreshDetail();ui:InspectQuest(9971)
-    assert(not detailHas(addon.L("OBJECTIVE_ITEM_UNKNOWN","Old task")) and not detailHas(addon.L("OBJECTIVE_OBJECTS")))
+    assert(not detailHas(unknownObjective("Old task")) and not detailHas(addon.L("OBJECTIVE_OBJECTS")))
     addon.db.locale=locale;f:finish()
 end)
 check("Event sanitizer and source member mutation cannot publish old labels across new or same-card generations",function()
@@ -5993,7 +5823,7 @@ check("Event sanitizer and source member mutation cannot publish old labels acro
         end
         ui:RefreshDetail();assert(not armed and ui.quest==(sameCard and 9970 or 9971))
         assert(not detailHas(addon.L("OBJECTIVE_ITEM","Old event",6)))
-        if sameCard then assert(detailHas(addon.L("OBJECTIVE_ITEM_UNKNOWN","Fresh event")))end
+        if sameCard then assert(detailHas(unknownObjective("Fresh event")))end
         issecretvalue=checker;f:finish()
     end
     local f,q=eventObjectivesFixture();local checker=issecretvalue;local armed=true
@@ -6016,14 +5846,14 @@ check("Cross-source event root and list mutations invalidate object publication 
             return false
         end
         ui:RefreshDetail();assert(not armed and not detailHas(addon.L("OBJECTIVE_ITEM","Old object",6)))
-        issecretvalue=checker;ui:RefreshDetail();assert(detailHas(addon.L("OBJECTIVE_ITEM_UNKNOWN","New event")))
+        issecretvalue=checker;ui:RefreshDetail();assert(detailHas(unknownObjective("New event")))
         assert(detailOccurrences(addon.L("OBJECTIVE_OBJECTS"))==1)
         f:finish()
     end
 end)
 check("Factual goal FontString setters preserve replacement event cards and independent live progress during native publication",function()
     for _,sameCard in ipairs({false,true})do
-        local f,q=eventObjectivesFixture();local old=addon.L("OBJECTIVE_ITEM_UNKNOWN",q.objectiveEvents[1].name)
+        local f,q=eventObjectivesFixture();local old=unknownObjective(q.objectiveEvents[1].name)
         local row=objectiveText(old);assert(row);local setter=row.SetText;local armed=true
         row.SetText=function(self,value)
             setter(self,value)
@@ -6034,7 +5864,7 @@ check("Factual goal FontString setters preserve replacement event cards and inde
         end
         ui:RefreshDetail();assert(not armed and ui.quest==(sameCard and 9970 or 9971))
         assert(not detailHas(old) and detailHas("|cff88bfffNative objective 0/1|r"))
-        if sameCard then assert(detailHas(addon.L("OBJECTIVE_ITEM_UNKNOWN","Current task")))end
+        if sameCard then assert(detailHas(unknownObjective("Current task")))end
         row.SetText=setter;f:finish()
     end
 end)
@@ -6042,7 +5872,7 @@ check("Actual95647 event pilot uses its factual task label and has no inferred q
     local f,q=eventObjectivesFixture();local actual={};assert(loadfile("Database/Catalog.lua"))("DungeonPro",actual)
     q.objectiveEvents=actual.quests[95647].objectiveEvents
     assert(#q.objectiveEvents==1 and q.objectiveEvents[1].npcID==262681 and q.objectiveEvents[1].quantity==nil)
-    ui:RefreshDetail();assert(detailHas(addon.L("OBJECTIVE_ITEM_UNKNOWN","Learn what happened to Ardin Grassman")))
+    ui:RefreshDetail();assert(detailHas(unknownObjective("Learn what happened to Ardin Grassman")))
     assert(f.api.name==0 and f.api.icon==0 and f.api.count==0 and f.api.navigation==0)
     assert(ui.engine:State(9970).status=="UNKNOWN" and not ui.action)
     f:finish()
@@ -6300,7 +6130,7 @@ check("Source-listed payment displays three hundred copper as reference cost sep
     local f,q=paymentFixture();local price=addon.L("QUEST_PAYMENT",addon.L("MONEY_COPPER",300))
     assert(detailHas(price) and detailHas(addon.L("QUEST_PAYMENT_NOTICE")))
     assert(detailHas(addon.L("REWARD_ITEM","Fixed reward",2)) and not detailHas(addon.L("REWARD_MONEY",price)))
-    assert(detailSectionY(price)>detailSectionY(addon.L("NEXT")) and detailSectionY(price)<detailSectionY(addon.L("REWARD_ITEMS")))
+    assert(not detailHas(addon.L("NEXT")) and detailSectionY(price)<detailSectionY(addon.L("DETAIL_GUARANTEED")))
     assert(q.requiredMoney==300 and ui.engine:State(9970).status=="UNKNOWN" and not ui.action and not hasDestination(false) and not hasDestination(true))
     f:finish()
 end)
@@ -6446,10 +6276,10 @@ local function firstDetailPrefix(prefix)
 end
 check("Actual1654 accepted native progress precedes long source item goals provided tools and every reference location",function()
     local f,q=hierarchyFixture(1654)
-    local nextY=detailSectionY(addon.L("NEXT"));local progressY=detailSectionY(addon.L("OBJECTIVE_PROGRESS"))
-    local dialogueY=detailSectionY(addon.L("OBJECTIVE_DIALOGUE"));local itemsY=detailSectionY(addon.L("OBJECTIVE_ITEMS"))
-    local suppliedY=detailSectionY(addon.L("PROVIDED_ITEMS"));local startY=firstDetailPrefix(addon.L("START")..": ")
-    assert(nextY<progressY and progressY<dialogueY and dialogueY<itemsY and itemsY<suppliedY and suppliedY<startY)
+    local giverY=detailSectionY(addon.L("DETAIL_GIVER"));local progressY=detailSectionY(addon.L("OBJECTIVE_PROGRESS"))
+    local dialogueY=detailSectionY(addon.L("OBJECTIVE_DIALOGUE"));local itemsY=detailSectionY(addon.L("DETAIL_OBJECTIVES"))
+    local suppliedY=detailSectionY(addon.L("PROVIDED_ITEMS"));local startY=firstDetailPrefix("")
+    assert(giverY<progressY and progressY<dialogueY and dialogueY<itemsY and itemsY<suppliedY and not detailHas(addon.L("NEXT")))
     assert(progressY<ui.detailScroll:GetHeight() and detailHas("|cff88bfffCurrent native counter 0/1|r"))
     assert(q.requirementsKnown==false and ui.engine:State(1654).status=="ACTIVE" and ui.action.kind=="complete" and not ui.action.place)
     assert(ui.materialButtons[1].shown and -ui.materialButtons[1].point[3]>suppliedY)
@@ -6459,16 +6289,16 @@ check("Native-first hierarchy preserves actual source role text in all locales a
     local f,q=hierarchyFixture(1654);local locale=addon.db.locale
     for code in pairs(addon.locales)do
         addon.db.locale=code;ui:RefreshDetail()
-        assert(detailSectionY(addon.L("OBJECTIVE_PROGRESS"))<detailSectionY(addon.L("OBJECTIVE_ITEMS")))
+        assert(detailSectionY(addon.L("OBJECTIVE_PROGRESS"))<detailSectionY(addon.L("DETAIL_OBJECTIVES")))
         assert(detailOccurrences(addon.L("OBJECTIVE_PROGRESS"))==1 and detailOccurrences(addon.L("OBJECTIVE_DIALOGUE"))==1)
         f.progress={};f.dialogue=nil;ui:RefreshDetail()
         assert(not detailHas(addon.L("OBJECTIVE_PROGRESS")) and not detailHas(addon.L("OBJECTIVE_DIALOGUE")))
-        assert(detailHas(addon.L("OBJECTIVE_ITEMS")) and detailHas(addon.L("PROVIDED_ITEMS")))
+        assert(detailHas(addon.L("DETAIL_OBJECTIVES")) and detailHas(addon.L("PROVIDED_ITEMS")))
         f.progress={{text="Current native counter 0/1",finished=false}};f.dialogue="Current dialogue objective"
     end
     f.held=false;f.dialogue=nil;showDetail(1654,f.context)
     assert(ui.engine:State(1654).status=="UNKNOWN" and not ui.action and not detailHas(addon.L("OBJECTIVE_PROGRESS")))
-    assert(detailSectionY(addon.L("OBJECTIVE_ITEMS"))<firstDetailPrefix(addon.L("START")..": "))
+    assert(detailSectionY(addon.L("DETAIL_GIVER"))<detailSectionY(addon.L("DETAIL_OBJECTIVES")))
     addon.QuestObjectives,addon.DialogueObjectiveText=nil,nil;ui:RefreshDetail()
     assert(not detailHas(addon.L("OBJECTIVE_PROGRESS")) and not detailHas(addon.L("OBJECTIVE_DIALOGUE")))
     addon.db.locale=locale;f:restore()
@@ -6476,15 +6306,15 @@ end)
 check("Promoted source facts remain distinct and goal-free twelve-start cards add no placeholder progress or source panels",function()
     for _,id in ipairs({92753,8991,1160})do
         local f,q=hierarchyFixture(id)
-        local goal=q.objectiveEvents and"OBJECTIVE_OBJECTS"or(q.objectiveKills and"OBJECTIVE_KILLS"or"OBJECTIVE_ITEMS")
+        local goal=q.objectiveEvents and"OBJECTIVE_OBJECTS"or(q.objectiveKills and"OBJECTIVE_KILLS"or"DETAIL_OBJECTIVES")
         assert(detailSectionY(addon.L("OBJECTIVE_PROGRESS"))<detailSectionY(addon.L(goal)))
-        assert(detailSectionY(addon.L(goal))<firstDetailPrefix(addon.L("START")..": "))
+        assert(not detailHas(addon.L("NEXT"))and detailSectionY(addon.L(goal)))
         assert(detailHas(addon.L("OBJECTIVE_PROGRESS")) and q.requirementsKnown==false and ui.engine:State(id).status=="ACTIVE")
         f:restore()
     end
     local f,q=hierarchyFixture(2933);f.held=false;f.dialogue=nil;showDetail(2933,f.context)
-    assert(ui.startButtons[12].shown and not detailHas(addon.L("OBJECTIVE_PROGRESS")) and not detailHas(addon.L("OBJECTIVE_DIALOGUE")))
-    assert(not detailHas(addon.L("OBJECTIVE_ITEMS"))and not detailHas(addon.L("PROVIDED_ITEMS"))and not detailHas(addon.L("OBJECTIVE_OBJECTS")))
+    assert(startButton(12).shown and not detailHas(addon.L("OBJECTIVE_PROGRESS")) and not detailHas(addon.L("OBJECTIVE_DIALOGUE")))
+    assert(not detailHas(addon.L("DETAIL_OBJECTIVES"))and not detailHas(addon.L("PROVIDED_ITEMS"))and not detailHas(addon.L("OBJECTIVE_OBJECTS")))
     f:restore()
 end)
 check("Early native objective producer reentry cannot overwrite replacement or newer same-card live data",function()
@@ -6515,7 +6345,7 @@ check("Promoted native label publication preserves current card and native helpe
     end
     ui:RefreshDetail();fs.SetText=setter
     assert(not armed and not detailHas(addon.L("OBJECTIVE_PROGRESS"))and not detailHas(addon.L("OBJECTIVE_DIALOGUE")))
-    assert(detailOccurrences(addon.L("OBJECTIVE_ITEMS"))==1 and detailOccurrences(addon.L("PROVIDED_ITEMS"))==1)
+    assert(detailOccurrences(addon.L("DETAIL_OBJECTIVES"))==1 and detailOccurrences(addon.L("PROVIDED_ITEMS"))==1)
     f:restore()
 end)
 
@@ -6743,7 +6573,7 @@ check("Held payment line setter reentry preserves a newer same-card amount and c
     assert(detailHas(logPaymentText(700)) and not detailHas(logPaymentText(300)))
     ui:InspectQuest(9971);assert(not detailHas(logPaymentText(700)))
     ui:BackQuest();expandDetail();assert(detailHas(logPaymentText(700)))
-    f.held=false;ui:RefreshDetail();assert(not detailHas(logPaymentText(700)) and detailHas(addon.L("QUEST_PAYMENT_NOTICE")))
+    f.held=false;ui:RefreshDetail();assert(not detailHas(logPaymentText(700)) and detailHas(addon.L("QUEST_PAYMENT",addon.L("MONEY_COPPER",300))))
     f:finish()
 end)
 
@@ -6821,7 +6651,7 @@ check("Game waypoint is a separate optional manual destination after native obje
     assert(button and button.shown and button.enabled and button.label.text==addon.L("GAME_WAYPOINT_FOLLOW"),"game waypoint needs a separate explicit follow control")
     assert(detailHas(addon.L("GAME_WAYPOINT_NOTICE"))and detailHas("Native route instruction")and #f.visits==0)
     assert(detailSectionY(addon.L("OBJECTIVE_DIALOGUE"))<detailSectionY(addon.L("GAME_WAYPOINT")))
-    assert(detailSectionY(addon.L("GAME_WAYPOINT"))<firstDetailPrefix(addon.L("START")..": "))
+    assert(detailSectionY(addon.L("DETAIL_GIVER"))<detailSectionY(addon.L("GAME_WAYPOINT")))
     assert(action.id==9970 and action.kind=="complete" and giver.place==q.start and ui.engine:State(9970).status=="ACTIVE")
     button.scripts.OnClick(button,"LeftButton");local visit=f.visits[1]
     assert(visit.id==9970 and visit.kind=="visit" and visit.place.mapID==43 and visit.place.x==10 and visit.place.y==90)
@@ -6997,11 +6827,11 @@ check("Reward context precedes all twelve actual2933 source references after cur
     local context={level=60,faction="Alliance",class="WARRIOR",race=1,completed=function()return false end,active=function()return false end}
     local progress=addon.QuestObjectives;addon.QuestObjectives=function()return{{text="Live objective retained",finished=false}}end
     for code in pairs(addon.locales)do addon.db.locale=code;showDetail(2933,context)
-        local rewardY=detailSectionY(addon.L("REWARD_ITEMS"));local referenceY=ui.startButtons[1].shown and -ui.startButtons[1].point[3]
-        assert(rewardY and referenceY and detailSectionY(addon.L("NEXT"))<rewardY and detailSectionY(addon.L("OBJECTIVE_PROGRESS"))<rewardY)
+        local rewardY=detailSectionY(addon.L("DETAIL_GUARANTEED"));local referenceY=startButton(3).shown and -startButton(3).point[3]
+        assert(rewardY and referenceY and not detailHas(addon.L("NEXT"))and detailSectionY(addon.L("OBJECTIVE_PROGRESS"))<rewardY)
         assert(rewardY<referenceY,"Available reward context is buried behind twelve source references")
-        assert(detailOccurrences(addon.L("REWARD_ITEM","Fixed reward",2))==1 and detailOccurrences(addon.L("REWARD_ITEM","Choice reward",1))==1)
-        local shown=0;for index,row in ipairs(ui.startButtons)do if row.shown then shown=shown+1;assert(row.title.text==actual.quests[2933].startAlternatives[index].name)end end
+        assert(detailOccurrences(addon.L("REWARD_ITEM","Fixed reward",2))==1 and detailOccurrences("Choice reward")==1)
+        local shown=0;for index=1,12 do local row=startButton(index);if row.shown then shown=shown+1;assert(row.title.text==actual.quests[2933].startAlternatives[index].name)end end
         assert(shown==12)
     end
     addon.QuestObjectives=progress;addon.quests[2933]=old;f:finish()
@@ -7014,9 +6844,9 @@ check("Reward priority retains hidden unknown empty and zero contexts while sour
         f.data=kind=="known"and{source="dialogue",items={{id=701,name="Fixed reward",count=2,texture=123}},choices={},xp=0,money=300}
             or kind=="empty"and{source="dialogue",items={},choices={},xp=0,money=0}
             or kind=="hidden"and{source="dialogue",hidden=true}or nil
-        ui:RefreshDetail();local reference=-ui.startButtons[1].point[3]
-        local key=kind=="known"and"REWARD_ITEMS"or kind=="empty"and"REWARD_NO_ITEMS"or kind=="hidden"and"REWARD_HIDDEN"or"REWARD_UNAVAILABLE"
-        assert(detailSectionY(addon.L(key))<reference)
+        ui:RefreshDetail();local reference=-startButton(3).point[3]
+        local key=kind=="known"and"DETAIL_GUARANTEED"or kind=="empty"and"REWARD_NO_ITEMS"or kind=="hidden"and"REWARD_HIDDEN"or"REWARD_UNAVAILABLE"
+        if kind=="known"then assert(detailSectionY(addon.L(key))<reference)else assert(not detailHas(addon.L(key)))end
         assert(detailHas(addon.L("REWARD_XP",0))==(kind=="known"or kind=="empty"))
         assert(detailHas(addon.L("REWARD_MONEY")..": Coins 300")== (kind=="known"))
         if kind~="known"then for _,row in ipairs(ui.rewardButtons or{})do assert(not row.shown)end end
@@ -7035,7 +6865,7 @@ check("Reward promotion preserves narrative content and current quest reading po
     local before=content();ui:RefreshDetail();local after=content()
     for text,count in pairs(before)do assert(after[text]==count)end;for text,count in pairs(after)do assert(before[text]==count)end
     assert(ui.detailScroll:GetVerticalScroll()==75)
-    assert(detailSectionY(addon.L("REWARD_ITEMS"))<detailSectionY(addon.L("QUEST_TEXT")))
+    assert(detailSectionY(addon.L("DETAIL_GUARANTEED"))<detailSectionY(addon.L("DETAIL_STORY")))
     assert(detailOccurrences("Narrative paragraph retained after references.")==1)
     addon.Description=description;f:finish()
 end)
@@ -7124,7 +6954,7 @@ check("current dialogue stage uses a distinct owned heading and keeps reward ori
     for _,stage in ipairs({"progress","completion"})do f.stage=stage;f.token={};ui:RefreshDetail()
         local heading=addon.L(stage=="progress"and"DIALOGUE_PROGRESS_TEXT"or"DIALOGUE_TURNIN_TEXT")
         assert(detailHas(heading)and detailHas(f.text)and detailHas("Original narrative remains separate."))
-        assert(detailSectionY(addon.L("REWARD_ITEMS"))<detailSectionY(heading)and detailSectionY(heading)<detailSectionY(addon.L("QUEST_TEXT")))
+        assert(detailSectionY(addon.L("DETAIL_GUARANTEED"))<detailSectionY(heading)and detailSectionY(heading)<detailSectionY(addon.L("DETAIL_STORY")))
         assert(ui.engine:State(9970).status=="UNKNOWN"and not ui.action)
     end
     f:finish()
@@ -7215,7 +7045,7 @@ check("finish reference requires a fresh single own turnin and skips alternative
             end
             return nextAction(engine,id,...)
         end
-        ui:RefreshDetail();assert(ui.giverPortrait.texture=="display:5001"and ui.action.id==26001 and reads==2)
+        ui:RefreshDetail();assert(ui.giverPortrait.texture=="display:5001"and ui.action.id==26001 and reads==3)
     end
     local original=q.finish
     for _,endpoint in ipairs({{npcID=4003,name="Unknown model"},{objectID=4003,name="Object"},{itemID=4003,name="Item"}})do
@@ -7347,11 +7177,11 @@ end
 check("actual quest level stays distinct from minimum level without changing status or twelve sources",function()
     for _,id in ipairs({5724,2933})do
         local f,q=questLevelFixture(id);local status=ui.engine:State(id).status
-        local metadata=addon.L("QUEST_LEVEL",q.level).." · "..addon.L("QUEST_MIN_LEVEL",q.minLevel)
+        local metadata=addon.L("DETAIL_LEVEL",q.level).." · "..addon.L("DETAIL_MIN_LEVEL",q.minLevel)
         local copies=0;for _,fs in ipairs(ui.details)do if fs.shown and fs.text:find(metadata,1,true)then copies=copies+1 end end
         assert(detailIncludes(metadata)and copies==1)
         assert(ui.engine:State(id).status==status and status==f.expectedStatus)
-        if id==2933 then local count=0;for _,b in ipairs(ui.startButtons)do if b.shown then count=count+1 end end;assert(count==12)end
+        if id==2933 then local count=0;for index=1,12 do local b=startButton(index);if b.shown then count=count+1 end end;assert(count==12)end
         f:finish()
     end
 end)
@@ -7359,25 +7189,25 @@ check("absent zero negative invalid or restricted recorded level keeps known min
     local f,q=questLevelFixture(5724);local checker=issecretvalue;local secretLevel={}
     issecretvalue=function(v)return v==secretLevel end
     for _,value in ipairs({0,-1,false,"16",16.5,math.huge,secretLevel})do
-        q.level=value;f:refresh();assert(detailIncludes(addon.L("QUEST_MIN_LEVEL",9))and not detailIncludes(addon.L("QUEST_LEVEL",16)))
+        q.level=value;f:refresh();assert(detailIncludes(addon.L("DETAIL_MIN_LEVEL",9))and not detailIncludes(addon.L("DETAIL_LEVEL",16)))
         assert(ui.engine:State(5724).status==f.expectedStatus)
     end
-    q.level=nil;f:refresh();assert(detailIncludes(addon.L("QUEST_MIN_LEVEL",9)))
+    q.level=nil;f:refresh();assert(detailIncludes(addon.L("DETAIL_MIN_LEVEL",9)))
     -- Missing minimum is outside the Planner schema; exercise only the display boundary with a read-only unknown state.
     q.level=16;q.minLevel=nil
     ui.engine={context=f.context,State=function()return{status="UNKNOWN"}end,Next=function()return{},false end}
-    ui:RefreshDetail();assert(detailIncludes(addon.L("QUEST_LEVEL",16))and not detailIncludes(addon.L("QUEST_MIN_LEVEL",9)))
+    ui:RefreshDetail();assert(detailIncludes(addon.L("DETAIL_LEVEL",16))and not detailIncludes(addon.L("DETAIL_MIN_LEVEL",9)))
     issecretvalue=checker;f:finish()
 end)
 check("recorded level and minimum wrap in ten locales at the existing readable body size and recycle",function()
     local f,q=questLevelFixture(5724);local locale=addon.db.locale
     measurement=function(fs)return fs.text:find(" · ",1,true)and 54 or 18 end
     for code in pairs(addon.locales)do addon.db.locale=code;f:refresh()
-        local value=addon.L("QUEST_LEVEL",16).." · "..addon.L("QUEST_MIN_LEVEL",9);local found=false
-        for _,fs in ipairs(ui.details)do if fs.shown and fs.text:find(value,1,true)then found=true;assert(fs.fontSize==15 and fs.measuredHeight==54)end end
+        local value=addon.L("DETAIL_LEVEL",16).." · "..addon.L("DETAIL_MIN_LEVEL",9);local found=false
+        for _,fs in ipairs(ui.details)do if fs.shown and fs.text:find(value,1,true)then found=true;assert(fs.fontSize==13 and fs.measuredHeight==54)end end
         assert(found)
     end
-    q.level=nil;f:refresh();assert(not detailIncludes(addon.L("QUEST_LEVEL",16)))
+    q.level=nil;f:refresh();assert(not detailIncludes(addon.L("DETAIL_LEVEL",16)))
     addon.db.locale=locale;f:finish()
 end)
 check("level localization replacing a quest cannot write the old metadata over a new card",function()
@@ -7385,11 +7215,11 @@ check("level localization replacing a quest cannot write the old metadata over a
     local old=addon.quests[99001];addon.quests[99001]={id=99001,name="New metadata card",level=30,minLevel=20,requires={},requirementsKnown=false}
     addon.L=function(key,...)
         local value=L(key,...)
-        if armed and key=="QUEST_LEVEL"then armed=false;showDetail(99001,f.context)end
+        if armed and key=="DETAIL_LEVEL"then armed=false;showDetail(99001,f.context)end
         return value
     end
-    f:refresh();assert(not armed and ui.quest==99001 and not detailHas(L("QUEST_LEVEL",q.level)))
-    assert(detailHas(L("QUEST_LEVEL",30).." · "..L("QUEST_MIN_LEVEL",20)))
+    f:refresh();assert(not armed and ui.quest==99001 and not detailHas(L("DETAIL_LEVEL",q.level)))
+    assert(detailHas(L("DETAIL_LEVEL",30).." · "..L("DETAIL_MIN_LEVEL",20)))
     addon.L=L;addon.quests[99001]=old;f:finish()
 end)
 
@@ -8269,7 +8099,7 @@ local function manualLocationHandoffFixture(route)
         else
             q.startAlternatives={{npcID=101,name="Explicit alternative",mapID=1436}}
             if route~="alternative-map"then q.startAlternatives[1].x=56.3;q.startAlternatives[1].y=47.5 end
-            showDetail(35001);f.control=ui.startButtons[1]
+            showDetail(35001);f.control=startButton(1)
         end
     end
     assert(f.control and f.control.shown and f.control.scripts.OnClick and f.calls==0)
@@ -8623,7 +8453,7 @@ check("Human inspection lists actual92753 without racial labels while unknown re
                 assert(not fs.text:find(addon.L("RACE_ID",95),1,true) and not fs.text:find("High Order",1,true))
                 assert(not fs.text:find(addon.L("QUEST_RACES",""),1,true))
             end end
-            assert(detailIncludes(addon.L(ui.detailReferencesExpanded and "QUEST_MIN_LEVEL"or"DETAIL_MIN_LEVEL",q.minLevel)))
+            assert(detailIncludes(addon.L(ui.detailReferencesExpanded and "DETAIL_MIN_LEVEL"or"DETAIL_MIN_LEVEL",q.minLevel)))
         end
         assert(q.races==races and #races==4 and reads==0)
     end
@@ -8818,10 +8648,9 @@ check("Compact selected giver stays visible before the mandatory chain and never
         if id<42002 then addon.quests[id].requires={{ids={id+1}}}end
     end
     ui.dungeon={key="visible-giver-chain",quests={42000}};showCompactDetail(42000)
-    assert(not ui.detailReferencesExpanded and ui.detailChainExpanded and not ui.chainButtons[1].shown)
-    ui.referenceToggle.scripts.OnClick();assert(ui.chainButtons[1].shown)
-    assert(detailSectionY(addon.L("QUEST_GIVER"))<detailSectionY(addon.L("CHAIN")))
-    assert(-ui.chainButtons[1].point[3]<detailSectionY(addon.L("NEXT")))
+    ui.questTreeRoot,ui.questTreeDungeon=42000,ui.dungeon;ui:RefreshQuests();ui:RefreshDetail()
+    local count=0;for _,row in ipairs(ui.rows)do if row.shown and row.questTreeNode and row.questID then count=count+1 end end
+    assert(count==3 and not ui.referenceToggle.shown and not detailHas(addon.L("CHAIN"))and not detailHas(addon.L("NEXT")))
     assert(destinationLine("Giver 42000") and ui.action.id==42002)
     dispatchGiverMap();ui.giver.scripts.OnClick()
     assert(calls[1]==addon.quests[42000].start and calls[2].id==42000 and calls[2].kind=="visit")
@@ -8863,25 +8692,20 @@ check("Mapped alternative giver areas remain explicit compact choices and stale 
     ui.giverButtons[1].scripts.OnClick();assert(mapped[2]==actual.quests[7494].startAlternatives[1] and started==0)
     addon.quests[7492],addon.quests[7494]=first,second;addon.Navigation=navigation;ui.quest,ui.dungeon=quest,dungeon;ui:Refresh()
 end)
-check("Long mandatory chains open as bounded visible prerequisite context with an explicit full expansion",function()
-    local quest,dungeon=ui.quest,ui.dungeon
+check("Long mandatory chains remain fully inspectable in the middle without duplicate right hierarchy",function()
+    local quest,dungeon,root,treeDungeon=ui.quest,ui.dungeon,ui.questTreeRoot,ui.questTreeDungeon
     for id=41001,41009 do
         addon.quests[id]={id=id,minLevel=1,requirementsKnown=true,start={name="Chain giver",mapID=1,x=20,y=30}}
         if id<41009 then addon.quests[id].requires={{ids={id+1}}}end
     end
     ui.dungeon={key="long-mandatory",quests={41001}};showCompactDetail(41001)
-    for _,row in ipairs(ui.chainButtons)do assert(not row.shown)end
-    ui.referenceToggle.scripts.OnClick()
-    local shown,parentVisible=0,false
-    for _,row in ipairs(ui.chainButtons)do if row.shown then
-        shown=shown+1;if row.label.text:find("Quest 41002",1,true)then parentVisible=true end
-    end end
-    assert(not ui.detailChainExpanded and shown>1 and shown<=6 and parentVisible and detailHas(addon.L("REQUIREMENT_NOTICE")))
-    assert(detailSectionY(addon.L("QUEST_GIVER"))<detailSectionY(addon.L("CHAIN")))
-    ui.storyToggle.scripts.OnClick();shown=0;for _,row in ipairs(ui.chainButtons)do if row.shown then shown=shown+1 end end
-    assert(ui.detailChainExpanded and shown==9)
+    ui.questTreeRoot,ui.questTreeDungeon=41001,ui.dungeon;ui:RefreshQuests();ui:RefreshDetail()
+    local shown,parent=0
+    for _,row in ipairs(ui.rows)do if row.shown and row.questTreeNode and row.questID then shown=shown+1;if row.questID==41002 then parent=row end end end
+    assert(shown==9 and parent and not detailHas(addon.L("CHAIN"))and not ui.referenceToggle.shown)
+    parent.scripts.OnClick();assert(ui.quest==41002 and destinationLine("Chain giver"))
     for id=41001,41009 do addon.quests[id]=nil end
-    ui.quest,ui.dungeon=quest,dungeon;ui:Refresh()
+    ui.quest,ui.dungeon,ui.questTreeRoot,ui.questTreeDungeon=quest,dungeon,root,treeDungeon;ui:Refresh()
 end)
 check("Shared dungeon approaches use a short header and retain both notices with their actual source",function()
     local quest,dungeon,provider,navigation,tooltip=ui.quest,ui.dungeon,addon.Entrances,addon.Navigation,GameTooltip
@@ -9193,17 +9017,17 @@ check("Default detail prioritizes narrative objectives rewards and one named giv
     assert(not ui.detailReferencesExpanded and not(ui.storyToggle and ui.storyToggle.shown))
     assert(detailHas("Selected quest narrative"),"default narrative")
     assert(detailIncludes("Selected live objective"),"default progress")
-    assert(detailHas(addon.L("REWARD_ITEM","Selected reward",1)),"default cached reward")
+    assert(detailHas("Selected reward"),"default cached reward")
     local giverLines,narrativeY=0
     for _,fs in ipairs(ui.details)do if fs.shown then
         if fs.text:find("Named primary giver",1,true)then giverLines=giverLines+1 end
         if fs.text=="Selected quest narrative"then narrativeY=-fs.point[3]end
     end end
-    assert(giverLines==1 and narrativeY and -ui.referenceToggle.point[3]>narrativeY)
+    assert(giverLines==1 and narrativeY and not ui.referenceToggle.shown)
     assert(not detailHas(addon.L("NEXT"))and not detailHas(addon.L("STORY_SHORT")))
     local action=ui.action;assert(action)
-    ui.referenceToggle.scripts.OnClick();assert(ui.detailReferencesExpanded and ui.storyToggle.shown and ui.action.id==action.id)
-    ui.referenceToggle.scripts.OnClick();assert(not ui.detailReferencesExpanded and not ui.storyToggle.shown and detailHas("Selected quest narrative"))
+    assert(not ui.referenceToggle.scripts.OnClick and not(ui.storyToggle and ui.storyToggle.shown))
+    ui:RefreshDetail();assert(ui.action.id==action.id and detailHas("Selected quest narrative"))
     addon.Description,addon.QuestObjectives,addon.CachedQuestRewards,addon.DialogueRewards,addon.QuestRewards=description,objectives,rewards,dialogue,log;f:finish()
 end)
 check("No-dungeon PICK notice clears recycled quest decorations and reward ownership",function()
@@ -9530,7 +9354,8 @@ check("Late narrative toggle hide and label writes preserve a newer same-quest r
     end
 end)
 check("Compact metadata and rewards remove duplicate default prose while advanced facts stay available",function()
-    local f=compactNarrativeFixture();local rewards,dialogue,log,coin=addon.CachedQuestRewards,addon.DialogueRewards,addon.QuestRewards,GetCoinTextureString
+    local f=compactNarrativeFixture();addon.quests[53001].startAlternatives={{name="Additional giver",mapID=1,x=22,y=33}}
+    local rewards,dialogue,log,coin=addon.CachedQuestRewards,addon.DialogueRewards,addon.QuestRewards,GetCoinTextureString
     addon.DialogueRewards,addon.QuestRewards=nil,nil
     addon.CachedQuestRewards=function()return{source="cache",items={},choices={},xp=123,money=456}end
     GetCoinTextureString=function(amount)assert(amount==456);return"coins"end
@@ -9540,11 +9365,11 @@ check("Compact metadata and rewards remove duplicate default prose while advance
     assert(detailHas(addon.L("DETAIL_REWARDS"))and detailHas(addon.L("REWARD_XP",123).." · "..addon.L("REWARD_MONEY")..": coins"))
     assert(not detailHas(addon.L("REWARD_NO_ITEMS"))and not detailHas(addon.L("REWARD_PREVIEW")))
     ui.referenceToggle.scripts.OnClick()
-    assert(detailIncludes(addon.L("QUEST_LEVEL",18))and detailIncludes(addon.L("QUEST_MIN_LEVEL",9)))
-    assert(detailHas(addon.L("REWARD_NO_ITEMS"))and detailHas(addon.L("REWARD_PREVIEW"))and detailHas(addon.L("REWARD_XP",123)))
+    assert(detailIncludes(addon.L("DETAIL_LEVEL",18))and detailIncludes(addon.L("DETAIL_MIN_LEVEL",9)))
+    assert(not detailHas(addon.L("REWARD_NO_ITEMS"))and not detailHas(addon.L("REWARD_PREVIEW"))and detailHas(addon.L("REWARD_XP",123)))
     addon.CachedQuestRewards=function()return nil end;ui.detailReferencesExpanded=false;ui:RefreshDetail()
     assert(not detailHas(addon.L("DETAIL_REWARDS"))and not detailHas(addon.L("REWARD_UNAVAILABLE")))
-    ui.referenceToggle.scripts.OnClick();assert(detailHas(addon.L("REWARD_UNAVAILABLE")))
+    ui.referenceToggle.scripts.OnClick();assert(not detailHas(addon.L("REWARD_UNAVAILABLE")))
     addon.CachedQuestRewards,addon.DialogueRewards,addon.QuestRewards,GetCoinTextureString=rewards,dialogue,log,coin;f:finish()
 end)
 check("Level filtering occupies the global header while character filtering stays scoped to quest heading",function()

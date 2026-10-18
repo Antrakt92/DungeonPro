@@ -204,3 +204,44 @@ local chainStrings = {
 for locale, values in pairs(chainStrings) do
     addon.locales[locale].CHAIN_EXPAND, addon.locales[locale].CHAIN_COLLAPSE = values[1], values[2]
 end
+
+local acquisitionStrings = {
+    enUS = { "Acquisition details", "Hide acquisition details", "Guaranteed", "Turn in" },
+    ruRU = { "Получение задания", "Скрыть сведения о получении", "Гарантированные", "Сдать" },
+    deDE = { "Annahmedetails", "Annahmedetails ausblenden", "Garantiert", "Abgeben" },
+    frFR = { "Détails d’obtention", "Masquer les détails d’obtention", "Garanties", "Rendre" },
+    esES = { "Detalles de obtención", "Ocultar detalles de obtención", "Garantizadas", "Entregar" },
+    itIT = { "Dettagli di ottenimento", "Nascondi dettagli di ottenimento", "Garantite", "Consegna" },
+    ptBR = { "Detalhes de obtenção", "Ocultar detalhes de obtenção", "Garantidas", "Entregar" },
+    koKR = { "수락 정보", "수락 정보 숨기기", "확정 보상", "완료 보고" },
+    zhCN = { "接取详情", "隐藏接取详情", "必得奖励", "交付" },
+    zhTW = { "接取詳情", "隱藏接取詳情", "必得獎勵", "交付" },
+}
+local acquisitionKeys = { "DETAIL_ACQUISITION", "DETAIL_ACQUISITION_HIDE", "DETAIL_GUARANTEED", "DETAIL_TURNIN" }
+for locale, values in pairs(acquisitionStrings) do
+    for index, key in ipairs(acquisitionKeys) do addon.locales[locale][key] = values[index] end
+end
+
+local routeActions = {
+    enUS = { "Use this route", "Use automatic choice" },
+    ruRU = { "Выбрать этот путь", "Выбирать автоматически" },
+    deDE = { "Diese Route wählen", "Automatische Auswahl" },
+    frFR = { "Choisir cet itinéraire", "Choix automatique" },
+    esES = { "Elegir esta ruta", "Elegir automáticamente" },
+    itIT = { "Scegli questo percorso", "Scelta automatica" },
+    ptBR = { "Escolher esta rota", "Escolha automática" },
+    koKR = { "이 경로 선택", "자동 선택 사용" },
+    zhCN = { "选择此路线", "自动选择路线" },
+    zhTW = { "選擇此路線", "自動選擇路線" },
+}
+for locale, values in pairs(routeActions) do
+    addon.locales[locale].BRANCH_PREFER, addon.locales[locale].BRANCH_RESET = values[1], values[2]
+end
+local objectiveCaptions = { enUS = "Objectives", ruRU = "Цели", deDE = "Ziele", frFR = "Objectifs",
+    esES = "Objetivos", itIT = "Obiettivi", ptBR = "Objetivos", koKR = "목표", zhCN = "目标", zhTW = "目標" }
+for locale, value in pairs(objectiveCaptions) do addon.locales[locale].DETAIL_OBJECTIVES = value end
+
+local requirementOwners = { enUS = "Required for: %s", ruRU = "Нужно для: %s", deDE = "Benötigt für: %s",
+    frFR = "Requis pour : %s", esES = "Requisito para: %s", itIT = "Necessario per: %s",
+    ptBR = "Necessário para: %s", koKR = "필요한 퀘스트: %s", zhCN = "前置任务归属：%s", zhTW = "前置任務歸屬：%s" }
+for locale, value in pairs(requirementOwners) do addon.locales[locale].REQUIREMENT_FOR = value end
