@@ -72,9 +72,11 @@ assert(ui.heading.point[2] + ui.heading:GetWidth() < ui.characterButton.point[2]
 assert(ui.characterButton.point[2] + ui.characterButton:GetWidth() < ui.detailScroll.point[2], "filters remain beside the quest heading")
 for _, control in ipairs({ ui.giver, ui.source }) do
     assert(control.parent == ui.detail and control.point[2] == ui.detail, "actions scroll with the quest title")
-    assert(control.point[1] == "TOPRIGHT" and control.point[3] == "TOPRIGHT" and control.point[5] == 0)
 end
-assert(ui.giver.point[4] == -40 and ui.source.point[4] == -4, "separate actions share the title line")
+assert(ui.source.point[1] == "TOPRIGHT" and ui.source.point[3] == "TOPRIGHT" and ui.source.point[5] == 0 and ui.source.point[4] == -4,
+    "Wowhead retains its compact title action")
+assert(ui.giver.point[1] == "TOPLEFT" and ui.giver.point[3] == "TOPLEFT" and ui.giver.point[4] == 4 and ui.giver.point[5] < 0,
+    "labelled giver action follows the giver details")
 assert(ui.detailScroll.point[3] == -66 and ui.detailScroll:GetHeight() == 622, "details reclaim the former action band")
 for _, scroll in ipairs({ ui.catalogScroll, ui.questScroll, ui.detailScroll }) do
     assert(-scroll.point[3] + scroll:GetHeight() == 688, "content reclaims the former bottom band")

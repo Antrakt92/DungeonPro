@@ -461,7 +461,7 @@ check("Map-only quest givers open their known zone and missing givers disable vi
         Start = function() started = started + 1 end }
     addon.quests[2].start = { mapID = 1436, name = "Known zone only" }
     showDetail(2)
-    assert(ui.giver.enabled and ui.giver.text == "" and ui.giver.footerLabelKey == "GIVER_MAP")
+    assert(ui.giver.enabled and ui.giver.caption.text == addon.L(ui.giver.footerLabelKey) and ui.giver.footerLabelKey == "GIVER_MAP")
     ui.giver.scripts.OnClick()
     assert(#mapped == 1 and mapped[1].mapID == 1436 and started == 0)
     addon.quests[2].start = nil; showDetail(2)
@@ -767,10 +767,10 @@ check("Reward redraw clears another quest's items and money text", function()
     assert(not detailHas("Only selected quest robe"))
     assert(not detailHas(addon.L("REWARD_MONEY") .. ": Selected coin texture"))
 end)
-check("Unavailable money formatter never produces a guessed currency value", function()
+check("Unavailable money formatter retains the exact known copper amount", function()
     addon.QuestRewards = function() return { items = {}, choices = {}, money = 100 } end
     GetCoinTextureString = nil; showDetail(2)
-    assert(detailHas(addon.L("REWARD_MONEY_UNKNOWN")))
+    assert(detailHas(addon.L("REWARD_MONEY") .. ": " .. addon.L("MONEY_COPPER",100)))
     addon.QuestRewards = function() error("reward API unavailable") end
     showDetail(2)
     assert(not detailHas(addon.L("REWARD_UNAVAILABLE")) and not detailHas(addon.L("REWARD_MONEY_UNKNOWN")))
@@ -2128,7 +2128,7 @@ check("Missing zero failing or restricted icons revert recycled text to ordinary
     issecretvalue = f.oldSecret
     f.data = nil; ui:RefreshDetail()
     assert(not first.shown and not first.scripts.OnEnter and first.icon.texture == nil)
-    for _, fs in ipairs(ui.details) do if fs.shown then assert(fs.width == ui.detail:GetWidth()-8-(fs.detailStyle=="title"and 80 or 0) and fs.point[2] == 4) end end
+    for _, fs in ipairs(ui.details) do if fs.shown then assert(fs.width == ui.detail:GetWidth()-8-(fs.detailStyle=="title"and 40 or 0) and fs.point[2] == 4) end end
     f:finish()
 end)
 check("Hover freshly rejects changed source hidden dialogue kind slot and item before redraw", function()
@@ -2703,7 +2703,10 @@ do
             assert(ui.rows[3].note.text:find(alliance .. addon.L("FACTION_Alliance"), 1, true))
             showCompactDetail(13003)
             local found = false
-            for _, fs in ipairs(ui.details) do if fs.shown and fs.text:find(alliance, 1, true) and fs.text:find(paladin, 1, true) then found = true end end
+            for _, fs in ipairs(ui.details) do if fs.shown and fs.text:find(alliance, 1, true) then found = true end end
+            local classFound=false
+            for _,fs in ipairs(ui.details)do if fs.shown and fs.text:find(paladin,1,true)then classFound=true end end
+            assert(classFound)
             assert(found and ui.engine:State(13003).status == "UNAVAILABLE" and not ui.action)
             expandDetail(); found = false
             local expected = addon.L("ITEM_CLASSES", paladin .. "Paladin")
@@ -2720,9 +2723,9 @@ do
         q.classes = { "PALADIN", "MAGE", "CUSTOM", "PALADIN" }
         addon.ClassName = function(token) return token end
         showCompactDetail(13003)
-        local metadata
+        local metadata = ""
         for _, fs in ipairs(ui.details) do
-            if fs.shown and fs.text:find("classicon-paladin", 1, true) then metadata = fs.text end
+            if fs.shown and (fs.text:find("classicon-paladin", 1, true) or fs.text:find("PVP-AllianceIcon",1,true)) then metadata = metadata .. fs.text end
         end
         assert(metadata)
         local _, paladins = metadata:gsub("classicon%-paladin", "")
@@ -4582,7 +4585,7 @@ end)
 check("Starter objective provided and reward hovers remain source-distinct and stale starter leaves preserve newer owners",function()
     local f,q=starterPresentationFixture()
     q.objectiveItems={{itemID=801,name="Goal",quantity=6}};q.providedItems={{itemID=801,name="Supplied"}};ui:RefreshDetail()
-    local starter,objective,provided=ui.objectiveButtons[3],ui.objectiveButtons[1],ui.objectiveButtons[2]
+    local starter,objective,provided=ui.objectiveButtons[1],ui.objectiveButtons[2],ui.objectiveButtons[3]
     assert(starter.objectiveBinding.role=="starter" and objective.objectiveBinding.role=="objective" and provided.objectiveBinding.role=="provided")
     starter.scripts.OnEnter();local oldLeave,oldEnter=starter.scripts.OnLeave,starter.scripts.OnEnter
     objective.scripts.OnEnter();local hides=f.tip.hides;oldLeave();assert(f.tip.hides==hides and f.tip.owner==objective)
@@ -4608,8 +4611,8 @@ check("Real starter catalogue records show separate known acquisition routes or 
     addon.dungeons=real.dungeons;addon.ItemName=function()return nil end
     for _,qid in ipairs({4903,1100,6522,7761})do
         q.start=real.quests[qid].start;ui:RefreshDetail()
-        assert(detailHas(addon.L("ITEM_ACQUISITION")))
-        assert(detailHas(addon.L("ITEM_ACQUISITION_UNKNOWN"))==(qid==4903))
+        assert(detailHas(addon.L("ITEM_ACQUISITION"))==(qid~=4903))
+        assert(detailHas(addon.L("START_ITEM_LOCATION_UNKNOWN"))==(qid==4903))
         assert(detailHas(""..addon.L("ITEM_STARTER",q.start.name)))
         assert(ui.engine:State(9970).status=="UNKNOWN" and not ui.action)
         if qid==1100 then
@@ -4628,14 +4631,14 @@ check("Acquisition sections translate recycle and reject empty source placeholde
     local f,q=starterPresentationFixture();local locale=addon.db.locale
     for code in pairs(addon.locales)do
         addon.db.locale=code;q.start={itemID=801,name="Starter",dropSources={}}
-        ui:RefreshDetail();assert(detailHas(addon.L("ITEM_ACQUISITION")) and detailHas(addon.L("ITEM_ACQUISITION_UNKNOWN")))
+        ui:RefreshDetail();assert(not detailHas(addon.L("ITEM_ACQUISITION")) and detailHas(addon.L("START_ITEM_LOCATION_UNKNOWN")))
         q.start.dropSources={{name="No identity",locationName="Zone"},{npcID=1,name=" ",locationName="Zone"}}
-        ui:RefreshDetail();assert(detailHas(addon.L("ITEM_ACQUISITION_UNKNOWN")))
+        ui:RefreshDetail();assert(detailHas(addon.L("START_ITEM_LOCATION_UNKNOWN")))
         q.start.dropSources={{npcID=1,name="Source",locationName="Known zone"},{npcID=2,name="Other source",locationName="Other zone"}}
-        ui:RefreshDetail();assert(not detailHas(addon.L("ITEM_ACQUISITION_UNKNOWN")))
+        ui:RefreshDetail();assert(not detailHas(addon.L("START_ITEM_LOCATION_UNKNOWN")))
         assert(detailHas(addon.L("ITEM_DROP_SOURCE","Source","Known zone")) and detailHas(addon.L("ITEM_DROP_SOURCE","Other source","Other zone")))
         q.start={npcID=1,name="Giver"};ui:RefreshDetail()
-        assert(not detailHas(addon.L("ITEM_ACQUISITION")) and not detailHas(addon.L("ITEM_ACQUISITION_UNKNOWN")))
+        assert(not detailHas(addon.L("ITEM_ACQUISITION")) and not detailHas(addon.L("START_ITEM_LOCATION_UNKNOWN")))
     end
     addon.db.locale=locale;f:finish()
 end)
@@ -4656,7 +4659,7 @@ check("Acquisition container visits and reported points reject changed source de
     q.start.containerSource={objectID=19861,name="Replacement",mapID=1441};click();assert(#maps==1)
     ui:RefreshDetail();assert(ui.containerButtons[1].shown)
     q.start.containerSource=nil;ui:RefreshDetail()
-    assert(not ui.containerButtons[1].shown and detailHas(addon.L("ITEM_ACQUISITION_UNKNOWN")))
+    assert(not ui.containerButtons[1].shown and detailHas(addon.L("START_ITEM_LOCATION_UNKNOWN")))
     addon.Navigation=nav;f:finish()
 end)
 check("Acquisition label hydration cannot append old routes to a replacement card or same-card generation",function()
@@ -4674,7 +4677,7 @@ check("Acquisition label hydration cannot append old routes to a replacement car
         end
         showDetail(9970)
         assert(not armed and ui.detail.height==nestedHeight and not detailHas(addon.L("ITEM_DROP_SOURCE","Old drop","Old zone")))
-        if same then assert(detailHas(addon.L("ITEM_ACQUISITION_UNKNOWN")))else assert(not detailHas(addon.L("ITEM_ACQUISITION")))end
+        if same then assert(detailHas(addon.L("START_ITEM_LOCATION_UNKNOWN")))else assert(not detailHas(addon.L("ITEM_ACQUISITION")))end
     end
     addon.GiverName=names;f:finish()
 end)
@@ -4828,7 +4831,7 @@ check("Text-only drop sources stay ordinary while map-only and reported-only sou
     q.start.dropSources={{npcID=1,name="Text only",locationName="Dungeon"}};ui:RefreshDetail()
     assert(not detailHas(addon.L("ITEM_DROP_LOCATIONS")))
     for _,row in ipairs(ui.dropButtons)do assert(not row.shown and not row.enabled and not row.scripts.OnClick)end
-    assert(not detailHas(addon.L("ITEM_ACQUISITION_UNKNOWN")))
+    assert(not detailHas(addon.L("START_ITEM_LOCATION_UNKNOWN")))
     addon.Navigation=nav;f:finish()
 end)
 check("Mapped drop callbacks bind source lists entries and reported coordinates without promoting NPC or mixed starters",function()
@@ -5586,7 +5589,7 @@ check("Practical acquisition retains container and mapped drop visit controls wi
     for _,id in ipairs({1100,96391})do
         local f,q=starterPresentationFixture();q.start=actual.quests[id].start
         local nav=addon.Navigation;local visits={};addon.Navigation={Start=function(a)visits[#visits+1]=a end,Map=function(p)visits[#visits+1]=p end}
-        ui:RefreshDetail();assert(ui.referenceToggle.shown and #visits==0 and not detailHas(addon.L("NEXT")))
+        ui:RefreshDetail();assert(not ui.referenceToggle.shown and #visits==0 and not detailHas(addon.L("NEXT")))
         if id==1100 then local row=ui.containerButtons[1];assert(row.shown);row.scripts.OnClick();assert(#visits==1 and(visits[1].place or visits[1])==q.start.containerSource)
         else assert(ui.dropButtons[1].shown and ui.dropButtons[2].shown);ui.dropButtons[2].scripts.OnClick();assert(#visits==1 and visits[1].place==q.start.dropSources[2])end
         assert(ui.engine:State(9970).status=="UNKNOWN"and not ui.action)
@@ -8373,16 +8376,16 @@ check("Real language hover previews the existing window and restores its labels 
     assert(not language.session and addon.db.locale=="enUS")
     addon.Language=previous;addon.db.locale=locale;ui.quest,ui.dungeon=quest,dungeon;ui.frame:Show();ui:Refresh()
 end)
-check("Detail header quest-giver and Wowhead controls retain actions in equal compact icon-only slots",function()
+check("Quest-giver action uses a readable strip while Wowhead retains its compact header slot",function()
     local quest,locale,navigation=ui.quest,addon.db.locale,addon.Navigation
     local called;addon.Navigation={Start=function(action)called=action;return true end}
     showCompactDetail(3,{level=20,completed=function()return false end,active=function()return false end});local giver,source=ui.giver,ui.source
     local giverIcon,sourceIcon=giver.footerIcon,source.footerIcon
-    assert(giver.width==32 and giver.height==32 and source.width==32 and source.height==32)
+    assert(giver.width>200 and giver.height>=34 and source.width==32 and source.height==32)
     assert(giver.parent==ui.detail and source.parent==ui.detail)
-    assert(giver.point[1]=="TOPRIGHT"and giver.point[2]==ui.detail and giver.point[3]=="TOPRIGHT"and giver.point[4]==-40 and giver.point[5]==0)
+    assert(giver.point[1]=="TOPLEFT"and giver.point[2]==ui.detail and giver.point[3]=="TOPLEFT"and giver.point[4]==4 and giver.point[5]<0)
     assert(source.point[1]=="TOPRIGHT"and source.point[2]==ui.detail and source.point[3]=="TOPRIGHT"and source.point[4]==-4 and source.point[5]==0)
-    assert(giver.text==""and source.text==""and giverIcon.width==24 and sourceIcon.height==24)
+    assert(giver.caption.text==addon.L(giver.footerLabelKey)and source.text==""and giverIcon.width==24 and sourceIcon.height==24)
     assert(giverIcon.texture=="Interface\\Minimap\\MinimapArrow")
     assert(sourceIcon.texture=="Interface\\AddOns\\DungeonPro\\Media\\Icons\\Wowhead")
     assert(sourceIcon.texCoords[1]==0 and sourceIcon.texCoords[2]==.75 and sourceIcon.texCoords[3]==0 and sourceIcon.texCoords[4]==.75)
@@ -8392,7 +8395,7 @@ check("Detail header quest-giver and Wowhead controls retain actions in equal co
     source.scripts.OnClick();assert(ui.copy.shown and ui.copy.text=="https://www.wowhead.com/forever/quest=3"and ui.frame.shown)
     ui:CloseCopyLink()
     for code in pairs(addon.locales)do addon.db.locale=code;ui:Refresh()
-        assert(giver.text==""and source.text==""and giver.footerIcon==giverIcon and source.footerIcon==sourceIcon)
+        assert(giver.caption.text==addon.L(giver.footerLabelKey)and source.text==""and giver.footerIcon==giverIcon and source.footerIcon==sourceIcon)
         assert(giverIcon.alpha==.88 and sourceIcon.alpha==.88 and not sourceIcon.desaturated)
     end
     ui.quest=nil;ui:RefreshDetail()
@@ -9513,15 +9516,15 @@ check("Detail title wraps before action slots while body width and scrolling rem
     end
     showDetail(1)
     local title=ui.details[1];local full=ui.detail:GetWidth()-8
-    assert(title.shown and title.width==full-80 and seenTitle==full-80)
-    assert(seenBody==full and title.point[2]+title.width<=ui.detail:GetWidth()-72)
+    assert(title.shown and title.width==full-40 and seenTitle==full-40)
+    assert(seenBody==full and title.point[2]+title.width<=ui.detail:GetWidth()-36)
     assert(-ui.details[2].point[3]>=82,"wrapped title consumes measured height plus its gap")
     assert(ui.giver.parent==ui.detail and ui.source.parent==ui.detail,"native scroll child carries both actions with the title")
     ui.detailScroll:SetVerticalScroll(77);ui:RefreshQuests()
     assert(ui.detailScroll.point[3]==-66 and ui.detailScroll.height==622 and ui.detailScroll.verticalScroll==77)
     assert(ui.questScroll.point[3]==-(66+92+8),"only quest rows follow the long dungeon heading")
     ui.quest=nil;ui:RefreshDetail()
-    assert(ui.details[1].detailStyle=="title"and ui.details[1].width==full-80)
+    assert(ui.details[1].detailStyle=="title"and ui.details[1].width==full-40)
     assert(not ui.giver.enabled and not ui.source.enabled)
     measurement=nil;addon.QuestName=names;ui.quest,ui.dungeon=quest,dungeon;ui:Refresh()
 end)

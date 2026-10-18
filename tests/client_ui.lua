@@ -151,10 +151,11 @@ check("Window opens and filters without requiring cached quest titles", function
     for _, d in ipairs(addon.dungeons) do if d.key == "dm" then addon.UI.dungeon = d end end
     addon.UI:Refresh(); assert(#addon.UI.rows == 7)
 end)
-check("Real TOC detail header uses separate quest and Wowhead icons without replacing actions", function()
+check("Real TOC details show a labelled giver action and separate Wowhead icon", function()
     local ui = addon.UI
     ui.quest = 166; ui:Refresh()
-    assert(ui.giver.text == "" and ui.source.text == "" and ui.giver.width == 32 and ui.source.height == 32)
+    assert(ui.giver.caption.text == addon.L("VISIT_GIVER") and ui.giver.width > 200 and ui.giver.height >= 34)
+    assert(ui.source.text == "" and ui.source.width == 32 and ui.source.height == 32)
     assert(ui.giver.footerIcon.texture == "Interface\\Minimap\\MinimapArrow")
     assert(ui.source.footerIcon.texture == "Interface\\AddOns\\DungeonPro\\Media\\Icons\\Wowhead")
     local uv = ui.source.footerIcon.texCoords

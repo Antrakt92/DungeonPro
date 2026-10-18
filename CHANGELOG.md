@@ -2,6 +2,11 @@
 
 ## 0.1.0 - 16-Oct-2026 — Development preview
 
+- Highlighted unknown quest-giver locations and added a labelled visit button
+  with an explanation when unavailable. Quest and minimum levels have clear labels.
+- Showed starter-item sources directly and removed repeated starter details.
+- Fixed money rewards disappearing when the legacy coin formatter is unavailable.
+
 - Simplified quest details with compact objectives, larger reward icons and a
   separate story section. Quest chains stay in the quest list; additional sources
   open only when needed.

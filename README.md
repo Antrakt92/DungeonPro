@@ -106,8 +106,8 @@ Level ranges are provisional recommendations.
   quests and all quests, using a portrait or list symbol and a short mode label.
   Hover for the current mode and click to switch.
   The message and heart icons offer issue-report and project-support links for copying.
-  Quest-log occupancy sits in the top bar; navigation and Wowhead actions sit
-  beside the quest title and scroll with the details.
+  Quest-log occupancy sits in the top bar. A labelled visit action appears with
+  the quest giver; the Wowhead link sits beside the quest title.
   Select a quest to expand its related steps in place, then select any step to
   read its details without losing the opened list. Completed steps remain visible.
   A faction crest follows faction-specific quest names. A chevron identifies
@@ -119,20 +119,24 @@ Level ranges are provisional recommendations.
   into required prerequisites. Same-named steps show their quest IDs.
   Quest icons show journal progress and completion; hover for the status reason.
   Required prerequisites and source-listed story quests are labelled separately.
-  The detail pane keeps the giver, objectives and rewards together with compact
-  level information. Story text has its own reading section; long passages expand
-  on demand. Acquisition details appears when there are additional sources,
-  locations or starter-item facts. Reward tiles distinguish guaranteed items
-  from choices; hover an icon for the full native item tooltip.
+  The detail pane labels the quest level and required character level separately.
+  Unknown giver locations are highlighted, and hovering the unavailable visit
+  action explains why it cannot be used. Item-started quests show the starter
+  item and its known sources directly; missing sources stay visibly unknown.
+  Additional locations and sources can be expanded when available. Story text
+  has its own reading section; long passages expand on demand. Reward tiles
+  distinguish guaranteed items from choices; hover an icon for the full native
+  item tooltip. Money uses the client's coin formatter, with a copper amount
+  as a fallback when formatting is unavailable.
 - When available, follow the game's next waypoint for a quest in your log.
   It may mark a route point, an entrance or a turn-in. Quest-giver locations
   and preparation steps remain separate.
-- The navigation arrow opens the giver's known zone or guides to a known location.
+- The visit action opens the giver's known zone or guides to a known location.
   Known coordinates appear as a Dungeon Pro marker on the map, even without native waypoint support.
-  The Wowhead icon offers the quest link for copying. Hover over either icon
-  for its action description.
+  The Wowhead icon offers the quest link for copying. Hover over an action
+  for its description.
   Visiting a giver does not confirm that the quest is available to pick up.
-  The quest icon always refers to the selected quest's giver.
+  The visit action always refers to the selected quest's giver.
   Alternative givers have separate actions; missing coordinates are explained.
   A low-level character can still visit a known giver without treating the quest
   as available. The planner stays open; move it if it covers the map.

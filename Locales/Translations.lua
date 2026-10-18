@@ -156,16 +156,16 @@ for locale, values in pairs(cardStrings) do
 end
 
 local detailStrings = {
-    enUS = { "Lv %d", "%d+", "Start", "Rewards", "Story", "Text not recorded yet", "Read story", "Collapse story" },
-    ruRU = { "Ур. %d", "С %d ур.", "Где взять", "Награды", "История", "Текст пока не сохранён", "Читать историю", "Свернуть историю" },
-    deDE = { "Stufe %d", "Ab %d", "Auftraggeber", "Belohnungen", "Geschichte", "Text noch nicht gespeichert", "Geschichte lesen", "Geschichte einklappen" },
-    frFR = { "Niv. %d", "Dès %d", "Départ", "Récompenses", "Histoire", "Texte pas encore enregistré", "Lire l’histoire", "Réduire l’histoire" },
-    esES = { "Nivel %d", "Desde %d", "Inicio", "Recompensas", "Historia", "Texto aún no guardado", "Leer historia", "Contraer historia" },
-    itIT = { "Liv. %d", "Dal %d", "Inizio", "Ricompense", "Storia", "Testo non ancora salvato", "Leggi la storia", "Riduci la storia" },
-    ptBR = { "Nív. %d", "A partir do %d", "Início", "Recompensas", "História", "Texto ainda não salvo", "Ler história", "Recolher história" },
-    koKR = { "레벨 %d", "%d레벨부터", "시작", "보상", "이야기", "아직 저장된 내용이 없습니다", "이야기 읽기", "이야기 접기" },
-    zhCN = { "等级 %d", "%d级起", "接取地点", "奖励", "故事", "尚未保存任务文本", "阅读故事", "收起故事" },
-    zhTW = { "等級 %d", "%d級起", "接取地點", "獎勵", "故事", "尚未儲存任務文本", "閱讀故事", "收起故事" },
+    enUS = { "Quest level: %d", "Required level: %d", "Quest giver", "Rewards", "Story", "Text not recorded yet", "Read story", "Collapse story" },
+    ruRU = { "Уровень задания: %d", "Минимальный уровень: %d", "Кто выдаёт", "Награды", "История", "Текст пока не сохранён", "Читать историю", "Свернуть историю" },
+    deDE = { "Queststufe: %d", "Mindeststufe: %d", "Auftraggeber", "Belohnungen", "Geschichte", "Text noch nicht gespeichert", "Geschichte lesen", "Geschichte einklappen" },
+    frFR = { "Niveau de quête : %d", "Niveau requis : %d", "Donneur de quête", "Récompenses", "Histoire", "Texte pas encore enregistré", "Lire l’histoire", "Réduire l’histoire" },
+    esES = { "Nivel de misión: %d", "Nivel requerido: %d", "Quién la ofrece", "Recompensas", "Historia", "Texto aún no guardado", "Leer historia", "Contraer historia" },
+    itIT = { "Livello missione: %d", "Livello richiesto: %d", "Chi offre la missione", "Ricompense", "Storia", "Testo non ancora salvato", "Leggi la storia", "Riduci la storia" },
+    ptBR = { "Nível da missão: %d", "Nível necessário: %d", "Quem oferece", "Recompensas", "História", "Texto ainda não salvo", "Ler história", "Recolher história" },
+    koKR = { "퀘스트 레벨: %d", "필요 레벨: %d", "퀘스트 제공자", "보상", "이야기", "아직 저장된 내용이 없습니다", "이야기 읽기", "이야기 접기" },
+    zhCN = { "任务等级：%d", "需要等级：%d", "任务给予者", "奖励", "故事", "尚未保存任务文本", "阅读故事", "收起故事" },
+    zhTW = { "任務等級：%d", "需要等級：%d", "任務給予者", "獎勵", "故事", "尚未儲存任務文本", "閱讀故事", "收起故事" },
 }
 local detailKeys = { "DETAIL_LEVEL", "DETAIL_MIN_LEVEL", "DETAIL_GIVER", "DETAIL_REWARDS", "DETAIL_STORY", "DETAIL_STORY_EMPTY", "DETAIL_STORY_READ", "DETAIL_STORY_HIDE" }
 for locale, values in pairs(detailStrings) do
@@ -206,20 +206,36 @@ for locale, values in pairs(chainStrings) do
 end
 
 local acquisitionStrings = {
-    enUS = { "Acquisition details", "Hide acquisition details", "Guaranteed", "Turn in" },
-    ruRU = { "Получение задания", "Скрыть сведения о получении", "Гарантированные", "Сдать" },
-    deDE = { "Annahmedetails", "Annahmedetails ausblenden", "Garantiert", "Abgeben" },
-    frFR = { "Détails d’obtention", "Masquer les détails d’obtention", "Garanties", "Rendre" },
-    esES = { "Detalles de obtención", "Ocultar detalles de obtención", "Garantizadas", "Entregar" },
-    itIT = { "Dettagli di ottenimento", "Nascondi dettagli di ottenimento", "Garantite", "Consegna" },
-    ptBR = { "Detalhes de obtenção", "Ocultar detalhes de obtenção", "Garantidas", "Entregar" },
-    koKR = { "수락 정보", "수락 정보 숨기기", "확정 보상", "완료 보고" },
-    zhCN = { "接取详情", "隐藏接取详情", "必得奖励", "交付" },
-    zhTW = { "接取詳情", "隱藏接取詳情", "必得獎勵", "交付" },
+    enUS = { "More locations and sources", "Hide extra locations and sources", "Guaranteed", "Turn in" },
+    ruRU = { "Другие места и источники", "Скрыть другие места и источники", "Гарантированные", "Сдать" },
+    deDE = { "Weitere Orte und Quellen", "Weitere Orte und Quellen ausblenden", "Garantiert", "Abgeben" },
+    frFR = { "Autres lieux et sources", "Masquer les autres lieux et sources", "Garanties", "Rendre" },
+    esES = { "Más ubicaciones y fuentes", "Ocultar ubicaciones y fuentes adicionales", "Garantizadas", "Entregar" },
+    itIT = { "Altri luoghi e fonti", "Nascondi altri luoghi e fonti", "Garantite", "Consegna" },
+    ptBR = { "Outros locais e fontes", "Ocultar outros locais e fontes", "Garantidas", "Entregar" },
+    koKR = { "다른 위치와 획득처", "추가 위치와 획득처 숨기기", "확정 보상", "완료 보고" },
+    zhCN = { "更多位置和来源", "隐藏其他位置和来源", "必得奖励", "交付" },
+    zhTW = { "更多位置與來源", "隱藏其他位置與來源", "必得獎勵", "交付" },
 }
 local acquisitionKeys = { "DETAIL_ACQUISITION", "DETAIL_ACQUISITION_HIDE", "DETAIL_GUARANTEED", "DETAIL_TURNIN" }
 for locale, values in pairs(acquisitionStrings) do
     for index, key in ipairs(acquisitionKeys) do addon.locales[locale][key] = values[index] end
+end
+
+local starterDetails = {
+    enUS = { "Start with this item", "Starter item source is not yet known." },
+    ruRU = { "Задание начинает предмет", "Пока неизвестно, где получить стартовый предмет." },
+    deDE = { "Queststart durch Gegenstand", "Die Quelle des Startgegenstands ist noch unbekannt." },
+    frFR = { "Objet qui lance la quête", "La source de l’objet de départ est encore inconnue." },
+    esES = { "Objeto que inicia la misión", "Aún se desconoce dónde obtener el objeto inicial." },
+    itIT = { "Oggetto che avvia la missione", "La provenienza dell’oggetto iniziale è ancora sconosciuta." },
+    ptBR = { "Item que inicia a missão", "Ainda não se sabe onde obter o item inicial." },
+    koKR = { "퀘스트 시작 아이템", "시작 아이템의 획득처를 아직 알 수 없습니다." },
+    zhCN = { "任务起始物品", "起始物品的来源尚不明确。" },
+    zhTW = { "任務起始物品", "起始物品的來源尚不明確。" },
+}
+for locale, values in pairs(starterDetails) do
+    addon.locales[locale].DETAIL_START_ITEM, addon.locales[locale].START_ITEM_LOCATION_UNKNOWN = values[1], values[2]
 end
 
 local routeActions = {

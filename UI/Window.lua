@@ -14,6 +14,7 @@ local DETAIL_STYLES = {
     body = { size = 15, minimum = 20, color = { 0.92, 0.91, 0.87 } },
     title = { size = 22, minimum = 30, gap = 6, color = { 0.96, 0.83, 0.59 } },
     caption = { size = 13, minimum = 16, before = 4, gap = 3, color = { 0.64, 0.73, 0.74 } },
+    warning = { size = 15, minimum = 20, before = 4, color = { 1, .35, .3 } },
     story = { size = 14, minimum = 18, gap = 6, color = { 0.74, 0.77, 0.75 } },
     section = { size = 20, minimum = 26, before = 8, color = { 0.76, 0.86, 0.85 } },
 }
@@ -267,6 +268,7 @@ end
 function UI:SetFooterLabel(control, key)
     control.footerLabelKey = key
     control:SetText("")
+    if control.caption then control.caption:SetText(addon.L(key)) end
 end
 
 local LANGUAGE_CHOICES = { { "auto" }, { "enUS", "English" }, { "ruRU", "Русский" }, { "deDE", "Deutsch" },
@@ -2426,6 +2428,8 @@ function UI:RefreshDetail()
     self.giverAction, self.giverHasCoordinates, self.giverBinding = nil, false, nil
     self:SetFooterEnabled(self.giver, false)
     self:SetFooterLabel(self.giver, "VISIT_GIVER")
+    self.giverUnavailableKey = nil
+    self.giver:Hide()
     local rewardIndex, objectiveIndex = 0, 0
     local function line(value, style, reward, objective, ownerCurrent)
         if ownerCurrent and not ownerCurrent() then return false end
@@ -2471,7 +2475,7 @@ function UI:RefreshDetail()
         if ownerCurrent and not ownerCurrent() then return false end
         if fs.detailStyle ~= style or fs.detailFont ~= font then fs.measuredHeight = nil end
         fs.detailStyle, fs.detailFont = style, font
-        if not write(fs, "SetTextColor", unpack(format.color)) or not write(fs, "SetWidth", style == "title" and contentWidth - 80 or contentWidth) or
+        if not write(fs, "SetTextColor", unpack(format.color)) or not write(fs, "SetWidth", style == "title" and contentWidth - 40 or contentWidth) or
             not write(fs, "ClearAllPoints") or not write(fs, "SetPoint", "TOPLEFT", 4, -y) or
             not write(fs, "SetText", value) or not write(fs, "Show") then return false end
         local itemID = reward and addon.Clean(reward.item.id, "number")
@@ -2656,7 +2660,7 @@ function UI:RefreshDetail()
             return self.quest == renderQuest and self.dungeon == renderDungeon and self.rewardGeneration == rewardGeneration and addon.char == renderCharacter
         end)
         if factions == false then return end
-        if factions then metadataParts[#metadataParts + 1] = factions end
+
         for _, rule in ipairs({ { "classes", "string", "QUEST_CLASSES", addon.ClassName } }) do
             local entries = addon.Clean(q[rule[1]], "table")
             local names, seen = {}, {}
@@ -2681,6 +2685,7 @@ function UI:RefreshDetail()
             if value and value:find("%S") then metadataParts[#metadataParts + 1] = value end
         end
         if #metadataParts > 0 and line(table.concat(metadataParts, " · "), "caption", nil, nil, metadataCurrent) == false then return end
+        if factions and line(factions, "caption", nil, nil, metadataCurrent) == false then return end
         local offerGetter = addon.CurrentOffer
         local offer = addon.Read(offerGetter, "table", id)
         local offeredNow = offer and addon.Clean(offer.offeredNow, "boolean") == true
@@ -2826,20 +2831,25 @@ function UI:RefreshDetail()
                 if reported(destination, slot .. index, ownerCurrent) == false or not current() then return false end
             end
         end
-        if line(addon.L("DETAIL_GIVER"), "caption", nil, nil, portraitCardCurrent) == false then return end
+        local startItemID = start and addon.Clean(rawget(start, "itemID"), "number")
+        local itemStarter = startItemID and startItemID > 0 and startItemID <= 9007199254740991 and startItemID % 1 == 0 and
+            rawget(start, "npcID") == nil and rawget(start, "objectID") == nil and q.startAlternatives == nil
+        self.giverUnavailableKey = itemStarter and "START_ITEM_LOCATION_UNKNOWN" or "GIVER_LOCATION_UNKNOWN"
+        if line(addon.L(itemStarter and "DETAIL_START_ITEM" or "DETAIL_GIVER"), "caption", nil, nil, portraitCardCurrent) == false then return end
         if start then
             local giverFields = { "npcID", "objectID", "itemID", "name", "zoneName", "locationName", "mapID", "x", "y" }
-            local giverValues, nameGetter, itemGetter, mapRoot, checker = {}, addon.GiverName, addon.ItemName, C_Map, issecretvalue
+            local giverValues, nameGetter, itemGetter, iconGetter, countGetter, mapRoot, checker = {}, addon.GiverName, addon.ItemName, addon.ItemIcon, addon.CarriedItemCount, C_Map, issecretvalue
             for _, field in ipairs(giverFields) do giverValues[field] = rawget(start, field) end
             local function giverCurrent()
                 local ok, same = pcall(function()
                     if not portraitCardCurrent() or addon.quests[id] ~= definition or q.start ~= start
-                        or addon.GiverName ~= nameGetter or addon.ItemName ~= itemGetter or C_Map ~= mapRoot or issecretvalue ~= checker then return false end
+                        or addon.GiverName ~= nameGetter or addon.ItemName ~= itemGetter or addon.ItemIcon ~= iconGetter or addon.CarriedItemCount ~= countGetter or C_Map ~= mapRoot or issecretvalue ~= checker then return false end
                     for _, field in ipairs(giverFields) do
                         local value = rawget(start, field)
                         if type(checker) == "function" and addon.Read(checker, "boolean", value) ~= false then return false end
                         if value ~= giverValues[field] then return false end
                     end
+                    for _, field in ipairs(giverFields) do if rawget(start, field) ~= giverValues[field] then return false end end
                     return portraitCardCurrent()
                 end)
                 return ok and same == true
@@ -2847,9 +2857,27 @@ function UI:RefreshDetail()
             if not giverCurrent() then return end
             local description = addon.Read(place, "string", start)
             if not giverCurrent() then return end
-            if description and description ~= addon.L("UNKNOWN_PLACE") and line(description, nil, nil, nil, giverCurrent) == false then return end
-            if not pendingGiver or not pendingGiver.coordinates then
-                if line(addon.L(pendingGiver and "GIVER_COORDINATES_UNKNOWN" or "GIVER_LOCATION_UNKNOWN"), nil, nil, nil, giverCurrent) == false then return end
+            local starterBinding, starterCarried
+            if itemStarter then
+                local itemID = addon.Clean(rawget(start, "itemID"), "number")
+                if itemID and itemID > 0 and itemID <= 4294967295 and itemID % 1 == 0 then
+                    local count = carried(itemID)
+                    if not giverCurrent() then return end
+                    starterCarried = count
+                    local icon = addon.Read(iconGetter, "number", itemID)
+                    if not giverCurrent() then return end
+                    if icon and icon > 0 and icon <= 4294967295 and icon % 1 == 0 then
+                        starterBinding = { id = itemID, texture = icon, role = "starter", sourceField = "start", current = giverCurrent }
+                    end
+                end
+            end
+            if description and description ~= addon.L("UNKNOWN_PLACE") and line(description, nil, nil, starterBinding, giverCurrent) == false then return end
+            if starterCarried and line(starterCarried, "caption", nil, nil, giverCurrent) == false then return end
+            if itemStarter and rawget(start, "containerSource") == nil and rawget(start, "dropNPCID") == nil and rawget(start, "dropSources") == nil then
+                if line(addon.L("START_ITEM_LOCATION_UNKNOWN"), "warning", nil, nil, giverCurrent) == false then return end
+            end
+            if not itemStarter and (not pendingGiver or not pendingGiver.coordinates) then
+                if line(addon.L(pendingGiver and "GIVER_COORDINATES_UNKNOWN" or "GIVER_LOCATION_UNKNOWN"), "warning", nil, nil, giverCurrent) == false then return end
             end
         elseif q.startAlternatives then
             local alternatives = q.startAlternatives
@@ -2861,7 +2889,20 @@ function UI:RefreshDetail()
                 return portraitCardCurrent()
             end
             if alternativePlaces(preview, self.giverButtons, "START_ALTERNATIVES", "giverAlternative:", giverCurrent) == false then return end
-        elseif line(addon.L("GIVER_LOCATION_UNKNOWN"), nil, nil, nil, portraitCardCurrent) == false then return end
+        elseif line(addon.L("GIVER_LOCATION_UNKNOWN"), "warning", nil, nil, portraitCardCurrent) == false then return end
+        if not itemStarter then
+            if not locationWrite(portraitCardCurrent, self.giver, "ClearAllPoints") or
+                not locationWrite(portraitCardCurrent, self.giver, "SetPoint", "TOPLEFT", self.detail, "TOPLEFT", 4, -y) or
+                not locationWrite(portraitCardCurrent, self.giver, "SetWidth", contentWidth) or
+                not locationWrite(portraitCardCurrent, self.giver.caption, "SetWidth", contentWidth - 50) then return end
+            local caption = addon.L(pendingGiver and not pendingGiver.coordinates and "GIVER_MAP" or "VISIT_GIVER")
+            if not portraitCardCurrent() then return end
+            self.giver.caption:SetText(caption)
+            local height = math.max(34, measuredHeight(self.giver.caption, 20) + 14)
+            if not portraitCardCurrent() or not locationWrite(portraitCardCurrent, self.giver, "SetHeight", height) or
+                not locationWrite(portraitCardCurrent, self.giver, "Show") then return end
+            y = y + height + 8
+        end
         do
             local finish = addon.Clean(q.finish, "table")
             local fields, values, startingValues = { "npcID", "objectID", "itemID", "name", "zoneName", "mapID", "x", "y" }, {}, {}
@@ -3713,6 +3754,7 @@ function UI:RefreshDetail()
         local hidden = rewards and addon.Clean(rewards.hidden, "boolean") == true
         local xp = rewards and addon.Clean(rewards.xp, "number")
         local money = rewards and addon.Clean(rewards.money, "number")
+        if not (money and money > 0 and money <= 9007199254740991 and money % 1 == 0) then money = nil end
         local validXP = xp and xp >= 0 and xp % 1 == 0
         if not hidden and items and choices and (#items > 0 or #choices > 0 or validXP or (money and money > 0)) then
             line(addon.L("DETAIL_REWARDS"), "caption")
@@ -3757,16 +3799,39 @@ function UI:RefreshDetail()
             end
             if not lootGroup(items, "items", "DETAIL_GUARANTEED") or not lootGroup(choices, "choices", "REWARD_CHOICES") then return end
 
-            local gains = {}
-            if validXP then
-                gains[#gains + 1] = addon.L("REWARD_XP", xp)
+            local gains, gainsCurrent = {}, portraitCardCurrent
+            if validXP then gains[#gains + 1] = addon.L("REWARD_XP", xp) end
+            if money then
+                local currencyRoot, legacy, checker = C_CurrencyInfo, GetCoinTextureString, issecretvalue
+                local currency = addon.Clean(currencyRoot, "table")
+                local native = currency and rawget(currency, "GetCoinTextureString")
+                local database, localize, localeGetter = addon.db, addon.L, GetLocale
+                local locale = database and rawget(database, "locale")
+                local gameLocale = addon.Read(localeGetter, "string")
+                local function moneyCurrent()
+                    local language = addon.Read(localeGetter, "string")
+                    local ok, same = pcall(function()
+                        return portraitCardCurrent() and addon.quests[id] == definition and rewards.money == money and
+                            C_CurrencyInfo == currencyRoot and GetCoinTextureString == legacy and issecretvalue == checker and
+                            (not currency or rawget(currency, "GetCoinTextureString") == native) and
+                            addon.db == database and (not database or rawget(database, "locale") == locale) and
+                            addon.L == localize and GetLocale == localeGetter and language == gameLocale
+                    end)
+                    return ok and same == true
+                end
+                if not moneyCurrent() then return end
+                local formatted = addon.Read(native, "string", money)
+                if not moneyCurrent() then return end
+                if not formatted or #formatted > 4096 or not formatted:find("%S") then formatted = addon.Read(legacy, "string", money) end
+                if not moneyCurrent() then return end
+                if not formatted or #formatted > 4096 or not formatted:find("%S") then formatted = addon.Read(localize, "string", "MONEY_COPPER", money) end
+                if not moneyCurrent() then return end
+                local heading = addon.Read(localize, "string", "REWARD_MONEY")
+                if not moneyCurrent() then return end
+                if formatted and heading then gains[#gains + 1] = heading .. ": " .. formatted end
+                gainsCurrent = moneyCurrent
             end
-            if money and money > 0 then
-                local formatted = addon.Read(GetCoinTextureString, "string", money)
-                local gain = formatted and (addon.L("REWARD_MONEY") .. ": " .. formatted) or addon.L("REWARD_MONEY_UNKNOWN")
-                gains[#gains + 1] = gain
-            end
-            if #gains > 0 then line(table.concat(gains, " · "), "caption") end
+            if #gains > 0 and line(table.concat(gains, " · "), "caption", nil, nil, gainsCurrent) == false then return end
         end
         do
             local getter, checker, localize = addon.Clean(addon.DialogueText, "function"), issecretvalue, addon.L
@@ -3867,18 +3932,6 @@ function UI:RefreshDetail()
             if typedStarter and not starterCurrent() then return end
             local starting = place(q.start)
             if not starting or (typedStarter and not starterCurrent()) then return end
-            local starterBinding
-            if typedStarter then
-                starterCount = carried(starterID)
-                if not starterCurrent() then return end
-                local icon = starterID <= 4294967295 and addon.Read(starterIconGetter, "number", starterID) or nil
-                if not starterCurrent() then return end
-                if icon and icon > 0 and icon <= 4294967295 and icon % 1 == 0 then
-                    starterBinding = { id = starterID, texture = icon, role = "starter", sourceField = "start" }
-                    starterBinding.current = function() return starterCurrent(starterBinding) end
-                end
-            end
-            if starterBinding and line(starting, nil, nil, starterBinding) == false then return end
             if reported(q.start, "start") == false then return end
         end
         local start = q.start
@@ -3886,7 +3939,7 @@ function UI:RefreshDetail()
             local count = typedStarter and starterCount or nil
             if not typedStarter then count = carried(start.itemID) end
             if typedStarter and not starterCurrent() then return end
-            if count then line(count) end
+            if count and not typedStarter then line(count) end
             local shown = false
             local classes = addon.Clean(start.itemClasses, "table")
             if classes then
@@ -4009,8 +4062,10 @@ function UI:RefreshDetail()
                 end
             end
             if not acquisitionCurrent() then return end
-            line(addon.L("ITEM_ACQUISITION"), "section")
-            if #routes == 0 then line(addon.L("ITEM_ACQUISITION_UNKNOWN")) end
+            if #routes > 0 then line(addon.L("ITEM_ACQUISITION"), "caption")
+            elseif rawget(starterSource, "containerSource") ~= nil or rawget(starterSource, "dropNPCID") ~= nil or rawget(starterSource, "dropSources") ~= nil then
+                line(addon.L("START_ITEM_LOCATION_UNKNOWN"), "warning")
+            end
             for _, route in ipairs(routes) do
                 if route.container then
                     if alternativePlaces({ route.container }, self.containerButtons, "CONTAINER_SOURCE", "container:", acquisitionCurrent) == false then return end
@@ -4146,7 +4201,10 @@ function UI:RefreshDetail()
             (sourceStart and nonemptySource(sourceStart.reportedLocations)) or
             (sourceFinish and nonemptySource(sourceFinish.reportedLocations))
         if not narrativeCurrent() then return end
-        if acquisition then
+        if itemOnly then
+            if not acquisitionPortraits(true) or not acquisitionObjectives() or not acquisitionItems() then return end
+        end
+        if acquisition and not itemOnly then
         do
             local toggle = self.referenceToggle
             if not toggle then
@@ -4475,12 +4533,15 @@ function UI:Create()
             self:DispatchDetail(self.giverAction, not self.giverHasCoordinates, true)
         end
     end)
-    self.giver:SetPoint("TOPRIGHT", self.detail, "TOPRIGHT", -40, 0)
+    self.giver.footerCaption = true
+    self.giver.caption = label(self.giver, "", 40, -7, 280, 14)
+    self.giver:SetPoint("TOPLEFT", self.detail, "TOPLEFT", 4, -80)
     for _, control in ipairs({ self.giver, self.source }) do
         control:SetHeight(32)
         if type(control.SetMotionScriptsWhileDisabled) == "function" then pcall(control.SetMotionScriptsWhileDisabled, control, true) end
         local icon = control:CreateTexture(nil, "ARTWORK"); control.footerIcon = icon
-        icon:SetSize(24, 24); icon:SetPoint("CENTER", control, "CENTER", 0, 0)
+        icon:SetSize(24, 24)
+        icon:SetPoint(control == self.giver and "LEFT" or "CENTER", control, control == self.giver and "LEFT" or "CENTER", control == self.giver and 8 or 0, 0)
         icon:SetTexture(control == self.giver and "Interface\\Minimap\\MinimapArrow" or "Interface\\AddOns\\DungeonPro\\Media\\Icons\\Wowhead")
         if control == self.source then icon:SetTexCoord(0, .75, 0, .75) end
         icon:Show()
@@ -4500,8 +4561,9 @@ function UI:Create()
                     self.rewardGeneration == generation and GameTooltip == tip and addon.Read(frame.IsShown, "boolean", frame) == true
             end
             local point = destination and destination()
-            if not tip or (not point and not bodyKey) or not current() then return end
-            local text = bodyKey and addon.L(bodyKey) or addon.Read(giverName, "string", point)
+            local reason = not point and control == self.giver and self.quest and self.giverUnavailableKey
+            if not tip or (not point and not bodyKey and not reason) or not current() then return end
+            local text = (bodyKey or reason) and addon.L(bodyKey or reason) or addon.Read(giverName, "string", point)
             local zone = point and addon.Clean(point.zoneName, "string")
             local x, y = point and addon.Clean(point.x, "number"), point and addon.Clean(point.y, "number")
             if text and zone and zone:find("%S") then text = text .. " — " .. zone end
