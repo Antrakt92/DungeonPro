@@ -261,3 +261,20 @@ local requirementOwners = { enUS = "Required for: %s", ruRU = "Нужно для
     frFR = "Requis pour : %s", esES = "Requisito para: %s", itIT = "Necessario per: %s",
     ptBR = "Necessário para: %s", koKR = "필요한 퀘스트: %s", zhCN = "前置任务归属：%s", zhTW = "前置任務歸屬：%s" }
 for locale, value in pairs(requirementOwners) do addon.locales[locale].REQUIREMENT_FOR = value end
+
+local directNavigationHints = {
+    enUS = { "Choose a quest giver in the quest details.", "Navigation is currently unavailable.", "Starts from an item. See quest details for its source." },
+    ruRU = { "Выберите квестодателя в подробностях задания.", "Навигация сейчас недоступна.", "Задание начинается предметом. Источник указан в подробностях задания." },
+    deDE = { "Wähle einen Questgeber in den Questdetails.", "Navigation ist derzeit nicht verfügbar.", "Beginnt durch einen Gegenstand. Die Quelle steht in den Questdetails." },
+    frFR = { "Choisissez un donneur dans les détails de la quête.", "La navigation est actuellement indisponible.", "Cette quête commence par un objet. Consultez sa source dans les détails." },
+    esES = { "Elige un dador en los detalles de la misión.", "La navegación no está disponible en este momento.", "Se inicia con un objeto. Consulta su origen en los detalles de la misión." },
+    itIT = { "Scegli un personaggio nei dettagli della missione.", "La navigazione non è al momento disponibile.", "Inizia con un oggetto. Consulta la sua provenienza nei dettagli della missione." },
+    ptBR = { "Escolha quem oferece a missão nos detalhes.", "A navegação está indisponível no momento.", "Começa com um item. Veja sua origem nos detalhes da missão." },
+    koKR = { "퀘스트 상세 정보에서 제공자를 선택하세요.", "현재 길 안내를 사용할 수 없습니다.", "아이템으로 시작하는 퀘스트입니다. 상세 정보에서 획득처를 확인하세요." },
+    zhCN = { "请在任务详情中选择任务给予者。", "导航暂时不可用。", "此任务由物品触发。请在任务详情中查看来源。" },
+    zhTW = { "請在任務詳情中選擇任務給予者。", "導航暫時無法使用。", "此任務由物品觸發。請在任務詳情中查看來源。" },
+}
+for locale, values in pairs(directNavigationHints) do
+    addon.locales[locale].GIVER_CHOICES_REQUIRED, addon.locales[locale].NAVIGATION_UNAVAILABLE,
+        addon.locales[locale].START_ITEM_NAVIGATION = values[1], values[2], values[3]
+end

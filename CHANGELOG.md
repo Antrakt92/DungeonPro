@@ -2,6 +2,9 @@
 
 ## 0.1.0 - 16-Oct-2026 — Development preview
 
+- Added quick navigation beside the dungeon heading and at the right of quest
+  rows, with destination hints and explanations for unknown locations.
+
 - Made dungeon cards more compact, enlarged their covers and balanced spacing
   around names and navigation/status icons.
 

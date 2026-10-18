@@ -32,6 +32,8 @@ local function current(row, state)
     if state.owner and addon.Read(state.owner, "boolean") ~= true then return false end
     if states[row] ~= state then return false end
     if state.clear then return true end
+    local ok, sameInset = pcall(function() return rawequal(row.navigationReserve, state.rawInset) end)
+    if not ok or not sameInset then return false end
     return addon.CachedQuestRewards == state.provider and addon.char == state.character and
         addon.quests == state.catalogue and state.catalogue[state.id] == state.quest and
         GetLocale == state.localeGetter and issecretvalue == state.checker
@@ -172,7 +174,7 @@ render = function(row, state)
             if item then
                 if not write(row, state, button, "SetSize", 20, 20) or
                     not write(row, state, button, "ClearAllPoints") or
-                    not write(row, state, button, "SetPoint", "TOPRIGHT", row, "TOPRIGHT", -6 - (index - 1) * 22, -5) or
+                    not write(row, state, button, "SetPoint", "TOPRIGHT", row, "TOPRIGHT", -6 - state.rightInset - (index - 1) * 22, -5) or
                     not write(row, state, button.icon, "SetAllPoints", button) or
                     not write(row, state, button.icon, "SetTexture", item.texture) or
                     not write(row, state, button.icon, "Show") or
@@ -250,7 +252,12 @@ end
 function Rewards.Paint(row, id, ownerCurrent)
     if not row then return 0 end
     local prior = states[row]
+    local insetOK, rawInset = pcall(function() return row.navigationReserve end)
+    if not insetOK then return 0 end
+    local rightInset = addon.Clean(rawInset, "number")
+    if not (rightInset and rightInset >= 0 and rightInset <= 1000 and rightInset % 1 == 0) then rightInset = 0 end
     local state = { items = {}, fixed = {}, choices = {}, total = 0, buttons = prior and prior.buttons or {}, id = integer(id), owner = ownerCurrent,
+        rawInset = rawInset, rightInset = rightInset,
         provider = addon.CachedQuestRewards, character = addon.char, catalogue = addon.quests,
         localeGetter = GetLocale, checker = issecretvalue }
     state.quest = state.id and state.catalogue[state.id]

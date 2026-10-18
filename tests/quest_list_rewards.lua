@@ -367,4 +367,29 @@ check("Replacing native ownership helpers releases stale tooltip bookkeeping wit
     r.Paint(row,2);tooltip.shown=false;buttons[1].scripts.OnEnter()
     assert(tooltip.shown,"stale bookkeeping cannot block the newly captured native helper")
 end)
+check("Navigation inset shifts cached rewards and invalidates stale hover without changing reward width",function()
+    local r=reset();row.navigationReserve=32
+    assert(r.Paint(row,1)==26 and buttons[1].point[4]==-38)
+    row.navigationReserve=0;tooltip.shown=false;buttons[1].scripts.OnEnter();assert(not tooltip.shown)
+    r.Clear(row);assert(not buttons[1].shown)
+    r.Paint(row,1);assert(buttons[1].point[4]==-6)
+    row.navigationReserve=nil;r.Paint(row,1);assert(buttons[1].point[4]==-6)
+end)
+check("Late reward anchors repair the newer navigation inset after nested row painting",function()
+    local r=reset();r.Paint(row,1)
+    local setter,armed=buttons[1].SetPoint,true
+    buttons[1].SetPoint=function(self,...)
+        if armed then armed=false;row.navigationReserve=32;r.Paint(row,2)end
+        return setter(self,...)
+    end
+    r.Paint(row,1)
+    assert(not armed and buttons[1].shown and buttons[1].point[4]==-38)
+end)
+check("Navigation inset retains indexed native-shaped row adapters and safe absent defaults",function()
+    local r=reset();local backing=row;row=newproxy(true)
+    getmetatable(row).__index=backing;getmetatable(row).__newindex=backing
+    row.navigationReserve=32;assert(r.Paint(row,1)==26 and buttons[1].point[4]==-38)
+    row.navigationReserve=nil;assert(r.Paint(row,1)==26 and buttons[1].point[4]==-6)
+    r.Clear(row);assert(not buttons[1].shown)
+end)
 print("Quest list reward checks passed: " .. total .. " (modeled, no native layout proof)")

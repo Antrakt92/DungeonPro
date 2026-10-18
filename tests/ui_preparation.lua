@@ -8922,7 +8922,7 @@ check("Compact reward space is reserved before wrapped title measurement without
     addon.QuestListRewards={Paint=function()return 70 end,Clear=function()end}
     measurement=function(fs)
         for _,row in ipairs(ui.rows)do if fs==row.title and row.questID==43000 then
-            assert(fs.width==row:GetWidth()-22-70-(row.statusInset or 0)-(row.dungeonBadgeReserve or 0)-(row.chainInset or 0)-(row.factionReserve or 0));measured=measured+1;return 54
+            assert(fs.width==row:GetWidth()-22-70-(row.navigationReserve or 0)-(row.statusInset or 0)-(row.dungeonBadgeReserve or 0)-(row.chainInset or 0)-(row.factionReserve or 0));measured=measured+1;return 54
         end end
         return 18
     end
@@ -9059,7 +9059,7 @@ check("Right header search reserves input and clear space while icon filters sit
     local locale=addon.db.locale
     for code in pairs(addon.locales)do
         addon.db.locale=code;ui:Refresh()
-        assert(ui.subtitle==nil and ui.title.fontSize==22 and ui.heading.width==258)
+        assert(ui.subtitle==nil and ui.title.fontSize==22 and ui.heading.width==226)
         assert(ui.searchBox.point[1]=="TOPRIGHT" and ui.searchBox.point[2]==-190 and ui.searchBox.point[3]==-14)
         assert(ui.searchBox.width==330 and ui.searchBox.height==26)
         assert(ui.searchBox.textInsets[1]==28 and ui.searchBox.textInsets[2]==30)
@@ -9386,7 +9386,7 @@ check("Level filtering occupies the global header while character filtering stay
         assert(ui.capacityStatus.point[2]==350 and ui.capacityStatus.point[3]==-22 and ui.capacityStatus.width==220)
         local searchLeft=ui.frame:GetWidth()+ui.searchBox.point[2]-ui.searchBox.width
         assert(ui.capacityStatus.point[2]+ui.capacityStatus.width<searchLeft)
-        assert(ui.heading.width==258 and ui.heading.point[2]+ui.heading.width<character.point[2])
+        assert(ui.heading.width==226 and ui.heading.point[2]+ui.heading.width<character.point[2])
         assert(character.point[2]==548 and character.point[3]==-66 and character.width==100 and character.height==32)
         assert(character.point[2]+character.width==ui.questScroll.point[2]+ui.questScroll.width)
         assert(character.filterCaption.point[4]==38 and character.filterCaption.width==56 and character.filterCaption.fontSize==13)

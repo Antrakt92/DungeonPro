@@ -100,6 +100,201 @@ function UI:GetEntranceBinding(dungeon, ownerCurrent)
     if current() then return { current = current, dungeon = dungeon, point = point, navigation = navigation, start = start } end
 end
 
+function UI:RefreshQuestEntrance(ownerCurrent)
+    local control, dungeon, frame, character = self.questEntrance, self.dungeon, self.frame, addon.char
+    local revision = {}; self.questEntranceRevision = revision
+    local function current()
+        return ownerCurrent() and self.questEntranceRevision == revision and self.questEntrance == control and
+            self.frame == frame and self.dungeon == dungeon and addon.char == character
+    end
+    local function write(object, method, ...) return self:QuestListWrite(object, method, current, ...) end
+    if not write(control, "Hide") or not write(control, "SetEnabled", false) or not write(control, "SetScript", "OnClick", nil) then return false end
+    control.entranceBinding, control.entranceCurrent, control.entranceDungeon = nil, nil, nil
+    if not dungeon then self.questEntranceCache = nil; return current() end
+    local binding, found
+    for _, card in ipairs(self.cards) do
+        if card.entranceDungeon == dungeon and addon.Read(card.IsShown, "boolean", card) == true and
+            card.entranceCurrent and card.entranceCurrent() then
+            local candidate = card.entranceBinding
+            if not candidate or candidate.current() then binding, found = candidate, true end
+            if found then break end
+        end
+        if not current() then return false end
+    end
+    if not found then
+        local cache = self.questEntranceCache
+        if not cache or cache.dungeon ~= dungeon or cache.character ~= character or cache.frame ~= frame or
+            addon.Entrances ~= cache.provider or addon.Navigation ~= cache.navigation or
+            (cache.provider and addon.Clean(cache.provider, "table") and rawget(cache.provider, "Get") ~= cache.getter) or
+            (cache.navigation and addon.Clean(cache.navigation, "table") and rawget(cache.navigation, "StartEntrance") ~= cache.start) or
+            (not cache.binding and cache.catalogGeneration ~= self.catalogGeneration) or
+            (cache.binding and not cache.binding.current()) then
+            cache = { dungeon = dungeon, character = character, frame = frame, provider = addon.Entrances, navigation = addon.Navigation }
+            cache.getter = addon.Clean(cache.provider, "table") and rawget(cache.provider, "Get")
+            cache.start = addon.Clean(cache.navigation, "table") and rawget(cache.navigation, "StartEntrance")
+            cache.catalogGeneration = self.catalogGeneration
+            self.questEntranceCache = cache
+            local function cacheCurrent()
+                return addon.UI == self and self.questEntranceCache == cache and self.dungeon == dungeon and
+                    self.frame == frame and addon.char == character and addon.Entrances == cache.provider and addon.Navigation == cache.navigation and
+                    (not addon.Clean(cache.provider, "table") or rawget(cache.provider, "Get") == cache.getter) and
+                    (not addon.Clean(cache.navigation, "table") or rawget(cache.navigation, "StartEntrance") == cache.start)
+            end
+            cache.binding = self:GetEntranceBinding(dungeon, cacheCurrent)
+            if not current() or not cacheCurrent() then return false end
+        end
+        binding = cache.binding
+    end
+    if not current() then return false end
+    control.entranceBinding, control.entranceDungeon, control.entranceCurrent = binding, dungeon, current
+    control.footerEnabled = binding ~= nil
+    self:RefreshFooterIcon(control)
+    if not current() or not write(control, "SetEnabled", binding ~= nil) or
+        not write(control, "SetScript", "OnClick", function()
+            if not current() or control.entranceBinding ~= binding or not binding or not binding.current() or
+                addon.Read(frame.IsShown, "boolean", frame) ~= true or not current() then return end
+            pcall(binding.start, dungeon, binding.point)
+        end) or not write(control, "Show") then return false end
+    return current()
+end
+
+function UI:QuestRowNavigationHint(row, binding)
+    local control = row.navigationControl
+    if row.navigationBinding ~= binding or not binding.current() then return end
+    self:HideNavigationHint()
+    local tip, localize = addon.Clean(GameTooltip, "table") or addon.Clean(GameTooltip, "userdata"), addon.L
+    local nameGetter = addon.GiverName
+    local mapRoot = C_Map
+    local mapNamespace = addon.Clean(mapRoot, "table")
+    local mapGetter = mapNamespace and rawget(mapNamespace, "GetMapInfo")
+    local localeGetter = GetLocale
+    local gameLocale = addon.Read(localeGetter, "string")
+    local database = addon.db
+    local locale = database and rawget(database, "locale")
+    local function current()
+        local language = addon.Read(localeGetter, "string")
+        return row.navigationBinding == binding and binding.current() and addon.L == localize and addon.GiverName == nameGetter and addon.db == database and
+            C_Map == mapRoot and (not mapNamespace or rawget(mapNamespace, "GetMapInfo") == mapGetter) and
+            GetLocale == localeGetter and language == gameLocale and
+            (not database or rawget(database, "locale") == locale) and GameTooltip == tip and
+            addon.Read(row.IsShown, "boolean", row) == true and addon.Read(self.frame.IsShown, "boolean", self.frame) == true
+    end
+    if not tip or not current() then return end
+    local title = addon.Read(localize, "string", binding.mapOnly and "GIVER_MAP" or "VISIT_GIVER")
+    local text = binding.reason and addon.Read(localize, "string", binding.reason)
+    if not text and binding.action then
+        local point = binding.action.place
+        text = addon.Read(nameGetter, "string", point)
+        if not current() then return end
+        if not text or #text > 1024 or not text:find("%S") then text = addon.Clean(rawget(point, "name"), "string") end
+        if not text or #text > 1024 or not text:find("%S") then text = addon.Read(localize, "string", "UNKNOWN_PLACE") end
+        local zone = addon.Clean(rawget(point, "zoneName"), "string") or addon.Clean(rawget(point, "locationName"), "string")
+        if not zone then
+            local info = addon.Read(mapGetter, "table", binding.map)
+            if not current() then return end
+            zone = info and addon.Clean(rawget(info, "name"), "string")
+        end
+        if text and zone then text = text .. " — " .. zone end
+        if text and not binding.mapOnly then text = text .. string.format(" (%.1f, %.1f)", binding.x, binding.y) end
+    end
+    if not title or not text or not current() then return end
+    local held = { tip = tip, button = control }; self.navigationTooltip = held
+    for _, operation in ipairs({ { "SetOwner", control, "ANCHOR_RIGHT" }, { "SetText", title }, { "AddLine", text, 1, 1, 1, true }, { "Show" } }) do
+        if not current() or self.navigationTooltip ~= held then return end
+        local fn = addon.Clean(tip[operation[1]], "function")
+        if not fn or not pcall(fn, tip, unpack(operation, 2)) or not current() or self.navigationTooltip ~= held or
+            addon.Read(tip.IsOwned, "boolean", tip, control) ~= true or not current() then
+            if self.navigationTooltip == held then self:HideNavigationHint() end
+            return
+        end
+    end
+end
+
+function UI:BindQuestRowNavigation(row, id, ownerCurrent)
+    local control = row.navigationControl
+    local function write(object, method, ...) return self:QuestListWrite(object, method, ownerCurrent, ...) end
+    if control and self.navigationTooltip and self.navigationTooltip.button == control then
+        self:HideNavigationHint()
+        if not ownerCurrent() then return false end
+    end
+    row.navigationReserve, row.navigationBinding = 0, nil
+    if control and (not write(control, "Hide") or not write(control, "SetEnabled", false) or not write(control, "SetScript", "OnClick", nil)) then return false end
+    if not id then return ownerCurrent() end
+    if not control then
+        control = CreateFrame("Button", nil, row)
+        if not ownerCurrent() then return false end
+        row.navigationControl = control
+        control:SetSize(24, 24)
+        if type(control.SetMotionScriptsWhileDisabled) == "function" then control:SetMotionScriptsWhileDisabled(true) end
+        control.footerIcon = control:CreateTexture(nil, "ARTWORK")
+        control.footerIcon:SetSize(20, 20); control.footerIcon:SetPoint("CENTER", control, "CENTER", 0, 0)
+        control.footerIcon:SetTexture("Interface\\Minimap\\MinimapArrow"); control.footerIcon:Show()
+    end
+    local catalogue, definition, checker = addon.quests, addon.quests[id], issecretvalue
+    local rawStart = definition and rawget(definition, "start")
+    local start = addon.Clean(rawStart, "table")
+    local sourceID = definition and rawget(definition, "id")
+    local alternatives = definition and rawget(definition, "startAlternatives")
+    local fields = { npcID = "number", objectID = "number", itemID = "number", name = "string", zoneName = "string", locationName = "string", mapID = "number", x = "number", y = "number" }
+    local values, rawValues, readable = {}, {}, true
+    for field, kind in pairs(fields) do
+        local raw = start and rawget(start, field)
+        rawValues[field] = raw
+        if type(checker) == "function" and addon.Read(checker, "boolean", raw) ~= false then readable = false
+        elseif raw ~= nil then
+            local value = addon.Clean(raw, kind)
+            if value == nil then readable = false else values[field] = value end
+        end
+    end
+    local navigationRoot = addon.Navigation
+    local navigation = addon.Clean(navigationRoot, "table")
+    local mapOnly = not (values.x and values.y and values.x >= 0 and values.x <= 100 and values.y >= 0 and values.y <= 100)
+    local rawMethod = navigation and rawget(navigation, mapOnly and "Map" or "Start")
+    local method = addon.Clean(rawMethod, "function")
+    local binding = { mapOnly = mapOnly, map = values.mapID, x = values.x, y = values.y }
+    local function current()
+        if not ownerCurrent() or row.navigationBinding ~= binding or addon.quests ~= catalogue or catalogue[id] ~= definition or
+            addon.Navigation ~= navigationRoot or issecretvalue ~= checker or row.navigationControl ~= control then return false end
+        local ok, same = pcall(function()
+            if not definition or rawget(definition, "start") ~= rawStart or rawget(definition, "startAlternatives") ~= alternatives or rawget(definition, "id") ~= sourceID then return false end
+            for field, kind in pairs(fields) do
+                local raw = start and rawget(start, field)
+                if type(checker) == "function" and addon.Read(checker, "boolean", raw) ~= false then return false end
+                if raw ~= rawValues[field] then return false end
+            end
+            for field in pairs(fields) do if (start and rawget(start, field)) ~= rawValues[field] then return false end end
+            return ownerCurrent() and row.navigationBinding == binding and addon.quests == catalogue and catalogue[id] == definition and
+                addon.Navigation == navigationRoot and issecretvalue == checker and
+                (not navigation or rawget(navigation, mapOnly and "Map" or "Start") == rawMethod)
+        end)
+        return ok and same == true
+    end
+    binding.current = current
+    local itemOnly = values.itemID and not values.npcID and not values.objectID
+    if itemOnly then binding.reason = "START_ITEM_NAVIGATION"
+    elseif not start and alternatives then binding.reason = "GIVER_CHOICES_REQUIRED"
+    elseif not readable or not start or not values.mapID or values.mapID <= 0 or values.mapID > 9007199254740991 or values.mapID % 1 ~= 0 then binding.reason = "GIVER_LOCATION_UNKNOWN"
+    elseif not method then binding.reason = "NAVIGATION_UNAVAILABLE"
+    else binding.action = { id = id, kind = "visit", place = start } end
+    row.navigationReserve, row.navigationBinding = 32, binding
+    local function leave()
+        local held = self.navigationTooltip
+        if held and held.button == control and row.navigationBinding == binding then self:HideNavigationHint() end
+    end
+    control.footerEnabled = binding.action ~= nil
+    self:RefreshFooterIcon(control)
+    if not ownerCurrent() or not write(control, "ClearAllPoints") or
+        not write(control, "SetPoint", "TOPRIGHT", row, "TOPRIGHT", -4, -3) or
+        not write(control, "SetEnabled", binding.action ~= nil) or
+        not write(control, "SetScript", "OnClick", function()
+            if not binding.action or not current() or addon.Read(row.IsShown, "boolean", row) ~= true or not current() then return end
+            self:DispatchDetail(binding.action, mapOnly, false, current)
+        end) or not write(control, "SetScript", "OnEnter", function() self:QuestRowNavigationHint(row, binding) end) or
+        not write(control, "SetScript", "OnLeave", leave) or not write(control, "SetScript", "OnHide", leave) or
+        not write(control, "Show") then return false end
+    return ownerCurrent()
+end
+
 function UI:RefreshEntrance()
     local frame, dungeon, quest, character, generation = self.frame, self.dungeon, self.quest, addon.char, self.rewardGeneration
     self.entranceBinding = nil
@@ -1744,6 +1939,7 @@ function UI:RefreshQuests()
     local heading = d and addon.DungeonName(d) or addon.L("QUESTS")
     if not current() then return end
     if not writeText(self.heading, heading) then return end
+    if not self:RefreshQuestEntrance(current) then return end
     local n, offset = 0, 0
     if d then
         local plan = engine:Dungeon(d, { includeUnavailable = self.includeUnavailable })
@@ -1904,6 +2100,7 @@ function UI:RefreshQuests()
             if not current() or not width or width <= 28 or not write(row, "SetWidth", width - 4 - row.questTreeInset) then return end
             local function interactionCurrent() return current() and proveTree() and current() end
             row.questListCurrent = interactionCurrent
+            if not self:BindQuestRowNavigation(row, not entry.heading and (id or entry.anchorID), current) then return end
             if not write(row, "SetScript", "OnEnter", function() if interactionCurrent() then self:QuestListHint(row) end end) or
                 not write(row, "SetScript", "OnLeave", function() self:HideNavigationHint() end) then return end
             local rewards = addon.Clean(addon.QuestListRewards, "table")
@@ -1911,6 +2108,7 @@ function UI:RefreshQuests()
             local reserve = id and not entry.heading and rewardPaint and addon.Read(rewardPaint, "number", row, id, current) or 0
             if not current() then return end
             if not reserve or reserve < 0 or reserve > 100 then reserve = 0 end
+            reserve = reserve + row.navigationReserve
             if (entry.heading or entry.anchorID) and rewards then addon.Read(rewards.Clear, "nil", row) end
             if not current() then return end
             local badge = row.dungeonBadge
@@ -2099,6 +2297,7 @@ function UI:RefreshQuests()
         row.dungeonTarget, row.dungeonBadgeVisible, row.dungeonBadgeReserve, row.statusInset, row.questCompleted = false, false, 0, 0, false
         row.rowInfo, row.rowInfoCurrent, row.chainExpandable, row.chainExpanded, row.chainInset, row.factionReserve, row.branchReserve = nil, nil, false, false, 0, 0, 0
         row.questListCurrent = current
+        if not self:BindQuestRowNavigation(row, nil, current) then return end
         local rewards = addon.Clean(addon.QuestListRewards, "table")
         if rewards then addon.Read(rewards.Clear, "nil", row) end
         if not current() then return end
@@ -2121,6 +2320,7 @@ function UI:RefreshQuests()
     for index = n + 1, #self.rows do
         local row = self.rows[index]
         if not write(row, "Hide") then return end
+        if not self:BindQuestRowNavigation(row, nil, current) then return end
         local rewards = addon.Clean(addon.QuestListRewards, "table")
         if rewards then addon.Read(rewards.Clear, "nil", row) end
         if not current() then return end
@@ -4524,7 +4724,19 @@ function UI:Create()
         control:SetScript("OnLeave", function() if type(icon.SetAlpha) == "function" then icon:SetAlpha(.76) end; self:HideNavigationHint() end)
         if type(icon.SetAlpha) == "function" then icon:SetAlpha(.76) end
     end
-    self.heading = label(frame, "", 278, -66, 258, 26)
+    self.heading = label(frame, "", 278, -66, 226, 26)
+    self.questEntrance = button(frame, "", 28, nil)
+    self.questEntrance:SetSize(28, 28); self.questEntrance:SetPoint("TOPLEFT", 510, -66)
+    self.questEntrance.entranceControl = self.questEntrance
+    if type(self.questEntrance.SetMotionScriptsWhileDisabled) == "function" then self.questEntrance:SetMotionScriptsWhileDisabled(true) end
+    self.questEntrance.footerIcon = self.questEntrance:CreateTexture(nil, "ARTWORK")
+    self.questEntrance.footerIcon:SetSize(20, 20); self.questEntrance.footerIcon:SetPoint("CENTER", self.questEntrance, "CENTER", 0, 0)
+    self.questEntrance.footerIcon:SetTexture("Interface\\Icons\\INV_Misc_Map_01"); self.questEntrance.footerIcon:Show()
+    self.questEntrance:SetScript("OnEnter", function() self:CatalogEntranceHint(self.questEntrance) end)
+    local function leaveQuestEntrance()
+        if self.navigationTooltip and self.navigationTooltip.button == self.questEntrance then self:HideNavigationHint() end
+    end
+    self.questEntrance:SetScript("OnLeave", leaveQuestEntrance); self.questEntrance:SetScript("OnHide", leaveQuestEntrance)
     self.catalog, self.catalogScroll = scrolling(frame, 12, -66, 238, 622)
     self.searchHint = label(self.catalog, "", 4, 0, 202, 13)
     self.catalogNotice = label(self.catalog, "", 4, 0, 202, 13)

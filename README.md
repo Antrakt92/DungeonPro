@@ -121,6 +121,10 @@ Level ranges are provisional recommendations.
   into required prerequisites. Same-named steps show their quest IDs.
   Quest icons show journal progress and completion; hover for the status reason.
   Required prerequisites and source-listed story quests are labelled separately.
+  A navigation icon at the right of each quest row visits that quest's own giver
+  without changing the quest you are reading. The entrance icon beside the dungeon
+  heading routes to the dungeon. Hover for the destination or the reason it is
+  unavailable; these actions do not confirm quest availability.
   The detail pane labels the quest level and required character level separately.
   Unknown giver locations are highlighted, and hovering the unavailable visit
   action explains why it cannot be used. Item-started quests show the starter
