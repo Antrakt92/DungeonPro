@@ -852,20 +852,26 @@ function addon.ItemIcon(id)
     if current() then return icon end
 end
 
-function addon.ItemName(id)
+function addon.ItemName(id, ownerCurrent)
     id = addon.Clean(id, "number")
     if not id or id < 1 or id % 1 ~= 0 then return nil end
     local item = addon.Clean(C_Item, "table")
     local scope = restrictionNameScope()
-    if not item or not scope then return nil end
+    local owner = addon.Clean(ownerCurrent, "function")
+    if not item or not scope or (ownerCurrent ~= nil and not owner) then return nil end
     local nameGetter = addon.Clean(item.GetItemNameByID, "function")
     local cacheGetter = addon.Clean(item.IsItemDataCachedByID, "function")
     local loader = addon.Clean(item.RequestLoadItemDataByID, "function")
-    local function current()
+    local function capabilities()
         return scope() and addon.Clean(C_Item, "table") == item and
             addon.Clean(item.GetItemNameByID, "function") == nameGetter and
             addon.Clean(item.IsItemDataCachedByID, "function") == cacheGetter and
             addon.Clean(item.RequestLoadItemDataByID, "function") == loader
+    end
+    local function current()
+        if not capabilities() then return false end
+        if not owner then return true end
+        return addon.Read(owner, "boolean") == true and capabilities()
     end
     local name = addon.Read(nameGetter, "string", id)
     if not current() then return nil end
@@ -1455,6 +1461,58 @@ function addon.RequestQuestRewardData(id, ownerCurrent)
     local ok, result = pcall(loader, id)
     return ok and (type(checker) ~= "function" or read(checker, "boolean", result) == false) and
         clean(result, "boolean") ~= false and current()
+end
+
+-- Reward IDs can be loaded before their item names and textures are cached.
+function addon.RequestQuestRewardItems(id, ownerCurrent)
+    local clean, read, checker = addon.Clean, addon.Read, issecretvalue
+    id = dialogueInteger(id, 1, 9007199254740991)
+    local owner = clean(ownerCurrent, "function")
+    local catalogue = clean(addon.quests, "table")
+    local definition = id and catalogue and clean(rawget(catalogue, id), "table")
+    local character, database, provider = addon.char, addon.db, addon.RequestQuestRewardItems
+    local api = { loaded = HaveQuestRewardData, locale = GetLocale, rewards = GetNumQuestLogRewards,
+        choices = GetNumQuestLogChoices, fixed = GetQuestLogRewardInfo, choice = GetQuestLogChoiceInfo,
+        itemName = addon.ItemName }
+    if not owner or not definition or dialogueInteger(rawget(definition, "id"), 1, 9007199254740991) ~= id or
+        not clean(api.itemName, "function") then return false end
+    local locale = read(api.locale, "string")
+    local function identities()
+        local ok, same = pcall(function()
+            return addon.Clean == clean and addon.Read == read and issecretvalue == checker and
+                addon.RequestQuestRewardItems == provider and addon.ItemName == api.itemName and
+                addon.quests == catalogue and rawget(catalogue, id) == definition and rawequal(rawget(definition, "id"), id) and
+                addon.char == character and addon.db == database and HaveQuestRewardData == api.loaded and GetLocale == api.locale and
+                GetNumQuestLogRewards == api.rewards and GetNumQuestLogChoices == api.choices and
+                GetQuestLogRewardInfo == api.fixed and GetQuestLogChoiceInfo == api.choice
+        end)
+        return ok and same == true
+    end
+    local function current()
+        return identities() and read(owner, "boolean") == true and identities() and
+            read(api.locale, "string") == locale and read(api.loaded, "boolean", id) == true and
+            read(owner, "boolean") == true and identities()
+    end
+    if not locale or #locale > 32 or not locale:find("%S") or not current() then return false end
+    local fixed = dialogueInteger(read(api.rewards, "number", id), 0, 100)
+    local choices = dialogueInteger(read(api.choices, "number", id), 0, 100)
+    if not fixed or not choices or not current() then return false end
+    local ids, seen = {}, {}
+    for _, group in ipairs({{count=fixed,getter=api.fixed},{count=choices,getter=api.choice}}) do
+        if group.count > 0 and not clean(group.getter, "function") then return false end
+        for index = 1, group.count do
+            local ok, _, _, _, _, _, itemID = pcall(group.getter, index, id)
+            itemID = dialogueInteger(itemID, 1, 4294967295)
+            if not ok or not itemID or not current() then return false end
+            if not seen[itemID] then seen[itemID] = true; ids[#ids + 1] = itemID end
+        end
+    end
+    for _, itemID in ipairs(ids) do
+        if not current() then return false end
+        pcall(api.itemName, itemID, current)
+        if not current() then return false end
+    end
+    return current()
 end
 
 function addon.QuestPortrait(id)

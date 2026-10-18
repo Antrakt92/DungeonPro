@@ -11,6 +11,7 @@ local function snapshot()
     return { char = addon.char, db = addon.db, quests = addon.quests,
         provider = addon.CachedQuestRewards, checker = issecretvalue, localeGetter = GetLocale,
         hydrator = addon.RequestQuestRewardData, rewardLoaded = HaveQuestRewardData,
+        itemHydrator = addon.RequestQuestRewardItems,
         task = C_TaskQuest, preload = addon.Clean(C_TaskQuest, "table") and C_TaskQuest.RequestPreloadRewardData,
         locale = addon.Read(GetLocale, "string"), language = language, selectionGetter = getter,
         selection = addon.Read(getter, "string", language),
@@ -19,7 +20,7 @@ end
 
 local function same(a, b)
     for _, key in ipairs({ "char", "db", "quests", "provider", "checker", "localeGetter", "locale",
-        "language", "selectionGetter", "selection", "committed", "hydrator", "rewardLoaded", "task", "preload" }) do
+        "language", "selectionGetter", "selection", "committed", "hydrator", "itemHydrator", "rewardLoaded", "task", "preload" }) do
         if a[key] ~= b[key] then return false end
     end
     return true
@@ -27,7 +28,7 @@ end
 
 local function sameBudget(a, b)
     for _, key in ipairs({ "char", "db", "quests", "provider", "checker", "localeGetter", "locale",
-        "hydrator", "rewardLoaded", "task", "preload" }) do
+        "hydrator", "itemHydrator", "rewardLoaded", "task", "preload" }) do
         if a[key] ~= b[key] then return false end
     end
     return true
@@ -93,6 +94,13 @@ schedule = function(owner, state)
                     pcall(state.context.hydrator, id, requestCurrent)
                     if not requestCurrent() then schedule(owner, state); return end
                 end
+                if not value and addon.Clean(state.context.itemHydrator, "function") then
+                    local function itemCurrent()
+                        return current(owner, state, latest) and state.entries[id] == entry and state.context.quests[id] == entry.quest
+                    end
+                    pcall(state.context.itemHydrator, id, itemCurrent)
+                    if not itemCurrent() then schedule(owner, state); return end
+                end
             end
         end
         if changed and current(owner, state, latest) then pcall(latest.refresh) end
@@ -146,6 +154,19 @@ function Cache.Watch(owner, coldIDs, ownerCurrent, refreshCallback)
             if not entry or entry.quest ~= context.quests[id] then
                 state.entries[id] = { quest = context.quests[id], attempts = 0 }
             end
+        end
+    end
+    -- Later item failures may become retryable after this view's polling budget.
+    -- The shared item loader owns pending/waiting/attempt bounds across repaints.
+    for _, id in ipairs(binding.ids) do
+        if not current(owner, state, binding) then return end
+        local entry = state.entries[id]
+        if not entry.done and addon.Clean(context.itemHydrator, "function") then
+            local function itemCurrent()
+                return current(owner, state, binding) and state.entries[id] == entry and context.quests[id] == entry.quest
+            end
+            pcall(context.itemHydrator, id, itemCurrent)
+            if not itemCurrent() then return end
         end
     end
     schedule(owner, state)

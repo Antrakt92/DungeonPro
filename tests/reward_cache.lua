@@ -7,6 +7,7 @@ local function reset()
     GetLocale = function() return locale end
     addon.char, addon.db, addon.quests, addon.Language = {}, { locale = "auto" }, { [1] = {}, [2] = {}, [3] = {} }, nil
     addon.RequestQuestRewardData = nil
+    addon.RequestQuestRewardItems = nil
     addon.CachedQuestRewards = function(id)
         reads[id] = (reads[id] or 0) + 1
         if ready[id] then return { source = "cache", items = {}, choices = {} } end

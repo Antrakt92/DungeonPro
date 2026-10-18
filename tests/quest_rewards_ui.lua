@@ -89,4 +89,36 @@ loaded = false
 event.scripts.OnEvent(event, "QUEST_DATA_LOAD_RESULT", 166, false)
 assert(#icons(questRow()) == 0)
 enter(); assert(not tip.shown, "a recycled reward cannot revive the previous quest tooltip")
+local itemReady, itemRequests, itemReads = false, 0, 0
+HaveQuestRewardData = function(id) return id == 166 end
+GetQuestLogRewardInfo = function(index, id)
+    assert(index == 1 and id == 166)
+    return itemReady and "Guaranteed reward" or nil, itemReady and 134400 or nil, 1, 2, true, 7001
+end
+GetQuestLogChoiceInfo = function(index, id)
+    assert(id == 166)
+    return itemReady and "Choice reward " .. index or nil, itemReady and 134400 + index or nil, 1, 2, true, 8000 + index
+end
+C_Item = {
+    GetItemNameByID = function() itemReads = itemReads + 1; return itemReady and "Cached reward" or nil end,
+    IsItemDataCachedByID = function() return itemReady end,
+    RequestLoadItemDataByID = function() itemRequests = itemRequests + 1 end,
+}
+pending = {}
+C_Timer = { After = function(delay, callback) pending[#pending + 1] = {delay=delay, callback=callback} end }
+ui:Refresh()
+assert(itemRequests == 6 and #icons(questRow()) == 0, "loaded reward IDs hydrate all six cold items without placeholder icons")
+itemReady = true
+event.scripts.OnEvent(event, "ITEM_DATA_LOAD_RESULT", 7001, true)
+local painted = false
+for _, entry in ipairs(pending) do
+    if entry.delay == .1 then entry.callback(); painted = true; break end
+end
+assert(painted and #icons(questRow()) == 3, "item arrival event repaints compact rewards in the actual UI")
+local requested, queried = itemRequests, itemReads
+buttons = icons(questRow())
+buttons[1].scripts.OnEnter(); assert(tip.shown and tip.link == "item:7001")
+buttons[1].scripts.OnLeave()
+assert(itemRequests == requested and itemReads == queried, "native reward hover never hydrates items")
+C_Timer = timer
 print("Actual quest reward previews: PASS (cold event, compact icons, all choices, hover work, stale callbacks)")
