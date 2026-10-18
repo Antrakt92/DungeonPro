@@ -7875,7 +7875,7 @@ check("Exact quest ID search uses only direct targets and identifies same-name v
     assert(ui.quest==quest and ui.dungeon==dungeon and ui.range==range)
     f:search("31002");assert(#f:cards()==1 and f:cards()[1].matchQuestID==31002)
     for _,query in ipairs({"3100","31003","999999"})do f:search(query);assert(#f:cards()==0)end
-    assert(sourceCalls==0 and cachedCalls==0)
+    assert(sourceCalls==0 and cachedCalls==2,"only the two distinct matching IDs read pure cached titles")
     f:search("31001");local inspect=ui.catalogInspectButtons[1]
     assert(inspect.shown and inspect.questID==31001)
     addon.QuestName=f.questName;inspect.scripts.OnClick()

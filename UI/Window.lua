@@ -1441,6 +1441,11 @@ function UI:RefreshCatalogLanguage()
         if not current() then return failed() end
         local title = addon.Read(addon.DungeonName, "string", result.dungeon)
         local matchedName = result.questID and result.matchedName and addon.Read(addon.CachedQuestName, "string", result.questID)
+        if result.idMatch then
+            if matchedName and #matchedName <= 1024 and matchedName:find("%S") then
+                matchedName = matchedName .. " (#" .. view.query .. ")"
+            else matchedName = result.idFallbackName end
+        end
         local function noteCurrent()
             return current() and (not result.statusCurrent or addon.Read(result.statusCurrent, "boolean") == true)
         end
@@ -1634,14 +1639,22 @@ function UI:RefreshDungeons()
         local dungeon = input.dungeon
         if not range or (context.level and context.level >= input.minimum - 3 and context.level <= input.maximum + 3) then
             if not scanMember(input, inputIndex) then return end
-            local matchedName, matchedID, sourceMatch, idMatch
+            local matchedName, matchedID, sourceMatch, idMatch, idFallbackName
             if queryID then
                 for memberIndex, member in ipairs(input.members) do
                     if not scanMember(input, inputIndex, member, memberIndex) then return end
                     if member.id == queryID and member.quest and member.questID == queryID then
                         local title = addon.Clean(member.name, "string")
                         if not current(true) then return end
-                        matchedName = title and title ~= "" and (title .. " (#" .. query .. ")") or ("#" .. query)
+                        idFallbackName = title and title ~= "" and (title .. " (#" .. query .. ")") or ("#" .. query)
+                        local cached = memo[member.id]
+                        if not cached then
+                            cached = { name = addon.Read(getter, "string", member.id) }; memo[member.id] = cached
+                        end
+                        if not current(true) then return end
+                        local localized = cached.name
+                        matchedName = localized and #localized <= 1024 and localized:find("%S") and
+                            (localized .. " (#" .. query .. ")") or idFallbackName
                         matchedID, idMatch = member.id, true
                         break
                     end
@@ -1726,7 +1739,7 @@ function UI:RefreshDungeons()
             if not current(true) then return end
             if matches or matchedName then
                 local result = { dungeon = dungeon, title = name, questID = matchedID, sourceMatch = sourceMatch,
-                    idMatch = idMatch, includeUnavailable = includeUnavailable, minimum = input.minimum, maximum = input.maximum, count = includeUnavailable == true and #input.members or nil, matchedName = matchedName }
+                    idMatch = idMatch, idFallbackName = idFallbackName, includeUnavailable = includeUnavailable, minimum = input.minimum, maximum = input.maximum, count = includeUnavailable == true and #input.members or nil, matchedName = matchedName }
                 result.note = self:CatalogResultNote(result)
                 if not current(true) then return end
                 results[#results + 1] = result
