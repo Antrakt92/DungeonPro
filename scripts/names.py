@@ -23,6 +23,21 @@ def unique_fields(pairs):
     return fields
 
 
+def validate_unicode(value):
+    if isinstance(value, str):
+        try:
+            value.encode("utf-8")
+        except UnicodeEncodeError:
+            raise ValueError("Invalid Unicode scalar in localized-name input") from None
+    elif isinstance(value, dict):
+        for key, child in value.items():
+            validate_unicode(key)
+            validate_unicode(child)
+    elif isinstance(value, list):
+        for child in value:
+            validate_unicode(child)
+
+
 def title(value):
     return (type(value) is str and 0 < len(value) <= 1024 and value.strip() == value and
             bool(value.strip()) and not any(ord(c) < 32 or ord(c) == 127 for c in value) and
@@ -30,6 +45,8 @@ def title(value):
 
 
 def validate(data, catalog):
+    validate_unicode(data)
+    validate_unicode(catalog)
     if (type(data) is not dict or set(data) != {"schema", "checked", "provenance", "locales"} or
             type(data["schema"]) is not int or data["schema"] != 1):
         raise ValueError("Invalid localized-name schema")
@@ -82,6 +99,7 @@ def quoted(value):
 
 
 def validate_supplement(data, catalog, expected_locales=None):
+    validate_unicode(data)
     if (type(data) is not dict or set(data) != {"schema", "provenance", "locales"} or
             type(data["schema"]) is not int or data["schema"] != 1 or
             data["provenance"] != {"provider": "Dungeon Pro", "extraction": "authored-title-translation"}):
@@ -139,8 +157,10 @@ def merge(data, catalog, *supplements):
 
 
 def load_data(root=ROOT):
-    read = lambda name: json.loads((root / "data" / name).read_text(encoding="utf-8"),
-                                   object_pairs_hook=unique_fields)
+    def read(name):
+        document = json.loads((root / "data" / name).read_text(encoding="utf-8"), object_pairs_hook=unique_fields)
+        validate_unicode(document)
+        return document
     data, catalog = read("name_translations.json"), read("catalog.json")
     supplements = read("name_translation_supplements.json")
     italian = read("name_translation_itIT.json")
@@ -179,7 +199,7 @@ def main():
         if not target.exists() or target.read_bytes() != content.encode("utf-8"):
             raise SystemExit("Localized-name generated output differs")
     else:
-        target.write_text(content, encoding="utf-8", newline="\n")
+        target.write_bytes(content.encode("utf-8"))
     counts = {locale: {kind: len(entries) for kind, entries in payload.items()} for locale, payload in data["locales"].items()}
     print("Localized names valid: " + json.dumps(counts, sort_keys=True))
 

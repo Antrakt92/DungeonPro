@@ -3,6 +3,7 @@ import importlib.util
 import json
 import shutil
 import subprocess
+import sys
 import tempfile
 import unittest
 from pathlib import Path
@@ -17,6 +18,33 @@ SPEC.loader.exec_module(catalog)
 class CatalogTests(unittest.TestCase):
     def setUp(self):
         self.data = json.loads((ROOT / "data/catalog.json").read_text(encoding="utf-8"))
+
+    def test_invalid_unicode_never_replaces_verified_generated_catalogue(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            for name in ("scripts", "data", "Database"):
+                (root / name).mkdir()
+            shutil.copy2(ROOT / "scripts/catalog.py", root / "scripts/catalog.py")
+            target = root / "Database/Catalog.lua"
+            original = b"previous verified catalogue\n"
+            for field in ("name", "source"):
+                for invalid in ("bad\ud800text", "bad\udffftext"):
+                    data = self.minimal_catalog()
+                    data["quests"][0][field] += ("/" if field == "source" else "") + invalid
+                    (root / "data/catalog.json").write_text(json.dumps(data), encoding="utf-8")
+                    for options in ([], ["--check"]):
+                        with self.subTest(field=field, invalid=repr(invalid), options=options):
+                            target.write_bytes(original)
+                            result = subprocess.run([sys.executable, str(root / "scripts/catalog.py"), *options],
+                                                    capture_output=True)
+                            self.assertNotEqual(result.returncode, 0)
+                            self.assertEqual(target.read_bytes(), original)
+            data = self.minimal_catalog()
+            data["quests"][0]["name"] = "探検😀e\u0301"
+            (root / "data/catalog.json").write_text(json.dumps(data), encoding="utf-8")
+            result = subprocess.run([sys.executable, str(root / "scripts/catalog.py")], capture_output=True)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertIn("探検😀e\u0301".encode("utf-8"), target.read_bytes())
 
     def test_schema_requires_exact_integer_version(self):
         for version in (True, False, 1.0, "1", None, 0, 2):

@@ -42,6 +42,21 @@ def unique_fields(pairs):
     return fields
 
 
+def validate_unicode(value):
+    if isinstance(value, str):
+        try:
+            value.encode("utf-8")
+        except UnicodeEncodeError:
+            raise ValueError("Invalid Unicode scalar in catalogue") from None
+    elif isinstance(value, dict):
+        for key, child in value.items():
+            validate_unicode(key)
+            validate_unicode(child)
+    elif isinstance(value, list):
+        for child in value:
+            validate_unicode(child)
+
+
 def nonempty_string(value):
     return type(value) is str and bool(value.strip())
 
@@ -433,6 +448,7 @@ def validate(data):
         for place in places:
             if place and "dungeonKey" in place and place["dungeonKey"] not in keys:
                 raise ValueError(f"Missing pickup dungeon: {q['id']}")
+    validate_unicode(data)
     return data
 
 
@@ -480,7 +496,7 @@ def main():
             raise SystemExit("Generated catalogue differs; run python scripts/catalog.py")
     else:
         target.parent.mkdir(exist_ok=True)
-        target.write_text(content, encoding="utf-8", newline="\n")
+        target.write_bytes(content.encode("utf-8"))
     print(f"Catalogue: {len(data['dungeons'])} dungeons, {len(data['quests'])} quests; valid")
 
 

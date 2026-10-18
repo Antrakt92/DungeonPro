@@ -3,6 +3,7 @@ import importlib.util
 import json
 import shutil
 import subprocess
+import sys
 import tempfile
 import unittest
 from pathlib import Path
@@ -42,6 +43,44 @@ def authored_fixture(data, catalog):
 
 
 class NamesTests(unittest.TestCase):
+    def test_invalid_unicode_inputs_preserve_generated_names_in_write_and_check_modes(self):
+        data, catalog = fixture()
+        authored = authored_fixture(data, catalog)
+        italian = copy.deepcopy(authored)
+        italian["locales"] = {"itIT": italian["locales"]["itIT"]}
+        authored["locales"].pop("itIT")
+        inputs = {"catalog.json": catalog, "name_translations.json": data,
+                  "name_translation_supplements.json": authored, "name_translation_itIT.json": italian}
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            for name in ("scripts", "data", "Database"):
+                (root / name).mkdir()
+            shutil.copy2(ROOT / "scripts/names.py", root / "scripts/names.py")
+            target = root / "Database/NameTranslations.lua"
+            original = b"previous verified localized titles\n"
+            for filename, locale in (("name_translations.json", "ruRU"),
+                                     ("name_translation_supplements.json", "zhCN"),
+                                     ("name_translation_itIT.json", "itIT")):
+                for invalid in ("bad\ud800title", "bad\udffftitle"):
+                    candidate = copy.deepcopy(inputs)
+                    candidate[filename]["locales"][locale]["quests"]["166"]["name"] = invalid
+                    for name, payload in candidate.items():
+                        (root / "data" / name).write_text(json.dumps(payload), encoding="utf-8")
+                    for options in ([], ["--check"]):
+                        with self.subTest(filename=filename, invalid=repr(invalid), options=options):
+                            target.write_bytes(original)
+                            result = subprocess.run([sys.executable, str(root / "scripts/names.py"), *options],
+                                                    capture_output=True)
+                            self.assertNotEqual(result.returncode, 0)
+                            self.assertEqual(target.read_bytes(), original)
+            valid = copy.deepcopy(inputs)
+            valid["name_translations.json"]["locales"]["ruRU"]["quests"]["166"]["name"] = "探検😀e\u0301"
+            for name, payload in valid.items():
+                (root / "data" / name).write_text(json.dumps(payload), encoding="utf-8")
+            result = subprocess.run([sys.executable, str(root / "scripts/names.py")], capture_output=True)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertIn("探検😀e\u0301".encode("utf-8"), target.read_bytes())
+
     def test_file_loader_rejects_duplicate_json_keys_in_every_input(self):
         data, catalog = fixture()
         authored = authored_fixture(data, catalog)
