@@ -301,4 +301,51 @@ check("Successful real theme return shapes preserve the applied locale font with
         GameFontNormalSmall={};assert(r.Paint(row,2)==70 and styled==2 and label.localeFont==result)
     end
 end)
+check("Native item stats survive full grouped reward additions for each actual hovered choice",function()
+    local r=reset();payload.choices={{id=21,name="Choice one",count=1,texture=201},{id=22,name="Choice two",count=1,texture=202}}
+    local textWrites=0;local original=tooltip.SetText
+    tooltip.SetText=function(self,value)textWrites=textWrites+1;return original(self,value)end
+    tooltip.SetHyperlink=function(self,link)self.link=link;self.text="Native item stats";self.lines={}end
+    tooltip.AddLine=function(self,value)self.lines[#self.lines+1]=value end
+    assert(r.Paint(row,1)==70)
+    for index,id in ipairs({10,21,22})do
+        buttons[index].scripts.OnEnter()
+        assert(tooltip.link=="item:"..id and tooltip.text=="Native item stats"and textWrites==0)
+        local list=table.concat(tooltip.lines,"\n")
+        assert(list:find("Rewards",1,true)and list:find("Choose one",1,true)and list:find("Choice two",1,true)and calls==1)
+    end
+    buttons[3].scripts.OnLeave();assert(not tooltip.shown)
+end)
+check("Unsupported or failed native hyperlinks retain cached fallback and native-only tooltips retain stats",function()
+    for _,failure in ipairs({false,"throw"})do
+        local r=reset()
+        tooltip.SetHyperlink=function()if failure=="throw"then error("missing item")end;return false end
+        r.Paint(row,1);buttons[1].scripts.OnEnter()
+        assert(tooltip.shown and tooltip.text:find("Sword",1,true)and calls==1)
+    end
+    local r=reset();tooltip.SetHyperlink=function(self,link)self.link=link;self.text="Stats"end
+    r.Paint(row,1);buttons[1].scripts.OnEnter();assert(tooltip.shown and tooltip.text=="Stats"and tooltip.link=="item:10")
+end)
+check("Late native item and appended lines preserve newer hover while foreign ownership and Clear stay untouched",function()
+    for _,stage in ipairs({"hyperlink","line","foreign","clear"})do
+        local r=reset();local once
+        tooltip.SetHyperlink=function(self,link)
+            if not once and stage~="line"then
+                once=true
+                if stage=="clear"then r.Clear(row)
+                elseif stage=="foreign"then self.owner={};self.shown=false
+                else payload.items[1].id=11;r.Paint(row,2);buttons[1].scripts.OnEnter()end
+            end
+            self.link=link;self.text="Stats";self.lines={}
+        end
+        tooltip.AddLine=function(self,line)
+            if not once and stage=="line"then once=true;payload.items[1].id=11;r.Paint(row,2);buttons[1].scripts.OnEnter()end
+            self.lines[#self.lines+1]=line
+        end
+        r.Paint(row,1);buttons[1].scripts.OnEnter();assert(once)
+        if stage=="clear"then assert(not tooltip.shown and not buttons[1].shown)
+        elseif stage=="foreign"then assert(not tooltip.shown and tooltip.owner~=buttons[1])
+        else assert(tooltip.shown and tooltip.link=="item:11"and tooltip.text=="Stats"and calls==2)end
+    end
+end)
 print("Quest list reward checks passed: " .. total .. " (modeled, no native layout proof)")

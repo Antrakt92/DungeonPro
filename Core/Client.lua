@@ -1325,6 +1325,39 @@ function addon.CachedQuestRewards(id)
     return { source = "cache", items = fixed, choices = choice, money = money, xp = xp }
 end
 
+-- Explicit preload is separate from the cache reader and requires a live caller scope.
+function addon.RequestQuestRewardData(id, ownerCurrent)
+    local clean, read, checker = addon.Clean, addon.Read, issecretvalue
+    id = dialogueInteger(id, 1, 9007199254740991)
+    ownerCurrent = clean(ownerCurrent, "function")
+    local catalogue = clean(addon.quests, "table")
+    local definition = id and catalogue and clean(rawget(catalogue, id), "table")
+    local task = clean(C_TaskQuest, "table")
+    local loader = task and clean(rawget(task, "RequestPreloadRewardData"), "function")
+    local loaded, localeGetter, character, database = clean(HaveQuestRewardData, "function"), GetLocale, addon.char, addon.db
+    local getter = addon.RequestQuestRewardData
+    if not definition or dialogueInteger(rawget(definition, "id"), 1, 9007199254740991) ~= id or
+        not ownerCurrent or not loader or not loaded then return false end
+    local locale = read(localeGetter, "string")
+    local function same()
+        local ok, valid = pcall(function() return addon.Clean == clean and addon.Read == read and issecretvalue == checker and
+            addon.RequestQuestRewardData == getter and addon.quests == catalogue and rawget(catalogue, id) == definition and
+            dialogueInteger(rawget(definition, "id"), 1, 9007199254740991) == id and
+            addon.char == character and addon.db == database and C_TaskQuest == task and
+            rawget(task, "RequestPreloadRewardData") == loader and HaveQuestRewardData == loaded and GetLocale == localeGetter end)
+        return ok and valid == true
+    end
+    local function current()
+        if not same() or read(ownerCurrent, "boolean") ~= true or not same() then return false end
+        return read(localeGetter, "string") == locale and same()
+    end
+    if not locale or #locale > 32 or not locale:find("%S") or not current() or
+        read(loaded, "boolean", id) ~= false or not current() then return false end
+    local ok, result = pcall(loader, id)
+    return ok and (type(checker) ~= "function" or read(checker, "boolean", result) == false) and
+        clean(result, "boolean") ~= false and current()
+end
+
 function addon.QuestPortrait(id)
     id = dialogueInteger(id, 1)
     if not id then return nil end

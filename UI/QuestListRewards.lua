@@ -58,18 +58,30 @@ end
 showTooltip = function(value)
     if (tooltipDepth or 0) >= 3 then return end
     tooltipDepth = (tooltipDepth or 0) + 1
-    for _, operation in ipairs({ { value.owner, value.button, "ANCHOR_RIGHT" },
-        { value.text, value.description }, { value.show } }) do
-        if not value.current() then break end
-        pcall(operation[1], value.tooltip, unpack(operation, 2))
+    local function apply(method, ...)
+        if not value.current() then return false end
+        local ok, result = pcall(method, value.tooltip, ...)
         local owned = addon.Read(value.isOwned, "boolean", value.tooltip, value.button)
         if not value.current() or owned ~= true then
             local newest = held
             if newest and newest ~= value and newest.current() then showTooltip(newest)
             else release(value) end
-            break
+            return false
         end
+        return ok and addon.Clean(result, "boolean") ~= false
     end
+    if apply(value.owner, value.button, "ANCHOR_RIGHT") then
+        local native = value.hyperlink and apply(value.hyperlink, "item:" .. value.itemID)
+        if value.current() then
+            local painted = native or apply(value.text, value.description)
+            if native and value.addLine then
+                for _, line in ipairs(value.lines) do
+                    if not apply(value.addLine, line) then painted = false; break end
+                end
+            end
+            if painted then apply(value.show) else release(value) end
+        end
+    else release(value) end
     tooltipDepth = tooltipDepth - 1
 end
 
@@ -98,6 +110,7 @@ local function enter(row, state, button, item)
     local tooltip = addon.Clean(GameTooltip, "table") or addon.Clean(GameTooltip, "userdata")
     if not tooltip then return end
     local owner, text, show, hide, owned = tooltip.SetOwner, tooltip.SetText, tooltip.Show, tooltip.Hide, tooltip.IsOwned
+    local hyperlink, addLine = addon.Clean(tooltip.SetHyperlink, "function"), addon.Clean(tooltip.AddLine, "function")
     if type(owner) ~= "function" or type(text) ~= "function" or type(show) ~= "function" or
         type(hide) ~= "function" or type(owned) ~= "function" then return end
     release()
@@ -120,17 +133,19 @@ local function enter(row, state, button, item)
     end
     if not current(row, state) or #lines == 0 then return end
     local value = { tooltip = tooltip, button = button, hide = hide, state = state,
-        owner = owner, text = text, show = show, isOwned = owned }
+        owner = owner, text = text, show = show, isOwned = owned,
+        hyperlink = hyperlink, addLine = addLine, itemID = item.id, lines = lines }
     held = value
     local function fresh()
         return held == value and current(row, state) and visible(row) and visible(button) and
             held == value and current(row, state) and GameTooltip == tooltip and tooltip.SetOwner == owner and
-            tooltip.SetText == text and tooltip.Show == show and tooltip.Hide == hide and tooltip.IsOwned == owned
+            tooltip.SetText == text and tooltip.Show == show and tooltip.Hide == hide and tooltip.IsOwned == owned and
+            addon.Clean(tooltip.SetHyperlink, "function") == hyperlink and addon.Clean(tooltip.AddLine, "function") == addLine
     end
     value.current = fresh
     value.description = table.concat(lines, "\n")
     -- The complete cached list preserves fixed rewards and choose-one options.
-    -- Hovering never loads item data or queries quest rewards.
+    -- Native item tooltips may hydrate item data; quest rewards stay cached.
     showTooltip(value)
 end
 

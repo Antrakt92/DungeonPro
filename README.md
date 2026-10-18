@@ -96,8 +96,9 @@ Level ranges are provisional recommendations.
 - World map, optional TomTom and a built-in direction arrow. The arrow points
   toward a coordinate; it does not find paths around terrain or plan transport.
 - Browse compact quest rows with status icons and cached item reward previews.
-  Hover over a reward icon to see all known item rewards, grouped into guaranteed
-  items and choices where you pick one. A +N mark indicates additional items.
+  Hover over a reward icon for the game's item tooltip with its statistics,
+  followed by known guaranteed rewards and choices where you pick one.
+  A +N mark indicates additional items.
   Search sits on the right of the header, beside the language selector.
   The level tab beside the app title filters the dungeon catalogue. The larger
   quest filter beside the dungeon heading switches between your character's
@@ -158,7 +159,8 @@ Level ranges are provisional recommendations.
 - Item rewards, choices and experience for the currently selected active quest,
   when the client provides them. Unknown reward data is shown explicitly.
 - Reward previews for other quests when the client confirms their reward data
-  is already loaded. Missing data stays unknown.
+  is loaded. Visible lists make a bounded preload attempt when supported;
+  missing data stays unknown.
 - Reward items use native icons and item-ID hover tooltips when available.
   Missing icon or tooltip data leaves the reward text visible.
 - A separate note shows a quest observed in the current NPC dialogue. It expires

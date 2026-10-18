@@ -9,6 +9,8 @@ local function snapshot()
     local getter = language and addon.Clean(language.GetSelection, "function")
     return { char = addon.char, db = addon.db, quests = addon.quests,
         provider = addon.CachedQuestRewards, checker = issecretvalue, localeGetter = GetLocale,
+        hydrator = addon.RequestQuestRewardData, rewardLoaded = HaveQuestRewardData,
+        task = C_TaskQuest, preload = addon.Clean(C_TaskQuest, "table") and C_TaskQuest.RequestPreloadRewardData,
         locale = addon.Read(GetLocale, "string"), language = language, selectionGetter = getter,
         selection = addon.Read(getter, "string", language),
         committed = addon.Clean(addon.db, "table") and addon.Clean(addon.db.locale, "string") }
@@ -16,14 +18,15 @@ end
 
 local function same(a, b)
     for _, key in ipairs({ "char", "db", "quests", "provider", "checker", "localeGetter", "locale",
-        "language", "selectionGetter", "selection", "committed" }) do
+        "language", "selectionGetter", "selection", "committed", "hydrator", "rewardLoaded", "task", "preload" }) do
         if a[key] ~= b[key] then return false end
     end
     return true
 end
 
 local function sameBudget(a, b)
-    for _, key in ipairs({ "char", "db", "quests", "provider", "checker", "localeGetter", "locale" }) do
+    for _, key in ipairs({ "char", "db", "quests", "provider", "checker", "localeGetter", "locale",
+        "hydrator", "rewardLoaded", "task", "preload" }) do
         if a[key] ~= b[key] then return false end
     end
     return true
@@ -79,6 +82,15 @@ schedule = function(owner, state)
                 if value and addon.Clean(value.source, "string") == "cache" and
                     addon.Clean(value.items, "table") and addon.Clean(value.choices, "table") then
                     entry.done, changed = true, true
+                elseif not value and not entry.primed and addon.Clean(state.context.hydrator, "function") then
+                    -- Spending the request before dispatch also bounds synchronous reentry and errors.
+                    entry.primed = true
+                    local function requestCurrent()
+                        return current(owner, state, latest) and state.entries[id] == entry and
+                            state.context.quests[id] == entry.quest
+                    end
+                    pcall(state.context.hydrator, id, requestCurrent)
+                    if not requestCurrent() then schedule(owner, state); return end
                 end
             end
         end

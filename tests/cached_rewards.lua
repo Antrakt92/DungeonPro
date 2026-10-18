@@ -3,6 +3,7 @@ assert(loadfile("Core/Namespace.lua"))("DungeonPro", addon)
 assert(loadfile("Core/Client.lua"))("DungeonPro", addon)
 local fixed, choice, loaded, locale, fixedCount, choiceCount, calls
 local function reset()
+    addon.char, addon.db = nil, nil
     addon.quests = { [65] = { id = 65 } }
     fixed, choice = { "Reward", 123, 2, 3, false, 7001 }, { "Choice", "Icon", 1, 4, true, 8001 }
     loaded, locale, fixedCount, choiceCount, calls = true, "enUS", 1, 1, 0
@@ -26,6 +27,39 @@ local function check(name, callback)
     reset(); local ok, err = pcall(callback)
     assert(ok, name .. ": " .. tostring(err)); total = total + 1; print("PASS " .. name)
 end
+check("Explicit preload requests only a clean known cold quest through a current owner", function()
+    local requests = 0
+    loaded = false
+    C_TaskQuest.RequestPreloadRewardData = function(id, ...) requests = requests + 1; assert(id==65 and select("#",...)==0) end
+    assert(addon.RequestQuestRewardData(65,function()return true end) and requests==1)
+    assert(not addon.RequestQuestRewardData(65,function()return false end) and requests==1)
+    loaded=true;assert(not addon.RequestQuestRewardData(65,function()return true end) and requests==1)
+    loaded=nil;assert(not addon.RequestQuestRewardData(65,function()return true end) and requests==1)
+    loaded=secret;assert(not addon.RequestQuestRewardData(65,function()return true end) and requests==1)
+    loaded=false
+    for _,id in ipairs({0,-1,65.5,66,9007199254740992,secret})do assert(not addon.RequestQuestRewardData(id,function()return true end))end
+    assert(not addon.RequestQuestRewardData(65,nil) and requests==1)
+end)
+check("Missing failing and rejected preload APIs never claim a dispatched request", function()
+    loaded=false
+    for _,loader in ipairs({false,function()error("unsupported")end,function()return false end,function()return secret end})do
+        C_TaskQuest.RequestPreloadRewardData=loader
+        assert(not addon.RequestQuestRewardData(65,function()return true end))
+    end
+    C_TaskQuest=nil;assert(not addon.RequestQuestRewardData(65,function()return true end))
+end)
+check("Cold loaded-check reentry must retain character catalogue namespace locale and caller ownership", function()
+    local requests=0
+    for _,mutate in ipairs({function()addon.char={}end,function()addon.db={}end,function()addon.quests[65]={id=65}end,
+        function()addon.quests[65].id=66 end,function()locale="ruRU"end,
+        function()C_TaskQuest={}end,function()C_TaskQuest.RequestPreloadRewardData=function()end end})do
+        reset();C_TaskQuest.RequestPreloadRewardData=function()requests=requests+1 end
+        HaveQuestRewardData=function()mutate();return false end
+        assert(not addon.RequestQuestRewardData(65,function()return true end) and requests==0)
+    end
+    reset();local fresh=true;C_TaskQuest.RequestPreloadRewardData=function()requests=requests+1;fresh=false end
+    loaded=false;assert(not addon.RequestQuestRewardData(65,function()return fresh end) and requests==1)
+end)
 check("Loaded catalogue reward preview routes every explicit ID and exact six-field tuple", function()
     local r = addon.CachedQuestRewards(65)
     assert(r.source == "cache" and #r.items == 1 and #r.choices == 1 and r.money == 12345 and r.xp == 678)

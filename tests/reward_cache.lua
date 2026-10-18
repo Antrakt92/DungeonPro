@@ -6,6 +6,7 @@ local function reset()
     issecretvalue = function() return false end
     GetLocale = function() return locale end
     addon.char, addon.db, addon.quests, addon.Language = {}, { locale = "auto" }, { [1] = {}, [2] = {}, [3] = {} }, nil
+    addon.RequestQuestRewardData = nil
     addon.CachedQuestRewards = function(id)
         reads[id] = (reads[id] or 0) + 1
         if ready[id] then return { source = "cache", items = {}, choices = {} } end
@@ -31,6 +32,29 @@ test("Three deferred cache reads exhaust without requests or endless repaint", f
     assert(tick() == .6); watch(); assert(tick() == 1.2)
     for _ = 1, 20 do watch() end
     assert(reads[1] == 3 and #queue == 0 and notices == 0)
+end)
+test("Cold reward data explicitly primes once and arrives through a later cache read", function()
+    local requests = 0
+    addon.RequestQuestRewardData = function(id, current)
+        assert(id==1 and current()); requests=requests+1; ready[id]=true; return true
+    end
+    watch();assert(requests==0);tick();assert(requests==1 and notices==0)
+    watch();tick();assert(notices==1 and reads[1]==2 and requests==1 and #queue==0)
+end)
+test("Failed preload is spent once across repaints UI language and membership changes", function()
+    local requests=0
+    addon.RequestQuestRewardData=function()requests=requests+1;error("unsupported quest")end
+    watch();tick();addon.db.locale="ruRU";watch();tick();watch({});watch();tick()
+    assert(requests==1 and reads[1]==3 and #queue==0)
+end)
+test("Preload reentry cannot publish or request removed newer members", function()
+    local requests=0
+    addon.RequestQuestRewardData=function(id,current)
+        requests=requests+1;assert(id==1 and current());watch({2});assert(not current())
+    end
+    watch();tick();assert(requests==1 and notices==0)
+    addon.RequestQuestRewardData=nil;ready[2]=true;watch({2});tick()
+    assert(notices==1 and reads[2]==1)
 end)
 test("Ready IDs coalesce one notification and empty valid rewards stop retries", function()
     watch({1, 2, 1}); ready[1], ready[2] = true, true; tick()

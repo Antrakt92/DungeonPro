@@ -13,11 +13,15 @@ CreateFrame = function(kind, name, parent, template)
 end
 event.scripts.OnEvent(event, "ADDON_LOADED", "DungeonPro")
 SlashCmdList.DUNGEONPRO("")
-local ui, loaded, reads = addon.UI, false, 0
+local ui, loaded, reads, preloads = addon.UI, false, 0, 0
 GetLocale = function() return "enUS" end
 addon.db.locale = "enUS"
 for _, dungeon in ipairs(addon.dungeons) do if dungeon.key == "dm" then ui.dungeon = dungeon end end
 HaveQuestRewardData = function(id) reads = reads + 1; return id == 166 and loaded end
+C_TaskQuest = { RequestPreloadRewardData = function(id)
+    assert(id > 0 and addon.quests[id], "only catalogue quest rewards are requested")
+    if id == 166 then preloads = preloads + 1 end
+end }
 GetNumQuestLogRewards = function(id) assert(id == 166); reads = reads + 1; return 1 end
 GetNumQuestLogChoices = function(id) assert(id == 166); reads = reads + 1; return 5 end
 GetQuestLogRewardInfo = function(index, id)
@@ -32,6 +36,10 @@ local tip = {}
 function tip:SetOwner(owner) self.owner = owner end
 function tip:IsOwned(owner) return self.owner == owner end
 function tip:SetText(text) self.text = text end
+function tip:SetHyperlink(link)
+    self.link, self.text, self.lines = link, "Native item statistics", {}
+end
+function tip:AddLine(text) self.lines[#self.lines + 1] = text end
 function tip:Show() self.shown = true end
 function tip:Hide() self.shown = false end
 GameTooltip = tip
@@ -52,23 +60,30 @@ local function icons(row)
     return result
 end
 assert(#icons(questRow()) == 0, "cold reward data must not invent an item")
-loaded = true
 assert(#pending == 1, "cold rows share one deferred cache check")
 pending[1]()
+assert(preloads == 1 and #icons(questRow()) == 0, "cold rewards request hydration without inventing items")
+loaded = true
+assert(pending[2], "reward hydration retains its bounded follow-up")
+pending[2]()
 C_Timer = timer
 local row = questRow()
 local buttons = icons(row)
 assert(#buttons == 3, "deferred cache arrival repaints without requiring an event")
 assert(buttons[3].overflowLabel and buttons[3].overflowLabel:GetText() == "+3")
 local before, selected, root = reads, ui.quest, ui.questTreeRoot
-for _, button in ipairs(buttons) do
+for index, button in ipairs(buttons) do
     button.scripts.OnEnter()
-    assert(tip.shown and tip.owner == button and tip.text:find("Guaranteed reward", 1, true))
-    assert(tip.text:find(addon.L("REWARD_ITEMS"), 1, true) and tip.text:find(addon.L("REWARD_CHOICES"), 1, true))
-    for index = 1, 5 do assert(tip.text:find("Choice reward " .. index, 1, true), "every choice is visible in the hover preview") end
+    assert(tip.shown and tip.owner == button and tip.text == "Native item statistics", "native item statistics survive supplemental reward text")
+    assert(tip.link == "item:" .. (index == 1 and 7001 or 7999 + index), "each icon opens its own item tooltip")
+    local supplemental = table.concat(tip.lines, "\n")
+    assert(supplemental:find("Guaranteed reward", 1, true))
+    assert(supplemental:find(addon.L("REWARD_ITEMS"), 1, true) and supplemental:find(addon.L("REWARD_CHOICES"), 1, true))
+    for choice = 1, 5 do assert(supplemental:find("Choice reward " .. choice, 1, true), "every choice is visible in the hover preview") end
     button.scripts.OnLeave(); assert(not tip.shown)
 end
 assert(reads == before and ui.quest == selected and ui.questTreeRoot == root, "hover does not query rewards or select quests")
+assert(preloads == 1, "hover never requests quest reward data again")
 local enter = buttons[1].scripts.OnEnter
 loaded = false
 event.scripts.OnEvent(event, "QUEST_DATA_LOAD_RESULT", 166, false)
