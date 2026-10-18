@@ -1032,4 +1032,57 @@ test("late portrait and list tint writes repair the newer filter mode",function(
     addon.Theme.StyleFilter(b,false)
     assert(icon.vertex[1]==1 and strip.vertex[1]>strip.vertex[2])
 end)
+local function catalogueParts(ui)
+    local result = {}
+    for _, part in ipairs(ui.frame.textures) do
+        for _, point in ipairs(part.points or {}) do
+            if point[2] == ui.catalogScroll then result[#result + 1] = part; break end
+        end
+    end
+    assert(#result == 3, "the catalogue owns exactly three backdrop regions")
+    return result
+end
+
+test("catalogue collapse updates only its existing backdrop without allocating decoration", function()
+    local ui = { frame = region(), catalogScroll = region(), questScroll = region(), detailScroll = region() }
+    assert(addon.Theme.Apply(ui))
+    assert(type(addon.Theme.SetCatalogVisible) == "function", "collapsed catalogue needs an owned backdrop visibility adapter")
+    local parts, count = catalogueParts(ui), #ui.frame.textures
+    local before = {}; for _, part in ipairs(ui.frame.textures) do before[part] = part.shown end
+    ui.catalogCollapsed = true
+    assert(addon.Theme.SetCatalogVisible(ui))
+    for _, part in ipairs(parts) do assert(part.shown == false) end
+    for _, part in ipairs(ui.frame.textures) do
+        local isCatalogue = false; for _, own in ipairs(parts) do isCatalogue = isCatalogue or own == part end
+        if not isCatalogue then assert(part.shown == before[part], "other panel visibility is preserved") end
+    end
+    for _ = 1, 100 do assert(addon.Theme.SetCatalogVisible(ui)) end
+    assert(#ui.frame.textures == count)
+    ui.catalogCollapsed = false
+    assert(addon.Theme.Apply(ui))
+    for _, part in ipairs(parts) do assert(part.shown == true) end
+end)
+
+test("a late catalogue Hide tail cannot cover a newer expanded panel", function()
+    local ui = { frame = region(), catalogScroll = region() }
+    assert(addon.Theme.Apply(ui))
+    local parts = catalogueParts(ui)
+    local original, armed, fired = parts[1].Hide, true, false
+    parts[1].Hide = function(self)
+        if armed then
+            armed, fired = false, true
+            ui.catalogCollapsed = false
+            addon.Theme.SetCatalogVisible(ui)
+        end
+        original(self)
+    end
+    ui.catalogCollapsed = true
+    assert(addon.Theme.SetCatalogVisible(ui) == false)
+    assert(fired and ui.catalogCollapsed == false)
+    for _, part in ipairs(parts) do assert(part.shown == true, "the latest expanded state survives the old Hide") end
+    parts[1].Hide = original
+    ui.catalogCollapsed = true
+    assert(addon.Theme.SetCatalogVisible(ui))
+    for _, part in ipairs(parts) do assert(part.shown == false) end
+end)
 print("theme: " .. total .. " scenarios passed")

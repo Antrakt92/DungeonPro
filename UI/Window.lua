@@ -805,6 +805,55 @@ function UI:ChooseBranch(id, index, parent)
     return true
 end
 
+function UI:ApplyColumns(listY)
+    local revision, collapsed, frame = self.layoutRevision, self.catalogCollapsed == true, self.frame
+    local intent = {}; self.columnIntent = intent
+    local questScroll, questList, detailScroll, heading, catalogScroll, toggle = self.questScroll, self.questList,
+        self.detailScroll, self.heading, self.catalogScroll, self.catalogToggle
+    local glyph = toggle and toggle.label
+    local themeRoot = addon.Theme
+    local theme = addon.Clean(themeRoot,"table")
+    local rawVisible = theme and rawget(theme,"SetCatalogVisible")
+    local visible = addon.Clean(rawVisible,"function")
+    local function current()
+        return addon.UI == self and self.frame == frame and self.layoutRevision == revision and self.columnIntent == intent and
+            (self.catalogCollapsed == true) == collapsed and self.questScroll == questScroll and self.questList == questList and
+            self.detailScroll == detailScroll and self.heading == heading and self.catalogScroll == catalogScroll and self.catalogToggle == toggle and (not toggle or toggle.label == glyph) and
+            addon.Theme == themeRoot and (not theme or rawget(theme,"SetCatalogVisible") == rawVisible)
+    end
+    local function write(object, method, ...) return self:QuestListWrite(object, method, current, ...) end
+    local x, width = collapsed and 54 or 278, collapsed and 594 or 370
+    listY = listY or 100
+    if not write(self.questScroll,"ClearAllPoints") or not write(self.questScroll,"SetPoint","TOPLEFT",x,-listY) or
+        not write(self.questScroll,"SetWidth",width) or not write(self.questList,"SetWidth",width-4) or
+        not write(self.questScroll,"SetHeight",math.max(80,688-listY)) or
+        not write(self.detailScroll,"ClearAllPoints") or not write(self.detailScroll,"SetPoint","TOPLEFT",674,-66) or
+        not write(self.detailScroll,"SetHeight",622) or not write(self.heading,"ClearAllPoints") or
+        not write(self.heading,"SetPoint","TOPLEFT",x,-66) or not write(self.heading,"SetWidth",collapsed and 450 or 226) or
+        not write(self.catalogScroll,"SetShown",not collapsed) then return false end
+    if toggle then
+        toggle.footerLabelKey = collapsed and "CATALOG_SHOW" or "CATALOG_HIDE"
+        if not current() then return false end
+        setFont(glyph,20)
+        if not current() or not write(toggle,"ClearAllPoints") or not write(toggle,"SetPoint","TOPLEFT",collapsed and 12 or 250,-66) or
+            not write(glyph,"SetText",collapsed and "›" or "‹") or not write(toggle,"Show") then return false end
+    end
+    if not current() or (visible and addon.Read(visible,"boolean",self) ~= true) then return false end
+    return current()
+end
+
+function UI:SetCatalogCollapsed(value, deferRefresh)
+    value = addon.Clean(value,"boolean")
+    local frame = self.frame
+    if value == nil or not frame or addon.Read(frame.IsShown,"boolean",frame) ~= true or addon.UI ~= self then return false end
+    if (self.catalogCollapsed == true) == value then return true end
+    local revision = {}; self.layoutRevision, self.catalogCollapsed = revision, value
+    self:HideNavigationHint()
+    if self.layoutRevision ~= revision or not self:ApplyColumns() then return false end
+    if not deferRefresh then self:Refresh(nil,true) end
+    return self.layoutRevision == revision and self.catalogCollapsed == value
+end
+
 function UI:FlushPendingSearch(expected)
     local pending = self.pendingSearch
     if not pending or (expected and pending ~= expected) then return false end
@@ -813,7 +862,10 @@ function UI:FlushPendingSearch(expected)
     local shown = frame and addon.Read(frame.IsShown, "boolean", frame)
     if self.pendingSearch or addon.UI ~= self or self.frame ~= frame or self.search ~= pending.query or
         self.RefreshDungeons ~= pending.refresh or shown ~= true then return false end
-    self:RefreshDungeons()
+    if self.catalogCollapsed == true and pending.query:find("%S") then
+        if not self:SetCatalogCollapsed(false,true) then return false end
+        self:Refresh(nil,true)
+    else self:RefreshDungeons() end
     return true
 end
 
@@ -1277,7 +1329,7 @@ function UI:RefreshDungeons()
             local loaded = type(icon.SetAtlas) == "function" and pcall(icon.SetAtlas, icon, atlas)
             if not loaded or addon.Read(icon.GetAtlas, "string", icon) ~= atlas then icon:SetTexture("Interface\\Icons\\INV_Misc_Map_01") end
             icon:Show()
-            control:SetScript("OnEnter", function() control.footerHovered = true; self:RefreshFooterIcon(control); self:CatalogEntranceHint(row) end)
+            control:SetScript("OnEnter", function() if self.catalogCollapsed then return end; control.footerHovered = true; self:RefreshFooterIcon(control); self:CatalogEntranceHint(row) end)
             control:SetScript("OnLeave", function() control.footerHovered = false; self:RefreshFooterIcon(control); self:HideNavigationHint(control) end)
             control:SetScript("OnHide", function() control.footerHovered = false; self:RefreshFooterIcon(control); self:HideNavigationHint(control) end)
         end
@@ -1310,7 +1362,7 @@ function UI:RefreshDungeons()
             statusControl:EnableMouse(true)
             local statusIcon = statusControl:CreateTexture(nil, "ARTWORK"); statusControl.statusIcon = statusIcon
             statusIcon:SetSize(20, 20); statusIcon:SetPoint("CENTER", statusControl, "CENTER", 0, 0)
-            statusControl:SetScript("OnEnter", function() self:CatalogStatusHint(row) end)
+            statusControl:SetScript("OnEnter", function() if not self.catalogCollapsed then self:CatalogStatusHint(row) end end)
             statusControl:SetScript("OnLeave", function() self:HideNavigationHint(statusControl) end)
             statusControl:SetScript("OnHide", function() self:HideNavigationHint(statusControl) end)
         end
@@ -1332,7 +1384,7 @@ function UI:RefreshDungeons()
         end
         local binding = row.entranceBinding
         if not write(control, "SetScript", "OnClick", function()
-            if addon.Read(row.IsShown, "boolean", row) ~= true then return end
+            if self.catalogCollapsed or addon.Read(row.IsShown, "boolean", row) ~= true then return end
             if not entranceCurrent() or row.entranceBinding ~= binding or not binding or not binding.current() then return end
             if addon.Read(frame.IsShown, "boolean", frame) ~= true or not entranceCurrent() or not binding.current() then return end
             pcall(binding.start, binding.dungeon, binding.point)
@@ -1349,7 +1401,7 @@ function UI:RefreshDungeons()
         if not current() then return end
         row.matchQuestID = result.questID
         if not write(row, "SetScript", "OnClick", function()
-            if addon.Read(row.IsShown, "boolean", row) ~= true then return end
+            if self.catalogCollapsed or addon.Read(row.IsShown, "boolean", row) ~= true then return end
             if not proveSources() then return end
             self:ResetHistoryReading()
             self.detailHistory = {}
@@ -1395,7 +1447,7 @@ function UI:RefreshDungeons()
             styleRow(inspect, "control", false)
             if not inspectCurrent() or not write(inspect, "SetScript", "OnClick", function()
                 local shown = addon.Read(self.frame.IsShown, "boolean", self.frame)
-                if shown ~= true or not inspectCurrent() then return end
+                if self.catalogCollapsed or shown ~= true or not inspectCurrent() then return end
                 local matches
                 if result.idMatch then
                     matches = queryID == questID
@@ -1526,6 +1578,8 @@ function UI:PaintQuestRowStatus(row, entry, engine, ownerCurrent)
 end
 
 function UI:RefreshQuests()
+    local layoutRevision = self.layoutRevision
+    if not self:ApplyColumns() or self.layoutRevision ~= layoutRevision then return end
     local d, character, previousGeneration = self.dungeon, addon.char, self.questListGeneration
     local preparation, includeUnavailable = self.preparation, self.includeUnavailable
     local targets, targetIDs, targetSet = d and d.quests, {}, {}
@@ -1541,13 +1595,13 @@ function UI:RefreshQuests()
     self.questListGeneration = generation
     local proveTree
     local function current()
-        local owned = self.questListGeneration == generation and self.engine == engine and self.dungeon == d and addon.char == character and
+        local owned = self.layoutRevision == layoutRevision and self.questListGeneration == generation and self.engine == engine and self.dungeon == d and addon.char == character and
             self.preparation == preparation and self.includeUnavailable == includeUnavailable
         if not owned or treeFailed or infoFailed then return false end
         if d and (d.quests ~= targets or #targets ~= #targetIDs) then return false end
         for index, id in ipairs(targetIDs) do if targets[index] ~= id then return false end end
         if not rendering and not proveTree() then return false end
-        return self.questListGeneration == generation and self.engine == engine and self.dungeon == d and addon.char == character and
+        return self.layoutRevision == layoutRevision and self.questListGeneration == generation and self.engine == engine and self.dungeon == d and addon.char == character and
             self.preparation == preparation and self.includeUnavailable == includeUnavailable
     end
     proveTree = function()
@@ -2030,10 +2084,7 @@ function UI:RefreshQuests()
     local headingHeight = math.max(26, measuredHeight(self.heading, 26))
     if not current() then return end
     local listY = 66 + headingHeight + 8
-    if not write(self.questScroll, "ClearAllPoints") or not write(self.questScroll, "SetPoint", "TOPLEFT", 278, -listY) or
-        not write(self.questScroll, "SetHeight", math.max(80, 688 - listY)) or
-        not write(self.detailScroll, "ClearAllPoints") or not write(self.detailScroll, "SetPoint", "TOPLEFT", 674, -66) or
-        not write(self.detailScroll, "SetHeight", 622) then return end
+    if not self:ApplyColumns(listY) or not current() then return end
     for index = n + 1, #self.rows do
         local row = self.rows[index]
         if not write(row, "Hide") then return end
@@ -2066,7 +2117,7 @@ function UI:RefreshQuests()
         end
         local function visibleCurrent()
             local function owned()
-                local valid = addon.UI == self and self.frame == frame and self.questListGeneration == generation and
+                local valid = self.layoutRevision == layoutRevision and addon.UI == self and self.frame == frame and self.questListGeneration == generation and
                     self.engine == engine and self.dungeon == d and addon.char == character and not treeFailed and not infoFailed and
                     self.preparation == preparation and self.includeUnavailable == includeUnavailable and
                     (not d or (d.quests == targets and #targets == #targetIDs))
@@ -2285,6 +2336,7 @@ function UI:ResetQuestLogControl()
 end
 
 function UI:RefreshDetail(sourceFocus)
+    local layoutRevision = self.layoutRevision
     local renderQuest, renderDungeon = self.quest, self.dungeon
     local renderIncludeUnavailable = self.includeUnavailable
     local renderEngine, renderCharacter, pendingAction, pendingGiver, pendingTurnin = self.engine, addon.char, nil, nil, nil
@@ -2334,7 +2386,7 @@ function UI:RefreshDetail(sourceFocus)
         for _, row in ipairs(buttons) do row:Hide(); row:SetEnabled(false); row:SetScript("OnClick", nil) end
     end
     local function portraitCardCurrent()
-        return self.quest == renderQuest and self.dungeon == renderDungeon and self.engine == renderEngine and
+        return self.layoutRevision == layoutRevision and self.quest == renderQuest and self.dungeon == renderDungeon and self.engine == renderEngine and
             self.includeUnavailable == renderIncludeUnavailable and addon.char == renderCharacter and self.rewardGeneration == rewardGeneration and
             (self.detailReferencesExpanded == true) == referencesExpanded and
             (self.detailNarrativeExpanded == true) == narrativeExpanded and
@@ -5011,8 +5063,24 @@ function UI:Create()
         control:SetScript("OnHide", function() control.footerHovered, control.footerPressed = false, false; self:RefreshFooterIcon(control); self:HideNavigationHint(control) end)
     end
     self:SetFooterLabel(self.source, "SOURCE"); self:SetFooterLabel(self.giver, "VISIT_GIVER")
+    self.catalogCollapsed, self.layoutRevision = false, {}
+    local catalogToggle
+    catalogToggle = button(frame,"",24,function()
+        if addon.UI == self and self.frame == frame and self.catalogToggle == catalogToggle then
+            self:SetCatalogCollapsed(not self.catalogCollapsed)
+        end
+    end)
+    self.catalogToggle = catalogToggle
+    catalogToggle:SetSize(24,24)
+    catalogToggle.label = label(catalogToggle,"",2,-1,20,20)
+    styleRow(catalogToggle,"control",false)
+    catalogToggle.label:SetJustifyH("CENTER")
+    catalogToggle.label:SetTextColor(1,.78,.15)
+    if not self:ApplyColumns() then return end
     local function navigationHint(control, destination, bodyKey)
         control:SetScript("OnEnter", function()
+            local isCatalogToggle, revision = control == self.catalogToggle, self.layoutRevision
+            local resolvedBodyKey = bodyKey == true and control.footerLabelKey or bodyKey
             local isTurnin = control == self.turnin
             local turninBinding = isTurnin and self.turninBinding
             if control.footerIcon then control.footerHovered = true; self:RefreshFooterIcon(control) end
@@ -5025,14 +5093,14 @@ function UI:Create()
                 local shown = addon.Read(frame.IsShown, "boolean", frame)
                 local turninCurrent = not isTurnin or (self.turnin == control and turninBinding and self.turninBinding == turninBinding and
                     addon.Read(turninBinding.current, "boolean") == true)
-                return turninCurrent and addon.UI == self and self.frame == frame and self.quest == quest and self.dungeon == dungeon and
+                return (not isCatalogToggle or (self.catalogToggle == control and self.layoutRevision == revision)) and turninCurrent and addon.UI == self and self.frame == frame and self.quest == quest and self.dungeon == dungeon and
                     self.rewardGeneration == generation and addon.SourceAreaName == areaGetter and addon.L == localize and addon.db == database and
                     (not database or rawget(database, "locale") == locale) and GameTooltip == tip and shown == true
             end
             local point = destination and destination()
             local reason = not point and control == self.giver and self.quest and self.giverUnavailableKey
-            if not tip or (not point and not bodyKey and not reason) or not current() then return end
-            local text = (bodyKey or reason) and addon.L(bodyKey or reason) or addon.Read(giverName, "string", point)
+            if not tip or (not point and not resolvedBodyKey and not reason) or not current() then return end
+            local text = (resolvedBodyKey or reason) and addon.L(resolvedBodyKey or reason) or addon.Read(giverName, "string", point)
             local canonical = point and addon.Clean(point.zoneName, "string")
             local zone = canonical and (addon.Read(areaGetter, "string", canonical, current) or canonical)
             local x, y = point and addon.Clean(point.x, "number"), point and addon.Clean(point.y, "number")
@@ -5068,6 +5136,7 @@ function UI:Create()
     navigationHint(self.giver, function() local action = self:NavigationDestination(false); return action and action.place end)
     navigationHint(self.turnin, function() local binding = self.turninBinding; return binding and binding.current() and binding.action.place end)
     navigationHint(self.source, nil, "COPY")
+    navigationHint(self.catalogToggle, nil, true)
     self.capacityStatus = label(frame, "", 350, -22, 220, 12)
     self.capacityStatus:Hide()
     self.frame, self.cards, self.rows, self.details, self.chainButtons, self.branchButtons = frame, {}, {}, {}, {}, {}

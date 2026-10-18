@@ -43,10 +43,14 @@ def lua_quote(text: str) -> str:
     return '"' + text.replace("\\", "\\\\").replace('"', '\\"').replace("\r", "\\r").replace("\n", "\\n").replace("\t", "\\t") + '"'
 
 
-def capture(lua: str, quest: int, locale: str, metrics_path: Path | None = None) -> dict:
+def capture(lua: str, quest: int, locale: str, metrics_path: Path | None = None, catalog_collapsed: bool = False) -> dict:
     args = [lua, "tests/detail_visual.lua", str(quest), locale]
     if metrics_path:
         args.append(str(metrics_path))
+    if catalog_collapsed:
+        if not metrics_path:
+            args.append("")
+        args.append("collapsed")
     completed = subprocess.run(args, cwd=ROOT, check=True, capture_output=True, encoding="utf-8")
     return json.loads(completed.stdout)
 
@@ -148,6 +152,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--lua", default=shutil.which("lua5.1") or shutil.which("lua5.1.exe"))
     parser.add_argument("--output", type=Path, default=ROOT / "dist/preview")
+    parser.add_argument("--catalog-collapsed", action="store_true", help="Capture the wider quest list with the dungeon catalogue hidden")
     args = parser.parse_args()
     global Image, ImageDraw, ImageFont
     try:
@@ -159,14 +164,14 @@ def main() -> None:
     args.output.mkdir(parents=True, exist_ok=True)
     for quest in (4764, 4766):
         for locale in ("enUS", "ruRU"):
-            snapshot = capture(args.lua, quest, locale)
+            snapshot = capture(args.lua, quest, locale, catalog_collapsed=args.catalog_collapsed)
             entries = []
             for key, row in snapshot["metrics"].items():
                 _, height, width = layout(row["text"], row["size"], row["width"])
                 entries.append(f"[{lua_quote(key)}]={{height={height},width={width}}}")
             metrics_path = args.output / f"{quest}-{locale}-metrics.lua"
             metrics_path.write_text("return {" + ",".join(entries) + "}", encoding="utf-8")
-            snapshot = capture(args.lua, quest, locale, metrics_path)
+            snapshot = capture(args.lua, quest, locale, metrics_path, catalog_collapsed=args.catalog_collapsed)
             (args.output / f"{quest}-{locale}.json").write_text(json.dumps(snapshot, ensure_ascii=False, indent=2), encoding="utf-8")
             target = args.output / f"{quest}-{locale}.png"
             render(snapshot, target)

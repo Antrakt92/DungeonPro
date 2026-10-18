@@ -922,6 +922,49 @@ local function strip(parent, height, from, to, offset, tint)
     return region
 end
 
+local function catalogVisibility(ui, force)
+    ui = addon.Clean(ui, "table")
+    local frame = ui and cleanObject(ui.frame)
+    local state = frame and windows[frame]
+    local parts = state and state.panels and state.panels.catalog
+    if not frame or addon.Theme ~= Theme then return false end
+    if not parts then return true end
+    local rawMode = rawget(ui, "catalogCollapsed")
+    local hidden = addon.Clean(rawMode, "boolean") == true
+    if not force and state.catalogHidden == hidden then return true end
+    local revision = {}
+    state.catalogVisibilityRevision, state.catalogHidden = revision, nil
+    local function current()
+        return addon.Theme == Theme and ui.frame == frame and windows[frame] == state and
+            state.panels.catalog == parts and state.catalogVisibilityRevision == revision and
+            rawequal(rawget(ui, "catalogCollapsed"), rawMode)
+    end
+    for _, part in ipairs(parts) do
+        if not current() then return false end
+        local method = hidden and "Hide" or "Show"
+        local writer = addon.Read(function() return part[method] end, "function")
+        if not current() or not writer then return false end
+        local ok = pcall(writer, part)
+        if not current() then
+            -- A native setter can finish after a newer layout has shown the panel.
+            if addon.Theme == Theme and ui.frame == frame and windows[frame] == state and
+                state.panels.catalog == parts and not state.catalogVisibilityRepairing then
+                state.catalogVisibilityRepairing = true
+                catalogVisibility(ui, true)
+                state.catalogVisibilityRepairing = nil
+            end
+            return false
+        end
+        if not ok then return false end
+    end
+    state.catalogHidden = hidden
+    return true
+end
+
+function Theme.SetCatalogVisible(ui)
+    return catalogVisibility(ui, false)
+end
+
 function Theme.Apply(ui)
     ui = addon.Clean(ui, "table")
     local frame = ui and cleanObject(ui.frame)
@@ -942,7 +985,9 @@ function Theme.Apply(ui)
         for key, target in pairs({ catalog = catalog, quests = cleanObject(ui.questScroll), detail = cleanObject(ui.detailScroll) }) do
             decoration.panels[key] = panel(frame, target)
         end
+        decoration.catalogHidden = false
     end
+    if not Theme.SetCatalogVisible(ui) then return false end
     local catalogScroll = cleanObject(ui.catalogScroll) or (cleanObject(ui.catalog) and objectResult(ui.catalog, "GetParent"))
     for _, scroll in pairs({ catalogScroll, cleanObject(ui.questScroll), cleanObject(ui.detailScroll) }) do Theme.StyleScrollBar(scroll) end
     textColor(ui.title, palette.heading); textColor(ui.subtitle, palette.muted)

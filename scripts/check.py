@@ -53,6 +53,8 @@ def main():
     run(lua, "tests/ready_turnin_retirement_ui.lua")
     run(lua, "tests/ancestor_action_cue_ui.lua")
     run(lua, "tests/ancestor_action_retirement_ui.lua")
+    run(lua, "tests/catalogue_layout_ui.lua")
+    run(lua, "tests/catalogue_layout_retirement_ui.lua")
     run(lua, "tests/quest_tree_ui.lua")
     run(lua, "tests/quest_tree_limit_notice_ui.lua")
     run(lua, "tests/hidden_enemies_storyline_ui.lua")

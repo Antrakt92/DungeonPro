@@ -1,6 +1,7 @@
 -- Offline native-shaped layout capture. Sample prose/rewards are fixture data.
 local checking = arg and arg[1] == "check"
 local questID, locale, metricsPath = tonumber(arg and arg[1]) or 4764, arg and arg[2] or "enUS", arg and arg[3]
+if metricsPath == "" then metricsPath = nil end
 local metrics = metricsPath and assert(loadfile(metricsPath))() or {}
 local fixture = assert(loadfile("tests/client_ui.lua"))("fixture")
 local addon, ui, methods = fixture.addon, fixture.addon.UI, fixture.methods
@@ -80,6 +81,10 @@ if not ui.dungeon then
 end
 assert(ui.dungeon and addon.quests[questID], "capture requires a listed quest")
 ui.quest = questID; ui:Refresh()
+if arg and arg[4] == "collapsed" then
+    assert(ui:SetCatalogCollapsed(true) ~= false)
+    assert(ui.catalogCollapsed == true and ui.quest == questID)
+end
 assert(ui.quest == questID and ui.detailScroll:GetWidth() > 300 and ui.detailScroll:GetHeight() > 0)
 local visibleRewards = 0
 for _, button in ipairs(ui.rewardButtons) do
@@ -110,7 +115,7 @@ for index, object in ipairs(fixture.objects) do
     objects[#objects+1]=row
 end
 local roles = {}
-for _, key in ipairs({"frame","catalogScroll","questScroll","detailScroll","detail","narrativeToggle","referenceToggle","title","giver","source"}) do roles[key]=ids[ui[key]] end
+for _, key in ipairs({"frame","catalogScroll","questScroll","detailScroll","detail","narrativeToggle","referenceToggle","title","giver","source","catalogToggle"}) do roles[key]=ids[ui[key]] end
 local function quote(value)
     return '"' .. value:gsub('[%z\1-\31\\"]',function(char)
         local escapes = {['"']='\\"',['\\']='\\\\',['\n']='\\n',['\r']='\\r',['\t']='\\t'}
@@ -126,4 +131,4 @@ local function json(value)
     else for key,item in pairs(value)do fields[#fields+1]=quote(tostring(key))..":"..json(item)end;table.sort(fields)end
     return (array and "[" or "{")..table.concat(fields,",")..(array and "]" or "}")
 end
-print(json({questID=questID,locale=locale,fixtureRewards=true,offline=true,objects=objects,roles=roles,metrics=requests}))
+print(json({questID=questID,locale=locale,fixtureRewards=true,offline=true,catalogCollapsed=ui.catalogCollapsed==true,objects=objects,roles=roles,metrics=requests}))
