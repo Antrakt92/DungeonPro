@@ -40,22 +40,9 @@ to find dungeons that list it.
 
 </details>
 
-## Getting started
+## Open the planner
 
-Install Dungeon Pro through [CurseForge](https://www.curseforge.com/wow/addons/dungeon-pro),
-then reload your interface. Click the minimap button or type `/DP` and pick a dungeon.
-
-This build is for **WoW Forever**.
-
-<details>
-<summary>Installing a ZIP manually</summary>
-
-Download the Forever ZIP from [GitHub Releases](https://github.com/Antrakt92/DungeonPro/releases)
-and extract its `DungeonPro` folder into your Forever client's `Interface/AddOns`
-folder. Choose the addon ZIP under **Assets**, not the automatic **Source code** ZIP.
-Then reload your interface.
-
-</details>
+Click the minimap button or type `/DP` and pick a dungeon.
 
 ## Commands
 
