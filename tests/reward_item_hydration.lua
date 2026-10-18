@@ -44,10 +44,12 @@ end
 test("Loaded reward IDs with cold item names request outside pure cached reads and later resolve",function()
     assert(addon.CachedQuestRewards(65)==nil and requests[7001]==nil)
     local view=owner();watch(view,{65,66})
+    assert(requests[7001]==nil,"opening a list must not hydrate native items synchronously")
+    fire(.2)
     assert(requests[7001]==1,"cold loaded rewards must warm item metadata once")
     for _=1,10 do watch(view,{65,66})end
     assert(requests[7001]==1)
-    ready[7001]=true;addon.ItemDataResult(7001,true);fire(.2)
+    ready[7001]=true;addon.ItemDataResult(7001,true);fire(.6)
     local value=addon.CachedQuestRewards(65)
     assert(value and value.items[1].id==7001 and value.choices[1].name=="Sword" and notices==1)
 end)
@@ -64,7 +66,7 @@ test("Exhausted polling still permits bounded transient item retry on visible No
         if attempt<3 then
             fire(2);fire(.1)
             addon.db.locale=attempt==1 and "ruRU" or "enUS"
-            watch(view);assert(requests[7001]==attempt+1)
+            watch(view);fire(1.2);assert(requests[7001]==attempt+1)
         end
     end
     for _=1,20 do watch(view)end

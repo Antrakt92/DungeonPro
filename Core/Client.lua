@@ -364,7 +364,7 @@ function addon.CaptureOffers()
         -- Unverifiable time invalidates evidence; it does not prove the dialogue stayed current.
         if clock and clock >= snapshot.time and clock - snapshot.time < 30 then return end
         addon.ClearOffers()
-        addon.Notify()
+        addon.Notify("data")
     end
     scheduled = C_Timer and type(C_Timer.After) == "function" and pcall(C_Timer.After, 30, expire) or false
     scheduling = false
@@ -398,7 +398,7 @@ local function refreshRetries()
     local function run()
         if retryRefreshPending ~= token then return end
         retryRefreshPending, retryRefreshing = nil, inline
-        local ok, message = pcall(addon.Notify)
+        local ok, message = pcall(addon.Notify, "data")
         retryRefreshing = nil
         if not ok then error(message) end
     end

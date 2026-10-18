@@ -22,6 +22,6 @@ function addon.Read(fn, expected, ...)
     return addon.Clean(value, expected)
 end
 
-function addon.Notify()
-    for _, callback in ipairs(addon.listeners) do callback() end
+function addon.Notify(reason)
+    for _, callback in ipairs(addon.listeners) do callback(reason) end
 end

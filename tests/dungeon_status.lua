@@ -157,4 +157,37 @@ check("Every actual dungeon aggregates planner states without changing them or i
     end
     assert(count==29)
 end)
+check("Pure aggregate construction scales linearly while published guards retain complete source proofs",function()
+    local function measured(size)
+        local rows={};for i=1,size do rows[i]={"AVAILABLE"}end
+        local f=fixture(rows);local checks=0
+        issecretvalue=function()checks=checks+1;return false end
+        local value,current=addon.DungeonStatus.Get(f.dungeon,f.engine)
+        assert(value and value.listed==size and f.calls()==size)
+        local construction=checks
+        assert(current());local warm=checks-construction
+        f.engine.quests[1].minLevel=99
+        assert(not current(),"first definition remains part of the published snapshot")
+        return construction,warm
+    end
+    local small,smallGuard=measured(20)
+    local large,largeGuard=measured(40)
+    assert(large<=small*2.5,"doubling listed quests must not quadruple construction proof work: "..small.." -> "..large)
+    assert(largeGuard>smallGuard,"published guards still validate the complete larger snapshot")
+end)
+check("Later state callbacks cannot publish mutations to an earlier completed aggregate row",function()
+    for _,mode in ipairs({"definition","state","eligibility"})do
+        local f=fixture({{"AVAILABLE"},{"AVAILABLE"}});local state=f.engine.State
+        f.engine.State=function(self,id)
+            local value=state(self,id)
+            if id==2 then
+                if mode=="definition"then self.quests[1].minLevel=99
+                elseif mode=="state"then f.states[1].status="COMPLETED"
+                else self.quests[1].classes={"WARRIOR"}end
+            end
+            return value
+        end
+        assert(addon.DungeonStatus.Get(f.dungeon,f.engine)==nil,mode)
+    end
+end)
 print("Dungeon status modeled checks passed: "..total)

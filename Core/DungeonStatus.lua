@@ -17,6 +17,7 @@ function Status.Get(dungeon, engine)
     local ids = dungeon and clean(rawget(dungeon, "quests"), "table")
     if not dungeon or not engine or not quests or not context or not eligible or not getter or not fresh or not ids then return nil, "input" end
     local fieldObjects, fieldKeys, fieldValues, fieldCount = {}, {}, {}, 0
+    local building = true
     local function keep(object, key)
         if fieldCount >= 4000 then return nil, false end
         local value = rawget(object, key)
@@ -41,8 +42,10 @@ function Status.Get(dungeon, engine)
             not same(rawget(engine, "State"), getter) or not same(rawget(engine, "Current"), fresh) or
             not same(rawget(engine, "quests"), quests) or not same(rawget(engine, "context"), context) or
             not same(rawget(engine, "states"), cache) then return false end
-        for index = 1, fieldCount do
-            if not same(rawget(fieldObjects[index], fieldKeys[index]), fieldValues[index]) then return false end
+        if not building then
+            for index = 1, fieldCount do
+                if not same(rawget(fieldObjects[index], fieldKeys[index]), fieldValues[index]) then return false end
+            end
         end
         if not rawequal(rawget(addon, "DungeonStatus"), Status) or not rawequal(rawget(Status, "Get"), getterOwner) or not rawequal(rawget(addon, "Clean"), clean) or
             not rawequal(rawget(addon, "Read"), read) or not rawequal(rawget(_G, "issecretvalue"), checker) or
@@ -50,8 +53,10 @@ function Status.Get(dungeon, engine)
             not rawequal(rawget(engine, "State"), getter) or not rawequal(rawget(engine, "Current"), fresh) or
             not rawequal(rawget(engine, "quests"), quests) or not rawequal(rawget(engine, "context"), context) or
             not rawequal(rawget(engine, "states"), cache) then return false end
-        for index = 1, fieldCount do
-            if not rawequal(rawget(fieldObjects[index], fieldKeys[index]), fieldValues[index]) then return false end
+        if not building then
+            for index = 1, fieldCount do
+                if not rawequal(rawget(fieldObjects[index], fieldKeys[index]), fieldValues[index]) then return false end
+            end
         end
         return true
     end
@@ -164,6 +169,9 @@ function Status.Get(dungeon, engine)
             end
         end
     end
+    -- The DTO stays private during construction. Validate the complete source
+    -- once before publication, then retain that complete proof for every caller.
+    building = false
     if not current() then return nil, "expired" end
     result.status = "UNAVAILABLE"
     if result.eligible > 0 then

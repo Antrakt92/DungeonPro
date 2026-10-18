@@ -990,6 +990,48 @@ function UI:CatalogResultNote(result, matchedName)
     return note
 end
 
+function UI:CatalogLanguageKey()
+    local language = addon.Clean(addon.Language, "table")
+    local selection = language and addon.Read(language.GetSelection, "string", language)
+    local locale = selection or addon.Clean(addon.db.locale, "string") or "auto"
+    if locale == "auto" then locale = addon.Read(GetLocale, "string") end
+    return locale
+end
+
+function UI:RefreshCatalogData()
+    local view = self.catalogLanguageView
+    local locale = self:CatalogLanguageKey()
+    local function current()
+        return self.catalogLanguageView == view and view and view.current()
+    end
+    if not view or view.query ~= "" or not locale or view.uiLanguage ~= locale or not current() then return false end
+    for _, result in ipairs(view.results) do
+        if result.statusCurrent and addon.Read(result.statusCurrent, "boolean") ~= true then return false end
+        if not current() then return false end
+    end
+    if self:CatalogLanguageKey() ~= locale or not current() then return false end
+    local selected = self.dungeon
+    if selected ~= view.selectedDungeon then
+        for _, result in ipairs(view.results) do
+            if result.dungeon == selected or result.dungeon == view.selectedDungeon then
+                styleRow(result.row, "dungeon", result.dungeon == selected)
+                if not current() or self.dungeon ~= selected then
+                    -- A nested selection may never have touched this pending
+                    -- card. Repair its late styling using the newest selection.
+                    if current() and not view.selectionRepair then
+                        view.selectionRepair = true
+                        styleRow(result.row, "dungeon", result.dungeon == self.dungeon)
+                        view.selectionRepair = nil
+                    end
+                    return false, "superseded"
+                end
+            end
+        end
+        view.selectedDungeon = selected
+    end
+    return current()
+end
+
 function UI:RefreshCatalogLanguage()
     local view = self.catalogLanguageView
     if not view then return false end
@@ -1040,6 +1082,9 @@ function UI:RefreshCatalogLanguage()
     end
     if not write(self.catalog, "SetHeight", math.max(1, offset)) then return failed() end
     if not current() or not view.current() then return failed() end
+    local locale = self:CatalogLanguageKey()
+    if not current() or not view.current() then return failed() end
+    view.uiLanguage = locale
     return true
 end
 
@@ -1439,7 +1484,8 @@ function UI:RefreshDungeons()
             self.detailHistory = {}
             self.dungeon, self.quest = dungeon, nil
             character.selectedDungeon = dungeon.key
-            self:Refresh()
+            self.preparation = false
+            self:Refresh(nil, true)
         end) then return end
         offset = self:LayoutRow(row, 64, offset, current, write)
         if not offset then return end
@@ -1529,8 +1575,11 @@ function UI:RefreshDungeons()
         if result.inspect and not write(result.inspect, "Show") then return retire() end
     end
     if not proveSources() then return retire() end
+    local uiLanguage = self:CatalogLanguageKey()
+    if not proveSources() then return retire() end
     self.catalogLanguageView = { current = proveSources, owned = function() return baseCurrent(true) end,
-        write = ownedWrite, query = query, queryID = queryID, results = results }
+        write = ownedWrite, query = query, queryID = queryID, results = results,
+        uiLanguage = uiLanguage, selectedDungeon = self.dungeon }
 end
 
 function UI:PaintQuestRowStatus(row, entry, engine, ownerCurrent)
@@ -1615,28 +1664,21 @@ function UI:RefreshQuests()
     local engine = needsEngine and addon.Planner.New(addon.quests, context, addon.Clean(character.choices, "table")) or nil
     self.engine = engine
     self.currentPlan = nil
-    local generation, treeCurrent, treeFailed = {}, nil, false
-    local infoProofs, publishingInfos, infoFailed = {}, false, false
+    local generation, treeCurrent, treeFailed, rendering = {}, nil, false, true
+    local infoProofs, infoFailed = {}, false
     self.questListGeneration = generation
+    local proveTree
     local function current()
         local owned = self.questListGeneration == generation and self.engine == engine and self.dungeon == d and addon.char == character and
             self.preparation == preparation and self.includeUnavailable == includeUnavailable
         if not owned or treeFailed or infoFailed then return false end
-        if publishingInfos then
-            for _, proof in ipairs(infoProofs) do
-                if addon.Read(proof, "boolean") ~= true then
-                    infoFailed = true
-                    for _, row in ipairs(self.rows) do
-                        local function cleanupCurrent() return self.questListGeneration == generation end
-                        if not self:QuestListWrite(row, "Hide", cleanupCurrent) or
-                            not self:QuestListWrite(row, "SetScript", cleanupCurrent, "OnClick", nil) then return false end
-                    end
-                    return false
-                end
-            end
-        end
         if d and (d.quests ~= targets or #targets ~= #targetIDs) then return false end
         for index, id in ipairs(targetIDs) do if targets[index] ~= id then return false end end
+        if not rendering and not proveTree() then return false end
+        return self.questListGeneration == generation and self.engine == engine and self.dungeon == d and addon.char == character and
+            self.preparation == preparation and self.includeUnavailable == includeUnavailable
+    end
+    proveTree = function()
         if treeCurrent and addon.Read(treeCurrent, "boolean") ~= true then
             treeFailed = true
             -- Retire only this still-current hierarchy; callbacks may already
@@ -1651,11 +1693,26 @@ function UI:RefreshQuests()
             end
             return false
         end
-        return self.questListGeneration == generation and self.engine == engine and self.dungeon == d and addon.char == character and
-            self.preparation == preparation and self.includeUnavailable == includeUnavailable
+        return self.questListGeneration == generation and not treeFailed
     end
     local function write(object, method, ...)
         return self:QuestListWrite(object, method, current, ...)
+    end
+    local function retireInfos()
+        infoFailed = true
+        for _, row in ipairs(self.rows) do
+            local function cleanupCurrent() return self.questListGeneration == generation end
+            if not self:QuestListWrite(row, "Hide", cleanupCurrent) or
+                not self:QuestListWrite(row, "SetScript", cleanupCurrent, "OnClick", nil) then return false end
+        end
+        return false
+    end
+    local function proveInfos()
+        if not current() or not proveTree() then return retireInfos() end
+        for _, proof in ipairs(infoProofs) do
+            if addon.Read(proof, "boolean") ~= true or not current() then return retireInfos() end
+        end
+        return (current() and proveTree()) or retireInfos()
     end
     local function writeText(fs, value)
         if not current() then return false end
@@ -1671,6 +1728,9 @@ function UI:RefreshQuests()
         end
         return false
     end
+    -- Hidden rows use local source guards while building. Prove the complete
+    -- hierarchy at publication boundaries; retained input always rechecks it.
+    local function render()
     for _, row in ipairs(self.rows) do
         if not write(row, "Hide") or not write(row, "SetEnabled", false) or not write(row, "SetScript", "OnClick", nil) then return end
     end
@@ -1829,8 +1889,9 @@ function UI:RefreshQuests()
             row.dungeonBadgeVisible = row.dungeonTarget and row.questTreeNode
             local width = addon.Read(self.questList.GetWidth, "number", self.questList)
             if not current() or not width or width <= 28 or not write(row, "SetWidth", width - 4 - row.questTreeInset) then return end
-            row.questListCurrent = current
-            if not write(row, "SetScript", "OnEnter", function() if current() then self:QuestListHint(row) end end) or
+            local function interactionCurrent() return current() and proveTree() and current() end
+            row.questListCurrent = interactionCurrent
+            if not write(row, "SetScript", "OnEnter", function() if interactionCurrent() then self:QuestListHint(row) end end) or
                 not write(row, "SetScript", "OnLeave", function() self:HideNavigationHint() end) then return end
             local rewards = addon.Clean(addon.QuestListRewards, "table")
             local rewardPaint = rewards and addon.Clean(rewards.Paint, "function")
@@ -1883,7 +1944,7 @@ function UI:RefreshQuests()
             else
                 if not write(row.bg, "SetColorTexture", 0.13, 0.16, 0.20, 1) or
                     not write(row, "SetScript", "OnClick", function()
-                        if addon.Read(self.frame.IsShown, "boolean", self.frame) ~= true or not current() or (entry.tree and treeCurrent and addon.Read(treeCurrent, "boolean") ~= true) or not current() then return end
+                        if addon.Read(self.frame.IsShown, "boolean", self.frame) ~= true or not current() or not proveTree() or not current() then return end
                         local destination = entry.anchorID or id
                         if entry.anchorID then
                             self.questTreeRoot, self.questTreeDungeon = nil, nil
@@ -2013,9 +2074,9 @@ function UI:RefreshQuests()
     end
     if not write(self.questList, "SetHeight", math.max(1, offset)) then return end
     -- Publish only after every reused row has its new text, geometry and owner.
-    publishingInfos = true
-    if not current() then return end
+    if not proveInfos() then return end
     for index = 1, n do if not write(self.rows[index], "Show") then return end end
+    if not proveInfos() then return end
     local identity = d and (addon.Clean(d.key, "string") or d)
     if not current() then return end
     if self.questListDungeon ~= identity then
@@ -2033,13 +2094,28 @@ function UI:RefreshQuests()
             if id then cold[#cold + 1] = id end
         end
         local function visibleCurrent()
-            return addon.UI == self and self.frame == frame and current() and
-                addon.Read(frame.IsShown, "boolean", frame) == true and current()
+            local function owned()
+                local valid = addon.UI == self and self.frame == frame and self.questListGeneration == generation and
+                    self.engine == engine and self.dungeon == d and addon.char == character and not treeFailed and not infoFailed and
+                    self.preparation == preparation and self.includeUnavailable == includeUnavailable and
+                    (not d or (d.quests == targets and #targets == #targetIDs))
+                if not valid then return false end
+                for index, id in ipairs(targetIDs) do if targets[index] ~= id then return false end end
+                return true
+            end
+            if not owned() or addon.Read(frame.IsShown, "boolean", frame) ~= true then return false end
+            if engine and addon.Read(engine.Current, "boolean", engine) ~= true then return false end
+            return owned()
         end
         addon.Read(cache.Watch, "nil", self, cold, visibleCurrent, function()
-            if visibleCurrent() then addon.Notify() end
+            if visibleCurrent() then addon.Notify("data") end
         end)
+        proveInfos()
     end
+    end
+    local ok, failure = pcall(function() render(); proveInfos() end)
+    rendering = false
+    if not ok then retireInfos(); error(failure, 0) end
 end
 
 local function rewardData(id)
@@ -4493,9 +4569,9 @@ function UI:RefreshLanguagePreview()
     return self:Refresh(true)
 end
 
-function UI:Refresh(languageOnly)
+function UI:Refresh(languageOnly, dataOnly)
     if not self.frame or not self.frame:IsShown() then return end
-    if languageOnly ~= true then self.preparation = false end
+    if languageOnly ~= true and dataOnly ~= true then self.preparation = false end
     if addon.Theme and addon.Theme.RefreshFonts then addon.Theme.RefreshFonts() end
     self.title:SetText(addon.L("TITLE"))
     if not self:RefreshLanguageLabel() then return end
@@ -4507,8 +4583,10 @@ function UI:Refresh(languageOnly)
     local known = count ~= nil and capacity ~= nil and count >= 0 and count % 1 == 0 and capacity > 0 and capacity % 1 == 0
     self.capacityStatus:SetText(known and addon.L("QUEST_LOG_CAPACITY", count, capacity) or "")
     self.capacityStatus:SetShown(known)
-    if languageOnly == true then
-        local reused, reason = self:RefreshCatalogLanguage()
+    if languageOnly == true or dataOnly == true then
+        local reused, reason
+        if dataOnly == true and languageOnly ~= true then reused, reason = self:RefreshCatalogData() end
+        if not reused and reason ~= "superseded" then reused, reason = self:RefreshCatalogLanguage() end
         if reason == "superseded" then return true end
         if not reused then self:RefreshDungeons() end
     else self:RefreshDungeons() end
@@ -4741,7 +4819,7 @@ function UI:Create()
         if (event == "DISPLAY_SIZE_CHANGED" or event == "UI_SCALE_CHANGED") and
             addon.Read(f.IsShown, "boolean", f) == true then self:Fit() end
     end)
-    frame:SetScript("OnShow", function(f) raiseWindow(f); self:Fit(); self:Refresh() end)
+    frame:SetScript("OnShow", function(f) raiseWindow(f); self:Fit(); self.preparation = false; self:Refresh(nil, true) end)
     frame:SetScript("OnHide", function() local pending = self.developerLinkRequest; self.developerLinkRequest = nil; if pending and type(StaticPopup_Hide) == "function" then pcall(StaticPopup_Hide, "DUNGEONPRO_COPY_DEVELOPER_LINK") end; self:HideNavigationHint(); local language = addon.Clean(addon.Language, "table"); if language then addon.Read(language.Cancel, "boolean", language, self) end; self.pendingSearch = nil; self.detailReferencesExpanded, self.detailChainExpanded, self.detailNarrativeExpanded = false, false, false; self.storyStates, self.storyOrder = nil, nil; if not self:ResetQuestLogControl() then return end; self.detailActionChoice = nil; self.languageMenuRevision = {}; self:ResetHistoryReading(); self:ResetRewardPresentation(); self:CloseCopyLink() end)
     self:ApplyTheme()
     frame:Hide()
@@ -4751,4 +4829,4 @@ function UI:Toggle()
     if not self.frame then self:Create() end
     self.frame:SetShown(not self.frame:IsShown())
 end
-addon.listeners[#addon.listeners + 1] = function() UI:Refresh() end
+addon.listeners[#addon.listeners + 1] = function(reason) UI:Refresh(nil, reason == "data") end

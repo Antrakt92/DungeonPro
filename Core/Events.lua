@@ -4,6 +4,9 @@ local initialized, pending, refreshing = false, false, false
 local contextEvents = { QUEST_LOG_UPDATE = true, QUEST_ACCEPTED = true, QUEST_REMOVED = true, QUEST_TURNED_IN = true,
     QUEST_ITEM_UPDATE = true, BAG_UPDATE_DELAYED = true, PLAYER_LEVEL_UP = true, PLAYER_ENTERING_WORLD = true,
     PLAYER_LEAVING_WORLD = true, PLAYER_LOGOUT = true }
+local dataEvents = { QUEST_DATA_LOAD_RESULT = true, ITEM_DATA_LOAD_RESULT = true, QUEST_DETAIL = true,
+    GOSSIP_SHOW = true, GOSSIP_CLOSED = true, GOSSIP_OPTIONS_REFRESHED = true, QUEST_GREETING = true,
+    QUEST_FINISHED = true, QUEST_PROGRESS = true, QUEST_COMPLETE = true }
 
 local function probeNavigation()
     local navigation = addon.Clean(addon.Navigation, "table")
@@ -135,10 +138,14 @@ local function renderVisible()
     return shown ~= false
 end
 
-local function refresh()
-    if pending or refreshing or not initialized then return end
+local function refresh(dataOnly)
+    if pending then
+        if dataOnly ~= true then pending.dataOnly = false end
+        return
+    end
+    if refreshing or not initialized then return end
     if not renderVisible() then return end
-    local token = {}
+    local token = { dataOnly = dataOnly == true }
     pending = token
     -- Only inline callbacks need recursion suppression; delayed renders may queue new state.
     local immediate = true
@@ -146,7 +153,7 @@ local function refresh()
         if pending ~= token then return end
         pending, refreshing = false, immediate
         if not renderVisible() then refreshing = false; return end
-        local ok, message = pcall(addon.Notify)
+        local ok, message = pcall(addon.Notify, token.dataOnly and "data" or nil)
         refreshing = false
         if not ok then error(message) end
     end
@@ -207,5 +214,5 @@ events:SetScript("OnEvent", function(_, event, arg1, arg2)
     if event == "QUEST_ACCEPTED" or event == "QUEST_TURNED_IN" or event == "QUEST_REMOVED" then
         addon.Navigation.QuestChanged(arg1)
     end
-    refresh()
+    refresh(dataEvents[event] == true)
 end)

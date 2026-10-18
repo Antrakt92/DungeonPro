@@ -164,4 +164,44 @@ test("Snapshot getter reentry preserves the newest watcher membership and notifi
         assert(reads[1]==nil and reads[2]==1 and notices==10,"older "..phase.." snapshot must not replace the later watch")
     end
 end)
+test("Forty-two cold quests hydrate in bounded slices with scoped constant-size ownership checks", function()
+    local ids, definitions, lookups, hydrations = {}, {}, 0, 0
+    for id=1,42 do ids[id]=id;definitions[id]={id=id} end
+    addon.quests=setmetatable({}, {__index=function(_,id)lookups=lookups+1;return definitions[id]end})
+    addon.RequestQuestRewardItems=function(_,current)
+        hydrations=hydrations+1
+        for _=1,60 do assert(current())end
+    end
+    watch(ids)
+    assert(hydrations==0 and next(reads)==nil,"Watch must return without native reward work")
+    local callbacks,maxSlice=0,0
+    while #queue>0 do
+        local before=hydrations;tick();callbacks=callbacks+1
+        maxSlice=math.max(maxSlice,hydrations-before)
+        assert(hydrations-before<=2,"one deferred callback monopolized the large quest list")
+        assert(callbacks<100)
+    end
+    assert(hydrations==126 and maxSlice==2 and callbacks==63)
+    assert(lookups<15000,"per-quest ownership must not rescan the whole membership")
+    print("42-quest cache slices: callbacks="..callbacks.." maxQuests="..maxSlice.." membershipReads="..lookups)
+end)
+test("Ready slices coalesce notification until the current list pass finishes", function()
+    local ids={}
+    for id=1,7 do ids[id]=id;addon.quests[id]={};ready[id]=true end
+    watch(ids);tick();assert(notices==0 and reads[3]==nil)
+    tick();assert(notices==0);tick();assert(notices==0);tick()
+    assert(notices==1 and reads[7]==1 and #queue==0)
+end)
+test("Changing or hiding the list between slices cancels old pending hydration", function()
+    local requests={}
+    for id=1,6 do addon.quests[id]={}end
+    addon.RequestQuestRewardItems=function(id,current)assert(current());requests[#requests+1]=id end
+    watch({1,2,3,4,5,6});tick();assert(#requests==2)
+    watch({6});tick();assert(#requests==3 and requests[3]==6)
+    shown=false;tick();assert(#requests==3 and #queue==0)
+end)
+test("Malformed item hydration capability cannot create work after the polling cap", function()
+    addon.RequestQuestRewardItems=3
+    watch();tick();tick();tick();assert(#queue==0 and reads[1]==3)
+end)
 print("Reward cache: " .. total .. " checks passed")

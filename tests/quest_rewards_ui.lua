@@ -45,7 +45,7 @@ function tip:Hide() self.shown = false end
 GameTooltip = tip
 local timer, pending = C_Timer, {}
 C_Timer = { After = function(delay, callback)
-    if delay < 3 then pending[#pending + 1] = callback end
+    if delay < 3 then pending[#pending + 1] = {delay=delay, callback=callback} end
 end }
 ui.quest = nil; ui:Refresh()
 local function questRow()
@@ -61,12 +61,14 @@ local function icons(row)
 end
 assert(#icons(questRow()) == 0, "cold reward data must not invent an item")
 assert(#pending == 1, "cold rows share one deferred cache check")
-pending[1]()
+table.remove(pending, 1).callback()
 assert(preloads == 1 and #icons(questRow()) == 0, "cold rewards request hydration without inventing items")
 loaded = true
-assert(pending[2], "reward hydration retains its bounded follow-up")
-pending[2]()
-C_Timer = timer
+local ticks = 0
+while #pending > 0 do
+    ticks = ticks + 1; assert(ticks < 200, "deferred reward slices must settle")
+    table.remove(pending, 1).callback()
+end
 local row = questRow()
 local buttons = icons(row)
 assert(#buttons == 3, "deferred cache arrival repaints without requiring an event")
@@ -87,6 +89,11 @@ assert(preloads == 1, "hover never requests quest reward data again")
 local enter = buttons[1].scripts.OnEnter
 loaded = false
 event.scripts.OnEvent(event, "QUEST_DATA_LOAD_RESULT", 166, false)
+ticks = 0
+while #pending > 0 do
+    ticks = ticks + 1; assert(ticks < 200, "cache invalidation must settle")
+    table.remove(pending, 1).callback()
+end
 assert(#icons(questRow()) == 0)
 enter(); assert(not tip.shown, "a recycled reward cannot revive the previous quest tooltip")
 local itemReady, itemRequests, itemReads = false, 0, 0
@@ -107,7 +114,11 @@ C_Item = {
 pending = {}
 C_Timer = { After = function(delay, callback) pending[#pending + 1] = {delay=delay, callback=callback} end }
 ui:Refresh()
-assert(itemRequests == 6 and #icons(questRow()) == 0, "loaded reward IDs hydrate all six cold items without placeholder icons")
+assert(itemRequests == 0 and #icons(questRow()) == 0, "opening the list defers native item hydration")
+local hydrate = table.remove(pending, 1)
+assert(hydrate and hydrate.delay == .2, "cold item work has a bounded deferred first slice")
+hydrate.callback()
+assert(itemRequests == 6 and #icons(questRow()) == 0, "a deferred slice hydrates all six known items without placeholder icons")
 itemReady = true
 event.scripts.OnEvent(event, "ITEM_DATA_LOAD_RESULT", 7001, true)
 local painted = false

@@ -34,7 +34,7 @@ local function sameBudget(a, b)
     return true
 end
 
-local function current(owner, state, binding)
+local function current(owner, state, binding, id, entry)
     if owners[owner] ~= state or state.binding ~= binding then return false end
     if addon.Read(binding.current, "boolean") ~= true then return false end
     if owners[owner] ~= state or state.binding ~= binding then return false end
@@ -43,11 +43,15 @@ local function current(owner, state, binding)
     local visible = addon.Clean(frame.IsVisible, "function") or addon.Clean(frame.IsShown, "function")
     if visible and addon.Read(visible, "boolean", frame) ~= true then return false end
     local context = snapshot()
-    for _, id in ipairs(binding.ids) do
-        if not state.entries[id] or context.quests ~= state.context.quests or
-            context.quests[id] ~= state.entries[id].quest then return false end
-    end
+    if id and (state.entries[id] ~= entry or context.quests ~= state.context.quests or
+        context.quests[id] ~= entry.quest) then return false end
     return owners[owner] == state and state.binding == binding and same(state.context, context)
+end
+
+local function eligible(state, binding, id)
+    local entry = state.entries[id]
+    return entry and not entry.done and (entry.attempts < 3 or
+        (type(state.context.itemHydrator) == "function" and entry.itemEpoch ~= binding.itemEpoch))
 end
 
 local schedule
@@ -56,54 +60,70 @@ schedule = function(owner, state)
     local binding = state.binding
     if not current(owner, state, binding) then return end
     local attempt
-    for _, id in ipairs(binding.ids) do
+    for index = state.cursor or 1, #binding.ids do
+        local id = binding.ids[index]
         local entry = state.entries[id]
-        if not entry.done and entry.attempts < 3 then attempt = math.min(attempt or 3, entry.attempts + 1) end
+        if eligible(state, binding, id) then attempt = math.min(attempt or 3, math.min(3, entry.attempts + 1)) end
     end
+    if not attempt and (state.cursor or 1) > 1 then state.cursor = 1; return schedule(owner, state) end
     if not attempt then return end
     local timer = addon.Clean(C_Timer, "table")
     local after = timer and addon.Clean(timer.After, "function")
     if not after then return end
     local token, armed, immediate = {}, false, false
     state.pending, state.scheduling = token, true
-    local ok, result = pcall(after, delays[attempt], function()
+    local delay = (state.cursor or 1) > 1 and .01 or delays[attempt]
+    local ok, result = pcall(after, delay, function()
         if not armed then immediate = true; return end
         if owners[owner] ~= state or state.pending ~= token then return end
         state.pending = nil
         local latest = state.binding
         if not current(owner, state, latest) then return end
-        local changed = false
-        for _, id in ipairs(latest.ids) do
+        local processed = 0
+        for index = state.cursor or 1, #latest.ids do
+            local id = latest.ids[index]
+            state.cursor = index + 1
             local entry = state.entries[id]
-            if not entry.done and entry.attempts < 3 and state.context.quests[id] == entry.quest then
-                entry.attempts = entry.attempts + 1
-                local value = addon.Read(state.context.provider, "table", id)
-                if not current(owner, state, latest) or state.entries[id] ~= entry then
+            if eligible(state, latest, id) then
+                processed = processed + 1
+                local function itemCurrent() return current(owner, state, latest, id, entry) end
+                if not itemCurrent() then return end
+                local value
+                if entry.attempts < 3 then
+                    entry.attempts = entry.attempts + 1
+                    value = addon.Read(state.context.provider, "table", id)
+                end
+                if not itemCurrent() then
                     schedule(owner, state); return
                 end
                 if value and addon.Clean(value.source, "string") == "cache" and
                     addon.Clean(value.items, "table") and addon.Clean(value.choices, "table") then
-                    entry.done, changed = true, true
+                    entry.done, state.changed = true, true
                 elseif not value and not entry.primed and addon.Clean(state.context.hydrator, "function") then
                     -- Spending the request before dispatch also bounds synchronous reentry and errors.
                     entry.primed = true
-                    local function requestCurrent()
-                        return current(owner, state, latest) and state.entries[id] == entry and
-                            state.context.quests[id] == entry.quest
-                    end
-                    pcall(state.context.hydrator, id, requestCurrent)
-                    if not requestCurrent() then schedule(owner, state); return end
-                end
-                if not value and addon.Clean(state.context.itemHydrator, "function") then
-                    local function itemCurrent()
-                        return current(owner, state, latest) and state.entries[id] == entry and state.context.quests[id] == entry.quest
-                    end
-                    pcall(state.context.itemHydrator, id, itemCurrent)
+                    pcall(state.context.hydrator, id, itemCurrent)
                     if not itemCurrent() then schedule(owner, state); return end
                 end
+                if not value then
+                    entry.itemEpoch = latest.itemEpoch
+                    if addon.Clean(state.context.itemHydrator, "function") then
+                        pcall(state.context.itemHydrator, id, itemCurrent)
+                        if not itemCurrent() then schedule(owner, state); return end
+                    end
+                end
+                if processed >= 2 then break end
             end
         end
-        if changed and current(owner, state, latest) then pcall(latest.refresh) end
+        local remaining = false
+        for index = state.cursor or 1, #latest.ids do
+            if eligible(state, latest, latest.ids[index]) then remaining = true; break end
+        end
+        if not remaining then
+            state.cursor = 1
+            local changed = state.changed; state.changed = nil
+            if changed and current(owner, state, latest) then pcall(latest.refresh) end
+        end
         if owners[owner] == state then schedule(owner, state) end
     end)
     state.scheduling = nil
@@ -114,7 +134,7 @@ schedule = function(owner, state)
         if state.binding == binding then
             for _, id in ipairs(binding.ids) do
                 local entry = state.entries[id]
-                if entry then entry.attempts = 3 end
+                if entry then entry.attempts, entry.itemEpoch = 3, binding.itemEpoch end
             end
         end
     end
@@ -133,16 +153,17 @@ function Cache.Watch(owner, coldIDs, ownerCurrent, refreshCallback)
     if requests[owner] ~= request then return end
     local state = owners[owner]
     if not state then
-        state = { context = context, entries = {} }; owners[owner] = state
+        state = { context = context, entries = {}, cursor = 1 }; owners[owner] = state
     elseif not same(state.context, context) then
         -- Keep the scheduling slot: its callback reads the newest binding.
         -- UI language previews do not change the native reward cache.
-        if not sameBudget(state.context, context) then state.entries = {} end
+        if not sameBudget(state.context, context) then state.entries, state.changed = {}, nil end
         state.context = context
     end
-    local binding = { ids = {}, current = ownerCurrent, refresh = refreshCallback, frame = owner.frame or owner }
+    local binding = { ids = {}, current = ownerCurrent, refresh = refreshCallback, frame = owner.frame or owner, itemEpoch = {} }
     if requests[owner] ~= request then return end
     state.binding = binding
+    state.cursor = 1
     local seen = {}
     for index = 1, math.min(#coldIDs, 600) do
         local id = addon.Clean(coldIDs[index], "number")
@@ -156,18 +177,7 @@ function Cache.Watch(owner, coldIDs, ownerCurrent, refreshCallback)
             end
         end
     end
-    -- Later item failures may become retryable after this view's polling budget.
-    -- The shared item loader owns pending/waiting/attempt bounds across repaints.
-    for _, id in ipairs(binding.ids) do
-        if not current(owner, state, binding) then return end
-        local entry = state.entries[id]
-        if not entry.done and addon.Clean(context.itemHydrator, "function") then
-            local function itemCurrent()
-                return current(owner, state, binding) and state.entries[id] == entry and context.quests[id] == entry.quest
-            end
-            pcall(context.itemHydrator, id, itemCurrent)
-            if not itemCurrent() then return end
-        end
-    end
+    -- Native hydration is deferred in two-quest slices; opening a large list
+    -- never walks every reward tuple before returning to the frame loop.
     schedule(owner, state)
 end
