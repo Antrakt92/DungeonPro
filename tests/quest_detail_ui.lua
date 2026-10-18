@@ -12,6 +12,16 @@ assert(dungeon)
 local definition = {}
 for key, value in pairs(addon.quests[166]) do definition[key] = value end
 definition.requiredMoney = 123
+-- Keep this portrait/disclosure scenario to one location per endpoint. The
+-- actual catalogue's alternate pins are covered by the source navigation suite.
+for _, field in ipairs({"start", "finish"}) do
+    if definition[field] then
+        local point = {}
+        for key, value in pairs(definition[field]) do point[key] = value end
+        point.reportedLocations = nil
+        definition[field] = point
+    end
+end
 addon.quests[166] = definition
 local description, rewardDTO = "A short complete story.", nil
 addon.Description = function() return description end

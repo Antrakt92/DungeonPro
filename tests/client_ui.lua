@@ -178,7 +178,8 @@ check("Default compact quest card retains the real next step and explicit giver 
     expandedReferenceFixture = false
     ui:InspectQuest(373); ui:InspectQuest(166)
     assert(ui.detailReferencesExpanded == false)
-    assert((not ui.referenceToggle or not ui.referenceToggle:IsShown()) and ui.giver.enabled and ui.giverAction.place == addon.quests[166].start)
+    assert(ui.referenceToggle and ui.referenceToggle:IsShown() and ui.giver.enabled and ui.giverAction.place == addon.quests[166].start,
+        "reported giver positions stay reachable while the compact card remains collapsed")
     assert(ui.engine:State(166).status == "UNKNOWN" and not ui.action)
     withKnownDefias(function()
         ui:Refresh()
@@ -220,7 +221,7 @@ check("Quest icon maps and guides to the selected giver while the known graph re
         local quest, dungeon = addon.UI.quest, addon.UI.dungeon
         addon.UI.giver.scripts.OnClick()
         assert(#waypoints == 1 and waypoints[1].mapID == 1436)
-        assert(math.abs(waypoints[1].x - 0.563) < 0.0001 and mapCalls == 1)
+        assert(math.abs(waypoints[1].x - 0.562) < 0.0001 and mapCalls == 1)
         assert(addon.UI.frame:IsShown() and addon.UI.quest == quest and addon.UI.dungeon == dungeon,
             "accepted guidance must keep the inspected planner open")
     end)
@@ -238,7 +239,7 @@ check("TomTom receives coordinates from the resolved nested place", function()
             captured = { map, x, y }; return { map, x, y, dungeonProOwner = options.dungeonProOwner }
         end }
     addon.Navigation.Start({ id = 65, place = addon.quests[65].start })
-    assert(captured[1] == 1436 and math.abs(captured[2] - 0.563) < 0.0001)
+    assert(captured[1] == 1436 and math.abs(captured[2] - 0.562) < 0.0001)
 end)
 check("Replacing or clearing guidance removes only its own TomTom waypoint", function()
     local removed, counter = {}, 0
@@ -1489,7 +1490,7 @@ check("Actual level-one Defias giver click couples source UI navigation and owne
     assert(ui.engine:State(166).status=="LOCKED"and ui.giver.enabled and ui.giverHasCoordinates)
     explicitGiverVisit(ui, 166)
     assert(ui.giverAction.id==166 and ui.giverAction.kind=="visit"and ui.giverAction.place==q.start)
-    assert(q.start.npcID==234 and q.start.mapID==1436 and q.start.x==56.3 and q.start.y==47.5)
+    assert(q.start.npcID==234 and q.start.mapID==1436 and q.start.x==56.2 and q.start.y==47.4)
     local start=addon.Navigation.Start;local started,result=0,nil
     addon.Navigation.Start=function(action)started=started+1;assert(action==ui.giverAction);result=start(action);return result end
     ui.giver.scripts.OnClick();addon.Navigation.Start=start
@@ -1497,7 +1498,7 @@ check("Actual level-one Defias giver click couples source UI navigation and owne
     for _,object in ipairs(objects)do if object.arrow and object.scripts.OnUpdate and object.shown then guide=object end end
     assert(started==1 and result==true and opened==1 and sets==1 and guide and guide.arrow.shown)
     assert(guide.layerStrata=="DIALOG"and guide.layerLevel==41)
-    assert(pin and pin.uiMapID==1436 and math.abs(pin.position.x-.563)<1e-12 and math.abs(pin.position.y-.475)<1e-12)
+    assert(pin and pin.uiMapID==1436 and math.abs(pin.position.x-.562)<1e-12 and math.abs(pin.position.y-.474)<1e-12)
     addon.Navigation.Stop();assert(not guide.shown and pin==nil)
     addon.Navigation=navigation
     for _,key in ipairs(globals)do _G[key]=saved[key]end

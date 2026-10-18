@@ -23,10 +23,22 @@ addon.ItemIcon = function() return 134400 end
 addon.CarriedItemCount = function() return 0 end
 addon.DialogueRewards, addon.QuestRewards, addon.CachedQuestRewards = function() end, function() end, function() end
 local owners = {}
-for _,dungeon in ipairs(addon.dungeons) do for _,id in ipairs(dungeon.quests) do
-    owners[id]=dungeon
-    for _,member in ipairs(addon.quests[id].storyline or {}) do owners[member]=dungeon end
-end end
+local function associate(id,dungeon,seen)
+    if seen[id] then return end
+    seen[id]=true; owners[id]=owners[id] or dungeon
+    local quest=assert(addon.quests[id])
+    for _,member in ipairs(quest.storyline or {}) do associate(member,dungeon,seen) end
+    for _,group in ipairs(quest.requires or {}) do
+        for _,member in ipairs(group.ids) do associate(member,dungeon,seen) end
+    end
+    for _,group in ipairs(quest.storylineGroups or {}) do
+        for _,member in ipairs(group) do associate(member,dungeon,seen) end
+    end
+end
+for _,dungeon in ipairs(addon.dungeons) do
+    local seen={}
+    for _,id in ipairs(dungeon.quests) do associate(id,dungeon,seen) end
+end
 local function contains(text)
     for _,field in ipairs(ui.details) do
         if field:IsShown() and field.text:find(text,1,true) then return true end
@@ -54,7 +66,7 @@ end
 local function finish(id, npc)
     render(id,true)
     local definition=addon.quests[id]
-    assert(ui.action and ui.action.id==id and ui.action.kind=="turnin" and
+    assert(ui.action and ui.action.id==id and ui.action.kind=="turnin" and ui.action.place and
         ui.action.place==definition.finish and ui.action.place.npcID==npc,
         "ready quest targets its reviewed turn-in NPC")
     assert(ui:DispatchDetail(ui.action,false))
@@ -117,4 +129,61 @@ for _,id in ipairs({214,96394,96403,92744,92747,92748,92749,92750,92751,92752,92
     assert(addon.quests[id].requirementsKnown==false, "source corrections do not claim complete requirements")
 end
 assert(addon.quests[214].requires[1].ids[1]==155, "existing prerequisite fact survives source correction")
+for _,sample in ipairs({{2040,6579},{5725,2425},{5761,3216},{96391,264936}}) do
+    finish(sample[1],sample[2])
+end
+local itemGoals = {
+    {96987,{275996}}, {95250,{268518}}, {95775,{270308,270309,270310,270311}},
+    {95787,{270308,270309,270310,270311}}, {95788,{270343},5}, {96774,{276894}},
+}
+for _,sample in ipairs(itemGoals) do
+    render(sample[1])
+    local shown = {}
+    for _,button in ipairs(ui.objectiveButtons) do if button:IsShown() then
+        local binding = button.objectiveBinding
+        assert(binding.role == "objective" and binding.sourceField == "objectiveItems" and binding.current(),
+            "listed collection goals keep their objective role")
+        shown[binding.id] = true
+    end end
+    for _,id in ipairs(sample[2]) do
+        assert(shown[id], "every reviewed collection goal is inspectable")
+        assert(contains("Recorded item "..id.." ×"..(sample[3] or "?")),
+            "only the explicitly recorded quantity is displayed")
+    end
+    for _,button in ipairs(ui.rewardButtons) do assert(not button:IsShown(), "collection goals are not rewards") end
+    assert(not addon.quests[sample[1]].finish, "collection item identity does not invent a finisher")
+end
+local classGoals={
+    {8985,{22227}}, {8990,{22048,22046}}, {8962,{22226}}, {8963,{22227}},
+    {8964,{22228}}, {8935,{16713,16712}}, {8941,{16713,16712}}, {8937,{16736,16737}},
+    {7647,{18799,18792,18749,18746}}, {8256,{7972},1},
+}
+for _,sample in ipairs(classGoals) do
+    render(sample[1])
+    for _,id in ipairs(sample[2]) do
+        local found=false
+        for _,button in ipairs(ui.objectiveButtons) do if button:IsShown() then
+            local binding=button.objectiveBinding
+            if binding.id==id then
+                assert(binding.role=="objective" and binding.sourceField=="objectiveItems" and binding.current())
+                found=true
+            end
+        end end
+        assert(found and contains("Recorded item "..id.." ×"..(sample[3] or "?")),
+            "class collection goals retain their exact recorded quantity and role")
+    end
+    for _,button in ipairs(ui.rewardButtons) do assert(not button:IsShown(), "class goals are not fabricated rewards") end
+end
+for _,sample in ipairs({{8990,22050},{7647,18804}}) do
+    render(sample[1])
+    local found=false
+    for _,button in ipairs(ui.objectiveButtons) do if button:IsShown() then
+        local binding=button.objectiveBinding
+        if binding.id==sample[2] then
+            assert(binding.role=="provided" and binding.sourceField=="providedItems" and binding.current())
+            found=true
+        end
+    end end
+    assert(found,"existing supplied tools remain separate from the newly listed collection goals")
+end
 print("Reviewed quest sources UI: PASS (actual TOC; modeled routing and roles, no native acceptance)")

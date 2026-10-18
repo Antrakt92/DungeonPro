@@ -15,11 +15,26 @@
       "start": {
         "name": "Gryan Stoutmantle",
         "mapID": 1436,
-        "x": 56.3,
-        "y": 47.5,
+        "x": 56.2,
+        "y": 47.4,
         "npcID": 234,
         "creatureDisplayID": 1690,
-        "portraitSource": "https://www.wowhead.com/forever/npc=234"
+        "portraitSource": "https://www.wowhead.com/forever/npc=234",
+        "zoneName": "Westfall",
+        "reportedLocations": [
+          {
+            "mapID": 1436,
+            "zoneName": "Westfall",
+            "x": 56.2,
+            "y": 47.4
+          },
+          {
+            "mapID": 1436,
+            "zoneName": "Westfall",
+            "x": 56.2,
+            "y": 47.6
+          }
+        ]
       },
       "finish": {
         "name": "Wiley the Black",
@@ -53,11 +68,26 @@
       "finish": {
         "name": "Gryan Stoutmantle",
         "mapID": 1436,
-        "x": 56.3,
-        "y": 47.5,
+        "x": 56.2,
+        "y": 47.4,
         "npcID": 234,
         "creatureDisplayID": 1690,
-        "portraitSource": "https://www.wowhead.com/forever/npc=234"
+        "portraitSource": "https://www.wowhead.com/forever/npc=234",
+        "zoneName": "Westfall",
+        "reportedLocations": [
+          {
+            "mapID": 1436,
+            "zoneName": "Westfall",
+            "x": 56.2,
+            "y": 47.4
+          },
+          {
+            "mapID": 1436,
+            "zoneName": "Westfall",
+            "x": 56.2,
+            "y": 47.6
+          }
+        ]
       },
       "requires": [
         {
@@ -80,11 +110,26 @@
       "start": {
         "name": "Gryan Stoutmantle",
         "mapID": 1436,
-        "x": 56.3,
-        "y": 47.5,
+        "x": 56.2,
+        "y": 47.4,
         "npcID": 234,
         "creatureDisplayID": 1690,
-        "portraitSource": "https://www.wowhead.com/forever/npc=234"
+        "portraitSource": "https://www.wowhead.com/forever/npc=234",
+        "zoneName": "Westfall",
+        "reportedLocations": [
+          {
+            "mapID": 1436,
+            "zoneName": "Westfall",
+            "x": 56.2,
+            "y": 47.4
+          },
+          {
+            "mapID": 1436,
+            "zoneName": "Westfall",
+            "x": 56.2,
+            "y": 47.6
+          }
+        ]
       },
       "finish": {
         "name": "Master Mathias Shaw",
@@ -125,11 +170,26 @@
       "finish": {
         "name": "Gryan Stoutmantle",
         "mapID": 1436,
-        "x": 56.3,
-        "y": 47.5,
+        "x": 56.2,
+        "y": 47.4,
         "npcID": 234,
         "creatureDisplayID": 1690,
-        "portraitSource": "https://www.wowhead.com/forever/npc=234"
+        "portraitSource": "https://www.wowhead.com/forever/npc=234",
+        "zoneName": "Westfall",
+        "reportedLocations": [
+          {
+            "mapID": 1436,
+            "zoneName": "Westfall",
+            "x": 56.2,
+            "y": 47.4
+          },
+          {
+            "mapID": 1436,
+            "zoneName": "Westfall",
+            "x": 56.2,
+            "y": 47.6
+          }
+        ]
       },
       "requires": [
         {
@@ -152,20 +212,50 @@
       "start": {
         "name": "Gryan Stoutmantle",
         "mapID": 1436,
-        "x": 56.3,
-        "y": 47.5,
+        "x": 56.2,
+        "y": 47.4,
         "npcID": 234,
         "creatureDisplayID": 1690,
-        "portraitSource": "https://www.wowhead.com/forever/npc=234"
+        "portraitSource": "https://www.wowhead.com/forever/npc=234",
+        "zoneName": "Westfall",
+        "reportedLocations": [
+          {
+            "mapID": 1436,
+            "zoneName": "Westfall",
+            "x": 56.2,
+            "y": 47.4
+          },
+          {
+            "mapID": 1436,
+            "zoneName": "Westfall",
+            "x": 56.2,
+            "y": 47.6
+          }
+        ]
       },
       "finish": {
         "name": "Gryan Stoutmantle",
         "mapID": 1436,
-        "x": 56.3,
-        "y": 47.5,
+        "x": 56.2,
+        "y": 47.4,
         "npcID": 234,
         "creatureDisplayID": 1690,
-        "portraitSource": "https://www.wowhead.com/forever/npc=234"
+        "portraitSource": "https://www.wowhead.com/forever/npc=234",
+        "zoneName": "Westfall",
+        "reportedLocations": [
+          {
+            "mapID": 1436,
+            "zoneName": "Westfall",
+            "x": 56.2,
+            "y": 47.4
+          },
+          {
+            "mapID": 1436,
+            "zoneName": "Westfall",
+            "x": 56.2,
+            "y": 47.6
+          }
+        ]
       },
       "requires": [
         {
@@ -197,11 +287,26 @@
       "finish": {
         "name": "Gryan Stoutmantle",
         "mapID": 1436,
-        "x": 56.3,
-        "y": 47.5,
+        "x": 56.2,
+        "y": 47.4,
         "npcID": 234,
         "creatureDisplayID": 1690,
-        "portraitSource": "https://www.wowhead.com/forever/npc=234"
+        "portraitSource": "https://www.wowhead.com/forever/npc=234",
+        "zoneName": "Westfall",
+        "reportedLocations": [
+          {
+            "mapID": 1436,
+            "zoneName": "Westfall",
+            "x": 56.2,
+            "y": 47.4
+          },
+          {
+            "mapID": 1436,
+            "zoneName": "Westfall",
+            "x": 56.2,
+            "y": 47.6
+          }
+        ]
       },
       "requires": [
         {
@@ -224,20 +329,50 @@
       "start": {
         "name": "Gryan Stoutmantle",
         "mapID": 1436,
-        "x": 56.3,
-        "y": 47.5,
+        "x": 56.2,
+        "y": 47.4,
         "npcID": 234,
         "creatureDisplayID": 1690,
-        "portraitSource": "https://www.wowhead.com/forever/npc=234"
+        "portraitSource": "https://www.wowhead.com/forever/npc=234",
+        "zoneName": "Westfall",
+        "reportedLocations": [
+          {
+            "mapID": 1436,
+            "zoneName": "Westfall",
+            "x": 56.2,
+            "y": 47.4
+          },
+          {
+            "mapID": 1436,
+            "zoneName": "Westfall",
+            "x": 56.2,
+            "y": 47.6
+          }
+        ]
       },
       "finish": {
         "name": "Gryan Stoutmantle",
         "mapID": 1436,
-        "x": 56.3,
-        "y": 47.5,
+        "x": 56.2,
+        "y": 47.4,
         "npcID": 234,
         "creatureDisplayID": 1690,
-        "portraitSource": "https://www.wowhead.com/forever/npc=234"
+        "portraitSource": "https://www.wowhead.com/forever/npc=234",
+        "zoneName": "Westfall",
+        "reportedLocations": [
+          {
+            "mapID": 1436,
+            "zoneName": "Westfall",
+            "x": 56.2,
+            "y": 47.4
+          },
+          {
+            "mapID": 1436,
+            "zoneName": "Westfall",
+            "x": 56.2,
+            "y": 47.6
+          }
+        ]
       },
       "requires": [
         {
@@ -386,14 +521,101 @@
         "y": 12.4,
         "npcID": 6579,
         "creatureDisplayID": 5378,
-        "portraitSource": "https://www.wowhead.com/forever/npc=6579"
+        "portraitSource": "https://www.wowhead.com/forever/npc=6579",
+        "zoneName": "Stormwind City",
+        "reportedLocations": [
+          {
+            "mapID": 1453,
+            "zoneName": "Stormwind City",
+            "x": 55.4,
+            "y": 12.4
+          },
+          {
+            "mapID": 1453,
+            "zoneName": "Stormwind City",
+            "x": 55.4,
+            "y": 12.6
+          },
+          {
+            "mapID": 1453,
+            "zoneName": "Stormwind City",
+            "x": 55.6,
+            "y": 12.4
+          },
+          {
+            "mapID": 1453,
+            "zoneName": "Stormwind City",
+            "x": 55.6,
+            "y": 12.6
+          },
+          {
+            "mapID": 1453,
+            "zoneName": "Stormwind City",
+            "x": 62.4,
+            "y": 34.2
+          },
+          {
+            "mapID": 1453,
+            "zoneName": "Stormwind City",
+            "x": 62.6,
+            "y": 34.2
+          }
+        ]
       },
       "objectiveItems": [
         {
           "itemID": 7365,
           "name": "Gnoam Sprecklesprocket"
         }
-      ]
+      ],
+      "finish": {
+        "name": "Shoni the Shilent",
+        "mapID": 1453,
+        "x": 55.4,
+        "y": 12.4,
+        "npcID": 6579,
+        "creatureDisplayID": 5378,
+        "portraitSource": "https://www.wowhead.com/forever/npc=6579",
+        "zoneName": "Stormwind City",
+        "reportedLocations": [
+          {
+            "mapID": 1453,
+            "zoneName": "Stormwind City",
+            "x": 55.4,
+            "y": 12.4
+          },
+          {
+            "mapID": 1453,
+            "zoneName": "Stormwind City",
+            "x": 55.4,
+            "y": 12.6
+          },
+          {
+            "mapID": 1453,
+            "zoneName": "Stormwind City",
+            "x": 55.6,
+            "y": 12.4
+          },
+          {
+            "mapID": 1453,
+            "zoneName": "Stormwind City",
+            "x": 55.6,
+            "y": 12.6
+          },
+          {
+            "mapID": 1453,
+            "zoneName": "Stormwind City",
+            "x": 62.4,
+            "y": 34.2
+          },
+          {
+            "mapID": 1453,
+            "zoneName": "Stormwind City",
+            "x": 62.6,
+            "y": 34.2
+          }
+        ]
+      }
     },
     {
       "id": 92742,
@@ -1842,7 +2064,67 @@
           "itemID": 14396,
           "name": "Incantations from the Nether"
         }
-      ]
+      ],
+      "finish": {
+        "name": "Varimathras",
+        "mapID": 1458,
+        "x": 56.2,
+        "y": 92.4,
+        "npcID": 2425,
+        "zoneName": "Undercity",
+        "reportedLocations": [
+          {
+            "mapID": 1458,
+            "zoneName": "Undercity",
+            "x": 56.2,
+            "y": 92.4
+          },
+          {
+            "mapID": 1458,
+            "zoneName": "Undercity",
+            "x": 56.2,
+            "y": 92.6
+          },
+          {
+            "mapID": 1458,
+            "zoneName": "Undercity",
+            "x": 56.4,
+            "y": 91.4
+          },
+          {
+            "mapID": 1458,
+            "zoneName": "Undercity",
+            "x": 56.4,
+            "y": 93.6
+          },
+          {
+            "mapID": 1458,
+            "zoneName": "Undercity",
+            "x": 56.6,
+            "y": 90.8
+          },
+          {
+            "mapID": 1458,
+            "zoneName": "Undercity",
+            "x": 56.6,
+            "y": 92
+          },
+          {
+            "mapID": 1458,
+            "zoneName": "Undercity",
+            "x": 56.6,
+            "y": 92.6
+          },
+          {
+            "mapID": 1458,
+            "zoneName": "Undercity",
+            "x": 56.6,
+            "y": 93.6
+          }
+        ],
+        "creatureDisplayID": 11658,
+        "portraitSource": "https://www.wowhead.com/forever/npc=2425"
+      }
     },
     {
       "id": 5761,
@@ -1907,7 +2189,55 @@
           "itemID": 14540,
           "name": "Taragaman the Hungerer's Heart"
         }
-      ]
+      ],
+      "finish": {
+        "name": "Neeru Fireblade",
+        "npcID": 3216,
+        "zoneName": "Orgrimmar",
+        "mapID": 1454,
+        "x": 49.4,
+        "y": 50.4,
+        "reportedLocations": [
+          {
+            "mapID": 1454,
+            "x": 49.4,
+            "y": 50.4,
+            "zoneName": "Orgrimmar"
+          },
+          {
+            "mapID": 1454,
+            "x": 49.4,
+            "y": 50.6,
+            "zoneName": "Orgrimmar"
+          },
+          {
+            "mapID": 1454,
+            "x": 49.4,
+            "y": 51.6,
+            "zoneName": "Orgrimmar"
+          },
+          {
+            "mapID": 1454,
+            "x": 49.6,
+            "y": 50.4,
+            "zoneName": "Orgrimmar"
+          },
+          {
+            "mapID": 1454,
+            "x": 49.6,
+            "y": 50.6,
+            "zoneName": "Orgrimmar"
+          },
+          {
+            "mapID": 1454,
+            "x": 49.6,
+            "y": 51.6,
+            "zoneName": "Orgrimmar"
+          }
+        ],
+        "creatureDisplayID": 3754,
+        "portraitSource": "https://www.wowhead.com/forever/npc=3216"
+      }
     },
     {
       "id": 96391,
@@ -2025,7 +2355,17 @@
         4,
         7,
         95
-      ]
+      ],
+      "finish": {
+        "name": "Earthseer Farsen",
+        "mapID": 1426,
+        "x": 64.8,
+        "y": 58.4,
+        "npcID": 264936,
+        "zoneName": "Dun Morogh",
+        "creatureDisplayID": 144321,
+        "portraitSource": "https://www.wowhead.com/forever/npc=264936"
+      }
     },
     {
       "id": 96393,
@@ -2055,7 +2395,33 @@
         "npcID": 2784,
         "zoneName": "Ironforge",
         "creatureDisplayID": 3597,
-        "portraitSource": "https://www.wowhead.com/forever/npc=2784"
+        "portraitSource": "https://www.wowhead.com/forever/npc=2784",
+        "reportedLocations": [
+          {
+            "mapID": 1455,
+            "zoneName": "Ironforge",
+            "x": 39.4,
+            "y": 55.4
+          },
+          {
+            "mapID": 1455,
+            "zoneName": "Ironforge",
+            "x": 39.4,
+            "y": 55.8
+          },
+          {
+            "mapID": 1455,
+            "zoneName": "Ironforge",
+            "x": 39.6,
+            "y": 55.6
+          },
+          {
+            "mapID": 1455,
+            "zoneName": "Ironforge",
+            "x": 40.0,
+            "y": 55.2
+          }
+        ]
       },
       "requires": [
         {
@@ -4369,7 +4735,46 @@
         "x": 55.4,
         "y": 12.4,
         "creatureDisplayID": 5378,
-        "portraitSource": "https://www.wowhead.com/forever/npc=6579"
+        "portraitSource": "https://www.wowhead.com/forever/npc=6579",
+        "zoneName": "Stormwind City",
+        "reportedLocations": [
+          {
+            "mapID": 1453,
+            "zoneName": "Stormwind City",
+            "x": 55.4,
+            "y": 12.4
+          },
+          {
+            "mapID": 1453,
+            "zoneName": "Stormwind City",
+            "x": 55.4,
+            "y": 12.6
+          },
+          {
+            "mapID": 1453,
+            "zoneName": "Stormwind City",
+            "x": 55.6,
+            "y": 12.4
+          },
+          {
+            "mapID": 1453,
+            "zoneName": "Stormwind City",
+            "x": 55.6,
+            "y": 12.6
+          },
+          {
+            "mapID": 1453,
+            "zoneName": "Stormwind City",
+            "x": 62.4,
+            "y": 34.2
+          },
+          {
+            "mapID": 1453,
+            "zoneName": "Stormwind City",
+            "x": 62.6,
+            "y": 34.2
+          }
+        ]
       },
       "finish": {
         "npcID": 6579,
@@ -4378,7 +4783,46 @@
         "x": 55.4,
         "y": 12.4,
         "creatureDisplayID": 5378,
-        "portraitSource": "https://www.wowhead.com/forever/npc=6579"
+        "portraitSource": "https://www.wowhead.com/forever/npc=6579",
+        "zoneName": "Stormwind City",
+        "reportedLocations": [
+          {
+            "mapID": 1453,
+            "zoneName": "Stormwind City",
+            "x": 55.4,
+            "y": 12.4
+          },
+          {
+            "mapID": 1453,
+            "zoneName": "Stormwind City",
+            "x": 55.4,
+            "y": 12.6
+          },
+          {
+            "mapID": 1453,
+            "zoneName": "Stormwind City",
+            "x": 55.6,
+            "y": 12.4
+          },
+          {
+            "mapID": 1453,
+            "zoneName": "Stormwind City",
+            "x": 55.6,
+            "y": 12.6
+          },
+          {
+            "mapID": 1453,
+            "zoneName": "Stormwind City",
+            "x": 62.4,
+            "y": 34.2
+          },
+          {
+            "mapID": 1453,
+            "zoneName": "Stormwind City",
+            "x": 62.6,
+            "y": 34.2
+          }
+        ]
       },
       "objectiveItems": [
         {
@@ -10884,7 +11328,13 @@
         "Horde"
       ],
       "requirementsKnown": false,
-      "source": "https://www.wowhead.com/forever/quest=96987/opportunistic-education"
+      "source": "https://www.wowhead.com/forever/quest=96987/opportunistic-education",
+      "objectiveItems": [
+        {
+          "itemID": 275996,
+          "name": "The Founding of Dalaran"
+        }
+      ]
     },
     {
       "id": 92489,
@@ -16651,7 +17101,33 @@
         "x": 39.4,
         "y": 55.4,
         "creatureDisplayID": 3597,
-        "portraitSource": "https://www.wowhead.com/forever/npc=2784"
+        "portraitSource": "https://www.wowhead.com/forever/npc=2784",
+        "reportedLocations": [
+          {
+            "mapID": 1455,
+            "zoneName": "Ironforge",
+            "x": 39.4,
+            "y": 55.4
+          },
+          {
+            "mapID": 1455,
+            "zoneName": "Ironforge",
+            "x": 39.4,
+            "y": 55.8
+          },
+          {
+            "mapID": 1455,
+            "zoneName": "Ironforge",
+            "x": 39.6,
+            "y": 55.6
+          },
+          {
+            "mapID": 1455,
+            "zoneName": "Ironforge",
+            "x": 40.0,
+            "y": 55.2
+          }
+        ]
       },
       "finish": {
         "npcID": 9021,
@@ -16709,7 +17185,33 @@
         "x": 39.4,
         "y": 55.4,
         "creatureDisplayID": 3597,
-        "portraitSource": "https://www.wowhead.com/forever/npc=2784"
+        "portraitSource": "https://www.wowhead.com/forever/npc=2784",
+        "reportedLocations": [
+          {
+            "mapID": 1455,
+            "zoneName": "Ironforge",
+            "x": 39.4,
+            "y": 55.4
+          },
+          {
+            "mapID": 1455,
+            "zoneName": "Ironforge",
+            "x": 39.4,
+            "y": 55.8
+          },
+          {
+            "mapID": 1455,
+            "zoneName": "Ironforge",
+            "x": 39.6,
+            "y": 55.6
+          },
+          {
+            "mapID": 1455,
+            "zoneName": "Ironforge",
+            "x": 40.0,
+            "y": 55.2
+          }
+        ]
       },
       "storyline": [
         4342,
@@ -16736,7 +17238,33 @@
         "x": 39.4,
         "y": 55.4,
         "creatureDisplayID": 3597,
-        "portraitSource": "https://www.wowhead.com/forever/npc=2784"
+        "portraitSource": "https://www.wowhead.com/forever/npc=2784",
+        "reportedLocations": [
+          {
+            "mapID": 1455,
+            "zoneName": "Ironforge",
+            "x": 39.4,
+            "y": 55.4
+          },
+          {
+            "mapID": 1455,
+            "zoneName": "Ironforge",
+            "x": 39.4,
+            "y": 55.8
+          },
+          {
+            "mapID": 1455,
+            "zoneName": "Ironforge",
+            "x": 39.6,
+            "y": 55.6
+          },
+          {
+            "mapID": 1455,
+            "zoneName": "Ironforge",
+            "x": 40.0,
+            "y": 55.2
+          }
+        ]
       },
       "finish": {
         "npcID": 8929,
@@ -16773,7 +17301,33 @@
         "x": 39.4,
         "y": 55.4,
         "creatureDisplayID": 3597,
-        "portraitSource": "https://www.wowhead.com/forever/npc=2784"
+        "portraitSource": "https://www.wowhead.com/forever/npc=2784",
+        "reportedLocations": [
+          {
+            "mapID": 1455,
+            "zoneName": "Ironforge",
+            "x": 39.4,
+            "y": 55.4
+          },
+          {
+            "mapID": 1455,
+            "zoneName": "Ironforge",
+            "x": 39.4,
+            "y": 55.8
+          },
+          {
+            "mapID": 1455,
+            "zoneName": "Ironforge",
+            "x": 39.6,
+            "y": 55.6
+          },
+          {
+            "mapID": 1455,
+            "zoneName": "Ironforge",
+            "x": 40.0,
+            "y": 55.2
+          }
+        ]
       },
       "storyline": [
         4342,
@@ -18073,6 +18627,12 @@
       "requirementsKnown": false,
       "factions": [
         "Alliance"
+      ],
+      "objectiveItems": [
+        {
+          "itemID": 268518,
+          "name": "Head of the Baron"
+        }
       ]
     },
     {
@@ -18084,6 +18644,24 @@
       "requirementsKnown": false,
       "factions": [
         "Horde"
+      ],
+      "objectiveItems": [
+        {
+          "itemID": 270308,
+          "name": "The First Tablet of I'lalai"
+        },
+        {
+          "itemID": 270309,
+          "name": "The Second Tablet of I'lalai"
+        },
+        {
+          "itemID": 270310,
+          "name": "The Third Tablet of I'lalai"
+        },
+        {
+          "itemID": 270311,
+          "name": "The Fourth Tablet of I'lalai"
+        }
       ]
     },
     {
@@ -18106,6 +18684,24 @@
       "requirementsKnown": false,
       "factions": [
         "Alliance"
+      ],
+      "objectiveItems": [
+        {
+          "itemID": 270308,
+          "name": "The First Tablet of I'lalai"
+        },
+        {
+          "itemID": 270309,
+          "name": "The Second Tablet of I'lalai"
+        },
+        {
+          "itemID": 270310,
+          "name": "The Third Tablet of I'lalai"
+        },
+        {
+          "itemID": 270311,
+          "name": "The Fourth Tablet of I'lalai"
+        }
       ]
     },
     {
@@ -18117,6 +18713,13 @@
       "requirementsKnown": false,
       "factions": [
         "Alliance"
+      ],
+      "objectiveItems": [
+        {
+          "itemID": 270343,
+          "name": "I'lalai Fetish",
+          "quantity": 5
+        }
       ]
     },
     {
@@ -18158,6 +18761,12 @@
       "requirementsKnown": false,
       "factions": [
         "Horde"
+      ],
+      "objectiveItems": [
+        {
+          "itemID": 276894,
+          "name": "Ancient Gurubashi Idol"
+        }
       ]
     },
     {
@@ -20397,6 +21006,12 @@
         [
           8996
         ]
+      ],
+      "objectiveItems": [
+        {
+          "itemID": 22227,
+          "name": "Starbreeze Village Relic"
+        }
       ]
     },
     {
@@ -20648,6 +21263,16 @@
           "itemID": 22050,
           "name": "Brazier of Beckoning"
         }
+      ],
+      "objectiveItems": [
+        {
+          "itemID": 22048,
+          "name": "Lord Valthalak's Amulet"
+        },
+        {
+          "itemID": 22046,
+          "name": "Right Piece of Lord Valthalak's Amulet"
+        }
       ]
     },
     {
@@ -20895,6 +21520,12 @@
         [
           8970
         ]
+      ],
+      "objectiveItems": [
+        {
+          "itemID": 22226,
+          "name": "Druidical Remains"
+        }
       ]
     },
     {
@@ -20940,6 +21571,12 @@
         [
           8970
         ]
+      ],
+      "objectiveItems": [
+        {
+          "itemID": 22227,
+          "name": "Starbreeze Village Relic"
+        }
       ]
     },
     {
@@ -20985,6 +21622,12 @@
         [
           8970
         ]
+      ],
+      "objectiveItems": [
+        {
+          "itemID": 22228,
+          "name": "Brilliant Sword of Zealotry"
+        }
       ]
     },
     {
@@ -25771,7 +26414,33 @@
         "x": 39.4,
         "y": 55.4,
         "creatureDisplayID": 3597,
-        "portraitSource": "https://www.wowhead.com/forever/npc=2784"
+        "portraitSource": "https://www.wowhead.com/forever/npc=2784",
+        "reportedLocations": [
+          {
+            "mapID": 1455,
+            "zoneName": "Ironforge",
+            "x": 39.4,
+            "y": 55.4
+          },
+          {
+            "mapID": 1455,
+            "zoneName": "Ironforge",
+            "x": 39.4,
+            "y": 55.8
+          },
+          {
+            "mapID": 1455,
+            "zoneName": "Ironforge",
+            "x": 39.6,
+            "y": 55.6
+          },
+          {
+            "mapID": 1455,
+            "zoneName": "Ironforge",
+            "x": 40.0,
+            "y": 55.2
+          }
+        ]
       },
       "startsInside": true,
       "providedItems": [
@@ -26645,7 +27314,17 @@
         "portraitSource": "https://www.wowhead.com/forever/npc=16013"
       },
       "requirementsKnown": false,
-      "source": "https://www.wowhead.com/forever/quest=8935/just-compensation"
+      "source": "https://www.wowhead.com/forever/quest=8935/just-compensation",
+      "objectiveItems": [
+        {
+          "itemID": 16713,
+          "name": "Shadowcraft Belt"
+        },
+        {
+          "itemID": 16712,
+          "name": "Shadowcraft Gloves"
+        }
+      ]
     },
     {
       "id": 8936,
@@ -26838,7 +27517,17 @@
         "portraitSource": "https://www.wowhead.com/forever/npc=16013"
       },
       "requirementsKnown": false,
-      "source": "https://www.wowhead.com/forever/quest=8937/just-compensation"
+      "source": "https://www.wowhead.com/forever/quest=8937/just-compensation",
+      "objectiveItems": [
+        {
+          "itemID": 16736,
+          "name": "Belt of Valor"
+        },
+        {
+          "itemID": 16737,
+          "name": "Gauntlets of Valor"
+        }
+      ]
     },
     {
       "id": 8938,
@@ -27173,7 +27862,17 @@
         "portraitSource": "https://www.wowhead.com/forever/npc=16012"
       },
       "requirementsKnown": false,
-      "source": "https://www.wowhead.com/forever/quest=8941/just-compensation"
+      "source": "https://www.wowhead.com/forever/quest=8941/just-compensation",
+      "objectiveItems": [
+        {
+          "itemID": 16713,
+          "name": "Shadowcraft Belt"
+        },
+        {
+          "itemID": 16712,
+          "name": "Shadowcraft Gloves"
+        }
+      ]
     },
     {
       "id": 8942,
@@ -28720,6 +29419,24 @@
           "itemID": 18804,
           "name": "Lord Grayson's Satchel"
         }
+      ],
+      "objectiveItems": [
+        {
+          "itemID": 18799,
+          "name": "Charger's Redeemed Soul"
+        },
+        {
+          "itemID": 18792,
+          "name": "Blessed Arcanite Barding"
+        },
+        {
+          "itemID": 18749,
+          "name": "Charger's Lost Soul"
+        },
+        {
+          "itemID": 18746,
+          "name": "Divination Scryer"
+        }
       ]
     },
     {
@@ -29553,7 +30270,14 @@
         8256,
         8257
       ],
-      "storylineEvidence": "https://www.wowhead.com/forever/quest=8256/the-ichor-of-undeath"
+      "storylineEvidence": "https://www.wowhead.com/forever/quest=8256/the-ichor-of-undeath",
+      "objectiveItems": [
+        {
+          "itemID": 7972,
+          "name": "Ichor of Undeath",
+          "quantity": 1
+        }
+      ]
     },
     {
       "id": 8419,
