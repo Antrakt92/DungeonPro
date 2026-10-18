@@ -42,7 +42,7 @@
 
 - Improved planner window focus and the opaque background when other addon windows are open.
 
-- Redesigned the language picker with flags, immediate hover previews and a compact flag button.
+- Added immediate language previews on hover and a neutral globe button.
 
 - Removed race-based quest exclusions and race lists from quest cards; faction, class and preparation requirements still apply.
 - Improved minimap button placement reliability and added read-only minimap diagnostics.
@@ -57,12 +57,12 @@
 - Preserved native font families when sizing multilingual interface text.
 - Added missing reported locations for several early dungeon quest givers.
 - Restored quest selection when preparation section headings are present.
-- Explained faction, class and race restrictions directly in quest rows.
+- Explained faction and class restrictions directly in quest rows.
 - Added native dungeon artwork for 24 catalogue entries and safer image fallback.
 - Adjusted four new dungeon images for their recorded wide preview proportions.
 - Refined the window, controls and selected rows with a cohesive dark theme.
 - Added a dungeon overview before selecting a quest, with artwork and coverage notes.
-- Let Back return from the first quest to its dungeon overview.
+- Clicking a dungeon card returns to its overview.
 - Restored the reading position when returning from a related quest or copied link.
 - Showed a clear copy instruction beside the selected Wowhead link.
 - Preserved map pins when their native API context changes during guidance.
@@ -78,8 +78,7 @@
   separate from quest-log progress and preparation requirements.
 - Clarified prerequisite groups and whether a step needs acceptance or completion.
 - Added separate quest-detail links beside prerequisite alternatives.
-- Added Back navigation for supporting quest cards and optional client-provided
-  dungeon images and current-offer portraits.
+- Added optional client-provided dungeon images and current-offer portraits.
 - Expanded later dungeon quest lists and sourced quest-giver locations.
 - Added expandable reported giver positions with navigation to a chosen point.
 - Added sourced item containers separately from the items that begin quests.
@@ -94,7 +93,7 @@
 - Added current carried counts for quest-starting items and completion materials.
 - Added the current quest-log count and its client-provided capacity.
 - Added optional item icons and native hover tooltips to quest rewards.
-- Showed minimum level and listed class/race limits on quest detail cards.
+- Showed minimum level and listed class limits on quest detail cards.
 - Added `/rl` as a shortcut for reloading the interface.
 - Added a movable minimap button, with commands to hide or reset it.
 - Showed sourced objective-item quantities separately from current carried counts.
