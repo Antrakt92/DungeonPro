@@ -186,4 +186,47 @@ for _,sample in ipairs({{8990,22050},{7647,18804}}) do
     end end
     assert(found,"existing supplied tools remain separate from the newly listed collection goals")
 end
+local reviewedClassRoles = {
+    {1954,"objectiveItems",{{7291}}}, {8255,"objectiveItems",{{20027,4}}},
+    {8419,"objectiveItems",{{14256}}}, {8420,"objectiveItems",{{14256}}},
+    {8421,"objectiveItems",{{20613,10},{20614,4}}}, {9052,"objectiveItems",{{22435,8},{22434,8}}},
+    {8153,"objectiveItems",{{20017,2}}}, {8231,"objectiveItems",{{20087,6}}},
+    {8251,"objectiveItems",{{20028,10}}}, {8252,"objectiveItems",{{20029,6}}},
+    {8234,"objectiveItems",{{19775}}}, {8235,"objectiveItems",{{20023,10}}},
+    {7646,"objectiveItems",{{12800},{18335}}}, {7624,"objectiveItems",{{18719}}},
+    {7625,"objectiveItems",{{18687}}}, {7667,"objectiveItems",{{12800},{18335}}},
+    {9051,"providedItems",{{22432}}}, {8416,"providedItems",{{20612}}}, {7644,"providedItems",{{18792}}},
+}
+for _,sample in ipairs(reviewedClassRoles) do
+    render(sample[1])
+    for _,item in ipairs(sample[3]) do
+        local found=false
+        for _,button in ipairs(ui.objectiveButtons) do if button:IsShown() then
+            local binding=button.objectiveBinding
+            if binding.id==item[1] then
+                assert(binding.sourceField==sample[2] and binding.current(), "reviewed class item role is current")
+                assert(binding.role==(sample[2]=="providedItems" and "provided" or "objective"))
+                found=true
+            end
+        end end
+        assert(found and contains("Recorded item "..item[1].." ×"..(item[2] or "?")),
+            "new class goal/supply has exact known quantity or explicit unknown")
+    end
+    for _,button in ipairs(ui.rewardButtons) do assert(not button:IsShown(), "new class role is not a reward") end
+    assert(addon.quests[sample[1]].requirementsKnown==false)
+end
+for _,sample in ipairs({{1955,{{6549}}},{1957,{{6550,12}}},{8423,{{5993,7}}},
+    {8424,{{6006,20},{6004,10},{6005,20}}}}) do
+    render(sample[1])
+    local goals=assert(addon.quests[sample[1]].objectiveKills)
+    assert(#goals==#sample[2])
+    for index,expected in ipairs(sample[2]) do
+        local goal=goals[index]
+        assert(goal.npcID==expected[1] and goal.quantity==expected[2], "typed class kill identity and quantity")
+        assert(contains(goal.name.." ×"..(expected[2] or "?")), "class kills are visible with truthful quantity")
+    end
+    assert(addon.quests[sample[1]].requirementsKnown==false)
+end
+assert(addon.quests[7631].providedItems[1].itemID==18818 and not addon.quests[7631].objectiveItems,
+    "existing mount supply remains supplied rather than a collection goal")
 print("Reviewed quest sources UI: PASS (actual TOC; modeled routing and roles, no native acceptance)")

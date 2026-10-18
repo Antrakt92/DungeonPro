@@ -28995,7 +28995,13 @@
         1956,
         1957
       ],
-      "storylineEvidence": "https://www.wowhead.com/forever/quest=1957/mana-surges"
+      "storylineEvidence": "https://www.wowhead.com/forever/quest=1957/mana-surges",
+      "objectiveItems": [
+        {
+          "itemID": 7291,
+          "name": "Infernal Orb"
+        }
+      ]
     },
     {
       "id": 1955,
@@ -29038,7 +29044,13 @@
         1956,
         1957
       ],
-      "storylineEvidence": "https://www.wowhead.com/forever/quest=1957/mana-surges"
+      "storylineEvidence": "https://www.wowhead.com/forever/quest=1957/mana-surges",
+      "objectiveKills": [
+        {
+          "npcID": 6549,
+          "name": "Demon of the Orb"
+        }
+      ]
     },
     {
       "id": 1957,
@@ -29081,7 +29093,14 @@
         1956,
         1957
       ],
-      "storylineEvidence": "https://www.wowhead.com/forever/quest=1957/mana-surges"
+      "storylineEvidence": "https://www.wowhead.com/forever/quest=1957/mana-surges",
+      "objectiveKills": [
+        {
+          "npcID": 6550,
+          "name": "Mana Surge",
+          "quantity": 12
+        }
+      ]
     },
     {
       "id": 4141,
@@ -30070,7 +30089,14 @@
         8424,
         8425
       ],
-      "storylineEvidence": "https://www.wowhead.com/forever/quest=8424/war-on-the-shadowsworn"
+      "storylineEvidence": "https://www.wowhead.com/forever/quest=8424/war-on-the-shadowsworn",
+      "objectiveKills": [
+        {
+          "npcID": 5993,
+          "name": "Helboar",
+          "quantity": 7
+        }
+      ]
     },
     {
       "id": 8424,
@@ -30140,7 +30166,24 @@
         8424,
         8425
       ],
-      "storylineEvidence": "https://www.wowhead.com/forever/quest=8424/war-on-the-shadowsworn"
+      "storylineEvidence": "https://www.wowhead.com/forever/quest=8424/war-on-the-shadowsworn",
+      "objectiveKills": [
+        {
+          "npcID": 6006,
+          "name": "Shadowsworn Adept",
+          "quantity": 20
+        },
+        {
+          "npcID": 6004,
+          "name": "Shadowsworn Cultist",
+          "quantity": 10
+        },
+        {
+          "npcID": 6005,
+          "name": "Shadowsworn Thug",
+          "quantity": 20
+        }
+      ]
     },
     {
       "id": 8254,
@@ -30228,7 +30271,14 @@
         8256,
         8257
       ],
-      "storylineEvidence": "https://www.wowhead.com/forever/quest=8256/the-ichor-of-undeath"
+      "storylineEvidence": "https://www.wowhead.com/forever/quest=8256/the-ichor-of-undeath",
+      "objectiveItems": [
+        {
+          "itemID": 20027,
+          "name": "Healthy Courser Gland",
+          "quantity": 4
+        }
+      ]
     },
     {
       "id": 8256,
@@ -30347,7 +30397,13 @@
           8422
         ]
       ],
-      "storylineEvidence": "https://www.wowhead.com/forever/quest=8421/the-wrong-stuff"
+      "storylineEvidence": "https://www.wowhead.com/forever/quest=8421/the-wrong-stuff",
+      "objectiveItems": [
+        {
+          "itemID": 14256,
+          "name": "Felcloth"
+        }
+      ]
     },
     {
       "id": 8420,
@@ -30423,7 +30479,13 @@
           8422
         ]
       ],
-      "storylineEvidence": "https://www.wowhead.com/forever/quest=8421/the-wrong-stuff"
+      "storylineEvidence": "https://www.wowhead.com/forever/quest=8421/the-wrong-stuff",
+      "objectiveItems": [
+        {
+          "itemID": 14256,
+          "name": "Felcloth"
+        }
+      ]
     },
     {
       "id": 8421,
@@ -30499,7 +30561,19 @@
           8422
         ]
       ],
-      "storylineEvidence": "https://www.wowhead.com/forever/quest=8421/the-wrong-stuff"
+      "storylineEvidence": "https://www.wowhead.com/forever/quest=8421/the-wrong-stuff",
+      "objectiveItems": [
+        {
+          "itemID": 20613,
+          "name": "Rotting Wood",
+          "quantity": 10
+        },
+        {
+          "itemID": 20614,
+          "name": "Bloodvenom Essence",
+          "quantity": 4
+        }
+      ]
     },
     {
       "id": 9063,
@@ -30633,7 +30707,19 @@
         9051,
         9053
       ],
-      "storylineEvidence": "https://www.wowhead.com/forever/quest=9051/toxic-test"
+      "storylineEvidence": "https://www.wowhead.com/forever/quest=9051/toxic-test",
+      "objectiveItems": [
+        {
+          "itemID": 22435,
+          "name": "Gorishi Sting",
+          "quantity": 8
+        },
+        {
+          "itemID": 22434,
+          "name": "Bloodcap",
+          "quantity": 8
+        }
+      ]
     },
     {
       "id": 9051,
@@ -30703,7 +30789,13 @@
         9051,
         9053
       ],
-      "storylineEvidence": "https://www.wowhead.com/forever/quest=9051/toxic-test"
+      "storylineEvidence": "https://www.wowhead.com/forever/quest=9051/toxic-test",
+      "providedItems": [
+        {
+          "itemID": 22432,
+          "name": "Devilsaur Barb"
+        }
+      ]
     },
     {
       "id": 8418,
@@ -31019,7 +31111,13 @@
         8416,
         8418
       ],
-      "storylineEvidence": "https://www.wowhead.com/forever/quest=8416/inert-scourgestones"
+      "storylineEvidence": "https://www.wowhead.com/forever/quest=8416/inert-scourgestones",
+      "providedItems": [
+        {
+          "itemID": 20612,
+          "name": "Inert Scourgestone"
+        }
+      ]
     },
     {
       "id": 8151,
@@ -31115,7 +31213,14 @@
         8231,
         8232
       ],
-      "storylineEvidence": "https://www.wowhead.com/forever/quest=8231/wavethrashing"
+      "storylineEvidence": "https://www.wowhead.com/forever/quest=8231/wavethrashing",
+      "objectiveItems": [
+        {
+          "itemID": 20017,
+          "name": "Perfect Courser Antler",
+          "quantity": 2
+        }
+      ]
     },
     {
       "id": 8231,
@@ -31157,7 +31262,14 @@
         8231,
         8232
       ],
-      "storylineEvidence": "https://www.wowhead.com/forever/quest=8231/wavethrashing"
+      "storylineEvidence": "https://www.wowhead.com/forever/quest=8231/wavethrashing",
+      "objectiveItems": [
+        {
+          "itemID": 20087,
+          "name": "Wavethrasher Scales",
+          "quantity": 6
+        }
+      ]
     },
     {
       "id": 8251,
@@ -31238,7 +31350,14 @@
         8252,
         8253
       ],
-      "storylineEvidence": "https://www.wowhead.com/forever/quest=8252/the-sirens-coral"
+      "storylineEvidence": "https://www.wowhead.com/forever/quest=8252/the-sirens-coral",
+      "objectiveItems": [
+        {
+          "itemID": 20028,
+          "name": "Glittering Dust",
+          "quantity": 10
+        }
+      ]
     },
     {
       "id": 8252,
@@ -31319,7 +31438,14 @@
         8252,
         8253
       ],
-      "storylineEvidence": "https://www.wowhead.com/forever/quest=8252/the-sirens-coral"
+      "storylineEvidence": "https://www.wowhead.com/forever/quest=8252/the-sirens-coral",
+      "objectiveItems": [
+        {
+          "itemID": 20029,
+          "name": "Enchanted Coral",
+          "quantity": 6
+        }
+      ]
     },
     {
       "id": 8233,
@@ -31431,7 +31557,13 @@
         8235,
         8236
       ],
-      "storylineEvidence": "https://www.wowhead.com/forever/quest=8235/encoded-fragments"
+      "storylineEvidence": "https://www.wowhead.com/forever/quest=8235/encoded-fragments",
+      "objectiveItems": [
+        {
+          "itemID": 19775,
+          "name": "Sealed Azure Bag"
+        }
+      ]
     },
     {
       "id": 8235,
@@ -31513,7 +31645,14 @@
         8235,
         8236
       ],
-      "storylineEvidence": "https://www.wowhead.com/forever/quest=8235/encoded-fragments"
+      "storylineEvidence": "https://www.wowhead.com/forever/quest=8235/encoded-fragments",
+      "objectiveItems": [
+        {
+          "itemID": 20023,
+          "name": "Encoded Fragment",
+          "quantity": 10
+        }
+      ]
     },
     {
       "id": 8413,
@@ -31732,7 +31871,13 @@
         7646,
         7647
       ],
-      "storylineEvidence": "https://www.wowhead.com/forever/quest=7646/the-divination-scryer"
+      "storylineEvidence": "https://www.wowhead.com/forever/quest=7646/the-divination-scryer",
+      "providedItems": [
+        {
+          "itemID": 18792,
+          "name": "Blessed Arcanite Barding"
+        }
+      ]
     },
     {
       "id": 7646,
@@ -31829,7 +31974,17 @@
         7646,
         7647
       ],
-      "storylineEvidence": "https://www.wowhead.com/forever/quest=7646/the-divination-scryer"
+      "storylineEvidence": "https://www.wowhead.com/forever/quest=7646/the-divination-scryer",
+      "objectiveItems": [
+        {
+          "itemID": 12800,
+          "name": "Azerothian Diamond"
+        },
+        {
+          "itemID": 18335,
+          "name": "Pristine Black Diamond"
+        }
+      ]
     },
     {
       "id": 7623,
@@ -31991,7 +32146,13 @@
         7625,
         7629
       ],
-      "storylineEvidence": "https://www.wowhead.com/forever/quest=7625/xorothian-stardust"
+      "storylineEvidence": "https://www.wowhead.com/forever/quest=7625/xorothian-stardust",
+      "objectiveItems": [
+        {
+          "itemID": 18719,
+          "name": "The Traitor's Heart"
+        }
+      ]
     },
     {
       "id": 7625,
@@ -32075,7 +32236,13 @@
         7625,
         7629
       ],
-      "storylineEvidence": "https://www.wowhead.com/forever/quest=7625/xorothian-stardust"
+      "storylineEvidence": "https://www.wowhead.com/forever/quest=7625/xorothian-stardust",
+      "objectiveItems": [
+        {
+          "itemID": 18687,
+          "name": "Xorothian Stardust"
+        }
+      ]
     },
     {
       "id": 7667,
@@ -32159,7 +32326,17 @@
         7667,
         8258
       ],
-      "storylineEvidence": "https://www.wowhead.com/forever/quest=7667/material-assistance"
+      "storylineEvidence": "https://www.wowhead.com/forever/quest=7667/material-assistance",
+      "objectiveItems": [
+        {
+          "itemID": 12800,
+          "name": "Azerothian Diamond"
+        },
+        {
+          "itemID": 18335,
+          "name": "Pristine Black Diamond"
+        }
+      ]
     },
     {
       "id": 7631,
