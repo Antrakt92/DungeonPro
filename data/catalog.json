@@ -21014,6 +21014,22 @@
       "factions": [
         "Alliance",
         "Horde"
+      ],
+      "objectiveItems": [
+        {
+          "itemID": 12847,
+          "name": "Soul Stained Pike"
+        },
+        {
+          "itemID": 12806,
+          "name": "Unforged Rune Covered Breastplate"
+        }
+      ],
+      "providedItems": [
+        {
+          "itemID": 12848,
+          "name": "Blood Stained Pike"
+        }
       ]
     },
     {

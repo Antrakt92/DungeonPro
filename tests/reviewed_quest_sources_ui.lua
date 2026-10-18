@@ -342,6 +342,7 @@ local reviewedItemRoles = {
     {97289,"providedItems",{{268518}}},
     {97291,"objectiveItems",{{281246},{281300},{8923}}},
     {97292,"providedItems",{{281327}}},
+    {5127,"objectiveItems",{{12847},{12806}}}, {5127,"providedItems",{{12848}}},
 }
 for _,sample in ipairs(reviewedItemRoles) do
     render(sample[1],false,roleInspection[sample[1]])
@@ -553,4 +554,5 @@ for _,id in ipairs({92458,96984})do
         "collecting arcane motes preserves the separate supplied sewer key")
 end
 for _,id in ipairs({92401,92434,97288})do assert(not addon.quests[id].objectiveEvents,"unlinked prose actions stay held without guessed typed identities")end
+assert(not addon.quests[5127].objectiveKills,"the Demon Forge item requirements do not invent a Goraluk slain goal")
 print("Reviewed quest sources UI: PASS (actual TOC; modeled routing and roles, no native acceptance)")
