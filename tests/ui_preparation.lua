@@ -6315,7 +6315,10 @@ check("Promoted source facts remain distinct and goal-free twelve-start cards ad
         assert(detailHas(addon.L("OBJECTIVE_PROGRESS")) and q.requirementsKnown==false and ui.engine:State(id).status=="ACTIVE")
         f:restore()
     end
-    local f,q=hierarchyFixture(2933);f.held=false;f.dialogue=nil;showDetail(2933,f.context)
+    local f,q=hierarchyFixture(2933)
+    -- This isolated goal-free case keeps the twelve sources; supplied-role coverage uses the actual catalogue separately.
+    q.providedItems=nil
+    f.held=false;f.dialogue=nil;showDetail(2933,f.context)
     assert(startButton(12).shown and not detailHas(addon.L("OBJECTIVE_PROGRESS")) and not detailHas(addon.L("OBJECTIVE_DIALOGUE")))
     assert(not detailHas(addon.L("DETAIL_OBJECTIVES"))and not detailHas(addon.L("PROVIDED_ITEMS"))and not detailHas(addon.L("OBJECTIVE_OBJECTS")))
     f:restore()

@@ -12577,6 +12577,19 @@
         3527,
         4787,
         3528
+      ],
+      "objectiveEvents": [
+        {
+          "npcID": 8612,
+          "name": "Screecher Spirits Collected",
+          "quantity": 3
+        }
+      ],
+      "providedItems": [
+        {
+          "itemID": 10699,
+          "name": "Yeh'kinya's Bramble"
+        }
       ]
     },
     {
@@ -12714,6 +12727,12 @@
         2935,
         2936,
         2937
+      ],
+      "providedItems": [
+        {
+          "itemID": 9321,
+          "name": "Venom Bottle"
+        }
       ]
     },
     {
@@ -12758,6 +12777,12 @@
           "ids": [
             2933
           ]
+        }
+      ],
+      "objectiveItems": [
+        {
+          "itemID": 9322,
+          "name": "Undamaged Venom Sac"
         }
       ]
     },
@@ -12870,6 +12895,18 @@
         2935,
         2936,
         2937
+      ],
+      "objectiveItems": [
+        {
+          "itemID": 9324,
+          "name": "Shadra's Venom"
+        }
+      ],
+      "providedItems": [
+        {
+          "itemID": 9323,
+          "name": "Gadrin's Parchment"
+        }
       ]
     },
     {
@@ -12910,6 +12947,20 @@
         2992,
         2993,
         2994
+      ],
+      "objectiveObjects": [
+        {
+          "objectID": 144066,
+          "name": "Check First Cage"
+        },
+        {
+          "objectID": 144067,
+          "name": "Check Second Cage"
+        },
+        {
+          "objectID": 144068,
+          "name": "Check Third Cage"
+        }
       ]
     },
     {
@@ -13003,6 +13054,12 @@
           "ids": [
             2989
           ]
+        }
+      ],
+      "providedItems": [
+        {
+          "itemID": 9468,
+          "name": "Sharpbeak's Feather"
         }
       ]
     },
@@ -13124,6 +13181,18 @@
         2992,
         2993,
         2994
+      ],
+      "objectiveObjects": [
+        {
+          "objectID": 144070,
+          "name": "Open Sharpbeak's Cage"
+        }
+      ],
+      "objectiveItems": [
+        {
+          "itemID": 9472,
+          "name": "Hexx's Key"
+        }
       ]
     },
     {
@@ -13162,6 +13231,12 @@
         3527,
         4787,
         3528
+      ],
+      "objectiveItems": [
+        {
+          "itemID": 12402,
+          "name": "Ancient Egg"
+        }
       ]
     },
     {
@@ -13624,6 +13699,12 @@
         [
           3444
         ]
+      ],
+      "objectiveItems": [
+        {
+          "itemID": 10556,
+          "name": "Stone Circle"
+        }
       ]
     },
     {
@@ -13673,6 +13754,13 @@
         [
           471
         ]
+      ],
+      "objectiveItems": [
+        {
+          "itemID": 284845,
+          "name": "Thicket Raptor Hide",
+          "quantity": 4
+        }
       ]
     },
     {

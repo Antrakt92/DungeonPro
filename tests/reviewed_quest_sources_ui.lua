@@ -204,6 +204,11 @@ local reviewedItemRoles = {
     {4742,"objectiveItems",{{12336},{12335},{12337},{12219}}},
     {8949,"objectiveItems",{{21982,25}}},
     {5466,"providedItems",{{13752}}}, {7508,"providedItems",{{18513}}},
+    {3520,"providedItems",{{10699}}}, {2933,"providedItems",{{9321}}},
+    {2934,"objectiveItems",{{9322}}}, {2937,"objectiveItems",{{9324}}},
+    {2937,"providedItems",{{9323}}}, {2990,"providedItems",{{9468}}},
+    {2994,"objectiveItems",{{9472}}}, {4787,"objectiveItems",{{12402}}},
+    {3444,"objectiveItems",{{10556}}}, {98815,"objectiveItems",{{284845,4}}},
 }
 for _,sample in ipairs(reviewedItemRoles) do
     render(sample[1])
@@ -264,4 +269,32 @@ assert(addon.quests[8945].objectiveEvents[1].npcID==16031 and not addon.quests[8
     "rescue credit retains its typed NPC identity without an invented quantity")
 assert(not addon.quests[8945].objectiveKills and addon.quests[8945].requirementsKnown==false,
     "freeing Ysida does not become killing her or authorize quest pickup")
+render(3520)
+local spirits=assert(addon.quests[3520].objectiveEvents)
+assert(#spirits==1 and spirits[1].npcID==8612 and spirits[1].quantity==3 and contains("Screecher Spirits Collected ×3"),
+    "spirit collection is the explicit three-count non-kill NPC credit")
+assert(not addon.quests[3520].objectiveKills and addon.quests[3520].requirementsKnown==false,
+    "collecting spirits does not invent a slain objective or authorize pickup")
+for _,sample in ipairs({{2988,{{144066,"Check First Cage"},{144067,"Check Second Cage"},{144068,"Check Third Cage"}}},
+    {2994,{{144070,"Open Sharpbeak's Cage"}}}})do
+    render(sample[1])
+    local goals=assert(addon.quests[sample[1]].objectiveObjects)
+    assert(#goals==#sample[2])
+    for index,expected in ipairs(sample[2])do
+        local goal=goals[index]
+        assert(goal.objectID==expected[1] and goal.name==expected[2] and not goal.quantity,
+            "cage tasks retain exact object identity, source order and unknown quantity")
+        assert(contains(goal.name.." ×?") and not contains(goal.name.." ×1"),
+            "each cage task renders without an invented count")
+    end
+    assert(not addon.quests[sample[1]].objectiveKills and addon.quests[sample[1]].requirementsKnown==false)
+end
+render(2933)
+assert(not addon.quests[2933].start and #addon.quests[2933].startAlternatives==12,
+    "Venom Bottle starter objects remain separate from the supplied item")
+for _,point in ipairs(addon.quests[2933].startAlternatives)do
+    assert(point.objectID and not point.itemID,"supplied item9321 does not replace any typed starter object")
+end
+assert(not addon.quests[2933].objectiveItems,
+    "the supplied Venom Bottle does not become an invented collection goal")
 print("Reviewed quest sources UI: PASS (actual TOC; modeled routing and roles, no native acceptance)")
