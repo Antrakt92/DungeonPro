@@ -192,6 +192,9 @@ local roleInspection = {
     [2203]=assert(owners[2201]), [2440]=assert(owners[2439]), [2501]=assert(owners[2500]),
     [3374]=assert(owners[1424]), [4701]=assert(owners[4742]),
     [4724]=assert(owners[4742]), [4729]=assert(owners[4742]),
+    [4734]=assert(owners[4765]), [4788]=assert(owners[4742]), [4862]=assert(owners[4742]),
+    [4867]=assert(owners[4742]), [4982]=assert(owners[4742]), [4983]=assert(owners[4742]),
+    [5065]=assert(owners[1424]),
 }
 for id,dungeon in pairs(roleInspection)do
     assert(not owners[id], "standalone definition has no invented natural dungeon association")
@@ -291,6 +294,28 @@ local reviewedItemRoles = {
     {4142,"providedItems",{{11316}}},
     {4729,"objectiveItems",{{12263}}},
     {4729,"providedItems",{{12262}}},
+    {4734,"providedItems",{{12286}}},
+    {4743,"objectiveItems",{{12324}}},
+    {4743,"providedItems",{{12339}}},
+    {4765,"providedItems",{{12437}}},
+    {4788,"objectiveItems",{{12740},{12741}}},
+    {4862,"objectiveItems",{{12530,15}}},
+    {4867,"objectiveItems",{{12712}}},
+    {4867,"providedItems",{{12730}}},
+    {4982,"objectiveItems",{{12345}}},
+    {4983,"providedItems",{{12652}}},
+    {5002,"providedItems",{{12770}}},
+    {5047,"providedItems",{{12710}}},
+    {5065,"objectiveItems",{{12411},{12412}}},
+    {5089,"providedItems",{{12780}}},
+    {6501,"providedItems",{{16662}}},
+    {5527,"objectiveItems",{{22201}}},
+    {6568,"providedItems",{{16785}}},
+    {6570,"providedItems",{{16787}}},
+    {6585,"objectiveItems",{{16872}}},
+    {6601,"providedItems",{{16888}}},
+    {6824,"objectiveItems",{{17332},{17329},{17331},{17330}}},
+    {7029,"objectiveItems",{{17696}}},
 }
 for _,sample in ipairs(reviewedItemRoles) do
     render(sample[1],false,roleInspection[sample[1]])
@@ -316,7 +341,8 @@ for _,sample in ipairs({{1955,{{6549}}},{1957,{{6550,12}}},{8423,{{5993,7}}},
     {4262,{{9026}}},{4362,{{9019}}},
     {303,{{1051,15},{1053,5},{1052,5},{1054,5}}},{739,{{2945},{2893,12}}},
     {8992,{{16118}}},{8989,{{16080}}},{8995,{{16042}}},{8966,{{16080}}},
-    {4145,{{6509,5},{6512,5},{6510,5},{6511,5}}},{4701,{{10220}}},{4724,{{10220}}}}) do
+    {4145,{{6509,5},{6512,5},{6510,5},{6511,5}}},{4701,{{10220}}},{4724,{{10220}}},
+    {6822,{{11658,1},{11668,1},{11673,1},{12101,1}}}}) do
     render(sample[1],false,roleInspection[sample[1]])
     local goals=assert(addon.quests[sample[1]].objectiveKills)
     assert(#goals==#sample[2])
@@ -429,4 +455,42 @@ assert(oathstoneRoles.starter=="start" and oathstoneRoles.provided=="providedIte
 assert(addon.quests[4141].objectiveItems[1].itemID==11316 and not addon.quests[4141].providedItems)
 assert(addon.quests[4142].providedItems[1].itemID==11316 and not addon.quests[4142].objectiveItems,
     "the collected bloodpetal becomes an explicit supplied item only in its delivery quest")
+render(5089)
+local commandRoles={}
+for _,button in ipairs(ui.objectiveButtons)do if button:IsShown()then
+    local binding=button.objectiveBinding
+    if binding.id==12780 and binding.current()then commandRoles[binding.role]=binding.sourceField end
+end end
+assert(commandRoles.starter=="start"and commandRoles.provided=="providedItems",
+    "Drakkisath's command retains both starter and supplied-item bindings")
+render(5527)
+assert(#addon.quests[5527].objectiveItems==1 and addon.quests[5527].objectiveItems[1].itemID==22201,
+    "the exact reliquary identity is not substituted by a same-name different item")
+for _,button in ipairs(ui.objectiveButtons)do if button:IsShown()then
+    assert(button.objectiveBinding.id~=18539 and button.objectiveBinding.id~=18540,
+        "the neighbouring quest's supplied and sealed reliquaries do not leak into5527")
+end end
+render(5526)
+local reliquaryRoles={}
+for _,button in ipairs(ui.objectiveButtons)do if button:IsShown()then
+    local binding=button.objectiveBinding
+    if binding.current()then reliquaryRoles[binding.id]=binding.role end
+end end
+assert(reliquaryRoles[18539]=="provided"and reliquaryRoles[18540]=="objective"and not reliquaryRoles[22201],
+    "the neighbouring reliquary quest keeps its separate supplied and collected identities")
+render(7029)
+local vines=assert(addon.quests[7029].objectiveEvents)
+assert(#vines==1 and vines[1].npcID==13696 and vines[1].quantity==8 and contains("Vylestem Vines healed ×8"),
+    "healing eight vines remains an exact non-kill task")
+assert(not addon.quests[7029].objectiveKills and addon.quests[7029].requirementsKnown==false,
+    "healing does not become a slain objective or a confirmed availability gate")
+local vialRoles={}
+for _,button in ipairs(ui.objectiveButtons)do if button:IsShown()then
+    local binding=button.objectiveBinding
+    if binding.current()then vialRoles[binding.id]=binding.role end
+end end
+assert(vialRoles[17693]=="provided"and vialRoles[17696]=="objective",
+    "coated supplied and filled collected vials keep distinct identities and roles")
+assert(not addon.quests[6569].objectiveItems and not addon.quests[6569].providedItems,
+    "unverified eye item references remain held rather than invented quest roles")
 print("Reviewed quest sources UI: PASS (actual TOC; modeled routing and roles, no native acceptance)")

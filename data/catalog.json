@@ -18295,6 +18295,19 @@
           "itemID": 17693,
           "name": "Coated Cerulean Vial"
         }
+      ],
+      "objectiveEvents": [
+        {
+          "npcID": 13696,
+          "name": "Vylestem Vines healed",
+          "quantity": 8
+        }
+      ],
+      "objectiveItems": [
+        {
+          "itemID": 17696,
+          "name": "Filled Cerulean Vial"
+        }
       ]
     },
     {
@@ -20109,6 +20122,18 @@
       "factions": [
         "Alliance",
         "Horde"
+      ],
+      "objectiveItems": [
+        {
+          "itemID": 12712,
+          "name": "Warosh's Mojo"
+        }
+      ],
+      "providedItems": [
+        {
+          "itemID": 12730,
+          "name": "Warosh's Scroll"
+        }
       ]
     },
     {
@@ -20169,6 +20194,16 @@
       "storyline": [
         5065,
         4788
+      ],
+      "objectiveItems": [
+        {
+          "itemID": 12740,
+          "name": "Fifth Mosh'aru Tablet"
+        },
+        {
+          "itemID": 12741,
+          "name": "Sixth Mosh'aru Tablet"
+        }
       ]
     },
     {
@@ -20197,6 +20232,13 @@
       "factions": [
         "Alliance",
         "Horde"
+      ],
+      "objectiveItems": [
+        {
+          "itemID": 12530,
+          "name": "Spire Spider Egg",
+          "quantity": 15
+        }
       ]
     },
     {
@@ -20227,6 +20269,12 @@
         4981,
         4982,
         4983
+      ],
+      "objectiveItems": [
+        {
+          "itemID": 12345,
+          "name": "Bijou's Belongings"
+        }
       ]
     },
     {
@@ -20680,6 +20728,12 @@
       "factions": [
         "Alliance",
         "Horde"
+      ],
+      "providedItems": [
+        {
+          "itemID": 12710,
+          "name": "Glowing Hunk of the Beast's Flesh"
+        }
       ]
     },
     {
@@ -24456,6 +24510,18 @@
       "storyline": [
         4742,
         4743
+      ],
+      "objectiveItems": [
+        {
+          "itemID": 12324,
+          "name": "Forged Seal of Ascension"
+        }
+      ],
+      "providedItems": [
+        {
+          "itemID": 12339,
+          "name": "Vaelan's Gift"
+        }
       ]
     },
     {
@@ -24553,6 +24619,12 @@
       "storyline": [
         5089,
         5102
+      ],
+      "providedItems": [
+        {
+          "itemID": 12780,
+          "name": "General Drakkisath's Command"
+        }
       ]
     },
     {
@@ -24645,6 +24717,12 @@
         4766,
         4764,
         4765
+      ],
+      "providedItems": [
+        {
+          "itemID": 12437,
+          "name": "Ridgewell's Crate"
+        }
       ]
     },
     {
@@ -24788,6 +24866,12 @@
       "storyline": [
         4907,
         4734
+      ],
+      "providedItems": [
+        {
+          "itemID": 12286,
+          "name": "Eggscilloscope Prototype"
+        }
       ]
     },
     {
@@ -24871,6 +24955,12 @@
         4981,
         4982,
         4983
+      ],
+      "providedItems": [
+        {
+          "itemID": 12652,
+          "name": "Bijou's Reconnaissance Report"
+        }
       ]
     },
     {
@@ -24904,6 +24994,12 @@
         5001,
         5002,
         5081
+      ],
+      "providedItems": [
+        {
+          "itemID": 12770,
+          "name": "Bijou's Information"
+        }
       ]
     },
     {
@@ -25012,6 +25108,12 @@
         6568,
         6569,
         6570
+      ],
+      "providedItems": [
+        {
+          "itemID": 16785,
+          "name": "Rexxar's Testament"
+        }
       ]
     },
     {
@@ -25068,6 +25170,12 @@
         6568,
         6569,
         6570
+      ],
+      "providedItems": [
+        {
+          "itemID": 16787,
+          "name": "Amulet of Draconic Subversion"
+        }
       ]
     },
     {
@@ -25156,6 +25264,16 @@
       "storyline": [
         5065,
         4788
+      ],
+      "objectiveItems": [
+        {
+          "itemID": 12411,
+          "name": "Third Mosh'aru Tablet"
+        },
+        {
+          "itemID": 12412,
+          "name": "Fourth Mosh'aru Tablet"
+        }
       ]
     },
     {
@@ -25383,6 +25501,12 @@
         6403,
         6501,
         6502
+      ],
+      "providedItems": [
+        {
+          "itemID": 16662,
+          "name": "Fragment of the Dragon's Eye"
+        }
       ]
     },
     {
@@ -25456,6 +25580,12 @@
         6585,
         6601,
         6602
+      ],
+      "objectiveItems": [
+        {
+          "itemID": 16872,
+          "name": "The Skull of Axtroz"
+        }
       ]
     },
     {
@@ -25507,6 +25637,12 @@
         6585,
         6601,
         6602
+      ],
+      "providedItems": [
+        {
+          "itemID": 16888,
+          "name": "Dull Drakefire Amulet"
+        }
       ]
     },
     {
@@ -25573,6 +25709,28 @@
         6822,
         6823,
         6824
+      ],
+      "objectiveKills": [
+        {
+          "npcID": 11658,
+          "name": "Molten Giant",
+          "quantity": 1
+        },
+        {
+          "npcID": 11668,
+          "name": "Firelord",
+          "quantity": 1
+        },
+        {
+          "npcID": 11673,
+          "name": "Ancient Core Hound",
+          "quantity": 1
+        },
+        {
+          "npcID": 12101,
+          "name": "Lava Surger",
+          "quantity": 1
+        }
       ]
     },
     {
@@ -25705,6 +25863,24 @@
         6822,
         6823,
         6824
+      ],
+      "objectiveItems": [
+        {
+          "itemID": 17332,
+          "name": "Hand of Shazzrah"
+        },
+        {
+          "itemID": 17329,
+          "name": "Hand of Lucifron"
+        },
+        {
+          "itemID": 17331,
+          "name": "Hand of Gehennas"
+        },
+        {
+          "itemID": 17330,
+          "name": "Hand of Sulfuron"
+        }
       ]
     },
     {
@@ -29262,6 +29438,12 @@
       "storyline": [
         5527,
         5526
+      ],
+      "objectiveItems": [
+        {
+          "itemID": 22201,
+          "name": "Reliquary of Purity"
+        }
       ]
     },
     {
