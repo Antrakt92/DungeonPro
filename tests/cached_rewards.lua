@@ -160,6 +160,31 @@ check("Replacement native capabilities or catalogue identity cannot publish olde
     reset(); GetQuestLogRewardMoney = function() addon.quests[65] = { id = 65 }; return 0 end
     assert(addon.CachedQuestRewards(65) == nil)
 end)
+check("Character context and catalogue ownership survive every cached reward read", function()
+    for _, mutate in ipairs({
+        function() addon.char = {} end,
+        function() addon.db = {} end,
+        function() addon.quests = { [65] = addon.quests[65] } end,
+        function() addon.quests[65].id = 66 end,
+        function() addon.quests = nil end,
+        function() addon.InvalidateContext() end,
+    }) do
+        reset()
+        GetQuestLogRewardInfo = function() mutate(); return unpack(fixed, 1, 6) end
+        assert(addon.CachedQuestRewards(65) == nil, "stale reward survived item read")
+        reset()
+        local checks = 0
+        HaveQuestRewardData = function()
+            checks = checks + 1
+            if checks == 2 then mutate() end
+            return true
+        end
+        assert(addon.CachedQuestRewards(65) == nil, "stale reward survived final loaded guard")
+    end
+    reset()
+    addon.quests[65].id = 66
+    assert(addon.CachedQuestRewards(65) == nil and calls == 0, "wrong source identity read rewards")
+end)
 check("The hundredth item is bounded and any later malformed row discards earlier rows", function()
     fixedCount, choiceCount = 100, 0
     GetQuestLogRewardInfo = function(index, id) assert(id == 65); return "Reward", 123, 1, 2, true, 7000 + index end

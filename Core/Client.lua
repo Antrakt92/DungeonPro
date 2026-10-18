@@ -1422,17 +1422,26 @@ function addon.QuestRewards(id)
 end
 
 function addon.CachedQuestRewards(id)
+    local clean, read, generation = addon.Clean, addon.Read, contextGeneration
+    local character, database = addon.char, addon.db
     id = dialogueInteger(id, 1)
-    local catalog = id and addon.quests[id]
-    if not catalog then return nil end
+    local catalogue = clean(addon.quests, "table")
+    local catalog = id and catalogue and clean(rawget(catalogue, id), "table")
+    if not catalog or dialogueInteger(rawget(catalog, "id"), 1) ~= id then return nil end
     local api = { loaded = HaveQuestRewardData, locale = GetLocale, rewards = GetNumQuestLogRewards,
         choices = GetNumQuestLogChoices, fixed = GetQuestLogRewardInfo, choice = GetQuestLogChoiceInfo,
         money = GetQuestLogRewardMoney, xp = GetQuestLogRewardXP, secret = issecretvalue }
     local function unchanged()
-        return addon.quests[id] == catalog and api.loaded == HaveQuestRewardData and api.locale == GetLocale and
-            api.rewards == GetNumQuestLogRewards and api.choices == GetNumQuestLogChoices and
-            api.fixed == GetQuestLogRewardInfo and api.choice == GetQuestLogChoiceInfo and
-            api.money == GetQuestLogRewardMoney and api.xp == GetQuestLogRewardXP and api.secret == issecretvalue
+        local ok, same = pcall(function()
+            return contextGeneration == generation and addon.char == character and addon.db == database and
+                addon.Clean == clean and addon.Read == read and addon.quests == catalogue and
+                rawget(catalogue, id) == catalog and rawget(catalog, "id") == id and
+                api.loaded == HaveQuestRewardData and api.locale == GetLocale and
+                api.rewards == GetNumQuestLogRewards and api.choices == GetNumQuestLogChoices and
+                api.fixed == GetQuestLogRewardInfo and api.choice == GetQuestLogChoiceInfo and
+                api.money == GetQuestLogRewardMoney and api.xp == GetQuestLogRewardXP and api.secret == issecretvalue
+        end)
+        return ok and same == true
     end
     local locale = addon.Read(api.locale, "string")
     if not locale or #locale > 32 or not locale:find("%S") or not unchanged() then return nil end
