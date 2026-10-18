@@ -201,6 +201,9 @@ local reviewedItemRoles = {
     {877,"providedItems",{{5068}}}, {880,"objectiveItems",{{5098,8}}},
     {1150,"objectiveItems",{{5843},{5845}}}, {1151,"objectiveItems",{{5844}}},
     {1154,"objectiveItems",{{5860}}}, {1052,"providedItems",{{5539}}},
+    {4742,"objectiveItems",{{12336},{12335},{12337},{12219}}},
+    {8949,"objectiveItems",{{21982,25}}},
+    {5466,"providedItems",{{13752}}}, {7508,"providedItems",{{18513}}},
 }
 for _,sample in ipairs(reviewedItemRoles) do
     render(sample[1])
@@ -208,8 +211,8 @@ for _,sample in ipairs(reviewedItemRoles) do
         local found=false
         for _,button in ipairs(ui.objectiveButtons) do if button:IsShown() then
             local binding=button.objectiveBinding
-            if binding.id==item[1] then
-                assert(binding.sourceField==sample[2] and binding.current(), "reviewed item role is current")
+            if binding.id==item[1] and binding.sourceField==sample[2] then
+                assert(binding.current(), "reviewed item role is current")
                 assert(binding.role==(sample[2]=="providedItems" and "provided" or "objective"))
                 found=true
             end
@@ -247,4 +250,18 @@ assert(addon.quests[877].objectiveObjects[1].objectID==3737 and not addon.quests
 for _,id in ipairs({5726,5727,5729,877,880,1150,1151,1154,1052,261}) do
     assert(addon.quests[id].requirementsKnown==false, "new source roles do not authorize availability")
 end
+render(7508)
+local bladeRoles={}
+for _,button in ipairs(ui.objectiveButtons) do if button:IsShown() then
+    local binding=button.objectiveBinding
+    if binding.id==18513 and binding.current() then bladeRoles[binding.role]=binding.sourceField end
+end end
+assert(bladeRoles.starter=="start" and bladeRoles.provided=="providedItems",
+    "the same catalogue item has distinct starter and supplied-item bindings")
+render(8945)
+assert(contains("Ysida Freed"), "rescue task is visible as a non-kill event")
+assert(addon.quests[8945].objectiveEvents[1].npcID==16031 and not addon.quests[8945].objectiveEvents[1].quantity,
+    "rescue credit retains its typed NPC identity without an invented quantity")
+assert(not addon.quests[8945].objectiveKills and addon.quests[8945].requirementsKnown==false,
+    "freeing Ysida does not become killing her or authorize quest pickup")
 print("Reviewed quest sources UI: PASS (actual TOC; modeled routing and roles, no native acceptance)")

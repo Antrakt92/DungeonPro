@@ -19460,6 +19460,24 @@
       "storyline": [
         4742,
         4743
+      ],
+      "objectiveItems": [
+        {
+          "itemID": 12336,
+          "name": "Gemstone of Spirestone"
+        },
+        {
+          "itemID": 12335,
+          "name": "Gemstone of Smolderthorn"
+        },
+        {
+          "itemID": 12337,
+          "name": "Gemstone of Bloodaxe"
+        },
+        {
+          "itemID": 12219,
+          "name": "Unadorned Seal of Ascension"
+        }
       ]
     },
     {
@@ -20233,6 +20251,12 @@
         {
           "itemID": 13626,
           "name": "Human Head of Ras Frostwhisper"
+        }
+      ],
+      "providedItems": [
+        {
+          "itemID": 13752,
+          "name": "Soulbound Keepsake"
         }
       ]
     },
@@ -22099,6 +22123,12 @@
         [
           8950
         ]
+      ],
+      "objectiveEvents": [
+        {
+          "npcID": 16031,
+          "name": "Ysida Freed"
+        }
       ]
     },
     {
@@ -24921,6 +24951,13 @@
         [
           8950
         ]
+      ],
+      "objectiveItems": [
+        {
+          "itemID": 21982,
+          "name": "Ogre Warbeads",
+          "quantity": 25
+        }
       ]
     },
     {
@@ -24950,6 +24987,12 @@
       "storyline": [
         7508,
         7509
+      ],
+      "providedItems": [
+        {
+          "itemID": 18513,
+          "name": "A Dull and Flat Elven Blade"
+        }
       ]
     },
     {
