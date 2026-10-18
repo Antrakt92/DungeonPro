@@ -80,7 +80,7 @@ check("Bounded text remains fresh without overwriting the saved description", fu
     assert(description.text == "Saved description")
 end)
 check("Hidden missing failing or restricted panels never authorize native text reads", function()
-    open(); state.detail = false; assert(addon.DialogueObjectiveText(132) == nil and state.calls == 0)
+    open(); assert(addon.DialogueObjectiveText(132)); state.detail = false; assert(addon.DialogueObjectiveText(132) == nil and state.calls == 1)
     state.detail = true; assert(addon.DialogueObjectiveText(132) == nil)
     reset(); open(); state.shown = false; assert(addon.DialogueObjectiveText(132) == nil and state.calls == 0)
     reset(); open(); QuestFrame = nil; assert(addon.DialogueObjectiveText(132) == nil and state.calls == 0)
@@ -154,5 +154,22 @@ check("Localized summary never becomes a structured objective or saved log descr
     assert(addon.DialogueObjectiveText(132) == "Локальная цель задания")
     assert(structured[1].text == "Log objective" and rows[1].numRequired == 3)
     assert(addon.char.texts[132].text == "Saved description")
+end)
+check("Objective getter replacement cannot publish its detached previous result",function()
+    open();GetObjectiveText=function()
+        GetObjectiveText=function()return"New objective"end
+        return"Old objective"
+    end
+    assert(addon.DialogueObjectiveText(132)==nil)
+    assert(addon.DialogueObjectiveText(132)=="New objective")
+end)
+check("Visibility callbacks cannot dispatch an expired objective getter",function()
+    local armed=false
+    QuestFrameDetailPanel.IsShown=function()
+        if armed then armed=false;GetObjectiveText=function()return"New objective"end end
+        return state.detail
+    end
+    open();armed=true
+    assert(addon.DialogueObjectiveText(132)==nil and state.calls==0)
 end)
 print("Offered objective modeled checks passed: " .. total .. " (native client unverified)")

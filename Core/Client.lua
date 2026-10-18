@@ -137,7 +137,9 @@ local function dialogueScope()
     local id = dialogueInteger(addon.Read(GetQuestID, "number"), 1)
     local player = addon.Read(UnitGUID, "string", "player")
     local locale = addon.Read(GetLocale, "string")
-    if not id or not addon.quests[id] or not player or player == "" or #player > 256 or
+    local catalogue = addon.Clean(addon.quests, "table")
+    local definition = id and catalogue and addon.Clean(rawget(catalogue, id), "table")
+    if not definition or not player or player == "" or #player > 256 or
         not locale or locale == "" or #locale > 32 then return nil end
     return id, player, locale
 end
@@ -147,9 +149,24 @@ local function clearDialogueReward()
 end
 
 local function currentDialogueReward(snapshot)
-    if snapshot ~= dialogueReward or snapshot.generation ~= dialogueGeneration then return false end
+    local function owned()
+        local ok, same = pcall(function()
+            return snapshot == dialogueReward and snapshot.generation == dialogueGeneration and
+                addon.char == snapshot.character and addon.quests == snapshot.catalogue and
+                rawget(snapshot.catalogue, snapshot.id) == snapshot.definition and
+                GetQuestID == snapshot.idGetter and UnitGUID == snapshot.playerGetter and GetLocale == snapshot.localeGetter and
+                issecretvalue == snapshot.checker and addon.Clean == snapshot.clean and addon.Read == snapshot.read and
+                QuestFrame == snapshot.frame and QuestFrameDetailPanel == snapshot.panel and
+                snapshot.frame.IsShown == snapshot.frameShown and snapshot.panel.IsShown == snapshot.panelShown
+        end)
+        return ok and same == true
+    end
+    if not owned() then
+        if dialogueReward == snapshot then clearDialogueReward() end
+        return false
+    end
     local id, player, locale = dialogueScope()
-    local current = snapshot == dialogueReward and snapshot.generation == dialogueGeneration and
+    local current = owned() and
         id == snapshot.id and player == snapshot.player and locale == snapshot.locale
     if not current and snapshot == dialogueReward then clearDialogueReward() end
     return current
@@ -157,10 +174,14 @@ end
 
 local function liveDialogueReward(snapshot)
     -- A matching native quest ID can outlive its closed detail window.
-    local shown = addon.Read(function() return QuestFrame:IsShown() end, "boolean") == true and
-        addon.Read(function() return QuestFrameDetailPanel:IsShown() end, "boolean") == true
-    if shown and currentDialogueReward(snapshot) then return true end
-    if dialogueReward == snapshot then clearDialogueReward() end
+    if not currentDialogueReward(snapshot) then return false end
+    local shown = addon.Read(snapshot.frameShown, "boolean", snapshot.frame)
+    local detail = addon.Read(snapshot.panelShown, "boolean", snapshot.panel)
+    if not currentDialogueReward(snapshot) then return false end
+    if shown == true and detail == true then snapshot.observedVisible = true; return true end
+    -- Native handlers may show these panels after the event reaches the addon.
+    if (shown == nil or detail == nil or snapshot.observedVisible) and dialogueReward == snapshot then clearDialogueReward() end
+    return false
 end
 
 function addon.DialogueRewardEvent(event)
@@ -168,9 +189,16 @@ function addon.DialogueRewardEvent(event)
     if event == "QUEST_DETAIL" then
         clearDialogueReward()
         local generation = dialogueGeneration
+        local snapshot = { generation = generation, character = addon.char, catalogue = addon.Clean(addon.quests, "table"),
+            idGetter = GetQuestID, playerGetter = UnitGUID, localeGetter = GetLocale, checker = issecretvalue,
+            clean = addon.Clean, read = addon.Read, frame = QuestFrame, panel = QuestFrameDetailPanel }
+        snapshot.frameShown = addon.Read(function() return snapshot.frame.IsShown end, "function")
+        snapshot.panelShown = addon.Read(function() return snapshot.panel.IsShown end, "function")
         local id, player, locale = dialogueScope()
-        if not id or generation ~= dialogueGeneration then return end
-        local snapshot = { id = id, player = player, locale = locale, generation = generation }
+        if not id or not snapshot.catalogue or generation ~= dialogueGeneration then return end
+        snapshot.id, snapshot.player, snapshot.locale = id, player, locale
+        snapshot.definition = addon.Clean(rawget(snapshot.catalogue, id), "table")
+        if not snapshot.definition then return end
         dialogueReward = snapshot
         currentDialogueReward(snapshot)
     elseif event == "QUEST_FINISHED" or event == "QUEST_PROGRESS" or event == "QUEST_COMPLETE" or
@@ -186,23 +214,35 @@ function addon.DialogueRewards(id)
     id = dialogueInteger(id, 1)
     local snapshot = dialogueReward
     if not id or not snapshot or snapshot.id ~= id or not currentDialogueReward(snapshot) then return nil end
+    local quest = addon.Clean(C_QuestLog, "table")
+    local api = { quest = C_QuestLog, visible = quest and rawget(quest, "ShouldShowQuestRewards"),
+        rewards = GetNumQuestRewards, choices = GetNumQuestChoices, items = GetQuestItemInfo,
+        money = GetRewardMoney, xp = GetRewardXP }
+    local function capabilities()
+        local ok, same = pcall(function()
+            return C_QuestLog == api.quest and (not quest or rawget(quest, "ShouldShowQuestRewards") == api.visible) and
+                GetNumQuestRewards == api.rewards and GetNumQuestChoices == api.choices and GetQuestItemInfo == api.items and
+                GetRewardMoney == api.money and GetRewardXP == api.xp
+        end)
+        return ok and same == true
+    end
     local function live()
-        return liveDialogueReward(snapshot)
+        return capabilities() and liveDialogueReward(snapshot) and capabilities()
     end
     if not live() then return nil end
-    local visible = addon.Read(C_QuestLog and C_QuestLog.ShouldShowQuestRewards, "boolean", id)
+    local visible = addon.Read(api.visible, "boolean", id)
     if not live() then return nil end
     if visible == nil then return nil end
     if not visible then return { hidden = true, source = "dialogue" } end
-    local rewards = dialogueInteger(addon.Read(GetNumQuestRewards, "number"), 0, 100)
+    local rewards = dialogueInteger(addon.Read(api.rewards, "number"), 0, 100)
     if not live() then return nil end
-    local choices = dialogueInteger(addon.Read(GetNumQuestChoices, "number"), 0, 100)
+    local choices = dialogueInteger(addon.Read(api.choices, "number"), 0, 100)
     if not rewards or not choices or not live() then return nil end
     local function items(kind, count)
-        if count > 0 and type(GetQuestItemInfo) ~= "function" then return nil end
+        if count > 0 and type(api.items) ~= "function" then return nil end
         local result = {}
         for i = 1, count do
-            local ok, name, texture, amount, quality, usable, itemID = pcall(GetQuestItemInfo, kind, i)
+            local ok, name, texture, amount, quality, usable, itemID = pcall(api.items, kind, i)
             if not ok or not live() then return nil end
             if type(issecretvalue) == "function" then
                 local fields = { name, texture, amount, quality, usable, itemID }
@@ -228,9 +268,9 @@ function addon.DialogueRewards(id)
     if not fixed then return nil end
     local choice = items("choice", choices)
     if not choice then return nil end
-    local money = dialogueInteger(addon.Read(GetRewardMoney, "number"), 0)
+    local money = dialogueInteger(addon.Read(api.money, "number"), 0)
     if not live() then return nil end
-    local xp = dialogueInteger(addon.Read(GetRewardXP, "number"), 0)
+    local xp = dialogueInteger(addon.Read(api.xp, "number"), 0)
     if not live() then return nil end
     return { items = fixed, choices = choice, money = money, xp = xp, source = "dialogue" }
 end
@@ -238,24 +278,40 @@ end
 function addon.DialogueObjectiveText(id)
     id = dialogueInteger(id, 1)
     local snapshot = dialogueReward
+    local getter, provider = addon.Clean(GetObjectiveText, "function"), addon.DialogueObjectiveText
+    local function capability()
+        local ok, same = pcall(function() return GetObjectiveText == getter and addon.DialogueObjectiveText == provider end)
+        return ok and same == true
+    end
+    local function live()
+        return capability() and liveDialogueReward(snapshot) and capability()
+    end
     if not id or not snapshot or snapshot.id ~= id or not currentDialogueReward(snapshot) or
-        not liveDialogueReward(snapshot) then return nil end
+        not getter or not live() then return nil end
     -- Offered summary text is separate from accepted quest objective counters.
-    local text = addon.Read(GetObjectiveText, "string")
-    if not liveDialogueReward(snapshot) then return nil end
+    local text = addon.Read(getter, "string")
+    if not live() then return nil end
     if text and text ~= "" and #text <= 30000 then return text end
 end
 
 function addon.DialoguePortrait(id)
     id = dialogueInteger(id, 1)
     local snapshot = dialogueReward
+    local getter, provider = addon.Clean(GetQuestPortraitGiver, "function"), addon.DialoguePortrait
+    local function capability()
+        local ok, same = pcall(function() return GetQuestPortraitGiver == getter and addon.DialoguePortrait == provider end)
+        return ok and same == true
+    end
+    local function live()
+        return capability() and liveDialogueReward(snapshot) and capability()
+    end
     if not id or not snapshot or snapshot.id ~= id or not currentDialogueReward(snapshot) or
-        not liveDialogueReward(snapshot) then return nil end
-    local display = addon.Read(GetQuestPortraitGiver, "number")
-    if not liveDialogueReward(snapshot) then return nil end
+        not getter or not live() then return nil end
+    local display = addon.Read(getter, "number")
+    if not live() then return nil end
     if display == 0 or display == -1 then return { hidden = true, source = "dialogue" } end
     display = dialogueInteger(display, 1)
-    if display then return { displayID = display, source = "dialogue" } end
+    if display and live() then return { displayID = display, source = "dialogue" } end
 end
 
 function addon.ClearOffers()
@@ -1098,19 +1154,27 @@ end
 function addon.Description(id)
     id = dialogueInteger(id, 1)
     if not id then return addon.L("NO_TEXT") end
+    local generation, clean, read, checker, provider = textCaptureGeneration, addon.Clean, addon.Read, issecretvalue, addon.Description
     local character = addon.Clean(addon.char, "table")
     local texts = character and addon.Clean(character.texts, "table")
     local getter = addon.Clean(GetQuestLogQuestText, "function")
     local scope, locale = selectedLogReadScope(id)
     local function owned()
-        return addon.Clean(addon.char, "table") == character and
+        local valid = textCaptureGeneration == generation and addon.Clean(addon.char, "table") == character and
             (not character or addon.Clean(character.texts, "table") == texts) and
             addon.Clean(GetQuestLogQuestText, "function") == getter
+        if not valid then return false end
+        local ok, same = pcall(function()
+            return textCaptureGeneration == generation and addon.Clean == clean and addon.Read == read and
+                issecretvalue == checker and addon.Description == provider and rawget(addon, "char") == character and
+                (not character or rawget(character, "texts") == texts) and GetQuestLogQuestText == getter
+        end)
+        return ok and same == true
     end
     -- The text reader uses the current selection; never change it to fetch text.
     if scope and owned() and scope() then
         local text = addon.Read(getter, "string")
-        if text and text ~= "" and #text <= 30000 and scope() and owned() then
+        if text and #text <= 30000 and text:find("%S") and scope() and owned() then
             if locale and texts then texts[id] = { text = text, locale = locale } end
             return text
         end
@@ -1122,10 +1186,18 @@ function addon.Description(id)
     local data = texts and addon.Clean(texts[id], "table")
     if data and locale and addon.Clean(data.locale, "string") == locale then
         local text = addon.Clean(data.text, "string")
-        if text and text ~= "" and #text <= 30000 and
+        if text and #text <= 30000 and text:find("%S") and
             addon.Read(localeGetter, "string") == locale and addon.Clean(GetLocale, "function") == localeGetter and
             issecretvalue == checker and addon.Clean(addon.char, "table") == character and
-            addon.Clean(character.texts, "table") == texts and addon.Clean(texts[id], "table") == data then return text end
+            addon.Clean(character.texts, "table") == texts and addon.Clean(texts[id], "table") == data then
+            local ok, same = pcall(function()
+                return addon.Clean == clean and addon.Read == read and addon.Description == provider and
+                    issecretvalue == checker and GetLocale == localeGetter and rawequal(rawget(addon, "char"), character) and
+                    rawequal(rawget(character, "texts"), texts) and rawequal(rawget(texts, id), data) and
+                    rawequal(rawget(data, "text"), text) and rawequal(rawget(data, "locale"), locale)
+            end)
+            if ok and same == true then return text end
+        end
     end
     return addon.L("NO_TEXT")
 end
@@ -1403,6 +1475,7 @@ end
 function addon.CaptureQuestText()
     local generation = {}
     textCaptureGeneration = generation
+    local clean, read, capture = addon.Clean, addon.Read, addon.CaptureQuestText
     local character, quests = addon.Clean(addon.char, "table"), addon.Clean(addon.quests, "table")
     local texts = character and addon.Clean(rawget(character, "texts"), "table")
     local idGetter, localeGetter, textGetter = addon.Clean(GetQuestID, "function"),
@@ -1414,11 +1487,21 @@ function addon.CaptureQuestText()
     local locale = addon.Read(localeGetter, "string")
     if not definition or not locale or #locale > 32 or not locale:find("%S") then return end
     local function owned()
-        return textCaptureGeneration == generation and issecretvalue == checker and
+        local valid = textCaptureGeneration == generation and issecretvalue == checker and
             addon.Clean(addon.char, "table") == character and addon.Clean(rawget(character, "texts"), "table") == texts and
             addon.Clean(addon.quests, "table") == quests and addon.Clean(rawget(quests, id), "table") == definition and
             addon.Clean(GetQuestID, "function") == idGetter and addon.Clean(GetLocale, "function") == localeGetter and
             addon.Clean(GetQuestText, "function") == textGetter
+        if not valid then return false end
+        -- Sanitizers may capture newer text or replace an earlier destination.
+        local ok, same = pcall(function()
+            return textCaptureGeneration == generation and issecretvalue == checker and
+                addon.Clean == clean and addon.Read == read and addon.CaptureQuestText == capture and
+                rawget(addon, "char") == character and rawget(character, "texts") == texts and
+                rawget(addon, "quests") == quests and rawget(quests, id) == definition and
+                GetQuestID == idGetter and GetLocale == localeGetter and GetQuestText == textGetter
+        end)
+        return ok and same == true
     end
     local function current()
         if not owned() then return false end

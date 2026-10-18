@@ -180,4 +180,19 @@ check("Final sanitizer drift is rejected and a stable reload recovers without ch
     setup(); local snapshot = addon.quests[2945]
     assert(addon.HeldQuestPayment(2945).amount == 300 and addon.quests[2945] == snapshot and snapshot.requiredMoney == nil)
 end)
+check("Final native held read cannot return payment after its caller owner expires", function()
+    local owner, afterFormat = true, 0
+    local held = C_QuestLog.IsOnQuest
+    C_QuestLog.IsOnQuest = function(...)
+        local result = held(...)
+        if fixture.formats > 0 then
+            afterFormat = afterFormat + 1
+            if afterFormat == 4 then owner = false end
+        end
+        return result
+    end
+    assert(addon.HeldQuestPayment(2945, function() return owner end) == nil,
+        "payment escaped the final native read with an expired caller")
+    assert(not owner and afterFormat == 4)
+end)
 print("Held quest payment modeled checks passed: " .. total .. " (no native money validation)")

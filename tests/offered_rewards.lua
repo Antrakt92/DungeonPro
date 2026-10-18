@@ -78,9 +78,9 @@ check("Unavailable restricted and failing reward visibility never become hidden 
     C_QuestLog = nil; assert(addon.DialogueRewards(65) == nil)
 end)
 check("Hidden or missing dialogue panels invalidate a stale matching native quest ID", function()
-    open(); state.shown = false; assert(addon.DialogueRewards(65) == nil)
+    open(); assert(addon.DialogueRewards(65)); state.shown = false; assert(addon.DialogueRewards(65) == nil)
     state.shown = true; assert(addon.DialogueRewards(65) == nil)
-    open(); state.detail = false; assert(addon.DialogueRewards(65) == nil)
+    open(); assert(addon.DialogueRewards(65)); state.detail = false; assert(addon.DialogueRewards(65) == nil)
     reset(); open(); QuestFrame = nil; assert(addon.DialogueRewards(65) == nil)
     reset(); open(); QuestFrameDetailPanel.IsShown = function() return secret end
     assert(addon.DialogueRewards(65) == nil)
@@ -195,5 +195,75 @@ check("Bad capture identity and reentrant detail capture never authorize rewards
     end
     reset(); GetQuestID = function() addon.DialogueRewardEvent("QUEST_FINISHED"); return 65 end
     open(); assert(addon.DialogueRewards(65) == nil)
+end)
+check("Offered rewards cannot cross character catalogue definition or native scope replacement", function()
+    for _,kind in ipairs({"character","catalogue","definition","idGetter","localeGetter","playerGetter","checker"})do
+        reset();open()
+        itemHook=function()
+            itemHook=nil
+            if kind=="character"then addon.char={}
+            elseif kind=="catalogue"then addon.quests={[65]=addon.quests[65]}
+            elseif kind=="definition"then addon.quests[65]={}
+            elseif kind=="idGetter"then GetQuestID=function()return state.id end
+            elseif kind=="localeGetter"then GetLocale=function()return state.locale end
+            elseif kind=="playerGetter"then UnitGUID=function()return state.player end
+            else issecretvalue=function()return false end end
+        end
+        assert(addon.DialogueRewards(65)==nil,kind.." returned a stale dialogue reward DTO")
+    end
+end)
+check("Offered reward getters cannot mix capabilities within one detached snapshot", function()
+    for _,kind in ipairs({"items","choices","fixedCount","choiceCount","money","xp","visibility","namespace"})do
+        reset();open()
+        itemHook=function()
+            itemHook=nil
+            if kind=="items"or kind=="choices"then GetQuestItemInfo=function()return"New",999,1,1,true,9999 end
+            elseif kind=="fixedCount"then GetNumQuestRewards=function()return 0 end
+            elseif kind=="choiceCount"then GetNumQuestChoices=function()return 0 end
+            elseif kind=="money"then GetRewardMoney=function()return 999 end
+            elseif kind=="xp"then GetRewardXP=function()return 999 end
+            elseif kind=="visibility"then C_QuestLog.ShouldShowQuestRewards=function()return false end
+            else C_QuestLog={ShouldShowQuestRewards=C_QuestLog.ShouldShowQuestRewards}end
+        end
+        assert(addon.DialogueRewards(65)==nil,kind.." mixed reward producers")
+    end
+end)
+check("Native visibility validation cannot authorize a replaced reward producer",function()
+    open()
+    QuestFrameDetailPanel.IsShown=function()
+        GetRewardXP=function()return 999 end
+        return true
+    end
+    assert(addon.DialogueRewards(65)==nil and state.reads==0)
+end)
+check("Malformed reward visibility namespaces quietly remain unavailable",function()
+    for _,value in ipairs({false,3,"missing",secret})do
+        reset();open();C_QuestLog=value
+        assert(addon.DialogueRewards(65)==nil and state.reads==0)
+    end
+end)
+check("Offered event-before-show survives early reads by every dialogue consumer",function()
+    for _,role in ipairs({"DialogueRewards","DialogueObjectiveText","DialoguePortrait"})do
+        reset();state.shown,state.detail=false,false
+        GetObjectiveText=function()return"Objective summary"end
+        GetQuestPortraitGiver=function()return 1234 end
+        open();assert(addon[role](65)==nil and state.reads==0)
+        assert(addon.DialogueRewards(132)==nil,"wrong consumer must not clear pending evidence")
+        state.shown,state.detail=true,true
+        assert(addon[role](65),role.." permanently erased pending offered evidence")
+        state.detail=false;assert(addon[role](65)==nil)
+        state.detail=true;assert(addon[role](65)==nil,"observed close must remain terminal")
+    end
+end)
+check("Unknown visibility and terminal pending identity loss cannot resurrect offered evidence",function()
+    for _,kind in ipairs({"unknown","restricted","player","getter"})do
+        reset();state.shown,state.detail=false,false;open()
+        local old=QuestFrame.IsShown
+        if kind=="unknown"then state.shown=nil elseif kind=="restricted"then state.shown=secret
+        elseif kind=="player"then state.player="Player-other"else QuestFrame.IsShown=function()return false end end
+        assert(addon.DialogueRewards(65)==nil)
+        state.shown,state.detail,state.player=true,true,"Player-1-ABC";QuestFrame.IsShown=old
+        assert(addon.DialogueRewards(65)==nil,kind.." revived stale pending evidence")
+    end
 end)
 print("Offered reward modeled checks passed: " .. total .. " (native client unverified)")

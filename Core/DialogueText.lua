@@ -90,15 +90,11 @@ local function stageScope(id, ownerCurrent)
         return true
     end
     local function current()
-        local valid = validate()
-        return valid == true
-    end
-    local function readable()
         local valid, reason = validate()
         if not valid and reason ~= "owner" and (reason ~= "visibility" or s.observedVisible) then abandon(s) end
-        return valid
+        return valid == true
     end
-    return s, current, readable
+    return s, current, current
 end
 
 dialogueText = function(id, ownerCurrent)

@@ -72,9 +72,9 @@ check("No detail token or wrong unknown invalid quest IDs never read an unrelate
     assert(addon.DialoguePortrait(nil) == nil and state.reads == 0)
 end)
 check("Hidden missing throwing or restricted ordinary panels invalidate matching raw quest ID", function()
-    open(); state.shown = false; assert(read() == nil and state.reads == 0)
+    open(); assert(read()); state.shown = false; assert(read() == nil and state.reads == 1)
     state.shown = true; assert(read() == nil)
-    reset(); open(); state.detail = false; assert(read() == nil and state.reads == 0)
+    reset(); open(); assert(read()); state.detail = false; assert(read() == nil and state.reads == 1)
     reset(); open(); QuestFrame = nil; assert(read() == nil and state.reads == 0)
     reset(); open(); QuestFrameDetailPanel.IsShown = function() return secret end
     assert(read() == nil and state.reads == 0)
@@ -122,5 +122,22 @@ end)
 check("Reentrant visible-panel checks cannot authorize stale portrait reads", function()
     open(); QuestFrameDetailPanel.IsShown = function() addon.DialogueRewardEvent("QUEST_FINISHED"); return true end
     assert(read() == nil and state.reads == 0)
+end)
+check("Portrait getter replacement cannot publish its detached previous display",function()
+    open();GetQuestPortraitGiver=function()
+        GetQuestPortraitGiver=function()return 222 end
+        return 111
+    end
+    assert(read()==nil)
+    assert(read().displayID==222)
+end)
+check("Visibility callbacks cannot dispatch an expired portrait getter",function()
+    local armed=false
+    QuestFrameDetailPanel.IsShown=function()
+        if armed then armed=false;GetQuestPortraitGiver=function()return 222 end end
+        return state.detail
+    end
+    open();armed=true
+    assert(read()==nil and state.reads==0)
 end)
 print("Offered portrait modeled checks passed: " .. total .. " (native client unverified)")

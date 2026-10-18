@@ -59,6 +59,8 @@ local function payment(id, ownerCurrent)
         -- Index/locale readers can reenter and release the quest after the first
         -- held check. Finish with fresh held evidence, then raw identities.
         if read(held, "boolean", id) ~= true then return false end
+        -- The native ownership readers can also expire only the caller's view.
+        if scope and read(scope, "boolean") ~= true then return false end
         -- Caller checks and sanitizers can replace a formerly absent formatter.
         return identities()
     end

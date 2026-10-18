@@ -280,5 +280,16 @@ check("Stage validation cannot invoke a prose getter replaced during its native 
     assert(f.rewardReads==0,"Expired prose getter invoked after stage validation replaced it")
     assert(addon.DialogueTurnInPortrait(65).displayID==4321)
 end)
+check("Retained text and portrait proofs retire an observed closed native stage",function()
+    for _,role in ipairs({"text","portrait"})do
+        setup();open("completion")
+        local dto=assert(role=="text"and addon.DialogueText(65)or addon.DialogueTurnInPortrait(65))
+        f.shown=false;assert(not dto.current())
+        f.shown=true
+        assert(not dto.current(),role.." resurrected a stage already observed closed")
+        assert(addon.DialogueText(65)==nil and addon.DialogueTurnInPortrait(65)==nil)
+        open("completion");assert(addon.DialogueText(65))
+    end
+end)
 issecretvalue=nil
 print("Dialogue stage text modeled checks passed: "..total.." (native client unverified)")
