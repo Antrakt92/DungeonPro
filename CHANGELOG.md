@@ -1,6 +1,17 @@
 # Changelog
 
-## 0.1.0 - 16-Oct-2026 — Development preview
+## 0.1.0 - 18-Oct-2026 — First public Beta
+
+- Browse dungeon quests, inspect related steps and plan known prerequisites.
+- Show character quest states, objectives, starter sources, rewards and carried
+  items while keeping unverified requirements and missing locations explicit.
+- Follow known quest-giver and entrance locations with map guidance, a direction
+  arrow and optional TomTom support.
+- Use ten interface languages, including translated dungeon and quest titles.
+- Added clearer source warnings, source-item instructions and reviewed NPC and
+  object locations. Quest coverage remains incomplete.
+
+### Development preview — 16-Oct-2026
 
 - Made dungeon quest counts follow Mine / All, consistently in cards and quest
   overviews.
