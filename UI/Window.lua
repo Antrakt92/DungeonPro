@@ -466,6 +466,50 @@ function UI:SetFooterLabel(control, key)
     if control.caption then control.caption:SetText(addon.L(key)) end
 end
 
+function UI:QuestLevelPalette(questLevel, ownerCurrent)
+    local levelGetter, effectiveGetter, trivialGetter = UnitLevel, UnitEffectiveLevel, UnitQuestTrivialLevelRange
+    local colorGetter, checker = GetQuestDifficultyColor, issecretvalue
+    local function number(getter, minimum)
+        local value = addon.Read(getter, "number", "player")
+        return value and value >= minimum and value <= 9007199254740991 and value % 1 == 0 and value or nil
+    end
+    local level = number(levelGetter, 1)
+    local effective = number(effectiveGetter, 1)
+    local trivial = number(trivialGetter, 0)
+    local color, components, hex
+    local function current()
+        if not ownerCurrent() or UnitLevel ~= levelGetter or UnitEffectiveLevel ~= effectiveGetter or
+            UnitQuestTrivialLevelRange ~= trivialGetter or GetQuestDifficultyColor ~= colorGetter or issecretvalue ~= checker then return false end
+        local freshLevel = number(levelGetter, 1)
+        local ok, same = pcall(function()
+            if color and components then
+                for key, value in pairs(components) do if rawget(color, key) ~= value then return false end end
+            end
+            return ownerCurrent() and UnitLevel == levelGetter and UnitEffectiveLevel == effectiveGetter and
+                UnitQuestTrivialLevelRange == trivialGetter and GetQuestDifficultyColor == colorGetter and
+                issecretvalue == checker and freshLevel == level
+        end)
+        return ok and same == true
+    end
+    if not current() then return nil end
+    if level and questLevel then
+        color = addon.Read(colorGetter, "table", questLevel)
+        if not current() then return nil end
+        local afterEffective, afterTrivial = number(effectiveGetter, 1), number(trivialGetter, 0)
+        if not current() or afterEffective ~= effective or afterTrivial ~= trivial then return nil end
+        if color then
+            local r, g, b = addon.Clean(rawget(color, "r"), "number"), addon.Clean(rawget(color, "g"), "number"), addon.Clean(rawget(color, "b"), "number")
+            if not current() then return nil end
+            if r and g and b and r >= 0 and r <= 1 and g >= 0 and g <= 1 and b >= 0 and b <= 1 then
+                components = { r = r, g = g, b = b }
+                if not current() then return nil end
+                hex = string.format("%02x%02x%02x", math.floor(r * 255 + .5), math.floor(g * 255 + .5), math.floor(b * 255 + .5))
+            end
+        end
+    end
+    return { level = level, difficulty = hex, current = current }
+end
+
 local LANGUAGE_CHOICES = { { "auto" }, { "enUS", "English" }, { "ruRU", "Русский" }, { "deDE", "Deutsch" },
         { "frFR", "Français" }, { "esES", "Español" }, { "itIT", "Italiano" }, { "ptBR", "Português" },
         { "koKR", "한국어" }, { "zhCN", "简体中文" }, { "zhTW", "繁體中文" } }
@@ -2835,33 +2879,39 @@ function UI:RefreshDetail()
                 end) or not write(control, "Show") then return end
             y = y + height + 8
         end
-        local metadataDB, metadataLocalize = addon.db, addon.L
+        local metadataDB, metadataLocalize, metadataChecker = addon.db, addon.L, issecretvalue
         local metadataLocale = metadataDB and rawget(metadataDB, "locale")
-        local minimum = addon.Clean(rawget(q, "minLevel"), "number")
-        local questLevel = addon.Clean(rawget(q, "level"), "number")
+        local rawMinimum, rawQuestLevel = rawget(q, "minLevel"), rawget(q, "level")
+        local minimum = addon.Clean(rawMinimum, "number")
+        local questLevel = addon.Clean(rawQuestLevel, "number")
         local rawRepeatable = rawget(q, "repeatable")
         local repeatable = addon.Clean(rawRepeatable, "boolean")
         if not (questLevel and questLevel > 0 and questLevel <= 9007199254740991 and questLevel % 1 == 0) then questLevel = nil end
-        if not (minimum and minimum > 0 and minimum % 1 == 0) then minimum = nil end
+        if not (minimum and minimum > 0 and minimum <= 9007199254740991 and minimum % 1 == 0) then minimum = nil end
         local metadataParts = {}
-        local function metadataCurrent()
+        local function metadataBaseCurrent()
             local ok, same = pcall(function()
-                return portraitCardCurrent() and addon.quests[id] == definition and addon.L == metadataLocalize and
+                return portraitCardCurrent() and addon.quests[id] == definition and addon.L == metadataLocalize and issecretvalue == metadataChecker and
                     addon.db == metadataDB and (not metadataDB or rawget(metadataDB, "locale") == metadataLocale) and
-                    (not questLevel or rawget(q, "level") == questLevel) and (not minimum or rawget(q, "minLevel") == minimum) and
+                    rawequal(rawget(q, "level"), rawQuestLevel) and rawequal(rawget(q, "minLevel"), rawMinimum) and
                     rawequal(rawget(q, "repeatable"), rawRepeatable)
             end)
             return ok and same == true
         end
+        local palette = self:QuestLevelPalette(questLevel, metadataBaseCurrent)
+        if not palette then return end
+        local function metadataCurrent() return metadataBaseCurrent() and palette.current() end
         if minimum or questLevel then
             if not metadataCurrent() then return end
             if questLevel then
                 local value = addon.Read(metadataLocalize, "string", "DETAIL_LEVEL", questLevel)
+                if value and value:find("%S") and palette.difficulty then value = "|cff" .. palette.difficulty .. value .. "|r" end
                 if value and value:find("%S") then metadataParts[#metadataParts + 1] = value end
             end
             if not metadataCurrent() then return end
             if minimum then
                 local value = addon.Read(metadataLocalize, "string", "DETAIL_MIN_LEVEL", minimum)
+                if value and value:find("%S") and palette.level then value = "|cff" .. (palette.level >= minimum and "66dd99" or "ff5555") .. value .. "|r" end
                 if value and value:find("%S") then metadataParts[#metadataParts + 1] = value end
             end
             if not metadataCurrent() then return end

@@ -60,6 +60,7 @@ def main():
     run(lua, "tests/quest_detail_ui.lua")
     run(lua, "tests/minimal_detail_ui.lua")
     run(lua, "tests/right_pane_ui.lua")
+    run(lua, "tests/quest_level_colors_ui.lua")
     run(lua, "tests/detail_sources_ui.lua")
     run(lua, "tests/detail_visual.lua", "check")
     run(lua, "tests/quest_payment.lua")

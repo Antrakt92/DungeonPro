@@ -126,6 +126,10 @@ Level ranges are provisional recommendations.
   heading routes to the dungeon. Hover for the destination or the reason it is
   unavailable; these actions do not confirm quest availability.
   The detail pane labels the quest level and required character level separately.
+  Quest level uses the game's difficulty color for your current character.
+  Required level is red below the minimum and green when the level requirement
+  is met. These colors do not confirm the other conditions for accepting a quest;
+  unreadable levels or unavailable difficulty colors remain neutral.
   Unknown giver locations are highlighted, and hovering the unavailable visit
   action explains why it cannot be used. Item-started quests show the starter
   item and its known sources directly; missing sources stay visibly unknown.

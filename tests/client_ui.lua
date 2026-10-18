@@ -1069,7 +1069,7 @@ check("All-character inspection retains paladin class and level limits without r
     local function shown(value)
         for _, line in ipairs(ui.details) do
             if line.shown then
-                local text = line.text:gsub("|A:[^|]+|a ", "")
+                local text = line.text:gsub("|A:[^|]+|a ", ""):gsub("|c%x%x%x%x%x%x%x%x", ""):gsub("|r", "")
                 if text:find(value, 1, true) then return true end
             end
         end
