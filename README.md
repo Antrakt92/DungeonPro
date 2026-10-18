@@ -113,7 +113,8 @@ Level ranges are provisional recommendations.
   The Wowhead link sits beside the quest title.
   Select a quest to expand its related steps in place, then select any step to
   read its details without losing the opened list. Completed steps remain visible.
-  A faction crest follows faction-specific quest names. A chevron identifies
+  Faction and class icons follow restricted quest names, so class-only quests
+  are recognizable in the list. A chevron identifies
   expandable quest chains and changes direction while their steps are open.
   Indented branches connect to their target; inside an expanded branch, a map
   badge identifies quests listed for the selected dungeon.

@@ -1,6 +1,8 @@
 local _, addon = ...
 local Info = {}
 addon.QuestRowInfo = Info
+local CLASS = { WARRIOR=true, PALADIN=true, HUNTER=true, ROGUE=true, PRIEST=true, DEATHKNIGHT=true,
+    SHAMAN=true, MAGE=true, WARLOCK=true, MONK=true, DRUID=true, DEMONHUNTER=true, EVOKER=true }
 
 function Info.Get(quests, questID)
     local clean, read, checker, getter = addon.Clean, addon.Read, issecretvalue, Info.Get
@@ -39,6 +41,30 @@ function Info.Get(quests, questID)
     end
     if not factionValid then faction = nil end
 
+    local sourceClasses, classesValid = list(definition, "classes")
+    local classes, seenClasses, classKeyCount = {}, {}, 0
+    if sourceClasses then
+        for key in next, sourceClasses do
+            classKeyCount = classKeyCount + 1
+            if classKeyCount > 100 then classesValid = false; break end
+            local index = clean(key, "number")
+            if not index or index < 1 or index > #sourceClasses or index % 1 ~= 0 then classesValid = false end
+        end
+        if classKeyCount ~= #sourceClasses then classesValid = false end
+        for index = 1, math.min(#sourceClasses, 100) do
+            local token = clean(keep(sourceClasses, index), "string")
+            if not token or not CLASS[token] then classesValid = false
+            elseif not seenClasses[token] then classes[#classes + 1] = token; seenClasses[token] = true end
+        end
+    end
+    if not classesValid then classes = {} end
+    local function classKeysCurrent()
+        if not sourceClasses then return true end
+        local count = 0
+        for _ in next, sourceClasses do count = count + 1; if count > 100 then break end end
+        return count == classKeyCount
+    end
+
     local edges, found, valid = 0, false, true
     local function member(value)
         edges = edges + 1
@@ -74,15 +100,21 @@ function Info.Get(quests, questID)
         if not group or not groupValid then valid = false; break end
         for other = 1, #group do if not member(keep(group, other)) then break end end
     end
+    -- The restriction predicate already returns a clean decision.
+    local function ordinaryValue(value) return checker(value) == false end
     local function current()
         if addon.QuestRowInfo ~= Info or Info.Get ~= getter or addon.Clean ~= clean or addon.Read ~= read or issecretvalue ~= checker or unknown then return false end
         if clean(rawget(quests, questID), "table") ~= definition then return false end
         for _, field in ipairs(fields) do
             local value = rawget(field.object, field.key)
-            if type(checker) == "function" and read(checker, "boolean", value) ~= false then return false end
+            if type(checker) == "function" then
+                local ok, ordinary = pcall(ordinaryValue, value)
+                if not ok or ordinary ~= true then return false end
+            end
             if value ~= field.value then return false end
         end
         for _, length in ipairs(lengths) do if #length.object ~= length.length then return false end end
+        if not classKeysCurrent() then return false end
         if not rawequal(rawget(addon, "QuestRowInfo"), Info) or not rawequal(rawget(Info, "Get"), getter) or
             not rawequal(rawget(addon, "Clean"), clean) or not rawequal(rawget(addon, "Read"), read) or
             not rawequal(rawget(_G, "issecretvalue"), checker) or not rawequal(rawget(quests, questID), definition) then return false end
@@ -90,8 +122,9 @@ function Info.Get(quests, questID)
             if not rawequal(rawget(field.object, field.key), field.value) then return false end
         end
         for _, length in ipairs(lengths) do if #length.object ~= length.length then return false end end
+        if not classKeysCurrent() then return false end
         return true
     end
     if not current() then return nil end
-    return { faction = faction, chain = valid and found and true or false }, current
+    return { faction = faction, classes = classes, chain = valid and found and true or false }, current
 end

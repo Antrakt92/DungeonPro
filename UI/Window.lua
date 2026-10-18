@@ -1096,7 +1096,9 @@ function UI:LayoutRow(row, minimum, offset, ownerCurrent, ownerWrite)
     end
     if row.compact then
         local left = 8 + (row.chainInset or 0) + (row.statusInset or 0)
-        local height = math.max(minimum, 12 + measuredHeight(row.title, 18))
+        local titleHeight = measuredHeight(row.title, 18)
+        local height = math.max(minimum, 12 + titleHeight + (row.audienceExtra or 0))
+        row.audienceTop = 6 + titleHeight + 4
         if not current() or not write(row.note, "Hide") or not write(row.title, "ClearAllPoints") or
             not write(row.title, "SetPoint", "TOPLEFT", left, -6) or not write(row, "SetHeight", height) or
             not write(row, "ClearAllPoints") or not write(row, "SetPoint", "TOPLEFT", row.questTreeInset or 0, -offset) then return nil end
@@ -1109,9 +1111,10 @@ function UI:LayoutRow(row, minimum, offset, ownerCurrent, ownerWrite)
     if not current() then return nil end
     local noteHeight = row.heading and 0 or measuredHeight(row.note, 18)
     if not current() then return nil end
-    local height = math.max(minimum, 7 + titleHeight + (row.heading and 0 or 4) + noteHeight + 7)
+    row.audienceTop = 7 + titleHeight + 4
+    local height = math.max(minimum, 7 + titleHeight + (row.heading and 0 or 4) + (row.audienceExtra or 0) + noteHeight + 7)
     if not write(row.title, "ClearAllPoints") or not write(row.title, "SetPoint", "TOPLEFT", titleLeft, -7) or
-        not write(row.note, "ClearAllPoints") or not write(row.note, "SetPoint", "TOPLEFT", noteLeft, -(7 + titleHeight + 4)) or
+        not write(row.note, "ClearAllPoints") or not write(row.note, "SetPoint", "TOPLEFT", noteLeft, -(7 + titleHeight + 4 + (row.audienceExtra or 0))) or
         not write(row, "SetHeight", height) or not write(row, "ClearAllPoints") or
         not write(row, "SetPoint", "TOPLEFT", 0, -offset) then return nil end
     return offset + height + 4
@@ -2162,6 +2165,16 @@ function UI:RefreshQuests()
             local faction = info and addon.Clean(info.faction, "string")
             if faction ~= "Alliance" and faction ~= "Horde" then faction = nil end
             row.factionReserve = faction and 18 or 0
+            local classes, seenClasses = {}, {}
+            local classSource = info and addon.Clean(info.classes, "table")
+            for index = 1, math.min(classSource and #classSource or 0, 13) do
+                local token = addon.Clean(rawget(classSource, index), "string")
+                if token and AUDIENCE_ICONS.classes[token] and not seenClasses[token] then
+                    classes[#classes + 1] = token; seenClasses[token] = true
+                end
+            end
+            if not current() then return end
+            row.classReserve, row.audienceExtra, row.audienceBelow, row.audienceColumns = #classes * 18, 0, false, nil
             row.questTreeSelected = id ~= nil and id == self.quest
             row.questTreePath = entry.tree and entry.tree.onTargetPath == true or false
             row.questTreeTarget = entry.tree ~= nil and id == entry.rootID
@@ -2261,7 +2274,14 @@ function UI:RefreshQuests()
                         not write(branchControl, "Show") then return end
                 end
             end
-            row.statusBaseWidth = math.max(24, row:GetWidth() - 22 - reserve - row.dungeonBadgeReserve - row.factionReserve - row.chainInset - row.branchReserve)
+            local audienceSpace = row:GetWidth() - 22 - reserve - row.dungeonBadgeReserve - row.chainInset - row.branchReserve
+            if row.classReserve > 0 and audienceSpace - row.factionReserve - row.classReserve < 64 then
+                row.audienceBelow = true
+                row.audienceColumns = math.max(1, math.floor((audienceSpace - 20) / 18))
+                row.audienceExtra = math.ceil((#classes + (faction and 1 or 0)) / row.audienceColumns) * 18 + 2
+                row.classReserve, row.factionReserve = 0, 0
+            end
+            row.statusBaseWidth = math.max(24, audienceSpace - row.factionReserve - row.classReserve)
             if not current() then return end
             if not self:PaintQuestRowStatus(row, entry, engine, current) then return end
             if not writeText(row.title, title) or not writeText(row.note, note) or
@@ -2315,21 +2335,36 @@ function UI:RefreshQuests()
                 if not current() then return end
                 if ok then row.factionIcon, factionIcon = value, value end
             end
-            if factionIcon then
-                if not write(factionIcon, "Hide") then return end
-                local atlas = faction and AUDIENCE_ICONS.factions[faction]
+            row.classIcons = row.classIcons or {}
+            for _, icon in ipairs(row.classIcons) do if not write(icon, "Hide") then return end end
+            local function paintAudience(icon, atlas, slot)
+                if not write(icon, "Hide") then return false end
                 local width = atlas and addon.Read(row.title.GetStringWidth, "number", row.title)
                 local cap = atlas and addon.Read(row.title.GetWidth, "number", row.title)
                 if not current() then return end
-                if width and width >= 0 and cap and cap > 0 and addon.Clean(factionIcon.SetAtlas, "function") then
-                    local painted = write(factionIcon, "SetAtlas", atlas)
+                if width and width >= 0 and cap and cap > 0 and addon.Clean(icon.SetAtlas, "function") then
+                    local painted = write(icon, "SetAtlas", atlas)
                     if not current() then return end
-                    if painted and addon.Read(factionIcon.GetAtlas, "string", factionIcon) == atlas then
-                        if not current() or not write(factionIcon, "SetSize", 14, 14) or not write(factionIcon, "ClearAllPoints") or
-                            not write(factionIcon, "SetPoint", "TOPLEFT", row.title, "TOPLEFT", math.min(width, cap) + 4, -2) or
-                            not write(factionIcon, "Show") then return end
+                    if painted and addon.Read(icon.GetAtlas, "string", icon) == atlas then
+                        local x, top = math.min(width, cap) + 4 + slot * 18, -2
+                        if row.audienceBelow then
+                            x, top = (slot % row.audienceColumns) * 18, -(row.audienceTop - (row.compact and 6 or 7) + math.floor(slot / row.audienceColumns) * 18)
+                        end
+                        if not current() or not write(icon, "SetSize", 14, 14) or not write(icon, "ClearAllPoints") or
+                            not write(icon, "SetPoint", "TOPLEFT", row.title, "TOPLEFT", x, top) or not write(icon, "Show") then return false end
                     end
                 end
+                return current()
+            end
+            if factionIcon and paintAudience(factionIcon, faction and AUDIENCE_ICONS.factions[faction], 0) ~= true then return end
+            for index, token in ipairs(classes) do
+                local icon = row.classIcons[index]
+                if not icon then
+                    local ok, value = pcall(row.CreateTexture, row, nil, "ARTWORK")
+                    if not current() then return end
+                    if ok then icon = value; row.classIcons[index] = icon end
+                end
+                if icon and paintAudience(icon, "classicon-" .. AUDIENCE_ICONS.classes[token], index - 1 + (faction and 1 or 0)) ~= true then return end
             end
             if not current() then return end
             if row.chainExpandable and not row.chainChevron then
@@ -2372,7 +2407,9 @@ function UI:RefreshQuests()
         row.questTreeNode, row.questTreeIndent, row.questTreeInset = false, 0, 0
         row.questTreeAnchor, row.anchorQuestID, row.questTreeSelected, row.questTreePath, row.questTreeTarget = false, nil, false, false, false
         row.dungeonTarget, row.dungeonBadgeVisible, row.dungeonBadgeReserve, row.statusInset, row.questCompleted = false, false, 0, 0, false
-        row.rowInfo, row.rowInfoCurrent, row.chainExpandable, row.chainExpanded, row.chainInset, row.factionReserve, row.branchReserve = nil, nil, false, false, 0, 0, 0
+        row.rowInfo, row.rowInfoCurrent, row.chainExpandable, row.chainExpanded, row.chainInset, row.factionReserve, row.classReserve, row.branchReserve = nil, nil, false, false, 0, 0, 0, 0
+        row.audienceExtra, row.audienceBelow, row.audienceColumns = 0, false, nil
+        for _, icon in ipairs(row.classIcons or {}) do if not write(icon, "Hide") then return end end
         row.questListCurrent = current
         if not self:BindQuestRowNavigation(row, nil, current) then return end
         local rewards = addon.Clean(addon.QuestListRewards, "table")
@@ -2397,6 +2434,7 @@ function UI:RefreshQuests()
     for index = n + 1, #self.rows do
         local row = self.rows[index]
         if not write(row, "Hide") then return end
+        for _, icon in ipairs(row.classIcons or {}) do if not write(icon, "Hide") then return end end
         if not self:BindQuestRowNavigation(row, nil, current) then return end
         local rewards = addon.Clean(addon.QuestListRewards, "table")
         if rewards then addon.Read(rewards.Clear, "nil", row) end

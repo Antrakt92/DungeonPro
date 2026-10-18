@@ -21,6 +21,25 @@ test("Only one exact known faction produces a marker and duplicates deduplicate"
     end
     assert(get({factions="Alliance"}).faction==nil)
 end)
+test("Class restrictions retain every known token once in source order without guessing",function()
+    local dto,current=get({classes={"PALADIN","WARRIOR","PALADIN"}})
+    assert(current()and #dto.classes==2 and dto.classes[1]=="PALADIN"and dto.classes[2]=="WARRIOR")
+    for _,values in ipairs({{}, {"CUSTOM"},{"PALADIN","CUSTOM"},{false},{"paladin"},{[1]="PALADIN",extra="MAGE"}})do
+        local value=get({classes=values});assert(value and #value.classes==0)
+    end
+    assert(#get({classes="PALADIN"}).classes==0)
+    local secret={};issecretvalue=function(value)return value==secret end
+    assert(not get({classes={secret}}))
+end)
+
+test("Class membership replacement append and invalid dictionary keys expire the existing source proof",function()
+    for _,mutate in ipairs({function(q)q.classes[1]="WARRIOR"end,function(q)q.classes[2]="MAGE"end,
+        function(q)q.classes={}end,function(q)q.classes.extra="MAGE"end})do
+        local q={classes={"PALADIN"}};local dto,current=get(q);assert(current()and dto.classes[1]=="PALADIN")
+        mutate(q);assert(not current())
+    end
+end)
+
 test("Requirements ordered stories and grouped stories mark another distinct known ID", function()
     for _, q in ipairs({{requires={{ids={2},mode="active"}}}, {storyline={1,2,3}}, {storylineGroups={{1,2},{3}}}}) do
         local dto,current=get(q);assert(dto.chain and current())
@@ -72,6 +91,39 @@ test("Restricted source values and invalid inputs never authorize display metada
     assert(not get({storyline={secret}}))
     assert(not addon.QuestRowInfo.Get({},0) and not addon.QuestRowInfo.Get({},math.huge))
 end)
+test("Retained class proofs directly reject failed restricted and nonboolean checker results",function()
+    for _,mode in ipairs({"true","nil","string","throw"})do
+        local changed=false
+        issecretvalue=function(value)
+            if changed and value=="PALADIN"then
+                if mode=="throw"then error("unreadable")end
+                if mode=="true"then return true elseif mode=="nil"then return nil else return "false"end
+            end
+            return false
+        end
+        local dto,current=get({classes={"PALADIN"}});assert(dto and current());changed=true
+        local ok,result=pcall(current);assert(ok and not result,mode)
+    end
+end)
+
+test("Direct checker reentry cannot approve old class membership or provider ownership",function()
+    for _,mode in ipairs({"class","provider","checker"})do
+        local q={classes={"PALADIN"}};local changed=false
+        local getter=addon.QuestRowInfo.Get
+        issecretvalue=function(value)
+            if changed and value=="PALADIN"then
+                changed=false
+                if mode=="class"then q.classes[1]="MAGE"
+                elseif mode=="provider"then addon.QuestRowInfo.Get=function()end
+                else issecretvalue=function()return false end end
+            end
+            return false
+        end
+        local dto,current=get(q);assert(dto and current());changed=true
+        assert(not current(),mode);addon.QuestRowInfo.Get=getter
+    end
+end)
+
 test("Edge traversal is bounded without state tree or native provider calls", function()
     local qs={[1]={requires={}}};for i=2,101 do qs[i]={}end
     for i=1,4 do local ids={};for j=2,101 do ids[#ids+1]=j end;qs[1].requires[i]={ids=ids}end

@@ -2,6 +2,9 @@
 
 ## 0.1.0 - 16-Oct-2026 — Development preview
 
+- Added class icons beside faction crests in quest rows to make class restrictions
+  visible before opening a quest.
+
 - Completed quest and dungeon title coverage for every supported language and
   fixed English client titles overriding the selected language.
 

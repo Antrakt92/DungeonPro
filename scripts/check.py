@@ -46,6 +46,7 @@ def main():
     run(lua, "tests/ui_preparation.lua")
     run(lua, "tests/quest_tree_ui.lua")
     run(lua, "tests/quest_row_markers_ui.lua")
+    run(lua, "tests/quest_class_icons_ui.lua")
     run(lua, "tests/quest_row_navigation_ui.lua")
     run(lua, "tests/quest_target_path_ui.lua")
     run(lua, "tests/localized_names_ui.lua")
