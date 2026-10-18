@@ -5,7 +5,7 @@ local target, frame, elapsed = nil, nil, 0
 local tomtomOwner, tomtomUID, nativePoint
 local navigationGeneration = {}
 local presentation, contextElapsed = nil, 0
-local presentationWrite
+local presentationWrite, guideUpdate
 local mapMarker, mapMarkerState, mapMarkerTicker
 local markerGeneration, markerElapsed, markerWrites = {}, 0, setmetatable({}, { __mode = "k" })
 
@@ -569,23 +569,33 @@ local function present(action, generation, status)
 end
 
 local function update(_, delta)
+    delta = addon.Clean(delta, "number")
+    if not delta or delta < 0 then return end
     elapsed, contextElapsed = elapsed + delta, contextElapsed + delta
     if elapsed < 0.1 then return end
     elapsed = 0
     local action, generation = target, navigationGeneration
     if not action then return end
+    local tick = {}; guideUpdate = tick
+    local function current()
+        return navigationGeneration == generation and rawequal(target, action) and guideUpdate == tick
+    end
     local north, west
     if action then north, west = N.Vector(action.place) end
-    if navigationGeneration ~= generation or not rawequal(target, action) then return end
+    if not current() then return end
     local facing = addon.Read(GetPlayerFacing, "number")
-    if navigationGeneration ~= generation or not rawequal(target, action) then return end
+    if not current() then return end
     if not north or not west or not facing then
-        frame.arrow:Hide(); present(action, generation, addon.L("NO_POSITION")); return
+        if markerWrite(frame.arrow, "Hide", current) then present(action, generation, addon.L("NO_POSITION")) end
+        return
     end
     local distance = addon.Clean(math.sqrt(north * north + west * west), "number")
-    if not distance then frame.arrow:Hide(); present(action, generation, addon.L("NO_POSITION")); return end
-    frame.arrow:SetRotation(math.atan2(west, north) - facing)
-    frame.arrow:Show()
+    if not distance then
+        if markerWrite(frame.arrow, "Hide", current) then present(action, generation, addon.L("NO_POSITION")) end
+        return
+    end
+    if not markerWrite(frame.arrow, "SetRotation", current, math.atan2(west, north) - facing) or
+        not markerWrite(frame.arrow, "Show", current) then return end
     present(action, generation, addon.L("GUIDE_DISTANCE", math.floor(distance)))
 end
 

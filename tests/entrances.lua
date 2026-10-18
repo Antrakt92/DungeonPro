@@ -314,5 +314,47 @@ check("Every sourced current catalogue entrance is usable without optional nativ
     end
     assert(present, "current catalogue includes reviewed source routes")
 end)
+check("Published native entrance coordinates cannot poison the cached source point",function()
+    for _,field in ipairs({"mapID","x","y","name","areaPoiID"})do
+        local e=reset();local point,current=e.Get(dungeon);assert(current())
+        point[field]=field=="name"and"Foreign label"or 99
+        assert(not current(),field.." must expire an exposed point binding")
+        local fresh,valid=e.Get(dungeon)
+        assert(fresh and fresh~=point and valid()and fresh.mapID==1436 and fresh.x==42 and fresh.y==75 and fresh.name=="Dungeon portal"and fresh.areaPoiID==100)
+        assert(not current()and joins==1 and #calls==1,"repair reuses source data without another native scan")
+    end
+end)
+check("Final point sanitizers cannot mutate earlier native or recorded provenance",function()
+    local e=reset();local point,current;local armed=false
+    issecretvalue=function(value)
+        if armed and value==100 then armed=false;point.origin="recorded";point.source="forged"end
+        return false
+    end
+    point,current=e.Get(dungeon);assert(current());armed=true
+    assert(not current(),"late native sanitizer must not authorize forged provenance")
+    for _,field in ipairs({"origin","source","scope","kind","x"})do
+        e=recordedFixture(reviewedSources[1],true)
+        armed=false
+        issecretvalue=function(value)
+            if armed and value==36 then armed=false;point[field]=field=="x"and 99 or"forged"end
+            return false
+        end
+        point,current=e.Get(dungeon);assert(point and current());armed=true
+        assert(not current(),"late recorded sanitizer: "..field)
+    end
+end)
+check("Published route provenance and labels cannot lose recorded shared approach notices",function()
+    for _,field in ipairs({"name","origin","source","scope","kind"})do
+        local e=recordedFixture(reviewedSources[1],true)
+        local point,current=e.Get(dungeon);assert(point and current())
+        point[field]=field=="origin"and"native"or"Foreign value"
+        assert(not current(),field.." must retire changed published provenance")
+    end
+    for _,field in ipairs({"origin","source","scope","kind"})do
+        local e=reset();local point,current=e.Get(dungeon);assert(current())
+        point[field]=false
+        assert(not current(),"native point cannot acquire unsupported metadata: "..field)
+    end
+end)
 issecretvalue = nil
 print("Entrance modeled checks passed: " .. total .. " (native coverage unverified)")

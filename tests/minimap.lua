@@ -304,5 +304,40 @@ check("Failed essential native anchoring still hides the launcher without changi
     assert(not m:ToggleVisibility() and not m.button.shown and config.hide==false)
     assert(not m:Reset() and not m.button.shown and config.angle==19)
 end)
+check("Nested placement owns the final launcher anchor and angle",function()
+    for _,method in ipairs({"ClearAllPoints","SetPoint"})do
+        local m=reset({hide=false});assert(m:Initialize());local b=m.button
+        local original,armed,snapshot=b[method],true
+        b[method]=function(self,...)
+            if armed then
+                armed=false;assert(m:Place(90));snapshot={unpack(b.point)}
+            end
+            if method=="SetPoint"then self.order="clear"end
+            return original(self,...)
+        end
+        assert(not m:Place(0),"superseded placement must retire")
+        assert(snapshot and b.point[4]==snapshot[4]and b.point[5]==snapshot[5]and m.angle==90,method)
+    end
+end)
+check("Superseded initialization and reset cannot hide a newer launcher placement",function()
+    for _,operation in ipairs({"Initialize","Reset","ToggleVisibility"})do
+        local m=reset({hide=false});assert(m:Initialize());local b=m.button
+        if operation=="ToggleVisibility"then b:Hide()end
+        local original,armed=b.SetPoint,true
+        b.SetPoint=function(self,...)
+            if armed then armed=false;assert(m:Place(90));b:Show()end
+            self.order="clear";return original(self,...)
+        end
+        assert(not m[operation](m))
+        assert(b.shown and m.angle==90,"older "..operation.." cannot hide a newer placement")
+    end
+    local m=reset({hide=false});assert(m:Initialize());local b=m.button
+    local original,armed=b.SetPoint,true
+    b.SetPoint=function(self,...)
+        if armed then armed=false;assert(m:Initialize())end
+        self.order="clear";return original(self,...)
+    end
+    assert(not m:Initialize()and b.shown,"older session cannot hide replacement initialization")
+end)
 issecretvalue=nil
 print("Minimap modeled checks passed: "..total.." (native client unverified)")

@@ -27,7 +27,8 @@ local function context()
     if not join or not list or not quests or not dungeons then return end
     if cache and current(cache) then return cache end
     cache = { library = library, join = join, list = list, quests = quests, dungeons = dungeons,
-        checker = issecretvalue, indexes = {}, results = {}, journals = {} }
+        checker = issecretvalue, rawJoin = rawget(library, "GetInstanceForGameMap"),
+        rawList = rawget(library, "GetDungeonEntrancesForMap"), indexes = {}, results = {}, journals = {} }
     return cache
 end
 
@@ -119,7 +120,7 @@ local function nativeEntrance(dungeon)
         return found and count == 1
     end
     local old = c.results[dungeon]
-    if old and old.gameMap == gameMap and valid() then return old.place, valid end
+    if old and old.gameMap == gameMap and old.current and old.current() then return old.place, old.current end
     local joined = c.journals[dungeon]
     if not joined or joined.gameMap ~= gameMap then joined = { attempts = 0, gameMap = gameMap }; c.journals[dungeon] = joined end
     local journal = joined.value
@@ -133,7 +134,47 @@ local function nativeEntrance(dungeon)
         local rows = indexMap(c, mapID)
         if not valid() then return end
         for _, row in ipairs(rows or {}) do
-            if row.journal == journal then c.results[dungeon] = { place = row.place, gameMap = gameMap }; return row.place, valid end
+            if row.journal == journal then
+                local source, point = row.place, {}
+                local keys = { "mapID", "x", "y", "name", "areaPoiID" }
+                for _, key in ipairs(keys) do point[key] = source[key] end
+                local held = { place = point, gameMap = gameMap }
+                local function pointCurrent()
+                    if not valid() or c.results[dungeon] ~= held then return false end
+                    if addon.Read(function()
+                        return rawget(point, "origin") == nil and rawget(point, "source") == nil and
+                            rawget(point, "scope") == nil and rawget(point, "kind") == nil
+                    end, "boolean") ~= true then return false end
+                    for _, key in ipairs(keys) do
+                        local value = addon.Clean(rawget(point, key), type(source[key]))
+                        if value ~= source[key] then return false end
+                    end
+                    if not valid() then return false end
+                    -- Finish after sanitizer and source callbacks with raw bindings.
+                    if cache ~= c or c.results[dungeon] ~= held or not rawequal(rawget(addon, "Entrances"), E) or
+                        not rawequal(rawget(addon, "quests"), c.quests) or not rawequal(rawget(addon, "dungeons"), c.dungeons) or
+                        not rawequal(rawget(_G, "C_EncounterJournal"), c.library) or not rawequal(rawget(_G, "issecretvalue"), c.checker) or
+                        not rawequal(rawget(c.library, "GetInstanceForGameMap"), c.rawJoin) or
+                        not rawequal(rawget(c.library, "GetDungeonEntrancesForMap"), c.rawList) or
+                        not rawequal(rawget(dungeon, "instanceID"), gameMap) or not rawequal(rawget(dungeon, "wing"), nil) then return false end
+                    for _, key in ipairs(keys) do
+                        if not rawequal(rawget(point, key), source[key]) then return false end
+                    end
+                    for _, key in ipairs({ "origin", "source", "scope", "kind" }) do
+                        if not rawequal(rawget(point, key), nil) then return false end
+                    end
+                    local found, shared = false, 0
+                    for index = 1, math.min(#c.dungeons, 100) do
+                        local member = rawget(c.dungeons, index)
+                        if rawequal(member, dungeon) then found = true end
+                        if type(member) == "table" and rawequal(rawget(member, "instanceID"), gameMap) then shared = shared + 1 end
+                    end
+                    return found and shared == 1
+                end
+                held.current, c.results[dungeon] = pointCurrent, held
+                if pointCurrent() then return point, pointCurrent end
+                return
+            end
         end
     end
 end
@@ -169,10 +210,17 @@ local function recordedEntrance(dungeon)
         source:match("^https://www%.wowhead%.com/forever/zone=[1-9]%d*/[a-z0-9%-]+$")
     if not reviewed then return end
     local point = { mapID = mapID, x = x, y = y, name = name, origin = "recorded", source = source, scope = scope, kind = kind }
+    local rawFields = { { dungeon, "instanceID", gameMap }, { dungeon, "wing", wing }, { dungeon, "entrance", entry },
+            { dungeon, "key", key }, { dungeon, "name", name }, { entry, "gameMapID", sourceMap }, { entry, "mapID", mapID },
+            { entry, "x", x }, { entry, "y", y }, { entry, "source", source }, { entry, "scope", scope }, { entry, "kind", kind },
+            { point, "mapID", mapID }, { point, "x", x }, { point, "y", y }, { point, "name", name },
+            { point, "origin", "recorded" }, { point, "source", source }, { point, "scope", scope }, { point, "kind", kind } }
     local function valid()
         local fieldsMatch = addon.Read(function()
             return rawget(dungeon, "instanceID") == gameMap and rawget(dungeon, "wing") == wing and
-                rawget(entry, "gameMapID") == sourceMap and rawget(entry, "scope") == scope and rawget(entry, "kind") == kind
+                rawget(entry, "gameMapID") == sourceMap and rawget(entry, "scope") == scope and rawget(entry, "kind") == kind and
+                rawget(point, "name") == name and rawget(point, "origin") == "recorded" and
+                rawget(point, "source") == source and rawget(point, "scope") == scope and rawget(point, "kind") == kind
         end, "boolean")
         if fieldsMatch ~= true then return false end
         if addon.Entrances ~= E or addon.dungeons ~= dungeons or rawget(dungeon, "entrance") ~= entry or
@@ -191,7 +239,18 @@ local function recordedEntrance(dungeon)
             if member == dungeon then found = true end
             if member and identity(rawget(member, "instanceID")) == gameMap then shared = shared + 1 end
         end
-        return found and (shared == 1 or scope == "shared" or not gameMap) and addon.Entrances == E and addon.dungeons == dungeons
+        if not found or not (shared == 1 or scope == "shared" or not gameMap) then return false end
+        if not rawequal(rawget(addon, "Entrances"), E) or not rawequal(rawget(addon, "dungeons"), dungeons) then return false end
+        for _, field in ipairs(rawFields) do
+            if not rawequal(rawget(field[1], field[2]), field[3]) then return false end
+        end
+        found, shared = false, 0
+        for index = 1, math.min(#dungeons, 100) do
+            local member = rawget(dungeons, index)
+            if rawequal(member, dungeon) then found = true end
+            if type(member) == "table" and rawequal(rawget(member, "instanceID"), gameMap) then shared = shared + 1 end
+        end
+        return found and (shared == 1 or scope == "shared" or not gameMap)
     end
     if valid() then return point, valid end
 end

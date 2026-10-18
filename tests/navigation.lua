@@ -10,7 +10,7 @@ function methods:SetPoint(...) self.point={...} end
 function methods:ClearAllPoints() end
 function methods:SetJustifyH() end
 function methods:GetStringHeight() return self.measured or 18 end
-function methods:SetRotation(value) assert(value == value and value ~= math.huge and value ~= -math.huge) end
+function methods:SetRotation(value) assert(value == value and value ~= math.huge and value ~= -math.huge); self.rotation=value end
 for _, name in ipairs({ "SetMovable", "EnableMouse", "RegisterForDrag", "SetTexture",
     "SetWidth", "StartMoving", "StopMovingOrSizing" }) do methods[name] = function() end end
 local function object()
@@ -1384,5 +1384,47 @@ check("Repeated same-map and cross-map routes release rounded owned pins and Sto
     end
     nav.Stop();assert(clears==#places and current==nil)
     nav.Stop();assert(clears==#places)
+end)
+check("Late arrow setters cannot overwrite a replacement guide bearing or visibility",function()
+    for _,method in ipairs({"SetRotation","Show","Hide"})do
+        assert(nav.Start(action));local card=hud();local arrow=card.arrow
+        local setter,armed,snapshot=arrow[method],true
+        arrow[method]=function(self,...)
+            if armed then
+                armed=false
+                GetPlayerFacing=function()return method=="Show"and nil or 1 end
+                assert(nav.Start({id=888,place={mapID=1,x=20,y=30}}))
+                snapshot={rotation=arrow.rotation,shown=arrow.shown}
+            end
+            return setter(self,...)
+        end
+        if method=="Hide"then GetPlayerFacing=function()return nil end end
+        card.scripts.OnUpdate(card,.2)
+        arrow[method]=nil
+        assert(snapshot and arrow.rotation==snapshot.rotation and arrow.shown==snapshot.shown,method)
+        nav.Stop();GetPlayerFacing=function()return 0 end
+    end
+end)
+check("A nested update of the same guide retains its newer arrow bearing",function()
+    assert(nav.Start(action));local card=hud();local arrow=card.arrow
+    local setter,armed,snapshot=arrow.SetRotation,true
+    arrow.SetRotation=function(self,...)
+        if armed then
+            armed=false;GetPlayerFacing=function()return 1 end
+            card.scripts.OnUpdate(card,.2);snapshot=arrow.rotation
+        end
+        return setter(self,...)
+    end
+    card.scripts.OnUpdate(card,.2);arrow.SetRotation=nil
+    assert(snapshot and arrow.rotation==snapshot)
+end)
+check("Invalid elapsed values cannot poison navigation ticking or query positions",function()
+    assert(nav.Start(action));local card=hud();local reads=0
+    local getter=C_Map.GetBestMapForUnit
+    C_Map.GetBestMapForUnit=function(...)reads=reads+1;return getter(...)end
+    local secret={};issecretvalue=function(value)return value==secret end
+    for _,delta in ipairs({"bad",-1,0/0,math.huge,secret})do card.scripts.OnUpdate(card,delta)end
+    assert(reads==0)
+    card.scripts.OnUpdate(card,.2);assert(reads==1 and card.arrow.shown)
 end)
 print("Navigation modeled checks passed: " .. total .. " (no native map validation)")

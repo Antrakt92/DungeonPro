@@ -124,20 +124,41 @@ function M:Place(value)
     local button, parent = self.button, self.parent
     value = angle(value)
     if not value or not self:Current() then return false end
+    local binding = { session = self.session }
+    self.placement = binding
+    local function current()
+        return self.placement == binding and self.session == binding.session and
+            self:Current() and self.parent == parent and self.button == button
+    end
+    binding.current = current
     local width = addon.Read(method(parent, "GetWidth"), "number", parent)
-    if not width or width <= 0 or not self:Current() or self.parent ~= parent or self.button ~= button then return false end
+    if not current() then return false, "superseded" end
+    if not width or width <= 0 then return false end
     local heightGetter = method(parent, "GetHeight")
     local height = heightGetter and addon.Read(heightGetter, "number", parent)
+    if not current() then return false, "superseded" end
     if heightGetter and (not height or height <= 0) then return false end
-    if not self:Current() or self.parent ~= parent or self.button ~= button then return false end
     local radius = width / 2 + 8
     local radians = math.rad(value)
     local x, y = math.cos(radians) * radius, math.sin(radians) * radius
-    local ok = pcall(function()
+    local function apply()
+        if not current() then return end
         button:ClearAllPoints()
+        if not current() then return end
         button:SetPoint("CENTER", parent, "CENTER", x, y)
-    end)
-    if not ok or not self:Current() or self.button ~= button or self.parent ~= parent then return false end
+    end
+    binding.apply = apply
+    local ok = pcall(apply)
+    if not current() then
+        local newer = self.placement
+        if newer and newer ~= binding and newer.apply and not newer.repairing and newer.current() then
+            newer.repairing = true
+            if self.placement == newer and newer.current() then pcall(newer.apply) end
+            newer.repairing = nil
+        end
+        return false, "superseded"
+    end
+    if not ok then return false end
     self.angle = value
     return true
 end
@@ -284,7 +305,12 @@ function M:Initialize(retry)
         end
     end)
     if not self:StyleLauncher() or not current() then return false end
-    if not self:Place(angle(self.config.angle) or 225) then button:Hide(); self:RetryPlacement(db, retry); return false end
+    local placed, reason = self:Place(angle(self.config.angle) or 225)
+    if not current() then return false end
+    if not placed then
+        if reason ~= "superseded" then button:Hide(); self:RetryPlacement(db, retry) end
+        return false
+    end
     self.retry = nil
     if addon.Clean(self.config.hide, "boolean") == true then button:Hide() else button:Show() end
     return true
@@ -306,9 +332,9 @@ function M:ToggleVisibility()
     else
         local position = angle(config.angle) or 225
         if not current() then return false end
-        local placed = self:Place(position)
+        local placed, reason = self:Place(position)
         if not current() then return false end
-        if not placed then button:Hide(); return false end
+        if not placed then if reason ~= "superseded" then button:Hide() end; return false end
         config.hide = false
         button:Show()
     end
@@ -317,9 +343,17 @@ end
 
 function M:Reset()
     if not self:Current() and not self:Initialize() then return false end
+    local button, parent, config, session = self.button, self.parent, self.config, self.session
+    local function current()
+        return addon.Minimap == self and self:Current() and self.button == button and self.parent == parent and
+            self.config == config and self.session == session
+    end
     self:StopDrag(false); self:ReleaseTooltip()
-    if not self:Place(225) then self.button:Hide(); return false end
-    self.config.angle, self.config.hide = 225, false
-    self.button:Show()
-    return true
+    if not current() then return false end
+    local placed, reason = self:Place(225)
+    if not current() then return false end
+    if not placed then if reason ~= "superseded" then button:Hide() end; return false end
+    config.angle, config.hide = 225, false
+    button:Show()
+    return current()
 end
