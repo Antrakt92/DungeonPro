@@ -3308,7 +3308,7 @@ function UI:RefreshDetail()
         local itemStarter = startItemID and startItemID > 0 and startItemID <= 9007199254740991 and startItemID % 1 == 0 and
             rawget(start, "npcID") == nil and rawget(start, "objectID") == nil and q.startAlternatives == nil
         self.giverUnavailableKey = itemStarter and "START_ITEM_LOCATION_UNKNOWN" or q.startAlternatives and "GIVER_CHOICES_REQUIRED" or "GIVER_LOCATION_UNKNOWN"
-        if line(addon.L(itemStarter and "DETAIL_START_ITEM" or "DETAIL_GIVER"), "caption", nil, nil, portraitCardCurrent, not start and q.startAlternatives ~= nil) == false then return end
+        if not itemStarter and line(addon.L("DETAIL_GIVER"), "caption", nil, nil, portraitCardCurrent, not start and q.startAlternatives ~= nil) == false then return end
         if start then
             local giverFields = { "npcID", "objectID", "itemID", "name", "zoneName", "locationName", "mapID", "x", "y" }
             local giverValues, nameGetter, itemGetter, iconGetter, countGetter, mapRoot, checker = {}, addon.GiverName, addon.ItemName, addon.ItemIcon, addon.CarriedItemCount, C_Map, issecretvalue

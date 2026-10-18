@@ -40,7 +40,7 @@ addon.ItemName = function() return "Starter" end
 addon.ItemIcon = function() return 134400 end
 addon.CarriedItemCount = function() return 0 end
 render()
-assert(#fields(addon.L("DETAIL_START_ITEM")) == 1 and #fields(addon.L("START_ITEM_LOCATION_UNKNOWN")) == 1)
+assert(#fields(addon.L("DETAIL_START_ITEM")) == 0 and #fields(addon.L("START_ITEM_LOCATION_UNKNOWN")) == 1)
 assert(#fields(addon.L("GIVER_LOCATION_UNKNOWN")) == 0 and not ui.giver:IsShown())
 assert(not ui.referenceToggle or not ui.referenceToggle:IsShown(), "empty acquisition drawer is absent")
 assert(#fields(addon.L("ITEM_STARTER", "Starter")) == 1 and #fields(addon.L("ITEM_CARRIED", 0)) == 1)

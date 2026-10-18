@@ -78,7 +78,8 @@ for _,control in ipairs({giver,row.navigationControl})do
     end
 end
 q.start={itemID=801,name="Starter"};render()
-assert(not giver:IsShown()and text(addon.L("DETAIL_START_ITEM")).navigationInset==0,"item starts do not inherit an NPC navigation inset")
+for _,field in ipairs(ui.details)do assert(not field:IsShown()or field.text~=addon.L("DETAIL_START_ITEM"),"redundant starter caption is absent")end
+assert(not giver:IsShown()and text(addon.L("ITEM_STARTER", "Starter")).navigationInset==0,"item starts retain one introduction without an NPC navigation inset")
 q.start={npcID=1,name="Start One",mapID=1453};render()
 assert(giver:IsShown()and giver.enabled and giver.footerLabelKey=="GIVER_MAP")
 location=text("Start One");assert(location.navigationInset==32 and location.width==ui.detail:GetWidth()-40)

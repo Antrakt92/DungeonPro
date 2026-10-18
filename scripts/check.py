@@ -75,6 +75,7 @@ def main():
     run(lua, "tests/detail_scroll_ownership_ui.lua")
     run(lua, "tests/minimal_detail_ui.lua")
     run(lua, "tests/right_pane_ui.lua")
+    run(lua, "tests/item_starter_copy_ui.lua")
     run(lua, "tests/inline_giver_ui.lua")
     run(lua, "tests/quest_level_colors_ui.lua")
     run(lua, "tests/detail_sources_ui.lua")
