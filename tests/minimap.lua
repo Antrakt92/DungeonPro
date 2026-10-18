@@ -339,5 +339,117 @@ check("Superseded initialization and reset cannot hide a newer launcher placemen
     end
     assert(not m:Initialize()and b.shown,"older session cannot hide replacement initialization")
 end)
+check("Idle minimap resizing follows the same angle without replacing native handlers or adding hooks",function()
+    local m=reset({hide=false,angle=0});local parent=Minimap;local hooks,calls={},0
+    function parent:HasScript(key)return key=="OnSizeChanged"end
+    function parent:HookScript(key,callback)assert(key=="OnSizeChanged");hooks[#hooks+1]=callback end
+    parent.scripts.OnSizeChanged=function()calls=calls+1 end
+    local function resize(value)
+        width=value;parent.scripts.OnSizeChanged(parent)
+        for _,callback in ipairs(hooks)do callback(parent,value,200)end
+    end
+    assert(m:Initialize());near(m.button.point[4],108)
+    resize(400);near(m.button.point[4],208)
+    assert(calls==1 and #hooks==1 and addon.db.minimap.angle==0)
+    assert(m:Initialize()and m:Initialize()and #hooks==1)
+    resize(300);near(m.button.point[4],158)
+    assert(calls==2 and m.button.scripts.OnUpdate==nil)
+end)
+check("Resize recovery preserves explicit and external hiding without writing user preferences",function()
+    local m=reset({hide=false,angle=0});local resize
+    function Minimap:HasScript(key)return key=="OnSizeChanged"end
+    function Minimap:HookScript(_,callback)resize=callback end
+    assert(m:Initialize());local config=addon.db.minimap
+    width=0;resize();assert(not m.button.shown and config.hide==false and config.angle==0)
+    width=400;resize();assert(m.button.shown);near(m.button.point[4],208)
+    m.button:Hide();width=300;resize();assert(not m.button.shown and config.hide==false)
+    m.button:Show();assert(m:ToggleVisibility()and config.hide==true)
+    width=500;resize();assert(not m.button.shown and config.hide==true and config.angle==0)
+    assert(m:ToggleVisibility());near(m.button.point[4],258)
+end)
+check("Old minimap resize hooks become inert after parent or manager replacement",function()
+    local m=reset({hide=false,angle=0});local hooks={}
+    local function capabilities(parent)
+        function parent:HasScript(key)return key=="OnSizeChanged"end
+        function parent:HookScript(_,callback)hooks[parent]=callback end
+    end
+    local old=Minimap;capabilities(old);assert(m:Initialize())
+    local newer=frame();newer.GetWidth=old.GetWidth;newer.GetEffectiveScale=old.GetEffectiveScale;newer.GetCenter=old.GetCenter
+    capabilities(newer);Minimap=newer;width=300;assert(m:Initialize())
+    local previous={unpack(m.button.point)};width=400;hooks[old]()
+    assert(m.button.point[4]==previous[4]and m.button.parent==newer)
+    hooks[newer]();near(m.button.point[4],208)
+    previous={unpack(m.button.point)};addon.Minimap={};width=500;hooks[newer]()
+    assert(m.button.point[4]==previous[4]);addon.Minimap=m
+end)
+check("Failed optional resize hooks stay inert and never compound during initialization",function()
+    for _,mode in ipairs({"missing","unsupported","throws","lateThrows","false"})do
+        local m=reset({hide=false,angle=0});local calls,callback=0
+        if mode~="missing"then
+            function Minimap:HasScript()return mode~="unsupported"end
+            function Minimap:HookScript(_,fn)
+                calls=calls+1
+                if mode=="throws"then error("unsupported hook")end
+                callback=fn
+                if mode=="lateThrows"then error("hook installed before failure")end
+                return false
+            end
+        end
+        assert(m:Initialize()and m:Initialize()and m.button.shown)
+        assert(calls<=1)
+        width=400;if callback then callback()end
+        near(m.button.point[4],108)
+        m.button.scripts.OnClick(m.button,"LeftButton");assert(clicks==1)
+    end
+end)
+check("Late resize Hide repairs a newer initialized launcher",function()
+    local m=reset({hide=false,angle=0});local callback
+    function Minimap:HasScript()return true end
+    function Minimap:HookScript(_,fn)callback=fn end
+    assert(m:Initialize());local b=m.button;local hide=b.Hide;local armed=true
+    b.Hide=function(self)
+        if armed then armed=false;width=200;assert(m:Initialize())end
+        return hide(self)
+    end
+    width=0;callback();b.Hide=hide
+    assert(not armed and b.shown)
+end)
+check("Late resize Show preserves a newer explicit hide",function()
+    local m=reset({hide=false,angle=0});local callback
+    function Minimap:HasScript()return true end
+    function Minimap:HookScript(_,fn)callback=fn end
+    assert(m:Initialize());local b=m.button
+    width=0;callback();assert(not b.shown)
+    local show=b.Show;local armed=true
+    b.Show=function(self)
+        if armed then
+            armed=false;show(self);assert(m:ToggleVisibility()and addon.db.minimap.hide==true)
+        end
+        return show(self)
+    end
+    width=400;callback();b.Show=show
+    assert(not armed and not b.shown and addon.db.minimap.hide==true)
+end)
+check("External hiding retires visibility intent before later resizing",function()
+    local m=reset({hide=false,angle=0});local callback
+    function Minimap:HasScript()return true end
+    function Minimap:HookScript(_,fn)callback=fn end
+    assert(m:Initialize());local b=m.button
+    assert(b.launcherVisibility and b.launcherVisibility.shown)
+    b:Hide();assert(b.launcherVisibility==nil)
+    width=400;callback();assert(not b.shown and addon.db.minimap.hide==false)
+end)
+check("A new session or external hide retires an older size recovery intent",function()
+    for _,mode in ipairs({"session","external"})do
+        local m=reset({hide=false,angle=0});local callback
+        function Minimap:HasScript()return true end
+        function Minimap:HookScript(_,fn)callback=fn end
+        assert(m:Initialize());width=0;callback();assert(not m.button.shown)
+        width=200
+        if mode=="session"then assert(m:Initialize());m.button:Hide()
+        else m.button:Hide()end
+        width=400;callback();assert(not m.button.shown and addon.db.minimap.hide==false)
+    end
+end)
 issecretvalue=nil
 print("Minimap modeled checks passed: "..total.." (native client unverified)")

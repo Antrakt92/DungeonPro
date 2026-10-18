@@ -163,6 +163,86 @@ function M:Place(value)
     return true
 end
 
+-- Keep the latest launcher visibility intent on the physical button so a late
+-- native write can repair a newer initialization without reviving an old session.
+function M:SetVisible(shown)
+    local button, parent, config, session = self.button, self.parent, self.config, self.session
+    if not button or addon.Minimap ~= self then return false end
+    local held = { shown = shown }
+    local function current()
+        return addon.Minimap == self and self.button == button and self.parent == parent and
+            self.config == config and self.session == session and button.launcherVisibility == held and
+            (not shown or self:Current())
+    end
+    held.current = current
+    button.launcherVisibility = held
+    local function apply()
+        if not current() then return false end
+        local setter = method(button, shown and "Show" or "Hide")
+        if not setter or not current() then return false end
+        button.launcherVisibilityWriting = (button.launcherVisibilityWriting or 0) + 1
+        local ok = pcall(setter, button)
+        button.launcherVisibilityWriting = button.launcherVisibilityWriting - 1
+        return ok
+    end
+    held.apply = apply
+    local ok = apply()
+    if not current() then
+        local newer = button.launcherVisibility
+        if newer and newer ~= held and newer.current() and not newer.repairing then
+            newer.repairing = true
+            if button.launcherVisibility == newer and newer.current() then newer.apply() end
+            newer.repairing = nil
+        end
+        return false
+    end
+    return ok
+end
+
+function M:WatchSize()
+    local parent = self.parent
+    local hook, has = method(parent, "HookScript"), method(parent, "HasScript")
+    if not hook or not has or addon.Read(has, "boolean", parent, "OnSizeChanged") ~= true then return true end
+    if addon.Minimap ~= self or self.parent ~= parent or not self:Current() then return false end
+    self.sizeHooks = self.sizeHooks or setmetatable({}, {__mode="k"})
+    if self.sizeHooks[parent] then return true end
+    local held = {}
+    self.sizeHooks[parent] = held
+    local ok, result = pcall(hook, parent, "OnSizeChanged", function()
+        if not held.active or held.running or addon.Minimap ~= self or self.sizeHooks[parent] ~= held or
+            self.parent ~= parent or not self:Current() then return end
+        local button, config, session = self.button, self.config, self.session
+        local function current()
+            return addon.Minimap == self and self.sizeHooks[parent] == held and self.parent == parent and
+                self.button == button and self.config == config and self.session == session and self:Current()
+        end
+        held.running = true
+        pcall(function()
+            if addon.Clean(config.hide, "boolean") == true then held.hiddenForSize = nil; return end
+            local shown = addon.Read(method(button, "IsShown"), "boolean", button)
+            if not current() then return end
+            local placed, reason = self:Place(angle(self.angle) or angle(config.angle) or 225)
+            if not current() then return end
+            if not placed then
+                if reason ~= "superseded" and shown == true then
+                    local hidden = self:SetVisible(false)
+                    if hidden and current() then held.hiddenForSize = button.launcherVisibility end
+                end
+            elseif held.hiddenForSize then
+                local hidden = held.hiddenForSize
+                held.hiddenForSize = nil
+                if button.launcherVisibility == hidden and hidden.current() and
+                    addon.Clean(config.hide, "boolean") ~= true and current() then self:SetVisible(true) end
+            end
+        end)
+        held.running = nil
+    end)
+    -- Registration is optional. Keep a failed record inert instead of risking
+    -- duplicate native hooks when a provider installs a callback and then throws.
+    held.active = ok and addon.Clean(result, "boolean") ~= false
+    return addon.Minimap == self and self.parent == parent and self:Current()
+end
+
 function M:StopDrag(save, expected)
     local held = self.drag
     if not held or (expected and expected ~= held) then return end
@@ -216,7 +296,7 @@ function M:Initialize(retry)
     local parent, db = cleanFrame(Minimap), addon.Clean(addon.db, "table")
     if not parent or not db or not method(parent, "GetWidth") then
         self:StopDrag(false); self:ReleaseTooltip()
-        if self.button then self.button:Hide() end
+        if self.button then self:SetVisible(false) end
         self:RetryPlacement(db, retry)
         return false
     end
@@ -245,7 +325,7 @@ function M:Initialize(retry)
             local setter = method(button, "SetParent")
             if not setter or not pcall(setter, button, parent) then
                 self.parent = nil
-                button:Hide()
+                self:SetVisible(false)
                 return false
             end
         end
@@ -300,19 +380,23 @@ function M:Initialize(retry)
     button:SetScript("OnEnter", function() if current() then self:Tooltip() end end)
     button:SetScript("OnLeave", function() if current() then self:ReleaseTooltip() end end)
     button:SetScript("OnHide", function()
+        if not button.launcherVisibilityWriting or button.launcherVisibilityWriting == 0 then
+            button.launcherVisibility = nil
+        end
         if self.session == session and self.button == button then
             self:StopDrag(false); self:ReleaseTooltip(); self.suppressClick = nil
         end
     end)
     if not self:StyleLauncher() or not current() then return false end
+    if not self:WatchSize() or not current() then return false end
     local placed, reason = self:Place(angle(self.config.angle) or 225)
     if not current() then return false end
     if not placed then
-        if reason ~= "superseded" then button:Hide(); self:RetryPlacement(db, retry) end
+        if reason ~= "superseded" then self:SetVisible(false); self:RetryPlacement(db, retry) end
         return false
     end
     self.retry = nil
-    if addon.Clean(self.config.hide, "boolean") == true then button:Hide() else button:Show() end
+    if addon.Clean(self.config.hide, "boolean") == true then self:SetVisible(false) else self:SetVisible(true) end
     return true
 end
 
@@ -328,15 +412,15 @@ function M:ToggleVisibility()
     if shown then
         self.retry = nil
         config.hide = true
-        button:Hide(); self:StopDrag(false); self:ReleaseTooltip()
+        self:SetVisible(false); self:StopDrag(false); self:ReleaseTooltip()
     else
         local position = angle(config.angle) or 225
         if not current() then return false end
         local placed, reason = self:Place(position)
         if not current() then return false end
-        if not placed then if reason ~= "superseded" then button:Hide() end; return false end
+        if not placed then if reason ~= "superseded" then self:SetVisible(false) end; return false end
         config.hide = false
-        button:Show()
+        self:SetVisible(true)
     end
     return current()
 end
@@ -352,8 +436,8 @@ function M:Reset()
     if not current() then return false end
     local placed, reason = self:Place(225)
     if not current() then return false end
-    if not placed then if reason ~= "superseded" then button:Hide() end; return false end
+    if not placed then if reason ~= "superseded" then self:SetVisible(false) end; return false end
     config.angle, config.hide = 225, false
-    button:Show()
+    self:SetVisible(true)
     return current()
 end
