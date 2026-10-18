@@ -2,196 +2,113 @@
 
 ## 0.1.0 - 18-Oct-2026 — First public Beta
 
-- Browse dungeon quests, inspect related steps and plan known prerequisites.
-- Show character quest states, objectives, starter sources, rewards and carried
-  items while keeping unverified requirements and missing locations explicit.
-- Follow known quest-giver and entrance locations with map guidance, a direction
-  arrow and optional TomTom support.
-- Use ten interface languages, including translated dungeon and quest titles.
-- Added clearer source warnings, source-item instructions and reviewed NPC and
-  object locations. Quest coverage remains incomplete.
+The first public beta brings dungeon quest browsing, prerequisite planning,
+character quest states, rewards and navigation to WoW Forever. Quest coverage
+and acceptance requirements remain incomplete; missing information is shown
+explicitly.
 
-### Development preview — 16-Oct-2026
+### Development history
 
-- Made dungeon quest counts follow Mine / All, consistently in cards and quest
-  overviews.
+The daily entries below run from oldest to newest. Dates follow the commit
+history in Europe/Dublin time (UTC+01:00 on these dates). They record when work
+was committed, rather than treating the release date as the date of every change.
 
-- Added class icons beside faction crests in quest rows to make class restrictions
-  visible before opening a quest.
+### 16-Oct-2026 — First working browser, planning and quest catalogue
 
-- Completed quest and dungeon title coverage for every supported language and
-  fixed English client titles overriding the selected language.
+- Added the dungeon browser, character quest states and a preparation action list,
+  starting with Deadmines, Ragefire Chasm and The Hall of Thanes.
+- Added prerequisite groups, acceptance-versus-completion conditions, alternative
+  branch choices and explanations for locked or unverified quests. Kept story
+  sequences separate from mandatory acceptance requirements.
+- Expanded the catalogue through Wailing Caverns, Shadowfang Keep, Blackfathom
+  Deeps, The Stockade, Gnomeregan, Razorfen Kraul and Downs, Scarlet Monastery,
+  Uldaman, Zul'Farrak, Temple of Atal'Hakkar, Dire Maul, Scholomance, Stratholme,
+  Blackrock Spire and Depths, plus several new Forever dungeons.
+- Added supporting faction and class quest stories, quest-starting items,
+  acquisition sources and containers, reported NPC positions and turn-in points.
+  Added VanCleef's letter to Deadmines and corrected Hidden Enemies giver data.
+- Added map guidance, a direction arrow and optional TomTom support. Added
+  separate visits to known quest givers and a choice of reported locations.
+- Added current quest-offer objectives, rewards, money and experience, cached
+  reward previews, item icons and native item tooltips.
+- Added carried-item counts, sourced objective quantities, quest-log occupancy,
+  starter-item requirements, quest levels and recorded character restrictions.
+- Added optional client-provided dungeon artwork and portraits, localized NPC
+  names and clearer notices for missing data and unsupported client features.
+- Renamed the addon to Dungeon Pro, added `/DP`, `/DungeonPro` and `/rl`, and
+  introduced the movable minimap launcher.
+- Improved saved-data protection, quest-title loading and description caching.
+  Kept current quest progress separate from past completion history and guarded
+  navigation against stale callbacks, failed APIs and changes to player map pins.
+- Added catalogue validation, local Lua checks, planning regressions and clean
+  addon packaging. Hid unnecessary scrollbars and supported wrapped list rows.
 
-- Colored quest and required levels relative to your current character, keeping
-  difficulty separate from the conditions for accepting a quest.
+### 17-Oct-2026 — Illustrated interface, richer details and compact quest chains
 
-- Added quick navigation beside the dungeon heading and at the right of quest
-  rows, with destination hints and explanations for unknown locations.
+- Introduced the dark visual theme, illustrated dungeon cards and an overview
+  before selecting a quest. Improved artwork proportions, fallback previews,
+  title hierarchy, scrolling and reading-position recovery.
+- Expanded collection, creature, object and event objectives, quest-provided
+  supplies, starter-item drops and source locations across the catalogue.
+  Added further NPC reference portraits and pickup/turn-in locations.
+- Distinguished quest payments from rewards and collection materials from items
+  supplied by a quest. Showed live progress and current turn-in dialogue, with
+  rewards and preparation costs ahead of lengthy source references.
+- Added starter-item acquisition explanations, source-location visits and a
+  direct action to open a held quest in the native quest journal.
+- Added case-insensitive Unicode search, quest-name and exact-ID search, recorded
+  NPC/source-place search and direct selection of matching quests. Improved
+  empty-result explanations, search focus and refresh performance.
+- Added compact expandable preparation details and inline quest trees, with
+  connected branches and distinct dungeon targets. Kept the planner open during
+  navigation and native quest-journal actions.
+- Added faction and class audience icons. Removed race-based exclusions and
+  restriction labels while retaining faction, class and level conditions.
+- Distinguished quest level from minimum pickup level. Improved multilingual
+  typography, preserved native alphabet fonts and enlarged readable quest text.
+- Added explicit language selection and hover previews. Replaced the temporary
+  flag picker with a neutral language control and readable native language names.
+- Added client-backed dungeon entrance navigation, clearer destination markers
+  and a floating guide showing the quest, destination and distance.
+- Simplified the toolbar and detail actions, improved window focus and screen
+  fitting, and repaired minimap visibility, placement and recovery.
+- Hardened quest, item, portrait and navigation refreshes against selection or
+  context changes. Expanded regression coverage and reduced repeated search,
+  title-loading and language-preview work.
 
-- Made dungeon cards more compact, enlarged their covers and balanced spacing
-  around names and navigation/status icons.
+### 18-Oct-2026 — Player-feedback fixes, data review and first public beta
 
-- Replaced the quest filter's menu-like list symbol with a plain All quests button.
+- Refined the header, search placement, dungeon-card artwork and spacing. Replaced
+  the menu-like All control with a plain All quests toggle and made dungeon
+  counts follow Mine / All in both cards and overviews.
+- Simplified quest details and separated story reading from objectives. Added
+  complete reward-choice previews, native item tooltips and uncached-item loading;
+  fixed money rewards when the legacy coin formatter is unavailable.
+- Made quest-giver navigation a compact gold action in details and quest rows,
+  added direct dungeon navigation and highlighted unknown giver locations with
+  explanations. Kept item starters distinct from missing NPC coordinates.
+- Colored quest and required levels relative to the current character and added
+  class icons beside faction crests in quest rows.
+- Completed selected-language quest and dungeon title coverage, prevented English
+  client titles from overriding that selection and localized reviewed source
+  areas. Recovered unsupported saved language choices.
+- Reviewed and corrected quest objectives, materials, supplied items, class quest
+  variants, story sources and giver/turn-in records across early and late dungeons.
+  Restored reviewed object positions, city maps and alternative giver locations.
+- Distinguished known source areas from unknown exact positions, explained
+  item-created quest sources and made item/alternative source details accessible
+  from quest rows. Kept incomplete requirements and locations explicit.
+- Preserved player TomTom waypoints and newer navigation, reward, tooltip,
+  language and scrolling state during delayed or overlapping updates.
+- Reduced startup scans, bounded large-list rendering and reward work, reused
+  validated planning data and loaded translated titles only when needed.
+  Removed obsolete detail-chain work and consolidated metadata retry handling.
+- Strengthened catalogue and translation validation, Unicode handling and package
+  membership checks. Improved font-asset recovery and minimap resize behavior.
+- Prepared and published the first 0.1.0 beta on GitHub after the user's in-game
+  check; submitted the Forever beta to CurseForge for review.
+- After the release, updated the repository README, added approved gameplay
+  screenshots, development instructions, reporting templates and support links.
+  These repository-documentation changes are newer than the original beta archive.
 
-- Highlighted unknown quest-giver locations and added compact gold navigation
-  icons beside the giver and quest rows, with explanations when unavailable.
-  Quest and minimum levels have clear labels.
-- Showed starter-item sources directly and removed repeated starter details.
-- Fixed money rewards disappearing when the legacy coin formatter is unavailable.
-
-- Simplified quest details with compact objectives, larger reward icons and a
-  separate story section. Quest chains stay in the quest list; additional sources
-  open only when needed.
-
-- Replaced national flags with a neutral language button and language names in the menu.
-
-- Improved language-menu fonts and Chinese/Korean font selection. Hover previews keep the saved language checked, cancel cleanly, and stay within the screen.
-
-- Fixed copying a quest link unexpectedly scrolling a different quest after the selection changes.
-
-- Improved cleanup of guide-created map pins when a navigation destination changes.
-
-- Improved planner window focus and the opaque background when other addon windows are open.
-
-- Added immediate language previews on hover and a neutral globe button.
-
-- Removed race-based quest exclusions and race lists from quest cards; faction, class and preparation requirements still apply.
-- Improved minimap button placement reliability and added read-only minimap diagnostics.
-- Replaced the quest-giver and Wowhead footer labels with compact icons and hover hints.
-- Simplified the toolbar by removing Back and the preparation-view switch.
-- Added language previews on hover, with click to save and leaving to cancel.
-- Clarified map and guide destinations, including visits to known quest givers
-  before the character reaches the quest's minimum level.
-- Added a separate dungeon entrance action using matching portal data from the client.
-- Added case-insensitive Unicode search for localized dungeon names.
-- Made quest titles and section headings easier to distinguish from body text.
-- Preserved native font families when sizing multilingual interface text.
-- Added missing reported locations for several early dungeon quest givers.
-- Restored quest selection when preparation section headings are present.
-- Explained faction and class restrictions directly in quest rows.
-- Added native dungeon artwork for 24 catalogue entries and safer image fallback.
-- Adjusted four new dungeon images for their recorded wide preview proportions.
-- Refined the window, controls and selected rows with a cohesive dark theme.
-- Added a dungeon overview before selecting a quest, with artwork and coverage notes.
-- Clicking a dungeon card returns to its overview.
-- Restored the reading position when returning from a related quest or copied link.
-- Showed a clear copy instruction beside the selected Wowhead link.
-- Preserved map pins when their native API context changes during guidance.
-- Added the dungeon browser, character quest states and prerequisite planning.
-- Added map guidance, a direction arrow and optional TomTom support.
-- Gave the floating guide a quest, destination and distance card that keeps its
-  context when the bearing is unavailable.
-- Added initial quest facts for The Deadmines, Ragefire Chasm and The Hall of Thanes.
-- Added explicit notices for incomplete data and interface translations.
-- Added a language menu with a visible automatic option and direct language selection.
-- Renamed the addon to Dungeon Pro, with `/DP` and `/DungeonPro` commands.
-- Added current quest-offer rewards, experience and objective summaries, kept
-  separate from quest-log progress and preparation requirements.
-- Clarified prerequisite groups and whether a step needs acceptance or completion.
-- Added separate quest-detail links beside prerequisite alternatives.
-- Added optional client-provided dungeon images and current-offer portraits.
-- Expanded later dungeon quest lists and sourced quest-giver locations.
-- Added expandable reported giver positions with navigation to a chosen point.
-- Added sourced item containers separately from the items that begin quests.
-- Preserved the current guide when TomTom or map callbacks replace an older request.
-- Kept early quests unverified where the full acceptance conditions lack evidence,
-  with a clearer label for quests absent from the current quest log.
-- Corrected a Hidden Enemies starting NPC and updated Neeru's reported positions.
-- Kept known prerequisite work visible while other acceptance conditions are unknown.
-- Listed VanCleef's quest-starting letter under Deadmines as well as its later story.
-- Added reward previews by quest ID when the client confirms loaded reward data.
-- Kept lower and upper Blackrock Spire distinct when using localized map names.
-- Added current carried counts for quest-starting items and completion materials.
-- Added the current quest-log count and its client-provided capacity.
-- Added optional item icons and native hover tooltips to quest rewards.
-- Showed minimum level and listed class limits on quest detail cards.
-- Added `/rl` as a shortcut for reloading the interface.
-- Added a movable minimap button, with commands to hide or reset it.
-- Showed sourced objective-item quantities separately from current carried counts.
-- Hid scrollbars when a list or quest card fits without scrolling.
-- Started the quest list at the top when switching dungeons.
-- Kept item names and quest details tied to the current client data and selection.
-- Cleared an old copied quest link when switching to another quest.
-- Kept known objective items visible when their required quantity is unverified.
-- Added missing dungeon quests and their supporting mage and faction story chains.
-- Kept newly accepted quests visible alongside past completion history, and
-  retained that history when checking prerequisite chains.
-- Added localized names for the current quest NPC, with catalogue names as fallback.
-- Added translated explanations for locked quests and missing information.
-- Added character filtering with an option to inspect restricted quests, and
-  remembered browsing filters per character.
-- Preserved saved settings when their schema is invalid or newer than supported.
-- Preserved saved descriptions after empty client responses and added bounded
-  retries when localized quest-title loading fails.
-- Added a next-step list for dungeon preparation and client-provided objectives.
-- Let quest cards select and inspect each independent preparation step.
-- Grouped preparation steps by outside pickups, inside pickups, level gates,
-  progress and unknown requirements, with translated headings.
-- Added initial Wailing Caverns quests and corrected Rahauro's approach waypoint.
-- Added initial Shadowfang Keep quests and supporting Wailing Caverns chain steps.
-- Added initial Blackfathom Deeps and shared paladin/warlock quests, plus sourced
-  waypoints for three Shadowfang Keep quest-givers.
-- Extended Blackfathom's Horde quest list and its known story sequences.
-- Added The Stockade and the paladin's Kor Gem support quest.
-- Added initial Scarlet Monastery, Uldaman and City of Dalaran quest lists,
-  supporting story records and sourced Scarlet Monastery giver locations.
-- Listed distinct sources when a quest-starting item drops from several creatures.
-- Added initial Zul’Farrak, Temple of Atal’Hakkar and Excavation Site quest lists.
-- Kept source-grouped story quests together without turning them into mandatory
-  prerequisite steps.
-- Preserved multiple possible NPC/object starting points and known source zones
-  without inventing map coordinates.
-- Preserved the correct quest and language when the selected quest changes during
-  a description read.
-- Completed the known shared story variants around Anthion and added sourced
-  locations for early-chain and Blackrock quest-givers.
-- Showed rewards, choices, money and experience from the open quest dialogue.
-- Kept quests already in your log visible when catalogue restrictions are stale.
-- Added a short-lived note for quests observed in the current NPC dialogue,
-  with cleanup when the dialogue or character context changes.
-- Added Dire Maul quests, book starters and acquisition sources, plus further
-  Blackrock Spire story steps.
-- Added the Treaty of Understanding in Hall of Thanes and corrected sourced
-  giver locations and Dark Iron Map acquisition information.
-- Showed class and level requirements of quest-starting items separately from
-  the quest’s own availability.
-- Added early travel and story steps for dungeon chains, plus seven sourced
-  Lordaeron quest-giver locations.
-- Added corroborated prerequisite links where compatible sources agree; unknown
-  full requirements continue to show as unverified.
-- Added initial Scholomance, Stratholme and Blackrock Spire quest lists with
-  separate wing evidence, shared story variants and a confirmed dragon-scale starter.
-- Added Ruins of Lordaeron, Maraudon, Drowned City and Blackrock Depths quest
-  lists, reviewed story steps and confirmed quest-starting items.
-- Added initial Razorfen Kraul and Razorfen Downs quests, item starters and
-  four sourced Razorfen quest-giver locations.
-- Added optional native quest-log portraits when the client provides one.
-- Expanded the client capability report and kept missing storyline data distinct
-  from confirmed empty results.
-- Added initial Gnomeregan quests, Stockade giver waypoints and the Horde
-  paladin's Kor Gem support quest.
-- Added client-provided item rewards, reward choices and money to quest details.
-- Improved localized dungeon search, added a clear button and explained empty
-  search results.
-- Extended Gnomeregan with separate object-quest variants, repeatable labels and
-  seven sourced giver locations.
-- Separated quests that provide completion materials from acceptance requirements.
-- Recovered quest-title requests that receive no result event, with bounded retries.
-- Preserved nearby player map pins and new guides started during waypoint cleanup.
-- Added saved choices for alternative prerequisite branches, with an automatic
-  planning option and safe fallback when a branch is unavailable.
-- Adjusted row and chain-button heights for wrapped text and kept navigation
-  active when unrelated quests change.
-- Improved navigation fallback after TomTom failures and protected the guide
-  against unavailable map/vector constructors and invalid positions.
-- Preserved player map pins when the client rejects a new waypoint.
-- Added separate quest-giver location guidance while keeping prerequisite guidance.
-- Added sourced approach waypoints for four Wailing Caverns quest-givers and
-  completed the known giver information for Nara Wildmane's story step.
-- Kept unresolved locked quests visible and stopped unfinished quests from
-  directing players to their turn-in NPC before objectives are complete.
-- Improved window sizing on shorter screens and recovery of saved positions.
-- Fixed preparation checks for inside quests with outside prerequisites and
-  preserved available steps when an alternative branch has incomplete data.
-
-Quest coverage, native-client behavior and visual layout are still being checked.
+Quest coverage, native-client behavior and visual layout continue to be improved.
