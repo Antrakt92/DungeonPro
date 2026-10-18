@@ -152,6 +152,8 @@ function Cache.Watch(owner, coldIDs, ownerCurrent, refreshCallback)
     if not addon.Clean(context.quests, "table") or not addon.Clean(context.provider, "function") or not context.locale then return end
     if requests[owner] ~= request then return end
     local state = owners[owner]
+    local previous, cursor = state and state.binding, state and state.cursor
+    local sameWork = state and sameBudget(state.context, context)
     if not state then
         state = { context = context, entries = {}, cursor = 1 }; owners[owner] = state
     elseif not same(state.context, context) then
@@ -176,6 +178,15 @@ function Cache.Watch(owner, coldIDs, ownerCurrent, refreshCallback)
                 state.entries[id] = { quest = context.quests[id], attempts = 0 }
             end
         end
+    end
+    -- Item arrivals repaint the same list. Restarting its slices can repeatedly
+    -- hydrate early cold rows while later quests never receive a first request.
+    if sameWork and previous and cursor and #previous.ids == #binding.ids then
+        local sameIDs = true
+        for index, id in ipairs(binding.ids) do
+            if previous.ids[index] ~= id then sameIDs = false; break end
+        end
+        if sameIDs then state.cursor = cursor end
     end
     -- Native hydration is deferred in two-quest slices; opening a large list
     -- never walks every reward tuple before returning to the frame loop.

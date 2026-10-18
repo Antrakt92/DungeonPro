@@ -78,6 +78,7 @@ def main():
     run(lua, "tests/quest_status_retirement_ui.lua")
     run(lua, "tests/quest_list_rewards.lua")
     run(lua, "tests/reward_cache.lua")
+    run(lua, "tests/overnight_reward_cache_fairness.lua")
     run(lua, "tests/reward_item_hydration.lua")
     run(lua, "tests/quest_rewards_ui.lua")
     run(lua, "tests/quest_detail_ui.lua")
