@@ -7,12 +7,6 @@ character quest states, rewards and navigation to WoW Forever. Quest coverage
 and acceptance requirements remain incomplete; missing information is shown
 explicitly.
 
-### Development history
-
-The daily entries below run from newest to oldest. Dates follow the commit
-history in Europe/Dublin time (UTC+01:00 on these dates). They record when work
-was committed, rather than treating the release date as the date of every change.
-
 ### 18-Oct-2026 — Player-feedback fixes, data review and first public beta
 
 - Refined the header, search placement, dungeon-card artwork and spacing. Replaced
