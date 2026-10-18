@@ -222,10 +222,10 @@ check("Forced dungeon locale uses exact source labels without native names and k
     assert(addon.DungeonName(d)=="Подземелье" and d.instanceID==230 and d.name=="Source dungeon")
     GetLocale=nil;assert(addon.DungeonName({key="test",name="Source dungeon"})=="Подземелье")
 end)
-check("Matching native dungeon names take priority and missing native names use reviewed labels",function()
+check("Reviewed selected-language dungeon names override matching native names",function()
     names();addon.db.locale="ruRU";GetLocale=function()return"ruRU"end
     local d={key="test",name="Source dungeon",instanceID=230}
-    assert(addon.DungeonName(d)=="Client dungeon")
+    assert(addon.DungeonName(d)=="Подземелье")
     GetRealZoneText=nil;assert(addon.DungeonName(d)=="Подземелье")
 end)
 check("Forced missing dungeon data keeps exact English source instead of another client language",function()

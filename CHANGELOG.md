@@ -2,6 +2,9 @@
 
 ## 0.1.0 - 16-Oct-2026 — Development preview
 
+- Completed quest and dungeon title coverage for every supported language and
+  fixed English client titles overriding the selected language.
+
 - Colored quest and required levels relative to your current character, keeping
   difficulty separate from the conditions for accepting a quest.
 

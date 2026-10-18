@@ -33,7 +33,7 @@ test("Explicit English selection does not construct unused translated dictionari
     a.db.locale="enUS";a.QuestName(166);a.CachedQuestName(166)
     assert(next(a.nameTranslations)==nil)
 end)
-test("Each visited dictionary materializes once including intentionally empty Italian coverage",function(a)
+test("Each visited dictionary materializes once including full Italian coverage",function(a)
     for locale,loader in pairs(a.nameTranslationFactories.loaders)do
         local calls=0
         a.nameTranslationFactories.loaders[locale]=function()calls=calls+1;return loader()end
@@ -41,7 +41,7 @@ test("Each visited dictionary materializes once including intentionally empty It
         assert(a.GetNameTranslations(locale,current)==first and calls==1)
         assert(a.nameTranslationFactories.loaders[locale]==nil)
     end
-    assert(count(a.nameTranslations)==9 and next(a.nameTranslations.itIT.quests)==nil)
+    assert(count(a.nameTranslations)==9 and count(a.nameTranslations.itIT.quests)==count(a.quests) and count(a.nameTranslations.itIT.dungeons)==#a.dungeons)
     assert(next(a.nameTranslationFactories.loaders)==nil)
 end)
 test("Plain replacement dictionaries preserve existing table semantics without factory writes",function(a)

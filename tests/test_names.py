@@ -28,7 +28,74 @@ def fixture():
     return data, catalog
 
 
+def authored_fixture(data, catalog):
+    supplement = {"schema": 1, "provenance": {"provider": "Dungeon Pro", "extraction": "authored-title-translation"}, "locales": {}}
+    for locale in names.LOCALES:
+        supplement["locales"][locale] = {"quests": {}, "dungeons": {}}
+        for kind, definitions in (("quests", catalog["quests"]), ("dungeons", catalog["dungeons"])):
+            for definition in definitions:
+                key = str(definition["id"]) if kind == "quests" else definition["key"]
+                if key not in data["locales"][locale][kind]:
+                    supplement["locales"][locale][kind][key] = {"source": definition["name"], "name": locale + " localized title"}
+    return supplement
+
+
 class NamesTests(unittest.TestCase):
+    def test_authored_entries_fill_every_hole_without_overriding_primary_sources(self):
+        data, catalog = fixture()
+        supplement = authored_fixture(data, catalog)
+        merged = names.merge(data, catalog, supplement)
+        for locale in names.LOCALES:
+            self.assertEqual(set(merged["locales"][locale]["quests"]), {"166"})
+            self.assertEqual(set(merged["locales"][locale]["dungeons"]), {"dm"})
+        self.assertEqual(merged["locales"]["ruRU"], data["locales"]["ruRU"])
+        self.assertEqual(data["locales"]["itIT"], {"quests": {}, "dungeons": {}})
+        supplement["locales"]["ruRU"]["quests"]["166"] = {"source": "The Defias Brotherhood", "name": "Overwrite"}
+        with self.assertRaisesRegex(ValueError, "overlaps"):
+            names.merge(data, catalog, supplement)
+
+    def test_authored_schema_identity_provenance_and_coverage_fail_closed(self):
+        mutations = (
+            lambda s: s.update({"schema": True}),
+            lambda s: s["provenance"].update({"provider": "Wowhead"}),
+            lambda s: s["provenance"].update({"url": "https://example.com"}),
+            lambda s: s["locales"]["zhCN"]["quests"]["166"].update({"source": "Stale English source"}),
+            lambda s: s["locales"]["zhCN"]["quests"]["166"].update({"url": "https://example.com"}),
+            lambda s: s["locales"]["zhCN"]["quests"].update({"999": {"source": "The Defias Brotherhood", "name": "Orphan"}}),
+            lambda s: s["locales"]["zhCN"]["quests"].pop("166"),
+            lambda s: s["locales"]["zhCN"]["dungeons"].pop("dm"),
+            lambda s: s["locales"].pop("itIT"),
+        )
+        for mutation in mutations:
+            data, catalog = fixture()
+            supplement = authored_fixture(data, catalog)
+            mutation(supplement)
+            with self.subTest(mutation=mutation), self.assertRaises(ValueError):
+                names.merge(data, catalog, supplement)
+
+    def test_authored_proper_names_may_match_source_but_placeholders_and_markup_cannot(self):
+        data, catalog = fixture()
+        supplement = authored_fixture(data, catalog)
+        entry = supplement["locales"]["itIT"]["quests"]["166"]
+        entry["name"] = entry["source"]
+        with self.assertRaises(ValueError):
+            names.merge(data, catalog, supplement)
+        for invalid_flag in (False, 1, "true"):
+            entry["unchangedProperName"] = invalid_flag
+            with self.subTest(invalid_flag=invalid_flag), self.assertRaises(ValueError):
+                names.merge(data, catalog, supplement)
+        entry["unchangedProperName"] = True
+        self.assertEqual(names.merge(data, catalog, supplement)["locales"]["itIT"]["quests"]["166"]["name"], entry["source"])
+        entry["name"] = "An actual translation"
+        with self.assertRaises(ValueError):
+            names.merge(data, catalog, supplement)
+        entry.pop("unchangedProperName")
+        for invalid in ("", " ", "Unknown", "[The Defias Brotherhood]", "|cffffffffTitle", "<b>Title</b>", "Name\n"):
+            entry["name"] = invalid
+            with self.subTest(invalid=invalid), self.assertRaises(ValueError):
+                names.merge(data, catalog, supplement)
+        with self.assertRaises(ValueError):
+            names.validate_supplement(supplement, catalog, {"itIT"})
     def test_exact_id_source_and_primary_locale_url(self):
         data, catalog = fixture()
         self.assertIs(names.validate(data, catalog), data)
@@ -87,16 +154,20 @@ class NamesTests(unittest.TestCase):
         self.assertTrue(path.exists(), "Title source data is required")
         data = json.loads(path.read_text(encoding="utf-8"))
         catalog = json.loads((ROOT / "data/catalog.json").read_text(encoding="utf-8"))
-        content = names.generate(names.validate(data, catalog))
+        merged = names.load_data()
+        content = names.generate(merged)
         self.assertEqual((ROOT / "Database/NameTranslations.lua").read_bytes(), content.encode("utf-8"))
-        # Exact source coverage is explicit; an untranslated locale may be empty.
+        # Every supported non-English locale must cover the complete current catalogue.
         self.assertEqual(data["provenance"]["englishVerifiedCount"], len(catalog["quests"]))
+        for locale, payload in merged["locales"].items():
+            self.assertEqual(set(payload["quests"]), {str(q["id"]) for q in catalog["quests"]}, locale)
+            self.assertEqual(set(payload["dungeons"]), {d["key"] for d in catalog["dungeons"]}, locale)
         for locale in ("deDE", "frFR", "esES", "ptBR", "ruRU", "koKR", "zhCN", "zhTW"):
             self.assertIn("166", data["locales"][locale]["quests"])
             self.assertIn("dm", data["locales"][locale]["dungeons"])
 
     def test_actual_lua_factories_preserve_every_reviewed_title_and_materialize_independently(self):
-        data = json.loads((ROOT / "data/name_translations.json").read_text(encoding="utf-8"))
+        data = names.load_data()
         lines = ['local addon={} local function load(...)', names.generate(data), 'end load("DungeonPro",addon)',
                  'assert(next(addon.nameTranslations)==nil and getmetatable(addon.nameTranslations)==nil)',
                  'local total=0']

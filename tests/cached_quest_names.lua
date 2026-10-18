@@ -67,9 +67,9 @@ check("Forced locale names use exact-ID reviewed data without native title capab
  bundle();addon.db={locale="ruRU"};locale="enUS";player=nil;C_QuestLog=nil;UnitGUID=nil
  assert(addon.CachedQuestName(123)=="Русское название" and addon.QuestName(123)=="Русское название" and reads==0)
 end)
-check("Matching-client native names have priority and reviewed bundles cover cold native data",function()
+check("Reviewed selected-language names override matching-client titles without native reads",function()
  bundle();addon.db={locale="ruRU"}
- assert(addon.CachedQuestName(123)=="Cached native title" and addon.QuestName(123)=="Cached native title")
+ assert(addon.CachedQuestName(123)=="Русское название" and addon.QuestName(123)=="Русское название" and reads==0)
  title=nil;assert(addon.CachedQuestName(123)=="Русское название" and addon.QuestName(123)=="Русское название")
 end)
 check("Forced missing translations fall back to source English without reading a different client language",function()

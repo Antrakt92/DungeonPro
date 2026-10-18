@@ -612,6 +612,7 @@ function addon.CachedQuestName(id)
     local translated, translationCurrent
     if id and definition and sourceCurrent() then
         translated, translationCurrent = translatedName("quests", id, definition, sourceCurrent, locale)
+        if locale ~= "enUS" and translated and translationCurrent and translationCurrent() then return translated end
         if locale ~= clientLocale then return translated end
     end
     local quest = addon.Clean(C_QuestLog, "table")
@@ -658,6 +659,7 @@ function addon.QuestName(id)
         return localeCurrent and localeCurrent() and addon.quests == catalogue and catalogue and rawget(catalogue, id) == definition
     end
     bundled, bundleCurrent = translatedName("quests", id, definition, sourceCurrent, locale)
+    if locale ~= "enUS" and bundled and bundleCurrent and bundleCurrent() then return bundled end
     if locale ~= clientLocale then
         return fallback()
     end
@@ -985,6 +987,7 @@ function addon.DungeonName(d)
         return localeCurrent and localeCurrent() and addon.Clean(rawget(d, "key"), "string") == key
     end
     if key then bundled, bundleCurrent = translatedName("dungeons", key, d, sourceCurrent, locale) end
+    if locale ~= "enUS" and bundled and bundleCurrent and bundleCurrent() then return bundled end
     if locale ~= clientLocale then return fallback() end
     local source = addon.Clean(d.name, "string")
     if not mapID then return fallback() end

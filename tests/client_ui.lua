@@ -387,6 +387,12 @@ check("Close and reopen preserve selection", function()
 end)
 check("Quest-data events pass success to bounded delayed title recovery", function()
     expandKnownChain()
+    -- A complete selected-language pack has no cold title to request. Exercise
+    -- native recovery only for an explicitly absent reviewed entry.
+    local dictionary = assert(addon.GetNameTranslations("ruRU", function() return true end))
+    local savedTranslation = dictionary.quests[65]
+    dictionary.quests[65] = nil
+    addon.QuestName(65)
     local savedTimer, savedRequest = C_Timer, C_QuestLog.RequestLoadQuestByID
     local callbacks, watchdogs, calls = {}, {}, 0
     C_Timer = { After = function(delay, fn)
@@ -403,6 +409,7 @@ check("Quest-data events pass success to bounded delayed title recovery", functi
     watchdogs[1]()
     assert(#callbacks == 1 and calls == 1)
     C_Timer, C_QuestLog.RequestLoadQuestByID = savedTimer, savedRequest
+    dictionary.quests[65] = savedTranslation
 end)
 check("Unrelated quest events preserve the guide and matching events release it", function()
     local saved, removed, serial = TomTom, {}, 0

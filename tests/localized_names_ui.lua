@@ -37,7 +37,7 @@ for _, locale in ipairs({ "deDE", "frFR", "esES", "itIT", "ptBR", "ruRU", "koKR"
         ui.search = ""; coverage = coverage + 1
     end
 end
-assert(coverage >= 7, "bundled real-language coverage unexpectedly lost")
+assert(coverage == 9, "all supported title languages cover both quest and dungeon names")
 addon.db.locale = "enUS"; ui:Refresh()
 local previous = addon.QuestName(166)
 ui.language.scripts.OnEnter()
@@ -51,4 +51,43 @@ assert(visibleTitle(translated.dungeons.dm.name), "hover previews ordinary dunge
 addon.Language:Cancel(ui)
 assert(addon.db.locale == "enUS" and addon.QuestName(166) == previous and questTitle(previous))
 assert(ui.dungeon == dungeon and ui.quest == 166, "language preview retains current dungeon and quest")
+local nativeReads = 0
+C_QuestLog.GetTitleForQuestID = function(id)
+    nativeReads = nativeReads + 1
+    return addon.quests[id] and addon.quests[id].name
+end
+local screenshotIDs = {92747,92748,92750,92751,92752,92753,92819}
+local originalDungeon, originalQuest = ui.dungeon, ui.quest
+local initialRequests = requests
+for _, locale in ipairs({"deDE","frFR","esES","itIT","ptBR","ruRU","koKR","zhCN","zhTW"}) do
+    GetLocale = function() return locale end
+    addon.db.locale = locale
+    local dictionary = assert(addon.GetNameTranslations(locale, function()return true end))
+    for id, definition in pairs(addon.quests) do
+        local entry = assert(dictionary.quests[id], locale .. " missing quest " .. id)
+        assert(entry.source == definition.name and addon.CachedQuestName(id) == entry.name and addon.QuestName(id) == entry.name,
+            "the complete selected-language pack wins over matching-client English cache text")
+    end
+    for _, definition in ipairs(addon.dungeons) do
+        local entry = assert(dictionary.dungeons[definition.key], locale .. " missing dungeon " .. definition.key)
+        assert(entry.source == definition.name and addon.DungeonName(definition) == entry.name,
+            "all dungeon titles retain the selected language and wing suffix exactly once")
+    end
+    ui.dungeon, ui.quest = dungeon, 92753; ui.questTreeRoot, ui.questTreeDungeon = 92753, dungeon
+    ui:Refresh()
+    for _, id in ipairs(screenshotIDs) do
+        local entry = dictionary.quests[id]
+        assert(entry.name ~= entry.source, locale .. " screenshot quest still falls back to English")
+        ui.quest = id; ui:RefreshDetail()
+        assert(questTitle(entry.name), locale .. " selected screenshot quest title is localized")
+    end
+    for _, row in ipairs(ui.rows) do
+        local id = row.questID or row.anchorQuestID
+        if row:IsShown() and id then assert(row.title.text == dictionary.quests[id].name or row.title.text == dictionary.quests[id].name .. " #" .. id, "chain and list titles use the same language as details, with IDs only to distinguish repeated names") end
+    end
+end
+assert(nativeReads == 0 and requests == initialRequests, "complete title browsing uses lazy offline dictionaries without native reads or hydration")
+addon.db.locale = "enUS"; GetLocale = function()return "zhCN"end
+assert(addon.QuestName(92753) == addon.quests[92753].name, "forcing English never reuses the Chinese dictionary")
+ui.dungeon, ui.quest = originalDungeon, originalQuest
 print("Actual localized name composition: PASS (selected titles, translated search, preview, cancellation)")

@@ -1,0 +1,2434 @@
+{
+  "schema": 1,
+  "provenance": {
+    "provider": "Dungeon Pro",
+    "extraction": "authored-title-translation"
+  },
+  "locales": {
+    "itIT": {
+      "quests": {
+        "65": {
+          "source": "The Defias Brotherhood",
+          "name": "La Fratellanza dei Defias"
+        },
+        "132": {
+          "source": "The Defias Brotherhood",
+          "name": "La Fratellanza dei Defias"
+        },
+        "135": {
+          "source": "The Defias Brotherhood",
+          "name": "La Fratellanza dei Defias"
+        },
+        "141": {
+          "source": "The Defias Brotherhood",
+          "name": "La Fratellanza dei Defias"
+        },
+        "142": {
+          "source": "The Defias Brotherhood",
+          "name": "La Fratellanza dei Defias"
+        },
+        "155": {
+          "source": "The Defias Brotherhood",
+          "name": "La Fratellanza dei Defias"
+        },
+        "166": {
+          "source": "The Defias Brotherhood",
+          "name": "La Fratellanza dei Defias"
+        },
+        "167": {
+          "source": "Oh Brother...",
+          "name": "Oh, fratello..."
+        },
+        "168": {
+          "source": "Collecting Memories",
+          "name": "Raccogliere ricordi"
+        },
+        "214": {
+          "source": "Red Silk Bandanas",
+          "name": "Bandane di seta rossa"
+        },
+        "2040": {
+          "source": "Underground Assault",
+          "name": "Assalto sotterraneo"
+        },
+        "92742": {
+          "source": "Testing the Wells",
+          "name": "Controllare i pozzi"
+        },
+        "92744": {
+          "source": "Murloc Gills",
+          "name": "Branchie di murloc"
+        },
+        "92745": {
+          "source": "The State of the Mines",
+          "name": "Lo stato delle miniere"
+        },
+        "92747": {
+          "source": "Moonbrook Espionage",
+          "name": "Spionaggio a Rivoluna"
+        },
+        "92748": {
+          "source": "Explosive Consultation",
+          "name": "Consulenza esplosiva"
+        },
+        "92749": {
+          "source": "A Dynamite Plan",
+          "name": "Un piano alla dinamite"
+        },
+        "92750": {
+          "source": "Detonation at a Distance",
+          "name": "Detonazione a distanza"
+        },
+        "92751": {
+          "source": "Detonation at a Distance",
+          "name": "Detonazione a distanza"
+        },
+        "92752": {
+          "source": "Explosive Consultation",
+          "name": "Consulenza esplosiva"
+        },
+        "92753": {
+          "source": "Destruction in Deadmines",
+          "name": "Distruzione nelle Miniere della Morte"
+        },
+        "92819": {
+          "source": "Destruction in Deadmines",
+          "name": "Distruzione nelle Miniere della Morte"
+        },
+        "5726": {
+          "source": "Hidden Enemies",
+          "name": "Nemici nascosti"
+        },
+        "5727": {
+          "source": "Hidden Enemies",
+          "name": "Nemici nascosti"
+        },
+        "5728": {
+          "source": "Hidden Enemies",
+          "name": "Nemici nascosti"
+        },
+        "5729": {
+          "source": "Hidden Enemies",
+          "name": "Nemici nascosti"
+        },
+        "5730": {
+          "source": "Hidden Enemies",
+          "name": "Nemici nascosti"
+        },
+        "5722": {
+          "source": "Searching for the Lost Satchel",
+          "name": "Alla ricerca della sacca perduta"
+        },
+        "5723": {
+          "source": "Testing an Enemy's Strength",
+          "name": "Mettere alla prova la forza del nemico"
+        },
+        "5724": {
+          "source": "Returning the Lost Satchel",
+          "name": "Restituire la sacca perduta"
+        },
+        "5725": {
+          "source": "The Power to Destroy...",
+          "name": "Il potere di distruggere..."
+        },
+        "5761": {
+          "source": "Slaying the Beast",
+          "name": "Uccidere la bestia"
+        },
+        "96391": {
+          "source": "Underground Map",
+          "name": "Mappa del sottosuolo"
+        },
+        "96393": {
+          "source": "Old Ironforge Incursion",
+          "name": "Incursione nella Vecchia Forgiardente"
+        },
+        "96394": {
+          "source": "The Restless Dead",
+          "name": "I morti inquieti"
+        },
+        "96395": {
+          "source": "An Ancient Grudge",
+          "name": "Un antico rancore"
+        },
+        "96403": {
+          "source": "Important Heirlooms",
+          "name": "Cimeli importanti"
+        },
+        "914": {
+          "source": "Leaders of the Fang",
+          "name": "I capi della Zanna"
+        },
+        "6981": {
+          "source": "The Glowing Shard",
+          "name": "Il frammento luminoso"
+        },
+        "1491": {
+          "source": "Smart Drinks",
+          "name": "Bevande intelligenti"
+        },
+        "1489": {
+          "source": "Hamuul Runetotem",
+          "name": "Hamuul Totem Runico"
+        },
+        "1487": {
+          "source": "Deviate Eradication",
+          "name": "Sterminio dei deviati"
+        },
+        "959": {
+          "source": "Trouble at the Docks",
+          "name": "Guai al porto"
+        },
+        "1486": {
+          "source": "Deviate Hides",
+          "name": "Pelli dei deviati"
+        },
+        "962": {
+          "source": "Serpentbloom",
+          "name": "Sbocciaserpe"
+        },
+        "1490": {
+          "source": "Nara Wildmane",
+          "name": "Nara Manto Selvaggio"
+        },
+        "1098": {
+          "source": "Deathstalkers in Shadowfang",
+          "name": "Inseguitori della Morte a Zannascura"
+        },
+        "1013": {
+          "source": "The Book of Ur",
+          "name": "Il libro di Ur"
+        },
+        "1014": {
+          "source": "Arugal Must Die",
+          "name": "Arugal deve morire"
+        },
+        "870": {
+          "source": "The Forgotten Pools",
+          "name": "Le Pozze Dimenticate"
+        },
+        "877": {
+          "source": "The Stagnant Oasis",
+          "name": "L'Oasi Stagnante"
+        },
+        "880": {
+          "source": "Altered Beings",
+          "name": "Creature alterate"
+        },
+        "6561": {
+          "source": "Blackfathom Villainy",
+          "name": "Malvagità a Fondocupo"
+        },
+        "6565": {
+          "source": "Allegiance to the Old Gods",
+          "name": "Fedeltà agli Dei Antichi"
+        },
+        "1200": {
+          "source": "Blackfathom Villainy",
+          "name": "Malvagità a Fondocupo"
+        },
+        "1198": {
+          "source": "In Search of Thaelrid",
+          "name": "Alla ricerca di Thaelrid"
+        },
+        "6921": {
+          "source": "Amongst the Ruins",
+          "name": "Tra le rovine"
+        },
+        "971": {
+          "source": "Knowledge in the Deeps",
+          "name": "Sapere negli abissi"
+        },
+        "1199": {
+          "source": "Twilight Falls",
+          "name": "Il crepuscolo cala"
+        },
+        "1275": {
+          "source": "Researching the Corruption",
+          "name": "Studiare la corruzione"
+        },
+        "95036": {
+          "source": "A Moon-Kissed Blade",
+          "name": "Una lama baciata dalla luna"
+        },
+        "1654": {
+          "source": "The Test of Righteousness",
+          "name": "La prova della rettitudine"
+        },
+        "1740": {
+          "source": "The Orb of Soran'ruk",
+          "name": "La sfera di Soran'ruk"
+        },
+        "6564": {
+          "source": "Allegiance to the Old Gods",
+          "name": "Fedeltà agli Dei Antichi"
+        },
+        "6563": {
+          "source": "The Essence of Aku'Mai",
+          "name": "L'essenza di Aku'Mai"
+        },
+        "6562": {
+          "source": "Trouble in the Deeps",
+          "name": "Guai negli abissi"
+        },
+        "378": {
+          "source": "The Fury Runs Deep",
+          "name": "Furia nelle profondità"
+        },
+        "377": {
+          "source": "Crime and Punishment",
+          "name": "Delitto e castigo"
+        },
+        "391": {
+          "source": "The Stockade Riots",
+          "name": "Le rivolte delle Segrete"
+        },
+        "388": {
+          "source": "The Color of Blood",
+          "name": "Il colore del sangue"
+        },
+        "386": {
+          "source": "What Comes Around...",
+          "name": "Chi la fa..."
+        },
+        "387": {
+          "source": "Quell the Uprising",
+          "name": "Sedare la rivolta"
+        },
+        "1442": {
+          "source": "Seeking the Kor Gem",
+          "name": "Alla ricerca della gemma Kor"
+        },
+        "2930": {
+          "source": "Data Rescue",
+          "name": "Recupero dati"
+        },
+        "2841": {
+          "source": "Rig Wars",
+          "name": "Guerre di trivelle"
+        },
+        "2929": {
+          "source": "The Grand Betrayal",
+          "name": "Il grande tradimento"
+        },
+        "2904": {
+          "source": "A Fine Mess",
+          "name": "Un bel pasticcio"
+        },
+        "2926": {
+          "source": "Gnogaine",
+          "name": "Gnogaina"
+        },
+        "2962": {
+          "source": "The Only Cure is More Green Glow",
+          "name": "L'unica cura è più bagliore verde"
+        },
+        "2928": {
+          "source": "Gyrodrillmatic Excavationators",
+          "name": "Scavatori girotrivellomatici"
+        },
+        "2922": {
+          "source": "Save Techbot's Brain!",
+          "name": "Salvate il cervello di Tecnobot!"
+        },
+        "2945": {
+          "source": "Grime-Encrusted Ring",
+          "name": "Anello incrostato di sporcizia"
+        },
+        "2951": {
+          "source": "The Sparklematic 5200!",
+          "name": "Lo Splendimat 5200!"
+        },
+        "2924": {
+          "source": "Essential Artificials",
+          "name": "Componenti artificiali essenziali"
+        },
+        "2931": {
+          "source": "Castpipe's Task",
+          "name": "L'incarico di Castpipe"
+        },
+        "2923": {
+          "source": "Tinkmaster Overspark",
+          "name": "Mastro Meccanista Granfavilla"
+        },
+        "2925": {
+          "source": "Klockmort's Essentials",
+          "name": "L'occorrente di Klockmort"
+        },
+        "2842": {
+          "source": "Chief Engineer Scooty",
+          "name": "Ingegnere Capo Scooty"
+        },
+        "2843": {
+          "source": "Gnomer-gooooone!",
+          "name": "Gnomer... sparito!"
+        },
+        "95042": {
+          "source": "Seeking the Kor Gem",
+          "name": "Alla ricerca della gemma Kor"
+        },
+        "2949": {
+          "source": "Return of the Ring",
+          "name": "Il ritorno dell'anello"
+        },
+        "2947": {
+          "source": "Return of the Ring",
+          "name": "Il ritorno dell'anello"
+        },
+        "2927": {
+          "source": "The Day After",
+          "name": "Il giorno dopo"
+        },
+        "2952": {
+          "source": "The Sparklematic 5200!",
+          "name": "Lo Splendimat 5200!"
+        },
+        "2953": {
+          "source": "More Sparklematic Action",
+          "name": "Ancora lo Splendimat"
+        },
+        "4605": {
+          "source": "The Sparklematic 5200!",
+          "name": "Lo Splendimat 5200!"
+        },
+        "4604": {
+          "source": "More Sparklematic Action",
+          "name": "Ancora lo Splendimat"
+        },
+        "4606": {
+          "source": "The Sparklematic 5200!",
+          "name": "Lo Splendimat 5200!"
+        },
+        "4603": {
+          "source": "More Sparklematic Action",
+          "name": "Ancora lo Splendimat"
+        },
+        "4601": {
+          "source": "The Sparklematic 5200!",
+          "name": "Lo Splendimat 5200!"
+        },
+        "4602": {
+          "source": "The Sparklematic 5200!",
+          "name": "Lo Splendimat 5200!"
+        },
+        "2950": {
+          "source": "Nogg's Ring Redo",
+          "name": "Rifare l'anello di Nogg"
+        },
+        "1101": {
+          "source": "The Crone of the Kraul",
+          "name": "La megera dei Kraul"
+        },
+        "1102": {
+          "source": "A Vengeful Fate",
+          "name": "Un destino vendicativo"
+        },
+        "1109": {
+          "source": "Going, Going, Guano!",
+          "name": "Guano in arrivo!"
+        },
+        "1144": {
+          "source": "Willix the Importer",
+          "name": "Willix l'Importatore"
+        },
+        "1221": {
+          "source": "Blueleaf Tubers",
+          "name": "Tuberi di fogliablu"
+        },
+        "1142": {
+          "source": "Mortality Wanes",
+          "name": "La mortalità svanisce"
+        },
+        "1100": {
+          "source": "Lonebrow's Journal",
+          "name": "Il diario di Lonebrow"
+        },
+        "1113": {
+          "source": "Hearts of Zeal",
+          "name": "Cuori di zelo"
+        },
+        "6521": {
+          "source": "An Unholy Alliance",
+          "name": "Un'alleanza empia"
+        },
+        "6522": {
+          "source": "An Unholy Alliance",
+          "name": "Un'alleanza empia"
+        },
+        "3341": {
+          "source": "Bring the End",
+          "name": "Portare la fine"
+        },
+        "3525": {
+          "source": "Extinguishing the Idol",
+          "name": "Spegnere l'idolo"
+        },
+        "3636": {
+          "source": "Bring the Light",
+          "name": "Portare la Luce"
+        },
+        "6626": {
+          "source": "A Host of Evil",
+          "name": "Un'orda di malvagi"
+        },
+        "3523": {
+          "source": "Scourge of the Downs",
+          "name": "Il flagello dei Sotterranei"
+        },
+        "96800": {
+          "source": "Past Due",
+          "name": "Pagamento scaduto"
+        },
+        "1049": {
+          "source": "Compendium of the Fallen",
+          "name": "Compendio dei caduti"
+        },
+        "1051": {
+          "source": "Vorrel's Revenge",
+          "name": "La vendetta di Vorrel"
+        },
+        "1048": {
+          "source": "Into The Scarlet Monastery",
+          "name": "Nel Monastero Scarlatto"
+        },
+        "1053": {
+          "source": "In the Name of the Light",
+          "name": "Nel nome della Luce"
+        },
+        "1160": {
+          "source": "Test of Lore",
+          "name": "Prova di conoscenza"
+        },
+        "1050": {
+          "source": "Mythology of the Titans",
+          "name": "Mitologia dei Titani"
+        },
+        "1149": {
+          "source": "Test of Faith",
+          "name": "Prova di fede"
+        },
+        "1150": {
+          "source": "Test of Endurance",
+          "name": "Prova di resistenza"
+        },
+        "1151": {
+          "source": "Test of Strength",
+          "name": "Prova di forza"
+        },
+        "1152": {
+          "source": "Test of Lore",
+          "name": "Prova di conoscenza"
+        },
+        "1154": {
+          "source": "Test of Lore",
+          "name": "Prova di conoscenza"
+        },
+        "6627": {
+          "source": "Test of Lore",
+          "name": "Prova di conoscenza"
+        },
+        "1159": {
+          "source": "Test of Lore",
+          "name": "Prova di conoscenza"
+        },
+        "6628": {
+          "source": "Test of Lore",
+          "name": "Prova di conoscenza"
+        },
+        "1394": {
+          "source": "Final Passage",
+          "name": "L'ultimo passaggio"
+        },
+        "6141": {
+          "source": "Brother Anton",
+          "name": "Fratello Anton"
+        },
+        "261": {
+          "source": "Down the Scarlet Path",
+          "name": "Lungo il sentiero scarlatto"
+        },
+        "1052": {
+          "source": "Down the Scarlet Path",
+          "name": "Lungo il sentiero scarlatto"
+        },
+        "704": {
+          "source": "Agmond's Fate",
+          "name": "Il destino di Agmond"
+        },
+        "709": {
+          "source": "Solution to Doom",
+          "name": "Una soluzione alla rovina"
+        },
+        "2418": {
+          "source": "Power Stones",
+          "name": "Pietre del potere"
+        },
+        "2240": {
+          "source": "The Hidden Chamber",
+          "name": "La camera nascosta"
+        },
+        "2398": {
+          "source": "The Lost Dwarves",
+          "name": "I nani scomparsi"
+        },
+        "2278": {
+          "source": "The Platinum Discs",
+          "name": "I dischi di platino"
+        },
+        "2198": {
+          "source": "The Shattered Necklace",
+          "name": "La collana infranta"
+        },
+        "2342": {
+          "source": "Reclaimed Treasures",
+          "name": "Tesori recuperati"
+        },
+        "1139": {
+          "source": "The Lost Tablets of Will",
+          "name": "Le tavolette perdute di Volontà"
+        },
+        "2283": {
+          "source": "Necklace Recovery",
+          "name": "Recuperare la collana"
+        },
+        "17": {
+          "source": "Uldaman Reagent Run",
+          "name": "Reagenti da Uldaman"
+        },
+        "2202": {
+          "source": "Uldaman Reagent Run",
+          "name": "Reagenti da Uldaman"
+        },
+        "1360": {
+          "source": "Reclaimed Treasures",
+          "name": "Tesori recuperati"
+        },
+        "721": {
+          "source": "A Sign of Hope",
+          "name": "Un segno di speranza"
+        },
+        "2200": {
+          "source": "Back to Uldaman",
+          "name": "Ritorno a Uldaman"
+        },
+        "2284": {
+          "source": "Necklace Recovery, Take 2",
+          "name": "Recuperare la collana, secondo tentativo"
+        },
+        "722": {
+          "source": "Amulet of Secrets",
+          "name": "Amuleto dei segreti"
+        },
+        "2361": {
+          "source": "Restoring the Necklace",
+          "name": "Restaurare la collana"
+        },
+        "2199": {
+          "source": "Lore for a Price",
+          "name": "Il sapere ha un prezzo"
+        },
+        "2339": {
+          "source": "Find the Gems and Power Source",
+          "name": "Trovare le gemme e la fonte di energia"
+        },
+        "2279": {
+          "source": "The Platinum Discs",
+          "name": "I dischi di platino"
+        },
+        "2280": {
+          "source": "The Platinum Discs",
+          "name": "I dischi di platino"
+        },
+        "2341": {
+          "source": "Necklace Recovery, Take 3",
+          "name": "Recuperare la collana, terzo tentativo"
+        },
+        "2340": {
+          "source": "Deliver the Gems",
+          "name": "Consegnare le gemme"
+        },
+        "2318": {
+          "source": "Translating the Journal",
+          "name": "Tradurre il diario"
+        },
+        "2201": {
+          "source": "Find the Gems",
+          "name": "Trovare le gemme"
+        },
+        "2338": {
+          "source": "Translating the Journal",
+          "name": "Tradurre il diario"
+        },
+        "2204": {
+          "source": "Restoring the Necklace",
+          "name": "Restaurare la collana"
+        },
+        "3375": {
+          "source": "Replacement Phial",
+          "name": "Una fiala di ricambio"
+        },
+        "707": {
+          "source": "Ironband Wants You!",
+          "name": "Ironband ha bisogno di te!"
+        },
+        "738": {
+          "source": "Find Agmond",
+          "name": "Trovare Agmond"
+        },
+        "739": {
+          "source": "Murdaloc",
+          "name": "Murdaloc",
+          "unchangedProperName": true
+        },
+        "2258": {
+          "source": "Badlands Reagent Run",
+          "name": "Reagenti dalle Maleterre"
+        },
+        "720": {
+          "source": "A Sign of Hope",
+          "name": "Un segno di speranza"
+        },
+        "723": {
+          "source": "Prospect of Faith",
+          "name": "Prospettive di fede"
+        },
+        "724": {
+          "source": "Prospect of Faith",
+          "name": "Prospettive di fede"
+        },
+        "2439": {
+          "source": "The Platinum Discs",
+          "name": "I dischi di platino"
+        },
+        "2440": {
+          "source": "The Platinum Discs",
+          "name": "I dischi di platino"
+        },
+        "2500": {
+          "source": "Badlands Reagent Run",
+          "name": "Reagenti dalle Maleterre"
+        },
+        "2203": {
+          "source": "Badlands Reagent Run II",
+          "name": "Reagenti dalle Maleterre II"
+        },
+        "2501": {
+          "source": "Badlands Reagent Run II",
+          "name": "Reagenti dalle Maleterre II"
+        },
+        "96984": {
+          "source": "Heart of Disruption",
+          "name": "Cuore della distruzione"
+        },
+        "92458": {
+          "source": "Heart of Disruption",
+          "name": "Cuore della distruzione"
+        },
+        "92457": {
+          "source": "Starving Arcane",
+          "name": "Fame arcana"
+        },
+        "92456": {
+          "source": "A Green Sample",
+          "name": "Un campione verde"
+        },
+        "96987": {
+          "source": "Opportunistic Education",
+          "name": "Un'occasione per imparare"
+        },
+        "92489": {
+          "source": "Power Overwhelming",
+          "name": "Potere travolgente"
+        },
+        "96988": {
+          "source": "Source of Power",
+          "name": "Fonte di potere"
+        },
+        "96986": {
+          "source": "The Grave Knight",
+          "name": "Il cavaliere della tomba"
+        },
+        "92434": {
+          "source": "Blood in the Streets",
+          "name": "Sangue nelle strade"
+        },
+        "97287": {
+          "source": "Shrewd Negotiations",
+          "name": "Trattative astute"
+        },
+        "92432": {
+          "source": "An Alarming Request",
+          "name": "Una richiesta allarmante"
+        },
+        "92459": {
+          "source": "Friend of the Kirin Tor",
+          "name": "Amico del Kirin Tor"
+        },
+        "2770": {
+          "source": "Gahz'rilla",
+          "name": "Gahz'rilla",
+          "unchangedProperName": true
+        },
+        "2846": {
+          "source": "Tiara of the Deep",
+          "name": "Tiara degli abissi"
+        },
+        "3527": {
+          "source": "The Prophecy of Mosh'aru",
+          "name": "La profezia di Mosh'aru"
+        },
+        "2865": {
+          "source": "Scarab Shells",
+          "name": "Gusci di scarabeo"
+        },
+        "2768": {
+          "source": "Divino-matic Rod",
+          "name": "Bastone divinomatico"
+        },
+        "3042": {
+          "source": "Troll Temper",
+          "name": "Indole dei troll"
+        },
+        "2936": {
+          "source": "The Spider God",
+          "name": "Il Dio Ragno"
+        },
+        "2861": {
+          "source": "Tabetha's Task",
+          "name": "L'incarico di Tabetha"
+        },
+        "2991": {
+          "source": "Nekrum's Medallion",
+          "name": "Il medaglione di Nekrum"
+        },
+        "2864": {
+          "source": "Tran'rek",
+          "name": "Tran'rek",
+          "unchangedProperName": true
+        },
+        "3520": {
+          "source": "Screecher Spirits",
+          "name": "Spiriti stridenti"
+        },
+        "2769": {
+          "source": "The Brassbolts Brothers",
+          "name": "I fratelli Brassbolts"
+        },
+        "2933": {
+          "source": "Venom Bottles",
+          "name": "Bottiglie di veleno"
+        },
+        "2934": {
+          "source": "Undamaged Venom Sac",
+          "name": "Sacca di veleno intatta"
+        },
+        "2935": {
+          "source": "Consult Master Gadrin",
+          "name": "Consultare il Maestro Gadrin"
+        },
+        "2937": {
+          "source": "Summoning Shadra",
+          "name": "Evocare Shadra"
+        },
+        "2988": {
+          "source": "Witherbark Cages",
+          "name": "Le gabbie degli Scorzasecca"
+        },
+        "2989": {
+          "source": "The Altar of Zul",
+          "name": "L'altare di Zul"
+        },
+        "2990": {
+          "source": "Thadius Grimshade",
+          "name": "Thadius Grimshade",
+          "unchangedProperName": true
+        },
+        "2992": {
+          "source": "The Divination",
+          "name": "La divinazione"
+        },
+        "2993": {
+          "source": "Return to the Hinterlands",
+          "name": "Ritorno nell'Entroterre"
+        },
+        "2994": {
+          "source": "Saving Sharpbeak",
+          "name": "Salvare Beccaguzzo"
+        },
+        "4787": {
+          "source": "The Ancient Egg",
+          "name": "L'uovo antico"
+        },
+        "3528": {
+          "source": "The God Hakkar",
+          "name": "Il dio Hakkar"
+        },
+        "1446": {
+          "source": "Jammal'an the Prophet",
+          "name": "Jammal'an il Profeta"
+        },
+        "3447": {
+          "source": "Secret of the Circle",
+          "name": "Il segreto del cerchio"
+        },
+        "3373": {
+          "source": "The Essence of Eranikus",
+          "name": "L'essenza di Eranikus"
+        },
+        "1475": {
+          "source": "Into The Temple of Atal'Hakkar",
+          "name": "Nel Tempio di Atal'Hakkar"
+        },
+        "3446": {
+          "source": "Into the Depths",
+          "name": "Nelle profondità"
+        },
+        "1445": {
+          "source": "The Temple of Atal'Hakkar",
+          "name": "Il Tempio di Atal'Hakkar"
+        },
+        "3380": {
+          "source": "The Sunken Temple",
+          "name": "Il Tempio Sommerso"
+        },
+        "8733": {
+          "source": "Eranikus, Tyrant of the Dream",
+          "name": "Eranikus, Tiranno del Sogno"
+        },
+        "3445": {
+          "source": "The Sunken Temple",
+          "name": "Il Tempio Sommerso"
+        },
+        "3444": {
+          "source": "The Stone Circle",
+          "name": "Il cerchio di pietre"
+        },
+        "98815": {
+          "source": "Highland Hides",
+          "name": "Pelli delle alture"
+        },
+        "98823": {
+          "source": "Earthen Echo",
+          "name": "Eco della terra"
+        },
+        "95664": {
+          "source": "Elder Knowledge",
+          "name": "Sapienza degli anziani"
+        },
+        "95810": {
+          "source": "Lost Relic Carry",
+          "name": "Trasportare la reliquia perduta"
+        },
+        "95697": {
+          "source": "Changing Tastes",
+          "name": "Gusti che cambiano"
+        },
+        "95682": {
+          "source": "Open the Maw",
+          "name": "Aprire le fauci"
+        },
+        "95647": {
+          "source": "Lost in the Thicket Things",
+          "name": "Cose perdute nel folto"
+        },
+        "98824": {
+          "source": "Prehistoric Prism",
+          "name": "Prisma preistorico"
+        },
+        "95646": {
+          "source": "Horrors in the Highland",
+          "name": "Orrori sulle alture"
+        },
+        "95772": {
+          "source": "Songblade Search",
+          "name": "Alla ricerca della Lama Cantante"
+        },
+        "95809": {
+          "source": "Heartwoven",
+          "name": "Intessuto nel cuore"
+        },
+        "95737": {
+          "source": "Seeking Caitlin",
+          "name": "Alla ricerca di Caitlin"
+        },
+        "95663": {
+          "source": "Dragonmaw Rumors",
+          "name": "Voci sui Fauci di Drago"
+        },
+        "95795": {
+          "source": "Fallen in the Fen",
+          "name": "Caduti nella palude"
+        },
+        "469": {
+          "source": "Daily Delivery",
+          "name": "Consegna quotidiana"
+        },
+        "484": {
+          "source": "Young Crocolisk Skins",
+          "name": "Pelli di giovani crocolischi"
+        },
+        "471": {
+          "source": "Apprentice's Duties",
+          "name": "I doveri dell'apprendista"
+        },
+        "1469": {
+          "source": "Rhapsody's Tale",
+          "name": "Il racconto di Rhapsody"
+        },
+        "1424": {
+          "source": "Pool of Tears",
+          "name": "La Pozza delle Lacrime"
+        },
+        "1429": {
+          "source": "The Atal'ai Exile",
+          "name": "L'esule Atal'ai"
+        },
+        "1444": {
+          "source": "Return to Fel'Zerul",
+          "name": "Ritorno da Fel'Zerul"
+        },
+        "8734": {
+          "source": "Tyrande and Remulos",
+          "name": "Tyrande e Remulos"
+        },
+        "8735": {
+          "source": "The Nightmare's Corruption",
+          "name": "La corruzione dell'Incubo"
+        },
+        "3374": {
+          "source": "The Essence of Eranikus",
+          "name": "L'essenza di Eranikus"
+        },
+        "3801": {
+          "source": "Dark Iron Legacy",
+          "name": "L'eredità dei Ferroscuro"
+        },
+        "3802": {
+          "source": "Dark Iron Legacy",
+          "name": "L'eredità dei Ferroscuro"
+        },
+        "3906": {
+          "source": "Disharmony of Flame",
+          "name": "La disarmonia della fiamma"
+        },
+        "3907": {
+          "source": "Disharmony of Fire",
+          "name": "La disarmonia del fuoco"
+        },
+        "3981": {
+          "source": "Commander Gor'shak",
+          "name": "Comandante Gor'shak"
+        },
+        "3982": {
+          "source": "What Is Going On?",
+          "name": "Che cosa succede?"
+        },
+        "4001": {
+          "source": "What Is Going On?",
+          "name": "Che cosa succede?"
+        },
+        "4002": {
+          "source": "The Eastern Kingdoms",
+          "name": "I Regni Orientali"
+        },
+        "4003": {
+          "source": "The Royal Rescue",
+          "name": "Il salvataggio reale"
+        },
+        "4004": {
+          "source": "The Princess Saved?",
+          "name": "La principessa è salva?"
+        },
+        "4022": {
+          "source": "A Taste of Flame",
+          "name": "Un assaggio di fiamme"
+        },
+        "4023": {
+          "source": "A Taste of Flame",
+          "name": "Un assaggio di fiamme"
+        },
+        "4024": {
+          "source": "A Taste of Flame",
+          "name": "Un assaggio di fiamme"
+        },
+        "4061": {
+          "source": "The Rise of the Machines",
+          "name": "L'ascesa delle macchine"
+        },
+        "4062": {
+          "source": "The Rise of the Machines",
+          "name": "L'ascesa delle macchine"
+        },
+        "4063": {
+          "source": "The Rise of the Machines",
+          "name": "L'ascesa delle macchine"
+        },
+        "4081": {
+          "source": "KILL ON SIGHT: Dark Iron Dwarves",
+          "name": "UCCIDERE A VISTA: nani Ferroscuro"
+        },
+        "4082": {
+          "source": "KILL ON SIGHT: High Ranking Dark Iron Officials",
+          "name": "UCCIDERE A VISTA: alti ufficiali Ferroscuro"
+        },
+        "4083": {
+          "source": "The Spectral Chalice",
+          "name": "Il calice spettrale"
+        },
+        "4121": {
+          "source": "Precarious Predicament",
+          "name": "Una situazione precaria"
+        },
+        "4122": {
+          "source": "Grark Lorkrub",
+          "name": "Grark Lorkrub",
+          "unchangedProperName": true
+        },
+        "4123": {
+          "source": "The Heart of the Mountain",
+          "name": "Il cuore della montagna"
+        },
+        "4126": {
+          "source": "Hurley Blackbreath",
+          "name": "Hurley Soffionero"
+        },
+        "4128": {
+          "source": "Ragnar Thunderbrew",
+          "name": "Ragnar Birratuono"
+        },
+        "4132": {
+          "source": "Operation: Death to Angerforge",
+          "name": "Operazione: morte a Forgiarabbia"
+        },
+        "4133": {
+          "source": "Vivian Lagrave",
+          "name": "Vivian Lagrave",
+          "unchangedProperName": true
+        },
+        "4134": {
+          "source": "Lost Thunderbrew Recipe",
+          "name": "La ricetta perduta dei Birratuono"
+        },
+        "4136": {
+          "source": "Ribbly Screwspigot",
+          "name": "Ribbly Giravite"
+        },
+        "4182": {
+          "source": "Dragonkin Menace",
+          "name": "La minaccia dei dragonidi"
+        },
+        "4183": {
+          "source": "The True Masters",
+          "name": "I veri padroni"
+        },
+        "4184": {
+          "source": "The True Masters",
+          "name": "I veri padroni"
+        },
+        "4185": {
+          "source": "The True Masters",
+          "name": "I veri padroni"
+        },
+        "4186": {
+          "source": "The True Masters",
+          "name": "I veri padroni"
+        },
+        "4201": {
+          "source": "The Love Potion",
+          "name": "La pozione d'amore"
+        },
+        "4223": {
+          "source": "The True Masters",
+          "name": "I veri padroni"
+        },
+        "4224": {
+          "source": "The True Masters",
+          "name": "I veri padroni"
+        },
+        "4241": {
+          "source": "Marshal Windsor",
+          "name": "Maresciallo Windsor"
+        },
+        "4242": {
+          "source": "Abandoned Hope",
+          "name": "Speranza abbandonata"
+        },
+        "4262": {
+          "source": "Overmaster Pyron",
+          "name": "Sovrintendente Pyron"
+        },
+        "4263": {
+          "source": "Incendius!",
+          "name": "Incendius!",
+          "unchangedProperName": true
+        },
+        "4264": {
+          "source": "A Crumpled Up Note",
+          "name": "Un biglietto accartocciato"
+        },
+        "4282": {
+          "source": "A Shred of Hope",
+          "name": "Un barlume di speranza"
+        },
+        "4286": {
+          "source": "The Good Stuff",
+          "name": "La roba buona"
+        },
+        "4295": {
+          "source": "Rocknot's Ale",
+          "name": "La birra di Rocknot"
+        },
+        "4322": {
+          "source": "Jail Break!",
+          "name": "Evasione!"
+        },
+        "4324": {
+          "source": "Yuka Screwspigot",
+          "name": "Yuka Giravite"
+        },
+        "4341": {
+          "source": "Kharan Mighthammer",
+          "name": "Kharan Granmartello"
+        },
+        "4342": {
+          "source": "Kharan's Tale",
+          "name": "Il racconto di Kharan"
+        },
+        "4361": {
+          "source": "The Bearer of Bad News",
+          "name": "Il portatore di cattive notizie"
+        },
+        "4362": {
+          "source": "The Fate of the Kingdom",
+          "name": "Il destino del regno"
+        },
+        "4363": {
+          "source": "The Princess's Surprise",
+          "name": "La sorpresa della principessa"
+        },
+        "6402": {
+          "source": "Stormwind Rendezvous",
+          "name": "Appuntamento a Roccavento"
+        },
+        "7028": {
+          "source": "Twisted Evils",
+          "name": "Mali contorti"
+        },
+        "7029": {
+          "source": "Vyletongue Corruption",
+          "name": "La corruzione di Linguatroce"
+        },
+        "7041": {
+          "source": "Vyletongue Corruption",
+          "name": "La corruzione di Linguatroce"
+        },
+        "7044": {
+          "source": "Legends of Maraudon",
+          "name": "Le leggende di Maraudon"
+        },
+        "7046": {
+          "source": "The Scepter of Celebras",
+          "name": "Lo scettro di Celebras"
+        },
+        "7064": {
+          "source": "Corruption of Earth and Seed",
+          "name": "La corruzione della terra e del seme"
+        },
+        "7065": {
+          "source": "Corruption of Earth and Seed",
+          "name": "La corruzione della terra e del seme"
+        },
+        "7066": {
+          "source": "Seed of Life",
+          "name": "Il seme della vita"
+        },
+        "7067": {
+          "source": "The Pariah's Instructions",
+          "name": "Le istruzioni del reietto"
+        },
+        "7068": {
+          "source": "Shadowshard Fragments",
+          "name": "Frammenti di Ombroscheggia"
+        },
+        "7070": {
+          "source": "Shadowshard Fragments",
+          "name": "Frammenti di Ombroscheggia"
+        },
+        "7201": {
+          "source": "The Last Element",
+          "name": "L'ultimo elemento"
+        },
+        "7604": {
+          "source": "A Binding Contract",
+          "name": "Un contratto vincolante"
+        },
+        "9015": {
+          "source": "The Challenge",
+          "name": "La sfida"
+        },
+        "92401": {
+          "source": "A Frightened Request",
+          "name": "Una richiesta impaurita"
+        },
+        "92415": {
+          "source": "Remember That I Love You",
+          "name": "Ricorda che ti amo"
+        },
+        "92421": {
+          "source": "Light's Justice",
+          "name": "La giustizia della Luce"
+        },
+        "92422": {
+          "source": "The Wrath of Rath'mael",
+          "name": "L'ira di Rath'mael"
+        },
+        "95161": {
+          "source": "Remember That I Love You",
+          "name": "Ricorda che ti amo"
+        },
+        "95189": {
+          "source": "Crest of Lordaeron",
+          "name": "Lo stemma di Lordaeron"
+        },
+        "95195": {
+          "source": "Bloodied Insignia",
+          "name": "Insegne insanguinate"
+        },
+        "95204": {
+          "source": "Crest of Lordaeron",
+          "name": "Lo stemma di Lordaeron"
+        },
+        "95216": {
+          "source": "The New Plague",
+          "name": "La nuova piaga"
+        },
+        "95250": {
+          "source": "Abominable Creatures",
+          "name": "Creature abominevoli"
+        },
+        "95775": {
+          "source": "The Drowned City",
+          "name": "La Città Sommersa"
+        },
+        "95776": {
+          "source": "The Only Good Brinescale...",
+          "name": "L'unico Brinescale buono..."
+        },
+        "95787": {
+          "source": "Take Two With Water",
+          "name": "Prenderne due con acqua"
+        },
+        "95788": {
+          "source": "Magics of the Drowned City",
+          "name": "Le magie della Città Sommersa"
+        },
+        "96774": {
+          "source": "Ancient Gurubashi Idol",
+          "name": "Antico idolo Gurubashi"
+        },
+        "97288": {
+          "source": "Unending Torment",
+          "name": "Tormento senza fine"
+        },
+        "97289": {
+          "source": "Unending Torment",
+          "name": "Tormento senza fine"
+        },
+        "97290": {
+          "source": "Unending Torment",
+          "name": "Tormento senza fine"
+        },
+        "97291": {
+          "source": "Unending Torment",
+          "name": "Tormento senza fine"
+        },
+        "97292": {
+          "source": "Unending Torment",
+          "name": "Tormento senza fine"
+        },
+        "4724": {
+          "source": "The Pack Mistress",
+          "name": "La signora del branco"
+        },
+        "4701": {
+          "source": "Put Her Down",
+          "name": "Abbattetela"
+        },
+        "4903": {
+          "source": "Warlord's Command",
+          "name": "L'ordine del signore della guerra"
+        },
+        "4729": {
+          "source": "Kibler's Exotic Pets",
+          "name": "Gli animali esotici di Kibler"
+        },
+        "4742": {
+          "source": "Seal of Ascension",
+          "name": "Il sigillo dell'ascensione"
+        },
+        "4867": {
+          "source": "Urok Doomhowl",
+          "name": "Urok Urlonero"
+        },
+        "4866": {
+          "source": "Mother's Milk",
+          "name": "Latte materno"
+        },
+        "4788": {
+          "source": "The Final Tablets",
+          "name": "Le ultime tavolette"
+        },
+        "4862": {
+          "source": "En-Ay-Es-Tee-Why",
+          "name": "Sporco affare"
+        },
+        "4982": {
+          "source": "Bijou's Belongings",
+          "name": "Gli effetti personali di Bijou"
+        },
+        "5001": {
+          "source": "Bijou's Belongings",
+          "name": "Gli effetti personali di Bijou"
+        },
+        "5081": {
+          "source": "Maxwell's Mission",
+          "name": "La missione di Maxwell"
+        },
+        "4768": {
+          "source": "The Darkstone Tablet",
+          "name": "La tavoletta di Pietranera"
+        },
+        "4974": {
+          "source": "For The Horde!",
+          "name": "Per l'Orda!"
+        },
+        "6602": {
+          "source": "Blood of the Black Dragon Champion",
+          "name": "Il sangue del campione dei draghi neri"
+        },
+        "4764": {
+          "source": "Doomrigger's Clasp",
+          "name": "Il fermaglio di Doomrigger"
+        },
+        "5102": {
+          "source": "General Drakkisath's Demise",
+          "name": "La fine del Generale Drakkisath"
+        },
+        "6502": {
+          "source": "Drakefire Amulet",
+          "name": "L'amuleto di Fuocodraco"
+        },
+        "7761": {
+          "source": "Blackhand's Command",
+          "name": "L'ordine di Manonera"
+        },
+        "5160": {
+          "source": "The Matron Protectorate",
+          "name": "Il protettorato della matriarca"
+        },
+        "5047": {
+          "source": "Finkle Einhorn, At Your Service!",
+          "name": "Finkle Einhorn, al vostro servizio!"
+        },
+        "4735": {
+          "source": "Egg Collection",
+          "name": "Raccolta di uova"
+        },
+        "6821": {
+          "source": "Eye of the Emberseer",
+          "name": "L'occhio del Veggente delle Braci"
+        },
+        "5127": {
+          "source": "The Demon Forge",
+          "name": "La forgia demoniaca"
+        },
+        "5466": {
+          "source": "The Lich, Ras Frostwhisper",
+          "name": "Ras Soffiogelido, il lich"
+        },
+        "5384": {
+          "source": "Kirtonos the Herald",
+          "name": "Kirtonos l'Araldo"
+        },
+        "5382": {
+          "source": "Doctor Theolen Krastinov, the Butcher",
+          "name": "Dottor Theolen Krastinov, il Macellaio"
+        },
+        "4771": {
+          "source": "Dawn's Gambit",
+          "name": "La mossa dell'alba"
+        },
+        "5343": {
+          "source": "Barov Family Fortune",
+          "name": "La fortuna della famiglia Barov"
+        },
+        "5515": {
+          "source": "Krastinov's Bag of Horrors",
+          "name": "La sacca degli orrori di Krastinov"
+        },
+        "5582": {
+          "source": "Healthy Dragon Scale",
+          "name": "Scaglia di drago sana"
+        },
+        "5529": {
+          "source": "Plagued Hatchlings",
+          "name": "Draghetti appestati"
+        },
+        "5341": {
+          "source": "Barov Family Fortune",
+          "name": "La fortuna della famiglia Barov"
+        },
+        "8992": {
+          "source": "The Right Piece of Lord Valthalak's Amulet",
+          "name": "La metà destra dell'amuleto di Sire Valthalak"
+        },
+        "8969": {
+          "source": "The Left Piece of Lord Valthalak's Amulet",
+          "name": "La metà sinistra dell'amuleto di Sire Valthalak"
+        },
+        "5531": {
+          "source": "Betina Bigglezink",
+          "name": "Betina Bigglezink",
+          "unchangedProperName": true
+        },
+        "5461": {
+          "source": "The Human, Ras Frostwhisper",
+          "name": "Ras Soffiogelido, l'umano"
+        },
+        "5462": {
+          "source": "The Dying, Ras Frostwhisper",
+          "name": "Ras Soffiogelido, il morente"
+        },
+        "5463": {
+          "source": "Menethil's Gift",
+          "name": "Il dono di Menethil"
+        },
+        "5464": {
+          "source": "Menethil's Gift",
+          "name": "Il dono di Menethil"
+        },
+        "5465": {
+          "source": "Soulbound Keepsake",
+          "name": "Ricordo vincolato all'anima"
+        },
+        "5522": {
+          "source": "Leonid Barthalomew",
+          "name": "Leonid Barthalomew",
+          "unchangedProperName": true
+        },
+        "5344": {
+          "source": "The Last Barov",
+          "name": "L'ultimo Barov"
+        },
+        "5342": {
+          "source": "The Last Barov",
+          "name": "L'ultimo Barov"
+        },
+        "8985": {
+          "source": "More Components of Importance",
+          "name": "Altri componenti importanti"
+        },
+        "8986": {
+          "source": "More Components of Importance",
+          "name": "Altri componenti importanti"
+        },
+        "8987": {
+          "source": "More Components of Importance",
+          "name": "Altri componenti importanti"
+        },
+        "8988": {
+          "source": "More Components of Importance",
+          "name": "Altri componenti importanti"
+        },
+        "8989": {
+          "source": "The Right Piece of Lord Valthalak's Amulet",
+          "name": "La metà destra dell'amuleto di Sire Valthalak"
+        },
+        "8990": {
+          "source": "The Right Piece of Lord Valthalak's Amulet",
+          "name": "La metà destra dell'amuleto di Sire Valthalak"
+        },
+        "8991": {
+          "source": "The Right Piece of Lord Valthalak's Amulet",
+          "name": "La metà destra dell'amuleto di Sire Valthalak"
+        },
+        "8994": {
+          "source": "Final Preparations",
+          "name": "Ultimi preparativi"
+        },
+        "8995": {
+          "source": "Mea Culpa, Lord Valthalak",
+          "name": "Mea culpa, Sire Valthalak"
+        },
+        "8996": {
+          "source": "Return to Bodley",
+          "name": "Ritorno da Bodley"
+        },
+        "8962": {
+          "source": "Components of Importance",
+          "name": "Componenti importanti"
+        },
+        "8963": {
+          "source": "Components of Importance",
+          "name": "Componenti importanti"
+        },
+        "8964": {
+          "source": "Components of Importance",
+          "name": "Componenti importanti"
+        },
+        "8965": {
+          "source": "Components of Importance",
+          "name": "Componenti importanti"
+        },
+        "8966": {
+          "source": "The Left Piece of Lord Valthalak's Amulet",
+          "name": "La metà sinistra dell'amuleto di Sire Valthalak"
+        },
+        "8970": {
+          "source": "I See Alcaz Island In Your Future...",
+          "name": "Vedo l'Isola di Alcaz nel tuo futuro..."
+        },
+        "5214": {
+          "source": "The Great Fras Siabi",
+          "name": "Il grande Fras Siabi"
+        },
+        "8945": {
+          "source": "Dead Man's Plea",
+          "name": "La supplica di un morto"
+        },
+        "5262": {
+          "source": "The Truth Comes Crashing Down",
+          "name": "La verità viene a galla"
+        },
+        "5213": {
+          "source": "The Active Agent",
+          "name": "Il reagente attivo"
+        },
+        "5251": {
+          "source": "The Archivist",
+          "name": "L'Archivista"
+        },
+        "5243": {
+          "source": "Houses of the Holy",
+          "name": "Dimore sacre"
+        },
+        "5125": {
+          "source": "Aurius' Reckoning",
+          "name": "La resa dei conti di Aurius"
+        },
+        "5848": {
+          "source": "Of Love and Family",
+          "name": "Amore e famiglia"
+        },
+        "5263": {
+          "source": "Above and Beyond",
+          "name": "Oltre ogni limite"
+        },
+        "5282": {
+          "source": "The Restless Souls",
+          "name": "Le anime inquiete"
+        },
+        "5122": {
+          "source": "The Medallion of Faith",
+          "name": "Il medaglione della fede"
+        },
+        "5212": {
+          "source": "The Flesh Does Not Lie",
+          "name": "La carne non mente"
+        },
+        "6163": {
+          "source": "Ramstein",
+          "name": "Ramstein",
+          "unchangedProperName": true
+        },
+        "8968": {
+          "source": "The Left Piece of Lord Valthalak's Amulet",
+          "name": "La metà sinistra dell'amuleto di Sire Valthalak"
+        },
+        "8967": {
+          "source": "The Left Piece of Lord Valthalak's Amulet",
+          "name": "La metà sinistra dell'amuleto di Sire Valthalak"
+        },
+        "5281": {
+          "source": "The Restless Souls",
+          "name": "Le anime inquiete"
+        },
+        "5742": {
+          "source": "Redemption",
+          "name": "Redenzione"
+        },
+        "5781": {
+          "source": "Of Forgotten Memories",
+          "name": "Ricordi dimenticati"
+        },
+        "5845": {
+          "source": "Of Lost Honor",
+          "name": "Onore perduto"
+        },
+        "5846": {
+          "source": "Of Love and Family",
+          "name": "Amore e famiglia"
+        },
+        "5861": {
+          "source": "Find Myranda",
+          "name": "Trovare Myranda"
+        },
+        "5862": {
+          "source": "Scarlet Subterfuge",
+          "name": "Sotterfugio scarlatto"
+        },
+        "865": {
+          "source": "Raptor Horns",
+          "name": "Corna di raptor"
+        },
+        "303": {
+          "source": "The Dark Iron War",
+          "name": "La guerra dei Ferroscuro"
+        },
+        "389": {
+          "source": "Bazil Thredd",
+          "name": "Bazil Thredd",
+          "unchangedProperName": true
+        },
+        "762": {
+          "source": "An Ambassador of Evil",
+          "name": "Un ambasciatore del male"
+        },
+        "1452": {
+          "source": "Rhapsody's Kalimdor Kocktail",
+          "name": "Il cocktail di Kalimdor di Rhapsody"
+        },
+        "1448": {
+          "source": "In Search of The Temple",
+          "name": "Alla ricerca del tempio"
+        },
+        "1449": {
+          "source": "To The Hinterlands",
+          "name": "Verso l'Entroterre"
+        },
+        "1450": {
+          "source": "Gryphon Master Talonaxe",
+          "name": "Maestro dei Grifoni Asciartiglio"
+        },
+        "1451": {
+          "source": "Rhapsody Shindigger",
+          "name": "Rhapsody Shindigger",
+          "unchangedProperName": true
+        },
+        "725": {
+          "source": "Passing Word of a Threat",
+          "name": "Segnalare una minaccia"
+        },
+        "726": {
+          "source": "Passing Word of a Threat",
+          "name": "Segnalare una minaccia"
+        },
+        "373": {
+          "source": "The Unsent Letter",
+          "name": "La lettera mai spedita"
+        },
+        "4743": {
+          "source": "Seal of Ascension",
+          "name": "Il sigillo dell'ascensione"
+        },
+        "4769": {
+          "source": "Vivian Lagrave and the Darkstone Tablet",
+          "name": "Vivian Lagrave e la tavoletta di Pietranera"
+        },
+        "5089": {
+          "source": "General Drakkisath's Command",
+          "name": "L'ordine del Generale Drakkisath"
+        },
+        "4766": {
+          "source": "Mayara Brightwing",
+          "name": "Mayara Alalucente"
+        },
+        "4765": {
+          "source": "Delivery to Ridgewell",
+          "name": "Consegna a Ridgewell"
+        },
+        "4981": {
+          "source": "Operative Bijou",
+          "name": "Agente Bijou"
+        },
+        "4907": {
+          "source": "Tinkee Steamboil",
+          "name": "Tinkee Steamboil",
+          "unchangedProperName": true
+        },
+        "4734": {
+          "source": "Egg Freezing",
+          "name": "Congelare le uova"
+        },
+        "6569": {
+          "source": "Oculus Illusions",
+          "name": "Le illusioni di Oculus"
+        },
+        "4983": {
+          "source": "Bijou's Reconnaissance Report",
+          "name": "Il rapporto di ricognizione di Bijou"
+        },
+        "5002": {
+          "source": "Message to Maxwell",
+          "name": "Messaggio a Maxwell"
+        },
+        "6566": {
+          "source": "What the Wind Carries",
+          "name": "Ciò che porta il vento"
+        },
+        "6567": {
+          "source": "The Champion of the Horde",
+          "name": "Il campione dell'Orda"
+        },
+        "6568": {
+          "source": "The Testament of Rexxar",
+          "name": "Il testamento di Rexxar"
+        },
+        "6570": {
+          "source": "Emberstrife",
+          "name": "Braciardente"
+        },
+        "4941": {
+          "source": "Eitrigg's Wisdom",
+          "name": "La saggezza di Eitrigg"
+        },
+        "5065": {
+          "source": "The Lost Tablets of Mosh'aru",
+          "name": "Le tavolette perdute di Mosh'aru"
+        },
+        "5161": {
+          "source": "Wrath of the Blue Flight",
+          "name": "L'ira dello Stormo Blu"
+        },
+        "5162": {
+          "source": "Wrath of the Blue Flight",
+          "name": "L'ira dello Stormo Blu"
+        },
+        "5164": {
+          "source": "Catalogue of the Wayward",
+          "name": "Il catalogo degli smarriti"
+        },
+        "6403": {
+          "source": "The Great Masquerade",
+          "name": "La grande mascherata"
+        },
+        "6501": {
+          "source": "The Dragon's Eye",
+          "name": "L'occhio del drago"
+        },
+        "6585": {
+          "source": "The Test of Skulls, Axtroz",
+          "name": "La prova dei teschi: Axtroz"
+        },
+        "6601": {
+          "source": "Ascension...",
+          "name": "Ascensione..."
+        },
+        "6822": {
+          "source": "The Molten Core",
+          "name": "Il Nucleo Ardente"
+        },
+        "6823": {
+          "source": "Agent of Hydraxis",
+          "name": "Agente di Hydraxis"
+        },
+        "6824": {
+          "source": "Hands of the Enemy",
+          "name": "Le mani del nemico"
+        },
+        "7507": {
+          "source": "Foror's Compendium",
+          "name": "Il compendio di Foror"
+        },
+        "8949": {
+          "source": "Falrin's Vendetta",
+          "name": "La vendetta di Falrin"
+        },
+        "7508": {
+          "source": "The Forging of Quel'Serrar",
+          "name": "Forgiare Quel'Serrar"
+        },
+        "7441": {
+          "source": "Pusillin and the Elder Azj'Tordin",
+          "name": "Pusillin e l'Anziano Azj'Tordin"
+        },
+        "5518": {
+          "source": "The Gordok Ogre Suit",
+          "name": "Il travestimento da ogre Gordok"
+        },
+        "7503": {
+          "source": "The Greatest Race of Hunters",
+          "name": "La più grande stirpe di cacciatori"
+        },
+        "7463": {
+          "source": "Arcane Refreshment",
+          "name": "Ristoro arcano"
+        },
+        "7502": {
+          "source": "Harnessing Shadows",
+          "name": "Imbrigliare le ombre"
+        },
+        "7506": {
+          "source": "The Emerald Dream...",
+          "name": "Il Sogno di Smeraldo..."
+        },
+        "7498": {
+          "source": "Garona: A Study on Stealth and Treachery",
+          "name": "Garona: studio su furtività e tradimento"
+        },
+        "7461": {
+          "source": "The Madness Within",
+          "name": "La follia interiore"
+        },
+        "7483": {
+          "source": "Libram of Rapidity",
+          "name": "Libram della rapidità"
+        },
+        "5525": {
+          "source": "Free Knot!",
+          "name": "Liberate Knot!"
+        },
+        "7499": {
+          "source": "Codex of Defense",
+          "name": "Codice della difesa"
+        },
+        "7482": {
+          "source": "Elven Legends",
+          "name": "Leggende elfiche"
+        },
+        "5528": {
+          "source": "The Gordok Taste Test",
+          "name": "La prova del gusto Gordok"
+        },
+        "7500": {
+          "source": "The Arcanist's Cookbook",
+          "name": "Il ricettario dell'arcanista"
+        },
+        "7488": {
+          "source": "Lethtendris's Web",
+          "name": "La ragnatela di Lethtendris"
+        },
+        "7505": {
+          "source": "Frost Shock and You",
+          "name": "Folgore del Gelo e tu"
+        },
+        "7489": {
+          "source": "Lethtendris's Web",
+          "name": "La ragnatela di Lethtendris"
+        },
+        "1193": {
+          "source": "A Broken Trap",
+          "name": "Una trappola rotta"
+        },
+        "7481": {
+          "source": "Elven Legends",
+          "name": "Leggende elfiche"
+        },
+        "7492": {
+          "source": "Camp Mojache",
+          "name": "Accampamento Mojache"
+        },
+        "7703": {
+          "source": "Unfinished Gordok Business",
+          "name": "Affari Gordok in sospeso"
+        },
+        "7504": {
+          "source": "Holy Bologna: What the Light Won't Tell You",
+          "name": "Sacre frottole: ciò che la Luce non ti dirà"
+        },
+        "8950": {
+          "source": "The Instigator's Enchantment",
+          "name": "L'incantamento dell'istigatore"
+        },
+        "7501": {
+          "source": "The Light and How To Swing It",
+          "name": "La Luce e come brandirla"
+        },
+        "7485": {
+          "source": "Libram of Protection",
+          "name": "Libram della protezione"
+        },
+        "7429": {
+          "source": "Free Knot!",
+          "name": "Liberate Knot!"
+        },
+        "7484": {
+          "source": "Libram of Focus",
+          "name": "Libram della concentrazione"
+        },
+        "8948": {
+          "source": "Anthion's Old Friend",
+          "name": "Un vecchio amico di Anthion"
+        },
+        "7877": {
+          "source": "The Treasure of the Shen'dralar",
+          "name": "Il tesoro degli Shen'dralar"
+        },
+        "5519": {
+          "source": "The Gordok Ogre Suit",
+          "name": "Il travestimento da ogre Gordok"
+        },
+        "7494": {
+          "source": "Feathermoon Stronghold",
+          "name": "Fortezza di Piumaluna"
+        },
+        "98423": {
+          "source": "The Treaty of Understanding",
+          "name": "Il trattato d'intesa"
+        },
+        "96392": {
+          "source": "Farsen's Watch",
+          "name": "La Veglia di Farsen"
+        },
+        "7509": {
+          "source": "The Forging of Quel'Serrar",
+          "name": "Forgiare Quel'Serrar"
+        },
+        "5526": {
+          "source": "Shards of the Felvine",
+          "name": "Frammenti di Vildavite"
+        },
+        "5527": {
+          "source": "A Reliquary of Purity",
+          "name": "Un reliquiario della purezza"
+        },
+        "8926": {
+          "source": "Just Compensation",
+          "name": "Il giusto compenso"
+        },
+        "8927": {
+          "source": "Just Compensation",
+          "name": "Il giusto compenso"
+        },
+        "8931": {
+          "source": "Just Compensation",
+          "name": "Il giusto compenso"
+        },
+        "8932": {
+          "source": "Just Compensation",
+          "name": "Il giusto compenso"
+        },
+        "8933": {
+          "source": "Just Compensation",
+          "name": "Il giusto compenso"
+        },
+        "8934": {
+          "source": "Just Compensation",
+          "name": "Il giusto compenso"
+        },
+        "8935": {
+          "source": "Just Compensation",
+          "name": "Il giusto compenso"
+        },
+        "8936": {
+          "source": "Just Compensation",
+          "name": "Il giusto compenso"
+        },
+        "8937": {
+          "source": "Just Compensation",
+          "name": "Il giusto compenso"
+        },
+        "8938": {
+          "source": "Just Compensation",
+          "name": "Il giusto compenso"
+        },
+        "8939": {
+          "source": "Just Compensation",
+          "name": "Il giusto compenso"
+        },
+        "8940": {
+          "source": "Just Compensation",
+          "name": "Il giusto compenso"
+        },
+        "8941": {
+          "source": "Just Compensation",
+          "name": "Il giusto compenso"
+        },
+        "8942": {
+          "source": "Just Compensation",
+          "name": "Il giusto compenso"
+        },
+        "8943": {
+          "source": "Just Compensation",
+          "name": "Il giusto compenso"
+        },
+        "8944": {
+          "source": "Just Compensation",
+          "name": "Il giusto compenso"
+        },
+        "8929": {
+          "source": "In Search of Anthion",
+          "name": "Alla ricerca di Anthion"
+        },
+        "8930": {
+          "source": "In Search of Anthion",
+          "name": "Alla ricerca di Anthion"
+        },
+        "8946": {
+          "source": "Proof of Life",
+          "name": "Prova di vita"
+        },
+        "8947": {
+          "source": "Anthion's Strange Request",
+          "name": "La strana richiesta di Anthion"
+        },
+        "6922": {
+          "source": "Baron Aquanis",
+          "name": "Barone Aquanis"
+        },
+        "1951": {
+          "source": "Rituals of Power",
+          "name": "Rituali del potere"
+        },
+        "1956": {
+          "source": "Power in Uldaman",
+          "name": "Potere a Uldaman"
+        },
+        "7668": {
+          "source": "The Darkreaver Menace",
+          "name": "La minaccia di Darkreaver"
+        },
+        "4143": {
+          "source": "Haze of Evil",
+          "name": "La nebbia del male"
+        },
+        "4146": {
+          "source": "Zapper Fuel",
+          "name": "Carburante per lo Zapper"
+        },
+        "7848": {
+          "source": "Attunement to the Core",
+          "name": "Affinità con il Nucleo"
+        },
+        "1949": {
+          "source": "Hidden Secrets",
+          "name": "Segreti nascosti"
+        },
+        "1950": {
+          "source": "Get the Scoop",
+          "name": "Ottenere informazioni"
+        },
+        "1953": {
+          "source": "Return to the Marsh",
+          "name": "Ritorno alla palude"
+        },
+        "1954": {
+          "source": "The Infernal Orb",
+          "name": "La sfera infernale"
+        },
+        "1955": {
+          "source": "The Exorcism",
+          "name": "L'esorcismo"
+        },
+        "1957": {
+          "source": "Mana Surges",
+          "name": "Flussi di mana"
+        },
+        "4141": {
+          "source": "Muigin and Larion",
+          "name": "Muigin e Larion"
+        },
+        "4142": {
+          "source": "A Visit to Gregan",
+          "name": "Una visita a Gregan"
+        },
+        "4145": {
+          "source": "Larion and Muigin",
+          "name": "Larion e Muigin"
+        },
+        "4147": {
+          "source": "Marvon's Workshop",
+          "name": "L'officina di Marvon"
+        },
+        "7647": {
+          "source": "Judgment and Redemption",
+          "name": "Giudizio e redenzione"
+        },
+        "7629": {
+          "source": "Imp Delivery",
+          "name": "Consegna dell'imp"
+        },
+        "8258": {
+          "source": "The Darkreaver Menace",
+          "name": "La minaccia di Darkreaver"
+        },
+        "8425": {
+          "source": "Voodoo Feathers",
+          "name": "Piume voodoo"
+        },
+        "8257": {
+          "source": "Blood of Morphaz",
+          "name": "Il sangue di Morphaz"
+        },
+        "8422": {
+          "source": "Trolls of a Feather",
+          "name": "Troll della stessa piuma"
+        },
+        "9053": {
+          "source": "A Better Ingredient",
+          "name": "Un ingrediente migliore"
+        },
+        "8417": {
+          "source": "A Troubled Spirit",
+          "name": "Uno spirito inquieto"
+        },
+        "8423": {
+          "source": "Warrior Kinship",
+          "name": "Fratellanza guerriera"
+        },
+        "8424": {
+          "source": "War on the Shadowsworn",
+          "name": "Guerra ai Devoti dell'Ombra"
+        },
+        "8254": {
+          "source": "Cenarion Aid",
+          "name": "L'aiuto del Circolo Cenariano"
+        },
+        "8255": {
+          "source": "Of Coursers We Know",
+          "name": "Ciò che sappiamo dei corsieri"
+        },
+        "8256": {
+          "source": "The Ichor of Undeath",
+          "name": "L'icore della non morte"
+        },
+        "8419": {
+          "source": "An Imp's Request",
+          "name": "La richiesta di un imp"
+        },
+        "8420": {
+          "source": "Hot and Itchy",
+          "name": "Calore e prurito"
+        },
+        "8421": {
+          "source": "The Wrong Stuff",
+          "name": "La roba sbagliata"
+        },
+        "9063": {
+          "source": "Torwa Pathfinder",
+          "name": "Torwa il Cercatore"
+        },
+        "9052": {
+          "source": "Bloodpetal Poison",
+          "name": "Veleno dei Petalorosso"
+        },
+        "9051": {
+          "source": "Toxic Test",
+          "name": "Prova tossica"
+        },
+        "8418": {
+          "source": "Forging the Mightstone",
+          "name": "Forgiare la Pietra del Vigore"
+        },
+        "8232": {
+          "source": "The Green Drake",
+          "name": "Il draco verde"
+        },
+        "8236": {
+          "source": "The Azure Key",
+          "name": "La chiave azzurra"
+        },
+        "8253": {
+          "source": "Destroy Morphaz",
+          "name": "Distruggere Morphaz"
+        },
+        "8416": {
+          "source": "Inert Scourgestones",
+          "name": "Pietre del Flagello inerti"
+        },
+        "8151": {
+          "source": "The Hunter's Charm",
+          "name": "Il talismano del cacciatore"
+        },
+        "8153": {
+          "source": "Courser Antlers",
+          "name": "Palchi di corsiero"
+        },
+        "8231": {
+          "source": "Wavethrashing",
+          "name": "Sferzare le onde"
+        },
+        "8251": {
+          "source": "Magic Dust",
+          "name": "Polvere magica"
+        },
+        "8252": {
+          "source": "The Siren's Coral",
+          "name": "Il corallo della sirena"
+        },
+        "8233": {
+          "source": "A Simple Request",
+          "name": "Una semplice richiesta"
+        },
+        "8234": {
+          "source": "Sealed Azure Bag",
+          "name": "Sacca azzurra sigillata"
+        },
+        "8235": {
+          "source": "Encoded Fragments",
+          "name": "Frammenti cifrati"
+        },
+        "8413": {
+          "source": "Da Voodoo",
+          "name": "Il voodoo"
+        },
+        "7643": {
+          "source": "Ancient Equine Spirit",
+          "name": "Antico spirito equino"
+        },
+        "7644": {
+          "source": "Blessed Arcanite Barding",
+          "name": "Bardatura benedetta d'arcanite"
+        },
+        "7646": {
+          "source": "The Divination Scryer",
+          "name": "Lo scrutatore divinatorio"
+        },
+        "7623": {
+          "source": "Lord Banehollow",
+          "name": "Sire Banehollow"
+        },
+        "7624": {
+          "source": "Ulathek the Traitor",
+          "name": "Ulathek il Traditore"
+        },
+        "7625": {
+          "source": "Xorothian Stardust",
+          "name": "Polvere di stelle di Xoroth"
+        },
+        "7667": {
+          "source": "Material Assistance",
+          "name": "Aiuto materiale"
+        },
+        "7631": {
+          "source": "Dreadsteed of Xoroth",
+          "name": "Il destriero del terrore di Xoroth"
+        }
+      },
+      "dungeons": {
+        "rfc": {
+          "source": "Ragefire Chasm",
+          "name": "Baratro di Fiamma Furente"
+        },
+        "wc": {
+          "source": "Wailing Caverns",
+          "name": "Caverna dei Lamenti"
+        },
+        "dm": {
+          "source": "The Deadmines",
+          "name": "Le Miniere della Morte"
+        },
+        "sfk": {
+          "source": "Shadowfang Keep",
+          "name": "Forte di Zannascura"
+        },
+        "bfd": {
+          "source": "Blackfathom Deeps",
+          "name": "Abissi di Fondocupo"
+        },
+        "stocks": {
+          "source": "The Stockade",
+          "name": "Le Segrete"
+        },
+        "gnom": {
+          "source": "Gnomeregan",
+          "name": "Gnomeregan",
+          "unchangedProperName": true
+        },
+        "rfk": {
+          "source": "Razorfen Kraul",
+          "name": "Gallerie di Lamaspina"
+        },
+        "sm": {
+          "source": "Scarlet Monastery",
+          "name": "Monastero Scarlatto"
+        },
+        "rfd": {
+          "source": "Razorfen Downs",
+          "name": "Sotterranei di Lamaspina"
+        },
+        "ulda": {
+          "source": "Uldaman",
+          "name": "Uldaman",
+          "unchangedProperName": true
+        },
+        "zf": {
+          "source": "Zul'Farrak",
+          "name": "Zul'Farrak",
+          "unchangedProperName": true
+        },
+        "mara": {
+          "source": "Maraudon",
+          "name": "Maraudon",
+          "unchangedProperName": true
+        },
+        "st": {
+          "source": "The Temple of Atal'Hakkar",
+          "name": "Il Tempio di Atal'Hakkar"
+        },
+        "brd": {
+          "source": "Blackrock Depths",
+          "name": "Sotterranei di Roccianera"
+        },
+        "lbrs": {
+          "source": "Lower Blackrock Spire",
+          "name": "Bastioni di Roccianera Inferiori"
+        },
+        "ubrs": {
+          "source": "Upper Blackrock Spire",
+          "name": "Bastioni di Roccianera Superiori"
+        },
+        "dire": {
+          "source": "Dire Maul",
+          "name": "Maglio Infausto"
+        },
+        "scholo": {
+          "source": "Scholomance",
+          "name": "Scholomance",
+          "unchangedProperName": true
+        },
+        "strat": {
+          "source": "Stratholme",
+          "name": "Stratholme",
+          "unchangedProperName": true
+        },
+        "thanes": {
+          "source": "The Hall of Thanes",
+          "name": "La Sala dei Thane"
+        },
+        "lordaeron": {
+          "source": "Ruins of Lordaeron",
+          "name": "Rovine di Lordaeron"
+        },
+        "excavation": {
+          "source": "Excavation Site: Wetlands",
+          "name": "Scavo Archeologico: Paludi Grigie"
+        },
+        "dalaran": {
+          "source": "City of Dalaran",
+          "name": "Città di Dalaran"
+        },
+        "drowned": {
+          "source": "The Drowned City",
+          "name": "La Città Sommersa"
+        },
+        "kroldok": {
+          "source": "Krol'dok Stronghold",
+          "name": "Roccaforte di Krol'dok"
+        },
+        "alcaz": {
+          "source": "Alcaz Prison",
+          "name": "Prigione di Alcaz"
+        },
+        "blackmaw": {
+          "source": "Blackmaw Hold",
+          "name": "Fortezza di Fauce Nera"
+        },
+        "shapers": {
+          "source": "Shaper's Terrace",
+          "name": "Terrazza del Plasmatore"
+        }
+      }
+    }
+  }
+}

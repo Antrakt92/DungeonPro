@@ -1,0 +1,1553 @@
+{
+  "schema": 1,
+  "provenance": {
+    "provider": "Dungeon Pro",
+    "extraction": "authored-title-translation"
+  },
+  "locales": {
+    "zhCN": {
+      "quests": {
+        "92747": {
+          "source": "Moonbrook Espionage",
+          "name": "月溪镇谍报"
+        },
+        "92748": {
+          "source": "Explosive Consultation",
+          "name": "爆破咨询"
+        },
+        "92750": {
+          "source": "Detonation at a Distance",
+          "name": "远程引爆"
+        },
+        "92751": {
+          "source": "Detonation at a Distance",
+          "name": "远程引爆"
+        },
+        "92752": {
+          "source": "Explosive Consultation",
+          "name": "爆破咨询"
+        },
+        "92753": {
+          "source": "Destruction in Deadmines",
+          "name": "摧毁死亡矿井"
+        },
+        "92819": {
+          "source": "Destruction in Deadmines",
+          "name": "摧毁死亡矿井"
+        },
+        "96391": {
+          "source": "Underground Map",
+          "name": "地下地图"
+        },
+        "95042": {
+          "source": "Seeking the Kor Gem",
+          "name": "寻找科尔宝石"
+        },
+        "96800": {
+          "source": "Past Due",
+          "name": "逾期未还"
+        },
+        "96984": {
+          "source": "Heart of Disruption",
+          "name": "扰乱之心"
+        },
+        "92458": {
+          "source": "Heart of Disruption",
+          "name": "扰乱之心"
+        },
+        "92457": {
+          "source": "Starving Arcane",
+          "name": "饥渴的奥术"
+        },
+        "92434": {
+          "source": "Blood in the Streets",
+          "name": "街头血案"
+        },
+        "97287": {
+          "source": "Shrewd Negotiations",
+          "name": "精明的谈判"
+        },
+        "92432": {
+          "source": "An Alarming Request",
+          "name": "令人不安的请求"
+        },
+        "92459": {
+          "source": "Friend of the Kirin Tor",
+          "name": "肯瑞托之友"
+        },
+        "98815": {
+          "source": "Highland Hides",
+          "name": "高地兽皮"
+        },
+        "95664": {
+          "source": "Elder Knowledge",
+          "name": "古老的知识"
+        },
+        "95810": {
+          "source": "Lost Relic Carry",
+          "name": "运送失落的遗物"
+        },
+        "95697": {
+          "source": "Changing Tastes",
+          "name": "口味的变化"
+        },
+        "95682": {
+          "source": "Open the Maw",
+          "name": "打开巨口"
+        },
+        "95647": {
+          "source": "Lost in the Thicket Things",
+          "name": "迷失在丛林中的物品"
+        },
+        "98824": {
+          "source": "Prehistoric Prism",
+          "name": "史前棱镜"
+        },
+        "95646": {
+          "source": "Horrors in the Highland",
+          "name": "高地的恐怖"
+        },
+        "95772": {
+          "source": "Songblade Search",
+          "name": "寻找歌刃"
+        },
+        "95809": {
+          "source": "Heartwoven",
+          "name": "心之交织"
+        },
+        "95737": {
+          "source": "Seeking Caitlin",
+          "name": "寻找凯特琳"
+        },
+        "95663": {
+          "source": "Dragonmaw Rumors",
+          "name": "龙喉传闻"
+        },
+        "95795": {
+          "source": "Fallen in the Fen",
+          "name": "沼泽中的亡者"
+        },
+        "92415": {
+          "source": "Remember That I Love You",
+          "name": "记住我爱你"
+        },
+        "95161": {
+          "source": "Remember That I Love You",
+          "name": "记住我爱你"
+        },
+        "95189": {
+          "source": "Crest of Lordaeron",
+          "name": "洛丹伦纹章"
+        },
+        "95195": {
+          "source": "Bloodied Insignia",
+          "name": "染血的徽记"
+        },
+        "95775": {
+          "source": "The Drowned City",
+          "name": "沉没之城"
+        },
+        "95776": {
+          "source": "The Only Good Brinescale...",
+          "name": "只有死掉的盐鳞才是好盐鳞……"
+        },
+        "95787": {
+          "source": "Take Two With Water",
+          "name": "用水服下两剂"
+        },
+        "95788": {
+          "source": "Magics of the Drowned City",
+          "name": "沉没之城的魔法"
+        },
+        "96774": {
+          "source": "Ancient Gurubashi Idol",
+          "name": "古老的古拉巴什神像"
+        },
+        "96392": {
+          "source": "Farsen's Watch",
+          "name": "法尔森的哨所"
+        }
+      },
+      "dungeons": {
+        "drowned": {
+          "source": "The Drowned City",
+          "name": "沉没之城"
+        },
+        "kroldok": {
+          "source": "Krol'dok Stronghold",
+          "name": "克罗多克要塞"
+        },
+        "alcaz": {
+          "source": "Alcaz Prison",
+          "name": "奥卡兹监狱"
+        },
+        "blackmaw": {
+          "source": "Blackmaw Hold",
+          "name": "黑喉堡垒"
+        },
+        "shapers": {
+          "source": "Shaper's Terrace",
+          "name": "塑造者平台"
+        }
+      }
+    },
+    "zhTW": {
+      "quests": {
+        "92745": {
+          "source": "The State of the Mines",
+          "name": "礦坑的現況"
+        },
+        "92747": {
+          "source": "Moonbrook Espionage",
+          "name": "月溪鎮諜報"
+        },
+        "92748": {
+          "source": "Explosive Consultation",
+          "name": "爆破諮詢"
+        },
+        "92750": {
+          "source": "Detonation at a Distance",
+          "name": "遠程引爆"
+        },
+        "92751": {
+          "source": "Detonation at a Distance",
+          "name": "遠程引爆"
+        },
+        "92752": {
+          "source": "Explosive Consultation",
+          "name": "爆破諮詢"
+        },
+        "92753": {
+          "source": "Destruction in Deadmines",
+          "name": "摧毀死亡礦坑"
+        },
+        "92819": {
+          "source": "Destruction in Deadmines",
+          "name": "摧毀死亡礦坑"
+        },
+        "96391": {
+          "source": "Underground Map",
+          "name": "地下地圖"
+        },
+        "96395": {
+          "source": "An Ancient Grudge",
+          "name": "古老的仇恨"
+        },
+        "96800": {
+          "source": "Past Due",
+          "name": "逾期未還"
+        },
+        "96984": {
+          "source": "Heart of Disruption",
+          "name": "擾亂之心"
+        },
+        "92458": {
+          "source": "Heart of Disruption",
+          "name": "擾亂之心"
+        },
+        "92457": {
+          "source": "Starving Arcane",
+          "name": "飢渴的秘法"
+        },
+        "92456": {
+          "source": "A Green Sample",
+          "name": "綠色樣本"
+        },
+        "96987": {
+          "source": "Opportunistic Education",
+          "name": "見機學習"
+        },
+        "92489": {
+          "source": "Power Overwhelming",
+          "name": "壓倒性的力量"
+        },
+        "92434": {
+          "source": "Blood in the Streets",
+          "name": "街頭血案"
+        },
+        "97287": {
+          "source": "Shrewd Negotiations",
+          "name": "精明的談判"
+        },
+        "92432": {
+          "source": "An Alarming Request",
+          "name": "令人不安的請求"
+        },
+        "92459": {
+          "source": "Friend of the Kirin Tor",
+          "name": "祈倫托之友"
+        },
+        "95664": {
+          "source": "Elder Knowledge",
+          "name": "古老的知識"
+        },
+        "95810": {
+          "source": "Lost Relic Carry",
+          "name": "運送失落的遺物"
+        },
+        "98824": {
+          "source": "Prehistoric Prism",
+          "name": "史前稜鏡"
+        },
+        "95646": {
+          "source": "Horrors in the Highland",
+          "name": "高地的恐怖"
+        },
+        "95809": {
+          "source": "Heartwoven",
+          "name": "心之交織"
+        },
+        "95737": {
+          "source": "Seeking Caitlin",
+          "name": "尋找凱特琳"
+        },
+        "95795": {
+          "source": "Fallen in the Fen",
+          "name": "沼澤中的亡者"
+        },
+        "8734": {
+          "source": "Tyrande and Remulos",
+          "name": "泰蘭妲與雷姆洛斯"
+        },
+        "92415": {
+          "source": "Remember That I Love You",
+          "name": "記住我愛你"
+        },
+        "95161": {
+          "source": "Remember That I Love You",
+          "name": "記住我愛你"
+        },
+        "95189": {
+          "source": "Crest of Lordaeron",
+          "name": "羅德隆紋章"
+        },
+        "95195": {
+          "source": "Bloodied Insignia",
+          "name": "染血的徽記"
+        },
+        "95204": {
+          "source": "Crest of Lordaeron",
+          "name": "羅德隆紋章"
+        },
+        "95250": {
+          "source": "Abominable Creatures",
+          "name": "可憎的生物"
+        },
+        "95775": {
+          "source": "The Drowned City",
+          "name": "沉沒之城"
+        },
+        "95776": {
+          "source": "The Only Good Brinescale...",
+          "name": "只有死掉的鹽鱗才是好鹽鱗……"
+        },
+        "95787": {
+          "source": "Take Two With Water",
+          "name": "用水服下兩劑"
+        },
+        "95788": {
+          "source": "Magics of the Drowned City",
+          "name": "沉沒之城的魔法"
+        },
+        "8992": {
+          "source": "The Right Piece of Lord Valthalak's Amulet",
+          "name": "瓦薩拉克領主護符的右半塊"
+        },
+        "8969": {
+          "source": "The Left Piece of Lord Valthalak's Amulet",
+          "name": "瓦薩拉克領主護符的左半塊"
+        },
+        "98423": {
+          "source": "The Treaty of Understanding",
+          "name": "諒解協議"
+        },
+        "96392": {
+          "source": "Farsen's Watch",
+          "name": "法爾森的哨所"
+        },
+        "8931": {
+          "source": "Just Compensation",
+          "name": "應得的補償"
+        },
+        "8932": {
+          "source": "Just Compensation",
+          "name": "應得的補償"
+        },
+        "8934": {
+          "source": "Just Compensation",
+          "name": "應得的補償"
+        },
+        "8936": {
+          "source": "Just Compensation",
+          "name": "應得的補償"
+        },
+        "8937": {
+          "source": "Just Compensation",
+          "name": "應得的補償"
+        },
+        "8938": {
+          "source": "Just Compensation",
+          "name": "應得的補償"
+        },
+        "8939": {
+          "source": "Just Compensation",
+          "name": "應得的補償"
+        },
+        "8942": {
+          "source": "Just Compensation",
+          "name": "應得的補償"
+        },
+        "8943": {
+          "source": "Just Compensation",
+          "name": "應得的補償"
+        }
+      },
+      "dungeons": {
+        "drowned": {
+          "source": "The Drowned City",
+          "name": "沉沒之城"
+        },
+        "kroldok": {
+          "source": "Krol'dok Stronghold",
+          "name": "克羅多克要塞"
+        },
+        "alcaz": {
+          "source": "Alcaz Prison",
+          "name": "奧卡茲監獄"
+        },
+        "blackmaw": {
+          "source": "Blackmaw Hold",
+          "name": "黑喉堡壘"
+        },
+        "shapers": {
+          "source": "Shaper's Terrace",
+          "name": "塑造者露臺"
+        }
+      }
+    },
+    "koKR": {
+      "quests": {
+        "96800": {
+          "source": "Past Due",
+          "name": "기한 초과"
+        },
+        "96984": {
+          "source": "Heart of Disruption",
+          "name": "교란의 심장"
+        },
+        "92458": {
+          "source": "Heart of Disruption",
+          "name": "교란의 심장"
+        },
+        "92457": {
+          "source": "Starving Arcane",
+          "name": "굶주린 비전"
+        },
+        "96987": {
+          "source": "Opportunistic Education",
+          "name": "기회를 살린 배움"
+        },
+        "96988": {
+          "source": "Source of Power",
+          "name": "힘의 근원"
+        },
+        "92434": {
+          "source": "Blood in the Streets",
+          "name": "피로 물든 거리"
+        },
+        "97287": {
+          "source": "Shrewd Negotiations",
+          "name": "빈틈없는 협상"
+        },
+        "92432": {
+          "source": "An Alarming Request",
+          "name": "불길한 요청"
+        },
+        "92459": {
+          "source": "Friend of the Kirin Tor",
+          "name": "키린 토의 친구"
+        },
+        "95682": {
+          "source": "Open the Maw",
+          "name": "아귀를 열어라"
+        },
+        "95809": {
+          "source": "Heartwoven",
+          "name": "마음의 엮임"
+        },
+        "95775": {
+          "source": "The Drowned City",
+          "name": "가라앉은 도시"
+        },
+        "95776": {
+          "source": "The Only Good Brinescale...",
+          "name": "착한 소금비늘은 죽은 소금비늘뿐..."
+        },
+        "95787": {
+          "source": "Take Two With Water",
+          "name": "물과 함께 두 알"
+        },
+        "95788": {
+          "source": "Magics of the Drowned City",
+          "name": "가라앉은 도시의 마법"
+        },
+        "96774": {
+          "source": "Ancient Gurubashi Idol",
+          "name": "고대 구루바시 우상"
+        },
+        "8992": {
+          "source": "The Right Piece of Lord Valthalak's Amulet",
+          "name": "군주 발타라크의 아뮬렛 오른쪽 조각"
+        },
+        "8987": {
+          "source": "More Components of Importance",
+          "name": "더 많은 중요한 재료"
+        },
+        "8988": {
+          "source": "More Components of Importance",
+          "name": "더 많은 중요한 재료"
+        },
+        "8991": {
+          "source": "The Right Piece of Lord Valthalak's Amulet",
+          "name": "군주 발타라크의 아뮬렛 오른쪽 조각"
+        },
+        "8965": {
+          "source": "Components of Importance",
+          "name": "중요한 재료"
+        },
+        "8931": {
+          "source": "Just Compensation",
+          "name": "정당한 보상"
+        },
+        "8932": {
+          "source": "Just Compensation",
+          "name": "정당한 보상"
+        },
+        "8934": {
+          "source": "Just Compensation",
+          "name": "정당한 보상"
+        },
+        "8936": {
+          "source": "Just Compensation",
+          "name": "정당한 보상"
+        },
+        "8937": {
+          "source": "Just Compensation",
+          "name": "정당한 보상"
+        },
+        "8939": {
+          "source": "Just Compensation",
+          "name": "정당한 보상"
+        },
+        "8940": {
+          "source": "Just Compensation",
+          "name": "정당한 보상"
+        },
+        "8942": {
+          "source": "Just Compensation",
+          "name": "정당한 보상"
+        }
+      },
+      "dungeons": {
+        "drowned": {
+          "source": "The Drowned City",
+          "name": "가라앉은 도시"
+        },
+        "kroldok": {
+          "source": "Krol'dok Stronghold",
+          "name": "크롤도크 요새"
+        },
+        "alcaz": {
+          "source": "Alcaz Prison",
+          "name": "알카즈 감옥"
+        },
+        "blackmaw": {
+          "source": "Blackmaw Hold",
+          "name": "검은아귀 성채"
+        },
+        "shapers": {
+          "source": "Shaper's Terrace",
+          "name": "조형사의 정원"
+        }
+      }
+    },
+    "ruRU": {
+      "quests": {
+        "96800": {
+          "source": "Past Due",
+          "name": "Просроченный долг"
+        },
+        "96984": {
+          "source": "Heart of Disruption",
+          "name": "Сердце разлада"
+        },
+        "92458": {
+          "source": "Heart of Disruption",
+          "name": "Сердце разлада"
+        },
+        "92457": {
+          "source": "Starving Arcane",
+          "name": "Голодная магия"
+        },
+        "92456": {
+          "source": "A Green Sample",
+          "name": "Зелёный образец"
+        },
+        "96987": {
+          "source": "Opportunistic Education",
+          "name": "Учиться при случае"
+        },
+        "92434": {
+          "source": "Blood in the Streets",
+          "name": "Кровь на улицах"
+        },
+        "97287": {
+          "source": "Shrewd Negotiations",
+          "name": "Искусные переговоры"
+        },
+        "92432": {
+          "source": "An Alarming Request",
+          "name": "Тревожная просьба"
+        },
+        "92459": {
+          "source": "Friend of the Kirin Tor",
+          "name": "Друг Кирин-Тора"
+        },
+        "95664": {
+          "source": "Elder Knowledge",
+          "name": "Древнее знание"
+        },
+        "95810": {
+          "source": "Lost Relic Carry",
+          "name": "Доставка утраченной реликвии"
+        },
+        "95737": {
+          "source": "Seeking Caitlin",
+          "name": "В поисках Кейтлин"
+        },
+        "95663": {
+          "source": "Dragonmaw Rumors",
+          "name": "Слухи о Драконьей Пасти"
+        },
+        "95775": {
+          "source": "The Drowned City",
+          "name": "Затонувший город"
+        },
+        "95776": {
+          "source": "The Only Good Brinescale...",
+          "name": "Хороший солечешуй — мёртвый солечешуй..."
+        },
+        "95787": {
+          "source": "Take Two With Water",
+          "name": "Две дозы, запить водой"
+        },
+        "95788": {
+          "source": "Magics of the Drowned City",
+          "name": "Магия затонувшего города"
+        },
+        "96774": {
+          "source": "Ancient Gurubashi Idol",
+          "name": "Древний идол Гурубаши"
+        }
+      },
+      "dungeons": {
+        "drowned": {
+          "source": "The Drowned City",
+          "name": "Затонувший город"
+        },
+        "kroldok": {
+          "source": "Krol'dok Stronghold",
+          "name": "Крепость Крол'док"
+        },
+        "alcaz": {
+          "source": "Alcaz Prison",
+          "name": "Тюрьма Алькац"
+        },
+        "blackmaw": {
+          "source": "Blackmaw Hold",
+          "name": "Оплот Черной Пасти"
+        },
+        "shapers": {
+          "source": "Shaper's Terrace",
+          "name": "Терраса Создателя"
+        }
+      }
+    },
+    "deDE": {
+      "quests": {
+        "1489": {
+          "source": "Hamuul Runetotem",
+          "name": "Hamuul Runentotem"
+        },
+        "1490": {
+          "source": "Nara Wildmane",
+          "name": "Nara Wildmähne"
+        },
+        "2926": {
+          "source": "Gnogaine",
+          "name": "Gnogaine",
+          "unchangedProperName": true
+        },
+        "96800": {
+          "source": "Past Due",
+          "name": "Überfällig"
+        },
+        "739": {
+          "source": "Murdaloc",
+          "name": "Murdaloc",
+          "unchangedProperName": true
+        },
+        "96984": {
+          "source": "Heart of Disruption",
+          "name": "Herz der Störung"
+        },
+        "92458": {
+          "source": "Heart of Disruption",
+          "name": "Herz der Störung"
+        },
+        "92457": {
+          "source": "Starving Arcane",
+          "name": "Hungrige arkane Magie"
+        },
+        "92434": {
+          "source": "Blood in the Streets",
+          "name": "Blut auf den Straßen"
+        },
+        "97287": {
+          "source": "Shrewd Negotiations",
+          "name": "Geschickte Verhandlungen"
+        },
+        "92432": {
+          "source": "An Alarming Request",
+          "name": "Eine beunruhigende Bitte"
+        },
+        "92459": {
+          "source": "Friend of the Kirin Tor",
+          "name": "Freund der Kirin Tor"
+        },
+        "2770": {
+          "source": "Gahz'rilla",
+          "name": "Gahz'rilla",
+          "unchangedProperName": true
+        },
+        "2864": {
+          "source": "Tran'rek",
+          "name": "Tran'rek",
+          "unchangedProperName": true
+        },
+        "2990": {
+          "source": "Thadius Grimshade",
+          "name": "Thadius Grimmschatten"
+        },
+        "4122": {
+          "source": "Grark Lorkrub",
+          "name": "Grark Lorkrub",
+          "unchangedProperName": true
+        },
+        "4133": {
+          "source": "Vivian Lagrave",
+          "name": "Vivian Lagrave",
+          "unchangedProperName": true
+        },
+        "4136": {
+          "source": "Ribbly Screwspigot",
+          "name": "Ribbly Schraubstutz"
+        },
+        "4241": {
+          "source": "Marshal Windsor",
+          "name": "Marschall Windsor"
+        },
+        "4263": {
+          "source": "Incendius!",
+          "name": "Incendius!",
+          "unchangedProperName": true
+        },
+        "4324": {
+          "source": "Yuka Screwspigot",
+          "name": "Yuka Schraubstutz"
+        },
+        "4341": {
+          "source": "Kharan Mighthammer",
+          "name": "Kharan Hammermacht"
+        },
+        "95775": {
+          "source": "The Drowned City",
+          "name": "Die versunkene Stadt"
+        },
+        "95776": {
+          "source": "The Only Good Brinescale...",
+          "name": "Nur ein toter Salzschupp ist ein guter Salzschupp..."
+        },
+        "95787": {
+          "source": "Take Two With Water",
+          "name": "Zwei mit Wasser einnehmen"
+        },
+        "95788": {
+          "source": "Magics of the Drowned City",
+          "name": "Magie der versunkenen Stadt"
+        },
+        "96774": {
+          "source": "Ancient Gurubashi Idol",
+          "name": "Uraltes Gurubashi-Idol"
+        },
+        "5531": {
+          "source": "Betina Bigglezink",
+          "name": "Betina Bigglezink",
+          "unchangedProperName": true
+        },
+        "5522": {
+          "source": "Leonid Barthalomew",
+          "name": "Leonid Barthalomew",
+          "unchangedProperName": true
+        },
+        "8995": {
+          "source": "Mea Culpa, Lord Valthalak",
+          "name": "Meine Schuld, Lord Valthalak"
+        },
+        "6163": {
+          "source": "Ramstein",
+          "name": "Ramstein",
+          "unchangedProperName": true
+        },
+        "389": {
+          "source": "Bazil Thredd",
+          "name": "Bazil Thredd",
+          "unchangedProperName": true
+        },
+        "4766": {
+          "source": "Mayara Brightwing",
+          "name": "Mayara Wolkenglanz"
+        },
+        "4907": {
+          "source": "Tinkee Steamboil",
+          "name": "Tinkee Kesseldampf"
+        },
+        "7492": {
+          "source": "Camp Mojache",
+          "name": "Camp Mojache",
+          "unchangedProperName": true
+        },
+        "6922": {
+          "source": "Baron Aquanis",
+          "name": "Baron Aquanis",
+          "unchangedProperName": true
+        },
+        "9063": {
+          "source": "Torwa Pathfinder",
+          "name": "Torwa Pfadfinder"
+        },
+        "7623": {
+          "source": "Lord Banehollow",
+          "name": "Lord Schattenfluch"
+        }
+      },
+      "dungeons": {
+        "gnom": {
+          "source": "Gnomeregan",
+          "name": "Gnomeregan",
+          "unchangedProperName": true
+        },
+        "ulda": {
+          "source": "Uldaman",
+          "name": "Uldaman",
+          "unchangedProperName": true
+        },
+        "zf": {
+          "source": "Zul'Farrak",
+          "name": "Zul'Farrak",
+          "unchangedProperName": true
+        },
+        "mara": {
+          "source": "Maraudon",
+          "name": "Maraudon",
+          "unchangedProperName": true
+        },
+        "scholo": {
+          "source": "Scholomance",
+          "name": "Scholomance",
+          "unchangedProperName": true
+        },
+        "strat": {
+          "source": "Stratholme",
+          "name": "Stratholme",
+          "unchangedProperName": true
+        },
+        "drowned": {
+          "source": "The Drowned City",
+          "name": "Die versunkene Stadt"
+        },
+        "kroldok": {
+          "source": "Krol'dok Stronghold",
+          "name": "Krol'dok-Festung"
+        },
+        "alcaz": {
+          "source": "Alcaz Prison",
+          "name": "Gefängnis von Alcaz"
+        },
+        "blackmaw": {
+          "source": "Blackmaw Hold",
+          "name": "Schwarzschlundfeste"
+        },
+        "shapers": {
+          "source": "Shaper's Terrace",
+          "name": "Terrasse des Formers"
+        }
+      }
+    },
+    "frFR": {
+      "quests": {
+        "1489": {
+          "source": "Hamuul Runetotem",
+          "name": "Hamuul Totem-Runique"
+        },
+        "1490": {
+          "source": "Nara Wildmane",
+          "name": "Nara Crin-Sauvage"
+        },
+        "2926": {
+          "source": "Gnogaine",
+          "name": "Gnogaine",
+          "unchangedProperName": true
+        },
+        "96800": {
+          "source": "Past Due",
+          "name": "En retard"
+        },
+        "739": {
+          "source": "Murdaloc",
+          "name": "Murdaloc",
+          "unchangedProperName": true
+        },
+        "96984": {
+          "source": "Heart of Disruption",
+          "name": "Le cœur de la perturbation"
+        },
+        "92458": {
+          "source": "Heart of Disruption",
+          "name": "Le cœur de la perturbation"
+        },
+        "92457": {
+          "source": "Starving Arcane",
+          "name": "Les arcanes affamées"
+        },
+        "92434": {
+          "source": "Blood in the Streets",
+          "name": "Du sang dans les rues"
+        },
+        "97287": {
+          "source": "Shrewd Negotiations",
+          "name": "Des négociations habiles"
+        },
+        "92432": {
+          "source": "An Alarming Request",
+          "name": "Une demande inquiétante"
+        },
+        "92459": {
+          "source": "Friend of the Kirin Tor",
+          "name": "Ami du Kirin Tor"
+        },
+        "2770": {
+          "source": "Gahz'rilla",
+          "name": "Gahz'rilla",
+          "unchangedProperName": true
+        },
+        "2864": {
+          "source": "Tran'rek",
+          "name": "Tran'rek",
+          "unchangedProperName": true
+        },
+        "2990": {
+          "source": "Thadius Grimshade",
+          "name": "Thadius Sombrouage"
+        },
+        "95737": {
+          "source": "Seeking Caitlin",
+          "name": "À la recherche de Caitlin"
+        },
+        "4122": {
+          "source": "Grark Lorkrub",
+          "name": "Grark Lorkrub",
+          "unchangedProperName": true
+        },
+        "4126": {
+          "source": "Hurley Blackbreath",
+          "name": "Hurley Soufflenoir"
+        },
+        "4128": {
+          "source": "Ragnar Thunderbrew",
+          "name": "Ragnar Tonnebière"
+        },
+        "4133": {
+          "source": "Vivian Lagrave",
+          "name": "Vivian Lagrave",
+          "unchangedProperName": true
+        },
+        "4136": {
+          "source": "Ribbly Screwspigot",
+          "name": "Ribbly Fermevanne"
+        },
+        "4324": {
+          "source": "Yuka Screwspigot",
+          "name": "Yuka Fermevanne"
+        },
+        "4341": {
+          "source": "Kharan Mighthammer",
+          "name": "Kharan Force-Marteau"
+        },
+        "95775": {
+          "source": "The Drowned City",
+          "name": "La cité engloutie"
+        },
+        "95776": {
+          "source": "The Only Good Brinescale...",
+          "name": "Un bon Saumécaille est un Saumécaille mort..."
+        },
+        "95787": {
+          "source": "Take Two With Water",
+          "name": "Deux doses avec de l'eau"
+        },
+        "95788": {
+          "source": "Magics of the Drowned City",
+          "name": "Les magies de la cité engloutie"
+        },
+        "5531": {
+          "source": "Betina Bigglezink",
+          "name": "Betina Bigglezink",
+          "unchangedProperName": true
+        },
+        "5522": {
+          "source": "Leonid Barthalomew",
+          "name": "Leonid Barthalomew",
+          "unchangedProperName": true
+        },
+        "6163": {
+          "source": "Ramstein",
+          "name": "Ramstein",
+          "unchangedProperName": true
+        },
+        "389": {
+          "source": "Bazil Thredd",
+          "name": "Bazil Thredd",
+          "unchangedProperName": true
+        },
+        "1451": {
+          "source": "Rhapsody Shindigger",
+          "name": "Rhapsody Croquejarret"
+        },
+        "4766": {
+          "source": "Mayara Brightwing",
+          "name": "Mayara Luisaile"
+        },
+        "4907": {
+          "source": "Tinkee Steamboil",
+          "name": "Tinkee Bricolo"
+        },
+        "6601": {
+          "source": "Ascension...",
+          "name": "Ascension...",
+          "unchangedProperName": true
+        },
+        "7492": {
+          "source": "Camp Mojache",
+          "name": "Camp Mojache",
+          "unchangedProperName": true
+        },
+        "6922": {
+          "source": "Baron Aquanis",
+          "name": "Baron Aquanis",
+          "unchangedProperName": true
+        },
+        "9063": {
+          "source": "Torwa Pathfinder",
+          "name": "Torwa le Guide"
+        }
+      },
+      "dungeons": {
+        "gnom": {
+          "source": "Gnomeregan",
+          "name": "Gnomeregan",
+          "unchangedProperName": true
+        },
+        "ulda": {
+          "source": "Uldaman",
+          "name": "Uldaman",
+          "unchangedProperName": true
+        },
+        "zf": {
+          "source": "Zul'Farrak",
+          "name": "Zul'Farrak",
+          "unchangedProperName": true
+        },
+        "mara": {
+          "source": "Maraudon",
+          "name": "Maraudon",
+          "unchangedProperName": true
+        },
+        "scholo": {
+          "source": "Scholomance",
+          "name": "Scholomance",
+          "unchangedProperName": true
+        },
+        "strat": {
+          "source": "Stratholme",
+          "name": "Stratholme",
+          "unchangedProperName": true
+        },
+        "drowned": {
+          "source": "The Drowned City",
+          "name": "La cité engloutie"
+        },
+        "kroldok": {
+          "source": "Krol'dok Stronghold",
+          "name": "Bastion de Krol'dok"
+        },
+        "alcaz": {
+          "source": "Alcaz Prison",
+          "name": "Prison d'Alcaz"
+        },
+        "blackmaw": {
+          "source": "Blackmaw Hold",
+          "name": "Bastion de Gueule-Noire"
+        },
+        "shapers": {
+          "source": "Shaper's Terrace",
+          "name": "Terrasse du Façonneur"
+        }
+      }
+    },
+    "esES": {
+      "quests": {
+        "2926": {
+          "source": "Gnogaine",
+          "name": "Gnogaine",
+          "unchangedProperName": true
+        },
+        "2928": {
+          "source": "Gyrodrillmatic Excavationators",
+          "name": "Excavadoras giroperforamáticas"
+        },
+        "95042": {
+          "source": "Seeking the Kor Gem",
+          "name": "En busca de la gema de Kor"
+        },
+        "96800": {
+          "source": "Past Due",
+          "name": "Plazo vencido"
+        },
+        "739": {
+          "source": "Murdaloc",
+          "name": "Murdaloc",
+          "unchangedProperName": true
+        },
+        "96984": {
+          "source": "Heart of Disruption",
+          "name": "Corazón de la perturbación"
+        },
+        "92458": {
+          "source": "Heart of Disruption",
+          "name": "Corazón de la perturbación"
+        },
+        "92457": {
+          "source": "Starving Arcane",
+          "name": "Magia Arcana hambrienta"
+        },
+        "96987": {
+          "source": "Opportunistic Education",
+          "name": "Aprender aprovechando la ocasión"
+        },
+        "96988": {
+          "source": "Source of Power",
+          "name": "Fuente de poder"
+        },
+        "96986": {
+          "source": "The Grave Knight",
+          "name": "El caballero de la tumba"
+        },
+        "92434": {
+          "source": "Blood in the Streets",
+          "name": "Sangre en las calles"
+        },
+        "97287": {
+          "source": "Shrewd Negotiations",
+          "name": "Negociaciones astutas"
+        },
+        "92432": {
+          "source": "An Alarming Request",
+          "name": "Una petición inquietante"
+        },
+        "92459": {
+          "source": "Friend of the Kirin Tor",
+          "name": "Amigo del Kirin Tor"
+        },
+        "2770": {
+          "source": "Gahz'rilla",
+          "name": "Gahz'rilla",
+          "unchangedProperName": true
+        },
+        "2864": {
+          "source": "Tran'rek",
+          "name": "Tran'rek",
+          "unchangedProperName": true
+        },
+        "95664": {
+          "source": "Elder Knowledge",
+          "name": "Conocimiento ancestral"
+        },
+        "95810": {
+          "source": "Lost Relic Carry",
+          "name": "Entrega de la reliquia perdida"
+        },
+        "95697": {
+          "source": "Changing Tastes",
+          "name": "Cambio de gustos"
+        },
+        "95682": {
+          "source": "Open the Maw",
+          "name": "Abre las fauces"
+        },
+        "95809": {
+          "source": "Heartwoven",
+          "name": "Corazones entrelazados"
+        },
+        "95663": {
+          "source": "Dragonmaw Rumors",
+          "name": "Rumores sobre los Faucedraco"
+        },
+        "95795": {
+          "source": "Fallen in the Fen",
+          "name": "Caídos en el pantano"
+        },
+        "4122": {
+          "source": "Grark Lorkrub",
+          "name": "Grark Lorkrub",
+          "unchangedProperName": true
+        },
+        "95775": {
+          "source": "The Drowned City",
+          "name": "La ciudad sumergida"
+        },
+        "95776": {
+          "source": "The Only Good Brinescale...",
+          "name": "El único Salmueraescama bueno..."
+        },
+        "95787": {
+          "source": "Take Two With Water",
+          "name": "Dos dosis con agua"
+        },
+        "95788": {
+          "source": "Magics of the Drowned City",
+          "name": "Magia de la ciudad sumergida"
+        },
+        "96774": {
+          "source": "Ancient Gurubashi Idol",
+          "name": "Ídolo Gurubashi ancestral"
+        },
+        "4867": {
+          "source": "Urok Doomhowl",
+          "name": "Urok Aullapocalipsis"
+        },
+        "5531": {
+          "source": "Betina Bigglezink",
+          "name": "Betina Bigglezink",
+          "unchangedProperName": true
+        },
+        "5522": {
+          "source": "Leonid Barthalomew",
+          "name": "Leonid Barthalomew",
+          "unchangedProperName": true
+        },
+        "8995": {
+          "source": "Mea Culpa, Lord Valthalak",
+          "name": "Mea culpa, Lord Valthalak"
+        },
+        "6163": {
+          "source": "Ramstein",
+          "name": "Ramstein",
+          "unchangedProperName": true
+        },
+        "389": {
+          "source": "Bazil Thredd",
+          "name": "Bazil Thredd",
+          "unchangedProperName": true
+        }
+      },
+      "dungeons": {
+        "gnom": {
+          "source": "Gnomeregan",
+          "name": "Gnomeregan",
+          "unchangedProperName": true
+        },
+        "ulda": {
+          "source": "Uldaman",
+          "name": "Uldaman",
+          "unchangedProperName": true
+        },
+        "zf": {
+          "source": "Zul'Farrak",
+          "name": "Zul'Farrak",
+          "unchangedProperName": true
+        },
+        "mara": {
+          "source": "Maraudon",
+          "name": "Maraudon",
+          "unchangedProperName": true
+        },
+        "scholo": {
+          "source": "Scholomance",
+          "name": "Scholomance",
+          "unchangedProperName": true
+        },
+        "strat": {
+          "source": "Stratholme",
+          "name": "Stratholme",
+          "unchangedProperName": true
+        },
+        "drowned": {
+          "source": "The Drowned City",
+          "name": "La ciudad sumergida"
+        },
+        "kroldok": {
+          "source": "Krol'dok Stronghold",
+          "name": "Bastión de Krol'dok"
+        },
+        "alcaz": {
+          "source": "Alcaz Prison",
+          "name": "Prisión de Alcaz"
+        },
+        "blackmaw": {
+          "source": "Blackmaw Hold",
+          "name": "Bastión Faucesnegras"
+        },
+        "shapers": {
+          "source": "Shaper's Terrace",
+          "name": "Bancal del Modelador"
+        }
+      }
+    },
+    "ptBR": {
+      "quests": {
+        "92751": {
+          "source": "Detonation at a Distance",
+          "name": "Detonação à distância"
+        },
+        "92752": {
+          "source": "Explosive Consultation",
+          "name": "Consulta explosiva"
+        },
+        "92819": {
+          "source": "Destruction in Deadmines",
+          "name": "Destruição nas Minas Mortas"
+        },
+        "96391": {
+          "source": "Underground Map",
+          "name": "Mapa subterrâneo"
+        },
+        "95036": {
+          "source": "A Moon-Kissed Blade",
+          "name": "Uma lâmina beijada pela lua"
+        },
+        "95042": {
+          "source": "Seeking the Kor Gem",
+          "name": "Em busca da gema de Kor"
+        },
+        "96800": {
+          "source": "Past Due",
+          "name": "Prazo vencido"
+        },
+        "739": {
+          "source": "Murdaloc",
+          "name": "Murdaloc",
+          "unchangedProperName": true
+        },
+        "96984": {
+          "source": "Heart of Disruption",
+          "name": "Coração da perturbação"
+        },
+        "92458": {
+          "source": "Heart of Disruption",
+          "name": "Coração da perturbação"
+        },
+        "92457": {
+          "source": "Starving Arcane",
+          "name": "Magia Arcana faminta"
+        },
+        "92456": {
+          "source": "A Green Sample",
+          "name": "Uma amostra verde"
+        },
+        "96987": {
+          "source": "Opportunistic Education",
+          "name": "Aprendizado oportunista"
+        },
+        "92489": {
+          "source": "Power Overwhelming",
+          "name": "Poder esmagador"
+        },
+        "92434": {
+          "source": "Blood in the Streets",
+          "name": "Sangue nas ruas"
+        },
+        "97287": {
+          "source": "Shrewd Negotiations",
+          "name": "Negociações astutas"
+        },
+        "92432": {
+          "source": "An Alarming Request",
+          "name": "Um pedido alarmante"
+        },
+        "92459": {
+          "source": "Friend of the Kirin Tor",
+          "name": "Amigo do Kirin Tor"
+        },
+        "2770": {
+          "source": "Gahz'rilla",
+          "name": "Gahz'rilla",
+          "unchangedProperName": true
+        },
+        "2864": {
+          "source": "Tran'rek",
+          "name": "Tran'rek",
+          "unchangedProperName": true
+        },
+        "98815": {
+          "source": "Highland Hides",
+          "name": "Couros das terras altas"
+        },
+        "95664": {
+          "source": "Elder Knowledge",
+          "name": "Conhecimento ancestral"
+        },
+        "95810": {
+          "source": "Lost Relic Carry",
+          "name": "Entrega da relíquia perdida"
+        },
+        "95682": {
+          "source": "Open the Maw",
+          "name": "Abra a bocarra"
+        },
+        "95647": {
+          "source": "Lost in the Thicket Things",
+          "name": "Objetos perdidos no matagal"
+        },
+        "98824": {
+          "source": "Prehistoric Prism",
+          "name": "Prisma pré-histórico"
+        },
+        "95646": {
+          "source": "Horrors in the Highland",
+          "name": "Horrores nas terras altas"
+        },
+        "95772": {
+          "source": "Songblade Search",
+          "name": "Em busca da lâmina cantante"
+        },
+        "95809": {
+          "source": "Heartwoven",
+          "name": "Corações entrelaçados"
+        },
+        "95737": {
+          "source": "Seeking Caitlin",
+          "name": "Em busca de Caitlin"
+        },
+        "95795": {
+          "source": "Fallen in the Fen",
+          "name": "Caídos no pântano"
+        },
+        "4122": {
+          "source": "Grark Lorkrub",
+          "name": "Grark Lorkrub",
+          "unchangedProperName": true
+        },
+        "4263": {
+          "source": "Incendius!",
+          "name": "Incendius!",
+          "unchangedProperName": true
+        },
+        "95161": {
+          "source": "Remember That I Love You",
+          "name": "Lembre-se de que eu te amo"
+        },
+        "95250": {
+          "source": "Abominable Creatures",
+          "name": "Criaturas abomináveis"
+        },
+        "95775": {
+          "source": "The Drowned City",
+          "name": "A cidade submersa"
+        },
+        "95776": {
+          "source": "The Only Good Brinescale...",
+          "name": "O único Escamassal bom..."
+        },
+        "95787": {
+          "source": "Take Two With Water",
+          "name": "Duas doses com água"
+        },
+        "95788": {
+          "source": "Magics of the Drowned City",
+          "name": "Magias da cidade submersa"
+        },
+        "96774": {
+          "source": "Ancient Gurubashi Idol",
+          "name": "Ídolo Gurubashi ancestral"
+        },
+        "6163": {
+          "source": "Ramstein",
+          "name": "Ramstein",
+          "unchangedProperName": true
+        },
+        "96392": {
+          "source": "Farsen's Watch",
+          "name": "Vigia de Farsen"
+        }
+      },
+      "dungeons": {
+        "gnom": {
+          "source": "Gnomeregan",
+          "name": "Gnomeregan",
+          "unchangedProperName": true
+        },
+        "ulda": {
+          "source": "Uldaman",
+          "name": "Uldaman",
+          "unchangedProperName": true
+        },
+        "zf": {
+          "source": "Zul'Farrak",
+          "name": "Zul'Farrak",
+          "unchangedProperName": true
+        },
+        "mara": {
+          "source": "Maraudon",
+          "name": "Maraudon",
+          "unchangedProperName": true
+        },
+        "strat": {
+          "source": "Stratholme",
+          "name": "Stratholme",
+          "unchangedProperName": true
+        },
+        "drowned": {
+          "source": "The Drowned City",
+          "name": "A cidade submersa"
+        },
+        "kroldok": {
+          "source": "Krol'dok Stronghold",
+          "name": "Fortaleza Krol'dok"
+        },
+        "alcaz": {
+          "source": "Alcaz Prison",
+          "name": "Prisão de Alcaz"
+        },
+        "blackmaw": {
+          "source": "Blackmaw Hold",
+          "name": "Bastião Gorjanegra"
+        },
+        "shapers": {
+          "source": "Shaper's Terrace",
+          "name": "Terraço do Moldador"
+        }
+      }
+    }
+  }
+}

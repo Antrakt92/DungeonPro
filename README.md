@@ -194,10 +194,12 @@ Level ranges are provisional recommendations.
 - Interface dictionaries for English, Russian, German, French, Spanish, Italian,
   Portuguese, Korean, Simplified Chinese and Traditional Chinese. enGB and esMX
   use English and Spanish. Translations and layout still need in-game review.
-  Dungeon and quest names follow the selected language where a verified title is
-  available. Missing translations retain their source names. Item names follow
-  the game client. The current NPC can also use its localized name; other
-  quest-giver names use the source catalogue.
+  All catalogue dungeon and quest titles follow the selected language, using
+  sourced titles supplemented by Dungeon Pro translations. Proper names may stay
+  unchanged. English client caches do not override the selected language. Item
+  names and live objective/description text follow the game client. The current
+  NPC can also use its localized name; other quest-giver names use the source
+  catalogue.
 
 Unknown prerequisites or incomplete dungeon coverage never produce a green
 preparation result. A quest listed in a storyline is not automatically treated
