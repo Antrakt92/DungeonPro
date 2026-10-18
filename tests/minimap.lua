@@ -451,5 +451,17 @@ check("A new session or external hide retires an older size recovery intent",fun
         width=400;callback();assert(not m.button.shown and addon.db.minimap.hide==false)
     end
 end)
+check("Explicit recovery attempts during zero-size retain the later resize recovery",function()
+    for _,action in ipairs({"ToggleVisibility","Reset","Initialize"})do
+        local m=reset({hide=false,angle=0});local callback
+        function Minimap:HasScript()return true end
+        function Minimap:HookScript(_,fn)callback=fn end
+        assert(m:Initialize());width=0;callback();assert(not m.button.shown)
+        assert(m[action](m)==false and addon.db.minimap.hide==false)
+        width=400;callback()
+        assert(m.button.shown,action.." discarded pending geometry recovery")
+        near(m.button.point[4],208)
+    end
+end)
 issecretvalue=nil
 print("Minimap modeled checks passed: "..total.." (native client unverified)")

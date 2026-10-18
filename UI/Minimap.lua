@@ -199,6 +199,20 @@ function M:SetVisible(shown)
     return ok
 end
 
+function M:HideForPlacement()
+    local button, parent, config, session = self.button, self.parent, self.config, self.session
+    if not self:SetVisible(false) then return false end
+    local intent = button.launcherVisibility
+    local held = self.sizeHooks and self.sizeHooks[parent]
+    local hidden = addon.Clean(config and config.hide, "boolean")
+    if held and held.active and hidden ~= true and addon.Minimap == self and self:Current() and
+        self.button == button and self.parent == parent and self.config == config and self.session == session and
+        button.launcherVisibility == intent and intent and intent.current() then
+        held.hiddenForSize = intent
+    end
+    return true
+end
+
 function M:WatchSize()
     local parent = self.parent
     local hook, has = method(parent, "HookScript"), method(parent, "HasScript")
@@ -225,8 +239,7 @@ function M:WatchSize()
             if not current() then return end
             if not placed then
                 if reason ~= "superseded" and shown == true then
-                    local hidden = self:SetVisible(false)
-                    if hidden and current() then held.hiddenForSize = button.launcherVisibility end
+                    self:HideForPlacement()
                 end
             elseif held.hiddenForSize then
                 local hidden = held.hiddenForSize
@@ -392,7 +405,7 @@ function M:Initialize(retry)
     local placed, reason = self:Place(angle(self.config.angle) or 225)
     if not current() then return false end
     if not placed then
-        if reason ~= "superseded" then self:SetVisible(false); self:RetryPlacement(db, retry) end
+        if reason ~= "superseded" then self:HideForPlacement(); self:RetryPlacement(db, retry) end
         return false
     end
     self.retry = nil
@@ -418,7 +431,7 @@ function M:ToggleVisibility()
         if not current() then return false end
         local placed, reason = self:Place(position)
         if not current() then return false end
-        if not placed then if reason ~= "superseded" then self:SetVisible(false) end; return false end
+        if not placed then if reason ~= "superseded" then self:HideForPlacement() end; return false end
         config.hide = false
         self:SetVisible(true)
     end
@@ -436,7 +449,7 @@ function M:Reset()
     if not current() then return false end
     local placed, reason = self:Place(225)
     if not current() then return false end
-    if not placed then if reason ~= "superseded" then self:SetVisible(false) end; return false end
+    if not placed then if reason ~= "superseded" then self:HideForPlacement() end; return false end
     config.angle, config.hide = 225, false
     self:SetVisible(true)
     return current()
