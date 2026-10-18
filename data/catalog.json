@@ -95,6 +95,12 @@
             65
           ]
         }
+      ],
+      "providedItems": [
+        {
+          "itemID": 1327,
+          "name": "Wiley's Note"
+        }
       ]
     },
     {
@@ -146,6 +152,12 @@
             132
           ]
         }
+      ],
+      "providedItems": [
+        {
+          "itemID": 1327,
+          "name": "Wiley's Note"
+        }
       ]
     },
     {
@@ -196,6 +208,12 @@
           "ids": [
             135
           ]
+        }
+      ],
+      "providedItems": [
+        {
+          "itemID": 1353,
+          "name": "Shaw's Report"
         }
       ]
     },
@@ -262,6 +280,12 @@
           "ids": [
             141
           ]
+        }
+      ],
+      "objectiveItems": [
+        {
+          "itemID": 1381,
+          "name": "A Mysterious Message"
         }
       ]
     },
@@ -10587,6 +10611,17 @@
             738
           ]
         }
+      ],
+      "objectiveKills": [
+        {
+          "npcID": 2945,
+          "name": "Murdaloc"
+        },
+        {
+          "npcID": 2893,
+          "name": "Stonevault Bonesnapper",
+          "quantity": 12
+        }
       ]
     },
     {
@@ -10763,6 +10798,12 @@
             722
           ]
         }
+      ],
+      "providedItems": [
+        {
+          "itemID": 4635,
+          "name": "Hammertoe's Amulet"
+        }
       ]
     },
     {
@@ -10827,6 +10868,12 @@
           "ids": [
             723
           ]
+        }
+      ],
+      "providedItems": [
+        {
+          "itemID": 4635,
+          "name": "Hammertoe's Amulet"
         }
       ]
     },
@@ -14568,6 +14615,12 @@
         [
           471
         ]
+      ],
+      "providedItems": [
+        {
+          "itemID": 3347,
+          "name": "Bundle of Crocolisk Skins"
+        }
       ]
     },
     {
@@ -14611,6 +14664,13 @@
         [
           471
         ]
+      ],
+      "objectiveItems": [
+        {
+          "itemID": 3397,
+          "name": "Young Crocolisk Skin",
+          "quantity": 6
+        }
       ]
     },
     {
@@ -14654,6 +14714,13 @@
         [
           471
         ]
+      ],
+      "objectiveItems": [
+        {
+          "itemID": 3348,
+          "name": "Giant Crocolisk Skin",
+          "quantity": 6
+        }
       ]
     },
     {
@@ -23546,7 +23613,14 @@
         "portraitSource": "https://www.wowhead.com/forever/npc=3446"
       },
       "requirementsKnown": false,
-      "source": "https://www.wowhead.com/forever/quest=865"
+      "source": "https://www.wowhead.com/forever/quest=865",
+      "objectiveItems": [
+        {
+          "itemID": 5055,
+          "name": "Intact Raptor Horn",
+          "quantity": 5
+        }
+      ]
     },
     {
       "id": 303,
@@ -23577,7 +23651,29 @@
         "portraitSource": "https://www.wowhead.com/forever/npc=1074"
       },
       "requirementsKnown": false,
-      "source": "https://www.wowhead.com/forever/quest=303"
+      "source": "https://www.wowhead.com/forever/quest=303",
+      "objectiveKills": [
+        {
+          "npcID": 1051,
+          "name": "Dark Iron Dwarf",
+          "quantity": 15
+        },
+        {
+          "npcID": 1053,
+          "name": "Dark Iron Tunneler",
+          "quantity": 5
+        },
+        {
+          "npcID": 1052,
+          "name": "Dark Iron Saboteur",
+          "quantity": 5
+        },
+        {
+          "npcID": 1054,
+          "name": "Dark Iron Demolitionist",
+          "quantity": 5
+        }
+      ]
     },
     {
       "id": 389,
@@ -23642,6 +23738,12 @@
         725,
         726,
         762
+      ],
+      "objectiveItems": [
+        {
+          "itemID": 4621,
+          "name": "Ambassador Infernus' Bracer"
+        }
       ]
     },
     {
@@ -23858,6 +23960,12 @@
         725,
         726,
         762
+      ],
+      "providedItems": [
+        {
+          "itemID": 4622,
+          "name": "Sealed Note to Advisor Belgrum"
+        }
       ]
     },
     {
@@ -26462,7 +26570,17 @@
       },
       "repeatable": true,
       "requirementsKnown": false,
-      "source": "https://www.wowhead.com/forever/quest=1193/a-broken-trap"
+      "source": "https://www.wowhead.com/forever/quest=1193/a-broken-trap",
+      "objectiveItems": [
+        {
+          "itemID": 15994,
+          "name": "Thorium Widget"
+        },
+        {
+          "itemID": 3829,
+          "name": "Frost Oil"
+        }
+      ]
     },
     {
       "id": 7481,

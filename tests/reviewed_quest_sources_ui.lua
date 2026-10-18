@@ -215,6 +215,13 @@ local reviewedItemRoles = {
     {4183,"providedItems",{{11366}}}, {4184,"providedItems",{{11367}}},
     {4186,"providedItems",{{11368}}}, {4264,"providedItems",{{11446}}},
     {5001,"objectiveItems",{{12345}}}, {5160,"providedItems",{{12923}}},
+    {132,"providedItems",{{1327}}}, {135,"providedItems",{{1327}}},
+    {141,"providedItems",{{1353}}}, {142,"objectiveItems",{{1381}}},
+    {469,"providedItems",{{3347}}}, {471,"objectiveItems",{{3348,6}}},
+    {484,"objectiveItems",{{3397,6}}}, {723,"providedItems",{{4635}}},
+    {724,"providedItems",{{4635}}}, {725,"providedItems",{{4622}}},
+    {762,"objectiveItems",{{4621}}}, {865,"objectiveItems",{{5055,5}}},
+    {1193,"objectiveItems",{{15994},{3829}}},
 }
 for _,sample in ipairs(reviewedItemRoles) do
     render(sample[1])
@@ -237,7 +244,8 @@ end
 for _,sample in ipairs({{1955,{{6549}}},{1957,{{6550,12}}},{8423,{{5993,7}}},
     {8424,{{6006,20},{6004,10},{6005,20}}},{261,{{11561,30}}},
     {3906,{{9026}}},{4003,{{9019}}},{4182,{{7047,15},{7040,10},{7044,1},{7041,4}}},
-    {4262,{{9026}}},{4362,{{9019}}}}) do
+    {4262,{{9026}}},{4362,{{9019}}},
+    {303,{{1051,15},{1053,5},{1052,5},{1054,5}}},{739,{{2945},{2893,12}}}}) do
     render(sample[1])
     local goals=assert(addon.quests[sample[1]].objectiveKills)
     assert(#goals==#sample[2])
@@ -317,4 +325,12 @@ assert(addon.quests[4121].objectiveItems[1].itemID==11286 and not addon.quests[4
 assert(addon.quests[4122].providedItems[1].itemID==11286 and not addon.quests[4122].objectiveItems)
 assert(addon.quests[4182].objectiveKills[3].npcID==7044 and addon.quests[4182].objectiveKills[3].quantity==1,
     "Black Drake one is an explicit source count, not an unknown-quantity default")
+assert(addon.quests[722].objectiveItems[1].itemID==4635 and not addon.quests[722].providedItems,
+    "Hammertoe's Amulet remains a collected objective in Amulet of Secrets")
+for _,id in ipairs({723,724})do
+    assert(addon.quests[id].providedItems[1].itemID==4635 and not addon.quests[id].objectiveItems,
+        "subsequent amulet deliveries remain supplied-item roles")
+end
+assert(not addon.quests[739].objectiveKills[1].quantity and addon.quests[739].objectiveKills[2].quantity==12,
+    "Murdaloc stays quantity-unknown while the explicit twelve Bonesnappers remain known")
 print("Reviewed quest sources UI: PASS (actual TOC; modeled routing and roles, no native acceptance)")
