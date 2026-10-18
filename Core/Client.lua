@@ -1,5 +1,6 @@
 local _, addon = ...
 local requested, requestedItems = {}, {}
+local retryRefreshPending, retryRefreshing
 local offerGeneration, currentOffers = {}, nil
 local dialogueGeneration, dialogueReward = {}, nil
 local textCaptureGeneration = {}
@@ -333,6 +334,24 @@ function addon.OfferEvent(event)
     else addon.ClearOffers() end
 end
 
+local function refreshRetries()
+    if retryRefreshPending or retryRefreshing then return end
+    local token, inline = {}, true
+    retryRefreshPending = token
+    local function run()
+        if retryRefreshPending ~= token then return end
+        retryRefreshPending, retryRefreshing = nil, inline
+        local ok, message = pcall(addon.Notify)
+        retryRefreshing = nil
+        if not ok then error(message) end
+    end
+    local after = C_Timer and addon.Clean(C_Timer.After, "function")
+    local ok, result
+    if after then ok, result = pcall(after, .1, run) end
+    if ok and addon.Clean(result, "boolean") ~= false then inline = false
+    else run() end
+end
+
 function addon.QuestDataResult(id, success)
     id = addon.Clean(id, "number")
     success = addon.Clean(success, "boolean")
@@ -345,7 +364,7 @@ function addon.QuestDataResult(id, success)
     local function retry()
         if requested[id] ~= request or not request.waiting or request.attempts ~= attempt then return end
         request.waiting = false
-        addon.Notify()
+        refreshRetries()
     end
     if not C_Timer or type(C_Timer.After) ~= "function" or not pcall(C_Timer.After, 2, retry) then
         request.waiting = false
@@ -577,7 +596,7 @@ function addon.ItemDataResult(id, success)
     local function retry()
         if requestedItems[id] ~= request or not request.waiting or request.attempts ~= attempt then return end
         request.waiting = false
-        addon.Notify()
+        refreshRetries()
     end
     if not C_Timer or type(C_Timer.After) ~= "function" or not pcall(C_Timer.After, 2, retry) then
         request.waiting = false

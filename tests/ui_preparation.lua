@@ -9700,4 +9700,72 @@ check("Detail title wraps before action slots while body width and scrolling rem
     assert(not ui.giver.enabled and not ui.source.enabled)
     measurement=nil;addon.QuestName=names;ui.quest,ui.dungeon=quest,dungeon;ui:Refresh()
 end)
+check("Empty quest panes avoid unused context planners while direct quest inspection still builds its engine",function()
+    local dungeon,quest,context,new=ui.dungeon,ui.quest,addon.Context,addon.Planner.New
+    local contexts,planners=0,0
+    addon.Context=function(...)contexts=contexts+1;return context(...)end
+    addon.Planner.New=function(...)planners=planners+1;return new(...)end
+    ui.dungeon,ui.quest=nil,nil;ui:RefreshQuests()
+    assert(contexts==0 and planners==0 and ui.engine==nil and ui.currentPlan==nil and ui.rows[1].heading=="PICK")
+    ui.quest=1;ui:RefreshQuests();assert(contexts==1 and planners==1 and ui.engine)
+    addon.Context,addon.Planner.New=context,new;ui.dungeon,ui.quest=dungeon,quest;ui:Refresh()
+end)
+check("Catalogue stages every card until complete source validation and retires cross-card mutations",function()
+    for _,phase in ipairs({"paint","publish"})do
+        local f=targetSearchFixture();local row=ui.cards[1];local armed=true
+        local object,method=phase=="paint"and row.title or row,phase=="paint"and "SetText"or "Show"
+        local native=object[method]
+        object[method]=function(self,...)
+            if armed then
+                armed=false
+                for _,card in ipairs(ui.cards)do assert(not card.shown,"catalogue remains hidden throughout staged paint")end
+                addon.dungeons[2].quests[1]=31003
+            end
+            return native(self,...)
+        end
+        ui:RefreshDungeons();assert(not armed)
+        for _,card in ipairs(ui.cards)do assert(not card.shown,"no partially validated catalogue survives source change")end
+        object[method]=native;ui:RefreshDungeons();assert(#f:cards()==3)
+        f:finish()
+    end
+end)
+check("A late old catalogue publication cannot hide a newer reentrant render",function()
+    local f=targetSearchFixture();local row=ui.cards[1];local native,armed=row.Show,true
+    row.Show=function(self,...)
+        if armed then armed=false;ui.search="Gamma";ui:RefreshDungeons()end
+        return native(self,...)
+    end
+    ui:RefreshDungeons();assert(not armed)
+    local cards=f:cards();assert(#cards==1 and cards[1].title.text=="Gamma dungeon")
+    row.Show=native;f:finish()
+end)
+check("Matched quest inspection siblings remain staged and retire with cross-card invalidation",function()
+    local f=targetSearchFixture();ui.search="Source target";ui:RefreshDungeons()
+    local row=ui.cards[2];local native,armed=row.title.SetText,true
+    row.title.SetText=function(self,...)
+        if armed then
+            armed=false
+            for _,control in ipairs(ui.catalogInspectButtons)do assert(not control.shown,"inspect siblings must remain staged")end
+            addon.dungeons[1].quests[1]=31003
+        end
+        return native(self,...)
+    end
+    ui:RefreshDungeons();assert(not armed)
+    for _,control in ipairs(ui.catalogInspectButtons)do assert(not control.shown,"invalidated search cannot retain visible inspection siblings")end
+    row.title.SetText=native;ui:RefreshDungeons()
+    assert(ui.catalogInspectButtons[1].shown)
+    f:finish()
+end)
+check("Late inspection publication cannot resurrect old siblings over a newer unmatched search",function()
+    local f=targetSearchFixture();ui.search="Source target";ui:RefreshDungeons()
+    local inspect=ui.catalogInspectButtons[1];local native,armed=inspect.Show,true
+    inspect.Show=function(self,...)
+        if armed then armed=false;ui.search="Gamma";ui:RefreshDungeons()end
+        return native(self,...)
+    end
+    ui:RefreshDungeons();assert(not armed)
+    assert(#f:cards()==1 and f:cards()[1].title.text=="Gamma dungeon")
+    for _,control in ipairs(ui.catalogInspectButtons)do assert(not control.shown)end
+    inspect.Show=native;f:finish()
+end)
 print("Preparation UI modeled checks passed: " .. total .. " (no native layout validation)")

@@ -128,7 +128,7 @@ function UI:CatalogEntranceHint(row)
     local tip = addon.Clean(GameTooltip, "table") or addon.Clean(GameTooltip, "userdata")
     local function current()
         return tip and GameTooltip == tip and row.entranceCurrent == owner and owner and owner() and
-            row.entranceBinding == binding and addon.Read(self.frame.IsShown, "boolean", self.frame) == true
+            row.entranceBinding == binding and addon.Read(row.IsShown, "boolean", row) == true and addon.Read(self.frame.IsShown, "boolean", self.frame) == true
     end
     if not current() then return end
     local text = addon.Read(addon.DungeonName, "string", row.entranceDungeon)
@@ -191,7 +191,7 @@ function UI:CatalogStatusHint(row)
     local isOwned = tip and addon.Clean(tip.IsOwned, "function")
     local function current()
         local shown = addon.Read(frame.IsShown, "boolean", frame)
-        return shown == true and addon.UI == self and self.frame == frame and row.catalogResult == result and row.dungeonStatusDTO == dto and
+        return shown == true and addon.Read(row.IsShown, "boolean", row) == true and addon.UI == self and self.frame == frame and row.catalogResult == result and row.dungeonStatusDTO == dto and
             row.dungeonStatusCurrent == owned and owned and owned() and GameTooltip == tip and tip.IsOwned == isOwned
     end
     if not tip or not isOwned or not dto or not current() then return end
@@ -1056,12 +1056,13 @@ function UI:RefreshDungeons()
     local query = (addon.Clean(search, "string") or ""):gsub("^%s+", ""):gsub("%s+$", "")
     local needle = searchText(query)
     local inputs, results, memo, sourceMemo, sourceMatches = {}, {}, {}, {}, {}
+    local renderInput, inputByDungeon, staging = nil, {}, true
     local sourceGetter, idParser = addon.QuestSourceSearchTerms, addon.SearchQuestID
     for index, dungeon in ipairs(catalogue) do
         local targets = dungeon.quests
         local input = { dungeon = dungeon, name = dungeon.name, key = dungeon.key, wing = dungeon.wing,
             minimum = dungeon.minLevel, maximum = dungeon.maxLevel, targets = targets, members = {} }
-        inputs[index] = input
+        inputs[index], input.index, inputByDungeon[dungeon] = input, index, input
         for other, id in ipairs(targets) do
             local quest = definitions[id]
             input.members[other] = { id = id, quest = quest, name = quest and quest.name, questID = quest and quest.id }
@@ -1078,8 +1079,8 @@ function UI:RefreshDungeons()
                 addon.DungeonName ~= dungeonGetter or addon.SearchFold ~= fold or issecretvalue ~= checker or
                 #catalogue ~= #inputs then return false end
             -- The source-only scan has no effects; publication still proves every member.
-            if sourceOnly then return true end
-            for index, input in ipairs(inputs) do
+            if sourceOnly == true then return true end
+            local function matches(input, index)
                 local dungeon = input.dungeon
                 if catalogue[index] ~= dungeon or dungeon.name ~= input.name or dungeon.key ~= input.key or dungeon.wing ~= input.wing or
                     dungeon.minLevel ~= input.minimum or dungeon.maxLevel ~= input.maximum or dungeon.quests ~= input.targets or
@@ -1088,7 +1089,10 @@ function UI:RefreshDungeons()
                     if input.targets[other] ~= member.id or definitions[member.id] ~= member.quest or
                         (member.quest and (member.quest.name ~= member.name or member.quest.id ~= member.questID)) then return false end
                 end
+                return true
             end
+            if renderInput and sourceOnly ~= "full" then return matches(renderInput, renderInput.index) end
+            for index, input in ipairs(inputs) do if not matches(input, index) then return false end end
             return true
         end)
         return ok and valid == true
@@ -1126,6 +1130,16 @@ function UI:RefreshDungeons()
         end
         return ok and fresh
     end
+    local function retire()
+        sourceReady = false
+        local function cleanupCurrent() return self.catalogGeneration == generation and self.catalogScroll == catalogScroll end
+        for _, controls in ipairs({ self.cards, self.catalogInspectButtons }) do
+            for _, control in ipairs(controls) do
+                if not ownedWrite(cleanupCurrent, false, control, "Hide") then return false end
+            end
+        end
+        return false
+    end
     local function expireSources()
         sourceReady = false
         for _, controls in ipairs({ self.cards, self.catalogInspectButtons }) do
@@ -1162,16 +1176,16 @@ function UI:RefreshDungeons()
         return baseCurrent(sourceOnly)
     end
     local function proveSources()
-        if not current() then return false end
+        if not current("full") then return false end
         for _, cached in pairs(sourceMemo) do
             if cached.current and addon.Read(cached.current, "boolean") ~= true then return expireSources() end
         end
-        if not current() then return false end
+        if not current("full") then return false end
         -- Complete callback preflights before the callback-free ownership pass.
         for _, cached in pairs(sourceMemo) do
             if cached.current and not unchanged(cached) then return expireSources() end
         end
-        return baseCurrent()
+        return baseCurrent("full")
     end
     local function scanMember(input, index, member, other)
         local ok, valid = pcall(function()
@@ -1296,6 +1310,7 @@ function UI:RefreshDungeons()
     local statusEngine = statusGetter and addon.Read(addon.Planner.New, "table", definitions, context, addon.Clean(character.choices, "table"))
     if not current() then return end
     for _, result in ipairs(results) do
+        renderInput = inputByDungeon[result.dungeon]
         local ok, dto, fresh
         if statusEngine then ok, dto, fresh = pcall(statusGetter, result.dungeon, statusEngine) end
         if not current() then return end
@@ -1306,6 +1321,9 @@ function UI:RefreshDungeons()
     local function write(object, method, ...)
         return ownedWrite(current, false, object, method, ...)
     end
+    renderInput = nil
+    if not proveSources() then return end
+    for _, row in ipairs(self.cards) do if not write(row, "Hide") then return retire() end end
     for _, control in ipairs(self.catalogInspectButtons) do
         if not write(control, "Hide") or not write(control, "SetEnabled", false) or
             not write(control, "SetScript", "OnClick", nil) then return end
@@ -1322,14 +1340,15 @@ function UI:RefreshDungeons()
     if not current() then return end
     for index, result in ipairs(results) do
         local dungeon = result.dungeon
-        local row = self:MakeRow(self.catalog, self.cards, index, 84)
+        renderInput = inputByDungeon[dungeon]
+        local row = self:MakeRow(self.catalog, self.cards, index, 84, current, true)
         row.catalogCard = true
         local theme = addon.Clean(addon.Theme, "table")
         if theme then addon.Read(theme.ApplyFont, "boolean", row.note, 12) end
         if not current() then return end
         result.row = row
         row.catalogResult = result
-        if not current() or not write(row, "Show") then return end
+        if not current() or not write(row, "Hide") then return end
         if not row.art then
             row.art = row:CreateTexture(nil, "ARTWORK")
             if not write(row.art, "SetSize", 52, 56) or not write(row.art, "SetPoint", "TOPLEFT", 8, -8) then return end
@@ -1355,7 +1374,7 @@ function UI:RefreshDungeons()
         local control, frame = row.entranceControl, self.frame
         local function entranceCurrent()
             local shown = addon.Read(row.IsShown, "boolean", row)
-            return shown == true and addon.UI == self and self.frame == frame and self.catalogGeneration == generation and self.cards[index] == row and
+            return (shown == true or staging) and addon.UI == self and self.frame == frame and self.catalogGeneration == generation and self.cards[index] == row and
                 row.entranceDungeon == dungeon and row.entranceCurrent == entranceCurrent and addon.dungeons == catalogue and
                 addon.char == character and addon.db == database and self.search == search and self.range == range and sourceReady
         end
@@ -1400,6 +1419,7 @@ function UI:RefreshDungeons()
         end
         local binding = row.entranceBinding
         if not write(control, "SetScript", "OnClick", function()
+            if addon.Read(row.IsShown, "boolean", row) ~= true then return end
             if not entranceCurrent() or row.entranceBinding ~= binding or not binding or not binding.current() then return end
             if addon.Read(frame.IsShown, "boolean", frame) ~= true or not entranceCurrent() or not binding.current() then return end
             pcall(binding.start, binding.dungeon, binding.point)
@@ -1413,6 +1433,7 @@ function UI:RefreshDungeons()
         if not current() then return end
         row.matchQuestID = result.questID
         if not write(row, "SetScript", "OnClick", function()
+            if addon.Read(row.IsShown, "boolean", row) ~= true then return end
             if not proveSources() then return end
             self:ResetHistoryReading()
             self.detailHistory = {}
@@ -1440,6 +1461,7 @@ function UI:RefreshDungeons()
             local inspect = self.catalogInspectButtons[inspectIndex]
             if not inspect then
                 inspect = CreateFrame("Button", nil, self.catalog)
+                if not write(inspect, "Hide") then return end
                 inspect:SetWidth(self.catalog:GetWidth() - 16); inspect.label = label(inspect, "", 7, -5, self.catalog:GetWidth() - 30, 14)
                 inspect.title = inspect.label
                 inspect:SetHighlightTexture("Interface\\QuestFrame\\UI-QuestTitleHighlight")
@@ -1473,15 +1495,16 @@ function UI:RefreshDungeons()
                         matches = cached and searchText(cached):find(needle, 1, true)
                     end
                 end
-                if not matches or not inspectCurrent() or not proveSources() then return end
+                if addon.Read(row.IsShown, "boolean", row) ~= true or not matches or not inspectCurrent() or not proveSources() then return end
                 self:ResetHistoryReading(); self.detailHistory = {}
                 self.dungeon, self.quest = dungeon, questID
                 character.selectedDungeon = dungeon.key
                 self:Refresh()
-            end) or not write(inspect, "Show") then return end
+            end) or not write(inspect, "Hide") then return end
             offset = offset + height + 6
         end
     end
+    renderInput, staging = nil, false
     for index = #results + 1, #self.cards do
         local row = self.cards[index]
         if not write(row, "Hide") or not write(row, "SetScript", "OnClick", nil) then return end
@@ -1496,11 +1519,16 @@ function UI:RefreshDungeons()
     end
     if not current() then return end
     if not write(self.catalog, "SetHeight", math.max(1, offset)) then return end
-    if not proveSources() then return end
+    if not proveSources() then return retire() end
     if self.catalogQueryKey ~= nil and self.catalogQueryKey ~= needle then
         if not write(catalogScroll, "SetVerticalScroll", 0) or not proveSources() then return end
     end
     self.catalogQueryKey = needle
+    for _, result in ipairs(results) do
+        if not write(result.row, "Show") then return retire() end
+        if result.inspect and not write(result.inspect, "Show") then return retire() end
+    end
+    if not proveSources() then return retire() end
     self.catalogLanguageView = { current = proveSources, owned = function() return baseCurrent(true) end,
         write = ownedWrite, query = query, queryID = queryID, results = results }
 end
@@ -1581,9 +1609,10 @@ function UI:RefreshQuests()
     local preparation, includeUnavailable = self.preparation, self.includeUnavailable
     local targets, targetIDs, targetSet = d and d.quests, {}, {}
     for index, id in ipairs(targets or {}) do targetIDs[index] = id; targetSet[id] = true end
-    local context = addon.Context()
+    local needsEngine = d ~= nil or self.quest ~= nil
+    local context = needsEngine and addon.Context() or nil
     if self.dungeon ~= d or addon.char ~= character or self.questListGeneration ~= previousGeneration then return end
-    local engine = addon.Planner.New(addon.quests, context, addon.Clean(character.choices, "table"))
+    local engine = needsEngine and addon.Planner.New(addon.quests, context, addon.Clean(character.choices, "table")) or nil
     self.engine = engine
     self.currentPlan = nil
     local generation, treeCurrent, treeFailed = {}, nil, false

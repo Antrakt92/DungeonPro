@@ -16,12 +16,13 @@ function Status.Get(dungeon, engine)
     local fresh = engine and clean(rawget(engine, "Current"), "function")
     local ids = dungeon and clean(rawget(dungeon, "quests"), "table")
     if not dungeon or not engine or not quests or not context or not eligible or not getter or not fresh or not ids then return nil, "input" end
-    local fields = {}
+    local fieldObjects, fieldKeys, fieldValues, fieldCount = {}, {}, {}, 0
     local function keep(object, key)
-        if #fields >= 4000 then return nil, false end
+        if fieldCount >= 4000 then return nil, false end
         local value = rawget(object, key)
         if type(checker) == "function" and read(checker, "boolean", value) ~= false then return nil, false end
-        fields[#fields + 1] = { object = object, key = key, value = value }
+        fieldCount = fieldCount + 1
+        fieldObjects[fieldCount], fieldKeys[fieldCount], fieldValues[fieldCount] = object, key, value
         return value, true
     end
     local function same(value, previous)
@@ -40,8 +41,8 @@ function Status.Get(dungeon, engine)
             not same(rawget(engine, "State"), getter) or not same(rawget(engine, "Current"), fresh) or
             not same(rawget(engine, "quests"), quests) or not same(rawget(engine, "context"), context) or
             not same(rawget(engine, "states"), cache) then return false end
-        for _, field in ipairs(fields) do
-            if not same(rawget(field.object, field.key), field.value) then return false end
+        for index = 1, fieldCount do
+            if not same(rawget(fieldObjects[index], fieldKeys[index]), fieldValues[index]) then return false end
         end
         return true
     end

@@ -128,6 +128,20 @@ check("Reachable dependency definitions are captured without querying their stat
     local f=fixture({{"AVAILABLE"}});for i=1,201 do f.engine.quests[i]={requires=i<201 and{{ids={i+1}}}or nil}end
     assert(addon.DungeonStatus.Get(f.dungeon,f.engine)==nil and f.calls()==0,"dependency capture has a hard source budget")
 end)
+check("Absent captured fields remain guarded after later populated fields and warm checks",function()
+    for _,field in ipairs({"requires","factions","classes","reason","completedHistory"})do
+        local f=fixture({{"AVAILABLE"}},{{minLevel=1,requirementsKnown=true}})
+        if field=="completedHistory"then f.states[1].completedHistory=nil end
+        local _,current=status(f)
+        local calls=f.calls()
+        for _=1,20 do assert(current())end
+        if field=="reason"then f.states[1].reason="level"
+        elseif field=="completedHistory"then f.states[1].completedHistory=true
+        elseif field=="requires"then f.engine.quests[1].requires={{ids={2}}}
+        else f.engine.quests[1][field]={field=="classes"and"WARRIOR"or"Horde"}end
+        assert(not current()and f.calls()==calls,field.." changed without querying quest state")
+    end
+end)
 check("Every actual dungeon aggregates planner states without changing them or invoking Next",function()
     local actual={};assert(loadfile("Database/Catalog.lua"))("DungeonPro",actual)
     local engine=addon.Planner.New(actual.quests,{level=60,faction="Alliance",class="MAGE",

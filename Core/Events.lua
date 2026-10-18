@@ -120,8 +120,21 @@ local function probeMinimap()
     for _, line in ipairs(lines) do print(line) end
 end
 
+local function renderVisible()
+    local ui = addon.Clean(addon.UI, "table")
+    if not ui then return true end
+    local frame = addon.Clean(ui.frame, "table") or addon.Clean(ui.frame, "userdata")
+    -- Opening the planner always reads current state; an unopened frame has nothing to paint.
+    if not frame then return false end
+    local getter = addon.Read(function() return frame.IsShown end, "function")
+    local shown = addon.Read(getter, "boolean", frame)
+    if addon.UI ~= ui or ui.frame ~= frame then return true end
+    return shown ~= false
+end
+
 local function refresh()
     if pending or refreshing or not initialized then return end
+    if not renderVisible() then return end
     local token = {}
     pending = token
     -- Only inline callbacks need recursion suppression; delayed renders may queue new state.
@@ -129,6 +142,7 @@ local function refresh()
     local function run()
         if pending ~= token then return end
         pending, refreshing = false, immediate
+        if not renderVisible() then refreshing = false; return end
         local ok, message = pcall(addon.Notify)
         refreshing = false
         if not ok then error(message) end

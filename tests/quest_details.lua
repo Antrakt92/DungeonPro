@@ -196,7 +196,7 @@ check("Offered text is not persisted under a locale that changes during the read
 end)
 check("Failed title loads retry with a bound and coalesce repeated reads", function()
     local callbacks, calls = {}, 0
-    C_Timer = { After = function(_, fn) callbacks[#callbacks + 1] = fn end }
+    C_Timer = { After = function(delay, fn) callbacks[#callbacks + 1] = { delay, fn } end }
     addon.quests = { [167] = { name = "Fallback" } }
     addon.Notify = function() addon.QuestName(167) end
     C_QuestLog.RequestLoadQuestByID = function()
@@ -205,8 +205,10 @@ check("Failed title loads retry with a bound and coalesce repeated reads", funct
     end
     for i = 1, 10 do assert(addon.QuestName(167) == "Fallback") end
     assert(calls == 1 and #callbacks == 1)
-    callbacks[1](); assert(calls == 2 and #callbacks == 2)
-    callbacks[2](); assert(calls == 3 and #callbacks == 2)
+    callbacks[1][2](); assert(calls == 1 and #callbacks == 2 and callbacks[2][1] == .1)
+    callbacks[2][2](); assert(calls == 2 and #callbacks == 3 and callbacks[3][1] == 2)
+    callbacks[3][2](); assert(calls == 2 and #callbacks == 4 and callbacks[4][1] == .1)
+    callbacks[4][2](); assert(calls == 3 and #callbacks == 4)
     for i = 1, 10 do addon.QuestName(167) end
     assert(calls == 3)
     C_QuestLog.GetTitleForQuestID = function() return "Localized title" end
@@ -214,7 +216,7 @@ check("Failed title loads retry with a bound and coalesce repeated reads", funct
 end)
 check("Synchronous title failure events keep pending state and delayed recovery", function()
     local callbacks, calls = {}, 0
-    C_Timer = { After = function(_, fn) callbacks[#callbacks + 1] = fn end }
+    C_Timer = { After = function(delay, fn) callbacks[#callbacks + 1] = { delay, fn } end }
     addon.quests = { [168] = { name = "Fallback" } }
     addon.Notify = function() addon.QuestName(168) end
     C_QuestLog.RequestLoadQuestByID = function(id)
@@ -223,13 +225,15 @@ check("Synchronous title failure events keep pending state and delayed recovery"
     addon.QuestName(168); assert(calls == 1 and #callbacks == 1)
     addon.QuestDataResult(168, false); addon.QuestDataResult(999, false)
     assert(#callbacks == 1)
-    callbacks[1](); assert(calls == 2)
+    callbacks[1][2](); assert(calls == 1 and callbacks[2][1] == .1)
+    callbacks[2][2](); assert(calls == 2 and callbacks[3][1] == 2)
     C_QuestLog.RequestLoadQuestByID = function(id)
         calls = calls + 1; addon.QuestDataResult(id, true)
     end
-    callbacks[2](); assert(calls == 3)
+    callbacks[3][2](); assert(calls == 2 and callbacks[4][1] == .1)
+    callbacks[4][2](); assert(calls == 3)
     for i = 1, 5 do addon.QuestName(168) end
-    assert(calls == 3 and #callbacks == 2)
+    assert(calls == 3 and #callbacks == 4)
 end)
 check("Silent title requests time out and stale watchdogs cannot fail a newer attempt", function()
     local isolated = {}
@@ -244,10 +248,13 @@ check("Silent title requests time out and stale watchdogs cannot fail a newer at
     assert(#queue == 1 and queue[1][1] == 10)
     local old = queue[1][2]
     old(); assert(#queue == 2 and queue[2][1] == 2)
-    queue[2][2](); assert(calls == 2 and #queue == 3)
-    old(); assert(#queue == 3 and calls == 2)
-    queue[3][2](); queue[4][2](); assert(calls == 3 and #queue == 5)
-    queue[5][2](); assert(#queue == 5)
+    queue[2][2](); assert(calls == 1 and #queue == 3 and queue[3][1] == .1)
+    queue[3][2](); assert(calls == 2 and #queue == 4 and queue[4][1] == 10)
+    old(); assert(#queue == 4 and calls == 2)
+    queue[4][2](); assert(queue[5][1] == 2)
+    queue[5][2](); assert(calls == 2 and queue[6][1] == .1)
+    queue[6][2](); assert(calls == 3 and #queue == 7 and queue[7][1] == 10)
+    queue[7][2](); assert(#queue == 7)
     for _ = 1, 10 do isolated.QuestName(169) end
     assert(calls == 3)
 end)
