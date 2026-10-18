@@ -2346,6 +2346,12 @@ function UI:RefreshDetail(sourceFocus)
         if not self:QuestListWrite(toggle, "Hide", current) or not self:QuestListWrite(toggle, "SetEnabled", current, false) or
             not self:QuestListWrite(toggle, "SetScript", current, "OnClick", nil) then return end
     end
+    if self.ancestorActionButton then
+        local control = self.ancestorActionButton
+        local function current() return portraitCardCurrent() and self.ancestorActionButton == control end
+        if not self:QuestListWrite(control, "Hide", current) or not self:QuestListWrite(control, "SetEnabled", current, false) or
+            not self:QuestListWrite(control, "SetScript", current, "OnClick", nil) then return end
+    end
     self.turninBinding = nil
     if self.turnin then
         local control = self.turnin
@@ -3067,6 +3073,116 @@ function UI:RefreshDetail(sourceFocus)
             if line(addon.L(key), nil, nil, nil, portraitCardCurrent) == false then return end
         end
         if not metadataCurrent() then return end
+        do
+            local actionID = action and addon.Clean(action.id, "number")
+            local kind = action and addon.Clean(action.kind, "string")
+            local ancestor = actionID and addon.Clean(addon.quests[actionID], "table")
+            if ancestor and actionID ~= id and (kind == "complete" or kind == "turnin") then
+                local endpoint = rawget(ancestor, "finish")
+                local destination = action.place
+                local heldState = engine:State(actionID)
+                local heldStatus = kind == "turnin" and "READY" or "ACTIVE"
+                if heldState.status == heldStatus and ((kind == "complete" and destination == nil) or
+                    (kind == "turnin" and rawequal(destination, endpoint))) then
+                    local clean, reader, localize, names, inspect = addon.Clean, addon.Read, addon.L, addon.CachedQuestName, self.InspectQuest
+                    local checker, catalogue, database, frame = issecretvalue, addon.quests, addon.db, self.frame
+                    local locale = database and rawget(database, "locale")
+                    local engineCurrent, engineNext, engineState = engine.Current, engine.Next, engine.State
+                    local snapshots, seen, valid = {}, {}, true
+                    local function capture(object, keys, length)
+                        if #snapshots >= 512 then valid = false; return end
+                        local values = {}; for _, key in ipairs(keys) do values[key] = rawget(object, key) end
+                        snapshots[#snapshots + 1] = { object = object, keys = keys, values = values, length = length }
+                    end
+                    local function dependency(questID)
+                        if seen[questID] or not valid then return end
+                        seen[questID] = true
+                        if #snapshots >= 256 then valid = false; return end
+                        local definition = clean(catalogue[questID], "table")
+                        if not definition then valid = false; return end
+                        capture(catalogue, { questID })
+                        capture(definition, { "id", "name", "requires" })
+                        local groups = clean(rawget(definition, "requires"), "table")
+                        if not groups then return end
+                        if #groups > 100 then valid = false; return end
+                        local keys = {}; for index = 1, #groups do keys[index] = index end
+                        capture(groups, keys, #groups)
+                        for _, index in ipairs(keys) do
+                            local group = clean(rawget(groups, index), "table")
+                            local ids = group and clean(rawget(group, "ids"), "table")
+                            if not ids or #ids > 100 then valid = false; return end
+                            capture(group, { "ids", "mode" })
+                            local members = {}; for n = 1, #ids do members[n] = n end
+                            capture(ids, members, #ids)
+                            for _, n in ipairs(members) do
+                                local parent = clean(rawget(ids, n), "number")
+                                if not parent or parent <= 0 or parent % 1 ~= 0 then valid = false; return end
+                                dependency(parent)
+                            end
+                        end
+                    end
+                    dependency(id)
+                    capture(ancestor, { "id", "name", "finish" })
+                    if type(endpoint) == "table" then
+                        capture(endpoint, { "npcID", "objectID", "itemID", "name", "zoneName", "mapID", "x", "y", "summonItem", "reportedLocations" })
+                    end
+                    local control = self.ancestorActionButton
+                    local function cueCurrent()
+                        if not current() or not portraitCardCurrent() then return false end
+                        local ok, same = pcall(function()
+                            if addon.UI ~= self or not valid or not seen[actionID] or addon.Clean ~= clean or addon.Read ~= reader or addon.L ~= localize or
+                                addon.CachedQuestName ~= names or self.InspectQuest ~= inspect or issecretvalue ~= checker or
+                                addon.quests ~= catalogue or addon.db ~= database or (database and rawget(database,"locale") ~= locale) or
+                                engine.Current ~= engineCurrent or engine.Next ~= engineNext or engine.State ~= engineState or
+                                self.frame ~= frame or self.ancestorActionButton ~= control or action.id ~= actionID or action.kind ~= kind or action.place ~= destination or
+                                engine.states[actionID] ~= heldState or heldState.status ~= heldStatus then return false end
+                            for _, snapshot in ipairs(snapshots) do
+                                if snapshot.length and #snapshot.object ~= snapshot.length then return false end
+                                for _, key in ipairs(snapshot.keys) do
+                                    if not rawequal(rawget(snapshot.object, key), snapshot.values[key]) then return false end
+                                end
+                            end
+                            local member = false; for _, candidate in ipairs(actions) do if candidate == action then member = true; break end end
+                            return member
+                        end)
+                        return ok and same == true
+                    end
+                    if not cueCurrent() then return end
+                    if not control then
+                        local candidate = CreateFrame("Button", nil, self.detail); candidate:Hide()
+                        candidate.label = label(candidate, "", 4, -3, contentWidth - 8, 13)
+                        candidate:SetHighlightTexture("Interface\\QuestFrame\\UI-QuestTitleHighlight")
+                        if not cueCurrent() then return end
+                        control = candidate; self.ancestorActionButton = control
+                    end
+                    local function write(object, method, ...) return self:QuestListWrite(object, method, cueCurrent, ...) end
+                    setFont(control.label, 13)
+                    if not cueCurrent() then return end
+                    local name = reader(names, "string", actionID)
+                    if not cueCurrent() then return end
+                    local targetName = reader(names, "string", id)
+                    if not cueCurrent() then return end
+                    if not name or not name:find("%S") then name = clean(ancestor.name, "string") end
+                    if name and (name == targetName or rawget(ancestor,"name") == rawget(q,"name")) then name = name .. " #" .. actionID end
+                    local prefix, status = reader(localize,"string","ANCESTOR_ACTION"), reader(localize,"string",heldStatus)
+                    if not cueCurrent() then return end
+                    if name and prefix and status then
+                        local text = prefix .. ": " .. name .. " — " .. status
+                        if not write(control.label,"SetWidth",contentWidth - 8) or not write(control.label,"SetText",text) or
+                            not write(control.label,"SetTextColor",.53,.77,1) then return end
+                        local height = math.max(22, measuredHeight(control.label,16) + 6)
+                        if not cueCurrent() or not write(control,"SetSize",contentWidth,height) or not write(control,"ClearAllPoints") or
+                            not write(control,"SetPoint","TOPLEFT",4,-y) or not write(control,"SetEnabled",true) or
+                            not write(control,"SetScript","OnClick",function()
+                                if reader(frame.IsShown,"boolean",frame) ~= true or reader(control.IsShown,"boolean",control) ~= true or
+                                    not cueCurrent() or self.action ~= action then return end
+                                inspect(self,actionID,true)
+                            end) or not write(control,"Show") then return end
+                        y = y + height + 6
+                    end
+                end
+            end
+        end
         local function acquisitionPortraits(sourceOnly)
         local portraitSetter, portraitChecker = addon.Clean(SetPortraitTextureFromCreatureDisplayID, "function"), issecretvalue
         local function renderPortrait(field, displayID, caption, current)

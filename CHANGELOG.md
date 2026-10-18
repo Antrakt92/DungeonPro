@@ -4,6 +4,8 @@
 
 ### 19-Oct-2026
 
+- Show an inspect link when a known prerequisite is already in the quest log
+  or ready to turn in, while preserving unknown requirements on the target.
 - Add a compact navigation action for a ready quest's distinct, known turn-in
   point, keeping it separate from the pickup location.
 
