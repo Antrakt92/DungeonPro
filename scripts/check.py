@@ -28,6 +28,7 @@ def main():
     run(lua, "tests/quest_row_info.lua")
     run(lua, "tests/model_snapshot_ownership.lua")
     run(lua, "tests/context.lua")
+    run(lua, "tests/event_context.lua")
     run(lua, "tests/catalog_contexts.lua")
     run(lua, "tests/client_ui.lua")
     run(lua, "tests/startup_events.lua")

@@ -1,5 +1,6 @@
 local _, addon = ...
 local requested, requestedItems = {}, {}
+local contextGeneration = {}
 local retryRefreshPending, retryRefreshing
 local offerGeneration, currentOffers = {}, nil
 local dialogueGeneration, dialogueReward = {}, nil
@@ -427,7 +428,13 @@ function addon.QuestDataResult(id, success)
     end
 end
 
+function addon.InvalidateContext()
+    contextGeneration = {}
+    return true
+end
+
 function addon.Context()
+    local generation = contextGeneration
     local result, checker = {}, issecretvalue
     local function characterRoot()
         local value = addon.char
@@ -455,12 +462,13 @@ function addon.Context()
     local function current()
         if not valid then return forget() end
         local root, known = characterRoot()
-        valid = known and root == character and issecretvalue == checker and addon.Clean(C_QuestLog, "table") == quest and
+        valid = generation == contextGeneration and known and root == character and issecretvalue == checker and addon.Clean(C_QuestLog, "table") == quest and
             addon.Clean(UnitLevel, "function") == level and addon.Clean(UnitFactionGroup, "function") == faction and
             addon.Clean(UnitClass, "function") == class and addon.Clean(UnitRace, "function") == race and
             (not quest or (addon.Clean(quest.IsQuestFlaggedCompleted, "function") == completed and
                 addon.Clean(quest.IsOnQuest, "function") == active and addon.Clean(quest.ReadyForTurnIn, "function") == ready and
                 addon.Clean(quest.IsComplete, "function") == complete))
+        valid = valid and generation == contextGeneration
         if not valid then return forget() end
         return true
     end

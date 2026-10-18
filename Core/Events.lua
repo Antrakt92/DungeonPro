@@ -1,6 +1,9 @@
 local name, addon = ...
 local events = CreateFrame("Frame")
 local initialized, pending, refreshing = false, false, false
+local contextEvents = { QUEST_LOG_UPDATE = true, QUEST_ACCEPTED = true, QUEST_REMOVED = true, QUEST_TURNED_IN = true,
+    QUEST_ITEM_UPDATE = true, BAG_UPDATE_DELAYED = true, PLAYER_LEVEL_UP = true, PLAYER_ENTERING_WORLD = true,
+    PLAYER_LEAVING_WORLD = true, PLAYER_LOGOUT = true }
 
 local function probeNavigation()
     local navigation = addon.Clean(addon.Navigation, "table")
@@ -191,6 +194,7 @@ events:SetScript("OnEvent", function(_, event, arg1, arg2)
         return
     end
     if not initialized then return end
+    if contextEvents[event] then addon.Read(addon.InvalidateContext, "boolean") end
     if event == "PLAYER_ENTERING_WORLD" and addon.Minimap then addon.Minimap:Initialize() end
     if addon.DialogueTextEvent then addon.DialogueTextEvent(event) end
     if addon.DialogueRewardEvent then addon.DialogueRewardEvent(event) end
