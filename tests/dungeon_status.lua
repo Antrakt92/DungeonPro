@@ -220,4 +220,44 @@ check("Root predicate callback source mutation cannot publish counts",function()
     assert(addon.DungeonStatus.Get(f.dungeon,f.engine)==nil)
     addon.Planner.RelevantToCharacter=original
 end)
+check("Retained root-array proofs preserve the initially validated key shape",function()
+    local function captured(roots,size)
+        local rows={};for id=1,size or 2 do rows[id]={"COMPLETED"}end
+        local f=fixture(rows);f.dungeon.quests=roots
+        local dto,current=status(f)
+        return f,dto,current
+    end
+    for _,case in ipairs({
+        {"dictionary",function(ids)ids.extra=2 end},
+        {"false dictionary value",function(ids)ids.extra=false end},
+        {"zero",function(ids)ids[0]=2 end},
+        {"negative",function(ids)ids[-1]=2 end},
+        {"fractional",function(ids)ids[1.5]=2 end},
+        {"sparse",function(ids)ids[3]=2 end},
+        {"oversized",function(ids)ids[201]=2 end},
+        {"append",function(ids)ids[2]=2 end},
+        {"replace",function(ids)ids[1]=2 end},
+        {"remove",function(ids)ids[1]=nil end},
+    })do
+        local f,_,current=captured({1});case[2](f.dungeon.quests)
+        assert(not current(),case[1].." source mutation retained its old root proof")
+    end
+    local f,dto,current=captured({1,1,2})
+    assert(dto.listedRoots==3 and dto.listed==2 and current(),"valid duplicate multiplicity remains supported")
+    f.dungeon.quests[1]=1;assert(current(),"unchanged dense roots remain current")
+    for _,size in ipairs({0,200})do
+        local ids={};for id=1,size do ids[id]=id end
+        f,dto,current=captured(ids,math.max(2,size));assert(dto.listedRoots==size)
+        ids.extra=1
+        assert(addon.DungeonStatus.Get(f.dungeon,f.engine)==nil and not current(),"boundary-size key mutation")
+    end
+    local armed,roots=false,{1}
+    issecretvalue=function(value)
+        if armed and value=="root-shape-tail"then armed=false;roots.extra=2 end
+        return false
+    end
+    f=fixture({{"COMPLETED","root-shape-tail"}});f.dungeon.quests=roots
+    dto,current=status(f);armed=true
+    assert(not current()and not armed,"late sanitizer cannot append an unowned key")
+end)
 print("Dungeon status modeled checks passed: "..total)

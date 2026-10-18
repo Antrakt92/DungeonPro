@@ -17,7 +17,7 @@ function Status.Get(dungeon, engine)
     local fresh = engine and clean(rawget(engine, "Current"), "function")
     local ids = dungeon and clean(rawget(dungeon, "quests"), "table")
     if not dungeon or not engine or not quests or not context or not eligible or not relevantRoot or not getter or not fresh or not ids then return nil, "input" end
-    local fieldObjects, fieldKeys, fieldValues, fieldCount = {}, {}, {}, 0
+    local fieldObjects, fieldKeys, fieldValues, fieldCount, rootCount = {}, {}, {}, 0, 0
     local building = true
     local function keep(object, key)
         if fieldCount >= 4000 then return nil, false end
@@ -59,6 +59,13 @@ function Status.Get(dungeon, engine)
             for index = 1, fieldCount do
                 if not rawequal(rawget(fieldObjects[index], fieldKeys[index]), fieldValues[index]) then return false end
             end
+            -- Numbered snapshots own the valid keys; this also rejects new sparse or dictionary keys.
+            local keys = 0
+            for _ in next, ids do
+                keys = keys + 1
+                if keys > rootCount then return false end
+            end
+            if keys ~= rootCount then return false end
         end
         return true
     end
@@ -73,6 +80,7 @@ function Status.Get(dungeon, engine)
         count = count + 1
     end
     if count > 200 or count ~= #ids then return nil, "source" end
+    rootCount = count
     keep(ids, count + 1)
     local result = { listedRoots = count, characterRoots = 0, listed = 0, eligible = 0, excluded = 0, completed = 0, unfinished = 0, counts = {},
         partial = clean(rawget(dungeon, "coverage"), "string") ~= "reviewed", allLevelBlocked = false }
