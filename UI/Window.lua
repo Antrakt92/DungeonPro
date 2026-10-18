@@ -2287,7 +2287,7 @@ end
 function UI:RefreshDetail(sourceFocus)
     local renderQuest, renderDungeon = self.quest, self.dungeon
     local renderIncludeUnavailable = self.includeUnavailable
-    local renderEngine, renderCharacter, pendingAction, pendingGiver = self.engine, addon.char, nil, nil
+    local renderEngine, renderCharacter, pendingAction, pendingGiver, pendingTurnin = self.engine, addon.char, nil, nil, nil
     local rewardGeneration = self:ResetRewardPresentation()
     if not rewardGeneration or self.quest ~= renderQuest then return end
     self:HideNavigationHint()
@@ -2345,6 +2345,16 @@ function UI:RefreshDetail(sourceFocus)
         local function current() return portraitCardCurrent() and self.recordedObjectivesToggle == toggle end
         if not self:QuestListWrite(toggle, "Hide", current) or not self:QuestListWrite(toggle, "SetEnabled", current, false) or
             not self:QuestListWrite(toggle, "SetScript", current, "OnClick", nil) then return end
+    end
+    self.turninBinding = nil
+    if self.turnin then
+        local control = self.turnin
+        local function current() return portraitCardCurrent() and self.turnin == control end
+        control.footerEnabled = false
+        self:RefreshFooterIcon(control)
+        if not current() or not self:QuestListWrite(control, "Hide", current) or
+            not self:QuestListWrite(control, "SetEnabled", current, false) or
+            not self:QuestListWrite(control, "SetScript", current, "OnClick", nil) then return end
     end
     self.clientWaypointBinding = nil
     if self.clientWaypointButton then
@@ -2437,9 +2447,15 @@ function UI:RefreshDetail(sourceFocus)
         if not write(fs, "SetTextColor", unpack(format.color)) or not write(fs, "SetWidth", width) or
             not write(fs, "ClearAllPoints") or not write(fs, "SetPoint", "TOPLEFT", navigation and 36 or 4, -y) or
             not write(fs, "SetText", value) or not write(fs, "Show") then return false end
-        if navigation and (not write(self.giver, "ClearAllPoints") or
-            not write(self.giver, "SetPoint", "TOPLEFT", self.detail, "TOPLEFT", 4, -y) or
-            not write(self.giver, "SetSize", 24, 24) or not write(self.giver, "Show")) then return false end
+        if navigation then
+            local control = navigation == true and self.giver or navigation
+            local function position(method, ...)
+                if control == self.giver then return write(control, method, ...) end
+                return self:QuestListWrite(control, method, ownerCurrent or portraitCardCurrent, ...)
+            end
+            if not position("ClearAllPoints") or not position("SetPoint", "TOPLEFT", self.detail, "TOPLEFT", 4, -y) or
+                not position("SetSize", 24, 24) or not position("Show") then return false end
+        end
         local itemID = reward and addon.Clean(reward.item.id, "number")
         local texture = reward and (addon.Clean(reward.item.texture, "string") or addon.Clean(reward.item.texture, "number"))
         local validTexture = type(texture) == "string" and texture ~= "" and #texture <= 1024 or
@@ -2963,6 +2979,8 @@ function UI:RefreshDetail(sourceFocus)
             local fields, values, startingValues = { "npcID", "objectID", "itemID", "name", "zoneName", "mapID", "x", "y" }, {}, {}
             local endpointChecker = issecretvalue
             if finish then
+                local alternatives, declaredSummon = rawget(q, "finishAlternatives"), rawget(finish, "summonItem")
+                local summonPresence, engineGetter, nextGetter, stateGetter = self.HasSummonSource, engine.Current, engine.Next, engine.State
                 local same = start ~= nil
                 for _, field in ipairs(fields) do
                     values[field], startingValues[field] = rawget(finish, field), start and rawget(start, field)
@@ -2978,13 +2996,40 @@ function UI:RefreshDetail(sourceFocus)
                             addon.Read(endpointChecker, "boolean", starting) ~= false) then return false end
                         if not rawequal(ending, values[field]) or not rawequal(starting, startingValues[field]) then return false end
                     end
+                    for _, field in ipairs(fields) do
+                        if not rawequal(rawget(finish, field), values[field]) or not rawequal(start and rawget(start, field), startingValues[field]) then return false end
+                    end
+                    if not rawequal(rawget(q, "finishAlternatives"), alternatives) or not rawequal(rawget(finish, "summonItem"), declaredSummon) then return false end
                     return portraitCardCurrent()
                 end
                 if not same then
                     local ending = addon.Read(place, "string", finish, endingCurrent)
                     if not endingCurrent() then return end
                     if ending and ending ~= addon.L("UNKNOWN_PLACE") then
-                        if line(addon.L("DETAIL_TURNIN") .. ": " .. ending, "caption", nil, nil, endingCurrent) == false then return end
+                        if state.status == "READY" then
+                            local readable = type(endpointChecker) ~= "function" or
+                                (addon.Read(endpointChecker, "boolean", alternatives) == false and addon.Read(endpointChecker, "boolean", declaredSummon) == false)
+                            local npc, object = addon.Clean(values.npcID, "number"), addon.Clean(values.objectID, "number")
+                            local map, x, gy = addon.Clean(values.mapID, "number"), addon.Clean(values.x, "number"), addon.Clean(values.y, "number")
+                            local ok, typed = pcall(function()
+                                return (npc and npc > 0 and npc <= 4294967295 and npc % 1 == 0 and values.objectID == nil and values.itemID == nil) or
+                                    (object and object > 0 and object <= 4294967295 and object % 1 == 0 and values.npcID == nil and values.itemID == nil)
+                            end)
+                            if not endingCurrent() then return end
+                            if readable and alternatives == nil and ok and typed and map and map > 0 and map <= 9007199254740991 and map % 1 == 0 and
+                                addon.Read(summonPresence, "boolean", self, finish) == false then
+                                local function current()
+                                    local fresh = not engineGetter or addon.Read(engineGetter, "boolean", engine) == true
+                                    return fresh and endingCurrent() and state.status == "READY" and self.HasSummonSource == summonPresence and
+                                        engine.Current == engineGetter and engine.Next == nextGetter and engine.State == stateGetter
+                                end
+                                if not current() then return end
+                                pendingTurnin = { place = finish, current = current,
+                                    coordinates = x ~= nil and gy ~= nil and x >= 0 and x <= 100 and gy >= 0 and gy <= 100 }
+                            end
+                        end
+                        if line(addon.L("DETAIL_TURNIN") .. ": " .. ending, "caption", nil, nil, endingCurrent,
+                            pendingTurnin and self.turnin) == false then return end
                     end
                 end
                 local finishSummon = addon.Read(summonGetter,"table",self,finish)
@@ -4603,6 +4648,32 @@ function UI:RefreshDetail(sourceFocus)
         self:SetFooterLabel(self.giver, pendingGiver.coordinates and "VISIT_GIVER" or "GIVER_MAP")
         self:SetFooterEnabled(self.giver, true)
     end
+    if pendingTurnin and pendingTurnin.current() and pendingAction and pendingAction.kind == "turnin" and
+        pendingAction.id == renderQuest and pendingAction.place == pendingTurnin.place then
+        local control, action, dispatch = self.turnin, pendingAction, self.DispatchDetail
+        local navigationRoot = addon.Navigation
+        local navigation = addon.Clean(navigationRoot, "table")
+        local key = pendingTurnin.coordinates and "Start" or "Map"
+        local rawMethod = navigation and rawget(navigation, key)
+        local method = addon.Clean(rawMethod, "function")
+        if method and pendingTurnin.current() and portraitCardCurrent() then
+            local binding = { action = action, coordinates = pendingTurnin.coordinates }
+            binding.current = function()
+                return pendingTurnin.current() and portraitCardCurrent() and addon.UI == self and self.turnin == control and
+                    self.turninBinding == binding and binding.action == action and self.action == action and action.id == renderQuest and
+                    action.kind == "turnin" and action.place == pendingTurnin.place and binding.coordinates == pendingTurnin.coordinates and
+                    self.DispatchDetail == dispatch and addon.Navigation == navigationRoot and navigationRoot == navigation and rawget(navigation, key) == rawMethod
+            end
+            self.turninBinding = binding
+            control.footerEnabled = true
+            self:RefreshFooterIcon(control)
+            if not binding.current() or not self:QuestListWrite(control, "SetEnabled", binding.current, true) or
+                not self:QuestListWrite(control, "SetScript", binding.current, "OnClick", function()
+                    if addon.Read(control.IsShown, "boolean", control) ~= true or not binding.current() then return end
+                    dispatch(self, action, not binding.coordinates, false, binding.current)
+                end) then return end
+        end
+    end
     if not portraitCardCurrent() then return end
     if sourceFocus == true then
         local scroll = self.detailScroll
@@ -4803,12 +4874,15 @@ function UI:Create()
             self:DispatchDetail(self.giverAction, not self.giverHasCoordinates, true)
         end
     end)
+    self.turnin = button(self.detail, "", 24, function() end)
+    self:SetFooterLabel(self.turnin, "VISIT_TURNIN")
+    self.turnin:Hide(); self.turnin:SetEnabled(false)
     self.giver:SetPoint("TOPLEFT", self.detail, "TOPLEFT", 4, -80)
-    for _, control in ipairs({ self.giver, self.source }) do
+    for _, control in ipairs({ self.giver, self.source, self.turnin }) do
         control:SetHeight(32)
         if type(control.SetMotionScriptsWhileDisabled) == "function" then pcall(control.SetMotionScriptsWhileDisabled, control, true) end
         local icon
-        if control == self.giver then icon = self:CreateGoldNavigationIcon(control)
+        if control == self.giver or control == self.turnin then icon = self:CreateGoldNavigationIcon(control)
         else
             icon = control:CreateTexture(nil, "ARTWORK")
             icon:SetSize(24, 24); icon:SetPoint("CENTER", control, "CENTER", 0, 0)
@@ -4823,6 +4897,8 @@ function UI:Create()
     self:SetFooterLabel(self.source, "SOURCE"); self:SetFooterLabel(self.giver, "VISIT_GIVER")
     local function navigationHint(control, destination, bodyKey)
         control:SetScript("OnEnter", function()
+            local isTurnin = control == self.turnin
+            local turninBinding = isTurnin and self.turninBinding
             if control.footerIcon then control.footerHovered = true; self:RefreshFooterIcon(control) end
             self:HideNavigationHint()
             local quest, dungeon, generation = self.quest, self.dungeon, self.rewardGeneration
@@ -4830,9 +4906,12 @@ function UI:Create()
             local locale = database and rawget(database, "locale")
             local tip = addon.Clean(GameTooltip, "table") or addon.Clean(GameTooltip, "userdata")
             local function current()
-                return addon.UI == self and self.frame == frame and self.quest == quest and self.dungeon == dungeon and
+                local shown = addon.Read(frame.IsShown, "boolean", frame)
+                local turninCurrent = not isTurnin or (self.turnin == control and turninBinding and self.turninBinding == turninBinding and
+                    addon.Read(turninBinding.current, "boolean") == true)
+                return turninCurrent and addon.UI == self and self.frame == frame and self.quest == quest and self.dungeon == dungeon and
                     self.rewardGeneration == generation and addon.SourceAreaName == areaGetter and addon.L == localize and addon.db == database and
-                    (not database or rawget(database, "locale") == locale) and GameTooltip == tip and addon.Read(frame.IsShown, "boolean", frame) == true
+                    (not database or rawget(database, "locale") == locale) and GameTooltip == tip and shown == true
             end
             local point = destination and destination()
             local reason = not point and control == self.giver and self.quest and self.giverUnavailableKey
@@ -4871,6 +4950,7 @@ function UI:Create()
         end)
     end
     navigationHint(self.giver, function() local action = self:NavigationDestination(false); return action and action.place end)
+    navigationHint(self.turnin, function() local binding = self.turninBinding; return binding and binding.current() and binding.action.place end)
     navigationHint(self.source, nil, "COPY")
     self.capacityStatus = label(frame, "", 350, -22, 220, 12)
     self.capacityStatus:Hide()

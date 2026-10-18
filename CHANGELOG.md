@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+### 19-Oct-2026
+
+- Add a compact navigation action for a ready quest's distinct, known turn-in
+  point, keeping it separate from the pickup location.
+
 ### 18-Oct-2026
 
 - Explain when a long quest-chain preview reaches its display limit.
