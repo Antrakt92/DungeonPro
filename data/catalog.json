@@ -11685,7 +11685,13 @@
             "zoneName": "Stormwind City"
           }
         ]
-      }
+      },
+      "objectiveKills": [
+        {
+          "npcID": 246016,
+          "name": "Arcanic Enigma"
+        }
+      ]
     },
     {
       "id": 96988,
@@ -11776,7 +11782,14 @@
             "zoneName": "Undercity"
           }
         ]
-      }
+      },
+      "objectiveItems": [
+        {
+          "itemID": 275997,
+          "name": "Cracked Sentry Core",
+          "quantity": 6
+        }
+      ]
     },
     {
       "id": 96986,
@@ -11855,7 +11868,13 @@
             "zoneName": "Hillsbrad Foothills"
           }
         ]
-      }
+      },
+      "objectiveKills": [
+        {
+          "npcID": 247126,
+          "name": "Atrexis the Grave Knight"
+        }
+      ]
     },
     {
       "id": 92434,
@@ -11923,6 +11942,12 @@
         92434,
         96984,
         97287
+      ],
+      "providedItems": [
+        {
+          "itemID": 279469,
+          "name": "Grimy Key"
+        }
       ]
     },
     {
@@ -11977,6 +12002,12 @@
         92434,
         96984,
         97287
+      ],
+      "providedItems": [
+        {
+          "itemID": 251961,
+          "name": "Arcane Mote"
+        }
       ]
     },
     {
@@ -12075,6 +12106,12 @@
         92432,
         92458,
         92459
+      ],
+      "providedItems": [
+        {
+          "itemID": 251961,
+          "name": "Arcane Mote"
+        }
       ]
     },
     {
@@ -14522,6 +14559,12 @@
       "storyline": [
         95647,
         95809
+      ],
+      "providedItems": [
+        {
+          "itemID": 270901,
+          "name": "Reed-woven Heart"
+        }
       ]
     },
     {
@@ -19098,6 +19141,12 @@
       "storyline": [
         92415,
         95161
+      ],
+      "providedItems": [
+        {
+          "itemID": 251522,
+          "name": "Blood-Stained Letter"
+        }
       ]
     },
     {
@@ -19125,6 +19174,13 @@
       "requirementsKnown": false,
       "factions": [
         "Horde"
+      ],
+      "objectiveItems": [
+        {
+          "itemID": 268580,
+          "name": "Intact Limbs",
+          "quantity": 25
+        }
       ]
     },
     {
@@ -19152,6 +19208,12 @@
       "requirementsKnown": false,
       "factions": [
         "Horde"
+      ],
+      "objectiveKills": [
+        {
+          "npcID": 250657,
+          "name": "Rath'mael"
+        }
       ]
     },
     {
@@ -19235,6 +19297,12 @@
       "storyline": [
         92415,
         95161
+      ],
+      "providedItems": [
+        {
+          "itemID": 251522,
+          "name": "Blood-Stained Letter"
+        }
       ]
     },
     {
@@ -19262,7 +19330,13 @@
           "objectID": 614679,
           "name": "Crest of Lordaeron"
         }
-      }
+      },
+      "providedItems": [
+        {
+          "itemID": 268579,
+          "name": "Crest of Lordaeron"
+        }
+      ]
     },
     {
       "id": 95195,
@@ -19411,7 +19485,14 @@
           }
         ],
         "dungeonKey": "lordaeron"
-      }
+      },
+      "providedItems": [
+        {
+          "itemID": 268540,
+          "name": "Bloodied Insignia",
+          "quantity": 10
+        }
+      ]
     },
     {
       "id": 95204,
@@ -19438,7 +19519,13 @@
           "objectID": 614679,
           "name": "Crest of Lordaeron"
         }
-      }
+      },
+      "providedItems": [
+        {
+          "itemID": 275521,
+          "name": "Crest of Lordaeron"
+        }
+      ]
     },
     {
       "id": 95216,
@@ -19465,6 +19552,12 @@
       "requirementsKnown": false,
       "factions": [
         "Horde"
+      ],
+      "objectiveItems": [
+        {
+          "itemID": 275443,
+          "name": "Highly Toxic Strain"
+        }
       ]
     },
     {
@@ -19657,7 +19750,13 @@
         ],
         "dungeonKey": "lordaeron",
         "itemMinLevel": 16
-      }
+      },
+      "providedItems": [
+        {
+          "itemID": 280438,
+          "name": "Abominable Head"
+        }
+      ]
     },
     {
       "id": 97289,
@@ -19715,6 +19814,12 @@
         97290,
         97291,
         97292
+      ],
+      "providedItems": [
+        {
+          "itemID": 268518,
+          "name": "Head of the Baron"
+        }
       ]
     },
     {
@@ -19811,6 +19916,20 @@
         97290,
         97291,
         97292
+      ],
+      "objectiveItems": [
+        {
+          "itemID": 281246,
+          "name": "Toxic Skullcap"
+        },
+        {
+          "itemID": 281300,
+          "name": "Blisterweed"
+        },
+        {
+          "itemID": 8923,
+          "name": "Essence of Agony"
+        }
       ]
     },
     {
@@ -19849,6 +19968,18 @@
         97290,
         97291,
         97292
+      ],
+      "providedItems": [
+        {
+          "itemID": 281327,
+          "name": "Hissing Serum"
+        }
+      ],
+      "objectiveEvents": [
+        {
+          "npcID": 272513,
+          "name": "Hissing Serum administered"
+        }
       ]
     },
     {
@@ -28372,6 +28503,23 @@
         [
           8950
         ]
+      ],
+      "objectiveItems": [
+        {
+          "itemID": 22224,
+          "name": "Jeering Spectre's Essence",
+          "quantity": 1
+        },
+        {
+          "itemID": 20520,
+          "name": "Dark Rune",
+          "quantity": 4
+        },
+        {
+          "itemID": 14344,
+          "name": "Large Brilliant Shard",
+          "quantity": 8
+        }
       ]
     },
     {
@@ -28595,6 +28743,12 @@
         [
           8950
         ]
+      ],
+      "providedItems": [
+        {
+          "itemID": 21983,
+          "name": "Incomplete Banner of Provocation"
+        }
       ]
     },
     {
@@ -29265,7 +29419,13 @@
         "y": 58.4,
         "creatureDisplayID": 144321,
         "portraitSource": "https://www.wowhead.com/forever/npc=264936"
-      }
+      },
+      "objectiveEvents": [
+        {
+          "npcID": 264936,
+          "name": "Use Farsen's Far Sight"
+        }
+      ]
     },
     {
       "id": 7509,
@@ -30479,7 +30639,17 @@
         "portraitSource": "https://www.wowhead.com/forever/npc=16012"
       },
       "requirementsKnown": false,
-      "source": "https://www.wowhead.com/forever/quest=8939/just-compensation"
+      "source": "https://www.wowhead.com/forever/quest=8939/just-compensation",
+      "objectiveItems": [
+        {
+          "itemID": 16685,
+          "name": "Magister's Belt"
+        },
+        {
+          "itemID": 16684,
+          "name": "Magister's Gloves"
+        }
+      ]
     },
     {
       "id": 8940,
@@ -30562,7 +30732,17 @@
         "portraitSource": "https://www.wowhead.com/forever/npc=16012"
       },
       "requirementsKnown": false,
-      "source": "https://www.wowhead.com/forever/quest=8940/just-compensation"
+      "source": "https://www.wowhead.com/forever/quest=8940/just-compensation",
+      "objectiveItems": [
+        {
+          "itemID": 16696,
+          "name": "Devout Belt"
+        },
+        {
+          "itemID": 16692,
+          "name": "Devout Gloves"
+        }
+      ]
     },
     {
       "id": 8941,
@@ -30741,7 +30921,17 @@
         "portraitSource": "https://www.wowhead.com/forever/npc=16012"
       },
       "requirementsKnown": false,
-      "source": "https://www.wowhead.com/forever/quest=8942/just-compensation"
+      "source": "https://www.wowhead.com/forever/quest=8942/just-compensation",
+      "objectiveItems": [
+        {
+          "itemID": 16673,
+          "name": "Cord of Elements"
+        },
+        {
+          "itemID": 16672,
+          "name": "Gauntlets of Elements"
+        }
+      ]
     },
     {
       "id": 8943,
@@ -30824,7 +31014,17 @@
         "portraitSource": "https://www.wowhead.com/forever/npc=16012"
       },
       "requirementsKnown": false,
-      "source": "https://www.wowhead.com/forever/quest=8943/just-compensation"
+      "source": "https://www.wowhead.com/forever/quest=8943/just-compensation",
+      "objectiveItems": [
+        {
+          "itemID": 16702,
+          "name": "Dreadmist Belt"
+        },
+        {
+          "itemID": 16705,
+          "name": "Dreadmist Wraps"
+        }
+      ]
     },
     {
       "id": 8944,
@@ -30907,7 +31107,17 @@
         "portraitSource": "https://www.wowhead.com/forever/npc=16012"
       },
       "requirementsKnown": false,
-      "source": "https://www.wowhead.com/forever/quest=8944/just-compensation"
+      "source": "https://www.wowhead.com/forever/quest=8944/just-compensation",
+      "objectiveItems": [
+        {
+          "itemID": 16736,
+          "name": "Belt of Valor"
+        },
+        {
+          "itemID": 16737,
+          "name": "Gauntlets of Valor"
+        }
+      ]
     },
     {
       "id": 8929,
@@ -31138,7 +31348,13 @@
         "portraitSource": "https://www.wowhead.com/forever/npc=16016"
       },
       "requirementsKnown": false,
-      "source": "https://www.wowhead.com/forever/quest=8946/proof-of-life"
+      "source": "https://www.wowhead.com/forever/quest=8946/proof-of-life",
+      "providedItems": [
+        {
+          "itemID": 22139,
+          "name": "Ysida's Locket"
+        }
+      ]
     },
     {
       "id": 8947,
@@ -31162,7 +31378,29 @@
         "portraitSource": "https://www.wowhead.com/forever/npc=16016"
       },
       "requirementsKnown": false,
-      "source": "https://www.wowhead.com/forever/quest=8947/anthions-strange-request"
+      "source": "https://www.wowhead.com/forever/quest=8947/anthions-strange-request",
+      "objectiveItems": [
+        {
+          "itemID": 11371,
+          "name": "Dark Iron Bar",
+          "quantity": 3
+        },
+        {
+          "itemID": 12810,
+          "name": "Enchanted Leather",
+          "quantity": 20
+        },
+        {
+          "itemID": 14342,
+          "name": "Mooncloth",
+          "quantity": 3
+        },
+        {
+          "itemID": 15407,
+          "name": "Cured Rugged Hide",
+          "quantity": 4
+        }
+      ]
     },
     {
       "id": 6922,

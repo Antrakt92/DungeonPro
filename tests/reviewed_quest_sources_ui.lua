@@ -195,6 +195,7 @@ local roleInspection = {
     [4734]=assert(owners[4765]), [4788]=assert(owners[4742]), [4862]=assert(owners[4742]),
     [4867]=assert(owners[4742]), [4982]=assert(owners[4742]), [4983]=assert(owners[4742]),
     [5065]=assert(owners[1424]),
+    [96392]=assert(owners[96394]),
 }
 for id,dungeon in pairs(roleInspection)do
     assert(not owners[id], "standalone definition has no invented natural dungeon association")
@@ -316,6 +317,31 @@ local reviewedItemRoles = {
     {6601,"providedItems",{{16888}}},
     {6824,"objectiveItems",{{17332},{17329},{17331},{17330}}},
     {7029,"objectiveItems",{{17696}}},
+    {8939,"objectiveItems",{{16685},{16684}}},
+    {8940,"objectiveItems",{{16696},{16692}}},
+    {8942,"objectiveItems",{{16673},{16672}}},
+    {8943,"objectiveItems",{{16702},{16705}}},
+    {8944,"objectiveItems",{{16736},{16737}}},
+    {8946,"providedItems",{{22139}}},
+    {8947,"objectiveItems",{{11371,3},{12810,20},{14342,3},{15407,4}}},
+    {8948,"providedItems",{{21983}}},
+    {8950,"objectiveItems",{{22224,1},{20520,4},{14344,8}}},
+    {92415,"providedItems",{{251522}}},
+    {92421,"objectiveItems",{{268580,25}}},
+    {92434,"providedItems",{{279469}}},
+    {92459,"providedItems",{{251961}}},
+    {95161,"providedItems",{{251522}}},
+    {95189,"providedItems",{{268579}}},
+    {95195,"providedItems",{{268540,10}}},
+    {95204,"providedItems",{{275521}}},
+    {95216,"objectiveItems",{{275443}}},
+    {95809,"providedItems",{{270901}}},
+    {96988,"objectiveItems",{{275997,6}}},
+    {97287,"providedItems",{{251961}}},
+    {97288,"providedItems",{{280438}}},
+    {97289,"providedItems",{{268518}}},
+    {97291,"objectiveItems",{{281246},{281300},{8923}}},
+    {97292,"providedItems",{{281327}}},
 }
 for _,sample in ipairs(reviewedItemRoles) do
     render(sample[1],false,roleInspection[sample[1]])
@@ -342,7 +368,8 @@ for _,sample in ipairs({{1955,{{6549}}},{1957,{{6550,12}}},{8423,{{5993,7}}},
     {303,{{1051,15},{1053,5},{1052,5},{1054,5}}},{739,{{2945},{2893,12}}},
     {8992,{{16118}}},{8989,{{16080}}},{8995,{{16042}}},{8966,{{16080}}},
     {4145,{{6509,5},{6512,5},{6510,5},{6511,5}}},{4701,{{10220}}},{4724,{{10220}}},
-    {6822,{{11658,1},{11668,1},{11673,1},{12101,1}}}}) do
+    {6822,{{11658,1},{11668,1},{11673,1},{12101,1}}},
+    {92422,{{250657}}},{92489,{{246016}}},{96986,{{247126}}}}) do
     render(sample[1],false,roleInspection[sample[1]])
     local goals=assert(addon.quests[sample[1]].objectiveKills)
     assert(#goals==#sample[2])
@@ -493,4 +520,37 @@ assert(vialRoles[17693]=="provided"and vialRoles[17696]=="objective",
     "coated supplied and filled collected vials keep distinct identities and roles")
 assert(not addon.quests[6569].objectiveItems and not addon.quests[6569].providedItems,
     "unverified eye item references remain held rather than invented quest roles")
+render(96392,false,roleInspection[96392])
+assert(#addon.quests[96392].objectiveEvents==1 and addon.quests[96392].objectiveEvents[1].npcID==264936 and not addon.quests[96392].objectiveEvents[1].quantity,
+    "typed non-kill event retains NPC identity and unknown quantity")
+assert(contains("Use Farsen's Far Sight ×?") and not addon.quests[96392].objectiveKills and addon.quests[96392].requirementsKnown==false,
+    "the source action is visible without an invented slain count or availability gate")
+render(97292,false,roleInspection[97292])
+assert(#addon.quests[97292].objectiveEvents==1 and addon.quests[97292].objectiveEvents[1].npcID==272513 and not addon.quests[97292].objectiveEvents[1].quantity,
+    "typed non-kill event retains NPC identity and unknown quantity")
+assert(contains("Hissing Serum administered ×?") and not addon.quests[97292].objectiveKills and addon.quests[97292].requirementsKnown==false,
+    "the source action is visible without an invented slain count or availability gate")
+for _,sample in ipairs({{95189,268579},{95204,275521},{97288,280438}})do
+    render(sample[1])
+    local roles={}
+    for _,button in ipairs(ui.objectiveButtons)do if button:IsShown()then
+        local binding=button.objectiveBinding
+        if binding.id==sample[2]and binding.current()then roles[binding.role]=binding.sourceField end
+    end end
+    assert(roles.starter=="start"and roles.provided=="providedItems","starter item keeps both recorded roles and its own identity")
+end
+assert(addon.quests[95195].providedItems[1].itemID==268540 and addon.quests[95195].providedItems[1].quantity==10 and not addon.quests[95195].objectiveItems,
+    "typed supplied ten insignia are not relabelled as a collection from narrative wording")
+for _,id in ipairs({92459,97287})do assert(addon.quests[id].providedItems[1].itemID==251961 and not addon.quests[id].objectiveItems)end
+for _,id in ipairs({92458,96984})do
+    render(id)
+    local roles={}
+    for _,button in ipairs(ui.objectiveButtons)do if button:IsShown()then
+        local binding=button.objectiveBinding
+        if binding.current()then roles[binding.id]=binding.role end
+    end end
+    assert(roles[251961]=="objective"and roles[277507]=="provided",
+        "collecting arcane motes preserves the separate supplied sewer key")
+end
+for _,id in ipairs({92401,92434,97288})do assert(not addon.quests[id].objectiveEvents,"unlinked prose actions stay held without guessed typed identities")end
 print("Reviewed quest sources UI: PASS (actual TOC; modeled routing and roles, no native acceptance)")
