@@ -246,7 +246,7 @@ heightRow.note.GetStringHeight = function()
     return addon.L("NEXT") == addon.locales.ruRU.NEXT and 100 or 18
 end
 heightRow.SetHeight = function(self, value)
-    if not heightEntered and value > 84 then
+    if not heightEntered and value > 76 then
         heightEntered = true
         session.rows[2].scripts.OnEnter()
         nestedHeight, nestedAnchor = self.height, followingRow.point[3]
@@ -255,7 +255,7 @@ heightRow.SetHeight = function(self, value)
 end
 session.rows[3].scripts.OnEnter()
 heightRow.note.GetStringHeight, heightRow.SetHeight = noteHeight, rowHeight
-check(heightEntered and nestedHeight == 84, "old tall-language native setter triggers a newer short-language row")
+check(heightEntered and nestedHeight == 76, "old tall-language native setter triggers a newer short-language row")
 check(type(nestedAnchor) == "number" and heightRow.height == nestedHeight and followingRow.point[3] == nestedAnchor,
     "old native row height and anchor cannot overwrite the newer language layout")
 check(addon.L("NEXT") == addon.locales.enUS.NEXT, "reentrant layout retains the newer language selection")

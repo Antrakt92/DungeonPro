@@ -808,11 +808,18 @@ function UI:LayoutRow(row, minimum, offset, ownerCurrent, ownerWrite)
     if row.catalogCard then
         local titleHeight = measuredHeight(row.title, 18)
         local noteHeight = measuredHeight(row.note, 14)
-        local height = math.max(84, 8 + titleHeight + 4 + noteHeight + 8)
-        if not current() or not write(row.title, "ClearAllPoints") or not write(row.title, "SetPoint", "TOPLEFT", 72, -8) or
+        local height = math.max(76, 8 + titleHeight + 4 + noteHeight + 8)
+        local textTop = (height - titleHeight - 4 - noteHeight) / 2
+        local artTop = (height - 60) / 2
+        if not current() or not write(row.title, "ClearAllPoints") or not write(row.title, "SetPoint", "TOPLEFT", 76, -textTop) or
             not write(row.note, "Show") or not write(row.note, "ClearAllPoints") or
-            not write(row.note, "SetPoint", "TOPLEFT", 72, -(8 + titleHeight + 4)) or not write(row, "SetHeight", height) or
+            not write(row.note, "SetPoint", "TOPLEFT", 76, -(textTop + titleHeight + 4)) or not write(row, "SetHeight", height) or
             not write(row, "ClearAllPoints") or not write(row, "SetPoint", "TOPLEFT", 0, -offset) then return nil end
+        if row.art and (not write(row.art, "ClearAllPoints") or not write(row.art, "SetPoint", "TOPLEFT", 8, -artTop)) then return nil end
+        if row.entranceControl and (not write(row.entranceControl, "ClearAllPoints") or
+            not write(row.entranceControl, "SetPoint", "TOPRIGHT", row, "TOPRIGHT", -4, -artTop)) then return nil end
+        if row.dungeonStatusControl and (not write(row.dungeonStatusControl, "ClearAllPoints") or
+            not write(row.dungeonStatusControl, "SetPoint", "TOPRIGHT", row, "TOPRIGHT", -4, -(artTop + 32))) then return nil end
         return offset + height + 8
     end
     if row.compact then
@@ -1386,7 +1393,7 @@ function UI:RefreshDungeons()
     for index, result in ipairs(results) do
         local dungeon = result.dungeon
         renderInput = inputByDungeon[dungeon]
-        local row = self:MakeRow(self.catalog, self.cards, index, 84, current, true)
+        local row = self:MakeRow(self.catalog, self.cards, index, 76, current, true)
         row.catalogCard = true
         local theme = addon.Clean(addon.Theme, "table")
         if theme then addon.Read(theme.ApplyFont, "boolean", row.note, 12) end
@@ -1396,7 +1403,7 @@ function UI:RefreshDungeons()
         if not current() or not write(row, "Hide") then return end
         if not row.art then
             row.art = row:CreateTexture(nil, "ARTWORK")
-            if not write(row.art, "SetSize", 52, 56) or not write(row.art, "SetPoint", "TOPLEFT", 8, -8) then return end
+            if not write(row.art, "SetSize", 56, 60) or not write(row.art, "SetPoint", "TOPLEFT", 8, -8) then return end
         end
         if not row.entranceControl then
             local control = CreateFrame("Button", nil, row)
@@ -1414,7 +1421,7 @@ function UI:RefreshDungeons()
             control:SetScript("OnHide", function() control.footerHovered = false; self:RefreshFooterIcon(control); self:HideNavigationHint() end)
         end
         -- The separate icon rail never overlaps title or metadata wrapping.
-        local textWidth = math.max(1, row:GetWidth() - 72 - 36)
+        local textWidth = math.max(1, row:GetWidth() - 76 - 36)
         if not write(row.title, "SetWidth", textWidth) or not write(row.note, "SetWidth", textWidth) then return end
         local control, frame = row.entranceControl, self.frame
         local function entranceCurrent()

@@ -64,4 +64,50 @@ for _, card in ipairs(ui.cards) do
     assert(card.dungeonStatusCurrent() and card.dungeonStatusDTO.status ~= "COMPLETED",
         "reopening after a hidden quest update cannot retain completed badges")
 end
+-- One- and two-line dungeon names use the same compact card. Longer content grows
+-- the whole card, keeping cover, text, and both rail controls vertically balanced.
+local measure = fixture.methods.GetStringHeight
+local tall = false
+fixture.methods.GetStringHeight = function(self)
+    if self == ui.cards[1].title then return 18 end
+    if self == ui.cards[2].title then return tall and 72 or 36 end
+    if self == ui.cards[2].note then return tall and 36 or 18 end
+    return 18
+end
+local function compactGeometry()
+    local first, second = ui.cards[1], ui.cards[2]
+    assert(first.height == 76, "short dungeon card removes the blank lower strip")
+    assert(second.height == (tall and 128 or 76), "two-line names stay compact and long text grows without truncation")
+    for _, card in ipairs({first, second}) do
+        local coverTop = -card.art.point[3]
+        assert(card.art.width == 56 and card.art.height == 60 and coverTop == (card.height - 60) / 2)
+        assert(coverTop == card.height - coverTop - card.art.height, "cover has equal top and bottom padding")
+        local titleHeight = card == first and 18 or tall and 72 or 36
+        local noteHeight = card == second and tall and 36 or 18
+        local textTop, noteTop = -card.title.point[3], -card.note.point[3]
+        assert(noteTop == textTop + titleHeight + 4 and textTop == card.height - noteTop - noteHeight,
+            "title and metadata form one vertically centred readable block")
+        assert(card.title.point[2] == 76 and card.note.point[2] == 76 and card.title.width == card:GetWidth() - 112)
+        assert(card.title.point[2] + card.title.width <= card:GetWidth() - 36, "text reserves the control rail before wrapping")
+        assert(-card.entranceControl.point[5] == coverTop and -card.dungeonStatusControl.point[5] == coverTop + 32)
+        assert(-card.entranceControl.point[5] + card.entranceControl.height + 4 == -card.dungeonStatusControl.point[5])
+        assert(-card.dungeonStatusControl.point[5] + card.dungeonStatusControl.height == card.height - coverTop)
+    end
+    assert(-second.point[3] == -first.point[3] + first.height + 8, "card offsets remain cumulative after relayout")
+end
+ui:RefreshDungeons(); compactGeometry()
+local firstCard, firstDTO = ui.cards[1], ui.cards[1].dungeonStatusDTO
+local aggregates, stateReads = builds, states
+tall = true
+assert(addon.Language:Open(ui))
+local geometrySession = addon.Language.session
+for _, locale in ipairs({"koKR", "ruRU", "enUS"}) do
+    addon.Language:Preview(geometrySession, locale)
+    compactGeometry()
+    assert(ui.cards[1] == firstCard and ui.cards[1].dungeonStatusDTO == firstDTO,
+        "language relayout reuses existing card and status evidence")
+    assert(builds == aggregates and states == stateReads, "language relayout does not rebuild quest status")
+end
+addon.Language:Cancel(ui)
+fixture.methods.GetStringHeight = measure; ui:RefreshDungeons()
 print("Actual dungeon cards: PASS (catalogue, warm locales, pooling, quest events, hidden reopen)")

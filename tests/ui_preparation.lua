@@ -616,7 +616,7 @@ check("Wrapped catalogue, quest and giver text expands cumulative rows without o
     assert(previous)
     addon.QuestName, addon.DungeonName, addon.quests[2].start.name = questName, dungeonName, giver
     measurement = nil;ui.questTreeRoot,ui.questTreeDungeon=nil,nil; ui.preparation = false; ui:Refresh(); showDetail(100)
-    assert(visibleRows()[1] == first and first.height == 30 and ui.cards[1].height == 84)
+    assert(visibleRows()[1] == first and first.height == 30 and ui.cards[1].height == 76)
     assert(not first.note.shown and not(ui.storyToggle and ui.storyToggle.shown))
 end)
 check("Invalid and restricted text measurements reuse clean geometry safely", function()
@@ -1242,7 +1242,7 @@ check("Catalogue labels distinguish listed targets from character eligibility an
     ui:RefreshDungeons()
     local card = ui.cards[1]
     assert(card.note.text == addon.L("CATALOG_COMPACT_META", 10, 30, 2))
-    assert(card.height == 84 and ui.cards[2].point[3] == -92, "compact metadata and cover fit cumulative geometry")
+    assert(card.height == 76 and ui.cards[2].point[3] == -84, "compact metadata and cover fit cumulative geometry")
     assert(addon.Planner.Eligible(addon.quests[2], addon.Context()) == false)
     ui.includeUnavailable = true; ui:RefreshDungeons()
     assert(card.note.text==addon.L("CATALOG_COMPACT_META",10,30,2), "listed count is independent of character filtering")
@@ -5483,10 +5483,10 @@ check("Target match cues wrap dynamically across locales and recycle without cha
     for locale in pairs(addon.locales)do
         addon.db.locale=locale;f:search("Long target");local rows=f:cards()
         assert(#rows==2 and rows[1].height>=144 and -rows[2].point[3]>=-rows[1].point[3]+rows[1].height)
-        assert(rows[1].title.width==rows[1]:GetWidth()-108 and rows[1].note.width==rows[1]:GetWidth()-108 and rows[1].note.text:find(addon.L("SEARCH_QUEST_MATCH",long),1,true))
+        assert(rows[1].title.width==rows[1]:GetWidth()-112 and rows[1].note.width==rows[1]:GetWidth()-112 and rows[1].note.text:find(addon.L("SEARCH_QUEST_MATCH",long),1,true))
     end
     measurement=nil;f:search("Alpha");local row=f:cards()[1]
-    assert(not row.matchQuestID and not row.note.text:find(long,1,true) and row.height==84)
+    assert(not row.matchQuestID and not row.note.text:find(long,1,true) and row.height==76)
     ui.range=true;f:search("Gamma");assert(#f:cards()==0)
     ui.clearSearch.scripts.OnClick();assert(ui.search=="" and ui.range==true and #f:cards()==2)
     f:finish()
@@ -6022,7 +6022,7 @@ check("Quest glyphs clear on state and heading recycling and never indent note t
     assert(row.questID==32001 and row.statusIcon.shown and row.statusInset==20 and row.title.width==width-20 and row.title.point[2]==8+(row.chainInset or 0)+row.statusInset and not row.note.shown)
     ui.preparation=true;ui:RefreshQuests();assert(ui.rows[1].heading and not ui.rows[1].statusIcon.shown and ui.rows[1].title.width==ui.rows[1]:GetWidth()-22)
     ui.preparation=false;f.active[32001]=true;ui:RefreshQuests();assert(row.statusIcon.shown and row.title.width==width-20)
-    ui:RefreshDungeons();for _,card in ipairs(ui.cards)do if card.shown then assert(card.title.point[2]==72 and card.note.point[2]==72)end end
+    ui:RefreshDungeons();for _,card in ipairs(ui.cards)do if card.shown then assert(card.title.point[2]==76 and card.note.point[2]==76)end end
     f:finish()
 end)
 check("Optional glyph painter failures and missing capabilities preserve textual original-width quest rows",function()
@@ -8765,7 +8765,7 @@ check("Catalogue reserves icon hit area before measuring wrapped titles and note
     local f=targetSearchFixture();local measured=0
     measurement=function(fs)
         for _,row in ipairs(ui.cards)do if fs==row.title or fs==row.note then
-            assert(fs.width==row:GetWidth()-108,"icon width must be reserved before text wrapping")
+            assert(fs.width==row:GetWidth()-112,"icon width must be reserved before text wrapping")
             measured=measured+1;return 72
         end end
         return 18
@@ -9240,10 +9240,10 @@ check("Compact dungeon cards separate cover titles metadata entrance actions and
     for index,status in ipairs(statuses)do
         local row=ui.cards[index];local control=row.dungeonStatusControl;local icon=control.statusIcon
         assert(row.dungeonStatusDTO.status==status and control.shown and icon.shown and control.kind=="Frame"and not control.scripts.OnClick)
-        assert(row.art.width==52 and row.art.height==56 and row.art.point[2]==8 and row.art.point[3]==-8)
-        assert(row.title.point[2]==72 and row.note.point[2]==72 and row.title.width==row:GetWidth()-108 and row.note.fontSize==12)
-        assert(row.height>=84 and -row.entranceControl.point[5]+row.entranceControl.height<=44)
-        assert(control.point[5]==-44 and control.width==28 and icon.width==20)
+        assert(row.art.width==56 and row.art.height==60 and row.art.point[2]==8 and -row.art.point[3]==(row.height-60)/2)
+        assert(row.title.point[2]==76 and row.note.point[2]==76 and row.title.width==row:GetWidth()-112 and row.note.fontSize==12)
+        assert(row.height>=76 and -row.entranceControl.point[5]+row.entranceControl.height<=-control.point[5]-4)
+        assert(-control.point[5]==(row.height-60)/2+32 and control.width==28 and icon.width==20)
         assert(row.note.text==addon.L("CATALOG_COMPACT_META",10,30,index==9 and 0 or 1))
         if index>1 then assert(-row.point[3]>=-ui.cards[index-1].point[3]+ui.cards[index-1].height+8)end
     end

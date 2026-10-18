@@ -97,6 +97,8 @@ Level ranges are provisional recommendations.
 - World map, optional TomTom and a built-in direction arrow. The arrow points
   toward a coordinate; it does not find paths around terrain or plan transport.
 - Browse compact quest rows with status icons and cached item reward previews.
+  Dungeon cards use larger covers and balanced spacing; long names expand the
+  card instead of being cut off.
   Hover over a reward icon for the game's item tooltip with its statistics,
   followed by known guaranteed rewards and choices where you pick one.
   A +N mark indicates additional items.
