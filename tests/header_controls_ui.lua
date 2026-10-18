@@ -40,11 +40,32 @@ assert(not ui.range and not addon.char.filters.range and not ui.rangeButton.filt
 ui.characterButton.scripts.OnClick()
 assert(ui.includeUnavailable and addon.char.filters.includeUnavailable and not ui.characterButton.filterSelected)
 assert(not ui.characterButton.filterIcon:IsShown() and ui.characterButton.filterCaption:GetText() == addon.L("FILTER_QUEST_ALL"))
-for _, strip in ipairs(ui.characterButton.filterList) do assert(strip:IsShown(), "All mode has its own list symbol") end
+assert(#ui.characterButton.filterList == 0, "All quests is a direct toggle without a hamburger or dropdown glyph")
+assert(ui.characterButton.filterCaption.point[4] == 8 and ui.characterButton.filterCaption:GetWidth() == 84,
+    "All quests uses the full button width for its readable label")
 ui.characterButton.scripts.OnClick()
 assert(not ui.includeUnavailable and not addon.char.filters.includeUnavailable and ui.characterButton.filterSelected)
 assert(ui.characterButton.filterIcon:IsShown() and ui.characterButton.filterCaption:GetText() == addon.L("FILTER_QUEST_MINE"))
-for _, strip in ipairs(ui.characterButton.filterList) do assert(not strip:IsShown()) end
+assert(#ui.characterButton.filterList == 0)
+assert(ui.characterButton.filterCaption.point[4] == 38 and ui.characterButton.filterCaption:GetWidth() == 56,
+    "Mine reserves the portrait while retaining the same toggle")
+local originalTooltip, tip = GameTooltip, {}
+function tip:SetOwner(owner) self.owner = owner end
+function tip:IsOwned(owner) return self.owner == owner end
+function tip:SetText(text) self.heading = text end
+function tip:AddLine(text) self.body = text end
+function tip:Show() self.shown = true end
+function tip:Hide() self.shown = false end
+GameTooltip = tip
+for _, allMode in ipairs({ false, true }) do
+    ui.includeUnavailable = allMode; ui:Refresh()
+    ui.characterButton.scripts.OnEnter()
+    assert(tip.shown and tip.owner == ui.characterButton and tip.heading == addon.L("CHARACTER_FILTER"))
+    assert(tip.body:find(addon.L(allMode and "MY_CHARACTER" or "ALL_CHARACTERS"), 1, true),
+        "hover explains which mode the direct toggle will select")
+    tip.owner = {}; ui.characterButton.scripts.OnLeave(); assert(tip.shown, "borrowed tooltips stay owned by their new surface")
+end
+ui.includeUnavailable = false; ui:Refresh(); GameTooltip = originalTooltip
 local later, timer = {}, C_Timer.After
 C_Timer.After = function(delay, callback) later[#later + 1] = callback end
 ui.searchBox:SetText("166"); ui.searchBox.scripts.OnTextChanged(ui.searchBox, true)

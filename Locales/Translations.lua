@@ -173,9 +173,9 @@ for locale, values in pairs(detailStrings) do
 end
 
 local filterStrings = {
-    enUS = { "All levels", "My level", "Mine", "All" },
-    ruRU = { "Все уровни", "Мой уровень", "Мои", "Все" },
-    deDE = { "Alle Stufen", "Mein Level", "Meine", "Alle" },
+    enUS = { "All levels", "My level", "Mine", "All quests" },
+    ruRU = { "Все уровни", "Мой уровень", "Мои", "Все задания" },
+    deDE = { "Alle Stufen", "Mein Level", "Meine", "Alle Quests" },
     frFR = { "Tous niveaux", "Mon niveau", "Moi", "Tous" },
     esES = { "Todos los niveles", "Mi nivel", "Mías", "Todas" },
     itIT = { "Tutti i livelli", "Il mio livello", "Mie", "Tutte" },

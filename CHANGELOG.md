@@ -2,6 +2,8 @@
 
 ## 0.1.0 - 16-Oct-2026 — Development preview
 
+- Replaced the quest filter's menu-like list symbol with a plain All quests button.
+
 - Highlighted unknown quest-giver locations and added a labelled visit button
   with an explanation when unavailable. Quest and minimum levels have clear labels.
 - Showed starter-item sources directly and removed repeated starter details.

@@ -406,7 +406,10 @@ function UI:RefreshFilterControls()
     end
     local control = controls[2]
     if not write(control.filterIcon, "SetShown", not all) then return end
-    for _, strip in ipairs(control.filterList) do if not write(strip, "SetShown", all) then return end end
+    if not write(control.filterCaption, "ClearAllPoints") or
+        not write(control.filterCaption, "SetPoint", "TOPLEFT", control, "TOPLEFT", all and 8 or 38, -8) or
+        not write(control.filterCaption, "SetWidth", all and 84 or 56) or
+        not write(control.filterCaption, "SetJustifyH", all and "CENTER" or "LEFT") then return end
 end
 
 function UI:ApplyTheme()
@@ -4486,12 +4489,6 @@ function UI:Create()
     if addon.Clean(SetPortraitTexture, "function") then pcall(SetPortraitTexture, portrait, "player") end
     characterControl.filterCaption = label(characterControl, "", 38, -8, 56, 13)
     characterControl.filterList = {}
-    for index = 1, 3 do
-        local strip = characterControl:CreateTexture(nil, "ARTWORK")
-        strip:SetTexture("Interface\\Buttons\\WHITE8X8"); strip:SetSize(18, 2)
-        strip:SetPoint("TOPLEFT", characterControl, "TOPLEFT", 8, -9 - (index - 1) * 6)
-        characterControl.filterList[index] = strip
-    end
     for _, control in ipairs({ rangeControl, characterControl }) do
         control:SetScript("OnEnter", function() self:FilterHint(control) end)
         control:SetScript("OnLeave", function() self:HideNavigationHint() end)

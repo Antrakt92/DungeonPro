@@ -4759,9 +4759,9 @@ check("Catalogue level and quest character filters retain distinct readable mode
         local control=ui.characterButton
         assert(control.text==""and control.width==100 and control.height==32 and control.filterCaption.text==addon.L("FILTER_QUEST_MINE"))
         assert(control.filterIcon.width==26 and control.filterIcon.height==26 and control.filterIcon.shown)
-        for _,strip in ipairs(control.filterList)do assert(not strip.shown)end
+        assert(#control.filterList==0)
         ui.characterButton.scripts.OnClick();assert(ui.includeUnavailable and not control.filterIcon.shown and control.filterCaption.text==addon.L("FILTER_QUEST_ALL"))
-        for _,strip in ipairs(control.filterList)do assert(strip.shown and strip.texture=="Interface\\Buttons\\WHITE8X8")end
+        assert(#control.filterList==0 and control.filterCaption.point[4]==8 and control.filterCaption.width==84)
     end
     addon.db.locale,ui.range,ui.includeUnavailable=locale,range,all;ui:SaveFilters();ui:Refresh()
 end)
@@ -9389,27 +9389,27 @@ check("Level filtering occupies the global header while character filtering stay
         assert(ui.heading.width==258 and ui.heading.point[2]+ui.heading.width<character.point[2])
         assert(character.point[2]==548 and character.point[3]==-66 and character.width==100 and character.height==32)
         assert(character.point[2]+character.width==ui.questScroll.point[2]+ui.questScroll.width)
-        assert(character.filterCaption.point[2]==38 and character.filterCaption.width==56 and character.filterCaption.fontSize==13)
+        assert(character.filterCaption.point[4]==38 and character.filterCaption.width==56 and character.filterCaption.fontSize==13)
         assert(character.filterCaption.text==addon.L("FILTER_QUEST_MINE")and character.filterIcon.shown and character.filterPortrait)
         assert(character.filterIcon.point[4]==4 and character.filterIcon.point[5]==-3)
-        for _,strip in ipairs(character.filterList)do assert(not strip.shown)end
+        assert(#character.filterList==0)
         level.scripts.OnClick();assert(ui.range and level.text==addon.L("FILTER_LEVEL_CURRENT"))
         character.scripts.OnClick();assert(ui.includeUnavailable and character.filterCaption.text==addon.L("FILTER_QUEST_ALL")and not character.filterIcon.shown)
-        for _,strip in ipairs(character.filterList)do assert(strip.shown and strip.width==18 and strip.height==2)end
+        assert(#character.filterList==0 and character.filterCaption.point[4]==8 and character.filterCaption.width==84)
     end
     addon.db.locale,ui.range,ui.includeUnavailable=locale,range,all;ui:SaveFilters();ui:Refresh()
 end)
 check("Late native filter captions and glyph visibility preserve the newest mode and locale",function()
     local locale,range,all=addon.db.locale,ui.range,ui.includeUnavailable
-    for _,kind in ipairs({"levelCaption","questCaption","portrait","list"})do
-        ui.range=false;ui.includeUnavailable=kind=="list";addon.db.locale="enUS";ui:RefreshFilterControls()
+    for _,kind in ipairs({"levelCaption","questCaption","portrait","captionPoint","captionWidth"})do
+        ui.range=false;ui.includeUnavailable=kind=="captionPoint"or kind=="captionWidth";addon.db.locale="enUS";ui:RefreshFilterControls()
         local object=kind=="levelCaption"and ui.rangeButton or kind=="questCaption"and ui.characterButton.filterCaption or
-            kind=="portrait"and ui.characterButton.filterIcon or ui.characterButton.filterList[1]
-        local method=(kind=="levelCaption"or kind=="questCaption")and "SetText"or "SetShown"
+            kind=="portrait"and ui.characterButton.filterIcon or ui.characterButton.filterCaption
+        local method=(kind=="levelCaption"or kind=="questCaption")and "SetText"or kind=="captionPoint"and "SetPoint"or kind=="captionWidth"and "SetWidth"or "SetShown"
         local original,armed=object[method],true
         object[method]=function(self,...)
             if armed then
-                armed=false;ui.range=true;ui.includeUnavailable=kind~="list";addon.db.locale="koKR";ui:RefreshFilterControls()
+                armed=false;ui.range=true;ui.includeUnavailable=not(kind=="captionPoint"or kind=="captionWidth");addon.db.locale="koKR";ui:RefreshFilterControls()
             end
             return original(self,...)
         end
@@ -9417,7 +9417,9 @@ check("Late native filter captions and glyph visibility preserve the newest mode
         assert(not armed and ui.range and ui.rangeButton.text==addon.L("FILTER_LEVEL_CURRENT"),kind)
         assert(ui.characterButton.filterCaption.text==addon.L(ui.includeUnavailable and "FILTER_QUEST_ALL"or"FILTER_QUEST_MINE"),kind)
         assert(ui.characterButton.filterIcon.shown==not ui.includeUnavailable,kind)
-        for _,strip in ipairs(ui.characterButton.filterList)do assert(strip.shown==ui.includeUnavailable,kind)end
+        assert(#ui.characterButton.filterList==0,kind)
+        assert(ui.characterButton.filterCaption.point[4]==(ui.includeUnavailable and 8 or 38),kind)
+        assert(ui.characterButton.filterCaption.width==(ui.includeUnavailable and 84 or 56),kind)
     end
     addon.db.locale,ui.range,ui.includeUnavailable=locale,range,all;ui:SaveFilters();ui:Refresh()
 end)

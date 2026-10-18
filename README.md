@@ -103,7 +103,7 @@ Level ranges are provisional recommendations.
   Search sits on the right of the header, beside the language selector.
   The level tab beside the app title filters the dungeon catalogue. The larger
   quest filter beside the dungeon heading switches between your character's
-  quests and all quests, using a portrait or list symbol and a short mode label.
+  quests and all quests. Mine shows your portrait; All quests is a plain text button.
   Hover for the current mode and click to switch.
   The message and heart icons offer issue-report and project-support links for copying.
   Quest-log occupancy sits in the top bar. A labelled visit action appears with
