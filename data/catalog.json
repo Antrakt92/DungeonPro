@@ -21223,6 +21223,28 @@
         [
           8996
         ]
+      ],
+      "objectiveKills": [
+        {
+          "npcID": 16118,
+          "name": "Kormok"
+        }
+      ],
+      "objectiveItems": [
+        {
+          "itemID": 22048,
+          "name": "Lord Valthalak's Amulet"
+        },
+        {
+          "itemID": 22046,
+          "name": "Right Piece of Lord Valthalak's Amulet"
+        }
+      ],
+      "providedItems": [
+        {
+          "itemID": 22052,
+          "name": "Brazier of Beckoning"
+        }
       ]
     },
     {
@@ -21319,6 +21341,12 @@
         5522,
         5531,
         4771
+      ],
+      "providedItems": [
+        {
+          "itemID": 13761,
+          "name": "Frozen Eggs"
+        }
       ]
     },
     {
@@ -21359,6 +21387,12 @@
         5464,
         5465,
         5466
+      ],
+      "objectiveItems": [
+        {
+          "itemID": 13585,
+          "name": "Keepsake of Remembrance"
+        }
       ]
     },
     {
@@ -21399,6 +21433,12 @@
         5464,
         5465,
         5466
+      ],
+      "providedItems": [
+        {
+          "itemID": 13585,
+          "name": "Keepsake of Remembrance"
+        }
       ]
     },
     {
@@ -21475,6 +21515,12 @@
         5464,
         5465,
         5466
+      ],
+      "providedItems": [
+        {
+          "itemID": 13624,
+          "name": "Soulbound Keepsake"
+        }
       ]
     },
     {
@@ -21515,6 +21561,12 @@
         5464,
         5465,
         5466
+      ],
+      "providedItems": [
+        {
+          "itemID": 13624,
+          "name": "Soulbound Keepsake"
+        }
       ]
     },
     {
@@ -21552,6 +21604,12 @@
         5522,
         5531,
         4771
+      ],
+      "providedItems": [
+        {
+          "itemID": 13761,
+          "name": "Frozen Eggs"
+        }
       ]
     },
     {
@@ -21635,6 +21693,12 @@
       "storyline": [
         5343,
         5344
+      ],
+      "objectiveItems": [
+        {
+          "itemID": 13470,
+          "name": "Head of Alexi Barov"
+        }
       ]
     },
     {
@@ -21694,6 +21758,12 @@
       "storyline": [
         5341,
         5342
+      ],
+      "objectiveItems": [
+        {
+          "itemID": 13469,
+          "name": "Head of Weldon Barov"
+        }
       ]
     },
     {
@@ -21798,6 +21868,12 @@
         [
           8996
         ]
+      ],
+      "objectiveItems": [
+        {
+          "itemID": 22226,
+          "name": "Druidical Remains"
+        }
       ]
     },
     {
@@ -21845,6 +21921,12 @@
         [
           8996
         ]
+      ],
+      "objectiveItems": [
+        {
+          "itemID": 22228,
+          "name": "Brilliant Sword of Zealotry"
+        }
       ]
     },
     {
@@ -21892,6 +21974,12 @@
         [
           8996
         ]
+      ],
+      "objectiveItems": [
+        {
+          "itemID": 22229,
+          "name": "Soul Ashes of the Banished"
+        }
       ]
     },
     {
@@ -21939,6 +22027,28 @@
         [
           8996
         ]
+      ],
+      "objectiveKills": [
+        {
+          "npcID": 16080,
+          "name": "Mor Grayhoof"
+        }
+      ],
+      "objectiveItems": [
+        {
+          "itemID": 22048,
+          "name": "Lord Valthalak's Amulet"
+        },
+        {
+          "itemID": 22046,
+          "name": "Right Piece of Lord Valthalak's Amulet"
+        }
+      ],
+      "providedItems": [
+        {
+          "itemID": 22049,
+          "name": "Brazier of Beckoning"
+        }
       ]
     },
     {
@@ -22075,6 +22185,16 @@
           "itemID": 22051,
           "name": "Brazier of Beckoning"
         }
+      ],
+      "objectiveItems": [
+        {
+          "itemID": 22048,
+          "name": "Lord Valthalak's Amulet"
+        },
+        {
+          "itemID": 22046,
+          "name": "Right Piece of Lord Valthalak's Amulet"
+        }
       ]
     },
     {
@@ -22122,6 +22242,23 @@
         [
           8996
         ]
+      ],
+      "objectiveItems": [
+        {
+          "itemID": 22138,
+          "name": "Blackrock Bracer",
+          "quantity": 40
+        },
+        {
+          "itemID": 13512,
+          "name": "Flask of Supreme Power"
+        }
+      ],
+      "providedItems": [
+        {
+          "itemID": 22048,
+          "name": "Lord Valthalak's Amulet"
+        }
       ]
     },
     {
@@ -22168,6 +22305,24 @@
         [
           8996
         ]
+      ],
+      "objectiveKills": [
+        {
+          "npcID": 16042,
+          "name": "Lord Valthalak"
+        }
+      ],
+      "objectiveItems": [
+        {
+          "itemID": 22048,
+          "name": "Lord Valthalak's Amulet"
+        }
+      ],
+      "providedItems": [
+        {
+          "itemID": 22056,
+          "name": "Brazier of Beckoning"
+        }
       ]
     },
     {
@@ -22214,6 +22369,12 @@
         [
           8996
         ]
+      ],
+      "objectiveItems": [
+        {
+          "itemID": 22056,
+          "name": "Brazier of Beckoning"
+        }
       ]
     },
     {
@@ -22408,6 +22569,12 @@
         [
           8970
         ]
+      ],
+      "objectiveItems": [
+        {
+          "itemID": 22229,
+          "name": "Soul Ashes of the Banished"
+        }
       ]
     },
     {
@@ -22449,6 +22616,24 @@
         [
           8970
         ]
+      ],
+      "objectiveKills": [
+        {
+          "npcID": 16080,
+          "name": "Mor Grayhoof"
+        }
+      ],
+      "objectiveItems": [
+        {
+          "itemID": 21984,
+          "name": "Left Piece of Lord Valthalak's Amulet"
+        }
+      ],
+      "providedItems": [
+        {
+          "itemID": 22049,
+          "name": "Brazier of Beckoning"
+        }
       ]
     },
     {
@@ -22490,6 +22675,19 @@
         [
           8970
         ]
+      ],
+      "objectiveItems": [
+        {
+          "itemID": 22094,
+          "name": "Bloodkelp",
+          "quantity": 20
+        }
+      ],
+      "providedItems": [
+        {
+          "itemID": 21984,
+          "name": "Left Piece of Lord Valthalak's Amulet"
+        }
       ]
     },
     {
@@ -23311,6 +23509,12 @@
         5848,
         5861,
         5862
+      ],
+      "objectiveItems": [
+        {
+          "itemID": 14613,
+          "name": "Taelan's Hammer"
+        }
       ]
     },
     {
@@ -23352,6 +23556,12 @@
         5848,
         5861,
         5862
+      ],
+      "objectiveItems": [
+        {
+          "itemID": 14625,
+          "name": "Symbol of Lost Honor"
+        }
       ]
     },
     {
@@ -23432,6 +23642,12 @@
         5848,
         5861,
         5862
+      ],
+      "providedItems": [
+        {
+          "itemID": 14872,
+          "name": "Tirion's Gift"
+        }
       ]
     },
     {
@@ -23581,6 +23797,12 @@
         5848,
         5861,
         5862
+      ],
+      "providedItems": [
+        {
+          "itemID": 14872,
+          "name": "Tirion's Gift"
+        }
       ]
     },
     {
@@ -25687,7 +25909,13 @@
         "itemClasses": [
           "HUNTER"
         ]
-      }
+      },
+      "providedItems": [
+        {
+          "itemID": 18361,
+          "name": "The Greatest Race of Hunters"
+        }
+      ]
     },
     {
       "id": 7463,
@@ -25808,7 +26036,13 @@
         "itemClasses": [
           "WARLOCK"
         ]
-      }
+      },
+      "providedItems": [
+        {
+          "itemID": 18360,
+          "name": "Harnessing Shadows"
+        }
+      ]
     },
     {
       "id": 7506,
@@ -25896,7 +26130,13 @@
         "itemClasses": [
           "DRUID"
         ]
-      }
+      },
+      "providedItems": [
+        {
+          "itemID": 18364,
+          "name": "The Emerald Dream"
+        }
+      ]
     },
     {
       "id": 7498,
@@ -25984,7 +26224,13 @@
         "itemClasses": [
           "ROGUE"
         ]
-      }
+      },
+      "providedItems": [
+        {
+          "itemID": 18356,
+          "name": "Garona: A Study on Stealth and Treachery"
+        }
+      ]
     },
     {
       "id": 7461,
@@ -26053,7 +26299,28 @@
       "repeatable": true,
       "requirementsKnown": false,
       "source": "https://www.wowhead.com/forever/quest=7483/libram-of-rapidity",
-      "startsInside": true
+      "startsInside": true,
+      "objectiveItems": [
+        {
+          "itemID": 18332,
+          "name": "Libram of Rapidity"
+        },
+        {
+          "itemID": 18335,
+          "name": "Pristine Black Diamond",
+          "quantity": 1
+        },
+        {
+          "itemID": 14344,
+          "name": "Large Brilliant Shard",
+          "quantity": 2
+        },
+        {
+          "itemID": 12938,
+          "name": "Blood of Heroes",
+          "quantity": 2
+        }
+      ]
     },
     {
       "id": 5525,
@@ -26173,7 +26440,13 @@
         "itemClasses": [
           "WARRIOR"
         ]
-      }
+      },
+      "providedItems": [
+        {
+          "itemID": 18357,
+          "name": "Codex of Defense"
+        }
+      ]
     },
     {
       "id": 7482,

@@ -222,6 +222,42 @@ local reviewedItemRoles = {
     {724,"providedItems",{{4635}}}, {725,"providedItems",{{4622}}},
     {762,"objectiveItems",{{4621}}}, {865,"objectiveItems",{{5055,5}}},
     {1193,"objectiveItems",{{15994},{3829}}},
+    {8992,"objectiveItems",{{22048},{22046}}},
+    {8992,"providedItems",{{22052}}},
+    {5531,"providedItems",{{13761}}},
+    {5461,"objectiveItems",{{13585}}},
+    {5462,"providedItems",{{13585}}},
+    {5464,"providedItems",{{13624}}},
+    {5465,"providedItems",{{13624}}},
+    {5522,"providedItems",{{13761}}},
+    {5344,"objectiveItems",{{13470}}},
+    {5342,"objectiveItems",{{13469}}},
+    {8986,"objectiveItems",{{22226}}},
+    {8987,"objectiveItems",{{22228}}},
+    {8988,"objectiveItems",{{22229}}},
+    {8989,"objectiveItems",{{22048},{22046}}},
+    {8989,"providedItems",{{22049}}},
+    {8991,"objectiveItems",{{22048},{22046}}},
+    {8994,"objectiveItems",{{22138,40},{13512}}},
+    {8994,"providedItems",{{22048}}},
+    {8995,"objectiveItems",{{22048}}},
+    {8995,"providedItems",{{22056}}},
+    {8996,"objectiveItems",{{22056}}},
+    {8965,"objectiveItems",{{22229}}},
+    {8966,"objectiveItems",{{21984}}},
+    {8966,"providedItems",{{22049}}},
+    {8970,"objectiveItems",{{22094,20}}},
+    {8970,"providedItems",{{21984}}},
+    {5781,"objectiveItems",{{14613}}},
+    {5845,"objectiveItems",{{14625}}},
+    {5861,"providedItems",{{14872}}},
+    {5862,"providedItems",{{14872}}},
+    {7503,"providedItems",{{18361}}},
+    {7502,"providedItems",{{18360}}},
+    {7506,"providedItems",{{18364}}},
+    {7498,"providedItems",{{18356}}},
+    {7483,"objectiveItems",{{18332},{18335,1},{14344,2},{12938,2}}},
+    {7499,"providedItems",{{18357}}},
 }
 for _,sample in ipairs(reviewedItemRoles) do
     render(sample[1])
@@ -245,7 +281,8 @@ for _,sample in ipairs({{1955,{{6549}}},{1957,{{6550,12}}},{8423,{{5993,7}}},
     {8424,{{6006,20},{6004,10},{6005,20}}},{261,{{11561,30}}},
     {3906,{{9026}}},{4003,{{9019}}},{4182,{{7047,15},{7040,10},{7044,1},{7041,4}}},
     {4262,{{9026}}},{4362,{{9019}}},
-    {303,{{1051,15},{1053,5},{1052,5},{1054,5}}},{739,{{2945},{2893,12}}}}) do
+    {303,{{1051,15},{1053,5},{1052,5},{1054,5}}},{739,{{2945},{2893,12}}},
+    {8992,{{16118}}},{8989,{{16080}}},{8995,{{16042}}},{8966,{{16080}}}}) do
     render(sample[1])
     local goals=assert(addon.quests[sample[1]].objectiveKills)
     assert(#goals==#sample[2])
@@ -333,4 +370,17 @@ for _,id in ipairs({723,724})do
 end
 assert(not addon.quests[739].objectiveKills[1].quantity and addon.quests[739].objectiveKills[2].quantity==12,
     "Murdaloc stays quantity-unknown while the explicit twelve Bonesnappers remain known")
+for _,sample in ipairs({{7503,18361},{7502,18360},{7506,18364},{7498,18356},{7499,18357}})do
+    render(sample[1])
+    local roles={}
+    for _,button in ipairs(ui.objectiveButtons)do if button:IsShown()then
+        local binding=button.objectiveBinding
+        if binding.id==sample[2] and binding.current()then roles[binding.role]=binding.sourceField end
+    end end
+    assert(roles.starter=="start" and roles.provided=="providedItems","the class book retains both starter and supplied-item bindings")
+end
+assert(addon.quests[5461].objectiveItems[1].itemID==13585 and not addon.quests[5461].providedItems)
+assert(addon.quests[5462].providedItems[1].itemID==13585 and not addon.quests[5462].objectiveItems)
+assert(addon.quests[8994].providedItems[1].itemID==22048 and addon.quests[8995].objectiveItems[1].itemID==22048,
+    "the amulet changes supplied and collected roles between separate quests")
 print("Reviewed quest sources UI: PASS (actual TOC; modeled routing and roles, no native acceptance)")
