@@ -55,6 +55,7 @@ def main():
     run(lua, "tests/dungeon_cards_ui.lua")
     run(lua, "tests/dungeon_count_filter_ui.lua")
     run(lua, "tests/theme.lua")
+    run(lua, "tests/font_ownership_ui.lua")
     run(lua, "tests/quest_status.lua")
     run(lua, "tests/quest_list_rewards.lua")
     run(lua, "tests/reward_cache.lua")

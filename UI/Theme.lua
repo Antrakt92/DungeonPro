@@ -42,7 +42,7 @@ local function anchor(region, ...)
     invoke(region, "SetPoint", ...)
 end
 
-local controlFonts, fontSerial = nil, 0
+local fontSerial = 0
 local styledButtons = setmetatable({}, { __mode = "k" })
 local fontRegions, inputRegions = setmetatable({}, { __mode = "k" }), setmetatable({}, { __mode = "k" })
 local NOTO_FONT = "Interface\\AddOns\\DungeonPro\\Media\\Fonts\\NotoSans-Regular.ttf"
@@ -127,8 +127,37 @@ local function sourceCache(context, creator)
     return cache
 end
 
+local fontUpdates, fontRepairs = setmetatable({}, { __mode = "k" }), setmetatable({}, { __mode = "k" })
+local applyTextFont, applyInputFont, styleButtonFonts
+
+local function updateFont(region, kind, size, locale, paint)
+    local previous = fontUpdates[region]
+    local creator, getter, clean, read = CreateFont, GetLocale, addon.Clean, addon.Read
+    local context = fontContext(locale)
+    -- Context getters can complete a newer request before this call paints.
+    if addon.Theme ~= Theme or fontUpdates[region] ~= previous then return nil end
+    local held = { kind = kind, size = size, locale = locale }
+    fontUpdates[region] = held
+    local first, second = paint(region, size, locale)
+    local fresh = fontContext(locale)
+    if addon.Theme == Theme and fontUpdates[region] == held and CreateFont == creator and GetLocale == getter and
+        addon.Clean == clean and addon.Read == read and fresh.key == context.key and fresh.source == context.source and
+        fresh.family == context.family then return first, second end
+    -- A newer request owns the desired font even when its native setter was a
+    -- no-op before this older call resumed. Never retain the region in a weak-key value.
+    local newer = fontUpdates[region]
+    if addon.Theme == Theme and newer and not fontRepairs[region] then
+        fontRepairs[region] = true
+        if newer.kind == "text" then pcall(applyTextFont, region, newer.size, newer.locale)
+        elseif newer.kind == "input" then pcall(applyInputFont, region)
+        elseif newer.kind == "button" then pcall(styleButtonFonts, region, newer.locale) end
+        fontRepairs[region] = nil
+    end
+    return nil
+end
+
 -- Keep asset overrides on owned font objects when switching back to native families.
-local function applyTextFont(region, size, locale)
+local function paintTextFont(region, size, locale)
     region, size = cleanObject(region), addon.Clean(size, "number")
     if not region or not size or size < 1 or size > 72 then return nil end
     local context, creator = fontContext(locale), addon.Clean(CreateFont, "function")
@@ -176,6 +205,12 @@ local function applyTextFont(region, size, locale)
     end
 end
 
+applyTextFont = function(region, size, locale)
+    region, size = cleanObject(region), addon.Clean(size, "number")
+    if not region or not size or size < 1 or size > 72 then return nil end
+    return updateFont(region, "text", size, locale, paintTextFont)
+end
+
 function Theme.ApplyFont(region, size)
     return applyTextFont(region, size)
 end
@@ -188,8 +223,7 @@ function Theme.ApplyLanguageFont(region, locale, size)
     if compatible then return font end
 end
 
-local inputFont
-function Theme.ApplyInputFont(region)
+local function paintInputFont(region)
     region = cleanObject(region)
     local context = fontContext()
     if not region or not context.family then return nil end
@@ -204,7 +238,7 @@ function Theme.ApplyInputFont(region)
         return previous.applied
     end
     local cache = sourceCache(context, creator)
-    inputFont = cache.input
+    local inputFont = cache.input
     if not inputFont then
         inputFont = { family = context.family, creator = creator }
         cache.input = inputFont
@@ -229,7 +263,17 @@ function Theme.ApplyInputFont(region)
     end
 end
 
-local function styleButtonFonts(button, locale)
+applyInputFont = function(region)
+    region = cleanObject(region)
+    if not region then return nil end
+    return updateFont(region, "input", 14, nil, paintInputFont)
+end
+
+function Theme.ApplyInputFont(region)
+    return applyInputFont(region)
+end
+
+local function paintButtonFonts(button, _, locale)
     button = cleanObject(button)
     local context, creator = fontContext(locale), addon.Clean(CreateFont, "function")
     local family = context.family
@@ -242,7 +286,7 @@ local function styleButtonFonts(button, locale)
         if not previous[role[1]] then return false end
     end
     local cache = sourceCache(context, creator)
-    controlFonts = cache.controls
+    local controlFonts = cache.controls
     if not controlFonts then
         controlFonts = { family = family, creator = creator, failed = true, compatible = true }
         cache.controls = controlFonts
@@ -277,6 +321,12 @@ local function styleButtonFonts(button, locale)
     styledButtons[button] = { fonts = controlFonts, key = context.key, locale = locale,
         family = context.family, creator = creator }
     return true, controlFonts.compatible
+end
+
+styleButtonFonts = function(button, locale)
+    button = cleanObject(button)
+    if not button then return false end
+    return updateFont(button, "button", 14, locale, paintButtonFonts)
 end
 
 function Theme.StyleButtonFonts(button)
