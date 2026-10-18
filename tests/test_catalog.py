@@ -59,6 +59,41 @@ class CatalogTests(unittest.TestCase):
                     catalog.lua(payload)
         self.assertEqual(catalog.lua([0, 1.5, -2.25]), "{ 0, 1.5, -2.25 }")
 
+    def test_unknown_requirement_fields_cannot_change_acceptance_mode_silently(self):
+        for field in ("mdoe", "questIDs", "optional", "quantity"):
+            data = self.minimal_catalog()
+            data["quests"][1]["requires"] = [{"ids": [1], field: "active"}]
+            with self.subTest(field=field), self.assertRaisesRegex(ValueError, "requirement group"):
+                catalog.generate(data)
+        for mode in ("completed", "active"):
+            data = self.minimal_catalog()
+            data["quests"][1]["requires"] = [{"ids": [1], "mode": mode}]
+            self.assertIn(f'["mode"] = "{mode}"', catalog.generate(data))
+
+    def test_unknown_completion_link_fields_cannot_invent_conditions(self):
+        for field in ("required", "quantity", "questID", "itemId"):
+            data = self.minimal_catalog()
+            data["quests"][0]["completionQuests"] = [{"id": 2, "itemID": 3, field: True}]
+            with self.subTest(field=field), self.assertRaisesRegex(ValueError, "completion quest link"):
+                catalog.generate(data)
+        data = self.minimal_catalog()
+        data["quests"][0]["completionQuests"] = [{"id": 2, "itemID": 3}]
+        self.assertIn('["completionQuests"]', catalog.generate(data))
+
+    def test_unknown_place_fields_cannot_silently_drop_navigation_facts(self):
+        for role in ("start", "finish", "startAlternatives", "finishAlternatives"):
+            for field in ("mapId", "npcId", "location", "coordinateX"):
+                data = self.minimal_catalog()
+                place = {"npcID": 7, "name": "NPC", field: 123}
+                data["quests"][0][role] = ([place, {"npcID": 8, "name": "Other NPC"}]
+                                            if role.endswith("Alternatives") else place)
+                with self.subTest(role=role, field=field), self.assertRaisesRegex(ValueError, "place fields"):
+                    catalog.generate(data)
+        data = self.minimal_catalog()
+        data["quests"][0]["start"] = {"npcID": 7, "name": "NPC", "mapID": 123,
+                                      "x": 10, "y": 20, "locationName": "Named area"}
+        self.assertIn('["mapID"] = 123', catalog.generate(data))
+
     def test_lua_serializer_rejects_unsafe_integers_even_in_optional_metadata(self):
         for value in (2 ** 53, 2 ** 53 + 1, 10 ** 400, -(2 ** 53), -(2 ** 53 + 1), -(10 ** 400)):
             for payload in (value, [value], {"metadata": value}, {value: "metadata"}):

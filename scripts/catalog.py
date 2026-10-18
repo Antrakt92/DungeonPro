@@ -22,6 +22,11 @@ QUEST_FIELDS = frozenset({
 DUNGEON_FIELDS = frozenset({
     "key", "name", "minLevel", "maxLevel", "coverage", "quests", "source", "instanceID", "wing", "entrance", "art",
 })
+PLACE_FIELDS = frozenset({
+    "name", "npcID", "objectID", "itemID", "mapID", "x", "y", "zoneName", "locationName",
+    "dungeonKey", "reportedLocations", "creatureDisplayID", "portraitSource", "dropNPCID", "dropName",
+    "dropSources", "containerSource", "itemClasses", "itemMinLevel", "source",
+})
 
 
 def integer(value):
@@ -183,6 +188,8 @@ def validate(data):
                 continue
             if type(p) is not dict:
                 raise ValueError(f"Invalid quest {key} place: {q['id']}")
+            if set(p) - PLACE_FIELDS:
+                raise ValueError(f"Unknown quest {key} place fields: {q['id']}")
             if "containerSource" in p:
                 container = p["containerSource"]
                 if (key != "start" or "itemID" not in p or type(container) is not dict or
@@ -305,7 +312,8 @@ def validate(data):
                 raise ValueError(f"Invalid completion quest links: {q['id']}")
             seen_related = set()
             for entry in related:
-                if type(entry) is not dict or not integer(entry.get("id")) or not integer(entry.get("itemID")):
+                if (type(entry) is not dict or set(entry) - {"id", "itemID"} or
+                        not integer(entry.get("id")) or not integer(entry.get("itemID"))):
                     raise ValueError(f"Invalid completion quest link: {q['id']}")
                 qid = entry["id"]
                 if qid == q["id"] or qid in seen_related:
@@ -314,7 +322,7 @@ def validate(data):
                     raise ValueError(f"Missing completion quest definition: {q['id']}")
                 seen_related.add(qid)
         for g in q.get("requires", []):
-            if (type(g) is not dict or type(g.get("ids")) is not list or not g["ids"] or
+            if (type(g) is not dict or set(g) - {"ids", "mode"} or type(g.get("ids")) is not list or not g["ids"] or
                 g.get("mode", "completed") not in ("completed", "active")):
                 raise ValueError("Invalid requirement group")
             if any(not integer(parent) for parent in g["ids"]):
