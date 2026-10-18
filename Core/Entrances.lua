@@ -32,7 +32,7 @@ local function context()
     return cache
 end
 
-local function mapsFor(c, dungeon)
+local function uncachedMapsFor(c, dungeon)
     local maps, seen, visited = {}, {}, 0
     local function place(p)
         p = addon.Clean(p, "table")
@@ -58,6 +58,100 @@ local function mapsFor(c, dungeon)
         visited = visited + 1
         if visited > 2000 then break end
         quest(q)
+    end
+    return maps
+end
+
+
+local function candidateSource(c)
+    local old = c.candidates
+    local function rawCurrent(held)
+        if cache ~= c or addon.quests ~= c.quests or addon.dungeons ~= c.dungeons or
+            addon.Clean ~= held.clean or issecretvalue ~= c.checker then return false end
+        local count = 0
+        for key, value in pairs(c.quests) do
+            count = count + 1
+            if count > 2000 or not rawequal(held.entryKeys[count], key) or
+                not rawequal(held.entryValues[count], value) then return false end
+        end
+        if count ~= held.count then return false end
+        for index = 1, #held.objects do
+            if not rawequal(rawget(held.objects[index], held.keys[index]), held.values[index]) then return false end
+        end
+        for object, length in pairs(held.lengths) do if #object ~= length then return false end end
+        return true
+    end
+    if old and rawCurrent(old) then return old end
+    local held = { clean = addon.Clean, entryKeys = {}, entryValues = {}, objects = {}, keys = {}, values = {}, lengths = {},
+        maps = {}, quests = {}, count = 0 }
+    local function read(object, key)
+        local value = rawget(object, key)
+        local index = #held.objects + 1
+        held.objects[index], held.keys[index], held.values[index] = object, key, value
+        return value
+    end
+    local function quest(value)
+        local q = addon.Clean(value, "table")
+        if not q then return {} end
+        local maps, seen = {}, {}
+        local function place(value)
+            local p = addon.Clean(value, "table")
+            local id = p and identity(read(p, "mapID"))
+            if id and not seen[id] and #maps < 128 then seen[id] = true; maps[#maps + 1] = id end
+        end
+        place(read(q, "start")); place(read(q, "finish"))
+        for _, key in ipairs({ "startAlternatives", "finishAlternatives" }) do
+            local alternatives = addon.Clean(read(q, key), "table")
+            if alternatives then
+                held.lengths[alternatives] = #alternatives
+                for index = 1, math.min(#alternatives, 100) do place(read(alternatives, index)) end
+            end
+        end
+        return maps
+    end
+    local seen = {}
+    for key, value in pairs(c.quests) do
+        held.count = held.count + 1
+        if held.count > 2000 then return nil, "oversized" end
+        held.entryKeys[held.count], held.entryValues[held.count] = key, value
+        local maps = quest(value)
+        local id = identity(key)
+        if id then held.quests[id] = maps end
+        for _, id in ipairs(maps) do
+            if not seen[id] and #held.maps < 128 then seen[id] = true; held.maps[#held.maps + 1] = id end
+        end
+    end
+    if not current(c) or not rawCurrent(held) then return end
+    held.current = function() return rawCurrent(held) end
+    c.candidates = held
+    return held
+end
+
+local function mapsFor(c, dungeon)
+    local source, reason = candidateSource(c)
+    if not source then
+        if reason == "oversized" then return uncachedMapsFor(c, dungeon) end
+        return
+    end
+    local maps, seen = {}, {}
+    local function add(id)
+        if not seen[id] and #maps < 64 then seen[id] = true; maps[#maps + 1] = id end
+    end
+    local rawMembers = rawget(dungeon, "quests")
+    local members = addon.Clean(rawMembers, "table")
+    local length = members and #members or 0
+    local captured = {}
+    for index = 1, math.min(length, 1000) do
+        local value = rawget(members, index)
+        captured[index] = value
+        local id = identity(value)
+        for _, mapID in ipairs(id and source.quests[id] or {}) do add(mapID) end
+    end
+    for _, id in ipairs(source.maps) do add(id) end
+    if not current(c) or not source.current() or not rawequal(rawget(dungeon, "quests"), rawMembers) or
+        (members and #members ~= length) then return end
+    for index = 1, math.min(length, 1000) do
+        if not rawequal(rawget(members, index), captured[index]) then return end
     end
     return maps
 end
@@ -130,7 +224,7 @@ local function nativeEntrance(dungeon)
         if valid() then joined.value = journal end
     end
     if not journal or not valid() then return end
-    for _, mapID in ipairs(mapsFor(c, dungeon)) do
+    for _, mapID in ipairs(mapsFor(c, dungeon) or {}) do
         local rows = indexMap(c, mapID)
         if not valid() then return end
         for _, row in ipairs(rows or {}) do

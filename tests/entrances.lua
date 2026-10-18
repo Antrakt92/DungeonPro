@@ -356,5 +356,72 @@ check("Published route provenance and labels cannot lose recorded shared approac
         assert(not current(),"native point cannot acquire unsupported metadata: "..field)
     end
 end)
+check("Warm actual catalogue misses reuse candidate extraction without native retry storms", function()
+    local e=reset()
+    assert(loadfile("Database/Catalog.lua"))("DungeonPro",addon)
+    local checks,joinCounts,mapCounts=0,{},{}
+    issecretvalue=function()checks=checks+1;return false end
+    C_EncounterJournal={GetInstanceForGameMap=function(id)
+        joinCounts[id]=(joinCounts[id]or 0)+1;return id+100000
+    end,GetDungeonEntrancesForMap=function(id)
+        mapCounts[id]=(mapCounts[id]or 0)+1;return {}
+    end}
+    for pass=1,2 do for _,d in ipairs(addon.dungeons)do e.Get(d)end end
+    local oldJoins,oldMaps=0,0
+    for _,count in pairs(joinCounts)do oldJoins=oldJoins+count;assert(count<=2)end
+    for _,count in pairs(mapCounts)do oldMaps=oldMaps+count;assert(count<=2)end
+    checks=0
+    for pass=1,40 do
+        local known=0
+        for _,d in ipairs(addon.dungeons)do if e.Get(d)then known=known+1 end end
+        assert(known==24)
+    end
+    assert(checks<3000000,"warm candidate extraction repeated "..checks.." sanitizer checks")
+    local newJoins,newMaps=0,0
+    for _,count in pairs(joinCounts)do newJoins=newJoins+count end
+    for _,count in pairs(mapCounts)do newMaps=newMaps+count end
+    assert(newJoins==oldJoins and newMaps==oldMaps)
+end)
+check("Candidate cache observes in-place maps alternatives members and dictionary changes", function()
+    for _,mode in ipairs({"map","alternative","members","entry","replacement"})do
+        local e=reset();rows={}
+        for pass=1,3 do assert(e.Get(dungeon)==nil)end
+        local map=2001
+        if mode=="map"then addon.quests[166].start.mapID=map
+        elseif mode=="alternative"then addon.quests[166].startAlternatives={{mapID=map}}
+        elseif mode=="members"then
+            addon.quests[2001]={start={mapID=map}};dungeon.quests[1]=2001
+        elseif mode=="entry"then addon.quests[2001]={finish={mapID=map}}
+        else addon.quests={[166]={start={mapID=map}}}end
+        rows[map]={row(77,.2,.3)}
+        local point,current=e.Get(dungeon)
+        assert(point and point.mapID==map and current(),mode)
+    end
+end)
+check("Candidate rebuild refuses a late sanitizer mutation of an earlier map",function()
+    local e=reset();rows={};for pass=1,3 do assert(e.Get(dungeon)==nil)end
+    addon.quests[166].startAlternatives={{mapID=2001}}
+    rows[2001]={row(77,.2,.3)}
+    local original=addon.Clean;local armed=true
+    addon.Clean=function(value,kind)
+        local result=original(value,kind)
+        if armed and value==2001 and kind=="number"then
+            armed=false;addon.quests[166].start.mapID=3001
+        end
+        return result
+    end
+    assert(e.Get(dungeon)==nil and not armed)
+    addon.Clean=original
+    assert(e.Get(dungeon).mapID==2001)
+end)
+check("Candidate cache survives absent APIs and keeps oversized source bounds",function()
+    local e=reset();local library=C_EncounterJournal;C_EncounterJournal=nil
+    assert(e.Get(dungeon)==nil and joins==0)
+    C_EncounterJournal=library;assert(e.Get(dungeon).mapID==1436)
+    e=reset();addon.quests={};dungeon.quests={2501}
+    for id=1,2501 do addon.quests[id]={start={mapID=3000+id}}end
+    rows={[5501]={row(77,.2,.3)}}
+    local p=e.Get(dungeon);assert(p and p.mapID==5501 and calls[1]==5501)
+end)
 issecretvalue = nil
 print("Entrance modeled checks passed: " .. total .. " (native coverage unverified)")
