@@ -121,6 +121,79 @@ class CatalogTests(unittest.TestCase):
             data["quests"][0]["storyline"] = list(range(1, length + 1))
             catalog.validate(data)
 
+    def test_source_url_controls_fail_cli_before_replacing_generated_output(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            for name in ("scripts", "data", "Database"):
+                (root / name).mkdir()
+            shutil.copy2(ROOT / "scripts/catalog.py", root / "scripts/catalog.py")
+            target = root / "Database/Catalog.lua"
+            original = b"previous verified catalogue\n"
+            for role in ("quest", "portrait", "objectiveContainer", "generalPlace"):
+                for character in ("\x00", "\x01", "\x1b", "\x7f", "\x80"):
+                    data = self.minimal_catalog()
+                    quest = data["quests"][0]
+                    suffix = "/source" + character + "tail"
+                    if role == "quest":
+                        quest["source"] += suffix
+                    elif role == "portrait":
+                        quest["start"] = {"npcID": 7, "name": "Trainer", "creatureDisplayID": 9,
+                                          "portraitSource": "https://www.wowhead.com/forever/npc=7" + suffix}
+                    elif role == "objectiveContainer":
+                        quest["objectiveItems"] = [{"itemID": 10}]
+                        quest["objectiveItemSources"] = [{"itemID": 10, "containerSources": [
+                            {"objectID": 7, "name": "Container", "source":
+                             "https://www.wowhead.com/forever/object=7" + suffix}]}]
+                    else:
+                        quest["start"] = {"npcID": 7, "name": "Trainer", "source": "https://example.org" + suffix}
+                    (root / "data/catalog.json").write_text(json.dumps(data), encoding="utf-8")
+                    for options in ([], ["--check"]):
+                        with self.subTest(role=role, character=repr(character), options=options):
+                            target.write_bytes(original)
+                            result = subprocess.run([sys.executable, str(root / "scripts/catalog.py"), *options],
+                                                    capture_output=True)
+                            self.assertNotEqual(result.returncode, 0)
+                            self.assertEqual(target.read_bytes(), original)
+
+    def test_optional_general_place_sources_require_web_urls_without_typed_family_inference(self):
+        for field in ("start", "finish"):
+            for value in (False, None, 1, {}, [], "", " ", "javascript:invalid", "/relative",
+                          "https://[broken", "https://example.org:bad", "https://user@example.org/path"):
+                data = self.minimal_catalog()
+                data["quests"][0][field] = {"npcID": 7, "name": "Trainer", "source": value}
+                with self.subTest(field=field, value=value), self.assertRaisesRegex(ValueError, "place source"):
+                    catalog.generate(data)
+        for value in ("https://example.org/探検?view=source#point", "http://example.org/source"):
+            data = self.minimal_catalog()
+            data["quests"][0]["start"] = {"npcID": 7, "name": "Trainer", "source": value}
+            self.assertIn(value, catalog.generate(data))
+        for role in ("quest", "portrait", "objectiveContainer"):
+            data = self.minimal_catalog()
+            quest = data["quests"][0]
+            if role == "quest":
+                quest["source"] += "/探検"
+            elif role == "portrait":
+                quest["start"] = {"npcID": 7, "name": "Trainer", "creatureDisplayID": 9,
+                                  "portraitSource": "https://www.wowhead.com/forever/npc=7/探検"}
+            else:
+                quest["objectiveItems"] = [{"itemID": 10}]
+                quest["objectiveItemSources"] = [{"itemID": 10, "containerSources": [
+                    {"objectID": 7, "name": "Container", "source": "https://www.wowhead.com/forever/object=7/探検"}]}]
+            self.assertIn("探検", catalog.generate(data))
+            if role == "quest":
+                place, key, wrong_id = quest, "source", "quest=2"
+            elif role == "portrait":
+                place, key, wrong_id = quest["start"], "portraitSource", "npc=8"
+            else:
+                place, key, wrong_id = quest["objectiveItemSources"][0]["containerSources"][0], "source", "object=8"
+            original = place[key]
+            wrong_identity = original.replace("quest=1", wrong_id).replace("npc=7", wrong_id).replace("object=7", wrong_id)
+            for invalid in (wrong_identity, original.replace("/forever/", "/classic/"),
+                            original.replace("www.wowhead.com", "example.org")):
+                place[key] = invalid
+                with self.subTest(role=role, invalid=invalid), self.assertRaises(ValueError):
+                    catalog.generate(data)
+
     def test_lua_serializer_rejects_nonfinite_numbers_in_all_positions(self):
         for value in (float("nan"), float("inf"), -float("inf")):
             for payload in (value, [value], {"metadata": value}, {value: "metadata"}):

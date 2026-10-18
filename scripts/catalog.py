@@ -130,7 +130,7 @@ def objective_item_source_places(quest):
             except UnicodeEncodeError:
                 valid_name = False
             source = place.get("source")
-            if (not valid_name or type(source) is not str or len(source) > 2048 or not re.fullmatch(
+            if (not valid_name or not web_source(source) or not re.fullmatch(
                     rf"https://www\.wowhead\.com/forever/object={place['objectID']}(?:/[^\s/?#]+)?", source)):
                 raise ValueError(f"Invalid objective item container name/source: {quest['id']}")
             places.append(("objectiveItemContainer", place))
@@ -183,7 +183,7 @@ def validate(data):
         validate_named_facts(q, "providedItems", "itemID", 2 ** 32 - 1, "provided item",
                              required_name=True, utf8_name=True)
         source = q.get("source")
-        if type(source) is not str or not re.fullmatch(
+        if not web_source(source) or not re.fullmatch(
             rf"https://www\.wowhead\.com/forever/quest={q['id']}(?:/[^\s/?#]+)?", source
         ):
             raise ValueError(f"Missing or mismatched Forever source: {q['id']}")
@@ -219,6 +219,8 @@ def validate(data):
                 raise ValueError(f"Invalid quest {key} place: {q['id']}")
             if set(p) - PLACE_FIELDS:
                 raise ValueError(f"Unknown quest {key} place fields: {q['id']}")
+            if "source" in p and not web_source(p["source"]):
+                raise ValueError(f"Invalid place source: {q['id']}")
             if "containerSource" in p:
                 container = p["containerSource"]
                 if (key != "start" or "itemID" not in p or type(container) is not dict or
@@ -242,8 +244,8 @@ def validate(data):
             if portrait_fields.intersection(p):
                 npc_id, display_id, source = p.get("npcID"), p.get("creatureDisplayID"), p.get("portraitSource")
                 if (not portrait_fields.issubset(p) or not integer(npc_id) or npc_id > 2 ** 32 - 1 or
-                        not integer(display_id) or display_id > 2 ** 32 - 1 or type(source) is not str or
-                        len(source) > 2048 or not re.fullmatch(
+                        not integer(display_id) or display_id > 2 ** 32 - 1 or not web_source(source) or
+                        not re.fullmatch(
                             rf"https://www\.wowhead\.com/forever/npc={npc_id}(?:/[^\s/?#]+)?", source)):
                     raise ValueError(f"Invalid sourced giver portrait: {q['id']}")
             if "dropNPCID" in p and "itemID" not in p:
