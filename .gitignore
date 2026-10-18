@@ -4,3 +4,11 @@ __pycache__/
 .agent-context/
 AGENTS.md
 AGENTS.override.md
+CLAUDE.md
+CLAUDE.local.md
+AUDIT.md
+PLAN.md
+NOTES.md
+.env
+.env.*
+*.log
