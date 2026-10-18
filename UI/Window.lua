@@ -289,7 +289,10 @@ function UI:BindQuestRowNavigation(row, id, ownerCurrent)
             binding.inspect, binding.reason = true, "START_ITEM_NAVIGATION"
         else binding.reason = "GIVER_LOCATION_UNKNOWN" end
     elseif not start and alternativeList and alternativeCount > 0 and alternativeCount <= 100 then binding.inspect, binding.reason = true, "SOURCE_DETAILS_HINT"
-    elseif not readable or not start or not values.mapID or values.mapID <= 0 or values.mapID > 9007199254740991 or values.mapID % 1 ~= 0 then binding.reason = "GIVER_LOCATION_UNKNOWN"
+    elseif not readable or not start or not values.mapID or values.mapID <= 0 or values.mapID > 9007199254740991 or values.mapID % 1 ~= 0 then
+        local area = values.zoneName
+        if not area or not area:find("%S") then area = values.locationName end
+        binding.reason = readable and area and area:find("%S") and "SOURCE_POSITION_UNKNOWN" or "GIVER_LOCATION_UNKNOWN"
     elseif not method then binding.reason = "NAVIGATION_UNAVAILABLE"
     else binding.action = { id = id, kind = "visit", place = start } end
     if binding.inspect and not inspectMethod then binding.reason = "NAVIGATION_UNAVAILABLE" end
@@ -3254,9 +3257,7 @@ function UI:RefreshDetail(sourceFocus)
                 addon.char == renderCharacter and self.rewardGeneration == rewardGeneration and self.reportedGeneration == reportedGeneration
         end
         local function locationWrite(current, object, method, ...)
-            if not current() then return false end
-            local ok = pcall(object[method], object, ...)
-            return ok and current()
+            return self:QuestListWrite(object, method, current, ...)
         end
         local function reported(parent, key, ownerCurrent)
             local function current() return locationCurrent() and (not ownerCurrent or ownerCurrent()) end
@@ -3328,7 +3329,7 @@ function UI:RefreshDetail(sourceFocus)
             return name .. (zoneName and (" — " .. zoneName) or "") ..
                 (coordinates and string.format(" (%.1f, %.1f)", x, py) or "")
         end
-        local function alternativePlaces(places, buttons, heading, slot, ownerCurrent, offset, clickCurrent, rowWriter)
+        local function alternativePlaces(places, buttons, heading, slot, ownerCurrent, offset, clickCurrent, rowWriter, warnPosition)
             local function current() return locationCurrent() and (not ownerCurrent or ownerCurrent()) end
             local function write(object, method, ...)
                 if rowWriter then return rowWriter(current, object, method, ...) end
@@ -3347,9 +3348,13 @@ function UI:RefreshDetail(sourceFocus)
                 if not current() then return false end
                 local x, py = addon.Clean(destination.x, "number"), addon.Clean(destination.y, "number")
                 local coordinates = validMap and x ~= nil and py ~= nil and x >= 0 and x <= 100 and py >= 0 and py <= 100
-                local note = ((zone and addon.Clean(zone.name, "string")) or
-                    addon.Clean(destination.zoneName, "string") or destination.locationName or addon.L("UNKNOWN_PLACE")) ..
+                local area = (zone and addon.Clean(zone.name, "string")) or
+                    addon.Clean(destination.zoneName, "string") or destination.locationName
+                local note = (area or addon.L("UNKNOWN_PLACE")) ..
                     (coordinates and string.format(" (%.1f, %.1f)", x, py) or "")
+                if warnPosition and not coordinates then
+                    note = (area and (area .. " — ") or "") .. "|cffff594d" .. addon.L("SOURCE_POSITION_UNKNOWN") .. "|r"
+                end
                 if not current() then return false end
                 local row = self:MakeRow(self.detail, buttons, (offset or 0) + index, 59)
                 if not current() then return false end
@@ -3415,7 +3420,13 @@ function UI:RefreshDetail(sourceFocus)
                 if line(addon.L("START_ITEM_LOCATION_UNKNOWN"), "warning", nil, nil, giverCurrent) == false then return end
             end
             if not itemStarter and (not pendingGiver or not pendingGiver.coordinates) then
-                if line(addon.L(pendingGiver and "GIVER_COORDINATES_UNKNOWN" or "GIVER_LOCATION_UNKNOWN"), "warning", nil, nil, giverCurrent, not giverInlinePlaced) == false then return end
+                local area = addon.Clean(rawget(start, "zoneName"), "string")
+                if not area or not area:find("%S") then area = addon.Clean(rawget(start, "locationName"), "string") end
+                if not giverCurrent() then return end
+                local warning = pendingGiver and "GIVER_COORDINATES_UNKNOWN" or
+                    area and area:find("%S") and "SOURCE_POSITION_UNKNOWN" or "GIVER_LOCATION_UNKNOWN"
+                self.giverUnavailableKey = warning
+                if line(addon.L(warning), "warning", nil, nil, giverCurrent, not giverInlinePlaced) == false then return end
             end
         elseif q.startAlternatives then
             local alternatives = q.startAlternatives
@@ -4595,7 +4606,7 @@ function UI:RefreshDetail(sourceFocus)
             end
             for _, route in ipairs(routes) do
                 if route.container then
-                    if alternativePlaces({ route.container }, self.containerButtons, "CONTAINER_SOURCE", "container:", acquisitionCurrent) == false then return end
+                    if alternativePlaces({ route.container }, self.containerButtons, "CONTAINER_SOURCE", "container:", acquisitionCurrent, nil, nil, nil, true) == false then return end
                 else line(route.text) end
                 if not acquisitionCurrent() then return end
             end

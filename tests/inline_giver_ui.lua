@@ -52,7 +52,7 @@ assert(giver.point[5]==location.point[3]and -turnin.point[3]>=-location.point[3]
 fixture.methods.GetStringHeight=measure
 q.start.name="Start One";q.start.mapID=nil;q.start.x=nil;q.start.y=nil
 render();assert(not giver.enabled);gold(giver,.6)
-assert(text(addon.L("GIVER_LOCATION_UNKNOWN")).detailStyle=="warning")
+assert(text(addon.L("SOURCE_POSITION_UNKNOWN")).detailStyle=="warning")
 local tip={}
 function tip:SetOwner(owner)self.owner=owner end
 function tip:IsOwned(owner)return self.owner==owner end
@@ -60,7 +60,7 @@ function tip:SetText(value)self.title=value end
 function tip:AddLine(value)self.body=value end
 function tip:Show()self.shown=true end
 function tip:Hide()self.shown=false end
-GameTooltip=tip;giver.scripts.OnEnter();assert(tip.shown and tip.body==addon.L("GIVER_LOCATION_UNKNOWN"))
+GameTooltip=tip;giver.scripts.OnEnter();assert(tip.shown and tip.body==addon.L("SOURCE_POSITION_UNKNOWN"))
 giver.scripts.OnClick();assert(visits==1)
 for _,control in ipairs({giver,row.navigationControl})do
     for _,method in ipairs({"SetAlpha","SetDesaturated"})do

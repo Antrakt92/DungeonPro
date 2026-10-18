@@ -1698,7 +1698,7 @@ check("Item containers stay separate from quest starters and navigate only expli
     container.name = "Container with unknown map"
     measurement = nil; showDetail(9930, context)
     assert(row.shown and not row.enabled and not row.scripts.OnClick and row.height == 59)
-    assert(detailHas(addon.L("CONTAINER_SOURCE")) and row.note.text == "Thousand Needles")
+    assert(detailHas(addon.L("CONTAINER_SOURCE")) and row.note.text == "Thousand Needles — |cffff594d" .. addon.L("SOURCE_POSITION_UNKNOWN") .. "|r")
     staleMap(); assert(#maps == 1)
     showDetail(2)
     staleContainer(); staleReport(); staleMap()

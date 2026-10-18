@@ -294,3 +294,17 @@ local sourceInspectionLabels = {
 for locale, values in pairs(sourceInspectionLabels) do
     addon.locales[locale].SOURCE_DETAILS, addon.locales[locale].SOURCE_DETAILS_HINT = values[1], values[2]
 end
+
+local unknownSourcePositions = {
+    enUS = "Exact location is not yet known.",
+    ruRU = "Точное местоположение пока неизвестно.",
+    deDE = "Der genaue Standort ist noch nicht bekannt.",
+    frFR = "L'emplacement exact n'est pas encore connu.",
+    esES = "La ubicación exacta aún no se conoce.",
+    itIT = "La posizione esatta non è ancora nota.",
+    ptBR = "A localização exata ainda não é conhecida.",
+    koKR = "정확한 위치는 아직 알려지지 않았습니다.",
+    zhCN = "确切位置尚不明确。",
+    zhTW = "確切位置尚不明確。",
+}
+for locale, value in pairs(unknownSourcePositions) do addon.locales[locale].SOURCE_POSITION_UNKNOWN = value end
