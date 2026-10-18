@@ -31,7 +31,7 @@ for _,value in ipairs(ui.details)do if value:IsShown() then
 end end
 assert(not ui.map and not ui.guide)
 assert(ui.summary==nil and ui.coverage==nil,"aggregate status and coverage labels must not occupy the workspace")
-assert(ui.questScroll.point[3]>-200 and ui.detailScroll.point[3]==ui.questScroll.point[3],"quest and detail panes reclaim the former summary space")
+assert(ui.questScroll.point[3]>-200 and ui.detailScroll.point[3]==-66 and ui.detailScroll:GetHeight()==622,"detail title reclaims its action band independently of the quest list")
 local show=fixture.methods.Show
 local expected={0,71001,71002,71003,71004,71005}
 function fixture.methods:Show()

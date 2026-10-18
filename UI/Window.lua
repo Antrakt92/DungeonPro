@@ -1973,8 +1973,8 @@ function UI:RefreshQuests()
     local listY = 66 + headingHeight + 8
     if not write(self.questScroll, "ClearAllPoints") or not write(self.questScroll, "SetPoint", "TOPLEFT", 278, -listY) or
         not write(self.questScroll, "SetHeight", math.max(80, 688 - listY)) or
-        not write(self.detailScroll, "ClearAllPoints") or not write(self.detailScroll, "SetPoint", "TOPLEFT", 674, -listY) or
-        not write(self.detailScroll, "SetHeight", math.max(80, 688 - listY)) then return end
+        not write(self.detailScroll, "ClearAllPoints") or not write(self.detailScroll, "SetPoint", "TOPLEFT", 674, -66) or
+        not write(self.detailScroll, "SetHeight", 622) then return end
     for index = n + 1, #self.rows do
         local row = self.rows[index]
         if not write(row, "Hide") then return end
@@ -2388,7 +2388,7 @@ function UI:RefreshDetail()
         if ownerCurrent and not ownerCurrent() then return false end
         if fs.detailStyle ~= style or fs.detailFont ~= font then fs.measuredHeight = nil end
         fs.detailStyle, fs.detailFont = style, font
-        if not write(fs, "SetTextColor", unpack(format.color)) or not write(fs, "SetWidth", contentWidth) or
+        if not write(fs, "SetTextColor", unpack(format.color)) or not write(fs, "SetWidth", style == "title" and contentWidth - 80 or contentWidth) or
             not write(fs, "ClearAllPoints") or not write(fs, "SetPoint", "TOPLEFT", 4, -y) or
             not write(fs, "SetText", value) or not write(fs, "Show") then return false end
         local itemID = reward and addon.Clean(reward.item.id, "number")
@@ -4627,21 +4627,21 @@ function UI:Create()
     self.searchHint = label(self.catalog, "", 4, 0, 202, 13)
     self.catalogNotice = label(self.catalog, "", 4, 0, 202, 13)
     self.questList, self.questScroll = scrolling(frame, 278, -100, 370, 588)
-    self.detail, self.detailScroll = scrolling(frame, 674, -100, 400, 588)
-    self.source = button(frame, "", 32, function() if self.quest then self:CopyLink(self.quest) end end)
-    self.source:SetPoint("TOPLEFT", 1038, -66)
-    self.giver = button(frame, "", 32, function()
+    self.detail, self.detailScroll = scrolling(frame, 674, -66, 400, 622)
+    self.source = button(self.detail, "", 32, function() if self.quest then self:CopyLink(self.quest) end end)
+    self.source:SetPoint("TOPRIGHT", self.detail, "TOPRIGHT", -4, 0)
+    self.giver = button(self.detail, "", 32, function()
         if self.giverAction then
             self:DispatchDetail(self.giverAction, not self.giverHasCoordinates, true)
         end
     end)
-    self.giver:SetPoint("TOPLEFT", 1002, -66)
+    self.giver:SetPoint("TOPRIGHT", self.detail, "TOPRIGHT", -40, 0)
     for _, control in ipairs({ self.giver, self.source }) do
         control:SetHeight(32)
         if type(control.SetMotionScriptsWhileDisabled) == "function" then pcall(control.SetMotionScriptsWhileDisabled, control, true) end
         local icon = control:CreateTexture(nil, "ARTWORK"); control.footerIcon = icon
         icon:SetSize(24, 24); icon:SetPoint("CENTER", control, "CENTER", 0, 0)
-        icon:SetTexture(control == self.giver and "Interface\\GossipFrame\\AvailableQuestIcon" or "Interface\\AddOns\\DungeonPro\\Media\\Icons\\Wowhead")
+        icon:SetTexture(control == self.giver and "Interface\\Minimap\\MinimapArrow" or "Interface\\AddOns\\DungeonPro\\Media\\Icons\\Wowhead")
         if control == self.source then icon:SetTexCoord(0, .75, 0, .75) end
         icon:Show()
         control:SetScript("OnMouseDown", function(_, mouse) if mouse == "LeftButton" then control.footerPressed = true; self:RefreshFooterIcon(control) end end)

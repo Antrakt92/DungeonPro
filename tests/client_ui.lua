@@ -146,7 +146,7 @@ check("Real TOC detail header uses separate quest and Wowhead icons without repl
     local ui = addon.UI
     ui.quest = 166; ui:Refresh()
     assert(ui.giver.text == "" and ui.source.text == "" and ui.giver.width == 32 and ui.source.height == 32)
-    assert(ui.giver.footerIcon.texture == "Interface\\GossipFrame\\AvailableQuestIcon")
+    assert(ui.giver.footerIcon.texture == "Interface\\Minimap\\MinimapArrow")
     assert(ui.source.footerIcon.texture == "Interface\\AddOns\\DungeonPro\\Media\\Icons\\Wowhead")
     local uv = ui.source.footerIcon.texCoords
     assert(uv[1] == 0 and uv[2] == .75 and uv[3] == 0 and uv[4] == .75)

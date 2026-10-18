@@ -104,8 +104,8 @@ Level ranges are provisional recommendations.
   quests and all quests, using a portrait or list symbol and a short mode label.
   Hover for the current mode and click to switch.
   The message and heart icons offer issue-report and project-support links for copying.
-  Quest-log occupancy sits in the top bar; giver and Wowhead actions sit above
-  the detail pane, leaving the full bottom area for scrolling content.
+  Quest-log occupancy sits in the top bar; navigation and Wowhead actions sit
+  beside the quest title and scroll with the details.
   Select a quest to expand its related steps in place, then select any step to
   read its details without losing the opened list. Completed steps remain visible.
   A faction crest follows faction-specific quest names. A chevron identifies

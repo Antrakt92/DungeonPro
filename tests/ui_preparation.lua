@@ -2113,7 +2113,7 @@ check("Missing zero failing or restricted icons revert recycled text to ordinary
     issecretvalue = f.oldSecret
     f.data = nil; ui:RefreshDetail()
     assert(not first.shown and not first.scripts.OnEnter and first.icon.texture == nil)
-    for _, fs in ipairs(ui.details) do if fs.shown then assert(fs.width == ui.detail:GetWidth()-8 and fs.point[2] == 4) end end
+    for _, fs in ipairs(ui.details) do if fs.shown then assert(fs.width == ui.detail:GetWidth()-8-(fs.detailStyle=="title"and 80 or 0) and fs.point[2] == 4) end end
     f:finish()
 end)
 check("Hover freshly rejects changed source hidden dialogue kind slot and item before redraw", function()
@@ -3898,13 +3898,13 @@ check("Noto and probed CJK assets retain actual sizes and unscaled reusable rows
     assert(not row.title.scaledText and not row.note.scaledText and not ChatFontNormal.fontSize and ChatFontNormal.unchanged)
     row:Hide();ChatFontNormal,addon.db.locale=old,locale;ui:Refresh()
 end)
-check("Heading reflow aligns both taller viewports without aggregate counter labels",function()
+check("Heading reflow moves only quest rows while detail retains its reclaimed title band",function()
     local selected,quest=ui.dungeon,ui.quest
     measurement=function(fs)if fs==ui.heading then return 68 end;return 18 end
     ui.questScroll:SetVerticalScroll(30);ui:RefreshQuests()
     assert(ui.summary==nil and ui.coverage==nil)
-    assert(ui.questScroll.point[3]==-(66+68+8)and ui.detailScroll.point[3]==ui.questScroll.point[3])
-    assert(ui.questScroll.height==688+ui.questScroll.point[3]and ui.detailScroll.height==ui.questScroll.height and ui.questScroll.verticalScroll==30)
+    assert(ui.questScroll.point[3]==-(66+68+8)and ui.detailScroll.point[3]==-66)
+    assert(ui.questScroll.height==688+ui.questScroll.point[3]and ui.detailScroll.height==622 and ui.questScroll.verticalScroll==30)
     assert(ui.dungeon==selected and ui.quest==quest)
     measurement=nil;ui:RefreshQuests();assert(ui.questScroll.point[3]==-100 and ui.questScroll.height==588)
 end)
@@ -8549,9 +8549,11 @@ check("Detail header quest-giver and Wowhead controls retain actions in equal co
     showCompactDetail(3,{level=20,completed=function()return false end,active=function()return false end});local giver,source=ui.giver,ui.source
     local giverIcon,sourceIcon=giver.footerIcon,source.footerIcon
     assert(giver.width==32 and giver.height==32 and source.width==32 and source.height==32)
-    assert(giver.point[1]=="TOPLEFT"and giver.point[2]==1002 and giver.point[3]==-66 and source.point[1]=="TOPLEFT"and source.point[2]==1038 and source.point[3]==-66)
+    assert(giver.parent==ui.detail and source.parent==ui.detail)
+    assert(giver.point[1]=="TOPRIGHT"and giver.point[2]==ui.detail and giver.point[3]=="TOPRIGHT"and giver.point[4]==-40 and giver.point[5]==0)
+    assert(source.point[1]=="TOPRIGHT"and source.point[2]==ui.detail and source.point[3]=="TOPRIGHT"and source.point[4]==-4 and source.point[5]==0)
     assert(giver.text==""and source.text==""and giverIcon.width==24 and sourceIcon.height==24)
-    assert(giverIcon.texture=="Interface\\GossipFrame\\AvailableQuestIcon")
+    assert(giverIcon.texture=="Interface\\Minimap\\MinimapArrow")
     assert(sourceIcon.texture=="Interface\\AddOns\\DungeonPro\\Media\\Icons\\Wowhead")
     assert(sourceIcon.texCoords[1]==0 and sourceIcon.texCoords[2]==.75 and sourceIcon.texCoords[3]==0 and sourceIcon.texCoords[4]==.75)
     assert(giver.disabledMotion and source.disabledMotion)
@@ -9187,7 +9189,7 @@ check("Default detail prioritizes narrative objectives rewards and one named giv
     addon.CachedQuestRewards=function()return{source="cache",items={{name="Selected reward",count=1}},choices={}}end
     f:anchor(43000).scripts.OnClick()
     assert(ui.summary==nil and ui.coverage==nil and type(ui.currentPlan.counts)=="table")
-    assert(ui.questScroll.point[3]==-100 and ui.detailScroll.point[3]==-100 and ui.questScroll.height==588 and ui.detailScroll.height==588)
+    assert(ui.questScroll.point[3]==-100 and ui.detailScroll.point[3]==-66 and ui.questScroll.height==588 and ui.detailScroll.height==622)
     assert(not ui.detailReferencesExpanded and not(ui.storyToggle and ui.storyToggle.shown))
     assert(detailHas("Selected quest narrative"),"default narrative")
     assert(detailIncludes("Selected live objective"),"default progress")
@@ -9674,5 +9676,28 @@ check("Late faction and chevron writes cannot replace newer row glyph ownership 
         end
         f:finish()
     end
+end)
+check("Detail title wraps before action slots while body width and scrolling remain independent of the quest heading",function()
+    local quest,dungeon,names=ui.quest,ui.dungeon,addon.QuestName
+    local seenTitle,seenBody=0,0
+    addon.QuestName=function(id)if id==1 then return string.rep("Long localized title ",12)end;return names(id)end
+    measurement=function(fs)
+        if fs.detailStyle=="title"then seenTitle=fs.width;return 76 end
+        if fs.detailStyle=="body"then seenBody=fs.width end
+        return fs==ui.heading and 92 or 18
+    end
+    showDetail(1)
+    local title=ui.details[1];local full=ui.detail:GetWidth()-8
+    assert(title.shown and title.width==full-80 and seenTitle==full-80)
+    assert(seenBody==full and title.point[2]+title.width<=ui.detail:GetWidth()-72)
+    assert(-ui.details[2].point[3]>=82,"wrapped title consumes measured height plus its gap")
+    assert(ui.giver.parent==ui.detail and ui.source.parent==ui.detail,"native scroll child carries both actions with the title")
+    ui.detailScroll:SetVerticalScroll(77);ui:RefreshQuests()
+    assert(ui.detailScroll.point[3]==-66 and ui.detailScroll.height==622 and ui.detailScroll.verticalScroll==77)
+    assert(ui.questScroll.point[3]==-(66+92+8),"only quest rows follow the long dungeon heading")
+    ui.quest=nil;ui:RefreshDetail()
+    assert(ui.details[1].detailStyle=="title"and ui.details[1].width==full-80)
+    assert(not ui.giver.enabled and not ui.source.enabled)
+    measurement=nil;addon.QuestName=names;ui.quest,ui.dungeon=quest,dungeon;ui:Refresh()
 end)
 print("Preparation UI modeled checks passed: " .. total .. " (no native layout validation)")

@@ -4,6 +4,7 @@ local create = CreateFrame
 function fixture.methods:SetAlpha(value) self.alpha = value end
 CreateFrame = function(kind, name, parent, template)
     local object = create(kind, name, parent, template)
+    object.parent = parent
     if template == "InputBoxTemplate" then
         for _, field in ipairs({ "Left", "Middle", "Right" }) do
             object[field] = create("Texture"); object[field]:SetAlpha(1); object[field]:Show()
@@ -70,18 +71,19 @@ assert(-ui.rangeButton.point[3] + ui.rangeButton:GetHeight() < -ui.catalogScroll
 assert(ui.heading.point[2] + ui.heading:GetWidth() < ui.characterButton.point[2])
 assert(ui.characterButton.point[2] + ui.characterButton:GetWidth() < ui.detailScroll.point[2], "filters remain beside the quest heading")
 for _, control in ipairs({ ui.giver, ui.source }) do
-    assert(control.point[1] == "TOPLEFT" and control.point[2] >= ui.detailScroll.point[2])
-    assert(-control.point[3] + control:GetHeight() <= -ui.detailScroll.point[3], "actions sit above detail scrolling content")
+    assert(control.parent == ui.detail and control.point[2] == ui.detail, "actions scroll with the quest title")
+    assert(control.point[1] == "TOPRIGHT" and control.point[3] == "TOPRIGHT" and control.point[5] == 0)
 end
+assert(ui.giver.point[4] == -40 and ui.source.point[4] == -4, "separate actions share the title line")
+assert(ui.detailScroll.point[3] == -66 and ui.detailScroll:GetHeight() == 622, "details reclaim the former action band")
 for _, scroll in ipairs({ ui.catalogScroll, ui.questScroll, ui.detailScroll }) do
     assert(-scroll.point[3] + scroll:GetHeight() == 688, "content reclaims the former bottom band")
 end
 local measure = ui.heading.GetStringHeight
 ui.heading.GetStringHeight = function() return 72 end
 ui:RefreshQuests()
-for _, scroll in ipairs({ ui.questScroll, ui.detailScroll }) do
-    assert(scroll.point[3] == -146 and scroll:GetHeight() == 542, "wrapped headings preserve the reclaimed bottom edge")
-end
+assert(ui.questScroll.point[3] == -146 and ui.questScroll:GetHeight() == 542, "wrapped headings preserve the quest list bottom edge")
+assert(ui.detailScroll.point[3] == -66 and ui.detailScroll:GetHeight() == 622, "wrapped list headings do not lower the independent detail title")
 ui.heading.GetStringHeight = measure; ui:RefreshQuests()
 ui.frame:Hide()
 ui.rangeButton.scripts.OnClick(); ui.characterButton.scripts.OnClick()
