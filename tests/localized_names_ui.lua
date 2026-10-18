@@ -22,11 +22,12 @@ local function questTitle(title)
     return false
 end
 local coverage = 0
-for locale, translations in pairs(addon.nameTranslations) do
+for _, locale in ipairs({ "deDE", "frFR", "esES", "itIT", "ptBR", "ruRU", "koKR", "zhCN", "zhTW" }) do
+    addon.db.locale = locale; ui:Refresh()
+    local translations = assert(addon.nameTranslations[locale], "selected locale materializes on first use")
     local quest = translations.quests[166]
     local name = translations.dungeons.dm
     if quest and name then
-        addon.db.locale = locale; ui:Refresh()
         assert(visibleTitle(name.name), locale .. " catalogue uses selected language")
         assert(ui.heading.text == name.name and questTitle(quest.name), locale .. " heading and selected quest translate together")
         local before = requests

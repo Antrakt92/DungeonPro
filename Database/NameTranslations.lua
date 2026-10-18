@@ -1,7 +1,8 @@
 -- Localized titles from public quest and zone records; runtime remains offline.
 local _, addon = ...
-addon.nameTranslations = {
-    deDE = {
+addon.nameTranslations = {}
+addon.nameTranslationFactories = { root = addon.nameTranslations, loaders = {
+    deDE = function() return {
         quests = {
             [17] = { source = "Uldaman Reagent Run", name = "Reagenzsuche in Uldaman" },
             [65] = { source = "The Defias Brotherhood", name = "Die Bruderschaft der Defias" },
@@ -557,8 +558,8 @@ addon.nameTranslations = {
             ["ubrs"] = { source = "Upper Blackrock Spire", name = "Blackrockspitze — Oberer Bereich" },
             ["wc"] = { source = "Wailing Caverns", name = "Die Höhlen des Wehklagens" },
         },
-    },
-    esES = {
+    } end,
+    esES = function() return {
         quests = {
             [17] = { source = "Uldaman Reagent Run", name = "Componentes de Uldaman" },
             [65] = { source = "The Defias Brotherhood", name = "La hermandad de los Defias" },
@@ -1116,8 +1117,8 @@ addon.nameTranslations = {
             ["ubrs"] = { source = "Upper Blackrock Spire", name = "Cumbre de Roca Negra — Ala superior" },
             ["wc"] = { source = "Wailing Caverns", name = "Cuevas de los Lamentos" },
         },
-    },
-    frFR = {
+    } end,
+    frFR = function() return {
         quests = {
             [17] = { source = "Uldaman Reagent Run", name = "Rechercher les composants à Uldaman" },
             [65] = { source = "The Defias Brotherhood", name = "La Confrérie défias" },
@@ -1673,14 +1674,14 @@ addon.nameTranslations = {
             ["ubrs"] = { source = "Upper Blackrock Spire", name = "Pic Rochenoire — Aile supérieure" },
             ["wc"] = { source = "Wailing Caverns", name = "Cavernes des lamentations" },
         },
-    },
-    itIT = {
+    } end,
+    itIT = function() return {
         quests = {
         },
         dungeons = {
         },
-    },
-    koKR = {
+    } end,
+    koKR = function() return {
         quests = {
             [17] = { source = "Uldaman Reagent Run", name = "울다만에서 재료 찾기" },
             [65] = { source = "The Defias Brotherhood", name = "데피아즈단" },
@@ -2250,8 +2251,8 @@ addon.nameTranslations = {
             ["wc"] = { source = "Wailing Caverns", name = "통곡의 동굴" },
             ["zf"] = { source = "Zul'Farrak", name = "줄파락" },
         },
-    },
-    ptBR = {
+    } end,
+    ptBR = function() return {
         quests = {
             [17] = { source = "Uldaman Reagent Run", name = "Busca pelos reagentes de Uldaman" },
             [65] = { source = "The Defias Brotherhood", name = "A Irmandade Défias" },
@@ -2804,8 +2805,8 @@ addon.nameTranslations = {
             ["ubrs"] = { source = "Upper Blackrock Spire", name = "Pico da Rocha Negra — Ala superior" },
             ["wc"] = { source = "Wailing Caverns", name = "Caverna Ululante" },
         },
-    },
-    ruRU = {
+    } end,
+    ruRU = function() return {
         quests = {
             [17] = { source = "Uldaman Reagent Run", name = "В Ульдаман за реагентами" },
             [65] = { source = "The Defias Brotherhood", name = "Братство Справедливости" },
@@ -3386,8 +3387,8 @@ addon.nameTranslations = {
             ["wc"] = { source = "Wailing Caverns", name = "Пещеры Стенаний" },
             ["zf"] = { source = "Zul'Farrak", name = "Зул'Фаррак" },
         },
-    },
-    zhCN = {
+    } end,
+    zhCN = function() return {
         quests = {
             [17] = { source = "Uldaman Reagent Run", name = "奥达曼的蘑菇" },
             [65] = { source = "The Defias Brotherhood", name = "迪菲亚兄弟会" },
@@ -3947,8 +3948,8 @@ addon.nameTranslations = {
             ["wc"] = { source = "Wailing Caverns", name = "哀嚎洞穴" },
             ["zf"] = { source = "Zul'Farrak", name = "祖尔法拉克" },
         },
-    },
-    zhTW = {
+    } end,
+    zhTW = function() return {
         quests = {
             [17] = { source = "Uldaman Reagent Run", name = "奧達曼的蘑菇" },
             [65] = { source = "The Defias Brotherhood", name = "迪菲亞兄弟會" },
@@ -4496,5 +4497,5 @@ addon.nameTranslations = {
             ["wc"] = { source = "Wailing Caverns", name = "哀嚎洞穴" },
             ["zf"] = { source = "Zul'Farrak", name = "祖爾法拉克" },
         },
-    },
-}
+    } end,
+} }

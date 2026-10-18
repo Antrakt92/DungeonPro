@@ -73,9 +73,10 @@ def quoted(value):
 
 def generate(data):
     lines = ["-- Localized titles from public quest and zone records; runtime remains offline.",
-             "local _, addon = ...", "addon.nameTranslations = {"]
+             "local _, addon = ...", "addon.nameTranslations = {}",
+             "addon.nameTranslationFactories = { root = addon.nameTranslations, loaders = {"]
     for locale in sorted(LOCALES):
-        lines.append(f"    {locale} = {{")
+        lines.append(f"    {locale} = function() return {{")
         for kind in ("quests", "dungeons"):
             lines.append(f"        {kind} = {{")
             entries = data["locales"][locale][kind]
@@ -84,8 +85,8 @@ def generate(data):
                 index = key if kind == "quests" else quoted(key)
                 lines.append(f"            [{index}] = {{ source = {quoted(entry['source'])}, name = {quoted(entry['name'])} }},")
             lines.append("        },")
-        lines.append("    },")
-    lines += ["}", ""]
+        lines.append("    } end,")
+    lines += ["} }", ""]
     return "\n".join(lines)
 
 

@@ -6,6 +6,7 @@ local retryRefreshPending, retryRefreshing
 local offerGeneration, currentOffers = {}, nil
 local dialogueGeneration, dialogueReward = {}, nil
 local textCaptureGeneration = {}
+local nameLoads = setmetatable({}, { __mode = "k" })
 
 local function dialogueInteger(value, minimum, maximum)
     value = addon.Clean(value, "number")
@@ -527,11 +528,55 @@ local function nameLocaleScope()
     if current() then return locale, normalize(game), current end
 end
 
+local function nameDictionary(locale, ownerCurrent)
+    local clean, read, checker = addon.Clean, addon.Read, issecretvalue
+    locale, ownerCurrent = clean(locale, "string"), clean(ownerCurrent, "function")
+    local root = clean(addon.nameTranslations, "table")
+    if not root or not locale or not ownerCurrent then return nil end
+    local existing = clean(rawget(root, locale), "table")
+    if existing then
+        if read(ownerCurrent, "boolean") == true and addon.Clean == clean and addon.Read == read and issecretvalue == checker and
+            rawequal(rawget(addon, "GetNameTranslations"), nameDictionary) and
+            rawequal(rawget(addon, "nameTranslations"), root) and rawequal(rawget(root, locale), existing) then return existing end
+        return nil
+    end
+    local factories = clean(addon.nameTranslationFactories, "table")
+    local loaders = factories and clean(rawget(factories, "loaders"), "table")
+    local loader = loaders and clean(rawget(loaders, locale), "function")
+    if not loader or not rawequal(rawget(factories, "root"), root) then return nil end
+    local loading = nameLoads[root]
+    if not loading then loading = {}; nameLoads[root] = loading end
+    if loading[locale] then return nil end
+    local token = {}; loading[locale] = token
+    local function current()
+        if read(ownerCurrent, "boolean") ~= true then return false end
+        return rawequal(rawget(addon, "GetNameTranslations"), nameDictionary) and addon.Clean == clean and addon.Read == read and
+            issecretvalue == checker and rawequal(rawget(addon, "nameTranslations"), root) and
+            rawequal(rawget(root, locale), nil) and rawequal(rawget(addon, "nameTranslationFactories"), factories) and
+            rawequal(rawget(factories, "root"), root) and rawequal(rawget(factories, "loaders"), loaders) and
+            rawequal(rawget(loaders, locale), loader) and loading[locale] == token
+    end
+    local dictionary
+    if current() then dictionary = read(loader, "table") end
+    local quests = dictionary and clean(rawget(dictionary, "quests"), "table")
+    local dungeons = dictionary and clean(rawget(dictionary, "dungeons"), "table")
+    local valid = quests and dungeons and current() and
+        rawequal(rawget(dictionary, "quests"), quests) and rawequal(rawget(dictionary, "dungeons"), dungeons)
+    if valid then
+        rawset(root, locale, dictionary)
+        rawset(loaders, locale, nil)
+    end
+    if loading[locale] == token then loading[locale] = nil end
+    return valid and dictionary or nil
+end
+addon.GetNameTranslations = nameDictionary
+
 local function translatedName(kind, key, definition, current, locale)
     if not definition or not current then return nil end
     if kind == "quests" and dialogueInteger(rawget(definition, "id"), 1, 9007199254740991) ~= key then return nil end
     local root = addon.Clean(addon.nameTranslations, "table")
     local dictionary = root and addon.Clean(rawget(root, locale), "table")
+    if not dictionary and locale ~= "enUS" then dictionary = nameDictionary(locale, current) end
     local entries = dictionary and addon.Clean(rawget(dictionary, kind), "table")
     local entry = entries and addon.Clean(rawget(entries, key), "table")
     local source = addon.Clean(rawget(definition, "name"), "string")

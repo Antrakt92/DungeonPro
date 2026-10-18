@@ -1,6 +1,8 @@
 import copy
 import importlib.util
 import json
+import shutil
+import subprocess
 import unittest
 from pathlib import Path
 
@@ -92,6 +94,26 @@ class NamesTests(unittest.TestCase):
         for locale in ("deDE", "frFR", "esES", "ptBR", "ruRU", "koKR", "zhCN", "zhTW"):
             self.assertIn("166", data["locales"][locale]["quests"])
             self.assertIn("dm", data["locales"][locale]["dungeons"])
+
+    def test_actual_lua_factories_preserve_every_reviewed_title_and_materialize_independently(self):
+        data = json.loads((ROOT / "data/name_translations.json").read_text(encoding="utf-8"))
+        lines = ['local addon={} local function load(...)', names.generate(data), 'end load("DungeonPro",addon)',
+                 'assert(next(addon.nameTranslations)==nil and getmetatable(addon.nameTranslations)==nil)',
+                 'local total=0']
+        for locale, payload in sorted(data["locales"].items()):
+            lines.append(f'local dictionary=addon.nameTranslationFactories.loaders.{locale}()')
+            for kind, entries in payload.items():
+                lines.append(f'local count=0 for _ in pairs(dictionary.{kind})do count=count+1 end assert(count=={len(entries)})')
+                for key, entry in entries.items():
+                    index = key if kind == "quests" else names.quoted(key)
+                    lines.append(f'assert(dictionary.{kind}[{index}].source=={names.quoted(entry["source"])} and '
+                                 f'dictionary.{kind}[{index}].name=={names.quoted(entry["name"])}) total=total+1')
+        count = sum(len(entries) for payload in data["locales"].values() for entries in payload.values())
+        lines.append(f'assert(total=={count} and next(addon.nameTranslations)==nil)')
+        lua = shutil.which("lua5.1")
+        self.assertIsNotNone(lua, "Lua 5.1 is required for localized-title parity verification")
+        result = subprocess.run([lua, "-"], input="\n".join(lines), text=True, encoding="utf-8", capture_output=True)
+        self.assertEqual(result.returncode, 0, result.stderr)
 
 
 if __name__ == "__main__":
