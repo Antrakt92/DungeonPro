@@ -56,3 +56,19 @@ render()
 assert(#toggles() == 1 and quest.start.reportedLocations == source and quest.finish.reportedLocations == originalReports,
     "presentation deduplication leaves both source records untouched")
 print("Quest endpoint source disclosures: PASS (actual q971, five exact points, distinct sources and stale clicks)")
+
+-- The right quest card has no entrance action; that belongs to dungeon cards.
+-- Its redraws must not query unrelated entrance metadata or retain overview state.
+local entrances, entranceReads = addon.Entrances, 0
+addon.Entrances = { Get = function(...)
+    entranceReads = entranceReads + 1
+    return entrances.Get(...)
+end }
+ui.quest = nil; ui:RefreshDetail()
+assert(entranceReads == 1, "overview still resolves its entrance facts")
+entranceReads = 0
+ui.quest = 971; ui:RefreshDetail(); ui:RefreshDetail()
+assert(entranceReads == 0 and ui.entranceBinding == nil,
+    "quest-only redraws cannot repeatedly scan unrelated dungeon entrance sources")
+addon.Entrances = entrances
+print("Quest detail avoids unrelated entrance work: PASS")

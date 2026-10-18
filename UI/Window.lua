@@ -28,17 +28,6 @@ local function styleRow(row, kind, selected)
     end
 end
 
-function UI:CurrentDetailAction()
-    local engine, action = self.engine, self.action
-    if not engine or not action then return nil end
-    local quest, dungeon, character, generation = self.quest, self.dungeon, addon.char, self.rewardGeneration
-    local getter, place, id, kind = engine.Current, action.place, action.id, action.kind
-    local fresh = getter == nil or addon.Read(getter, "boolean", engine) == true
-    if fresh and self.engine == engine and self.action == action and self.quest == quest and self.dungeon == dungeon and
-        addon.char == character and self.rewardGeneration == generation and engine.Current == getter and
-        action.place == place and action.id == id and action.kind == kind then return action end
-end
-
 function UI:NavigationDestination(coordinates)
     local frame, quest, dungeon, engine, character, generation, giver = self.frame, self.quest, self.dungeon, self.engine,
         addon.char, self.rewardGeneration, self.giverAction
@@ -113,6 +102,7 @@ end
 function UI:RefreshEntrance()
     local frame, dungeon, quest, character, generation = self.frame, self.dungeon, self.quest, addon.char, self.rewardGeneration
     self.entranceBinding = nil
+    if quest then return false end
     local function current()
         return addon.UI == self and self.frame == frame and self.dungeon == dungeon and self.quest == quest and
             addon.char == character and self.rewardGeneration == generation
@@ -2356,62 +2346,6 @@ function UI:ResetQuestLogControl()
     return true
 end
 
-function UI:SourceStory(id, definition, current)
-    local checker, source = issecretvalue, definition.storylineGroups or definition.storyline
-    local grouped = definition.storylineGroups ~= nil
-    if not addon.Clean(source, "table") then return nil end
-    local snapshots, distinct, count = {}, {}, 0
-    local function capture(list)
-        local length = #list
-        if length < 1 or length > 100 then return false end
-        local copy = { list = list, length = length, values = {} }
-        snapshots[#snapshots + 1] = copy
-        for index = 1, length do copy.values[index] = rawget(list, index) end
-        return copy
-    end
-    local top = capture(source)
-    if not top then return nil end
-    local function add(value)
-        local clean = addon.Clean(value, "number")
-        if not clean or clean <= 0 or clean > 9007199254740991 or clean % 1 ~= 0 then return false end
-        if not distinct[clean] then distinct[clean] = true; count = count + 1 end
-        return true
-    end
-    for index = 1, top.length do
-        if grouped then
-            local group = addon.Clean(top.values[index], "table")
-            local copy = group and capture(group)
-            if not copy then return nil end
-            for other = 1, copy.length do if not add(copy.values[other]) then return nil end end
-        elseif not add(top.values[index]) then return nil end
-    end
-    local function same()
-        local ok, valid = pcall(function()
-            if issecretvalue ~= checker or addon.quests[id] ~= definition or
-                definition.storylineGroups ~= (grouped and source or nil) or
-                (not grouped and definition.storyline ~= source) then return false end
-            for _, copy in ipairs(snapshots) do
-                if #copy.list ~= copy.length then return false end
-                for index = 1, copy.length do if rawget(copy.list, index) ~= copy.values[index] then return false end end
-            end
-            return true
-        end)
-        return ok and valid == true
-    end
-    if not same() or not current() then return nil end
-    self.storyStates, self.storyOrder = self.storyStates or {}, self.storyOrder or {}
-    local record = self.storyStates[id]
-    if not record or record.definition ~= definition or not record.same() then
-        record = { definition = definition, same = same, count = count, expanded = count <= 4 }
-        if not self.storyStates[id] then
-            self.storyOrder[#self.storyOrder + 1] = id
-            if #self.storyOrder > 100 then self.storyStates[table.remove(self.storyOrder, 1)] = nil end
-        end
-        self.storyStates[id] = record
-    end
-    return record
-end
-
 function UI:RefreshDetail()
     local renderQuest, renderDungeon = self.quest, self.dungeon
     local renderEngine, renderCharacter, pendingAction, pendingGiver = self.engine, addon.char, nil, nil
@@ -2421,28 +2355,10 @@ function UI:RefreshDetail()
     if self.rewardGeneration ~= rewardGeneration or self.quest ~= renderQuest or self.dungeon ~= renderDungeon or
         self.engine ~= renderEngine or addon.char ~= renderCharacter then return end
     if self.detailReferenceQuest ~= renderQuest or self.detailReferenceDungeon ~= renderDungeon then
-        self.detailReferencesExpanded, self.detailChainExpanded, self.detailNarrativeExpanded = false, false, false
-        local selected = renderQuest and addon.quests[renderQuest]
-        if selected and selected.requires and #selected.requires > 0
-            and not selected.storyline and not selected.storylineGroups then
-            local seen, count = {}, 0
-            local function countSteps(questID, depth)
-                if seen[questID] or count > 6 or depth > 50 then return end
-                seen[questID], count = true, count + 1
-                local source = addon.quests[questID]
-                for _, group in ipairs(source and source.requires or {}) do
-                    for _, parent in ipairs(group.ids) do
-                        countSteps(parent, depth + 1)
-                        if count > 6 then return end
-                    end
-                end
-            end
-            countSteps(renderQuest, 0)
-            self.detailChainExpanded = count <= 6
-        end
+        self.detailReferencesExpanded, self.detailNarrativeExpanded = false, false
         self.detailReferenceQuest, self.detailReferenceDungeon = renderQuest, renderDungeon
     end
-    local referencesExpanded, chainExpanded = self.detailReferencesExpanded == true, self.detailChainExpanded == true
+    local referencesExpanded = self.detailReferencesExpanded == true
     local narrativeExpanded = self.detailNarrativeExpanded == true
     local overviewIdentity = not renderQuest and renderDungeon and (addon.Clean(renderDungeon.key, "string") or renderDungeon) or nil
     if self.renderedQuest ~= self.quest or self.renderedOverview ~= overviewIdentity then
@@ -2468,7 +2384,7 @@ function UI:RefreshDetail()
     local function portraitCardCurrent()
         return self.quest == renderQuest and self.dungeon == renderDungeon and self.engine == renderEngine and
             addon.char == renderCharacter and self.rewardGeneration == rewardGeneration and
-            (self.detailReferencesExpanded == true) == referencesExpanded and (self.detailChainExpanded == true) == chainExpanded and
+            (self.detailReferencesExpanded == true) == referencesExpanded and
             (self.detailNarrativeExpanded == true) == narrativeExpanded
     end
     self.clientWaypointBinding = nil
@@ -3002,12 +2918,6 @@ function UI:RefreshDetail()
         if state.reason and state.reason ~= "level" then
             local key = state.reason == "requirements" and state.status == "UNKNOWN" and "REASON_requirementsUnknown" or "REASON_" .. state.reason
             if line(addon.L(key), nil, nil, nil, portraitCardCurrent) == false then return end
-        end
-        local function actionText(candidate)
-            if candidate.id == id then return addon.L(candidate.kind) .. (candidate.level and (" " .. candidate.level) or "") end
-            local title = addon.QuestName(candidate.id)
-            if not current() then return nil end
-            return addon.L(candidate.kind) .. ": " .. title .. (candidate.level and (" (" .. candidate.level .. ")") or "")
         end
         if not metadataCurrent() then return end
         local function acquisitionPortraits(sourceOnly)
@@ -4641,7 +4551,7 @@ function UI:Create()
             addon.Read(f.IsShown, "boolean", f) == true then self:Fit() end
     end)
     frame:SetScript("OnShow", function(f) raiseWindow(f); self:Fit(); self.preparation = false; self:Refresh(nil, true) end)
-    frame:SetScript("OnHide", function() local pending = self.developerLinkRequest; self.developerLinkRequest = nil; if pending and type(StaticPopup_Hide) == "function" then pcall(StaticPopup_Hide, "DUNGEONPRO_COPY_DEVELOPER_LINK") end; self:HideNavigationHint(); local language = addon.Clean(addon.Language, "table"); if language then addon.Read(language.Cancel, "boolean", language, self) end; self.pendingSearch = nil; self.detailReferencesExpanded, self.detailChainExpanded, self.detailNarrativeExpanded = false, false, false; self.storyStates, self.storyOrder = nil, nil; if not self:ResetQuestLogControl() then return end; self.detailActionChoice = nil; self.languageMenuRevision = {}; self:ResetHistoryReading(); self:ResetRewardPresentation(); self:CloseCopyLink() end)
+    frame:SetScript("OnHide", function() local pending = self.developerLinkRequest; self.developerLinkRequest = nil; if pending and type(StaticPopup_Hide) == "function" then pcall(StaticPopup_Hide, "DUNGEONPRO_COPY_DEVELOPER_LINK") end; self:HideNavigationHint(); local language = addon.Clean(addon.Language, "table"); if language then addon.Read(language.Cancel, "boolean", language, self) end; self.pendingSearch = nil; self.detailReferencesExpanded, self.detailNarrativeExpanded = false, false; if not self:ResetQuestLogControl() then return end; self.detailActionChoice = nil; self.languageMenuRevision = {}; self:ResetHistoryReading(); self:ResetRewardPresentation(); self:CloseCopyLink() end)
     self:ApplyTheme()
     frame:Hide()
 end

@@ -176,12 +176,12 @@ check("Default compact quest card retains the real next step and explicit giver 
     local ui = addon.UI
     expandedReferenceFixture = false
     ui:InspectQuest(373); ui:InspectQuest(166)
-    assert(ui.detailReferencesExpanded == false and ui.detailChainExpanded == false)
+    assert(ui.detailReferencesExpanded == false)
     assert((not ui.referenceToggle or not ui.referenceToggle:IsShown()) and ui.giver.enabled and ui.giverAction.place == addon.quests[166].start)
     assert(ui.engine:State(166).status == "UNKNOWN" and not ui.action)
     withKnownDefias(function()
         ui:Refresh()
-        assert(ui.detailReferencesExpanded == false and ui.detailChainExpanded == false)
+        assert(ui.detailReferencesExpanded == false)
         assert(ui.action.id == 65 and ui.giver.enabled)
         assert(ui.giverAction.place == addon.quests[166].start and ui.quest == 166)
     end)
