@@ -2,7 +2,7 @@ local _, addon = ...
 local N = {}
 addon.Navigation = N
 local target, frame, elapsed = nil, nil, 0
-local tomtomOwner, tomtomUID, nativePoint, pendingNativeCleanup
+local tomtomOwner, tomtomUID, tomtomRemoval, nativePoint, pendingNativeCleanup
 local navigationGeneration = {}
 local presentation, contextElapsed = nil, 0
 local presentationWrite, guideUpdate
@@ -429,15 +429,15 @@ end
 function N.Stop()
     local generation = {}
     navigationGeneration = generation
-    local owner, uid, pin = tomtomOwner, tomtomUID, nativePoint or pendingNativeCleanup
+    local owner, uid, remove, pin = tomtomOwner, tomtomUID, tomtomRemoval, nativePoint or pendingNativeCleanup
     -- Release ownership before third-party cleanup can invoke callbacks.
-    tomtomOwner, tomtomUID, nativePoint, pendingNativeCleanup, target = nil, nil, nil, nil, nil
+    tomtomOwner, tomtomUID, tomtomRemoval, nativePoint, pendingNativeCleanup, target = nil, nil, nil, nil, nil, nil
     presentation, contextElapsed = nil, 0
     clearMapMarker()
     if frame then setVisible(false, nil, generation) end
-    if uid and owner and type(owner.RemoveWaypoint) == "function" and
+    if uid and owner and remove and owner.RemoveWaypoint == remove and
         not (rawequal(tomtomOwner, owner) and rawequal(tomtomUID, uid)) then
-        pcall(owner.RemoveWaypoint, owner, uid)
+        pcall(remove, owner, uid)
     end
     releaseNativePoint(pin, generation)
     return generation
@@ -698,20 +698,35 @@ function N.Start(action)
     end
     if not current() then return false end
     if owner and type(owner.AddWaypoint) == "function" then
-        local ok, uid = pcall(owner.AddWaypoint, owner, p.mapID, p.x / 100, p.y / 100,
-            { title = title, persistent = false, minimap = true, world = true })
-        local valid = addon.Clean(uid, "table") or addon.Clean(uid, "string") or addon.Clean(uid, "number")
-        if type(valid) == "string" and valid == "" then valid = nil end
-        if type(valid) == "number" and valid <= 0 then valid = nil end
-        if not current() then
-            -- A superseded request must not overwrite or remove a replacement's UID.
-            if ok and valid and not (rawequal(tomtomOwner, owner) and rawequal(tomtomUID, valid)) and
-                type(owner.RemoveWaypoint) == "function" then
-                pcall(owner.RemoveWaypoint, owner, valid)
+        local add, exists, remove, checker = owner.AddWaypoint, addon.Clean(owner.WaypointExists, "function"),
+            addon.Clean(owner.RemoveWaypoint, "function"), issecretvalue
+        local mapID, pointX, pointY = addon.Clean(p.mapID, "number"), addon.Clean(p.x, "number"), addon.Clean(p.y, "number")
+        local x, y = pointX and pointX / 100, pointY and pointY / 100
+        local absent = mapID and x and y and N.Valid({ mapID = mapID, x = pointX, y = pointY }) and
+            addon.Read(exists, "boolean", owner, mapID, x, y, title) == false
+        if not current() then return false end
+        if absent and remove and TomTom == owner and issecretvalue == checker and owner.AddWaypoint == add and
+            owner.WaypointExists == exists and owner.RemoveWaypoint == remove and action.place == p and
+            rawequal(rawget(p, "mapID"), mapID) and rawequal(rawget(p, "x"), pointX) and
+            rawequal(rawget(p, "y"), pointY) and current() then
+            -- TomTom returns an existing UID for duplicate coordinates/title. Only
+            -- a new UID copies options, so the per-call token proves creation.
+            local token = {}
+            local ok, uid = pcall(add, owner, mapID, x, y,
+                { title = title, persistent = false, minimap = true, world = true, dungeonProOwner = token })
+            local valid = ok and addon.Clean(uid, "table")
+            local marker = valid and addon.Clean(rawget(valid, "dungeonProOwner"), "table")
+            local created = marker and rawequal(marker, token) and issecretvalue == checker and
+                rawequal(rawget(valid, "dungeonProOwner"), token)
+            if not current() then
+                if created and not (rawequal(tomtomOwner, owner) and rawequal(tomtomUID, valid)) and
+                    owner.RemoveWaypoint == remove then
+                    pcall(remove, owner, valid)
+                end
+                return false
             end
-            return false
+            if created then tomtomOwner, tomtomUID, tomtomRemoval = owner, valid, remove end
         end
-        if ok and valid then tomtomOwner, tomtomUID = owner, valid end
     end
     if not tomtomUID and N.Valid(p) and C_Map and type(C_Map.SetUserWaypoint) == "function" and UiMapPoint and
         type(UiMapPoint.CreateFromCoordinates) == "function" then

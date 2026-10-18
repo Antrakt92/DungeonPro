@@ -51,6 +51,31 @@ local function reset()
         OpenWorldMap = function() end,
     }
 end
+-- Native-shaped TomTom test adapter: new UID tables copy options; duplicate
+-- results retain the original creation token. Assertions may still use serials.
+local function tomtom(spec)
+    local add, remove, identities = spec.AddWaypoint, spec.RemoveWaypoint, {}
+    if not add then return spec end
+    spec.WaypointExists = function() return false end
+    spec.AddWaypoint = function(self, map, x, y, options)
+        local value = add(self, map, x, y, options)
+        if type(value) == "boolean" or value == nil or value == "" or
+            (type(value) == "number" and (value <= 0 or value ~= value or value == math.huge)) then return value end
+        local uid = identities[value]
+        if not uid then
+            uid = { map, x, y, title = options.title, dungeonProOwner = options.dungeonProOwner }
+            identities[value] = uid
+        end
+        return uid
+    end
+    spec.RemoveWaypoint = function(self, uid)
+        for value, identity in pairs(identities) do
+            if identity == uid then if remove then return remove(self, value) end; return end
+        end
+        error("Removing an unowned test UID")
+    end
+    return spec
+end
 local function check(name, fn)
     reset()
     local ok, err = pcall(fn); assert(ok, name .. ": " .. tostring(err))
@@ -85,24 +110,24 @@ check("Unreadable world values and failed native setters do not claim ownership"
     nav.Stop(); assert(clears == 0)
 end)
 check("Throwing TomTom falls back to owned native waypoint", function()
-    TomTom = { AddWaypoint = function() error("TomTom unavailable") end }
+    TomTom = tomtom({ AddWaypoint = function() error("TomTom unavailable") end })
     assert(nav.Start(action) and nativeCalls == 1)
     nav.Stop(); assert(clears == 1)
 end)
 check("Missing or malformed TomTom identity falls back without removing foreign waypoints", function()
     for _, uid in ipairs({ false, true, "", 0, math.huge }) do
         local removed = 0
-        TomTom = { AddWaypoint = function() return uid end, RemoveWaypoint = function() removed = removed + 1 end }
+        TomTom = tomtom({ AddWaypoint = function() return uid end, RemoveWaypoint = function() removed = removed + 1 end })
         assert(nav.Start(action)); nav.Stop(); assert(removed == 0)
     end
     assert(nativeCalls == 5)
 end)
 check("Valid TomTom identity uses only its original owner for cleanup", function()
     local uid, removed, foreign = {}, 0, 0
-    TomTom = { AddWaypoint = function() return uid end,
-        RemoveWaypoint = function(_, removedUID) assert(removedUID == uid); removed = removed + 1 end }
+    TomTom = tomtom({ AddWaypoint = function() return uid end,
+        RemoveWaypoint = function(_, removedUID) assert(removedUID == uid); removed = removed + 1 end })
     assert(nav.Start(action) and nativeCalls == 0)
-    TomTom = { RemoveWaypoint = function() foreign = foreign + 1 end }
+    TomTom = tomtom({ RemoveWaypoint = function() foreign = foreign + 1 end })
     nav.Stop(); nav.Stop(); assert(removed == 1 and foreign == 0)
 end)
 check("Cleanup preserves a native waypoint moved by the player", function()
@@ -144,20 +169,20 @@ check("Quest cancellation preserves a nearby but different player waypoint", fun
 end)
 check("Reentrant cleanup cannot remove the same TomTom waypoint twice", function()
     local removed = 0
-    TomTom = { AddWaypoint = function() return 123 end, RemoveWaypoint = function()
+    TomTom = tomtom({ AddWaypoint = function() return 123 end, RemoveWaypoint = function()
         removed = removed + 1
         if removed == 1 then nav.Stop() end
-    end }
+    end })
     assert(nav.Start(action)); nav.Stop()
     assert(removed == 1)
 end)
 check("A replacement guide started by cleanup retains its owner and stays visible", function()
     local nextUID, removed = 0, {}
-    TomTom = { AddWaypoint = function() nextUID = nextUID + 1; return nextUID end,
+    TomTom = tomtom({ AddWaypoint = function() nextUID = nextUID + 1; return nextUID end,
         RemoveWaypoint = function(_, uid)
             removed[#removed + 1] = uid
             if uid == 1 then assert(nav.Start({ id = 2, kind = "visit", place = point })) end
-        end }
+        end })
     assert(nav.Start(action)); nav.Stop()
     local shown = false
     for _, frame in ipairs(frames) do if frame.shown and frame.scripts.OnUpdate then shown = true end end
@@ -167,11 +192,11 @@ check("A replacement guide started by cleanup retains its owner and stays visibl
 end)
 check("An older Start cannot overwrite a replacement requested during cleanup", function()
     local nextUID, removed = 0, {}
-    TomTom = { AddWaypoint = function() nextUID = nextUID + 1; return nextUID end,
+    TomTom = tomtom({ AddWaypoint = function() nextUID = nextUID + 1; return nextUID end,
         RemoveWaypoint = function(_, uid)
             removed[#removed + 1] = uid
             if uid == 1 then assert(nav.Start({ id = 3, kind = "visit", place = point })) end
-        end }
+        end })
     assert(nav.Start(action))
     assert(not nav.Start({ id = 2, kind = "visit", place = point }))
     assert(nextUID == 2)
@@ -245,19 +270,19 @@ end)
 check("TomTom replacement during AddWaypoint cleans only the actual creator", function()
     local ownRemoved, foreignRemoved = 0, 0
     local foreign = { RemoveWaypoint = function() foreignRemoved = foreignRemoved + 1 end }
-    local original = { AddWaypoint = function() TomTom = foreign; return 901 end,
-        RemoveWaypoint = function(_, uid) assert(uid == 901); ownRemoved = ownRemoved + 1 end }
+    local original = tomtom({ AddWaypoint = function() TomTom = foreign; return 901 end,
+        RemoveWaypoint = function(_, uid) assert(uid == 901); ownRemoved = ownRemoved + 1 end })
     TomTom = original
     assert(nav.Start(action) and nativeCalls == 0); nav.Stop()
     assert(ownRemoved == 1 and foreignRemoved == 0)
 end)
 check("A guide superseded during AddWaypoint releases only its stale returned identity", function()
     local calls, removed = 0, {}
-    TomTom = { AddWaypoint = function()
+    TomTom = tomtom({ AddWaypoint = function()
         calls = calls + 1; local uid = calls
         if uid == 1 then assert(nav.Start({ id = 2, kind = "visit", place = point })) end
         return uid
-    end, RemoveWaypoint = function(_, uid) removed[#removed + 1] = uid end }
+    end, RemoveWaypoint = function(_, uid) removed[#removed + 1] = uid end })
     assert(not nav.Start(action) and nativeCalls == 0)
     assert(#removed == 1 and removed[1] == 1)
     nav.QuestChanged(1); assert(#removed == 1)
@@ -266,34 +291,34 @@ end)
 check("A replacement using the same TomTom identity is not removed as stale", function()
     local calls, removed = 0, 0
     local uid = {}
-    TomTom = { AddWaypoint = function()
+    TomTom = tomtom({ AddWaypoint = function()
         calls = calls + 1
         if calls == 1 then assert(nav.Start({ id = 2, kind = "visit", place = point })) end
         return uid
-    end, RemoveWaypoint = function(_, identity) assert(rawequal(identity, uid)); removed = removed + 1 end }
+    end, RemoveWaypoint = function(_, identity) assert(rawequal(identity, uid)); removed = removed + 1 end })
     assert(not nav.Start(action) and calls == 2 and removed == 0)
     nav.QuestChanged(2); assert(removed == 1)
 end)
 check("Same action reused by a callback still creates a distinct navigation generation", function()
     local calls, removed = 0, {}
-    TomTom = { AddWaypoint = function()
+    TomTom = tomtom({ AddWaypoint = function()
         calls = calls + 1; local uid = calls
         if uid == 1 then assert(nav.Start(action)) end
         return uid
-    end, RemoveWaypoint = function(_, uid) removed[#removed + 1] = uid end }
+    end, RemoveWaypoint = function(_, uid) removed[#removed + 1] = uid end })
     assert(not nav.Start(action) and calls == 2 and #removed == 1 and removed[1] == 1)
     nav.QuestChanged(1); assert(#removed == 2 and removed[2] == 2)
 end)
 check("Stale waypoint cleanup may start another guide without corrupting its ownership", function()
     local calls, removed = 0, {}
-    TomTom = { AddWaypoint = function()
+    TomTom = tomtom({ AddWaypoint = function()
         calls = calls + 1; local uid = calls
         if uid == 1 then assert(nav.Start({ id = 2, kind = "visit", place = point })) end
         return uid
     end, RemoveWaypoint = function(_, uid)
         removed[#removed + 1] = uid
         if uid == 1 then assert(nav.Start({ id = 3, kind = "visit", place = point })) end
-    end }
+    end })
     assert(not nav.Start(action) and calls == 3)
     assert(#removed == 2 and removed[1] == 1 and removed[2] == 2)
     nav.QuestChanged(2); assert(#removed == 2)
@@ -301,8 +326,8 @@ check("Stale waypoint cleanup may start another guide without corrupting its own
 end)
 check("Stopping during AddWaypoint does not resurrect the old frame or claim its returned identity", function()
     local removed = 0
-    TomTom = { AddWaypoint = function() nav.Stop(); return 901 end,
-        RemoveWaypoint = function(_, uid) assert(uid == 901); removed = removed + 1 end }
+    TomTom = tomtom({ AddWaypoint = function() nav.Stop(); return 901 end,
+        RemoveWaypoint = function(_, uid) assert(uid == 901); removed = removed + 1 end })
     assert(not nav.Start(action) and removed == 1 and nativeCalls == 0)
     for _, item in ipairs(frames) do if item.scripts.OnUpdate then assert(not item.shown) end end
     nav.Stop(); assert(removed == 1)
@@ -843,8 +868,8 @@ check("Map dispatch uses the validated map identity snapshot", function()
 end)
 check("Old waypoint cleanup cannot authorize a newly invalid destination", function()
     local nextPoint, added = { mapID = 1, x = 20, y = 30 }, 0
-    TomTom = { AddWaypoint = function() added = added + 1; return "owned" end,
-        RemoveWaypoint = function() nextPoint.mapID = 1.5 end }
+    TomTom = tomtom({ AddWaypoint = function() added = added + 1; return "owned" end,
+        RemoveWaypoint = function() nextPoint.mapID = 1.5 end })
     assert(nav.Start(action) and added == 1)
     assert(not nav.Start({ id = 2, kind = "visit", place = nextPoint }))
     assert(added == 1 and nativeCalls == 0)
@@ -898,10 +923,10 @@ check("Old Hide cannot suppress a replacement started by its wrapper", function(
     nav.QuestChanged(2)
     assert(not card.shown)
 end)
-check("A replaced guide retaining a TomTom identity survives Hide cleanup", function()
+check("A replacement guide borrowing the old TomTom identity keeps its HUD without adopting cleanup", function()
     local removed = 0
-    TomTom = { AddWaypoint = function() return "same" end,
-        RemoveWaypoint = function() removed = removed + 1 end }
+    TomTom = tomtom({ AddWaypoint = function() return "same" end,
+        RemoveWaypoint = function() removed = removed + 1 end })
     assert(nav.Start(action))
     local card = hud()
     local original, armed = card.Hide, true
@@ -911,14 +936,14 @@ check("A replaced guide retaining a TomTom identity survives Hide cleanup", func
     end
     nav.Stop()
     card.Hide = original
-    assert(card.shown and removed == 0)
+    assert(card.shown and removed == 1)
     nav.QuestChanged(2)
     assert(removed == 1 and not card.shown)
 end)
 check("Hide replacement releases only the old distinct TomTom identity", function()
     local nextUID, removed = 0, {}
-    TomTom = { AddWaypoint = function() nextUID = nextUID + 1; return nextUID end,
-        RemoveWaypoint = function(_, uid) removed[#removed + 1] = uid end }
+    TomTom = tomtom({ AddWaypoint = function() nextUID = nextUID + 1; return nextUID end,
+        RemoveWaypoint = function(_, uid) removed[#removed + 1] = uid end })
     assert(nav.Start(action))
     local card = hud()
     local original, armed = card.Hide, true
@@ -1240,7 +1265,7 @@ check("Entrance navigation uses dungeon title and survives unrelated quest chang
     local oldQuestName = addon.QuestName
     addon.QuestName = function() calls = calls + 1; error("entrance has no quest") end
     local title
-    TomTom = { AddWaypoint = function(_, _, _, _, options) title = options.title; return "entry" end }
+    TomTom = tomtom({ AddWaypoint = function(_, _, _, _, options) title = options.title; return "entry" end })
     assert(nav.StartEntrance(d, point) and title == "Deadmines")
     local hud
     for _, f in ipairs(frames) do if f.shown and f.scripts.OnUpdate then hud = f end end
@@ -1262,7 +1287,7 @@ end)
 check("Entrance title callbacks cannot dispatch an obsolete guide after cancellation", function()
     local old = addon.DungeonName
     local calls = 0
-    TomTom = {AddWaypoint = function() calls = calls + 1; return "old" end}
+    TomTom = tomtom({AddWaypoint = function() calls = calls + 1; return "old" end})
     addon.DungeonName = function() nav.Stop(); return "Old entrance" end
     assert(not nav.StartEntrance({key = "old"}, point) and calls == 0 and nativeCalls == 0)
     addon.DungeonName = old
@@ -1281,7 +1306,7 @@ check("Entrance title callback cannot send a destination it invalidated to TomTo
     local mutable = {mapID = 1, x = 50, y = 60}
     local calls = 0
     addon.DungeonName = function() mutable.x = "invalid"; return "Entrance" end
-    TomTom = {AddWaypoint = function() calls = calls + 1; return "invalid" end}
+    TomTom = tomtom({AddWaypoint = function() calls = calls + 1; return "invalid" end})
     assert(not nav.StartEntrance({key = "changed"}, mutable) and calls == 0)
     addon.DungeonName = previous
 end)

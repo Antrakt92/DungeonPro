@@ -233,14 +233,19 @@ check("Invalid coordinates are rejected", function()
 end)
 check("TomTom receives coordinates from the resolved nested place", function()
     local captured
-    TomTom = { AddWaypoint = function(_, map, x, y) captured = { map, x, y } end }
+    TomTom = { WaypointExists = function() return false end, RemoveWaypoint = function() end,
+        AddWaypoint = function(_, map, x, y, options)
+            captured = { map, x, y }; return { map, x, y, dungeonProOwner = options.dungeonProOwner }
+        end }
     addon.Navigation.Start({ id = 65, place = addon.quests[65].start })
     assert(captured[1] == 1436 and math.abs(captured[2] - 0.563) < 0.0001)
 end)
 check("Replacing or clearing guidance removes only its own TomTom waypoint", function()
     local removed, counter = {}, 0
-    TomTom = { AddWaypoint = function() counter = counter + 1; return counter end,
-        RemoveWaypoint = function(_, uid) removed[#removed + 1] = uid end }
+    TomTom = { WaypointExists = function() return false end,
+        AddWaypoint = function(_, map, x, y, options) counter = counter + 1
+            return { map, x, y, serial = counter, dungeonProOwner = options.dungeonProOwner } end,
+        RemoveWaypoint = function(_, uid) removed[#removed + 1] = uid.serial end }
     addon.Navigation.Start({ id = 65, place = addon.quests[65].start })
     addon.Navigation.Start({ id = 132, place = addon.quests[132].start })
     assert(#removed == 1 and removed[1] == 1)
@@ -413,8 +418,10 @@ check("Quest-data events pass success to bounded delayed title recovery", functi
 end)
 check("Unrelated quest events preserve the guide and matching events release it", function()
     local saved, removed, serial = TomTom, {}, 0
-    TomTom = { AddWaypoint = function() serial = serial + 1; return serial end,
-        RemoveWaypoint = function(_, uid) removed[#removed + 1] = uid end }
+    TomTom = { WaypointExists = function() return false end,
+        AddWaypoint = function(_, map, x, y, options) serial = serial + 1
+            return { map, x, y, serial = serial, dungeonProOwner = options.dungeonProOwner } end,
+        RemoveWaypoint = function(_, uid) removed[#removed + 1] = uid.serial end }
     addon.Navigation.Start({ id = 65, place = addon.quests[65].start })
     for _, event in ipairs({ "QUEST_ACCEPTED", "QUEST_TURNED_IN", "QUEST_REMOVED" }) do
         eventFrame.scripts.OnEvent(eventFrame, event, 132)

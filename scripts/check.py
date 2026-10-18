@@ -99,6 +99,7 @@ def main():
     run(lua, "tests/offered_objectives.lua")
     run(lua, "tests/probe.lua")
     run(lua, "tests/navigation.lua")
+    run(lua, "tests/tomtom_ownership.lua")
     run(lua, "tests/map_marker.lua")
     run(lua, "tests/map_clicks.lua")
     run(lua, "tests/entrances.lua")
