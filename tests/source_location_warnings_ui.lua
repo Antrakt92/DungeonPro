@@ -23,8 +23,9 @@ for _,locale in ipairs({"enUS","ruRU","deDE","frFR","esES","ptBR","koKR","zhCN",
   assert(count("SOURCE_POSITION_UNKNOWN")==1 and count("GIVER_LOCATION_UNKNOWN")==0,"known area warns about exact position, not wholly unknown location")
   assert(ui.giverUnavailableKey=="SOURCE_POSITION_UNKNOWN"and not ui.giver.enabled,"known area does not invent a usable map route")
   local area=false
+  local expectedArea=id==5724 and locale~="enUS"and a.DungeonName(owners[id])or a.quests[id].start.zoneName
   for _,field in ipairs(ui.details)do if field:IsShown()then
-   if field.text:find(a.quests[id].start.zoneName,1,true)then area=true end
+   if field.text:find(expectedArea,1,true)then area=true end
    if field.text==a.L("SOURCE_POSITION_UNKNOWN")then assert(field.detailStyle=="warning","unknown exact position uses the explicit warning style")end
   end end
   assert(area,"recorded known area remains visible")

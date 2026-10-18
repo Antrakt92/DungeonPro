@@ -163,7 +163,7 @@ function UI:QuestRowNavigationHint(row, binding)
     if row.navigationBinding ~= binding or not binding.current() then return end
     self:HideNavigationHint()
     local tip, localize = addon.Clean(GameTooltip, "table") or addon.Clean(GameTooltip, "userdata"), addon.L
-    local nameGetter = addon.GiverName
+    local nameGetter, areaGetter = addon.GiverName, addon.SourceAreaName
     local mapRoot = C_Map
     local mapNamespace = addon.Clean(mapRoot, "table")
     local mapGetter = mapNamespace and rawget(mapNamespace, "GetMapInfo")
@@ -173,7 +173,7 @@ function UI:QuestRowNavigationHint(row, binding)
     local locale = database and rawget(database, "locale")
     local function current()
         local language = addon.Read(localeGetter, "string")
-        return row.navigationBinding == binding and binding.current() and addon.L == localize and addon.GiverName == nameGetter and addon.db == database and
+        return row.navigationBinding == binding and binding.current() and addon.L == localize and addon.GiverName == nameGetter and addon.SourceAreaName == areaGetter and addon.db == database and
             C_Map == mapRoot and (not mapNamespace or rawget(mapNamespace, "GetMapInfo") == mapGetter) and
             GetLocale == localeGetter and language == gameLocale and
             (not database or rawget(database, "locale") == locale) and GameTooltip == tip and
@@ -188,7 +188,8 @@ function UI:QuestRowNavigationHint(row, binding)
         if not current() then return end
         if not text or #text > 1024 or not text:find("%S") then text = addon.Clean(rawget(point, "name"), "string") end
         if not text or #text > 1024 or not text:find("%S") then text = addon.Read(localize, "string", "UNKNOWN_PLACE") end
-        local zone = addon.Clean(rawget(point, "zoneName"), "string") or addon.Clean(rawget(point, "locationName"), "string")
+        local canonical = addon.Clean(rawget(point, "zoneName"), "string")
+        local zone = addon.Read(areaGetter, "string", canonical, current) or canonical or addon.Clean(rawget(point, "locationName"), "string")
         if not zone then
             local info = addon.Read(mapGetter, "table", binding.map)
             if not current() then return end
@@ -3303,9 +3304,12 @@ function UI:RefreshDetail(sourceFocus)
                 return portraitCardCurrent() and issecretvalue == checker
             end
         end
+        local sourceAreaGetter = addon.SourceAreaName
         local function locationCurrent()
             return self.quest == renderQuest and self.dungeon == renderDungeon and self.engine == renderEngine and
-                addon.char == renderCharacter and self.rewardGeneration == rewardGeneration and self.reportedGeneration == reportedGeneration
+                addon.char == renderCharacter and self.rewardGeneration == rewardGeneration and self.reportedGeneration == reportedGeneration and
+                addon.SourceAreaName == sourceAreaGetter and addon.db == metadataDB and addon.L == metadataLocalize and
+                (not metadataDB or rawget(metadataDB, "locale") == metadataLocale)
         end
         local function locationWrite(current, object, method, ...)
             return self:QuestListWrite(object, method, current, ...)
@@ -3339,9 +3343,13 @@ function UI:RefreshDetail(sourceFocus)
             line(addon.L("REPORTED_NOTICE"))
             for _, destination in ipairs(places) do
                 local point = destination
-                local zone = addon.Read(C_Map and C_Map.GetMapInfo, "table", point.mapID)
+                local zoneName = addon.Read(sourceAreaGetter, "string", point.zoneName, current)
                 if not current() then return false end
-                local zoneName = (zone and addon.Clean(zone.name, "string")) or point.zoneName or addon.L("UNKNOWN_PLACE")
+                if not zoneName then
+                    local zone = addon.Read(C_Map and C_Map.GetMapInfo, "table", point.mapID)
+                    if not current() then return false end
+                    zoneName = (zone and addon.Clean(zone.name, "string")) or point.zoneName or addon.L("UNKNOWN_PLACE")
+                end
                 if not current() then return false end
                 reportIndex = reportIndex + 1
                 local row = self:MakeRow(self.detail, self.reportedRows, reportIndex, 59)
@@ -3366,16 +3374,22 @@ function UI:RefreshDetail(sourceFocus)
             local count = addon.Read(addon.CarriedItemCount, "number", itemID)
             if count and count >= 0 and count % 1 == 0 then return addon.L("ITEM_CARRIED", count) end
         end
-        local function place(p)
+        local function place(p, ownerCurrent)
+            local function current() return locationCurrent() and (not ownerCurrent or ownerCurrent()) end
             if not p then return addon.L("UNKNOWN_PLACE") end
-            local zone = p.mapID and addon.Read(C_Map and C_Map.GetMapInfo, "table", p.mapID)
-            if not locationCurrent() then return nil end
-            local zoneName = (zone and addon.Clean(zone.name, "string")) or addon.Clean(p.zoneName, "string")
+            local canonical = addon.Clean(p.zoneName, "string")
+            local zoneName = addon.Read(sourceAreaGetter, "string", canonical, current)
+            if not current() then return nil end
+            if not zoneName then
+                local zone = p.mapID and addon.Read(C_Map and C_Map.GetMapInfo, "table", p.mapID)
+                if not current() then return nil end
+                zoneName = (zone and addon.Clean(zone.name, "string")) or canonical
+            end
             local name = giverName(p)
-            if not locationCurrent() then return nil end
+            if not current() then return nil end
             if p.itemID then
                 name = addon.L("ITEM_STARTER", addon.Read(addon.ItemName, "string", p.itemID) or name)
-                if not locationCurrent() then return nil end
+                if not current() then return nil end
             end
             local x, py = addon.Clean(p.x, "number"), addon.Clean(p.y, "number")
             local coordinates = x ~= nil and py ~= nil and x >= 0 and x <= 100 and py >= 0 and py <= 100
@@ -3416,12 +3430,16 @@ function UI:RefreshDetail(sourceFocus)
                 if not current() then return false end
                 local mapID = addon.Clean(destination.mapID, "number")
                 local validMap = mapID ~= nil and mapID > 0 and mapID % 1 == 0
-                local zone = validMap and reader(mapGetter, "table", mapID)
+                local canonical = addon.Clean(destination.zoneName, "string")
+                local area = reader(sourceAreaGetter, "string", canonical, current)
                 if not current() then return false end
+                if not area then
+                    local zone = validMap and reader(mapGetter, "table", mapID)
+                    if not current() then return false end
+                    area = (zone and addon.Clean(zone.name, "string")) or canonical or addon.Clean(destination.locationName, "string")
+                end
                 local x, py = addon.Clean(destination.x, "number"), addon.Clean(destination.y, "number")
                 local coordinates = validMap and x ~= nil and py ~= nil and x >= 0 and x <= 100 and py >= 0 and py <= 100
-                local area = (zone and addon.Clean(zone.name, "string")) or
-                    addon.Clean(destination.zoneName, "string") or addon.Clean(destination.locationName, "string")
                 local note = (area or addon.L("UNKNOWN_PLACE")) ..
                     (coordinates and string.format(" (%.1f, %.1f)", x, py) or "")
                 if warnPosition and not coordinates then
@@ -3505,8 +3523,8 @@ function UI:RefreshDetail(sourceFocus)
             for _, field in ipairs(giverFields) do giverValues[field] = rawget(start, field) end
             local function giverCurrent()
                 local ok, same = pcall(function()
-                    if not portraitCardCurrent() or addon.quests[id] ~= definition or q.start ~= start
-                        or addon.GiverName ~= nameGetter or addon.ItemName ~= itemGetter or addon.ItemIcon ~= iconGetter or addon.CarriedItemCount ~= countGetter or C_Map ~= mapRoot or issecretvalue ~= checker then return false end
+                    if not locationCurrent() or not portraitCardCurrent() or addon.quests[id] ~= definition or q.start ~= start
+                        or addon.SourceAreaName ~= sourceAreaGetter or addon.GiverName ~= nameGetter or addon.ItemName ~= itemGetter or addon.ItemIcon ~= iconGetter or addon.CarriedItemCount ~= countGetter or C_Map ~= mapRoot or issecretvalue ~= checker then return false end
                     for _, field in ipairs(giverFields) do
                         local value = rawget(start, field)
                         if type(checker) == "function" and addon.Read(checker, "boolean", value) ~= false then return false end
@@ -3518,7 +3536,7 @@ function UI:RefreshDetail(sourceFocus)
                 return ok and same == true
             end
             if not giverCurrent() then return end
-            local description = addon.Read(place, "string", start)
+            local description = addon.Read(place, "string", start, giverCurrent)
             if not giverCurrent() then return end
             local starterBinding, starterCarried
             if itemStarter then
@@ -3577,7 +3595,7 @@ function UI:RefreshDetail(sourceFocus)
                     if not rawequal(values[field], startingValues[field]) then same = false end
                 end
                 local function endingCurrent()
-                    if not portraitCardCurrent() or addon.quests[id] ~= definition or q.finish ~= finish or q.start ~= start or issecretvalue ~= endpointChecker then return false end
+                    if not locationCurrent() or not portraitCardCurrent() or addon.SourceAreaName ~= sourceAreaGetter or addon.quests[id] ~= definition or q.finish ~= finish or q.start ~= start or issecretvalue ~= endpointChecker then return false end
                     for _, field in ipairs(fields) do
                         local ending, starting = rawget(finish, field), start and rawget(start, field)
                         if type(endpointChecker) == "function" and (addon.Read(endpointChecker, "boolean", ending) ~= false or
@@ -3587,7 +3605,7 @@ function UI:RefreshDetail(sourceFocus)
                     return portraitCardCurrent()
                 end
                 if not same then
-                    local ending = addon.Read(place, "string", finish)
+                    local ending = addon.Read(place, "string", finish, endingCurrent)
                     if not endingCurrent() then return end
                     if ending and ending ~= addon.L("UNKNOWN_PLACE") then
                         if line(addon.L("DETAIL_TURNIN") .. ": " .. ending, "caption", nil, nil, endingCurrent) == false then return end
@@ -4645,7 +4663,7 @@ function UI:RefreshDetail(sourceFocus)
                 if not starterCurrent() then return false end
                 local ok, same = pcall(function()
                     if C_Map ~= mapNamespace or (mapNamespace and mapNamespace.GetMapInfo ~= mapGetter) or
-                        addon.GiverName ~= giverGetter or addon.DungeonName ~= dungeonGetter then return false end
+                        addon.GiverName ~= giverGetter or addon.DungeonName ~= dungeonGetter or addon.SourceAreaName ~= sourceAreaGetter then return false end
                     for _, snapshot in ipairs(snapshots) do
                         if snapshot.length and #snapshot.object ~= snapshot.length then return false end
                         if snapshot.count then
@@ -4716,6 +4734,8 @@ function UI:RefreshDetail(sourceFocus)
                         if positive(drop.npcID) and name and name:find("%S") and location and location:find("%S") then
                             name = giverName(drop)
                             if not acquisitionCurrent() then return end
+                            location = addon.Read(sourceAreaGetter, "string", location, acquisitionCurrent) or location
+                            if not acquisitionCurrent() then return end
                             routes[#routes + 1] = { text = addon.L("ITEM_DROP_SOURCE", name, location) }
                             local map = positive(rawget(drop, "mapID"))
                             local reportedPoints = reportedPlaces(drop)
@@ -4738,7 +4758,7 @@ function UI:RefreshDetail(sourceFocus)
             for _, route in ipairs(routes) do
                 if route.container then
                     if alternativePlaces({ route.container }, self.containerButtons, "CONTAINER_SOURCE", "container:", acquisitionCurrent, nil, nil, nil, true) == false then return end
-                else line(route.text) end
+                elseif line(route.text, nil, nil, nil, acquisitionCurrent) == false then return end
                 if not acquisitionCurrent() then return end
             end
             if #mappedDrops > 0 and alternativePlaces(mappedDrops, self.dropButtons, "ITEM_DROP_LOCATIONS", "dropSource:", acquisitionCurrent) == false then return end
@@ -5279,16 +5299,20 @@ function UI:Create()
             if control.footerIcon then control.footerHovered = true; self:RefreshFooterIcon(control) end
             self:HideNavigationHint()
             local quest, dungeon, generation = self.quest, self.dungeon, self.rewardGeneration
+            local areaGetter, localize, database = addon.SourceAreaName, addon.L, addon.db
+            local locale = database and rawget(database, "locale")
             local tip = addon.Clean(GameTooltip, "table") or addon.Clean(GameTooltip, "userdata")
             local function current()
                 return addon.UI == self and self.frame == frame and self.quest == quest and self.dungeon == dungeon and
-                    self.rewardGeneration == generation and GameTooltip == tip and addon.Read(frame.IsShown, "boolean", frame) == true
+                    self.rewardGeneration == generation and addon.SourceAreaName == areaGetter and addon.L == localize and addon.db == database and
+                    (not database or rawget(database, "locale") == locale) and GameTooltip == tip and addon.Read(frame.IsShown, "boolean", frame) == true
             end
             local point = destination and destination()
             local reason = not point and control == self.giver and self.quest and self.giverUnavailableKey
             if not tip or (not point and not bodyKey and not reason) or not current() then return end
             local text = (bodyKey or reason) and addon.L(bodyKey or reason) or addon.Read(giverName, "string", point)
-            local zone = point and addon.Clean(point.zoneName, "string")
+            local canonical = point and addon.Clean(point.zoneName, "string")
+            local zone = canonical and (addon.Read(areaGetter, "string", canonical, current) or canonical)
             local x, y = point and addon.Clean(point.x, "number"), point and addon.Clean(point.y, "number")
             if text and zone and zone:find("%S") then text = text .. " — " .. zone end
             if text and x and y and x >= 0 and x <= 100 and y >= 0 and y <= 100 then text = text .. string.format(" (%.1f, %.1f)", x, y) end
