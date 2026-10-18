@@ -50,6 +50,7 @@ def main():
     run(lua, "tests/ui_preparation.lua")
     run(lua, "tests/recorded_objectives_ui.lua")
     run(lua, "tests/quest_tree_ui.lua")
+    run(lua, "tests/quest_tree_limit_notice_ui.lua")
     run(lua, "tests/hidden_enemies_storyline_ui.lua")
     run(lua, "tests/quest_row_markers_ui.lua")
     run(lua, "tests/quest_class_icons_ui.lua")

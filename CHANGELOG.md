@@ -4,6 +4,7 @@
 
 ### 18-Oct-2026
 
+- Explain when a long quest-chain preview reaches its display limit.
 - Keep live quest progress prominent and make recorded kill, object and event
   objectives available through a compact inline disclosure.
 - Match pasted curly apostrophes and common non-breaking or ideographic spaces

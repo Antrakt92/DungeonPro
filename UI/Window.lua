@@ -1673,6 +1673,9 @@ function UI:RefreshQuests()
                     if entry.heading or (anchor and entry.id == self.questTreeRoot) or (not treeIDs[entry.id] and not seen[entry.id]) then
                         if anchor and entry.id == self.questTreeRoot then
                             expanded[#expanded + 1] = { anchorID = entry.id, title = names[entry.id] }
+                            if addon.Clean(tree.truncated, "boolean") == true then
+                                expanded[#expanded + 1] = { heading = "CHAIN_TRUNCATED_NOTICE" }
+                            end
                             local last
                             for _, node in ipairs(presentation) do
                                 if not seen[node.id] then
