@@ -209,6 +209,12 @@ local reviewedItemRoles = {
     {2937,"providedItems",{{9323}}}, {2990,"providedItems",{{9468}}},
     {2994,"objectiveItems",{{9472}}}, {4787,"objectiveItems",{{12402}}},
     {3444,"objectiveItems",{{10556}}}, {98815,"objectiveItems",{{284845,4}}},
+    {4022,"objectiveItems",{{10575}}}, {4023,"objectiveItems",{{10575}}},
+    {4061,"objectiveItems",{{11266,10}}}, {4062,"providedItems",{{11267}}},
+    {4121,"objectiveItems",{{11286}}}, {4122,"providedItems",{{11286}}},
+    {4183,"providedItems",{{11366}}}, {4184,"providedItems",{{11367}}},
+    {4186,"providedItems",{{11368}}}, {4264,"providedItems",{{11446}}},
+    {5001,"objectiveItems",{{12345}}}, {5160,"providedItems",{{12923}}},
 }
 for _,sample in ipairs(reviewedItemRoles) do
     render(sample[1])
@@ -229,7 +235,9 @@ for _,sample in ipairs(reviewedItemRoles) do
     assert(addon.quests[sample[1]].requirementsKnown==false)
 end
 for _,sample in ipairs({{1955,{{6549}}},{1957,{{6550,12}}},{8423,{{5993,7}}},
-    {8424,{{6006,20},{6004,10},{6005,20}}},{261,{{11561,30}}}}) do
+    {8424,{{6006,20},{6004,10},{6005,20}}},{261,{{11561,30}}},
+    {3906,{{9026}}},{4003,{{9019}}},{4182,{{7047,15},{7040,10},{7044,1},{7041,4}}},
+    {4262,{{9026}}},{4362,{{9019}}}}) do
     render(sample[1])
     local goals=assert(addon.quests[sample[1]].objectiveKills)
     assert(#goals==#sample[2])
@@ -297,4 +305,16 @@ for _,point in ipairs(addon.quests[2933].startAlternatives)do
 end
 assert(not addon.quests[2933].objectiveItems,
     "the supplied Venom Bottle does not become an invented collection goal")
+render(4264)
+local noteRoles={}
+for _,button in ipairs(ui.objectiveButtons)do if button:IsShown()then
+    local binding=button.objectiveBinding
+    if binding.id==11446 and binding.current()then noteRoles[binding.role]=binding.sourceField end
+end end
+assert(noteRoles.starter=="start" and noteRoles.provided=="providedItems","the note retains both its starter and supplied-item bindings")
+-- The same shackles are collected in one quest and supplied in the next.
+assert(addon.quests[4121].objectiveItems[1].itemID==11286 and not addon.quests[4121].providedItems)
+assert(addon.quests[4122].providedItems[1].itemID==11286 and not addon.quests[4122].objectiveItems)
+assert(addon.quests[4182].objectiveKills[3].npcID==7044 and addon.quests[4182].objectiveKills[3].quantity==1,
+    "Black Drake one is an explicit source count, not an unknown-quantity default")
 print("Reviewed quest sources UI: PASS (actual TOC; modeled routing and roles, no native acceptance)")

@@ -15149,6 +15149,12 @@
       "storyline": [
         3906,
         3907
+      ],
+      "objectiveKills": [
+        {
+          "npcID": 9026,
+          "name": "Overmaster Pyron"
+        }
       ]
     },
     {
@@ -15415,6 +15421,12 @@
         4002,
         4003,
         4004
+      ],
+      "objectiveKills": [
+        {
+          "npcID": 9019,
+          "name": "Emperor Dagran Thaurissan"
+        }
       ]
     },
     {
@@ -15491,6 +15503,12 @@
         [
           4024
         ]
+      ],
+      "objectiveItems": [
+        {
+          "itemID": 10575,
+          "name": "Black Dragonflight Molt"
+        }
       ]
     },
     {
@@ -15532,6 +15550,12 @@
         [
           4024
         ]
+      ],
+      "objectiveItems": [
+        {
+          "itemID": 10575,
+          "name": "Black Dragonflight Molt"
+        }
       ]
     },
     {
@@ -15645,6 +15669,13 @@
         4061,
         4062,
         4063
+      ],
+      "objectiveItems": [
+        {
+          "itemID": 11266,
+          "name": "Fractured Elemental Shard",
+          "quantity": 10
+        }
       ]
     },
     {
@@ -15711,6 +15742,12 @@
         4061,
         4062,
         4063
+      ],
+      "providedItems": [
+        {
+          "itemID": 11267,
+          "name": "Elemental Shard Sample"
+        }
       ]
     },
     {
@@ -16089,7 +16126,13 @@
             "y": 47.6
           }
         ]
-      }
+      },
+      "objectiveItems": [
+        {
+          "itemID": 11286,
+          "name": "Thorium Shackles"
+        }
+      ]
     },
     {
       "id": 4122,
@@ -16192,7 +16235,13 @@
             "zoneName": "Burning Steppes"
           }
         ]
-      }
+      },
+      "providedItems": [
+        {
+          "itemID": 11286,
+          "name": "Thorium Shackles"
+        }
+      ]
     },
     {
       "id": 4123,
@@ -16623,6 +16672,28 @@
         4224,
         4241,
         4242
+      ],
+      "objectiveKills": [
+        {
+          "npcID": 7047,
+          "name": "Black Broodling",
+          "quantity": 15
+        },
+        {
+          "npcID": 7040,
+          "name": "Black Dragonspawn",
+          "quantity": 10
+        },
+        {
+          "npcID": 7044,
+          "name": "Black Drake",
+          "quantity": 1
+        },
+        {
+          "npcID": 7041,
+          "name": "Black Wyrmkin",
+          "quantity": 4
+        }
       ]
     },
     {
@@ -16683,6 +16754,12 @@
         4224,
         4241,
         4242
+      ],
+      "providedItems": [
+        {
+          "itemID": 11366,
+          "name": "Helendis Riverhorn's Letter"
+        }
       ]
     },
     {
@@ -16743,6 +16820,12 @@
         4224,
         4241,
         4242
+      ],
+      "providedItems": [
+        {
+          "itemID": 11367,
+          "name": "Solomon's Plea to Bolvar"
+        }
       ]
     },
     {
@@ -16845,6 +16928,12 @@
         4224,
         4241,
         4242
+      ],
+      "providedItems": [
+        {
+          "itemID": 11368,
+          "name": "Bolvar's Decree"
+        }
       ]
     },
     {
@@ -17108,6 +17197,12 @@
       "storyline": [
         4262,
         4263
+      ],
+      "objectiveKills": [
+        {
+          "npcID": 9026,
+          "name": "Overmaster Pyron"
+        }
       ]
     },
     {
@@ -17193,7 +17288,13 @@
           }
         ],
         "itemMinLevel": 50
-      }
+      },
+      "providedItems": [
+        {
+          "itemID": 11446,
+          "name": "A Crumpled Up Note"
+        }
+      ]
     },
     {
       "id": 4282,
@@ -17613,6 +17714,12 @@
         4361,
         4362,
         4363
+      ],
+      "objectiveKills": [
+        {
+          "npcID": 9019,
+          "name": "Emperor Dagran Thaurissan"
+        }
       ]
     },
     {
@@ -19926,6 +20033,12 @@
         5001,
         5002,
         5081
+      ],
+      "objectiveItems": [
+        {
+          "itemID": 12345,
+          "name": "Bijou's Belongings"
+        }
       ]
     },
     {
@@ -20313,6 +20426,12 @@
         5161,
         5162,
         5164
+      ],
+      "providedItems": [
+        {
+          "itemID": 12923,
+          "name": "Awbee's Scale"
+        }
       ]
     },
     {
