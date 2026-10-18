@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+### 18-Oct-2026
+
+- Find quests by source areas recorded on their reported locations, including
+  Thunder Bluff pickups for Wailing Caverns preparation.
+
 ## 0.1.0 - 18-Oct-2026 — First public Beta
 
 The first public beta brings dungeon quest browsing, prerequisite planning,

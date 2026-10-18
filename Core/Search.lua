@@ -111,7 +111,7 @@ function addon.QuestSourceSearchTerms(quest)
         capture(term, { "text", "kind" }, nil, true)
     end
     local fields = { "npcID", "objectID", "itemID", "mapID", "name", "zoneName", "locationName",
-        "dropNPCID", "dropName", "dropSources", "containerSource" }
+        "dropNPCID", "dropName", "dropSources", "containerSource", "reportedLocations" }
     local visit
     local function list(value, starter)
         value = clean(value, "table")
@@ -153,6 +153,8 @@ function addon.QuestSourceSearchTerms(quest)
         if npc or object or map then
             add(rawget(place, "zoneName"), "place")
             add(rawget(place, "locationName"), "place")
+            -- A source may name its area only on its reported position records.
+            list(rawget(place, "reportedLocations"), false)
         end
         if starter and item then
             if positive(rawget(place, "dropNPCID"), 4294967295) then add(rawget(place, "dropName"), "npc") end
