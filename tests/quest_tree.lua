@@ -297,4 +297,41 @@ check("Every generated catalogue quest builds from the real planner without rewr
     end
     assert(count==571)
 end)
+check("Private hierarchy construction stays linear while retained source proofs remain complete",function()
+    local function measured(size)
+        local quests={}
+        for id=1,size do quests[id]={requires=id<size and{{ids={id+1}}}or nil}end
+        local engine,calls=fixture(quests);local checks=0
+        issecretvalue=function()checks=checks+1;return false end
+        local tree=assert(addon.QuestTree.Build(quests,engine,1))
+        assert(#tree==size and #calls==size)
+        local construction=checks
+        assert(tree.current());local warm=checks-construction
+        quests[size].requires={{ids={1}}}
+        assert(not tree.current(),"the oldest captured leaf remains protected after publication")
+        return construction,warm
+    end
+    local small,smallGuard=measured(20)
+    local large,largeGuard=measured(40)
+    assert(large<=small*2.5,"private chain proofs repeat accumulated fields: "..small.." -> "..large)
+    assert(largeGuard>smallGuard,"warm proofs retain every source field")
+end)
+check("Later engine callbacks cannot publish edits to an earlier private source or state",function()
+    for _,mode in ipairs({"source","state"})do
+        local quests={[1]={requires={{ids={2}}}},[2]={requires={{ids={3}}}},[3]={}}
+        local engine=fixture(quests);local original=engine.State;local first,changed
+        engine.State=function(self,id)
+            local value=original(self,id)
+            if id==3 then first=value end
+            if id==1 then
+                assert(first,"the earlier leaf state must already have been captured")
+                changed=true
+                if mode=="source"then quests[3].requires={{ids={4}}}
+                else first.status="COMPLETED"end
+            end
+            return value
+        end
+        assert(addon.QuestTree.Build(quests,engine,1)==nil and changed,mode)
+    end
+end)
 print("Quest hierarchy modeled checks passed: "..total)

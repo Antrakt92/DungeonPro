@@ -15,7 +15,7 @@ function Tree.Build(quests, engine, rootID)
     local rawStateGetter, rawContextGetter = rawget(engine, "State"), rawget(engine, "Current")
     if engineQuests ~= nil and engineQuests ~= quests then return nil, "engine" end
     local nodes, sources, states, seen, visiting, byID = {}, {}, {}, {}, {}, {}
-    local failed, edges = nil, 0
+    local failed, edges, building = nil, 0, true
     local function same(value, previous)
         if type(checker) == "function" and read(checker, "boolean", value) ~= false then return false end
         return value == previous
@@ -28,15 +28,17 @@ function Tree.Build(quests, engine, rootID)
         if addon.QuestTree ~= Tree or Tree.Build ~= builder or addon.Clean ~= clean or addon.Read ~= read or issecretvalue ~= checker or
             engine.State ~= stateGetter or engine.Current ~= contextGetter or not same(rawget(engine, "quests"), engineQuests) or
             not same(rawget(engine, "context"), engineContext) or not same(rawget(engine, "choices"), engineChoices) then return false end
-        for _, source in ipairs(sources) do
-            if not same(rawget(quests, source.id), source.quest) then return false end
-            for _, field in ipairs(source.fields) do
-                if not same(rawget(field.object, field.key), field.value) then return false end
+        if not building then
+            for _, source in ipairs(sources) do
+                if not same(rawget(quests, source.id), source.quest) then return false end
+                for _, field in ipairs(source.fields) do
+                    if not same(rawget(field.object, field.key), field.value) then return false end
+                end
             end
-        end
-        for _, state in ipairs(states) do
-            for _, key in ipairs({ "status", "reason", "completedHistory" }) do
-                if not same(rawget(state.value, key), state[key]) then return false end
+            for _, state in ipairs(states) do
+                for _, key in ipairs({ "status", "reason", "completedHistory" }) do
+                    if not same(rawget(state.value, key), state[key]) then return false end
+                end
             end
         end
         -- Sanitizers and the context predicate can reenter after an earlier
@@ -46,16 +48,18 @@ function Tree.Build(quests, engine, rootID)
             not rawequal(rawget(engine, "State"), rawStateGetter) or not rawequal(rawget(engine, "Current"), rawContextGetter) or
             not rawequal(rawget(engine, "quests"), engineQuests) or not rawequal(rawget(engine, "context"), engineContext) or
             not rawequal(rawget(engine, "choices"), engineChoices) then return false end
-        for _, source in ipairs(sources) do
-            if not rawequal(rawget(quests, source.id), source.quest) then return false end
-            for _, field in ipairs(source.fields) do
-                if not rawequal(rawget(field.object, field.key), field.value) then return false end
+        if not building then
+            for _, source in ipairs(sources) do
+                if not rawequal(rawget(quests, source.id), source.quest) then return false end
+                for _, field in ipairs(source.fields) do
+                    if not rawequal(rawget(field.object, field.key), field.value) then return false end
+                end
             end
-        end
-        for _, state in ipairs(states) do
-            if not rawequal(rawget(state.value, "status"), state.status) or
-                not rawequal(rawget(state.value, "reason"), state.reason) or
-                not rawequal(rawget(state.value, "completedHistory"), state.completedHistory) then return false end
+            for _, state in ipairs(states) do
+                if not rawequal(rawget(state.value, "status"), state.status) or
+                    not rawequal(rawget(state.value, "reason"), state.reason) or
+                    not rawequal(rawget(state.value, "completedHistory"), state.completedHistory) then return false end
+            end
         end
         return true
     end
@@ -220,6 +224,9 @@ function Tree.Build(quests, engine, rootID)
         end
     end
     for _, node in ipairs(nodes) do present(node) end
+    -- Construction owns only a private model. Re-prove every captured field
+    -- after all callbacks before exposing the hierarchy or its retained guard.
+    building = false
     if not current() then return nil, "expired" end
     nodes.presentation, nodes.targetID = presentation, rootID
     nodes.current = current
