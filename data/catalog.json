@@ -336,21 +336,23 @@
       ],
       "start": {
         "name": "Scout Riell",
-        "mapID": 1436,
-        "x": 56.3,
-        "y": 47.5,
         "npcID": 820,
+        "zoneName": "Westfall",
+        "mapID": 1436,
+        "x": 56.6,
+        "y": 47.4,
         "creatureDisplayID": 2374,
         "portraitSource": "https://www.wowhead.com/forever/npc=820"
       },
       "finish": {
-        "name": "Gryan Stoutmantle",
+        "name": "Scout Riell",
+        "npcID": 820,
+        "zoneName": "Westfall",
         "mapID": 1436,
-        "x": 56.3,
-        "y": 47.5,
-        "npcID": 234,
-        "creatureDisplayID": 1690,
-        "portraitSource": "https://www.wowhead.com/forever/npc=234"
+        "x": 56.6,
+        "y": 47.4,
+        "creatureDisplayID": 2374,
+        "portraitSource": "https://www.wowhead.com/forever/npc=820"
       },
       "requires": [
         {
@@ -405,10 +407,25 @@
       ],
       "start": {
         "name": "Alba Fairmoon",
-        "mapID": 1436,
-        "x": 52.5,
-        "y": 53.1,
         "npcID": 253092,
+        "mapID": 1436,
+        "zoneName": "Westfall",
+        "x": 52.4,
+        "y": 53.0,
+        "reportedLocations": [
+          {
+            "mapID": 1436,
+            "zoneName": "Westfall",
+            "x": 52.4,
+            "y": 53.0
+          },
+          {
+            "mapID": 1436,
+            "zoneName": "Westfall",
+            "x": 52.6,
+            "y": 53.2
+          }
+        ],
         "creatureDisplayID": 137727,
         "portraitSource": "https://www.wowhead.com/forever/npc=253092"
       },
@@ -431,12 +448,52 @@
         92753,
         92819
       ],
-      "storylineEvidence": "https://www.wowhead.com/forever/storyline/toxic-soil-6026"
+      "storylineEvidence": "https://www.wowhead.com/forever/storyline/toxic-soil-6026",
+      "finish": {
+        "name": "Alba Fairmoon",
+        "npcID": 253092,
+        "mapID": 1436,
+        "zoneName": "Westfall",
+        "x": 52.4,
+        "y": 53.0,
+        "reportedLocations": [
+          {
+            "mapID": 1436,
+            "zoneName": "Westfall",
+            "x": 52.4,
+            "y": 53.0
+          },
+          {
+            "mapID": 1436,
+            "zoneName": "Westfall",
+            "x": 52.6,
+            "y": 53.2
+          }
+        ],
+        "creatureDisplayID": 137727,
+        "portraitSource": "https://www.wowhead.com/forever/npc=253092"
+      },
+      "objectiveItems": [
+        {
+          "itemID": 254546,
+          "name": "Jansen Stead Water Sample"
+        },
+        {
+          "itemID": 254547,
+          "name": "Molsen Farm Water Sample"
+        }
+      ],
+      "providedItems": [
+        {
+          "itemID": 254545,
+          "name": "Well Water Sample Kit"
+        }
+      ]
     },
     {
       "id": 92744,
       "name": "Murloc Gills",
-      "level": 14,
+      "level": 12,
       "minLevel": 9,
       "requirementsKnown": false,
       "source": "https://www.wowhead.com/forever/quest=92744",
@@ -445,10 +502,25 @@
       ],
       "start": {
         "name": "Alba Fairmoon",
-        "mapID": 1436,
-        "x": 52.5,
-        "y": 53.1,
         "npcID": 253092,
+        "mapID": 1436,
+        "zoneName": "Westfall",
+        "x": 52.4,
+        "y": 53.0,
+        "reportedLocations": [
+          {
+            "mapID": 1436,
+            "zoneName": "Westfall",
+            "x": 52.4,
+            "y": 53.0
+          },
+          {
+            "mapID": 1436,
+            "zoneName": "Westfall",
+            "x": 52.6,
+            "y": 53.2
+          }
+        ],
         "creatureDisplayID": 137727,
         "portraitSource": "https://www.wowhead.com/forever/npc=253092"
       },
@@ -471,7 +543,38 @@
         92753,
         92819
       ],
-      "storylineEvidence": "https://www.wowhead.com/forever/storyline/toxic-soil-6026"
+      "storylineEvidence": "https://www.wowhead.com/forever/storyline/toxic-soil-6026",
+      "finish": {
+        "name": "Alba Fairmoon",
+        "npcID": 253092,
+        "mapID": 1436,
+        "zoneName": "Westfall",
+        "x": 52.4,
+        "y": 53.0,
+        "reportedLocations": [
+          {
+            "mapID": 1436,
+            "zoneName": "Westfall",
+            "x": 52.4,
+            "y": 53.0
+          },
+          {
+            "mapID": 1436,
+            "zoneName": "Westfall",
+            "x": 52.6,
+            "y": 53.2
+          }
+        ],
+        "creatureDisplayID": 137727,
+        "portraitSource": "https://www.wowhead.com/forever/npc=253092"
+      },
+      "objectiveItems": [
+        {
+          "itemID": 254548,
+          "name": "Longshore Murloc Gill",
+          "quantity": 7
+        }
+      ]
     },
     {
       "id": 92745,
@@ -485,10 +588,25 @@
       ],
       "start": {
         "name": "Alba Fairmoon",
-        "mapID": 1436,
-        "x": 52.5,
-        "y": 53.1,
         "npcID": 253092,
+        "mapID": 1436,
+        "zoneName": "Westfall",
+        "x": 52.4,
+        "y": 53.0,
+        "reportedLocations": [
+          {
+            "mapID": 1436,
+            "zoneName": "Westfall",
+            "x": 52.4,
+            "y": 53.0
+          },
+          {
+            "mapID": 1436,
+            "zoneName": "Westfall",
+            "x": 52.6,
+            "y": 53.2
+          }
+        ],
         "creatureDisplayID": 137727,
         "portraitSource": "https://www.wowhead.com/forever/npc=253092"
       },
@@ -511,12 +629,48 @@
         92753,
         92819
       ],
-      "storylineEvidence": "https://www.wowhead.com/forever/storyline/toxic-soil-6026"
+      "storylineEvidence": "https://www.wowhead.com/forever/storyline/toxic-soil-6026",
+      "finish": {
+        "name": "Alba Fairmoon",
+        "npcID": 253092,
+        "mapID": 1436,
+        "zoneName": "Westfall",
+        "x": 52.4,
+        "y": 53.0,
+        "reportedLocations": [
+          {
+            "mapID": 1436,
+            "zoneName": "Westfall",
+            "x": 52.4,
+            "y": 53.0
+          },
+          {
+            "mapID": 1436,
+            "zoneName": "Westfall",
+            "x": 52.6,
+            "y": 53.2
+          }
+        ],
+        "creatureDisplayID": 137727,
+        "portraitSource": "https://www.wowhead.com/forever/npc=253092"
+      },
+      "objectiveKills": [
+        {
+          "npcID": 1236,
+          "name": "Kobold Digger",
+          "quantity": 4
+        },
+        {
+          "npcID": 1426,
+          "name": "Riverpaw Miner",
+          "quantity": 6
+        }
+      ]
     },
     {
       "id": 92747,
       "name": "Moonbrook Espionage",
-      "level": 16,
+      "level": 15,
       "minLevel": 9,
       "requirementsKnown": false,
       "source": "https://www.wowhead.com/forever/quest=92747",
@@ -525,10 +679,25 @@
       ],
       "start": {
         "name": "Alba Fairmoon",
-        "mapID": 1436,
-        "x": 52.5,
-        "y": 53.1,
         "npcID": 253092,
+        "mapID": 1436,
+        "zoneName": "Westfall",
+        "x": 52.4,
+        "y": 53.0,
+        "reportedLocations": [
+          {
+            "mapID": 1436,
+            "zoneName": "Westfall",
+            "x": 52.4,
+            "y": 53.0
+          },
+          {
+            "mapID": 1436,
+            "zoneName": "Westfall",
+            "x": 52.6,
+            "y": 53.2
+          }
+        ],
         "creatureDisplayID": 137727,
         "portraitSource": "https://www.wowhead.com/forever/npc=253092"
       },
@@ -551,7 +720,38 @@
         92753,
         92819
       ],
-      "storylineEvidence": "https://www.wowhead.com/forever/storyline/toxic-soil-6026"
+      "storylineEvidence": "https://www.wowhead.com/forever/storyline/toxic-soil-6026",
+      "finish": {
+        "name": "Alba Fairmoon",
+        "npcID": 253092,
+        "mapID": 1436,
+        "zoneName": "Westfall",
+        "x": 52.4,
+        "y": 53.0,
+        "reportedLocations": [
+          {
+            "mapID": 1436,
+            "zoneName": "Westfall",
+            "x": 52.4,
+            "y": 53.0
+          },
+          {
+            "mapID": 1436,
+            "zoneName": "Westfall",
+            "x": 52.6,
+            "y": 53.2
+          }
+        ],
+        "creatureDisplayID": 137727,
+        "portraitSource": "https://www.wowhead.com/forever/npc=253092"
+      },
+      "objectiveItems": [
+        {
+          "itemID": 254676,
+          "name": "Suspicious Industrial Supplies",
+          "quantity": 8
+        }
+      ]
     },
     {
       "id": 92748,
@@ -565,10 +765,25 @@
       ],
       "start": {
         "name": "Alba Fairmoon",
-        "mapID": 1436,
-        "x": 52.5,
-        "y": 53.1,
         "npcID": 253092,
+        "mapID": 1436,
+        "zoneName": "Westfall",
+        "x": 52.4,
+        "y": 53.0,
+        "reportedLocations": [
+          {
+            "mapID": 1436,
+            "zoneName": "Westfall",
+            "x": 52.4,
+            "y": 53.0
+          },
+          {
+            "mapID": 1436,
+            "zoneName": "Westfall",
+            "x": 52.6,
+            "y": 53.2
+          }
+        ],
         "creatureDisplayID": 137727,
         "portraitSource": "https://www.wowhead.com/forever/npc=253092"
       },
@@ -591,7 +806,35 @@
         92753,
         92819
       ],
-      "storylineEvidence": "https://www.wowhead.com/forever/storyline/toxic-soil-6026"
+      "storylineEvidence": "https://www.wowhead.com/forever/storyline/toxic-soil-6026",
+      "finish": {
+        "name": "Sprite Jumpsprocket",
+        "npcID": 11026,
+        "mapID": 1453,
+        "zoneName": "Stormwind City",
+        "x": 54.6,
+        "y": 8.0,
+        "reportedLocations": [
+          {
+            "mapID": 1453,
+            "zoneName": "Stormwind City",
+            "x": 54.6,
+            "y": 8.0
+          },
+          {
+            "mapID": 1453,
+            "zoneName": "Stormwind City",
+            "x": 54.8,
+            "y": 8.8
+          },
+          {
+            "mapID": 1453,
+            "zoneName": "Stormwind City",
+            "x": 61.8,
+            "y": 30.8
+          }
+        ]
+      }
     },
     {
       "id": 92749,
@@ -604,13 +847,32 @@
         "Alliance"
       ],
       "start": {
-        "name": "Alba Fairmoon",
-        "mapID": 1436,
-        "x": 52.5,
-        "y": 53.1,
-        "npcID": 253092,
-        "creatureDisplayID": 137727,
-        "portraitSource": "https://www.wowhead.com/forever/npc=253092"
+        "name": "Sprite Jumpsprocket",
+        "npcID": 11026,
+        "mapID": 1453,
+        "zoneName": "Stormwind City",
+        "x": 54.6,
+        "y": 8.0,
+        "reportedLocations": [
+          {
+            "mapID": 1453,
+            "zoneName": "Stormwind City",
+            "x": 54.6,
+            "y": 8.0
+          },
+          {
+            "mapID": 1453,
+            "zoneName": "Stormwind City",
+            "x": 54.8,
+            "y": 8.8
+          },
+          {
+            "mapID": 1453,
+            "zoneName": "Stormwind City",
+            "x": 61.8,
+            "y": 30.8
+          }
+        ]
       },
       "races": [
         3,
@@ -631,7 +893,42 @@
         92753,
         92819
       ],
-      "storylineEvidence": "https://www.wowhead.com/forever/storyline/toxic-soil-6026"
+      "storylineEvidence": "https://www.wowhead.com/forever/storyline/toxic-soil-6026",
+      "finish": {
+        "name": "Sprite Jumpsprocket",
+        "npcID": 11026,
+        "mapID": 1453,
+        "zoneName": "Stormwind City",
+        "x": 54.6,
+        "y": 8.0,
+        "reportedLocations": [
+          {
+            "mapID": 1453,
+            "zoneName": "Stormwind City",
+            "x": 54.6,
+            "y": 8.0
+          },
+          {
+            "mapID": 1453,
+            "zoneName": "Stormwind City",
+            "x": 54.8,
+            "y": 8.8
+          },
+          {
+            "mapID": 1453,
+            "zoneName": "Stormwind City",
+            "x": 61.8,
+            "y": 30.8
+          }
+        ]
+      },
+      "objectiveItems": [
+        {
+          "itemID": 4358,
+          "name": "Rough Dynamite",
+          "quantity": 10
+        }
+      ]
     },
     {
       "id": 92750,
@@ -644,13 +941,32 @@
         "Alliance"
       ],
       "start": {
-        "name": "Alba Fairmoon",
-        "mapID": 1436,
-        "x": 52.5,
-        "y": 53.1,
-        "npcID": 253092,
-        "creatureDisplayID": 137727,
-        "portraitSource": "https://www.wowhead.com/forever/npc=253092"
+        "name": "Sprite Jumpsprocket",
+        "npcID": 11026,
+        "mapID": 1453,
+        "zoneName": "Stormwind City",
+        "x": 54.6,
+        "y": 8.0,
+        "reportedLocations": [
+          {
+            "mapID": 1453,
+            "zoneName": "Stormwind City",
+            "x": 54.6,
+            "y": 8.0
+          },
+          {
+            "mapID": 1453,
+            "zoneName": "Stormwind City",
+            "x": 54.8,
+            "y": 8.8
+          },
+          {
+            "mapID": 1453,
+            "zoneName": "Stormwind City",
+            "x": 61.8,
+            "y": 30.8
+          }
+        ]
       },
       "races": [
         3,
@@ -671,7 +987,41 @@
         92753,
         92819
       ],
-      "storylineEvidence": "https://www.wowhead.com/forever/storyline/toxic-soil-6026"
+      "storylineEvidence": "https://www.wowhead.com/forever/storyline/toxic-soil-6026",
+      "finish": {
+        "name": "Jasper Fel",
+        "npcID": 1325,
+        "mapID": 1453,
+        "zoneName": "Stormwind City",
+        "x": 77.8,
+        "y": 59.6,
+        "reportedLocations": [
+          {
+            "mapID": 1453,
+            "zoneName": "Stormwind City",
+            "x": 77.8,
+            "y": 59.6
+          },
+          {
+            "mapID": 1453,
+            "zoneName": "Stormwind City",
+            "x": 78.2,
+            "y": 58.4
+          },
+          {
+            "mapID": 1453,
+            "zoneName": "Stormwind City",
+            "x": 78.2,
+            "y": 58.8
+          },
+          {
+            "mapID": 1453,
+            "zoneName": "Stormwind City",
+            "x": 80.0,
+            "y": 70.0
+          }
+        ]
+      }
     },
     {
       "id": 92751,
@@ -684,13 +1034,38 @@
         "Alliance"
       ],
       "start": {
-        "name": "Alba Fairmoon",
-        "mapID": 1436,
-        "x": 52.5,
-        "y": 53.1,
-        "npcID": 253092,
-        "creatureDisplayID": 137727,
-        "portraitSource": "https://www.wowhead.com/forever/npc=253092"
+        "name": "Jasper Fel",
+        "npcID": 1325,
+        "mapID": 1453,
+        "zoneName": "Stormwind City",
+        "x": 77.8,
+        "y": 59.6,
+        "reportedLocations": [
+          {
+            "mapID": 1453,
+            "zoneName": "Stormwind City",
+            "x": 77.8,
+            "y": 59.6
+          },
+          {
+            "mapID": 1453,
+            "zoneName": "Stormwind City",
+            "x": 78.2,
+            "y": 58.4
+          },
+          {
+            "mapID": 1453,
+            "zoneName": "Stormwind City",
+            "x": 78.2,
+            "y": 58.8
+          },
+          {
+            "mapID": 1453,
+            "zoneName": "Stormwind City",
+            "x": 80.0,
+            "y": 70.0
+          }
+        ]
       },
       "races": [
         3,
@@ -711,7 +1086,41 @@
         92753,
         92819
       ],
-      "storylineEvidence": "https://www.wowhead.com/forever/storyline/toxic-soil-6026"
+      "storylineEvidence": "https://www.wowhead.com/forever/storyline/toxic-soil-6026",
+      "finish": {
+        "name": "Sprite Jumpsprocket",
+        "npcID": 11026,
+        "mapID": 1453,
+        "zoneName": "Stormwind City",
+        "x": 54.6,
+        "y": 8.0,
+        "reportedLocations": [
+          {
+            "mapID": 1453,
+            "zoneName": "Stormwind City",
+            "x": 54.6,
+            "y": 8.0
+          },
+          {
+            "mapID": 1453,
+            "zoneName": "Stormwind City",
+            "x": 54.8,
+            "y": 8.8
+          },
+          {
+            "mapID": 1453,
+            "zoneName": "Stormwind City",
+            "x": 61.8,
+            "y": 30.8
+          }
+        ]
+      },
+      "providedItems": [
+        {
+          "itemID": 254552,
+          "name": "Remote Detonator Kit"
+        }
+      ]
     },
     {
       "id": 92752,
@@ -724,13 +1133,32 @@
         "Alliance"
       ],
       "start": {
-        "name": "Alba Fairmoon",
-        "mapID": 1436,
-        "x": 52.5,
-        "y": 53.1,
-        "npcID": 253092,
-        "creatureDisplayID": 137727,
-        "portraitSource": "https://www.wowhead.com/forever/npc=253092"
+        "name": "Sprite Jumpsprocket",
+        "npcID": 11026,
+        "mapID": 1453,
+        "zoneName": "Stormwind City",
+        "x": 54.6,
+        "y": 8.0,
+        "reportedLocations": [
+          {
+            "mapID": 1453,
+            "zoneName": "Stormwind City",
+            "x": 54.6,
+            "y": 8.0
+          },
+          {
+            "mapID": 1453,
+            "zoneName": "Stormwind City",
+            "x": 54.8,
+            "y": 8.8
+          },
+          {
+            "mapID": 1453,
+            "zoneName": "Stormwind City",
+            "x": 61.8,
+            "y": 30.8
+          }
+        ]
       },
       "races": [
         3,
@@ -751,7 +1179,37 @@
         92753,
         92819
       ],
-      "storylineEvidence": "https://www.wowhead.com/forever/storyline/toxic-soil-6026"
+      "storylineEvidence": "https://www.wowhead.com/forever/storyline/toxic-soil-6026",
+      "finish": {
+        "name": "Alba Fairmoon",
+        "npcID": 253092,
+        "mapID": 1436,
+        "zoneName": "Westfall",
+        "x": 52.4,
+        "y": 53.0,
+        "reportedLocations": [
+          {
+            "mapID": 1436,
+            "zoneName": "Westfall",
+            "x": 52.4,
+            "y": 53.0
+          },
+          {
+            "mapID": 1436,
+            "zoneName": "Westfall",
+            "x": 52.6,
+            "y": 53.2
+          }
+        ],
+        "creatureDisplayID": 137727,
+        "portraitSource": "https://www.wowhead.com/forever/npc=253092"
+      },
+      "providedItems": [
+        {
+          "itemID": 254553,
+          "name": "Extra-Destructive Explosives"
+        }
+      ]
     },
     {
       "id": 92753,
@@ -765,10 +1223,25 @@
       ],
       "start": {
         "name": "Alba Fairmoon",
-        "mapID": 1436,
-        "x": 52.5,
-        "y": 53.1,
         "npcID": 253092,
+        "mapID": 1436,
+        "zoneName": "Westfall",
+        "x": 52.4,
+        "y": 53.0,
+        "reportedLocations": [
+          {
+            "mapID": 1436,
+            "zoneName": "Westfall",
+            "x": 52.4,
+            "y": 53.0
+          },
+          {
+            "mapID": 1436,
+            "zoneName": "Westfall",
+            "x": 52.6,
+            "y": 53.2
+          }
+        ],
         "creatureDisplayID": 137727,
         "portraitSource": "https://www.wowhead.com/forever/npc=253092"
       },
@@ -853,12 +1326,39 @@
       ],
       "start": {
         "name": "Alba Fairmoon",
+        "npcID": 253279,
         "mapID": 1436,
-        "x": 52.5,
-        "y": 53.1,
-        "npcID": 253092,
+        "zoneName": "Westfall",
+        "x": 38.4,
+        "y": 83.4,
+        "reportedLocations": [
+          {
+            "mapID": 1436,
+            "zoneName": "Westfall",
+            "x": 38.4,
+            "y": 83.4
+          },
+          {
+            "mapID": 1436,
+            "zoneName": "Westfall",
+            "x": 38.4,
+            "y": 83.6
+          },
+          {
+            "mapID": 1436,
+            "zoneName": "Westfall",
+            "x": 38.6,
+            "y": 83.4
+          },
+          {
+            "mapID": 1436,
+            "zoneName": "Westfall",
+            "x": 38.6,
+            "y": 83.6
+          }
+        ],
         "creatureDisplayID": 137727,
-        "portraitSource": "https://www.wowhead.com/forever/npc=253092"
+        "portraitSource": "https://www.wowhead.com/forever/npc=253279"
       },
       "races": [
         3,
@@ -879,7 +1379,49 @@
         92753,
         92819
       ],
-      "storylineEvidence": "https://www.wowhead.com/forever/storyline/toxic-soil-6026"
+      "storylineEvidence": "https://www.wowhead.com/forever/storyline/toxic-soil-6026",
+      "finish": {
+        "name": "Alba Fairmoon",
+        "npcID": 253279,
+        "mapID": 1436,
+        "zoneName": "Westfall",
+        "x": 38.4,
+        "y": 83.4,
+        "reportedLocations": [
+          {
+            "mapID": 1436,
+            "zoneName": "Westfall",
+            "x": 38.4,
+            "y": 83.4
+          },
+          {
+            "mapID": 1436,
+            "zoneName": "Westfall",
+            "x": 38.4,
+            "y": 83.6
+          },
+          {
+            "mapID": 1436,
+            "zoneName": "Westfall",
+            "x": 38.6,
+            "y": 83.4
+          },
+          {
+            "mapID": 1436,
+            "zoneName": "Westfall",
+            "x": 38.6,
+            "y": 83.6
+          }
+        ],
+        "creatureDisplayID": 137727,
+        "portraitSource": "https://www.wowhead.com/forever/npc=253279"
+      },
+      "objectiveEvents": [
+        {
+          "npcID": 266995,
+          "name": "Detonator used"
+        }
+      ]
     },
     {
       "id": 5726,
@@ -1547,13 +2089,40 @@
       ],
       "start": {
         "name": "Afadra Dunwall",
+        "npcID": 264943,
+        "zoneName": "Ironforge",
         "mapID": 1455,
         "x": 32.8,
         "y": 48.6,
-        "npcID": 264943,
-        "zoneName": "Ironforge",
         "creatureDisplayID": 144322,
-        "portraitSource": "https://www.wowhead.com/forever/npc=264943"
+        "portraitSource": "https://www.wowhead.com/forever/npc=264943",
+        "reportedLocations": [
+          {
+            "mapID": 1455,
+            "x": 32.8,
+            "y": 48.6
+          },
+          {
+            "mapID": 1455,
+            "x": 33.0,
+            "y": 48.0
+          },
+          {
+            "mapID": 1455,
+            "x": 33.2,
+            "y": 47.4
+          },
+          {
+            "mapID": 1455,
+            "x": 33.6,
+            "y": 48.0
+          },
+          {
+            "mapID": 1455,
+            "x": 33.6,
+            "y": 48.6
+          }
+        ]
       },
       "objectiveKills": [
         {
@@ -1566,7 +2135,44 @@
           "name": "Tormented Soul",
           "quantity": 10
         }
-      ]
+      ],
+      "finish": {
+        "name": "Afadra Dunwall",
+        "npcID": 264943,
+        "zoneName": "Ironforge",
+        "mapID": 1455,
+        "x": 32.8,
+        "y": 48.6,
+        "creatureDisplayID": 144322,
+        "portraitSource": "https://www.wowhead.com/forever/npc=264943",
+        "reportedLocations": [
+          {
+            "mapID": 1455,
+            "x": 32.8,
+            "y": 48.6
+          },
+          {
+            "mapID": 1455,
+            "x": 33.0,
+            "y": 48.0
+          },
+          {
+            "mapID": 1455,
+            "x": 33.2,
+            "y": 47.4
+          },
+          {
+            "mapID": 1455,
+            "x": 33.6,
+            "y": 48.0
+          },
+          {
+            "mapID": 1455,
+            "x": 33.6,
+            "y": 48.6
+          }
+        ]
+      }
     },
     {
       "id": 96395,
@@ -1602,13 +2208,45 @@
       ],
       "start": {
         "name": "Thom Filch",
+        "npcID": 265003,
+        "zoneName": "Ironforge",
         "mapID": 1455,
         "x": 32.6,
         "y": 44.6,
-        "npcID": 265003,
-        "zoneName": "Ironforge",
         "creatureDisplayID": 144349,
-        "portraitSource": "https://www.wowhead.com/forever/npc=265003"
+        "portraitSource": "https://www.wowhead.com/forever/npc=265003",
+        "reportedLocations": [
+          {
+            "mapID": 1455,
+            "x": 32.6,
+            "y": 44.6
+          },
+          {
+            "mapID": 1455,
+            "x": 31.4,
+            "y": 45.8
+          },
+          {
+            "mapID": 1455,
+            "x": 31.6,
+            "y": 45.6
+          },
+          {
+            "mapID": 1455,
+            "x": 32.4,
+            "y": 44.4
+          },
+          {
+            "mapID": 1455,
+            "x": 32.4,
+            "y": 44.8
+          },
+          {
+            "mapID": 1455,
+            "x": 32.6,
+            "y": 44.4
+          }
+        ]
       },
       "objectiveItems": [
         {
@@ -1616,7 +2254,49 @@
           "name": "Dwarven Heirloom",
           "quantity": 8
         }
-      ]
+      ],
+      "finish": {
+        "name": "Thom Filch",
+        "npcID": 265003,
+        "zoneName": "Ironforge",
+        "mapID": 1455,
+        "x": 32.6,
+        "y": 44.6,
+        "creatureDisplayID": 144349,
+        "portraitSource": "https://www.wowhead.com/forever/npc=265003",
+        "reportedLocations": [
+          {
+            "mapID": 1455,
+            "x": 32.6,
+            "y": 44.6
+          },
+          {
+            "mapID": 1455,
+            "x": 31.4,
+            "y": 45.8
+          },
+          {
+            "mapID": 1455,
+            "x": 31.6,
+            "y": 45.6
+          },
+          {
+            "mapID": 1455,
+            "x": 32.4,
+            "y": 44.4
+          },
+          {
+            "mapID": 1455,
+            "x": 32.4,
+            "y": 44.8
+          },
+          {
+            "mapID": 1455,
+            "x": 32.6,
+            "y": 44.4
+          }
+        ]
+      }
     },
     {
       "id": 914,

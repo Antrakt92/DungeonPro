@@ -1,0 +1,120 @@
+-- Actual catalogue endpoints and source roles, exercised through the real TOC.
+local fixture = assert(loadfile("tests/client_ui.lua"))("fixture")
+local addon, ui = fixture.addon, fixture.addon.UI
+C_Timer = { After = function() end }
+issecretvalue = function() return false end
+fixture.eventFrame.scripts.OnEvent(fixture.eventFrame, "ADDON_LOADED", "DungeonPro")
+ui:Toggle(); addon.db.locale = "enUS"; ui.includeUnavailable = true
+local ready, selected, visits = false, nil, {}
+addon.Context = function()
+    return {level=60, faction="Alliance", class="MAGE", race=3,
+        completed=function(id) return id==155 end,
+        active=function(id) return ready and id==selected end,
+        ready=function(id) return ready and id==selected end}
+end
+UnitLevel = function() return 60 end
+UnitEffectiveLevel = function() return 60 end
+UnitQuestTrivialLevelRange = function() return 5 end
+GetQuestDifficultyColor = function() return {r=0,g=1,b=0} end
+addon.Navigation = {Start=function(action) visits[#visits+1]=action; return true end}
+addon.GiverName = function(point) return point.name end
+addon.ItemName = function(id) return "Recorded item "..id end
+addon.ItemIcon = function() return 134400 end
+addon.CarriedItemCount = function() return 0 end
+addon.DialogueRewards, addon.QuestRewards, addon.CachedQuestRewards = function() end, function() end, function() end
+local owners = {}
+for _,dungeon in ipairs(addon.dungeons) do for _,id in ipairs(dungeon.quests) do
+    owners[id]=dungeon
+    for _,member in ipairs(addon.quests[id].storyline or {}) do owners[member]=dungeon end
+end end
+local function contains(text)
+    for _,field in ipairs(ui.details) do
+        if field:IsShown() and field.text:find(text,1,true) then return true end
+    end
+    return false
+end
+local function render(id, turnin)
+    selected, ready = id, turnin == true
+    ui.dungeon, ui.quest = assert(owners[id]), id
+    ui.questTreeRoot, ui.questTreeDungeon = 92819, ui.dungeon
+    ui:Refresh()
+    assert(ui.quest==id and ui.renderedQuest==id, "render keeps inspected quest identity")
+end
+local function giver(id, npc)
+    render(id)
+    local definition = addon.quests[id]
+    assert(ui.giverAction and ui.giverAction.id==id and ui.giverAction.place==definition.start,
+        "giver navigation belongs to inspected quest rather than selected root")
+    assert(ui.giverAction.place.npcID==npc, "reviewed start NPC must be rendered")
+    assert(contains(definition.start.name), "reviewed giver identity is visible")
+    local before=#visits; ui.giver.scripts.OnClick()
+    assert(#visits==before+1 and visits[#visits].id==id and visits[#visits].place==definition.start,
+        "native giver click visits its own recorded endpoint")
+end
+local function finish(id, npc)
+    render(id,true)
+    local definition=addon.quests[id]
+    assert(ui.action and ui.action.id==id and ui.action.kind=="turnin" and
+        ui.action.place==definition.finish and ui.action.place.npcID==npc,
+        "ready quest targets its reviewed turn-in NPC")
+    assert(ui:DispatchDetail(ui.action,false))
+    assert(visits[#visits].id==id and visits[#visits].place==definition.finish,
+        "turn-in dispatch preserves its exact recorded endpoint")
+    if definition.start.npcID~=npc then
+        assert(contains(addon.L("DETAIL_TURNIN")..": "..definition.finish.name), "distinct turn-in identity is visible")
+    end
+end
+giver(214,820); finish(214,820)
+assert(addon.quests[214].start.x==56.6 and addon.quests[214].start.y==47.4 and
+    addon.quests[214].finish.x==56.6 and addon.quests[214].finish.y==47.4,
+    "Scout start and finish use the same actual source pin")
+for _,sample in ipairs({{96394,264943,5},{96403,265003,6}}) do
+    local id,npc,count=unpack(sample)
+    giver(id,npc); finish(id,npc)
+    assert(ui.referenceToggle and ui.referenceToggle:IsShown(), "reported source choices are reachable")
+    ui.referenceToggle.scripts.OnClick()
+    local toggle
+    for _,button in ipairs(ui.reportedToggles) do if button:IsShown() and button.locationKey=="start" then toggle=button end end
+    assert(toggle and toggle.title.text:find("("..count..")",1,true), "every reported NPC point is offered")
+    toggle.scripts.OnClick()
+    local countShown=0
+    for _,button in ipairs(ui.reportedRows) do if button:IsShown() and button.locationKey=="start" then
+        countShown=countShown+1
+        local point=addon.quests[id].start.reportedLocations[countShown]
+        assert(button.destination.mapID==point.mapID and button.destination.x==point.x and button.destination.y==point.y)
+        button.scripts.OnClick()
+        assert(visits[#visits].id==id and visits[#visits].place==button.destination, "reported visit retains own quest and exact source point")
+    end end
+    assert(countShown==count)
+end
+for _,sample in ipairs({{92748,253092,11026},{92749,11026,11026},{92750,11026,1325},
+    {92751,1325,11026},{92752,11026,253092},{92819,253279,253279}}) do
+    giver(sample[1],sample[2]); finish(sample[1],sample[3])
+end
+for _,sample in ipairs({{92744,12},{92747,15}}) do
+    render(sample[1])
+    assert(contains("|cff00ff00"..addon.L("DETAIL_LEVEL",sample[2]).."|r"), "corrected quest level receives native difficulty color")
+end
+for _,sample in ipairs({{92751,254552},{92752,254553}}) do
+    render(sample[1])
+    local found=false
+    for _,button in ipairs(ui.objectiveButtons) do if button:IsShown() then
+        local binding=button.objectiveBinding
+        if binding.id==sample[2] then
+            assert(binding.role=="provided" and binding.sourceField=="providedItems" and binding.current(),
+                "supplied item remains in its explicit provided role")
+            found=true
+        end
+    end end
+    assert(found and contains("Recorded item "..sample[2].." ×?"), "unverified supplied quantity stays explicit")
+    assert(not contains("Recorded item "..sample[2].." ×1"), "no invented supplied count")
+    for _,button in ipairs(ui.rewardButtons) do assert(not button:IsShown(), "supplied item is not invented as reward") end
+end
+render(92819)
+assert(contains("Detonator used"), "final quest event label is displayed")
+assert(addon.quests[92819].objectiveEvents[1].npcID==266995, "event objective retains exact typed NPC identity")
+for _,id in ipairs({214,96394,96403,92744,92747,92748,92749,92750,92751,92752,92819}) do
+    assert(addon.quests[id].requirementsKnown==false, "source corrections do not claim complete requirements")
+end
+assert(addon.quests[214].requires[1].ids[1]==155, "existing prerequisite fact survives source correction")
+print("Reviewed quest sources UI: PASS (actual TOC; modeled routing and roles, no native acceptance)")
