@@ -42,20 +42,20 @@ to find dungeons that list it.
 
 ## Getting started
 
-1. Download the file labelled **Forever** from
-   [GitHub Releases](https://github.com/Antrakt92/DungeonPro/releases) or
-   [CurseForge](https://www.curseforge.com/wow/addons/dungeon-pro).
-   On GitHub, choose `DungeonPro-0.1.0-Forever.zip` under **Assets**.
-   The automatic **Source code** ZIP is for development, not installation.
-2. Extract the ZIP's `DungeonPro` folder into your Forever client's
-   `Interface/AddOns` folder, then reload your interface.
-3. Click the minimap button or type `/DP`. Pick a dungeon, then a quest.
-   Expand its chain to see earlier steps, and hover a navigation icon to check
-   where it leads.
+Install Dungeon Pro through [CurseForge](https://www.curseforge.com/wow/addons/dungeon-pro),
+then reload your interface. Click the minimap button or type `/DP` and pick a dungeon.
 
-After extraction, the TOC should be at
-`Interface/AddOns/DungeonPro/DungeonPro.toc`. This build is for Forever;
-Retail and other Classic branches are not supported.
+This build is for **WoW Forever**.
+
+<details>
+<summary>Installing a ZIP manually</summary>
+
+Download the Forever ZIP from [GitHub Releases](https://github.com/Antrakt92/DungeonPro/releases)
+and extract its `DungeonPro` folder into your Forever client's `Interface/AddOns`
+folder. Choose the addon ZIP under **Assets**, not the automatic **Source code** ZIP.
+Then reload your interface.
+
+</details>
 
 ## Commands
 
