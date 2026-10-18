@@ -2768,7 +2768,39 @@
         "x": 75.6,
         "y": 31.2,
         "creatureDisplayID": 4513,
-        "portraitSource": "https://www.wowhead.com/forever/npc=5770"
+        "portraitSource": "https://www.wowhead.com/forever/npc=5770",
+        "reportedLocations": [
+          {
+            "x": 75.2,
+            "y": 30.4,
+            "mapID": 1456,
+            "zoneName": "Thunder Bluff"
+          },
+          {
+            "x": 75.4,
+            "y": 31.0,
+            "mapID": 1456,
+            "zoneName": "Thunder Bluff"
+          },
+          {
+            "x": 75.6,
+            "y": 31.2,
+            "mapID": 1456,
+            "zoneName": "Thunder Bluff"
+          },
+          {
+            "x": 75.6,
+            "y": 31.6,
+            "mapID": 1456,
+            "zoneName": "Thunder Bluff"
+          },
+          {
+            "x": 76.0,
+            "y": 30.4,
+            "mapID": 1456,
+            "zoneName": "Thunder Bluff"
+          }
+        ]
       },
       "finish": {
         "npcID": 5770,
@@ -2777,7 +2809,39 @@
         "x": 75.6,
         "y": 31.2,
         "creatureDisplayID": 4513,
-        "portraitSource": "https://www.wowhead.com/forever/npc=5770"
+        "portraitSource": "https://www.wowhead.com/forever/npc=5770",
+        "reportedLocations": [
+          {
+            "x": 75.2,
+            "y": 30.4,
+            "mapID": 1456,
+            "zoneName": "Thunder Bluff"
+          },
+          {
+            "x": 75.4,
+            "y": 31.0,
+            "mapID": 1456,
+            "zoneName": "Thunder Bluff"
+          },
+          {
+            "x": 75.6,
+            "y": 31.2,
+            "mapID": 1456,
+            "zoneName": "Thunder Bluff"
+          },
+          {
+            "x": 75.6,
+            "y": 31.6,
+            "mapID": 1456,
+            "zoneName": "Thunder Bluff"
+          },
+          {
+            "x": 76.0,
+            "y": 30.4,
+            "mapID": 1456,
+            "zoneName": "Thunder Bluff"
+          }
+        ]
       },
       "storyline": [
         1489,
@@ -3025,7 +3089,21 @@
         "x": 63.0,
         "y": 37.4,
         "creatureDisplayID": 7051,
-        "portraitSource": "https://www.wowhead.com/forever/npc=3665"
+        "portraitSource": "https://www.wowhead.com/forever/npc=3665",
+        "reportedLocations": [
+          {
+            "x": 63.0,
+            "y": 37.4,
+            "mapID": 1413,
+            "zoneName": "The Barrens"
+          },
+          {
+            "x": 63.0,
+            "y": 37.6,
+            "mapID": 1413,
+            "zoneName": "The Barrens"
+          }
+        ]
       },
       "finish": {
         "npcID": 3665,
@@ -3034,7 +3112,21 @@
         "x": 63.0,
         "y": 37.4,
         "creatureDisplayID": 7051,
-        "portraitSource": "https://www.wowhead.com/forever/npc=3665"
+        "portraitSource": "https://www.wowhead.com/forever/npc=3665",
+        "reportedLocations": [
+          {
+            "x": 63.0,
+            "y": 37.4,
+            "mapID": 1413,
+            "zoneName": "The Barrens"
+          },
+          {
+            "x": 63.0,
+            "y": 37.6,
+            "mapID": 1413,
+            "zoneName": "The Barrens"
+          }
+        ]
       },
       "objectiveItems": [
         {
@@ -3091,7 +3183,33 @@
         "x": 23.6,
         "y": 21.4,
         "creatureDisplayID": 1814,
-        "portraitSource": "https://www.wowhead.com/forever/npc=3419"
+        "portraitSource": "https://www.wowhead.com/forever/npc=3419",
+        "reportedLocations": [
+          {
+            "x": 22.4,
+            "y": 19.8,
+            "mapID": 1456,
+            "zoneName": "Thunder Bluff"
+          },
+          {
+            "x": 23.0,
+            "y": 21.0,
+            "mapID": 1456,
+            "zoneName": "Thunder Bluff"
+          },
+          {
+            "x": 23.6,
+            "y": 21.4,
+            "mapID": 1456,
+            "zoneName": "Thunder Bluff"
+          },
+          {
+            "x": 23.6,
+            "y": 21.6,
+            "mapID": 1456,
+            "zoneName": "Thunder Bluff"
+          }
+        ]
       },
       "finish": {
         "npcID": 3419,
@@ -3100,7 +3218,33 @@
         "x": 23.6,
         "y": 21.4,
         "creatureDisplayID": 1814,
-        "portraitSource": "https://www.wowhead.com/forever/npc=3419"
+        "portraitSource": "https://www.wowhead.com/forever/npc=3419",
+        "reportedLocations": [
+          {
+            "x": 22.4,
+            "y": 19.8,
+            "mapID": 1456,
+            "zoneName": "Thunder Bluff"
+          },
+          {
+            "x": 23.0,
+            "y": 21.0,
+            "mapID": 1456,
+            "zoneName": "Thunder Bluff"
+          },
+          {
+            "x": 23.6,
+            "y": 21.4,
+            "mapID": 1456,
+            "zoneName": "Thunder Bluff"
+          },
+          {
+            "x": 23.6,
+            "y": 21.6,
+            "mapID": 1456,
+            "zoneName": "Thunder Bluff"
+          }
+        ]
       },
       "objectiveItems": [
         {
@@ -3163,7 +3307,39 @@
         "x": 75.6,
         "y": 31.2,
         "creatureDisplayID": 4513,
-        "portraitSource": "https://www.wowhead.com/forever/npc=5770"
+        "portraitSource": "https://www.wowhead.com/forever/npc=5770",
+        "reportedLocations": [
+          {
+            "x": 75.2,
+            "y": 30.4,
+            "mapID": 1456,
+            "zoneName": "Thunder Bluff"
+          },
+          {
+            "x": 75.4,
+            "y": 31.0,
+            "mapID": 1456,
+            "zoneName": "Thunder Bluff"
+          },
+          {
+            "x": 75.6,
+            "y": 31.2,
+            "mapID": 1456,
+            "zoneName": "Thunder Bluff"
+          },
+          {
+            "x": 75.6,
+            "y": 31.6,
+            "mapID": 1456,
+            "zoneName": "Thunder Bluff"
+          },
+          {
+            "x": 76.0,
+            "y": 30.4,
+            "mapID": 1456,
+            "zoneName": "Thunder Bluff"
+          }
+        ]
       },
       "storyline": [
         1489,
@@ -29319,11 +29495,15 @@
         },
         {
           "npcID": 10877,
-          "name": "Courier Hammerfall"
+          "name": "Courier Hammerfall",
+          "mapID": 1455,
+          "zoneName": "Ironforge"
         },
         {
           "npcID": 10878,
-          "name": "Herald Moonstalker"
+          "name": "Herald Moonstalker",
+          "mapID": 1457,
+          "zoneName": "Darnassus"
         }
       ],
       "finish": {

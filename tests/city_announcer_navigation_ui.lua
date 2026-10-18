@@ -10,7 +10,7 @@ local visits,maps={},{}
 addon.Navigation={Start=function(action)visits[#visits+1]=action;return true end,
     Map=function(point)maps[#maps+1]=point;return true end}
 local expected={[10880]={1454,35.6,74.6,59},[10881]={1456,36.4,54.6,87},[2198]={1453,33.2,70.4,76}}
-local held={[10879]=1458,[10877]=false,[10878]=false}
+local held={[10879]=1458,[10877]=1455,[10878]=1457}
 local function shown(pool)local rows={};for _,row in ipairs(pool or{})do if row:IsShown()then rows[#rows+1]=row end end;return rows end
 local function locate(id)
     for _,d in ipairs(addon.dungeons)do
@@ -84,7 +84,7 @@ for _,id in ipairs({7492,7494})do
     end
     assert(#ui.currentPlan.rows==roots,"source navigation does not change dungeon root membership")
 end
-assert(alternatives==6 and points==222 and #visits==225 and #maps==1)
+assert(alternatives==6 and points==222 and #visits==225 and #maps==3)
 ui.quest=7492;ui:Refresh()
 local count=#visits;retiredSource();retiredPoint();assert(#visits==count,"last quest source controls also retire")
 print("City announcer navigation: PASS (actual two quests, three complete sources/222 points, three held sources; modeled)")
