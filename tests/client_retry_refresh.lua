@@ -67,4 +67,26 @@ test("Successful irrelevant or duplicate results schedule no retry refresh",func
     f:fail(1);f.addon.QuestDataResult(999,false);f.addon.ItemDataResult(999,false)
     assert(f:fire(2)==0 and f.notifications==0)
 end)
+test("Equal numeric quest and item IDs retain independent results and ignore late callbacks",function()
+    local f=fixture()
+    local questRequests,itemRequests=0,0
+    f.addon.quests[1]={id=1,name="Quest"}
+    C_QuestLog.RequestLoadQuestByID=function()questRequests=questRequests+1 end
+    C_Item.RequestLoadItemDataByID=function()itemRequests=itemRequests+1 end
+    f.addon.QuestName(1);f.addon.ItemName(1)
+    assert(questRequests==1 and itemRequests==1)
+    f.addon.QuestDataResult(1,true);f.addon.ItemDataResult(1,false)
+    assert(f:fire(2)==1 and f:fire(.1)==1 and f.notifications==1)
+    f.addon.QuestName(1);f.addon.ItemName(1)
+    assert(questRequests==1 and itemRequests==2)
+    f.addon.ItemDataResult(1,false)
+    local stale
+    for _,job in ipairs(f.queue)do if job.delay==2 then stale=job.fn end end
+    assert(stale and f:fire(2)==1 and f:fire(.1)==1)
+    f.addon.ItemName(1);f.addon.ItemDataResult(1,true)
+    stale();f:fire(10)
+    assert(f:fire(2)==0 and f:fire(.1)==0 and f.notifications==2)
+    f.addon.QuestName(1);f.addon.ItemName(1)
+    assert(questRequests==1 and itemRequests==3)
+end)
 print("Client retry refresh: "..total.." checks passed")

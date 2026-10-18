@@ -410,23 +410,27 @@ local function refreshRetries()
     else run() end
 end
 
-function addon.QuestDataResult(id, success)
-    id = addon.Clean(id, "number")
-    success = addon.Clean(success, "boolean")
-    local request = id and requested[id]
+local function dataResult(requests, id, success)
+    local request = id and requests[id]
     if not request or not request.pending or success == nil then return end
     request.pending = false
     if success or request.attempts >= 3 then request.finished = true; return end
     request.waiting = true
     local attempt = request.attempts
     local function retry()
-        if requested[id] ~= request or not request.waiting or request.attempts ~= attempt then return end
+        if requests[id] ~= request or not request.waiting or request.attempts ~= attempt then return end
         request.waiting = false
         refreshRetries()
     end
     if not C_Timer or type(C_Timer.After) ~= "function" or not pcall(C_Timer.After, 2, retry) then
         request.waiting = false
     end
+end
+
+function addon.QuestDataResult(id, success)
+    id = addon.Clean(id, "number")
+    success = addon.Clean(success, "boolean")
+    dataResult(requested, id, success)
 end
 
 function addon.InvalidateContext()
@@ -652,20 +656,7 @@ function addon.ItemDataResult(id, success)
     id = addon.Clean(id, "number")
     success = addon.Clean(success, "boolean")
     if not id or id < 1 or id % 1 ~= 0 then return end
-    local request = requestedItems[id]
-    if not request or not request.pending or success == nil then return end
-    request.pending = false
-    if success or request.attempts >= 3 then request.finished = true; return end
-    request.waiting = true
-    local attempt = request.attempts
-    local function retry()
-        if requestedItems[id] ~= request or not request.waiting or request.attempts ~= attempt then return end
-        request.waiting = false
-        refreshRetries()
-    end
-    if not C_Timer or type(C_Timer.After) ~= "function" or not pcall(C_Timer.After, 2, retry) then
-        request.waiting = false
-    end
+    dataResult(requestedItems, id, success)
 end
 
 -- This explicit action opens native UI and selects a held quest; capability reads never do.
