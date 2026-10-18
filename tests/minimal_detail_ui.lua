@@ -120,6 +120,12 @@ assert(ui.quest == 4765 and not ui.detailReferencesExpanded, "saved acquisition 
 start.reportedLocations = reported
 quest.repeatable=originalRepeatable
 
+local actualSourceAlternatives=addon.quests[8151].startAlternatives
+local unmappedAlternatives={}
+for index,point in ipairs(actualSourceAlternatives)do
+    unmappedAlternatives[index]={npcID=point.npcID,name=point.name}
+end
+addon.quests[8151].startAlternatives=unmappedAlternatives
 render(8151)
 local function starterRows()
     local result={}
@@ -161,7 +167,7 @@ local oldAlternative=ui.startButtons[1].scripts.OnClick
 mapped[3]={npcID=999,name="Replacement",mapID=1428,x=1,y=2}
 oldAlternative()
 assert(#visits==5, "an older sliced alternative handler rejects changed source membership")
-addon.quests[8151].startAlternatives,addon.Navigation=realAlternatives,navigation
+addon.quests[8151].startAlternatives,addon.Navigation=actualSourceAlternatives,navigation
 render(4764)
 
 local testID, rewards = 9904764, nil

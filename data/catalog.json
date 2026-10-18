@@ -12273,19 +12273,151 @@
       "startAlternatives": [
         {
           "npcID": 4568,
-          "name": "Anastasia Hartwell"
+          "name": "Anastasia Hartwell",
+          "mapID": 1458,
+          "zoneName": "Undercity",
+          "x": 84.4,
+          "y": 11,
+          "reportedLocations": [
+            {
+              "mapID": 1458,
+              "zoneName": "Undercity",
+              "x": 84.4,
+              "y": 11
+            },
+            {
+              "mapID": 1458,
+              "zoneName": "Undercity",
+              "x": 84.8,
+              "y": 10.6
+            },
+            {
+              "mapID": 1458,
+              "zoneName": "Undercity",
+              "x": 85,
+              "y": 10.2
+            }
+          ]
         },
         {
           "npcID": 5144,
-          "name": "Bink"
+          "name": "Bink",
+          "mapID": 1455,
+          "zoneName": "Ironforge",
+          "x": 26.4,
+          "y": 9.4,
+          "reportedLocations": [
+            {
+              "mapID": 1455,
+              "zoneName": "Ironforge",
+              "x": 26.4,
+              "y": 9.4
+            },
+            {
+              "mapID": 1455,
+              "zoneName": "Ironforge",
+              "x": 26.4,
+              "y": 9.6
+            },
+            {
+              "mapID": 1455,
+              "zoneName": "Ironforge",
+              "x": 26.8,
+              "y": 8.6
+            },
+            {
+              "mapID": 1455,
+              "zoneName": "Ironforge",
+              "x": 27,
+              "y": 8.2
+            }
+          ]
         },
         {
           "npcID": 5497,
-          "name": "Jennea Cannon"
+          "name": "Jennea Cannon",
+          "mapID": 1453,
+          "zoneName": "Stormwind City",
+          "x": 38.4,
+          "y": 79.4,
+          "reportedLocations": [
+            {
+              "mapID": 1453,
+              "zoneName": "Stormwind City",
+              "x": 38.4,
+              "y": 79.4
+            },
+            {
+              "mapID": 1453,
+              "zoneName": "Stormwind City",
+              "x": 38.4,
+              "y": 79.6
+            },
+            {
+              "mapID": 1453,
+              "zoneName": "Stormwind City",
+              "x": 38.6,
+              "y": 79.4
+            },
+            {
+              "mapID": 1453,
+              "zoneName": "Stormwind City",
+              "x": 38.6,
+              "y": 79.6
+            },
+            {
+              "mapID": 1453,
+              "zoneName": "Stormwind City",
+              "x": 49.4,
+              "y": 86
+            },
+            {
+              "mapID": 1453,
+              "zoneName": "Stormwind City",
+              "x": 49.6,
+              "y": 86
+            }
+          ]
         },
         {
           "npcID": 5885,
-          "name": "Deino"
+          "name": "Deino",
+          "mapID": 1454,
+          "zoneName": "Orgrimmar",
+          "x": 37.8,
+          "y": 86.6,
+          "reportedLocations": [
+            {
+              "mapID": 1454,
+              "zoneName": "Orgrimmar",
+              "x": 37.8,
+              "y": 86.6
+            },
+            {
+              "mapID": 1454,
+              "zoneName": "Orgrimmar",
+              "x": 38.4,
+              "y": 85.4
+            },
+            {
+              "mapID": 1454,
+              "zoneName": "Orgrimmar",
+              "x": 38.4,
+              "y": 85.8
+            },
+            {
+              "mapID": 1454,
+              "zoneName": "Orgrimmar",
+              "x": 38.6,
+              "y": 85.2
+            },
+            {
+              "mapID": 1454,
+              "zoneName": "Orgrimmar",
+              "x": 38.6,
+              "y": 86
+            }
+          ]
         }
       ],
       "finish": {
@@ -29036,23 +29168,191 @@
       "startAlternatives": [
         {
           "npcID": 3048,
-          "name": "Ursyn Ghull"
+          "name": "Ursyn Ghull",
+          "mapID": 1456,
+          "zoneName": "Thunder Bluff",
+          "x": 25.4,
+          "y": 14.4,
+          "reportedLocations": [
+            {
+              "mapID": 1456,
+              "zoneName": "Thunder Bluff",
+              "x": 25.4,
+              "y": 14.4
+            },
+            {
+              "mapID": 1456,
+              "zoneName": "Thunder Bluff",
+              "x": 25.4,
+              "y": 14.6
+            },
+            {
+              "mapID": 1456,
+              "zoneName": "Thunder Bluff",
+              "x": 25.6,
+              "y": 14.4
+            },
+            {
+              "mapID": 1456,
+              "zoneName": "Thunder Bluff",
+              "x": 25.6,
+              "y": 14.6
+            },
+            {
+              "mapID": 1456,
+              "zoneName": "Thunder Bluff",
+              "x": 25.6,
+              "y": 15.6
+            }
+          ]
         },
         {
           "npcID": 4568,
-          "name": "Anastasia Hartwell"
+          "name": "Anastasia Hartwell",
+          "mapID": 1458,
+          "zoneName": "Undercity",
+          "x": 84.4,
+          "y": 11,
+          "reportedLocations": [
+            {
+              "mapID": 1458,
+              "zoneName": "Undercity",
+              "x": 84.4,
+              "y": 11
+            },
+            {
+              "mapID": 1458,
+              "zoneName": "Undercity",
+              "x": 84.8,
+              "y": 10.6
+            },
+            {
+              "mapID": 1458,
+              "zoneName": "Undercity",
+              "x": 85,
+              "y": 10.2
+            }
+          ]
         },
         {
           "npcID": 5144,
-          "name": "Bink"
+          "name": "Bink",
+          "mapID": 1455,
+          "zoneName": "Ironforge",
+          "x": 26.4,
+          "y": 9.4,
+          "reportedLocations": [
+            {
+              "mapID": 1455,
+              "zoneName": "Ironforge",
+              "x": 26.4,
+              "y": 9.4
+            },
+            {
+              "mapID": 1455,
+              "zoneName": "Ironforge",
+              "x": 26.4,
+              "y": 9.6
+            },
+            {
+              "mapID": 1455,
+              "zoneName": "Ironforge",
+              "x": 26.8,
+              "y": 8.6
+            },
+            {
+              "mapID": 1455,
+              "zoneName": "Ironforge",
+              "x": 27,
+              "y": 8.2
+            }
+          ]
         },
         {
           "npcID": 5497,
-          "name": "Jennea Cannon"
+          "name": "Jennea Cannon",
+          "mapID": 1453,
+          "zoneName": "Stormwind City",
+          "x": 38.4,
+          "y": 79.4,
+          "reportedLocations": [
+            {
+              "mapID": 1453,
+              "zoneName": "Stormwind City",
+              "x": 38.4,
+              "y": 79.4
+            },
+            {
+              "mapID": 1453,
+              "zoneName": "Stormwind City",
+              "x": 38.4,
+              "y": 79.6
+            },
+            {
+              "mapID": 1453,
+              "zoneName": "Stormwind City",
+              "x": 38.6,
+              "y": 79.4
+            },
+            {
+              "mapID": 1453,
+              "zoneName": "Stormwind City",
+              "x": 38.6,
+              "y": 79.6
+            },
+            {
+              "mapID": 1453,
+              "zoneName": "Stormwind City",
+              "x": 49.4,
+              "y": 86
+            },
+            {
+              "mapID": 1453,
+              "zoneName": "Stormwind City",
+              "x": 49.6,
+              "y": 86
+            }
+          ]
         },
         {
           "npcID": 5885,
-          "name": "Deino"
+          "name": "Deino",
+          "mapID": 1454,
+          "zoneName": "Orgrimmar",
+          "x": 37.8,
+          "y": 86.6,
+          "reportedLocations": [
+            {
+              "mapID": 1454,
+              "zoneName": "Orgrimmar",
+              "x": 37.8,
+              "y": 86.6
+            },
+            {
+              "mapID": 1454,
+              "zoneName": "Orgrimmar",
+              "x": 38.4,
+              "y": 85.4
+            },
+            {
+              "mapID": 1454,
+              "zoneName": "Orgrimmar",
+              "x": 38.4,
+              "y": 85.8
+            },
+            {
+              "mapID": 1454,
+              "zoneName": "Orgrimmar",
+              "x": 38.6,
+              "y": 85.2
+            },
+            {
+              "mapID": 1454,
+              "zoneName": "Orgrimmar",
+              "x": 38.6,
+              "y": 86
+            }
+          ]
         }
       ],
       "storyline": [
@@ -30104,23 +30404,185 @@
       "startAlternatives": [
         {
           "npcID": 3354,
-          "name": "Sorek"
+          "name": "Sorek",
+          "mapID": 1454,
+          "zoneName": "Orgrimmar",
+          "x": 80,
+          "y": 32.6,
+          "reportedLocations": [
+            {
+              "mapID": 1454,
+              "zoneName": "Orgrimmar",
+              "x": 80,
+              "y": 32.6
+            },
+            {
+              "mapID": 1454,
+              "zoneName": "Orgrimmar",
+              "x": 80.2,
+              "y": 32.4
+            },
+            {
+              "mapID": 1454,
+              "zoneName": "Orgrimmar",
+              "x": 80.4,
+              "y": 31.4
+            }
+          ]
         },
         {
           "npcID": 4593,
-          "name": "Christoph Walker"
+          "name": "Christoph Walker",
+          "mapID": 1458,
+          "zoneName": "Undercity",
+          "x": 46.6,
+          "y": 16.6,
+          "reportedLocations": [
+            {
+              "mapID": 1458,
+              "zoneName": "Undercity",
+              "x": 46.6,
+              "y": 16.6
+            },
+            {
+              "mapID": 1458,
+              "zoneName": "Undercity",
+              "x": 46.8,
+              "y": 15.6
+            },
+            {
+              "mapID": 1458,
+              "zoneName": "Undercity",
+              "x": 47.2,
+              "y": 15.2
+            },
+            {
+              "mapID": 1458,
+              "zoneName": "Undercity",
+              "x": 47.6,
+              "y": 15.8
+            },
+            {
+              "mapID": 1458,
+              "zoneName": "Undercity",
+              "x": 47.8,
+              "y": 14.8
+            }
+          ]
         },
         {
           "npcID": 5113,
-          "name": "Kelv Sternhammer"
+          "name": "Kelv Sternhammer",
+          "mapID": 1455,
+          "zoneName": "Ironforge",
+          "x": 69.2,
+          "y": 91.4,
+          "reportedLocations": [
+            {
+              "mapID": 1455,
+              "zoneName": "Ironforge",
+              "x": 69.2,
+              "y": 91.4
+            },
+            {
+              "mapID": 1455,
+              "zoneName": "Ironforge",
+              "x": 70,
+              "y": 89.4
+            },
+            {
+              "mapID": 1455,
+              "zoneName": "Ironforge",
+              "x": 70,
+              "y": 90.4
+            },
+            {
+              "mapID": 1455,
+              "zoneName": "Ironforge",
+              "x": 70,
+              "y": 90.6
+            },
+            {
+              "mapID": 1455,
+              "zoneName": "Ironforge",
+              "x": 70.6,
+              "y": 90.4
+            },
+            {
+              "mapID": 1455,
+              "zoneName": "Ironforge",
+              "x": 70.6,
+              "y": 90.6
+            },
+            {
+              "mapID": 1455,
+              "zoneName": "Ironforge",
+              "x": 71.2,
+              "y": 91.6
+            }
+          ]
         },
         {
           "npcID": 5479,
-          "name": "Wu Shen"
+          "name": "Wu Shen",
+          "mapID": 1453,
+          "zoneName": "Stormwind City",
+          "x": 78.8,
+          "y": 45.4,
+          "reportedLocations": [
+            {
+              "mapID": 1453,
+              "zoneName": "Stormwind City",
+              "x": 78.8,
+              "y": 45.4
+            },
+            {
+              "mapID": 1453,
+              "zoneName": "Stormwind City",
+              "x": 78.8,
+              "y": 45.6
+            },
+            {
+              "mapID": 1453,
+              "zoneName": "Stormwind City",
+              "x": 80.6,
+              "y": 59.6
+            }
+          ]
         },
         {
           "npcID": 7315,
-          "name": "Darnath Bladesinger"
+          "name": "Darnath Bladesinger",
+          "mapID": 1457,
+          "zoneName": "Darnassus",
+          "x": 58.4,
+          "y": 35.4,
+          "reportedLocations": [
+            {
+              "mapID": 1457,
+              "zoneName": "Darnassus",
+              "x": 58.4,
+              "y": 35.4
+            },
+            {
+              "mapID": 1457,
+              "zoneName": "Darnassus",
+              "x": 58.4,
+              "y": 35.6
+            },
+            {
+              "mapID": 1457,
+              "zoneName": "Darnassus",
+              "x": 58.6,
+              "y": 35.4
+            },
+            {
+              "mapID": 1457,
+              "zoneName": "Darnassus",
+              "x": 58.6,
+              "y": 35.6
+            }
+          ]
         }
       ],
       "storyline": [
@@ -30322,15 +30784,135 @@
       "startAlternatives": [
         {
           "npcID": 5489,
-          "name": "Brother Joshua"
+          "name": "Brother Joshua",
+          "mapID": 1453,
+          "zoneName": "Stormwind City",
+          "x": 38.4,
+          "y": 26.6,
+          "reportedLocations": [
+            {
+              "mapID": 1453,
+              "zoneName": "Stormwind City",
+              "x": 38.4,
+              "y": 26.6
+            },
+            {
+              "mapID": 1453,
+              "zoneName": "Stormwind City",
+              "x": 38.8,
+              "y": 26.4
+            },
+            {
+              "mapID": 1453,
+              "zoneName": "Stormwind City",
+              "x": 38.8,
+              "y": 26.8
+            },
+            {
+              "mapID": 1453,
+              "zoneName": "Stormwind City",
+              "x": 49.6,
+              "y": 45.2
+            }
+          ]
         },
         {
           "npcID": 6018,
-          "name": "Ur'kyo"
+          "name": "Ur'kyo",
+          "mapID": 1454,
+          "zoneName": "Orgrimmar",
+          "x": 35.4,
+          "y": 87.6,
+          "reportedLocations": [
+            {
+              "mapID": 1454,
+              "zoneName": "Orgrimmar",
+              "x": 35.4,
+              "y": 87.6
+            },
+            {
+              "mapID": 1454,
+              "zoneName": "Orgrimmar",
+              "x": 35.6,
+              "y": 87.4
+            },
+            {
+              "mapID": 1454,
+              "zoneName": "Orgrimmar",
+              "x": 35.6,
+              "y": 87.6
+            }
+          ]
         },
         {
           "npcID": 11406,
-          "name": "High Priest Rohan"
+          "name": "High Priest Rohan",
+          "mapID": 1455,
+          "zoneName": "Ironforge",
+          "x": 23.4,
+          "y": 7.0,
+          "reportedLocations": [
+            {
+              "mapID": 1455,
+              "zoneName": "Ironforge",
+              "x": 23.4,
+              "y": 7.0
+            },
+            {
+              "mapID": 1455,
+              "zoneName": "Ironforge",
+              "x": 23.6,
+              "y": 6.4
+            },
+            {
+              "mapID": 1455,
+              "zoneName": "Ironforge",
+              "x": 23.6,
+              "y": 7.0
+            },
+            {
+              "mapID": 1455,
+              "zoneName": "Ironforge",
+              "x": 25.0,
+              "y": 8.4
+            },
+            {
+              "mapID": 1455,
+              "zoneName": "Ironforge",
+              "x": 25.0,
+              "y": 8.6
+            },
+            {
+              "mapID": 1455,
+              "zoneName": "Ironforge",
+              "x": 25.6,
+              "y": 9.0
+            },
+            {
+              "mapID": 1455,
+              "zoneName": "Ironforge",
+              "x": 26.4,
+              "y": 7.4
+            },
+            {
+              "mapID": 1455,
+              "zoneName": "Ironforge",
+              "x": 26.4,
+              "y": 7.6
+            },
+            {
+              "mapID": 1455,
+              "zoneName": "Ironforge",
+              "x": 26.8,
+              "y": 7.4
+            },
+            {
+              "mapID": 1455,
+              "zoneName": "Ironforge",
+              "x": 26.8,
+              "y": 7.6
+            }
+          ]
         }
       ],
       "storyline": [
@@ -30480,19 +31062,139 @@
       "startAlternatives": [
         {
           "npcID": 461,
-          "name": "Demisette Cloyce"
+          "name": "Demisette Cloyce",
+          "mapID": 1453,
+          "zoneName": "Stormwind City",
+          "x": 25.4,
+          "y": 78.2,
+          "reportedLocations": [
+            {
+              "mapID": 1453,
+              "zoneName": "Stormwind City",
+              "x": 25.4,
+              "y": 78.2
+            },
+            {
+              "mapID": 1453,
+              "zoneName": "Stormwind City",
+              "x": 25.4,
+              "y": 78.6
+            },
+            {
+              "mapID": 1453,
+              "zoneName": "Stormwind City",
+              "x": 25.6,
+              "y": 78.0
+            },
+            {
+              "mapID": 1453,
+              "zoneName": "Stormwind City",
+              "x": 39.2,
+              "y": 85.0
+            }
+          ]
         },
         {
           "npcID": 3326,
-          "name": "Zevrost"
+          "name": "Zevrost",
+          "mapID": 1454,
+          "zoneName": "Orgrimmar",
+          "x": 48.2,
+          "y": 45.4,
+          "reportedLocations": [
+            {
+              "mapID": 1454,
+              "zoneName": "Orgrimmar",
+              "x": 48.2,
+              "y": 45.4
+            },
+            {
+              "mapID": 1454,
+              "zoneName": "Orgrimmar",
+              "x": 48.4,
+              "y": 45.6
+            },
+            {
+              "mapID": 1454,
+              "zoneName": "Orgrimmar",
+              "x": 48.6,
+              "y": 45.4
+            },
+            {
+              "mapID": 1454,
+              "zoneName": "Orgrimmar",
+              "x": 48.6,
+              "y": 45.6
+            }
+          ]
         },
         {
           "npcID": 4563,
-          "name": "Kaal Soulreaper"
+          "name": "Kaal Soulreaper",
+          "mapID": 1458,
+          "zoneName": "Undercity",
+          "x": 85.2,
+          "y": 15.8,
+          "reportedLocations": [
+            {
+              "mapID": 1458,
+              "zoneName": "Undercity",
+              "x": 85.2,
+              "y": 15.8
+            },
+            {
+              "mapID": 1458,
+              "zoneName": "Undercity",
+              "x": 85.4,
+              "y": 15.4
+            },
+            {
+              "mapID": 1458,
+              "zoneName": "Undercity",
+              "x": 86.0,
+              "y": 15.4
+            },
+            {
+              "mapID": 1458,
+              "zoneName": "Undercity",
+              "x": 86.0,
+              "y": 15.6
+            }
+          ]
         },
         {
           "npcID": 5172,
-          "name": "Briarthorn"
+          "name": "Briarthorn",
+          "mapID": 1455,
+          "zoneName": "Ironforge",
+          "x": 50.2,
+          "y": 5.4,
+          "reportedLocations": [
+            {
+              "mapID": 1455,
+              "zoneName": "Ironforge",
+              "x": 50.2,
+              "y": 5.4
+            },
+            {
+              "mapID": 1455,
+              "zoneName": "Ironforge",
+              "x": 50.2,
+              "y": 6.0
+            },
+            {
+              "mapID": 1455,
+              "zoneName": "Ironforge",
+              "x": 50.2,
+              "y": 7.4
+            },
+            {
+              "mapID": 1455,
+              "zoneName": "Ironforge",
+              "x": 50.6,
+              "y": 6.0
+            }
+          ]
         }
       ],
       "storylineGroups": [
@@ -30726,19 +31428,133 @@
       "startAlternatives": [
         {
           "npcID": 3033,
-          "name": "Turak Runetotem"
+          "name": "Turak Runetotem",
+          "mapID": 1456,
+          "zoneName": "Thunder Bluff",
+          "x": 76.4,
+          "y": 27.4,
+          "reportedLocations": [
+            {
+              "mapID": 1456,
+              "zoneName": "Thunder Bluff",
+              "x": 76.4,
+              "y": 27.4
+            },
+            {
+              "mapID": 1456,
+              "zoneName": "Thunder Bluff",
+              "x": 76.4,
+              "y": 27.6
+            },
+            {
+              "mapID": 1456,
+              "zoneName": "Thunder Bluff",
+              "x": 76.6,
+              "y": 27.4
+            },
+            {
+              "mapID": 1456,
+              "zoneName": "Thunder Bluff",
+              "x": 76.6,
+              "y": 27.6
+            }
+          ]
         },
         {
           "npcID": 4217,
-          "name": "Mathrengyl Bearwalker"
+          "name": "Mathrengyl Bearwalker",
+          "mapID": 1457,
+          "zoneName": "Darnassus",
+          "x": 34.8,
+          "y": 7.4,
+          "reportedLocations": [
+            {
+              "mapID": 1457,
+              "zoneName": "Darnassus",
+              "x": 34.8,
+              "y": 7.4
+            },
+            {
+              "mapID": 1457,
+              "zoneName": "Darnassus",
+              "x": 35.2,
+              "y": 8.0
+            },
+            {
+              "mapID": 1457,
+              "zoneName": "Darnassus",
+              "x": 35.2,
+              "y": 8.6
+            }
+          ]
         },
         {
           "npcID": 5505,
-          "name": "Theridran"
+          "name": "Theridran",
+          "mapID": 1453,
+          "zoneName": "Stormwind City",
+          "x": 21.2,
+          "y": 52.6,
+          "reportedLocations": [
+            {
+              "mapID": 1453,
+              "zoneName": "Stormwind City",
+              "x": 21.2,
+              "y": 52.6
+            },
+            {
+              "mapID": 1453,
+              "zoneName": "Stormwind City",
+              "x": 21.4,
+              "y": 51.4
+            },
+            {
+              "mapID": 1453,
+              "zoneName": "Stormwind City",
+              "x": 21.4,
+              "y": 51.6
+            },
+            {
+              "mapID": 1453,
+              "zoneName": "Stormwind City",
+              "x": 21.6,
+              "y": 51.4
+            },
+            {
+              "mapID": 1453,
+              "zoneName": "Stormwind City",
+              "x": 36.2,
+              "y": 64.2
+            }
+          ]
         },
         {
           "npcID": 12042,
-          "name": "Loganaar"
+          "name": "Loganaar",
+          "mapID": 1450,
+          "zoneName": "Moonglade",
+          "x": 52.4,
+          "y": 40.4,
+          "reportedLocations": [
+            {
+              "mapID": 1450,
+              "zoneName": "Moonglade",
+              "x": 52.4,
+              "y": 40.4
+            },
+            {
+              "mapID": 1450,
+              "zoneName": "Moonglade",
+              "x": 52.4,
+              "y": 40.6
+            },
+            {
+              "mapID": 1450,
+              "zoneName": "Moonglade",
+              "x": 52.6,
+              "y": 40.4
+            }
+          ]
         }
       ],
       "storyline": [
@@ -31256,23 +32072,167 @@
       "startAlternatives": [
         {
           "npcID": 3039,
-          "name": "Holt Thunderhorn"
+          "name": "Holt Thunderhorn",
+          "mapID": 1456,
+          "zoneName": "Thunder Bluff",
+          "x": 57.2,
+          "y": 89.6,
+          "reportedLocations": [
+            {
+              "mapID": 1456,
+              "zoneName": "Thunder Bluff",
+              "x": 57.2,
+              "y": 89.6
+            },
+            {
+              "mapID": 1456,
+              "zoneName": "Thunder Bluff",
+              "x": 57.4,
+              "y": 88.4
+            },
+            {
+              "mapID": 1456,
+              "zoneName": "Thunder Bluff",
+              "x": 57.4,
+              "y": 89.2
+            },
+            {
+              "mapID": 1456,
+              "zoneName": "Thunder Bluff",
+              "x": 57.6,
+              "y": 88.4
+            },
+            {
+              "mapID": 1456,
+              "zoneName": "Thunder Bluff",
+              "x": 57.6,
+              "y": 88.6
+            }
+          ]
         },
         {
           "npcID": 3352,
-          "name": "Ormak Grimshot"
+          "name": "Ormak Grimshot",
+          "mapID": 1454,
+          "zoneName": "Orgrimmar",
+          "x": 66.2,
+          "y": 18.2,
+          "reportedLocations": [
+            {
+              "mapID": 1454,
+              "zoneName": "Orgrimmar",
+              "x": 66.2,
+              "y": 18.2
+            },
+            {
+              "mapID": 1454,
+              "zoneName": "Orgrimmar",
+              "x": 66.2,
+              "y": 18.6
+            }
+          ]
         },
         {
           "npcID": 4205,
-          "name": "Dorion"
+          "name": "Dorion",
+          "mapID": 1457,
+          "zoneName": "Darnassus",
+          "x": 42.2,
+          "y": 7.4,
+          "reportedLocations": [
+            {
+              "mapID": 1457,
+              "zoneName": "Darnassus",
+              "x": 42.2,
+              "y": 7.4
+            },
+            {
+              "mapID": 1457,
+              "zoneName": "Darnassus",
+              "x": 42.2,
+              "y": 7.6
+            },
+            {
+              "mapID": 1457,
+              "zoneName": "Darnassus",
+              "x": 42.2,
+              "y": 8.6
+            }
+          ]
         },
         {
           "npcID": 5116,
-          "name": "Olmin Burningbeard"
+          "name": "Olmin Burningbeard",
+          "mapID": 1455,
+          "zoneName": "Ironforge",
+          "x": 70.0,
+          "y": 84.6,
+          "reportedLocations": [
+            {
+              "mapID": 1455,
+              "zoneName": "Ironforge",
+              "x": 70.0,
+              "y": 84.6
+            },
+            {
+              "mapID": 1455,
+              "zoneName": "Ironforge",
+              "x": 70.4,
+              "y": 83.4
+            },
+            {
+              "mapID": 1455,
+              "zoneName": "Ironforge",
+              "x": 70.4,
+              "y": 83.8
+            },
+            {
+              "mapID": 1455,
+              "zoneName": "Ironforge",
+              "x": 70.6,
+              "y": 83.4
+            },
+            {
+              "mapID": 1455,
+              "zoneName": "Ironforge",
+              "x": 70.6,
+              "y": 83.8
+            }
+          ]
         },
         {
           "npcID": 5516,
-          "name": "Ulfir Ironbeard"
+          "name": "Ulfir Ironbeard",
+          "mapID": 1453,
+          "zoneName": "Stormwind City",
+          "x": 61.8,
+          "y": 15.6,
+          "reportedLocations": [
+            {
+              "mapID": 1453,
+              "zoneName": "Stormwind City",
+              "x": 61.8,
+              "y": 15.6
+            },
+            {
+              "mapID": 1453,
+              "zoneName": "Stormwind City",
+              "x": 62.0,
+              "y": 15.0
+            },
+            {
+              "mapID": 1453,
+              "zoneName": "Stormwind City",
+              "x": 67.4,
+              "y": 36.2
+            },
+            {
+              "mapID": 1453,
+              "zoneName": "Stormwind City",
+              "x": 67.6,
+              "y": 36.0
+            }
+          ]
         }
       ],
       "storyline": [
@@ -31582,23 +32542,185 @@
       "startAlternatives": [
         {
           "npcID": 918,
-          "name": "Osborne the Night Man"
+          "name": "Osborne the Night Man",
+          "mapID": 1453,
+          "zoneName": "Stormwind City",
+          "x": 74.0,
+          "y": 52.4,
+          "reportedLocations": [
+            {
+              "mapID": 1453,
+              "zoneName": "Stormwind City",
+              "x": 74.0,
+              "y": 52.4
+            },
+            {
+              "mapID": 1453,
+              "zoneName": "Stormwind City",
+              "x": 74.4,
+              "y": 52.8
+            },
+            {
+              "mapID": 1453,
+              "zoneName": "Stormwind City",
+              "x": 74.6,
+              "y": 52.8
+            },
+            {
+              "mapID": 1453,
+              "zoneName": "Stormwind City",
+              "x": 74.8,
+              "y": 53.8
+            },
+            {
+              "mapID": 1453,
+              "zoneName": "Stormwind City",
+              "x": 77.2,
+              "y": 65.2
+            }
+          ]
         },
         {
           "npcID": 3328,
-          "name": "Ormok"
+          "name": "Ormok",
+          "mapID": 1454,
+          "zoneName": "Orgrimmar",
+          "x": 44.0,
+          "y": 54.4,
+          "reportedLocations": [
+            {
+              "mapID": 1454,
+              "zoneName": "Orgrimmar",
+              "x": 44.0,
+              "y": 54.4
+            },
+            {
+              "mapID": 1454,
+              "zoneName": "Orgrimmar",
+              "x": 44.0,
+              "y": 54.6
+            }
+          ]
         },
         {
           "npcID": 4163,
-          "name": "Syurna"
+          "name": "Syurna",
+          "mapID": 1457,
+          "zoneName": "Darnassus",
+          "x": 36.2,
+          "y": 21.4,
+          "reportedLocations": [
+            {
+              "mapID": 1457,
+              "zoneName": "Darnassus",
+              "x": 36.2,
+              "y": 21.4
+            },
+            {
+              "mapID": 1457,
+              "zoneName": "Darnassus",
+              "x": 36.2,
+              "y": 21.6
+            },
+            {
+              "mapID": 1457,
+              "zoneName": "Darnassus",
+              "x": 36.8,
+              "y": 21.8
+            }
+          ]
         },
         {
           "npcID": 4583,
-          "name": "Miles Dexter"
+          "name": "Miles Dexter",
+          "mapID": 1458,
+          "zoneName": "Undercity",
+          "x": 84.2,
+          "y": 71.0,
+          "reportedLocations": [
+            {
+              "mapID": 1458,
+              "zoneName": "Undercity",
+              "x": 84.2,
+              "y": 71.0
+            },
+            {
+              "mapID": 1458,
+              "zoneName": "Undercity",
+              "x": 84.2,
+              "y": 71.6
+            },
+            {
+              "mapID": 1458,
+              "zoneName": "Undercity",
+              "x": 84.8,
+              "y": 71.6
+            },
+            {
+              "mapID": 1458,
+              "zoneName": "Undercity",
+              "x": 85.0,
+              "y": 70.2
+            },
+            {
+              "mapID": 1458,
+              "zoneName": "Undercity",
+              "x": 85.0,
+              "y": 71.2
+            }
+          ]
         },
         {
           "npcID": 5165,
-          "name": "Hulfdan Blackbeard"
+          "name": "Hulfdan Blackbeard",
+          "mapID": 1455,
+          "zoneName": "Ironforge",
+          "x": 51.2,
+          "y": 16.0,
+          "reportedLocations": [
+            {
+              "mapID": 1455,
+              "zoneName": "Ironforge",
+              "x": 51.2,
+              "y": 16.0
+            },
+            {
+              "mapID": 1455,
+              "zoneName": "Ironforge",
+              "x": 51.4,
+              "y": 14.4
+            },
+            {
+              "mapID": 1455,
+              "zoneName": "Ironforge",
+              "x": 51.4,
+              "y": 14.6
+            },
+            {
+              "mapID": 1455,
+              "zoneName": "Ironforge",
+              "x": 51.6,
+              "y": 14.4
+            },
+            {
+              "mapID": 1455,
+              "zoneName": "Ironforge",
+              "x": 51.6,
+              "y": 14.8
+            },
+            {
+              "mapID": 1455,
+              "zoneName": "Ironforge",
+              "x": 51.8,
+              "y": 16.0
+            },
+            {
+              "mapID": 1455,
+              "zoneName": "Ironforge",
+              "x": 52.4,
+              "y": 13.4
+            }
+          ]
         }
       ],
       "storyline": [
