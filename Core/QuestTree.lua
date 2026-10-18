@@ -14,7 +14,7 @@ function Tree.Build(quests, engine, rootID)
     local engineQuests, engineContext, engineChoices = rawget(engine, "quests"), rawget(engine, "context"), rawget(engine, "choices")
     local rawStateGetter, rawContextGetter = rawget(engine, "State"), rawget(engine, "Current")
     if engineQuests ~= nil and engineQuests ~= quests then return nil, "engine" end
-    local nodes, sources, states, seen, visiting, byID = {}, {}, {}, {}, {}, {}
+    local nodes, sources, states, seen, visiting, byID, arrays = {}, {}, {}, {}, {}, {}, {}
     local failed, edges, building = nil, 0, true
     local function same(value, previous)
         if type(checker) == "function" and read(checker, "boolean", value) ~= false then return false end
@@ -60,6 +60,10 @@ function Tree.Build(quests, engine, rootID)
                     not rawequal(rawget(state.value, "reason"), state.reason) or
                     not rawequal(rawget(state.value, "completedHistory"), state.completedHistory) then return false end
             end
+            -- A sparse extension can change # without touching the old nil sentinel.
+            for _, array in ipairs(arrays) do
+                if #array.object ~= array.length then return false end
+            end
         end
         return true
     end
@@ -73,6 +77,7 @@ function Tree.Build(quests, engine, rootID)
         local value = keep(source, object, key)
         if value == nil then return nil end
         if not clean(value, "table") or #value > 100 then failed = "source"; return end
+        arrays[#arrays + 1] = { object = value, length = #value }
         keep(source, value, #value + 1)
         return value
     end
@@ -187,6 +192,7 @@ function Tree.Build(quests, engine, rootID)
         for index = 1, groups and #groups or 0 do
             local group = keep(rootSource, groups, index)
             if not clean(group, "table") or #group > 100 then failed = "source"; break end
+            arrays[#arrays + 1] = { object = group, length = #group }
             keep(rootSource, group, #group + 1)
             for other = 1, #group do story(keep(rootSource, group, other), index, other) end
         end

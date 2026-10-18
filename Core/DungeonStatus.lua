@@ -18,6 +18,7 @@ function Status.Get(dungeon, engine)
     local ids = dungeon and clean(rawget(dungeon, "quests"), "table")
     if not dungeon or not engine or not quests or not context or not eligible or not relevantRoot or not getter or not fresh or not ids then return nil, "input" end
     local fieldObjects, fieldKeys, fieldValues, fieldCount, rootCount = {}, {}, {}, 0, 0
+    local arrays = {}
     local building = true
     local function keep(object, key)
         if fieldCount >= 4000 then return nil, false end
@@ -66,6 +67,10 @@ function Status.Get(dungeon, engine)
                 if keys > rootCount then return false end
             end
             if keys ~= rootCount then return false end
+            -- Retain the validated bounds even when an extension skips the old sentinel.
+            for _, array in ipairs(arrays) do
+                if #array.object ~= array.length then return false end
+            end
         end
         return true
     end
@@ -105,10 +110,12 @@ function Status.Get(dungeon, engine)
                         if (field == "factions" or field == "classes") and value ~= nil then
                             local list = clean(value, "table")
                             if not list or #list > 100 then return false end
+                            arrays[#arrays + 1] = { object = list, length = #list }
                             for item = 1, #list + 1 do local _, allowed = keep(list, item); if not allowed then return false end end
                         elseif field == "requires" and value ~= nil then
                             local groups = clean(value, "table")
                             if not groups or #groups > 100 then return false end
+                            arrays[#arrays + 1] = { object = groups, length = #groups }
                             for groupIndex = 1, #groups + 1 do
                                 local group, allowed = keep(groups, groupIndex)
                                 if not allowed then return false end
@@ -119,6 +126,7 @@ function Status.Get(dungeon, engine)
                                     local members, membersAllowed = keep(group, "ids")
                                     members = clean(members, "table")
                                     if not modeAllowed or not membersAllowed or not members or #members > 100 then return false end
+                                    arrays[#arrays + 1] = { object = members, length = #members }
                                     for member = 1, #members + 1 do
                                         local parent, memberAllowed = keep(members, member)
                                         if not memberAllowed then return false end
