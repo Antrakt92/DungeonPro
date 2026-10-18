@@ -997,4 +997,39 @@ test("late native color setters preserve the newer focus and filter state",funct
     end
     addon.Theme.StyleFilter(control,true);assert(icon.vertex[1]==quiet)
 end)
+test("portrait filters retain natural colors and captions while list mode stays bounded",function()
+    local b=region();b.filterIcon,b.filterCaption=region(),region();b.filterPortrait=true
+    b.filterCaption.text="Current character";b.filterList={region(),region(),region()}
+    local click=function()end;b.scripts.OnClick=click
+    assert(addon.Theme.StyleFilter(b,true))
+    for i=1,3 do assert(b.filterIcon.vertex[i]==1)end
+    assert(b.filterCaption.textColor[1]>.8 and b.filterCaption.text=="Current character")
+    for _,strip in ipairs(b.filterList)do assert(strip.vertex and strip.alpha==1 and strip.shown==nil)end
+    b.enabled=false;nativeEvent(b,"OnDisable");assert(b.filterIcon.alpha==.4)
+    for i=1,3 do assert(b.filterIcon.vertex[i]==1)end
+    for _=1,100 do addon.Theme.StyleFilter(b,false)end
+    assert(#b.textures==6 and #b.hooks.OnEnter==1 and b.scripts.OnClick==click and not b.points)
+    local plain=region();plain.filterSelected=true;plain.text="Levels 20–30"
+    assert(addon.Theme.Apply({frame=region(),rangeButton=plain}))
+    assert(plain.textures[2].color[1]>plain.textures[2].color[2] and plain.text=="Levels 20–30")
+end)
+
+test("late portrait and list tint writes repair the newer filter mode",function()
+    local b=region();b.filterIcon=region();b.filterPortrait=true;b.filterList={region(),region(),region()}
+    addon.Theme.StyleFilter(b,true)
+    local icon=b.filterIcon;local paint,once=icon.SetVertexColor,true
+    icon.SetVertexColor=function(self,...)
+        if once then once=false;b.filterPortrait=false;addon.Theme.StyleFilter(b,false)end
+        paint(self,...)
+    end
+    addon.Theme.StyleFilter(b,true)
+    assert(icon.vertex[1]<1 and b.filterList[1].vertex[1]==icon.vertex[1])
+    local strip=b.filterList[3];local setter,armed=strip.SetVertexColor,true
+    strip.SetVertexColor=function(self,...)
+        if armed then armed=false;b.filterPortrait=true;addon.Theme.StyleFilter(b,true)end
+        setter(self,...)
+    end
+    addon.Theme.StyleFilter(b,false)
+    assert(icon.vertex[1]==1 and strip.vertex[1]>strip.vertex[2])
+end)
 print("theme: " .. total .. " scenarios passed")

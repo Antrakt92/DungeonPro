@@ -99,8 +99,10 @@ Level ranges are provisional recommendations.
   Hover over a reward icon to see all known item rewards, grouped into guaranteed
   items and choices where you pick one. A +N mark indicates additional items.
   Search sits on the right of the header, beside the language selector.
-  Level and character filters are icons beside the dungeon heading. Hover for
-  the current mode and click to switch; the active highlight shows filtering.
+  The level tab beside the app title filters the dungeon catalogue. The larger
+  quest filter beside the dungeon heading switches between your character's
+  quests and all quests, using a portrait or list symbol and a short mode label.
+  Hover for the current mode and click to switch.
   The message and heart icons offer issue-report and project-support links for copying.
   Quest-log occupancy sits in the top bar; giver and Wowhead actions sit above
   the detail pane, leaving the full bottom area for scrolling content.

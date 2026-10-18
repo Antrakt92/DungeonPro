@@ -171,3 +171,20 @@ local detailKeys = { "DETAIL_LEVEL", "DETAIL_MIN_LEVEL", "DETAIL_GIVER", "DETAIL
 for locale, values in pairs(detailStrings) do
     for index, key in ipairs(detailKeys) do addon.locales[locale][key] = values[index] end
 end
+
+local filterStrings = {
+    enUS = { "All levels", "My level", "Mine", "All" },
+    ruRU = { "Все уровни", "Мой уровень", "Мои", "Все" },
+    deDE = { "Alle Stufen", "Mein Level", "Meine", "Alle" },
+    frFR = { "Tous niveaux", "Mon niveau", "Moi", "Tous" },
+    esES = { "Todos los niveles", "Mi nivel", "Mías", "Todas" },
+    itIT = { "Tutti i livelli", "Il mio livello", "Mie", "Tutte" },
+    ptBR = { "Todos os níveis", "Meu nível", "Minhas", "Todas" },
+    koKR = { "모든 레벨", "내 레벨", "내 것", "전체" },
+    zhCN = { "所有等级", "我的等级", "我的", "全部" },
+    zhTW = { "所有等級", "我的等級", "我的", "全部" },
+}
+local filterKeys = { "FILTER_LEVEL_ALL", "FILTER_LEVEL_CURRENT", "FILTER_QUEST_MINE", "FILTER_QUEST_ALL" }
+for locale, values in pairs(filterStrings) do
+    for index, key in ipairs(filterKeys) do addon.locales[locale][key] = values[index] end
+end

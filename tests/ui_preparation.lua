@@ -4822,7 +4822,7 @@ check("Hidden browser ignores resize events and reopens using current geometry w
     GetScreenWidth,GetScreenHeight,ui.Refresh=getWidth,getHeight,refresh
     screenWidth,screenHeight=width,height;ui:Fit();ui.frame:SetShown(shown)
 end)
-check("Icon filters preserve fixed geometry and localized state across every locale",function()
+check("Catalogue level and quest character filters retain distinct readable modes across every locale",function()
     local locale,range,all=addon.db.locale,ui.range,ui.includeUnavailable
     ui.frame:Show()
     for code in pairs(addon.locales)do
@@ -4833,20 +4833,23 @@ check("Icon filters preserve fixed geometry and localized state across every loc
         assert(ui.range and not ui.includeUnavailable and addon.char.filters.range and not addon.char.filters.includeUnavailable)
         assert(ui.rangeButton.filterLabelKey=="RANGE" and ui.rangeButton.filterSelected)
         assert(ui.characterButton.filterLabelKey=="MY_CHARACTER" and ui.characterButton.filterSelected)
-        for _,control in ipairs({ui.rangeButton,ui.characterButton})do
-            assert(control.text=="" and control.iconOnly and control.width==26 and control.height==26)
-            assert(control.filterIcon.width==20 and control.filterIcon.height==20 and control.filterIcon.shown)
-        end
+        assert(ui.rangeButton.text==addon.L("FILTER_LEVEL_CURRENT")and ui.rangeButton.width==160 and ui.rangeButton.height==32 and not ui.rangeButton.filterIcon)
+        local control=ui.characterButton
+        assert(control.text==""and control.width==100 and control.height==32 and control.filterCaption.text==addon.L("FILTER_QUEST_MINE"))
+        assert(control.filterIcon.width==26 and control.filterIcon.height==26 and control.filterIcon.shown)
+        for _,strip in ipairs(control.filterList)do assert(not strip.shown)end
+        ui.characterButton.scripts.OnClick();assert(ui.includeUnavailable and not control.filterIcon.shown and control.filterCaption.text==addon.L("FILTER_QUEST_ALL"))
+        for _,strip in ipairs(control.filterList)do assert(strip.shown and strip.texture=="Interface\\Buttons\\WHITE8X8")end
     end
     addon.db.locale,ui.range,ui.includeUnavailable=locale,range,all;ui:SaveFilters();ui:Refresh()
 end)
-check("Icon filters never query native text fitting capabilities",function()
+check("Readable filter controls preserve fixed dimensions without native wrapping measurements",function()
     local saved={}
     for i,control in ipairs({ui.rangeButton,ui.characterButton})do
         saved[i]=rawget(control,"GetFontString");control.GetFontString=function()error("icon controls must not measure labels")end
     end
     ui:Refresh();ui:ApplyTheme()
-    for i,control in ipairs({ui.rangeButton,ui.characterButton})do control.GetFontString=saved[i];assert(control.height==26)end
+    for i,control in ipairs({ui.rangeButton,ui.characterButton})do control.GetFontString=saved[i];assert(control.height==32)end
 end)
 check("Saved filter callbacks cannot mutate a hidden or replaced planner",function()
     local range,all,frame=ui.range,ui.includeUnavailable,ui.frame
@@ -8455,7 +8458,7 @@ check("Normal browsing ignores a saved preparation mode and exposes no Back or m
     assert(#visibleRows()==3)
     for _,row in ipairs(visibleRows())do assert(not row.heading and (row.questID==31001 or row.questID==31002))end
     ui.preparation=true;ui:Refresh();assert(not ui.preparation and #visibleRows()==3 and addon.char.filters.preparation==true)
-    assert(ui.characterButton.point[2]==622 and ui.entrance==nil and ui.language.width==64 and not ui.languageChevron)
+    assert(ui.characterButton.point[2]==548 and ui.entrance==nil and ui.language.width==64 and not ui.languageChevron)
     addon.char.filters=filters;f:finish()
 end)
 check("Blocked level navigation explicitly routes to a known giver without claiming the quest available",function()
@@ -9222,15 +9225,15 @@ check("Right header search reserves input and clear space while icon filters sit
     local locale=addon.db.locale
     for code in pairs(addon.locales)do
         addon.db.locale=code;ui:Refresh()
-        assert(ui.subtitle==nil and ui.title.fontSize==22 and ui.heading.width==296)
+        assert(ui.subtitle==nil and ui.title.fontSize==22 and ui.heading.width==258)
         assert(ui.searchBox.point[1]=="TOPRIGHT" and ui.searchBox.point[2]==-190 and ui.searchBox.point[3]==-14)
         assert(ui.searchBox.width==330 and ui.searchBox.height==26)
         assert(ui.searchBox.textInsets[1]==28 and ui.searchBox.textInsets[2]==30)
         assert(ui.searchPlaceholder.point[2]==28 and ui.searchPlaceholder.width==ui.searchBox.width-62)
         assert(ui.clearSearch.point[1]=="RIGHT" and ui.clearSearch.point[2]==ui.searchBox and ui.clearSearch.point[4]==-3)
-        assert(ui.heading.point[2]+ui.heading.width<ui.rangeButton.point[2])
-        assert(ui.rangeButton.point[2]==586 and ui.characterButton.point[2]==622)
-        for _,control in ipairs({ui.rangeButton,ui.characterButton})do assert(control.point[3]==-66 and control.height==26)end
+        assert(ui.heading.point[2]+ui.heading.width<ui.characterButton.point[2])
+        assert(ui.rangeButton.point[2]==178 and ui.characterButton.point[2]==548)
+        assert(ui.rangeButton.point[3]==-14 and ui.characterButton.point[3]==-66 and ui.rangeButton.height==32 and ui.characterButton.height==32)
         assert(ui.catalogScroll.point[2]+ui.catalogScroll.width+23<=ui.questScroll.point[2]-2)
         assert(ui.questScroll.point[2]+ui.questScroll.width+23<=ui.detailScroll.point[2]-2)
         assert(ui.detailScroll.point[2]+ui.detailScroll.width+23<=ui.frame:GetWidth()-2)
@@ -9536,5 +9539,51 @@ check("Compact metadata and rewards remove duplicate default prose while advance
     assert(not detailHas(addon.L("DETAIL_REWARDS"))and not detailHas(addon.L("REWARD_UNAVAILABLE")))
     ui.referenceToggle.scripts.OnClick();assert(detailHas(addon.L("REWARD_UNAVAILABLE")))
     addon.CachedQuestRewards,addon.DialogueRewards,addon.QuestRewards,GetCoinTextureString=rewards,dialogue,log,coin;f:finish()
+end)
+check("Level filtering occupies the global header while character filtering stays scoped to quest heading",function()
+    local locale,range,all=addon.db.locale,ui.range,ui.includeUnavailable
+    for code in pairs(addon.locales)do
+        addon.db.locale=code;ui.range=false;ui.includeUnavailable=false;ui:Refresh()
+        local level,character=ui.rangeButton,ui.characterButton
+        assert(level.point[2]==178 and level.point[3]==-14 and level.width==160 and level.height==32 and not level.filterIcon)
+        assert(level.text==addon.L("FILTER_LEVEL_ALL"))
+        assert(ui.title.point[2]+ui.title.width<level.point[2]and level.point[2]+level.width<ui.capacityStatus.point[2])
+        assert(ui.capacityStatus.point[2]==350 and ui.capacityStatus.point[3]==-22 and ui.capacityStatus.width==220)
+        local searchLeft=ui.frame:GetWidth()+ui.searchBox.point[2]-ui.searchBox.width
+        assert(ui.capacityStatus.point[2]+ui.capacityStatus.width<searchLeft)
+        assert(ui.heading.width==258 and ui.heading.point[2]+ui.heading.width<character.point[2])
+        assert(character.point[2]==548 and character.point[3]==-66 and character.width==100 and character.height==32)
+        assert(character.point[2]+character.width==ui.questScroll.point[2]+ui.questScroll.width)
+        assert(character.filterCaption.point[2]==38 and character.filterCaption.width==56 and character.filterCaption.fontSize==13)
+        assert(character.filterCaption.text==addon.L("FILTER_QUEST_MINE")and character.filterIcon.shown and character.filterPortrait)
+        assert(character.filterIcon.point[4]==4 and character.filterIcon.point[5]==-3)
+        for _,strip in ipairs(character.filterList)do assert(not strip.shown)end
+        level.scripts.OnClick();assert(ui.range and level.text==addon.L("FILTER_LEVEL_CURRENT"))
+        character.scripts.OnClick();assert(ui.includeUnavailable and character.filterCaption.text==addon.L("FILTER_QUEST_ALL")and not character.filterIcon.shown)
+        for _,strip in ipairs(character.filterList)do assert(strip.shown and strip.width==18 and strip.height==2)end
+    end
+    addon.db.locale,ui.range,ui.includeUnavailable=locale,range,all;ui:SaveFilters();ui:Refresh()
+end)
+check("Late native filter captions and glyph visibility preserve the newest mode and locale",function()
+    local locale,range,all=addon.db.locale,ui.range,ui.includeUnavailable
+    for _,kind in ipairs({"levelCaption","questCaption","portrait","list"})do
+        ui.range=false;ui.includeUnavailable=kind=="list";addon.db.locale="enUS";ui:RefreshFilterControls()
+        local object=kind=="levelCaption"and ui.rangeButton or kind=="questCaption"and ui.characterButton.filterCaption or
+            kind=="portrait"and ui.characterButton.filterIcon or ui.characterButton.filterList[1]
+        local method=(kind=="levelCaption"or kind=="questCaption")and "SetText"or "SetShown"
+        local original,armed=object[method],true
+        object[method]=function(self,...)
+            if armed then
+                armed=false;ui.range=true;ui.includeUnavailable=kind~="list";addon.db.locale="koKR";ui:RefreshFilterControls()
+            end
+            return original(self,...)
+        end
+        ui:RefreshFilterControls();object[method]=original
+        assert(not armed and ui.range and ui.rangeButton.text==addon.L("FILTER_LEVEL_CURRENT"),kind)
+        assert(ui.characterButton.filterCaption.text==addon.L(ui.includeUnavailable and "FILTER_QUEST_ALL"or"FILTER_QUEST_MINE"),kind)
+        assert(ui.characterButton.filterIcon.shown==not ui.includeUnavailable,kind)
+        for _,strip in ipairs(ui.characterButton.filterList)do assert(strip.shown==ui.includeUnavailable,kind)end
+    end
+    addon.db.locale,ui.range,ui.includeUnavailable=locale,range,all;ui:SaveFilters();ui:Refresh()
 end)
 print("Preparation UI modeled checks passed: " .. total .. " (no native layout validation)")

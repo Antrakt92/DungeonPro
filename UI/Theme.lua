@@ -584,10 +584,22 @@ function Theme.StyleFilter(button, active)
             color(state.surface.bg, state.active and palette.selected or palette.panel)
             edges(state.surface, state.active and palette.amber or (state.hover and palette.edge or palette.faint))
             invoke(state.surface.accent, "Hide")
+            local tint = enabled and (state.active and palette.amber or (state.hover and palette.text or palette.muted)) or palette.quiet
             local icon = cleanObject(button.filterIcon)
             if icon then
-                invoke(icon, "SetVertexColor", unpack(enabled and (state.active and palette.amber or (state.hover and palette.text or palette.muted)) or palette.quiet))
+                local portrait = addon.Clean(button.filterPortrait, "boolean") == true
+                if portrait then invoke(icon, "SetVertexColor", 1, 1, 1)
+                else invoke(icon, "SetVertexColor", unpack(tint)) end
                 invoke(icon, "SetAlpha", enabled and 1 or .4)
+            end
+            textColor(button.filterCaption, enabled and palette.text or palette.quiet)
+            local list = addon.Clean(button.filterList, "table")
+            for index = 1, math.min(list and #list or 0, 3) do
+                local strip = cleanObject(list[index])
+                if strip then
+                    invoke(strip, "SetVertexColor", unpack(tint))
+                    invoke(strip, "SetAlpha", enabled and 1 or .4)
+                end
             end
             if state.revision ~= revision and not state.repairing then
                 state.repairing = true; refresh(); state.repairing = nil
@@ -851,7 +863,7 @@ function Theme.Apply(ui)
     for _, key in ipairs({ "back", "rangeButton", "preparationButton", "characterButton", "language", "map", "guide", "source", "giver" }) do
         local button = cleanObject(ui[key])
         if button then
-            if cleanObject(button.filterIcon) then Theme.StyleFilter(button, button.filterSelected)
+            if key == "rangeButton" or key == "characterButton" or cleanObject(button.filterIcon) then Theme.StyleFilter(button, button.filterSelected)
             else Theme.StyleRow(button, { kind = "control" }) end
         end
     end

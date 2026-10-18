@@ -372,17 +372,43 @@ function UI:OpenLanguageMenu()
 end
 
 function UI:RefreshFilterControls()
-    self.rangeButton.filterLabelKey = self.range and "RANGE" or "ALL"
-    self.rangeButton.filterTargetKey = self.range and "ALL" or "RANGE"
-    self.rangeButton.filterSelected = self.range
-    self.characterButton.filterLabelKey = self.includeUnavailable and "ALL_CHARACTERS" or "MY_CHARACTER"
-    self.characterButton.filterTargetKey = self.includeUnavailable and "MY_CHARACTER" or "ALL_CHARACTERS"
-    self.characterButton.filterSelected = not self.includeUnavailable
+    local frame, database, character, range, all, localize = self.frame, addon.db, addon.char, self.range, self.includeUnavailable, addon.L
+    local locale = database and rawget(database, "locale")
+    local revision = {}; self.filterGeneration = revision
+    local controls = { self.rangeButton, self.characterButton }
+    local function current()
+        return addon.UI == self and self.filterGeneration == revision and self.frame == frame and addon.db == database and
+            addon.char == character and self.range == range and self.includeUnavailable == all and addon.L == localize and
+            (not database or rawget(database, "locale") == locale) and self.rangeButton == controls[1] and self.characterButton == controls[2]
+    end
+    local function write(object, method, ...) return self:QuestListWrite(object, method, current, ...) end
+    self.rangeButton.filterLabelKey = range and "RANGE" or "ALL"
+    self.rangeButton.filterTargetKey = range and "ALL" or "RANGE"
+    self.rangeButton.filterCaptionKey = range and "FILTER_LEVEL_CURRENT" or "FILTER_LEVEL_ALL"
+    self.rangeButton.filterSelected = range
+    self.characterButton.filterLabelKey = all and "ALL_CHARACTERS" or "MY_CHARACTER"
+    self.characterButton.filterTargetKey = all and "MY_CHARACTER" or "ALL_CHARACTERS"
+    self.characterButton.filterCaptionKey = all and "FILTER_QUEST_ALL" or "FILTER_QUEST_MINE"
+    self.characterButton.filterSelected = not all
     local theme = addon.Clean(addon.Theme, "table")
-    for _, control in ipairs({ self.rangeButton, self.characterButton }) do
+    for _, control in ipairs(controls) do
+        local caption = addon.Read(localize, "string", control.filterCaptionKey)
+        if not current() or not caption then return end
         if theme and addon.Clean(theme.StyleFilter, "function") then addon.Read(theme.StyleFilter, "boolean", control, control.filterSelected)
         else styleRow(control, "control", control.filterSelected) end
+        if not current() then return end
+        if control.filterCaption then
+            local font = theme and addon.Clean(theme.ApplyFont, "function")
+            if font then pcall(font, control.filterCaption, 13) end
+            if not current() or not write(control.filterCaption, "SetText", caption) then return end
+        else
+            if theme then addon.Read(theme.StyleButtonFonts, "boolean", control) end
+            if not current() or not write(control, "SetText", caption) then return end
+        end
     end
+    local control = controls[2]
+    if not write(control.filterIcon, "SetShown", not all) then return end
+    for _, strip in ipairs(control.filterList) do if not write(strip, "SetShown", all) then return end end
 end
 
 function UI:ApplyTheme()
@@ -4458,31 +4484,34 @@ function UI:Create()
         return shown == true and addon.UI == self and self.frame == frame and self[field] == control
     end
     local rangeControl
-    rangeControl = button(frame, "", 26, function()
+    rangeControl = button(frame, "", 160, function()
         if not filterCurrent(rangeControl, "rangeButton") then return end
         self.range = not self.range; self:SaveFilters(); self:Refresh()
     end)
     self.rangeButton = rangeControl
-    self.rangeButton:SetPoint("TOPLEFT", 586, -66)
+    self.rangeButton:SetSize(160, 32); self.rangeButton:SetPoint("TOPLEFT", 178, -14)
+    self.rangeButton.filterHeadingKey = "LEVEL_FILTER"
     local characterControl
-    characterControl = button(frame, "", 26, function()
+    characterControl = button(frame, "", 100, function()
         if not filterCurrent(characterControl, "characterButton") then return end
         self.includeUnavailable = not self.includeUnavailable; self:SaveFilters(); self:Refresh()
     end)
     self.characterButton = characterControl
-    self.characterButton:SetPoint("TOPLEFT", 622, -66)
-    for _, entry in ipairs({ { self.rangeButton, "LEVEL_FILTER", "Interface\\Icons\\XP_Icon" },
-        { self.characterButton, "CHARACTER_FILTER" } }) do
-        local control = entry[1]
-        control:SetSize(26, 26); control.iconOnly = true; control.filterHeadingKey = entry[2]
-        local icon = control:CreateTexture(nil, "ARTWORK"); control.filterIcon = icon
-        icon:SetSize(20, 20); icon:SetPoint("CENTER", control, "CENTER", 0, 0)
-        if entry[3] then icon:SetTexture(entry[3])
-        else
-            if addon.Clean(icon.SetAtlas, "function") then pcall(icon.SetAtlas, icon, "GM-indicator-player") end
-            if addon.Clean(SetPortraitTexture, "function") then pcall(SetPortraitTexture, icon, "player") end
-        end
-        icon:Show()
+    self.characterButton:SetSize(100, 32); self.characterButton:SetPoint("TOPLEFT", 548, -66)
+    local portrait = characterControl:CreateTexture(nil, "ARTWORK"); characterControl.filterIcon = portrait
+    characterControl.filterPortrait = true; characterControl.filterHeadingKey = "CHARACTER_FILTER"
+    portrait:SetSize(26, 26); portrait:SetPoint("TOPLEFT", characterControl, "TOPLEFT", 4, -3)
+    if addon.Clean(portrait.SetAtlas, "function") then pcall(portrait.SetAtlas, portrait, "GM-indicator-player") end
+    if addon.Clean(SetPortraitTexture, "function") then pcall(SetPortraitTexture, portrait, "player") end
+    characterControl.filterCaption = label(characterControl, "", 38, -8, 56, 13)
+    characterControl.filterList = {}
+    for index = 1, 3 do
+        local strip = characterControl:CreateTexture(nil, "ARTWORK")
+        strip:SetTexture("Interface\\Buttons\\WHITE8X8"); strip:SetSize(18, 2)
+        strip:SetPoint("TOPLEFT", characterControl, "TOPLEFT", 8, -9 - (index - 1) * 6)
+        characterControl.filterList[index] = strip
+    end
+    for _, control in ipairs({ rangeControl, characterControl }) do
         control:SetScript("OnEnter", function() self:FilterHint(control) end)
         control:SetScript("OnLeave", function() self:HideNavigationHint() end)
     end
@@ -4510,7 +4539,7 @@ function UI:Create()
         control:SetScript("OnLeave", function() if type(icon.SetAlpha) == "function" then icon:SetAlpha(.76) end; self:HideNavigationHint() end)
         if type(icon.SetAlpha) == "function" then icon:SetAlpha(.76) end
     end
-    self.heading = label(frame, "", 278, -66, 296, 26)
+    self.heading = label(frame, "", 278, -66, 258, 26)
     self.catalog, self.catalogScroll = scrolling(frame, 12, -66, 238, 622)
     self.searchHint = label(self.catalog, "", 4, 0, 202, 13)
     self.catalogNotice = label(self.catalog, "", 4, 0, 202, 13)
@@ -4582,7 +4611,7 @@ function UI:Create()
     end
     navigationHint(self.giver, function() local action = self:NavigationDestination(false); return action and action.place end)
     navigationHint(self.source, nil, "COPY")
-    self.capacityStatus = label(frame, "", 178, -18, 330, 12)
+    self.capacityStatus = label(frame, "", 350, -22, 220, 12)
     self.capacityStatus:Hide()
     self.frame, self.cards, self.rows, self.details, self.chainButtons, self.branchButtons = frame, {}, {}, {}, {}, {}
     self.materialButtons, self.catalogInspectButtons = {}, {}
