@@ -154,3 +154,20 @@ local cardKeys = { "CATALOG_COMPACT_META", "DUNGEON_STATUS", "DUNGEON_STATUS_SCO
 for locale, values in pairs(cardStrings) do
     for index, key in ipairs(cardKeys) do addon.locales[locale][key] = values[index] end
 end
+
+local detailStrings = {
+    enUS = { "Lv %d", "%d+", "Start", "Rewards", "Story", "Text not recorded yet", "Read story", "Collapse story" },
+    ruRU = { "Ур. %d", "С %d ур.", "Где взять", "Награды", "История", "Текст пока не сохранён", "Читать историю", "Свернуть историю" },
+    deDE = { "Stufe %d", "Ab %d", "Auftraggeber", "Belohnungen", "Geschichte", "Text noch nicht gespeichert", "Geschichte lesen", "Geschichte einklappen" },
+    frFR = { "Niv. %d", "Dès %d", "Départ", "Récompenses", "Histoire", "Texte pas encore enregistré", "Lire l’histoire", "Réduire l’histoire" },
+    esES = { "Nivel %d", "Desde %d", "Inicio", "Recompensas", "Historia", "Texto aún no guardado", "Leer historia", "Contraer historia" },
+    itIT = { "Liv. %d", "Dal %d", "Inizio", "Ricompense", "Storia", "Testo non ancora salvato", "Leggi la storia", "Riduci la storia" },
+    ptBR = { "Nív. %d", "A partir do %d", "Início", "Recompensas", "História", "Texto ainda não salvo", "Ler história", "Recolher história" },
+    koKR = { "레벨 %d", "%d레벨부터", "시작", "보상", "이야기", "아직 저장된 내용이 없습니다", "이야기 읽기", "이야기 접기" },
+    zhCN = { "等级 %d", "%d级起", "接取地点", "奖励", "故事", "尚未保存任务文本", "阅读故事", "收起故事" },
+    zhTW = { "等級 %d", "%d級起", "接取地點", "獎勵", "故事", "尚未儲存任務文本", "閱讀故事", "收起故事" },
+}
+local detailKeys = { "DETAIL_LEVEL", "DETAIL_MIN_LEVEL", "DETAIL_GIVER", "DETAIL_REWARDS", "DETAIL_STORY", "DETAIL_STORY_EMPTY", "DETAIL_STORY_READ", "DETAIL_STORY_HIDE" }
+for locale, values in pairs(detailStrings) do
+    for index, key in ipairs(detailKeys) do addon.locales[locale][key] = values[index] end
+end

@@ -323,7 +323,7 @@ local function showDetail(id, context)
     -- Data fixtures render the explicit expanded view once. Separate disclosure
     -- checks exercise the real collapsed-to-expanded user interaction.
     ui.detailReferenceQuest,ui.detailReferenceDungeon=id,ui.dungeon
-    ui.detailReferencesExpanded,ui.detailChainExpanded=true,true
+    ui.detailReferencesExpanded,ui.detailChainExpanded,ui.detailNarrativeExpanded=true,true,true
     local generation = showCompactDetail(id, context)
     if generation and ui.rewardGeneration == generation then expandDetail() end
 end
@@ -2247,6 +2247,8 @@ check("All-character inspection explains class and minimum level without racial 
     addon.RaceName = function(id) assert(id == 95); return "Native new race" end
     ui.includeUnavailable, ui.quest = true, 9980; ui:Refresh()
     assert(ui.engine:State(9980).status == "UNAVAILABLE" and not ui.action and not hasDestination(true))
+    assert(detailIncludes(addon.L("DETAIL_MIN_LEVEL",40))and detailIncludes("Native mage"))
+    ui.referenceToggle.scripts.OnClick()
     assert(detailIncludes(addon.L("QUEST_MIN_LEVEL", 40)))
     assert(detailIncludes(addon.L("QUEST_CLASSES", "Native mage")) and not detailIncludes(addon.L("QUEST_RACES", "Native new race")))
     local found = false
@@ -2991,11 +2993,11 @@ check("Detail typography uses explicit title section and body styles and resets 
     addon.QuestRewards = function() return { items = { { id = 701, name = "Body reward", count = 1, texture = 123 } }, choices = {}, money = 0 } end
     showDetail(17001)
     local title = ui.details[1]
-    assert(title.text == addon.QuestName(17001) and title.fontSize == 26 and title.fontSizeAtText == 26 and title.fontResetBeforeText)
+    assert(title.text == addon.QuestName(17001) and title.fontSize == 22 and title.fontSizeAtText == 22 and title.fontResetBeforeText)
     local heading, body, reward
     for _, fs in ipairs(ui.details) do
         if fs.shown and fs.text == addon.L("NEXT") then
-            if fs.fontSize == 20 then heading = fs elseif fs.fontSize == 15 then body = fs end
+            if fs.fontSize == 20 then heading = fs elseif fs.fontSize == 14 then body = fs end
         elseif fs.shown and fs.text == addon.L("REWARD_ITEM", "Body reward", 1) then reward = fs end
     end
     assert(heading and body and heading.fontResetBeforeText and body.fontResetBeforeText, "native prose matching a heading stays body text")
@@ -3017,14 +3019,14 @@ check("Large localized quest and overview titles measure wrapping without resett
     addon.QuestName = function(id) return id == 2 and long or questName(id) end
     measurement = function(fs) return fs.text == long and fs.fontSize * 3 or 18 end
     showDetail(2)
-    assert(ui.details[1].fontSize == 26 and ui.details[1].fontResetBeforeText)
+    assert(ui.details[1].fontSize == 22 and ui.details[1].fontResetBeforeText)
     assert(-ui.details[2].point[3] >= 68)
     ui.detailScroll:SetVerticalScroll(95); local writes = ui.detailScroll.scrollWrites
     ui:RefreshDetail(); ui.language.scripts.OnClick()
-    assert(ui.detailScroll.verticalScroll == 95 and ui.detailScroll.scrollWrites == writes and ui.details[1].fontSize == 26)
+    assert(ui.detailScroll.verticalScroll == 95 and ui.detailScroll.scrollWrites == writes and ui.details[1].fontSize == 22)
     ui.quest = nil; ui.dungeon = { key = "type-overview", name = "Overview title", minLevel = 1, maxLevel = 60, coverage = "partial", quests = {} }
     ui:RefreshDetail()
-    assert(ui.details[1].text == "Overview title" and ui.details[1].fontSize == 26 and ui.details[1].fontResetBeforeText)
+    assert(ui.details[1].text == "Overview title" and ui.details[1].fontSize == 22 and ui.details[1].fontResetBeforeText)
     measurement = nil; addon.QuestName, addon.db.locale = questName, locale
     ui.quest, ui.dungeon = quest, dungeon; ui:Refresh()
 end)
@@ -3399,7 +3401,7 @@ check("Native font families retain alphabet fallback while detail sizes and pool
     assert(row.note.fontFamily == family and row.note.fontSize == 14)
     showDetail(1)
     local title = ui.details[1]
-    assert(title.fontFamily == family and title.fontSize == 26 and title.fontSizeAtText == 26)
+    assert(title.fontFamily == family and title.fontSize == 22 and title.fontSizeAtText == 22)
     local oldFamily = family; ChatFontNormal = {}
     title.measuredHeight = 777
     ui:RefreshDetail()
@@ -3883,7 +3885,7 @@ check("Noto and probed CJK assets retain actual sizes and unscaled reusable rows
         local cjk={koKR="Fonts\\2002.ttf",zhCN="Fonts\\ARKai_T.ttf",zhTW="Fonts\\bHEI00M.ttf"}
         if cjk[code]then assert(title.fontPath==cjk[code] and title.fontFamily==nil)
         else assert(title.fontPath:find("NotoSans-Regular.ttf",1,true) and title.fontFamily==nil)end
-        assert(title.fontSize==26 and not title.scaledText and title.shadow[1]==0 and title.shadow[2]==0)
+        assert(title.fontSize==22 and not title.scaledText and title.shadow[1]==0 and title.shadow[2]==0)
     end
     addon.db.locale="enUS"
     local row=ui:MakeRow(ui.questList,{},1,59)
@@ -3991,6 +3993,8 @@ check("All-character detail records the actual faction requirement without chang
     ui.dungeon={key="faction-detail",name="Faction detail",quests={25001},coverage="reviewed"}
     ui.includeUnavailable=true;ui.quest=25001;ui:Refresh()
     assert(ui.engine:State(25001).status=="UNAVAILABLE" and ui.engine:State(25001).reason=="faction")
+    assert(detailIncludes(addon.L("FACTION_Horde"))and detailIncludes("PALADIN"))
+    ui.referenceToggle.scripts.OnClick()
     assert(detailIncludes(addon.L("QUEST_FACTIONS",addon.L("FACTION_Horde"))))
     assert(detailIncludes(addon.L("QUEST_CLASSES","PALADIN")) and not ui.action and not hasDestination(false) and not hasDestination(true))
     addon.quests[25001]=nil;addon.Context=context
@@ -5088,7 +5092,7 @@ check("Actual quest narrative has a separate readable heading while missing-text
     for code in pairs(addon.locales)do
         addon.db.locale=code;addon.Description=function()return"Actual narrative paragraph"end;ui:RefreshDetail()
         assert(detailHas(addon.L("QUEST_TEXT")) and detailHas("Actual narrative paragraph"))
-        assert(objectiveText(addon.L("QUEST_TEXT")).fontSize==20 and objectiveText("Actual narrative paragraph").fontSize==15)
+        assert(objectiveText(addon.L("QUEST_TEXT")).fontSize==20 and objectiveText("Actual narrative paragraph").fontSize==14)
         addon.Description=function()return addon.L("NO_TEXT")end;ui:RefreshDetail()
         assert(detailHas(addon.L("NO_TEXT")) and not detailHas(addon.L("QUEST_TEXT")) and not detailHas("Actual narrative paragraph"))
     end
@@ -7646,7 +7650,7 @@ check("reading profile preserves ten locale wrapping and short viewport scroll b
         assert(ui.detail.height>=1200 and ui.detailScroll.ScrollBar.shown and ui.detailScroll.ScrollBar.maximum>1000)
         local found=false
         for _,fs in ipairs(ui.details)do
-            if fs.shown and fs.text==prose then found=true;assert(fs.fontSize==15 and fs.measuredHeight==1200)end
+            if fs.shown and fs.text==prose then found=true;assert(fs.fontSize==14 and fs.measuredHeight==1200)end
         end
         assert(found)
         ui.detailScroll:SetHeight(ui.detail.height);assert(not ui.detailScroll.ScrollBar.shown)
@@ -8511,7 +8515,7 @@ check("Real language hover previews the existing window and restores its labels 
     assert(addon.db.locale=="enUS" and ui.language.languageCaption=="Русский" and ui.language.text=="RU")
     assert(addon.L(ui.rangeButton.filterLabelKey)==addon.L(ui.range and "RANGE"or"ALL")and addon.L(ui.rangeButton.filterLabelKey)~=range)
     assert(ui.rows[1].note.text~=note)
-    assert(detailHas(addon.locales.ruRU.QUEST_GIVER) and ui.back==nil and ui.preparationButton==nil)
+    assert(detailHas(addon.locales.ruRU.DETAIL_GIVER) and ui.back==nil and ui.preparationButton==nil)
     assert(language:Cancel(ui)and addon.db.locale=="enUS"and addon.L(ui.rangeButton.filterLabelKey)==range and ui.heading.text==heading)
     local selections={"enUS","ruRU","deDE","frFR","esES","itIT","ptBR","koKR","zhCN","zhTW"}
     ui.language.scripts.OnEnter();local session=language.session
@@ -8523,7 +8527,7 @@ check("Real language hover previews the existing window and restores its labels 
         assert(addon.L(ui.rangeButton.filterLabelKey)==addon.locales[code][ui.range and "RANGE"or"ALL"])
         assert(session.rows[1].text==addon.locales[code].LANGUAGE_AUTO and row.languagePreview)
         assert(session.rows[2].languageSelected and row.languageSelected==(code=="enUS"),"checkmark follows committed English while hover previews another locale")
-        assert(detailHas(addon.locales[code].QUEST_GIVER))
+        assert(detailHas(addon.locales[code].DETAIL_GIVER))
     end
     session.rows[4].scripts.OnClick();assert(addon.db.locale=="deDE" and not language.session)
     addon.db.locale="enUS";ui:Refresh()
@@ -8609,7 +8613,7 @@ check("Human inspection lists actual92753 without racial labels while unknown re
                 assert(not fs.text:find(addon.L("RACE_ID",95),1,true) and not fs.text:find("High Order",1,true))
                 assert(not fs.text:find(addon.L("QUEST_RACES",""),1,true))
             end end
-            assert(detailIncludes(addon.L("QUEST_MIN_LEVEL",q.minLevel)))
+            assert(detailIncludes(addon.L(ui.detailReferencesExpanded and "QUEST_MIN_LEVEL"or"DETAIL_MIN_LEVEL",q.minLevel)))
         end
         assert(q.races==races and #races==4 and reads==0)
     end
@@ -8825,9 +8829,9 @@ check("Level-only cards show concise level metadata and giver location without a
     local quest,dungeon,navigation=ui.quest,ui.dungeon,addon.Navigation
     addon.quests[41000]={id=41000,minLevel=80,requirementsKnown=true,start={name="Level quest giver",mapID=1455}}
     ui.dungeon={key="level-copy",quests={41000}};showCompactDetail(41000)
-    assert(ui.action.kind=="level" and detailHas(addon.L("QUEST_MIN_LEVEL",80)))
+    assert(ui.action.kind=="level" and detailHas(addon.L("DETAIL_MIN_LEVEL",80)))
     assert(not detailHas(addon.L("NEXT")) and not detailIncludes(addon.L("level")))
-    assert(detailHas(addon.L("QUEST_GIVER")) and destinationLine("Level quest giver"))
+    assert(detailHas(addon.L("DETAIL_GIVER")) and destinationLine("Level quest giver"))
     assert(detailHas(addon.L("GIVER_COORDINATES_UNKNOWN")) and hasDestination(false) and not hasDestination(true))
     addon.quests[41000].start.mapID=nil;ui:RefreshDetail()
     assert(detailHas(addon.L("GIVER_LOCATION_UNKNOWN")) and not hasDestination(false) and not hasDestination(true))
@@ -9451,5 +9455,86 @@ check("Dungeon status tooltips explain listed-character scope and reject stale r
     tip.SetText=function(self)self.owner=foreign end;old();assert(not tip.shown and tip.owner==foreign)
     tip.SetText=text;ui.search="Empty";ui:RefreshDungeons();old();assert(not tip.shown)
     GameTooltip,addon.db.locale=previous,locale;f:finish()
+end)
+local function compactNarrativeFixture()
+    local f={description=addon.Description,quest=ui.quest,dungeon=ui.dungeon,engine=ui.engine,
+        referenceQuest=ui.detailReferenceQuest,referenceDungeon=ui.detailReferenceDungeon,references=ui.detailReferencesExpanded,
+        chain=ui.detailChainExpanded,narrative=ui.detailNarrativeExpanded,locale=addon.db.locale,reads=0}
+    addon.quests[53001]={id=53001,level=18,minLevel=9,requirementsKnown=true,start={name="Narrative giver",mapID=1,x=20,y=30}}
+    addon.quests[53002]={id=53002,level=20,minLevel=10,requirementsKnown=true}
+    f.prose=string.rep("Я",300)
+    addon.Description=function(id)f.reads=f.reads+1;return id==53001 and f.prose or "Different short story"end
+    ui.dungeon={key="compact-narrative",name="Narrative dungeon",quests={53001,53002}}
+    ui.detailReferenceQuest=nil;showCompactDetail(53001)
+    function f:finish()
+        addon.Description=self.description;addon.quests[53001],addon.quests[53002]=nil,nil
+        ui.quest,ui.dungeon,ui.engine=self.quest,self.dungeon,self.engine
+        ui.detailReferenceQuest,ui.detailReferenceDungeon=self.referenceQuest,self.referenceDungeon
+        ui.detailReferencesExpanded,ui.detailChainExpanded,ui.detailNarrativeExpanded=self.references,self.chain,self.narrative
+        addon.db.locale=self.locale;ui:RefreshDetail()
+    end
+    return f
+end
+check("Optional narrative uses exact UTF8 excerpts and explicit full reading across all locales without background text polling",function()
+    local f=compactNarrativeFixture()
+    for code in pairs(addon.locales)do
+        addon.db.locale=code
+        local glyph=code=="koKR"and "한"or "Я"
+        if code=="zhCN"or code=="zhTW"then glyph="汉"end
+        f.prose=string.rep(glyph,300);ui.detailNarrativeExpanded=false
+        local before=f.reads;ui:RefreshDetail();assert(f.reads==before+1)
+        assert(detailHas(string.rep(glyph,240).."…")and not detailHas(f.prose))
+        assert(ui.details[1].fontSize==22 and detailHas(addon.L("DETAIL_STORY")))
+        assert(ui.narrativeToggle.shown and not ui.detailNarrativeExpanded)
+        local old=ui.narrativeToggle.scripts.OnClick;old()
+        assert(ui.detailNarrativeExpanded and detailHas(f.prose)and not detailHas(string.rep(glyph,240).."…"))
+        local fullReads=f.reads;old();assert(ui.detailNarrativeExpanded and f.reads==fullReads)
+        ui.narrativeToggle.scripts.OnClick();assert(not ui.detailNarrativeExpanded and detailHas(string.rep(glyph,240).."…"))
+        assert(f.reads==before+3,"only explicit paints read the narrative")
+    end
+    local stale=ui.narrativeToggle.scripts.OnClick;showCompactDetail(53002)
+    stale();assert(ui.quest==53002 and not ui.detailNarrativeExpanded and not ui.narrativeToggle.shown and detailHas("Different short story"))
+    f:finish()
+end)
+check("Late narrative toggle hide and label writes preserve a newer same-quest render",function()
+    for _,operation in ipairs({"Hide","SetText"})do
+        local f=compactNarrativeFixture();local toggle=ui.narrativeToggle
+        local object=operation=="Hide"and toggle or toggle.label
+        local original,armed=object[operation],true
+        object[operation]=function(self,...)
+            if armed then
+                armed=false;f.prose=string.rep("汉",300)
+                if operation=="SetText"then ui.detailNarrativeExpanded=true end
+                ui:RefreshDetail()
+            end
+            return original(self,...)
+        end
+        ui:RefreshDetail();object[operation]=original
+        assert(not armed and toggle.shown and ui.quest==53001)
+        if operation=="Hide"then
+            assert(not ui.detailNarrativeExpanded and detailHas(string.rep("汉",240).."…")and toggle.label.text:find(addon.L("DETAIL_STORY_READ"),1,true))
+        else
+            assert(ui.detailNarrativeExpanded and detailHas(f.prose)and toggle.label.text:find(addon.L("DETAIL_STORY_HIDE"),1,true))
+        end
+        f:finish()
+    end
+end)
+check("Compact metadata and rewards remove duplicate default prose while advanced facts stay available",function()
+    local f=compactNarrativeFixture();local rewards,dialogue,log,coin=addon.CachedQuestRewards,addon.DialogueRewards,addon.QuestRewards,GetCoinTextureString
+    addon.DialogueRewards,addon.QuestRewards=nil,nil
+    addon.CachedQuestRewards=function()return{source="cache",items={},choices={},xp=123,money=456}end
+    GetCoinTextureString=function(amount)assert(amount==456);return"coins"end
+    ui:RefreshDetail()
+    assert(detailHas(addon.L("DETAIL_LEVEL",18).." · "..addon.L("DETAIL_MIN_LEVEL",9)))
+    assert(detailHas(addon.L("DETAIL_GIVER"))and not detailHas(addon.L("QUEST_GIVER")))
+    assert(detailHas(addon.L("DETAIL_REWARDS"))and detailHas(addon.L("REWARD_XP",123).." · "..addon.L("REWARD_MONEY")..": coins"))
+    assert(not detailHas(addon.L("REWARD_NO_ITEMS"))and not detailHas(addon.L("REWARD_PREVIEW")))
+    ui.referenceToggle.scripts.OnClick()
+    assert(detailIncludes(addon.L("QUEST_LEVEL",18))and detailIncludes(addon.L("QUEST_MIN_LEVEL",9)))
+    assert(detailHas(addon.L("REWARD_NO_ITEMS"))and detailHas(addon.L("REWARD_PREVIEW"))and detailHas(addon.L("REWARD_XP",123)))
+    addon.CachedQuestRewards=function()return nil end;ui.detailReferencesExpanded=false;ui:RefreshDetail()
+    assert(not detailHas(addon.L("DETAIL_REWARDS"))and not detailHas(addon.L("REWARD_UNAVAILABLE")))
+    ui.referenceToggle.scripts.OnClick();assert(detailHas(addon.L("REWARD_UNAVAILABLE")))
+    addon.CachedQuestRewards,addon.DialogueRewards,addon.QuestRewards,GetCoinTextureString=rewards,dialogue,log,coin;f:finish()
 end)
 print("Preparation UI modeled checks passed: " .. total .. " (no native layout validation)")

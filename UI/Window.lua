@@ -12,7 +12,9 @@ local DEVELOPER_LINKS = {
 local FONT
 local DETAIL_STYLES = {
     body = { size = 15, minimum = 20, color = { 0.92, 0.91, 0.87 } },
-    title = { size = 26, minimum = 34, color = { 0.96, 0.83, 0.59 } },
+    title = { size = 22, minimum = 30, gap = 6, color = { 0.96, 0.83, 0.59 } },
+    caption = { size = 13, minimum = 16, before = 4, gap = 3, color = { 0.64, 0.73, 0.74 } },
+    story = { size = 14, minimum = 18, gap = 6, color = { 0.74, 0.77, 0.75 } },
     section = { size = 20, minimum = 26, before = 8, color = { 0.76, 0.86, 0.85 } },
 }
 
@@ -2143,7 +2145,7 @@ function UI:RefreshDetail()
     if self.rewardGeneration ~= rewardGeneration or self.quest ~= renderQuest or self.dungeon ~= renderDungeon or
         self.engine ~= renderEngine or addon.char ~= renderCharacter then return end
     if self.detailReferenceQuest ~= renderQuest or self.detailReferenceDungeon ~= renderDungeon then
-        self.detailReferencesExpanded, self.detailChainExpanded = false, false
+        self.detailReferencesExpanded, self.detailChainExpanded, self.detailNarrativeExpanded = false, false, false
         local selected = renderQuest and addon.quests[renderQuest]
         if selected and selected.requires and #selected.requires > 0
             and not selected.storyline and not selected.storylineGroups then
@@ -2165,6 +2167,7 @@ function UI:RefreshDetail()
         self.detailReferenceQuest, self.detailReferenceDungeon = renderQuest, renderDungeon
     end
     local referencesExpanded, chainExpanded = self.detailReferencesExpanded == true, self.detailChainExpanded == true
+    local narrativeExpanded = self.detailNarrativeExpanded == true
     local overviewIdentity = not renderQuest and renderDungeon and (addon.Clean(renderDungeon.key, "string") or renderDungeon) or nil
     if self.renderedQuest ~= self.quest or self.renderedOverview ~= overviewIdentity then
         self:CloseCopyLink()
@@ -2189,7 +2192,8 @@ function UI:RefreshDetail()
     local function portraitCardCurrent()
         return self.quest == renderQuest and self.dungeon == renderDungeon and self.engine == renderEngine and
             addon.char == renderCharacter and self.rewardGeneration == rewardGeneration and
-            (self.detailReferencesExpanded == true) == referencesExpanded and (self.detailChainExpanded == true) == chainExpanded
+            (self.detailReferencesExpanded == true) == referencesExpanded and (self.detailChainExpanded == true) == chainExpanded and
+            (self.detailNarrativeExpanded == true) == narrativeExpanded
     end
     self.clientWaypointBinding = nil
     if self.clientWaypointButton then
@@ -2337,8 +2341,13 @@ function UI:RefreshDetail()
         end
         local measured = measuredHeight(fs, height or 18)
         if ownerCurrent and not ownerCurrent() then return false end
-        y = y + math.max(height or 18, measured) + 8
+        y = y + math.max(height or 18, measured) + (format.gap or 8)
         return true
+    end
+    if self.narrativeToggle then
+        for _, operation in ipairs({ { "Hide" }, { "SetEnabled", false }, { "SetScript", "OnClick", nil } }) do
+            if not self:QuestListWrite(self.narrativeToggle, operation[1], portraitCardCurrent, unpack(operation, 2)) then return end
+        end
     end
     if self.storyToggle then self.storyToggle:Hide(); self.storyToggle:SetEnabled(false); self.storyToggle:SetScript("OnClick", nil) end
     if self.referenceToggle then self.referenceToggle:Hide(); self.referenceToggle:SetEnabled(false); self.referenceToggle:SetScript("OnClick", nil) end
@@ -2437,12 +2446,12 @@ function UI:RefreshDetail()
         if minimum or questLevel then
             if not metadataCurrent() then return end
             if questLevel then
-                local value = addon.Read(metadataLocalize, "string", "QUEST_LEVEL", questLevel)
+                local value = addon.Read(metadataLocalize, "string", referencesExpanded and "QUEST_LEVEL" or "DETAIL_LEVEL", questLevel)
                 if value and value:find("%S") then metadataParts[#metadataParts + 1] = value end
             end
             if not metadataCurrent() then return end
             if minimum then
-                local value = addon.Read(metadataLocalize, "string", "QUEST_MIN_LEVEL", minimum)
+                local value = addon.Read(metadataLocalize, "string", referencesExpanded and "QUEST_MIN_LEVEL" or "DETAIL_MIN_LEVEL", minimum)
                 if value and value:find("%S") then metadataParts[#metadataParts + 1] = value end
             end
             if not metadataCurrent() then return end
@@ -2451,7 +2460,7 @@ function UI:RefreshDetail()
             return self.quest == renderQuest and self.dungeon == renderDungeon and self.rewardGeneration == rewardGeneration and addon.char == renderCharacter
         end)
         if factions == false then return end
-        if factions then metadataParts[#metadataParts + 1] = addon.L("QUEST_FACTIONS", factions) end
+        if factions then metadataParts[#metadataParts + 1] = referencesExpanded and addon.L("QUEST_FACTIONS", factions) or factions end
         for _, rule in ipairs({ { "classes", "string", "QUEST_CLASSES", addon.ClassName } }) do
             local entries = addon.Clean(q[rule[1]], "table")
             local names, seen = {}, {}
@@ -2468,9 +2477,9 @@ function UI:RefreshDetail()
                     names[#names + 1] = audienceName(rule[1], value, name)
                 end
             end
-            if #names > 0 then metadataParts[#metadataParts + 1] = addon.L(rule[3], table.concat(names, ", ")) end
+            if #names > 0 then metadataParts[#metadataParts + 1] = referencesExpanded and addon.L(rule[3], table.concat(names, ", ")) or table.concat(names, ", ") end
         end
-        if #metadataParts > 0 and line(table.concat(metadataParts, " · "), nil, nil, nil, metadataCurrent) == false then return end
+        if #metadataParts > 0 and line(table.concat(metadataParts, " · "), referencesExpanded and "body" or "caption", nil, nil, metadataCurrent) == false then return end
         local offerGetter = addon.CurrentOffer
         local offer = addon.Read(offerGetter, "table", id)
         local offeredNow = offer and addon.Clean(offer.offeredNow, "boolean") == true
@@ -2616,7 +2625,7 @@ function UI:RefreshDetail()
                 if reported(destination, slot .. index, ownerCurrent) == false or not current() then return false end
             end
         end
-        if line(addon.L("QUEST_GIVER"), "section", nil, nil, portraitCardCurrent) == false then return end
+        if line(addon.L(referencesExpanded and "QUEST_GIVER" or "DETAIL_GIVER"), referencesExpanded and "section" or "caption", nil, nil, portraitCardCurrent) == false then return end
         if start then
             local giverFields = { "npcID", "objectID", "itemID", "name", "zoneName", "locationName", "mapID", "x", "y" }
             local giverValues, nameGetter, itemGetter, mapRoot, checker = {}, addon.GiverName, addon.ItemName, C_Map, issecretvalue
@@ -3819,36 +3828,47 @@ function UI:RefreshDetail()
             end
         end
         local rewards, rewardOrigin = rewardData(id)
-        if rewards and addon.Clean(rewards.source, "string") == "dialogue" then line(addon.L("REWARD_DIALOGUE"), "section")
-        elseif rewards and addon.Clean(rewards.source, "string") == "cache" then line(addon.L("REWARD_PREVIEW"), "section") end
         local items = rewards and addon.Clean(rewards.items, "table")
         local choices = rewards and addon.Clean(rewards.choices, "table")
-        if rewards and addon.Clean(rewards.hidden, "boolean") == true then
-            line(addon.L("REWARD_HIDDEN"))
+        local hidden = rewards and addon.Clean(rewards.hidden, "boolean") == true
+        local xp = rewards and addon.Clean(rewards.xp, "number")
+        local money = rewards and addon.Clean(rewards.money, "number")
+        local validXP = xp and xp >= 0 and xp % 1 == 0
+        if referencesExpanded then
+            if rewards and addon.Clean(rewards.source, "string") == "dialogue" then line(addon.L("REWARD_DIALOGUE"), "section")
+            elseif rewards and addon.Clean(rewards.source, "string") == "cache" then line(addon.L("REWARD_PREVIEW"), "section") end
+        elseif not hidden and items and choices and (#items > 0 or #choices > 0 or validXP or (money and money > 0)) then
+            line(addon.L("DETAIL_REWARDS"), "caption")
+        end
+        if hidden then
+            if referencesExpanded then line(addon.L("REWARD_HIDDEN")) end
         elseif items and choices then
             if #items > 0 then
-                line(addon.L("REWARD_ITEMS"), "section")
+                if referencesExpanded then line(addon.L("REWARD_ITEMS"), "section") end
                 for index, item in ipairs(items) do
                     if line(addon.L("REWARD_ITEM", item.name, item.count), nil,
                         { item = item, origin = rewardOrigin, source = addon.Clean(rewards.source, "string"), kind = "items", index = index }) == false then return end
                 end
             end
             if #choices > 0 then
-                line(addon.L("REWARD_CHOICES"), "section")
+                line(addon.L("REWARD_CHOICES"), referencesExpanded and "section" or "caption")
                 for index, item in ipairs(choices) do
                     if line(addon.L("REWARD_ITEM", item.name, item.count), nil,
                         { item = item, origin = rewardOrigin, source = addon.Clean(rewards.source, "string"), kind = "choices", index = index }) == false then return end
                 end
             end
-            if #items == 0 and #choices == 0 then line(addon.L("REWARD_NO_ITEMS")) end
-            local xp = addon.Clean(rewards.xp, "number")
-            if xp and xp >= 0 and xp % 1 == 0 then line(addon.L("REWARD_XP", xp)) end
-            local money = addon.Clean(rewards.money, "number")
+            if referencesExpanded and #items == 0 and #choices == 0 then line(addon.L("REWARD_NO_ITEMS")) end
+            local gains = {}
+            if validXP then
+                if referencesExpanded then line(addon.L("REWARD_XP", xp)) else gains[#gains + 1] = addon.L("REWARD_XP", xp) end
+            end
             if money and money > 0 then
                 local formatted = addon.Read(GetCoinTextureString, "string", money)
-                line(formatted and (addon.L("REWARD_MONEY") .. ": " .. formatted) or addon.L("REWARD_MONEY_UNKNOWN"))
+                local gain = formatted and (addon.L("REWARD_MONEY") .. ": " .. formatted) or addon.L("REWARD_MONEY_UNKNOWN")
+                if referencesExpanded then line(gain) else gains[#gains + 1] = gain end
             end
-        else line(addon.L("REWARD_UNAVAILABLE")) end
+            if #gains > 0 then line(table.concat(gains, " · "), "caption") end
+        elseif referencesExpanded then line(addon.L("REWARD_UNAVAILABLE")) end
         do
             local getter, checker, localize = addon.Clean(addon.DialogueText, "function"), issecretvalue, addon.L
             if getter then
@@ -4132,17 +4152,59 @@ function UI:RefreshDetail()
         local descriptionGetter, descriptionChecker = addon.Description, issecretvalue
         local description = addon.Read(descriptionGetter, "string", id)
         local placeholder = addon.L("NO_TEXT")
+        local database, localize, frame = addon.db, addon.L, self.frame
+        local locale = database and rawget(database, "locale")
         local function narrativeCurrent()
-            return portraitCardCurrent() and addon.quests[id] == definition and
+            return portraitCardCurrent() and addon.quests[id] == definition and self.frame == frame and addon.db == database and
+                (not database or rawget(database, "locale") == locale) and addon.L == localize and
                 addon.Description == descriptionGetter and issecretvalue == descriptionChecker
         end
         if not narrativeCurrent() then return end
         if not description or #description > 30000 or not description:find("%S") then description = placeholder end
-        if description ~= placeholder then
-            line(addon.L("QUEST_TEXT"), "section")
-            if not narrativeCurrent() then return end
+        if description == placeholder then
+            if line(addon.L(referencesExpanded and "NO_TEXT" or "DETAIL_STORY_EMPTY"), referencesExpanded and "body" or "caption", nil, nil, narrativeCurrent) == false then return end
+        else
+            local excerpt, long = description, false
+            -- Native markup stays intact. Plain prose can safely use a character-bound excerpt.
+            if not description:find("|", 1, true) then
+                local position, characters = 1, 0
+                while position <= #description and characters < 240 do
+                    local byte = description:byte(position)
+                    local width = byte >= 240 and byte <= 244 and 4 or (byte >= 224 and byte <= 239 and 3 or (byte >= 194 and byte <= 223 and 2 or 1))
+                    for offset = 1, width - 1 do
+                        local continuation = description:byte(position + offset)
+                        if not continuation or continuation < 128 or continuation > 191 then width = 1; break end
+                    end
+                    position, characters = position + width, characters + 1
+                end
+                long = position <= #description
+                if long and not narrativeExpanded then excerpt = description:sub(1, position - 1) .. "…" end
+            end
+            if line(addon.L(referencesExpanded and "QUEST_TEXT" or "DETAIL_STORY"), referencesExpanded and "section" or "caption", nil, nil, narrativeCurrent) == false or
+                line(excerpt, "story", nil, nil, narrativeCurrent) == false then return end
+            if long then
+                local toggle = self.narrativeToggle
+                if not toggle then
+                    toggle = CreateFrame("Button", nil, self.detail); toggle:SetWidth(contentWidth - 2)
+                    toggle.label = label(toggle, "", 7, -5, contentWidth - 16, 13); toggle.title = toggle.label
+                    if not narrativeCurrent() then return end
+                    self.narrativeToggle = toggle
+                end
+                local function toggleCurrent() return narrativeCurrent() and self.narrativeToggle == toggle end
+                local function write(object, method, ...) return self:QuestListWrite(object, method, toggleCurrent, ...) end
+                if not write(toggle.label, "SetText", (narrativeExpanded and "− " or "+ ") .. addon.L(narrativeExpanded and "DETAIL_STORY_HIDE" or "DETAIL_STORY_READ")) then return end
+                local height = math.max(28, measuredHeight(toggle.label, 18) + 8)
+                if not write(toggle, "SetHeight", height) or not write(toggle, "ClearAllPoints") or
+                    not write(toggle, "SetPoint", "TOPLEFT", 4, -y) or not write(toggle, "SetEnabled", true) then return end
+                styleRow(toggle, "control", narrativeExpanded)
+                if not toggleCurrent() or not write(toggle, "SetScript", "OnClick", function()
+                    if not toggleCurrent() or addon.Read(frame.IsShown, "boolean", frame) ~= true or not toggleCurrent() then return end
+                    self.detailNarrativeExpanded = not narrativeExpanded
+                    self:RefreshDetail()
+                end) or not write(toggle, "Show") then return end
+                y = y + height + 6
+            end
         end
-        line(description)
         if not narrativeCurrent() then return end
         do
             local toggle = self.referenceToggle
@@ -4537,7 +4599,7 @@ function UI:Create()
             addon.Read(f.IsShown, "boolean", f) == true then self:Fit() end
     end)
     frame:SetScript("OnShow", function(f) raiseWindow(f); self:Fit(); self:Refresh() end)
-    frame:SetScript("OnHide", function() local pending = self.developerLinkRequest; self.developerLinkRequest = nil; if pending and type(StaticPopup_Hide) == "function" then pcall(StaticPopup_Hide, "DUNGEONPRO_COPY_DEVELOPER_LINK") end; self:HideNavigationHint(); local language = addon.Clean(addon.Language, "table"); if language then addon.Read(language.Cancel, "boolean", language, self) end; self.pendingSearch = nil; self.detailReferencesExpanded, self.detailChainExpanded = false, false; self.storyStates, self.storyOrder = nil, nil; if not self:ResetQuestLogControl() then return end; self.detailActionChoice = nil; self.languageMenuRevision = {}; self:ResetHistoryReading(); self:ResetRewardPresentation(); self:CloseCopyLink() end)
+    frame:SetScript("OnHide", function() local pending = self.developerLinkRequest; self.developerLinkRequest = nil; if pending and type(StaticPopup_Hide) == "function" then pcall(StaticPopup_Hide, "DUNGEONPRO_COPY_DEVELOPER_LINK") end; self:HideNavigationHint(); local language = addon.Clean(addon.Language, "table"); if language then addon.Read(language.Cancel, "boolean", language, self) end; self.pendingSearch = nil; self.detailReferencesExpanded, self.detailChainExpanded, self.detailNarrativeExpanded = false, false, false; self.storyStates, self.storyOrder = nil, nil; if not self:ResetQuestLogControl() then return end; self.detailActionChoice = nil; self.languageMenuRevision = {}; self:ResetHistoryReading(); self:ResetRewardPresentation(); self:CloseCopyLink() end)
     self:ApplyTheme()
     frame:Hide()
 end

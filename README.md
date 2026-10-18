@@ -113,8 +113,9 @@ Level ranges are provisional recommendations.
   into required prerequisites. Same-named steps show their quest IDs.
   Quest icons show journal progress and completion; hover for the status reason.
   Required prerequisites and source-listed story quests are labelled separately.
-  The detail pane focuses on the selected quest's giver, objectives, rewards and
-  available text. More details opens its additional conditions and references.
+  The detail pane keeps the giver, objectives and rewards together with compact
+  level information. Story text has its own reading section; long passages expand
+  on demand. More details opens full conditions, availability notes and references.
 - When available, follow the game's next waypoint for a quest in your log.
   It may mark a route point, an entrance or a turn-in. Quest-giver locations
   and preparation steps remain separate.
