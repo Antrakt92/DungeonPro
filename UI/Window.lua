@@ -4112,7 +4112,19 @@ function UI:RefreshDetail()
         if q.finishAlternatives then
             if alternativePlaces(q.finishAlternatives, self.finishButtons, "POSSIBLE_TURNINS", "finishAlternative:") == false then return end
         elseif q.finish and q.finish ~= q.start then
-            if reported(q.finish, "finish") == false then return end
+            local starting = not q.startAlternatives and reportedPlaces(q.start)
+            local ending = reportedPlaces(q.finish)
+            if not locationCurrent() then return end
+            local repeated = starting and ending and #starting == #ending
+            if repeated then
+                for index, point in ipairs(starting) do
+                    for _, field in ipairs({ "npcID", "objectID", "name", "mapID", "x", "y", "zoneName" }) do
+                        if point[field] ~= ending[index][field] then repeated = false; break end
+                    end
+                    if not repeated then break end
+                end
+            end
+            if not repeated and reported(q.finish, "finish") == false then return end
         end
         local materialSource, materialGetter = q.completionQuests, engine.CompletionSteps
         local function materialCurrent()
