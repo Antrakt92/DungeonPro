@@ -5166,7 +5166,8 @@
       "source": "https://www.wowhead.com/forever/quest=2945/grime-encrusted-ring",
       "finish": {
         "objectID": 142487,
-        "name": "The Sparklematic 5200"
+        "name": "The Sparklematic 5200",
+        "zoneName": "Gnomeregan"
       },
       "start": {
         "itemID": 9326,
@@ -5197,11 +5198,13 @@
       "source": "https://www.wowhead.com/forever/quest=2951/the-sparklematic-5200",
       "start": {
         "objectID": 142487,
-        "name": "The Sparklematic 5200"
+        "name": "The Sparklematic 5200",
+        "zoneName": "Gnomeregan"
       },
       "finish": {
         "objectID": 142487,
-        "name": "The Sparklematic 5200"
+        "name": "The Sparklematic 5200",
+        "zoneName": "Gnomeregan"
       },
       "objectiveItems": [
         {
@@ -5627,7 +5630,8 @@
       "source": "https://www.wowhead.com/forever/quest=2949/return-of-the-ring",
       "start": {
         "objectID": 142487,
-        "name": "The Sparklematic 5200"
+        "name": "The Sparklematic 5200",
+        "zoneName": "Gnomeregan"
       },
       "finish": {
         "npcID": 3412,
@@ -5661,7 +5665,8 @@
       "source": "https://www.wowhead.com/forever/quest=2947/return-of-the-ring",
       "start": {
         "objectID": 142487,
-        "name": "The Sparklematic 5200"
+        "name": "The Sparklematic 5200",
+        "zoneName": "Gnomeregan"
       },
       "finish": {
         "npcID": 6826,
@@ -5747,11 +5752,13 @@
       "source": "https://www.wowhead.com/forever/quest=2952/the-sparklematic-5200",
       "start": {
         "objectID": 142487,
-        "name": "The Sparklematic 5200"
+        "name": "The Sparklematic 5200",
+        "zoneName": "Gnomeregan"
       },
       "finish": {
         "objectID": 142487,
-        "name": "The Sparklematic 5200"
+        "name": "The Sparklematic 5200",
+        "zoneName": "Gnomeregan"
       }
     },
     {
@@ -5767,11 +5774,13 @@
       "source": "https://www.wowhead.com/forever/quest=2953/more-sparklematic-action",
       "start": {
         "objectID": 142487,
-        "name": "The Sparklematic 5200"
+        "name": "The Sparklematic 5200",
+        "zoneName": "Gnomeregan"
       },
       "finish": {
         "objectID": 142487,
-        "name": "The Sparklematic 5200"
+        "name": "The Sparklematic 5200",
+        "zoneName": "Gnomeregan"
       },
       "repeatable": true,
       "objectiveItems": [
@@ -5795,11 +5804,13 @@
       "source": "https://www.wowhead.com/forever/quest=4605/the-sparklematic-5200",
       "start": {
         "objectID": 175084,
-        "name": "The Sparklematic 5200"
+        "name": "The Sparklematic 5200",
+        "zoneName": "Gnomeregan"
       },
       "finish": {
         "objectID": 175084,
-        "name": "The Sparklematic 5200"
+        "name": "The Sparklematic 5200",
+        "zoneName": "Gnomeregan"
       }
     },
     {
@@ -5815,11 +5826,13 @@
       "source": "https://www.wowhead.com/forever/quest=4604/more-sparklematic-action",
       "start": {
         "objectID": 175085,
-        "name": "The Sparklematic 5200"
+        "name": "The Sparklematic 5200",
+        "zoneName": "Gnomeregan"
       },
       "finish": {
         "objectID": 175085,
-        "name": "The Sparklematic 5200"
+        "name": "The Sparklematic 5200",
+        "zoneName": "Gnomeregan"
       },
       "repeatable": true,
       "objectiveItems": [
@@ -5843,11 +5856,13 @@
       "source": "https://www.wowhead.com/forever/quest=4606/the-sparklematic-5200",
       "start": {
         "objectID": 175085,
-        "name": "The Sparklematic 5200"
+        "name": "The Sparklematic 5200",
+        "zoneName": "Gnomeregan"
       },
       "finish": {
         "objectID": 175085,
-        "name": "The Sparklematic 5200"
+        "name": "The Sparklematic 5200",
+        "zoneName": "Gnomeregan"
       }
     },
     {
@@ -5863,11 +5878,13 @@
       "source": "https://www.wowhead.com/forever/quest=4603/more-sparklematic-action",
       "start": {
         "objectID": 175084,
-        "name": "The Sparklematic 5200"
+        "name": "The Sparklematic 5200",
+        "zoneName": "Gnomeregan"
       },
       "finish": {
         "objectID": 175084,
-        "name": "The Sparklematic 5200"
+        "name": "The Sparklematic 5200",
+        "zoneName": "Gnomeregan"
       },
       "repeatable": true,
       "objectiveItems": [
@@ -5891,11 +5908,13 @@
       "source": "https://www.wowhead.com/forever/quest=4601/the-sparklematic-5200",
       "start": {
         "objectID": 175084,
-        "name": "The Sparklematic 5200"
+        "name": "The Sparklematic 5200",
+        "zoneName": "Gnomeregan"
       },
       "finish": {
         "objectID": 175084,
-        "name": "The Sparklematic 5200"
+        "name": "The Sparklematic 5200",
+        "zoneName": "Gnomeregan"
       },
       "objectiveItems": [
         {
@@ -5918,11 +5937,13 @@
       "source": "https://www.wowhead.com/forever/quest=4602/the-sparklematic-5200",
       "start": {
         "objectID": 175085,
-        "name": "The Sparklematic 5200"
+        "name": "The Sparklematic 5200",
+        "zoneName": "Gnomeregan"
       },
       "finish": {
         "objectID": 175085,
-        "name": "The Sparklematic 5200"
+        "name": "The Sparklematic 5200",
+        "zoneName": "Gnomeregan"
       },
       "objectiveItems": [
         {
@@ -8347,11 +8368,13 @@
       "source": "https://www.wowhead.com/forever/quest=2278/the-platinum-discs",
       "start": {
         "objectID": 131474,
-        "name": "The Discs of Norgannon"
+        "name": "The Discs of Norgannon",
+        "zoneName": "Uldaman"
       },
       "finish": {
         "objectID": 131474,
-        "name": "The Discs of Norgannon"
+        "name": "The Discs of Norgannon",
+        "zoneName": "Uldaman"
       }
     },
     {
@@ -10120,7 +10143,8 @@
       "source": "https://www.wowhead.com/forever/quest=2279/the-platinum-discs",
       "start": {
         "objectID": 131474,
-        "name": "The Discs of Norgannon"
+        "name": "The Discs of Norgannon",
+        "zoneName": "Uldaman"
       },
       "finish": {
         "npcID": 5387,
@@ -10203,7 +10227,8 @@
       "source": "https://www.wowhead.com/forever/quest=2280/the-platinum-discs",
       "start": {
         "objectID": 131474,
-        "name": "The Discs of Norgannon"
+        "name": "The Discs of Norgannon",
+        "zoneName": "Uldaman"
       },
       "finish": {
         "npcID": 3978,
@@ -10772,7 +10797,25 @@
       },
       "finish": {
         "objectID": 2875,
-        "name": "Battered Dwarven Skeleton"
+        "name": "Battered Dwarven Skeleton",
+        "zoneName": "Badlands",
+        "mapID": 1418,
+        "x": 50.9,
+        "y": 62.2,
+        "reportedLocations": [
+          {
+            "x": 50.9,
+            "y": 62.2,
+            "mapID": 1418,
+            "zoneName": "Badlands"
+          },
+          {
+            "x": 51.0,
+            "y": 62.5,
+            "mapID": 1418,
+            "zoneName": "Badlands"
+          }
+        ]
       },
       "storyline": [
         707,
@@ -10793,7 +10836,25 @@
       "source": "https://www.wowhead.com/forever/quest=739/murdaloc",
       "start": {
         "objectID": 2875,
-        "name": "Battered Dwarven Skeleton"
+        "name": "Battered Dwarven Skeleton",
+        "zoneName": "Badlands",
+        "mapID": 1418,
+        "x": 50.9,
+        "y": 62.2,
+        "reportedLocations": [
+          {
+            "x": 50.9,
+            "y": 62.2,
+            "mapID": 1418,
+            "zoneName": "Badlands"
+          },
+          {
+            "x": 51.0,
+            "y": 62.5,
+            "mapID": 1418,
+            "zoneName": "Badlands"
+          }
+        ]
       },
       "finish": {
         "npcID": 1344,
@@ -10936,7 +10997,11 @@
       "source": "https://www.wowhead.com/forever/quest=720/a-sign-of-hope",
       "start": {
         "objectID": 2868,
-        "name": "Crumpled Map"
+        "name": "Crumpled Map",
+        "zoneName": "Badlands",
+        "mapID": 1418,
+        "x": 53.0,
+        "y": 34.1
       },
       "finish": {
         "npcID": 2910,
@@ -13040,51 +13105,113 @@
       "startAlternatives": [
         {
           "objectID": 142702,
-          "name": "Venom Bottle"
+          "name": "Venom Bottle",
+          "zoneName": "The Hinterlands",
+          "mapID": 1425,
+          "x": 23.6,
+          "y": 58.7
         },
         {
           "objectID": 142703,
-          "name": "Venom Bottle"
+          "name": "Venom Bottle",
+          "zoneName": "The Hinterlands",
+          "mapID": 1425,
+          "x": 23.2,
+          "y": 58.5
         },
         {
           "objectID": 142704,
-          "name": "Venom Bottle"
+          "name": "Venom Bottle",
+          "zoneName": "The Hinterlands",
+          "mapID": 1425,
+          "x": 23.2,
+          "y": 58.5
         },
         {
           "objectID": 142705,
-          "name": "Venom Bottle"
+          "name": "Venom Bottle",
+          "zoneName": "The Hinterlands",
+          "mapID": 1425,
+          "x": 23.6,
+          "y": 58.8
         },
         {
           "objectID": 142706,
-          "name": "Venom Bottle"
+          "name": "Venom Bottle",
+          "zoneName": "The Hinterlands",
+          "mapID": 1425,
+          "x": 23.4,
+          "y": 58.8,
+          "reportedLocations": [
+            {
+              "x": 23.4,
+              "y": 58.8,
+              "mapID": 1425,
+              "zoneName": "The Hinterlands"
+            },
+            {
+              "x": 23.5,
+              "y": 58.7,
+              "mapID": 1425,
+              "zoneName": "The Hinterlands"
+            }
+          ]
         },
         {
           "objectID": 142707,
-          "name": "Venom Bottle"
+          "name": "Venom Bottle",
+          "zoneName": "The Hinterlands",
+          "mapID": 1425,
+          "x": 23.2,
+          "y": 58.5
         },
         {
           "objectID": 142708,
-          "name": "Venom Bottle"
+          "name": "Venom Bottle",
+          "zoneName": "The Hinterlands",
+          "mapID": 1425,
+          "x": 31.6,
+          "y": 57.8
         },
         {
           "objectID": 142710,
-          "name": "Venom Bottle"
+          "name": "Venom Bottle",
+          "zoneName": "The Hinterlands",
+          "mapID": 1425,
+          "x": 31.6,
+          "y": 57.7
         },
         {
           "objectID": 142711,
-          "name": "Venom Bottle"
+          "name": "Venom Bottle",
+          "zoneName": "The Hinterlands",
+          "mapID": 1425,
+          "x": 31.6,
+          "y": 57.8
         },
         {
           "objectID": 142712,
-          "name": "Venom Bottle"
+          "name": "Venom Bottle",
+          "zoneName": "The Hinterlands",
+          "mapID": 1425,
+          "x": 31.6,
+          "y": 57.8
         },
         {
           "objectID": 142713,
-          "name": "Venom Bottle"
+          "name": "Venom Bottle",
+          "zoneName": "The Hinterlands",
+          "mapID": 1425,
+          "x": 23.1,
+          "y": 57.7
         },
         {
           "objectID": 142714,
-          "name": "Venom Bottle"
+          "name": "Venom Bottle",
+          "zoneName": "The Hinterlands",
+          "mapID": 1425,
+          "x": 23.0,
+          "y": 57.8
         }
       ],
       "finish": {
@@ -22760,7 +22887,8 @@
         "npcID": 16033,
         "name": "Bodley",
         "creatureDisplayID": 15994,
-        "portraitSource": "https://www.wowhead.com/forever/npc=16033"
+        "portraitSource": "https://www.wowhead.com/forever/npc=16033",
+        "zoneName": "Blackrock Mountain"
       },
       "storylineGroups": [
         [
@@ -22887,7 +23015,8 @@
         "npcID": 16033,
         "name": "Bodley",
         "creatureDisplayID": 15994,
-        "portraitSource": "https://www.wowhead.com/forever/npc=16033"
+        "portraitSource": "https://www.wowhead.com/forever/npc=16033",
+        "zoneName": "Blackrock Mountain"
       },
       "storylineGroups": [
         [
@@ -22944,7 +23073,8 @@
         "npcID": 16033,
         "name": "Bodley",
         "creatureDisplayID": 15994,
-        "portraitSource": "https://www.wowhead.com/forever/npc=16033"
+        "portraitSource": "https://www.wowhead.com/forever/npc=16033",
+        "zoneName": "Blackrock Mountain"
       },
       "storylineGroups": [
         [
@@ -23199,7 +23329,8 @@
         "npcID": 16033,
         "name": "Bodley",
         "creatureDisplayID": 15994,
-        "portraitSource": "https://www.wowhead.com/forever/npc=16033"
+        "portraitSource": "https://www.wowhead.com/forever/npc=16033",
+        "zoneName": "Blackrock Mountain"
       },
       "storylineGroups": [
         [
