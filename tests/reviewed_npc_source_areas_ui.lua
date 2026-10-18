@@ -36,11 +36,11 @@ for _,id in ipairs({3801,3802})do
  assert(ui.quest==id and ui.renderedQuest==id and ui.detailReferencesExpanded,"source inspection opens its own choice details")
  local known,unknown=assert(ui.giverButtons[1]),assert(ui.giverButtons[2])
  assert(known:IsShown()and unknown:IsShown()and known.title.text==unknown.title.text,"same-name typed NPC alternatives stay separate choices")
- assert(known.note.text=="Burning Steppes"and unknown.note.text==a.L("UNKNOWN_PLACE"),"only NPC8888 receives the verified area; NPC184290 stays unknown")
+ assert(known.note.text=="Burning Steppes — |cffff594d"..a.L("SOURCE_POSITION_UNKNOWN").."|r"and unknown.note.text=="|cffff594d"..a.L("UNKNOWN_PLACE").."|r","only NPC8888 receives the verified area; each missing position is visible and NPC184290 stays unknown")
  assert(not known.enabled and not unknown.enabled and not known.scripts.OnClick and not unknown.scripts.OnClick,"an area name alone does not invent a route for either alternative")
  if id==3801 then
   local finishKnown,finishUnknown=assert(ui.finishButtons[1]),assert(ui.finishButtons[2])
-  assert(finishKnown:IsShown()and finishUnknown:IsShown()and finishKnown.note.text=="Burning Steppes"and finishUnknown.note.text==a.L("UNKNOWN_PLACE"),"turn-in alternatives preserve the same independent NPC variant areas")
+  assert(finishKnown:IsShown()and finishUnknown:IsShown()and finishKnown.note.text=="Burning Steppes — |cffff594d"..a.L("SOURCE_POSITION_UNKNOWN").."|r"and finishUnknown.note.text=="|cffff594d"..a.L("UNKNOWN_PLACE").."|r","turn-in alternatives preserve the same independent NPC variant areas and visible unknown positions")
   assert(not finishKnown.enabled and not finishUnknown.enabled,"turn-in area facts do not become a fabricated map")
  else
   assert(field(a.L("DETAIL_TURNIN")..": "..a.quests[id].finish.name.." — Blackrock Depths"),"second quest still turns in at its own object rather than either starting NPC")

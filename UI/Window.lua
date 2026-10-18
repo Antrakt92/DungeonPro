@@ -3383,30 +3383,52 @@ function UI:RefreshDetail(sourceFocus)
                 (coordinates and string.format(" (%.1f, %.1f)", x, py) or "")
         end
         local function alternativePlaces(places, buttons, heading, slot, ownerCurrent, offset, clickCurrent, rowWriter, warnPosition)
-            local function current() return locationCurrent() and (not ownerCurrent or ownerCurrent()) end
-            local function write(object, method, ...)
-                if rowWriter then return rowWriter(current, object, method, ...) end
-                return locationWrite(current, object, method, ...)
+            local catalogue, count = addon.quests, #places
+            local function current()
+                return locationCurrent() and (not ownerCurrent or ownerCurrent()) and addon.quests == catalogue and
+                    catalogue[id] == definition and #places == count
             end
             if not current() then return false end
             if heading then line(addon.L(heading), "section") end
             if not current() then return false end
+            local parentCurrent = current
             for index, possible in ipairs(places) do
                 local destination = possible
+                local fields = { "npcID", "objectID", "itemID", "name", "zoneName", "locationName", "mapID", "x", "y", "reportedLocations" }
+                local values = {}; for _, field in ipairs(fields) do values[field] = rawget(destination, field) end
+                local clean, reader, localize, nameGetter, checker = addon.Clean, addon.Read, addon.L, addon.GiverName, issecretvalue
+                local mapRoot = C_Map
+                local mapNamespace = clean(mapRoot, "table")
+                local mapGetter = mapNamespace and rawget(mapNamespace, "GetMapInfo")
+                local function current()
+                    if not parentCurrent() or not rawequal(rawget(places, index), destination) or addon.Clean ~= clean or addon.Read ~= reader or addon.L ~= localize or
+                        addon.GiverName ~= nameGetter or issecretvalue ~= checker or C_Map ~= mapRoot or
+                        (mapNamespace and rawget(mapNamespace, "GetMapInfo") ~= mapGetter) then return false end
+                    for _, field in ipairs(fields) do if not rawequal(rawget(destination, field), values[field]) then return false end end
+                    return true
+                end
+                local function write(object, method, ...)
+                    if rowWriter then return rowWriter(current, object, method, ...) end
+                    return locationWrite(current, object, method, ...)
+                end
+                if not current() then return false end
                 local title = giverName(destination)
                 if not current() then return false end
                 local mapID = addon.Clean(destination.mapID, "number")
                 local validMap = mapID ~= nil and mapID > 0 and mapID % 1 == 0
-                local zone = validMap and addon.Read(C_Map and C_Map.GetMapInfo, "table", mapID)
+                local zone = validMap and reader(mapGetter, "table", mapID)
                 if not current() then return false end
                 local x, py = addon.Clean(destination.x, "number"), addon.Clean(destination.y, "number")
                 local coordinates = validMap and x ~= nil and py ~= nil and x >= 0 and x <= 100 and py >= 0 and py <= 100
                 local area = (zone and addon.Clean(zone.name, "string")) or
-                    addon.Clean(destination.zoneName, "string") or destination.locationName
+                    addon.Clean(destination.zoneName, "string") or addon.Clean(destination.locationName, "string")
                 local note = (area or addon.L("UNKNOWN_PLACE")) ..
                     (coordinates and string.format(" (%.1f, %.1f)", x, py) or "")
                 if warnPosition and not coordinates then
                     note = (area and (area .. " — ") or "") .. "|cffff594d" .. addon.L("SOURCE_POSITION_UNKNOWN") .. "|r"
+                elseif not validMap then
+                    note = (area and (area .. " — ") or "") .. "|cffff594d" ..
+                        addon.L(area and "SOURCE_POSITION_UNKNOWN" or "UNKNOWN_PLACE") .. "|r"
                 end
                 if not current() then return false end
                 local row = self:MakeRow(self.detail, buttons, (offset or 0) + index, 59)
@@ -3423,7 +3445,7 @@ function UI:RefreshDetail(sourceFocus)
                 local nextY = self:LayoutRow(row, 59, y, current)
                 if not nextY then return false end
                 y = nextY
-                if reported(destination, slot .. index, ownerCurrent) == false or not current() then return false end
+                if reported(destination, slot .. index, current) == false or not current() then return false end
             end
         end
         local summonGetter = self.SummonSource
@@ -4722,7 +4744,11 @@ function UI:RefreshDetail(sourceFocus)
             if #mappedDrops > 0 and alternativePlaces(mappedDrops, self.dropButtons, "ITEM_DROP_LOCATIONS", "dropSource:", acquisitionCurrent) == false then return end
         end
         if q.finishAlternatives then
-            if alternativePlaces(q.finishAlternatives, self.finishButtons, "POSSIBLE_TURNINS", "finishAlternative:") == false then return end
+            local finishes = q.finishAlternatives
+            local function finishesCurrent()
+                return portraitCardCurrent() and addon.quests[id] == definition and q.finishAlternatives == finishes
+            end
+            if alternativePlaces(finishes, self.finishButtons, "POSSIBLE_TURNINS", "finishAlternative:", finishesCurrent) == false then return end
         elseif q.finish and q.finish ~= q.start then
             local starting = not q.startAlternatives and reportedPlaces(q.start)
             local ending = reportedPlaces(q.finish)
