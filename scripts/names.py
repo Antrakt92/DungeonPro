@@ -14,6 +14,15 @@ UNKNOWN = {"unknown", "sconosciuto", "inconnu", "unbekannt", "desconocido", "des
            "未知", "未知任务", "未知任務", "알 수 없음"}
 
 
+def unique_fields(pairs):
+    fields = {}
+    for key, value in pairs:
+        if key in fields:
+            raise ValueError(f"Duplicate localized-name input key: {key!r}")
+        fields[key] = value
+    return fields
+
+
 def title(value):
     return (type(value) is str and 0 < len(value) <= 1024 and value.strip() == value and
             bool(value.strip()) and not any(ord(c) < 32 or ord(c) == 127 for c in value) and
@@ -130,7 +139,8 @@ def merge(data, catalog, *supplements):
 
 
 def load_data(root=ROOT):
-    read = lambda name: json.loads((root / "data" / name).read_text(encoding="utf-8"))
+    read = lambda name: json.loads((root / "data" / name).read_text(encoding="utf-8"),
+                                   object_pairs_hook=unique_fields)
     data, catalog = read("name_translations.json"), read("catalog.json")
     supplements = read("name_translation_supplements.json")
     italian = read("name_translation_itIT.json")

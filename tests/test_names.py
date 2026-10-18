@@ -3,6 +3,7 @@ import importlib.util
 import json
 import shutil
 import subprocess
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -41,6 +42,37 @@ def authored_fixture(data, catalog):
 
 
 class NamesTests(unittest.TestCase):
+    def test_file_loader_rejects_duplicate_json_keys_in_every_input(self):
+        data, catalog = fixture()
+        authored = authored_fixture(data, catalog)
+        italian = copy.deepcopy(authored)
+        italian["locales"] = {"itIT": italian["locales"]["itIT"]}
+        authored["locales"].pop("itIT")
+        inputs = {"catalog.json": catalog, "name_translations.json": data,
+                  "name_translation_supplements.json": authored, "name_translation_itIT.json": italian}
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            (root / "data").mkdir()
+            for name, payload in inputs.items():
+                (root / "data" / name).write_text(json.dumps(payload, ensure_ascii=False), encoding="utf-8")
+            self.assertEqual(len(names.load_data(root)["locales"]), 9)
+            for name, payload in inputs.items():
+                path = root / "data" / name
+                original = path.read_text(encoding="utf-8")
+                first = next(iter(payload))
+                duplicate = json.dumps({first: payload[first]}, ensure_ascii=False)[1:-1]
+                path.write_text("{" + duplicate + "," + original[1:], encoding="utf-8")
+                with self.subTest(file=name), self.assertRaisesRegex(ValueError, "Duplicate"):
+                    names.load_data(root)
+                path.write_text(original, encoding="utf-8")
+            path = root / "data/name_translations.json"
+            original = path.read_text(encoding="utf-8")
+            title = '"name": "Братство Справедливости"'
+            self.assertIn(title, original)
+            path.write_text(original.replace(title, '"name": "Скрытая подмена", ' + title, 1), encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "Duplicate"):
+                names.load_data(root)
+
     def test_authored_entries_fill_every_hole_without_overriding_primary_sources(self):
         data, catalog = fixture()
         supplement = authored_fixture(data, catalog)
