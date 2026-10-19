@@ -124,6 +124,8 @@ def main():
     run(lua, "tests/source_names.lua")
     run(lua, "tests/source_names_ui.lua")
     run(lua, "tests/source_names_retirement_ui.lua")
+    run(lua, "tests/npc_source_names.lua")
+    run(lua, "tests/npc_source_names_ui.lua")
     run(lua, "tests/localized_source_search.lua")
     run(lua, "tests/localized_source_search_ui.lua")
     run(lua, "tests/world_area_names.lua")

@@ -657,6 +657,12 @@ addon.nameTranslationFactories = { root = addon.nameTranslations, loaders = {
             [19861] = { source = "Henrig Lonebrow's Journal", name = "Henrik Lonebrows Tagebuch" },
             [112877] = { source = "Talvash's Scrying Bowl", name = "Talvashs Wahrsageschale" },
         },
+        npcs = {
+            [820] = { source = "Scout Riell", name = "Späherin Riell" },
+            [2055] = { source = "Master Apothecary Faranell", name = "Apothekermeister Faranell" },
+            [2216] = { source = "Apothecary Lydon", name = "Apotheker Lydon" },
+            [2784] = { source = "King Magni Bronzebeard", name = "König Magni Bronzebeard" },
+        },
         areas = {
             ["Alterac Mountains"] = { source = "Alterac Mountains", name = "Alteracgebirge" },
             ["Arathi Highlands"] = { source = "Arathi Highlands", name = "Arathihochland" },
@@ -1293,6 +1299,15 @@ addon.nameTranslationFactories = { root = addon.nameTranslations, loaders = {
         objects = {
             [19861] = { source = "Henrig Lonebrow's Journal", name = "Diario de Henrig Soliceja" },
             [112877] = { source = "Talvash's Scrying Bowl", name = "Cuenco de visión de Talvash" },
+        },
+        npcs = {
+            [234] = { source = "Gryan Stoutmantle", name = "Gryan Mantorrecio" },
+            [820] = { source = "Scout Riell", name = "Explorador Riell" },
+            [2055] = { source = "Master Apothecary Faranell", name = "Maestro boticario Faranell" },
+            [2216] = { source = "Apothecary Lydon", name = "Boticario Lydon" },
+            [2784] = { source = "King Magni Bronzebeard", name = "Rey Magni Barbabronce" },
+            [6868] = { source = "Jarkal Mossmeld", name = "Jarkal Musgofusión" },
+            [9560] = { source = "Marshal Maxwell", name = "Alguacil Maxwell" },
         },
         areas = {
             ["Alterac Mountains"] = { source = "Alterac Mountains", name = "Montañas de Alterac" },
@@ -1938,6 +1953,13 @@ addon.nameTranslationFactories = { root = addon.nameTranslations, loaders = {
         objects = {
             [19861] = { source = "Henrig Lonebrow's Journal", name = "Journal d'Henrig Lonebrow" },
             [112877] = { source = "Talvash's Scrying Bowl", name = "Coupe de divination de Talvash" },
+        },
+        npcs = {
+            [820] = { source = "Scout Riell", name = "Eclaireur Riell" },
+            [2055] = { source = "Master Apothecary Faranell", name = "Maître apothicaire Faranell" },
+            [2216] = { source = "Apothecary Lydon", name = "Apothicaire Lydon" },
+            [2784] = { source = "King Magni Bronzebeard", name = "Roi Magni Bronzebeard" },
+            [9560] = { source = "Marshal Maxwell", name = "Maréchal Maxwell" },
         },
         areas = {
             ["Alterac Mountains"] = { source = "Alterac Mountains", name = "Montagnes d'Alterac" },
@@ -3183,6 +3205,20 @@ addon.nameTranslationFactories = { root = addon.nameTranslations, loaders = {
             [19861] = { source = "Henrig Lonebrow's Journal", name = "헨리그 론브로우의 일지" },
             [112877] = { source = "Talvash's Scrying Bowl", name = "탈바쉬의 수정점 그릇" },
         },
+        npcs = {
+            [234] = { source = "Gryan Stoutmantle", name = "그라이언 스타우트맨틀" },
+            [820] = { source = "Scout Riell", name = "정찰병 리엘" },
+            [2055] = { source = "Master Apothecary Faranell", name = "수석 연금술사 파라넬" },
+            [2216] = { source = "Apothecary Lydon", name = "연금술사 라이던" },
+            [2784] = { source = "King Magni Bronzebeard", name = "국왕 마그니 브론즈비어드" },
+            [3446] = { source = "Mebok Mizzyrix", name = "메보크 미지릭스" },
+            [4949] = { source = "Thrall", name = "스랄" },
+            [6546] = { source = "Tabetha", name = "타베사" },
+            [6826] = { source = "Talvash del Kissel", name = "탈바쉬 델 키젤" },
+            [6868] = { source = "Jarkal Mossmeld", name = "자칼 모스멜드" },
+            [8405] = { source = "Ogtinc", name = "오그틴크" },
+            [9560] = { source = "Marshal Maxwell", name = "치안대장 맥스웰" },
+        },
         areas = {
             ["Alterac Mountains"] = { source = "Alterac Mountains", name = "알터랙 산맥" },
             ["Arathi Highlands"] = { source = "Arathi Highlands", name = "아라시 고원" },
@@ -3838,6 +3874,17 @@ addon.nameTranslationFactories = { root = addon.nameTranslations, loaders = {
         objects = {
             [19861] = { source = "Henrig Lonebrow's Journal", name = "Diário de Henrig Monocelha" },
             [112877] = { source = "Talvash's Scrying Bowl", name = "Bacia de Vidência do Didiê" },
+        },
+        npcs = {
+            [234] = { source = "Gryan Stoutmantle", name = "Miguel Mantoforte" },
+            [820] = { source = "Scout Riell", name = "Batedora Riell" },
+            [2055] = { source = "Master Apothecary Faranell", name = "Mestre-boticário Faranello" },
+            [2216] = { source = "Apothecary Lydon", name = "Boticário Lindolfo" },
+            [2784] = { source = "King Magni Bronzebeard", name = "Rei Magni Barbabronze" },
+            [3446] = { source = "Mebok Mizzyrix", name = "Cáliper Porcatraca" },
+            [6826] = { source = "Talvash del Kissel", name = "Didiê Du Mocó" },
+            [6868] = { source = "Jarkal Mossmeld", name = "Jarkal Limuno" },
+            [9560] = { source = "Marshal Maxwell", name = "Oficial Maxwell" },
         },
         areas = {
             ["Alterac Mountains"] = { source = "Alterac Mountains", name = "Montanhas de Alterac" },
@@ -4497,6 +4544,20 @@ addon.nameTranslationFactories = { root = addon.nameTranslations, loaders = {
             [142713] = { source = "Venom Bottle", name = "Флакон с ядом" },
             [142714] = { source = "Venom Bottle", name = "Флакон с ядом" },
         },
+        npcs = {
+            [234] = { source = "Gryan Stoutmantle", name = "Гриан Камнегрив" },
+            [820] = { source = "Scout Riell", name = "Разведчица Риэла" },
+            [2055] = { source = "Master Apothecary Faranell", name = "Мастер аптекарь Фаранелл" },
+            [2216] = { source = "Apothecary Lydon", name = "Аптекарь Лидон" },
+            [2784] = { source = "King Magni Bronzebeard", name = "Король Магни Бронзобород" },
+            [3446] = { source = "Mebok Mizzyrix", name = "Мебок Миззрикс" },
+            [4949] = { source = "Thrall", name = "Тралл" },
+            [6546] = { source = "Tabetha", name = "Табета" },
+            [6826] = { source = "Talvash del Kissel", name = "Талваш де Киссель" },
+            [6868] = { source = "Jarkal Mossmeld", name = "Джаркал Замшелый Клык" },
+            [8405] = { source = "Ogtinc", name = "Огтинк" },
+            [9560] = { source = "Marshal Maxwell", name = "Маршал Максвелл" },
+        },
         areas = {
             ["Alterac Mountains"] = { source = "Alterac Mountains", name = "Альтеракские горы" },
             ["Arathi Highlands"] = { source = "Arathi Highlands", name = "Нагорье Арати" },
@@ -5151,6 +5212,20 @@ addon.nameTranslationFactories = { root = addon.nameTranslations, loaders = {
         objects = {
             [19861] = { source = "Henrig Lonebrow's Journal", name = "亨里格·独眉的日记" },
             [112877] = { source = "Talvash's Scrying Bowl", name = "塔瓦斯德的占卜之碗" },
+        },
+        npcs = {
+            [234] = { source = "Gryan Stoutmantle", name = "格里安·斯托曼" },
+            [820] = { source = "Scout Riell", name = "哨兵瑞尔" },
+            [2055] = { source = "Master Apothecary Faranell", name = "大药剂师法拉尼尔" },
+            [2216] = { source = "Apothecary Lydon", name = "药剂师林度恩" },
+            [2784] = { source = "King Magni Bronzebeard", name = "国王麦格尼·铜须" },
+            [3446] = { source = "Mebok Mizzyrix", name = "麦伯克·米希瑞克斯" },
+            [4949] = { source = "Thrall", name = "萨尔" },
+            [6546] = { source = "Tabetha", name = "塔贝萨" },
+            [6826] = { source = "Talvash del Kissel", name = "塔瓦斯德·基瑟尔" },
+            [6868] = { source = "Jarkal Mossmeld", name = "加卡尔" },
+            [8405] = { source = "Ogtinc", name = "奥汀克" },
+            [9560] = { source = "Marshal Maxwell", name = "麦克斯韦尔元帅" },
         },
         areas = {
             ["Alterac Mountains"] = { source = "Alterac Mountains", name = "奥特兰克山脉" },
@@ -5807,6 +5882,20 @@ addon.nameTranslationFactories = { root = addon.nameTranslations, loaders = {
         objects = {
             [19861] = { source = "Henrig Lonebrow's Journal", name = "亨里格·獨眉的日記" },
             [112877] = { source = "Talvash's Scrying Bowl", name = "塔瓦斯德的占卜之碗" },
+        },
+        npcs = {
+            [234] = { source = "Gryan Stoutmantle", name = "格里安·斯托曼" },
+            [820] = { source = "Scout Riell", name = "哨兵瑞爾" },
+            [2055] = { source = "Master Apothecary Faranell", name = "大藥劑師法拉尼爾" },
+            [2216] = { source = "Apothecary Lydon", name = "藥劑師林度恩" },
+            [2784] = { source = "King Magni Bronzebeard", name = "國王麥格尼·銅鬚" },
+            [3446] = { source = "Mebok Mizzyrix", name = "麥伯克·米希瑞克斯" },
+            [4949] = { source = "Thrall", name = "索爾" },
+            [6546] = { source = "Tabetha", name = "塔貝薩" },
+            [6826] = { source = "Talvash del Kissel", name = "塔瓦斯德·基瑟爾" },
+            [6868] = { source = "Jarkal Mossmeld", name = "加卡爾" },
+            [8405] = { source = "Ogtinc", name = "奧汀克" },
+            [9560] = { source = "Marshal Maxwell", name = "麥克斯韋爾元帥" },
         },
         areas = {
             ["Alterac Mountains"] = { source = "Alterac Mountains", name = "奧特蘭克山脈" },

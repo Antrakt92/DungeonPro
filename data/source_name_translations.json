@@ -91,7 +91,68 @@
           "url": "https://nether.wowhead.com/forever/tooltip/object/19861?locale=7"
         }
       },
-      "npcs": {}
+      "npcs": {
+        "234": {
+          "source": "Gryan Stoutmantle",
+          "name": "Гриан Камнегрив",
+          "url": "https://nether.wowhead.com/forever/tooltip/npc/234?locale=7"
+        },
+        "820": {
+          "source": "Scout Riell",
+          "name": "Разведчица Риэла",
+          "url": "https://nether.wowhead.com/forever/tooltip/npc/820?locale=7"
+        },
+        "2055": {
+          "source": "Master Apothecary Faranell",
+          "name": "Мастер аптекарь Фаранелл",
+          "url": "https://nether.wowhead.com/forever/tooltip/npc/2055?locale=7"
+        },
+        "2216": {
+          "source": "Apothecary Lydon",
+          "name": "Аптекарь Лидон",
+          "url": "https://nether.wowhead.com/forever/tooltip/npc/2216?locale=7"
+        },
+        "2784": {
+          "source": "King Magni Bronzebeard",
+          "name": "Король Магни Бронзобород",
+          "url": "https://nether.wowhead.com/forever/tooltip/npc/2784?locale=7"
+        },
+        "3446": {
+          "source": "Mebok Mizzyrix",
+          "name": "Мебок Миззрикс",
+          "url": "https://nether.wowhead.com/forever/tooltip/npc/3446?locale=7"
+        },
+        "4949": {
+          "source": "Thrall",
+          "name": "Тралл",
+          "url": "https://nether.wowhead.com/forever/tooltip/npc/4949?locale=7"
+        },
+        "6546": {
+          "source": "Tabetha",
+          "name": "Табета",
+          "url": "https://nether.wowhead.com/forever/tooltip/npc/6546?locale=7"
+        },
+        "6826": {
+          "source": "Talvash del Kissel",
+          "name": "Талваш де Киссель",
+          "url": "https://nether.wowhead.com/forever/tooltip/npc/6826?locale=7"
+        },
+        "6868": {
+          "source": "Jarkal Mossmeld",
+          "name": "Джаркал Замшелый Клык",
+          "url": "https://nether.wowhead.com/forever/tooltip/npc/6868?locale=7"
+        },
+        "8405": {
+          "source": "Ogtinc",
+          "name": "Огтинк",
+          "url": "https://nether.wowhead.com/forever/tooltip/npc/8405?locale=7"
+        },
+        "9560": {
+          "source": "Marshal Maxwell",
+          "name": "Маршал Максвелл",
+          "url": "https://nether.wowhead.com/forever/tooltip/npc/9560?locale=7"
+        }
+      }
     },
     "deDE": {
       "objects": {
@@ -106,7 +167,28 @@
           "url": "https://nether.wowhead.com/forever/tooltip/object/19861?locale=3"
         }
       },
-      "npcs": {}
+      "npcs": {
+        "820": {
+          "source": "Scout Riell",
+          "name": "Späherin Riell",
+          "url": "https://nether.wowhead.com/forever/tooltip/npc/820?locale=3"
+        },
+        "2055": {
+          "source": "Master Apothecary Faranell",
+          "name": "Apothekermeister Faranell",
+          "url": "https://nether.wowhead.com/forever/tooltip/npc/2055?locale=3"
+        },
+        "2216": {
+          "source": "Apothecary Lydon",
+          "name": "Apotheker Lydon",
+          "url": "https://nether.wowhead.com/forever/tooltip/npc/2216?locale=3"
+        },
+        "2784": {
+          "source": "King Magni Bronzebeard",
+          "name": "König Magni Bronzebeard",
+          "url": "https://nether.wowhead.com/forever/tooltip/npc/2784?locale=3"
+        }
+      }
     },
     "frFR": {
       "objects": {
@@ -121,7 +203,33 @@
           "url": "https://nether.wowhead.com/forever/tooltip/object/19861?locale=2"
         }
       },
-      "npcs": {}
+      "npcs": {
+        "820": {
+          "source": "Scout Riell",
+          "name": "Eclaireur Riell",
+          "url": "https://nether.wowhead.com/forever/tooltip/npc/820?locale=2"
+        },
+        "2055": {
+          "source": "Master Apothecary Faranell",
+          "name": "Maître apothicaire Faranell",
+          "url": "https://nether.wowhead.com/forever/tooltip/npc/2055?locale=2"
+        },
+        "2216": {
+          "source": "Apothecary Lydon",
+          "name": "Apothicaire Lydon",
+          "url": "https://nether.wowhead.com/forever/tooltip/npc/2216?locale=2"
+        },
+        "2784": {
+          "source": "King Magni Bronzebeard",
+          "name": "Roi Magni Bronzebeard",
+          "url": "https://nether.wowhead.com/forever/tooltip/npc/2784?locale=2"
+        },
+        "9560": {
+          "source": "Marshal Maxwell",
+          "name": "Maréchal Maxwell",
+          "url": "https://nether.wowhead.com/forever/tooltip/npc/9560?locale=2"
+        }
+      }
     },
     "esES": {
       "objects": {
@@ -136,7 +244,43 @@
           "url": "https://nether.wowhead.com/forever/tooltip/object/19861?locale=6"
         }
       },
-      "npcs": {}
+      "npcs": {
+        "234": {
+          "source": "Gryan Stoutmantle",
+          "name": "Gryan Mantorrecio",
+          "url": "https://nether.wowhead.com/forever/tooltip/npc/234?locale=6"
+        },
+        "820": {
+          "source": "Scout Riell",
+          "name": "Explorador Riell",
+          "url": "https://nether.wowhead.com/forever/tooltip/npc/820?locale=6"
+        },
+        "2055": {
+          "source": "Master Apothecary Faranell",
+          "name": "Maestro boticario Faranell",
+          "url": "https://nether.wowhead.com/forever/tooltip/npc/2055?locale=6"
+        },
+        "2216": {
+          "source": "Apothecary Lydon",
+          "name": "Boticario Lydon",
+          "url": "https://nether.wowhead.com/forever/tooltip/npc/2216?locale=6"
+        },
+        "2784": {
+          "source": "King Magni Bronzebeard",
+          "name": "Rey Magni Barbabronce",
+          "url": "https://nether.wowhead.com/forever/tooltip/npc/2784?locale=6"
+        },
+        "6868": {
+          "source": "Jarkal Mossmeld",
+          "name": "Jarkal Musgofusión",
+          "url": "https://nether.wowhead.com/forever/tooltip/npc/6868?locale=6"
+        },
+        "9560": {
+          "source": "Marshal Maxwell",
+          "name": "Alguacil Maxwell",
+          "url": "https://nether.wowhead.com/forever/tooltip/npc/9560?locale=6"
+        }
+      }
     },
     "ptBR": {
       "objects": {
@@ -151,7 +295,53 @@
           "url": "https://nether.wowhead.com/forever/tooltip/object/19861?locale=8"
         }
       },
-      "npcs": {}
+      "npcs": {
+        "234": {
+          "source": "Gryan Stoutmantle",
+          "name": "Miguel Mantoforte",
+          "url": "https://nether.wowhead.com/forever/tooltip/npc/234?locale=8"
+        },
+        "820": {
+          "source": "Scout Riell",
+          "name": "Batedora Riell",
+          "url": "https://nether.wowhead.com/forever/tooltip/npc/820?locale=8"
+        },
+        "2055": {
+          "source": "Master Apothecary Faranell",
+          "name": "Mestre-boticário Faranello",
+          "url": "https://nether.wowhead.com/forever/tooltip/npc/2055?locale=8"
+        },
+        "2216": {
+          "source": "Apothecary Lydon",
+          "name": "Boticário Lindolfo",
+          "url": "https://nether.wowhead.com/forever/tooltip/npc/2216?locale=8"
+        },
+        "2784": {
+          "source": "King Magni Bronzebeard",
+          "name": "Rei Magni Barbabronze",
+          "url": "https://nether.wowhead.com/forever/tooltip/npc/2784?locale=8"
+        },
+        "3446": {
+          "source": "Mebok Mizzyrix",
+          "name": "Cáliper Porcatraca",
+          "url": "https://nether.wowhead.com/forever/tooltip/npc/3446?locale=8"
+        },
+        "6826": {
+          "source": "Talvash del Kissel",
+          "name": "Didiê Du Mocó",
+          "url": "https://nether.wowhead.com/forever/tooltip/npc/6826?locale=8"
+        },
+        "6868": {
+          "source": "Jarkal Mossmeld",
+          "name": "Jarkal Limuno",
+          "url": "https://nether.wowhead.com/forever/tooltip/npc/6868?locale=8"
+        },
+        "9560": {
+          "source": "Marshal Maxwell",
+          "name": "Oficial Maxwell",
+          "url": "https://nether.wowhead.com/forever/tooltip/npc/9560?locale=8"
+        }
+      }
     },
     "koKR": {
       "objects": {
@@ -166,7 +356,68 @@
           "url": "https://nether.wowhead.com/forever/tooltip/object/19861?locale=1"
         }
       },
-      "npcs": {}
+      "npcs": {
+        "234": {
+          "source": "Gryan Stoutmantle",
+          "name": "그라이언 스타우트맨틀",
+          "url": "https://nether.wowhead.com/forever/tooltip/npc/234?locale=1"
+        },
+        "820": {
+          "source": "Scout Riell",
+          "name": "정찰병 리엘",
+          "url": "https://nether.wowhead.com/forever/tooltip/npc/820?locale=1"
+        },
+        "2055": {
+          "source": "Master Apothecary Faranell",
+          "name": "수석 연금술사 파라넬",
+          "url": "https://nether.wowhead.com/forever/tooltip/npc/2055?locale=1"
+        },
+        "2216": {
+          "source": "Apothecary Lydon",
+          "name": "연금술사 라이던",
+          "url": "https://nether.wowhead.com/forever/tooltip/npc/2216?locale=1"
+        },
+        "2784": {
+          "source": "King Magni Bronzebeard",
+          "name": "국왕 마그니 브론즈비어드",
+          "url": "https://nether.wowhead.com/forever/tooltip/npc/2784?locale=1"
+        },
+        "3446": {
+          "source": "Mebok Mizzyrix",
+          "name": "메보크 미지릭스",
+          "url": "https://nether.wowhead.com/forever/tooltip/npc/3446?locale=1"
+        },
+        "4949": {
+          "source": "Thrall",
+          "name": "스랄",
+          "url": "https://nether.wowhead.com/forever/tooltip/npc/4949?locale=1"
+        },
+        "6546": {
+          "source": "Tabetha",
+          "name": "타베사",
+          "url": "https://nether.wowhead.com/forever/tooltip/npc/6546?locale=1"
+        },
+        "6826": {
+          "source": "Talvash del Kissel",
+          "name": "탈바쉬 델 키젤",
+          "url": "https://nether.wowhead.com/forever/tooltip/npc/6826?locale=1"
+        },
+        "6868": {
+          "source": "Jarkal Mossmeld",
+          "name": "자칼 모스멜드",
+          "url": "https://nether.wowhead.com/forever/tooltip/npc/6868?locale=1"
+        },
+        "8405": {
+          "source": "Ogtinc",
+          "name": "오그틴크",
+          "url": "https://nether.wowhead.com/forever/tooltip/npc/8405?locale=1"
+        },
+        "9560": {
+          "source": "Marshal Maxwell",
+          "name": "치안대장 맥스웰",
+          "url": "https://nether.wowhead.com/forever/tooltip/npc/9560?locale=1"
+        }
+      }
     },
     "zhCN": {
       "objects": {
@@ -181,7 +432,68 @@
           "url": "https://nether.wowhead.com/forever/tooltip/object/19861?locale=4"
         }
       },
-      "npcs": {}
+      "npcs": {
+        "234": {
+          "source": "Gryan Stoutmantle",
+          "name": "格里安·斯托曼",
+          "url": "https://nether.wowhead.com/forever/tooltip/npc/234?locale=4"
+        },
+        "820": {
+          "source": "Scout Riell",
+          "name": "哨兵瑞尔",
+          "url": "https://nether.wowhead.com/forever/tooltip/npc/820?locale=4"
+        },
+        "2055": {
+          "source": "Master Apothecary Faranell",
+          "name": "大药剂师法拉尼尔",
+          "url": "https://nether.wowhead.com/forever/tooltip/npc/2055?locale=4"
+        },
+        "2216": {
+          "source": "Apothecary Lydon",
+          "name": "药剂师林度恩",
+          "url": "https://nether.wowhead.com/forever/tooltip/npc/2216?locale=4"
+        },
+        "2784": {
+          "source": "King Magni Bronzebeard",
+          "name": "国王麦格尼·铜须",
+          "url": "https://nether.wowhead.com/forever/tooltip/npc/2784?locale=4"
+        },
+        "3446": {
+          "source": "Mebok Mizzyrix",
+          "name": "麦伯克·米希瑞克斯",
+          "url": "https://nether.wowhead.com/forever/tooltip/npc/3446?locale=4"
+        },
+        "4949": {
+          "source": "Thrall",
+          "name": "萨尔",
+          "url": "https://nether.wowhead.com/forever/tooltip/npc/4949?locale=4"
+        },
+        "6546": {
+          "source": "Tabetha",
+          "name": "塔贝萨",
+          "url": "https://nether.wowhead.com/forever/tooltip/npc/6546?locale=4"
+        },
+        "6826": {
+          "source": "Talvash del Kissel",
+          "name": "塔瓦斯德·基瑟尔",
+          "url": "https://nether.wowhead.com/forever/tooltip/npc/6826?locale=4"
+        },
+        "6868": {
+          "source": "Jarkal Mossmeld",
+          "name": "加卡尔",
+          "url": "https://nether.wowhead.com/forever/tooltip/npc/6868?locale=4"
+        },
+        "8405": {
+          "source": "Ogtinc",
+          "name": "奥汀克",
+          "url": "https://nether.wowhead.com/forever/tooltip/npc/8405?locale=4"
+        },
+        "9560": {
+          "source": "Marshal Maxwell",
+          "name": "麦克斯韦尔元帅",
+          "url": "https://nether.wowhead.com/forever/tooltip/npc/9560?locale=4"
+        }
+      }
     },
     "zhTW": {
       "objects": {
@@ -196,7 +508,68 @@
           "url": "https://nether.wowhead.com/forever/tooltip/object/19861?locale=10"
         }
       },
-      "npcs": {}
+      "npcs": {
+        "234": {
+          "source": "Gryan Stoutmantle",
+          "name": "格里安·斯托曼",
+          "url": "https://nether.wowhead.com/forever/tooltip/npc/234?locale=10"
+        },
+        "820": {
+          "source": "Scout Riell",
+          "name": "哨兵瑞爾",
+          "url": "https://nether.wowhead.com/forever/tooltip/npc/820?locale=10"
+        },
+        "2055": {
+          "source": "Master Apothecary Faranell",
+          "name": "大藥劑師法拉尼爾",
+          "url": "https://nether.wowhead.com/forever/tooltip/npc/2055?locale=10"
+        },
+        "2216": {
+          "source": "Apothecary Lydon",
+          "name": "藥劑師林度恩",
+          "url": "https://nether.wowhead.com/forever/tooltip/npc/2216?locale=10"
+        },
+        "2784": {
+          "source": "King Magni Bronzebeard",
+          "name": "國王麥格尼·銅鬚",
+          "url": "https://nether.wowhead.com/forever/tooltip/npc/2784?locale=10"
+        },
+        "3446": {
+          "source": "Mebok Mizzyrix",
+          "name": "麥伯克·米希瑞克斯",
+          "url": "https://nether.wowhead.com/forever/tooltip/npc/3446?locale=10"
+        },
+        "4949": {
+          "source": "Thrall",
+          "name": "索爾",
+          "url": "https://nether.wowhead.com/forever/tooltip/npc/4949?locale=10"
+        },
+        "6546": {
+          "source": "Tabetha",
+          "name": "塔貝薩",
+          "url": "https://nether.wowhead.com/forever/tooltip/npc/6546?locale=10"
+        },
+        "6826": {
+          "source": "Talvash del Kissel",
+          "name": "塔瓦斯德·基瑟爾",
+          "url": "https://nether.wowhead.com/forever/tooltip/npc/6826?locale=10"
+        },
+        "6868": {
+          "source": "Jarkal Mossmeld",
+          "name": "加卡爾",
+          "url": "https://nether.wowhead.com/forever/tooltip/npc/6868?locale=10"
+        },
+        "8405": {
+          "source": "Ogtinc",
+          "name": "奧汀克",
+          "url": "https://nether.wowhead.com/forever/tooltip/npc/8405?locale=10"
+        },
+        "9560": {
+          "source": "Marshal Maxwell",
+          "name": "麥克斯韋爾元帥",
+          "url": "https://nether.wowhead.com/forever/tooltip/npc/9560?locale=10"
+        }
+      }
     }
   }
 }

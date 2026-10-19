@@ -4,6 +4,7 @@
 
 ### 19-Oct-2026
 
+- Show reviewed translated NPC names in quest details, search and guidance.
 - Show reviewed world-area translations in quest locations, search and guidance.
 - Find quests by reviewed translated source names as well as their original names.
 - Show selected-language names for reviewed quest-starting objects in details

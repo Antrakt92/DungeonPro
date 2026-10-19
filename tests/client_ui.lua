@@ -763,6 +763,9 @@ check("Client hydration and quest events preserve scroll until the inspected que
     ui:Refresh()
 end)
 check("Gossip refresh localizes only the actual matching NPC and closing restores catalogue fallback", function()
+    -- Exercise the native fallback independently of reviewed selected-language names.
+    local reviewed = assert(addon.GetNameTranslations("ruRU", function() return true end))
+    local npcNames = reviewed.npcs; reviewed.npcs = nil
     local saved, keys = {}, { "UnitGUID", "UnitName", "C_CreatureInfo" }
     for _, key in ipairs(keys) do saved[key] = _G[key] end
     local ui, previousQuest, previousDungeon, preparation = addon.UI, addon.UI.quest, addon.UI.dungeon, addon.UI.preparation
@@ -799,6 +802,7 @@ check("Gossip refresh localizes only the actual matching NPC and closing restore
     guid = nil; event("GOSSIP_CLOSED")
     assert(shown(originalName) and not shown(name))
     assert(q.start.name == originalName and addon.db.npcNames == nil and addon.char.npcNames == nil)
+    reviewed.npcs = npcNames
     for _, key in ipairs(keys) do _G[key] = saved[key] end
     ui.quest, ui.dungeon, ui.preparation = previousQuest, previousDungeon, preparation
     ui:Refresh()
