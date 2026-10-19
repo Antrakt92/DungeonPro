@@ -4,6 +4,7 @@
 
 ### 19-Oct-2026
 
+- Add a back arrow beside quest tabs to revisit a previous quest or the dungeon overview.
 - Keep the newer quest waypoint when an earlier guide finishes validating.
 - Match filter tooltips and empty-list guidance to the Mine and All quests buttons.
 - Show ready turn-ins before unfinished quests in the dungeon overview.

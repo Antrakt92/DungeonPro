@@ -614,3 +614,7 @@ do
         for key, value in pairs(labels) do addon.locales[locale][key] = value end
     end
 end
+
+for _, locale in ipairs({"deDE","frFR","esES","itIT","ptBR","koKR","zhCN","zhTW"}) do
+    addon.locales[locale].BACK = addon.locales[locale].DETAIL_BACK
+end

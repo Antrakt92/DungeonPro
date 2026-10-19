@@ -2946,6 +2946,13 @@ function UI:RefreshDetail(sourceFocus)
                 not sourceWrite(current,row,"SetScript",nil,"OnClick",nil) then return end
         end
     end
+    if self.detailBackButton then
+        local control = self.detailBackButton
+        local function current() return portraitCardCurrent() and self.detailBackButton == control end
+        if not sourceWrite(current, control, "Hide", nil) or not sourceWrite(current, control, "SetEnabled", nil, false) or
+            not sourceWrite(current, control, "SetScript", nil, "OnClick", nil) then return end
+    end
+    self.detailBackBinding = nil
     for _, tab in pairs(self.detailTabButtons or {}) do
         if not self:QuestListWrite(tab,"Hide",portraitCardCurrent) or not self:QuestListWrite(tab,"SetEnabled",portraitCardCurrent,false) or
             not self:QuestListWrite(tab,"SetScript",portraitCardCurrent,"OnClick",nil) then return end
@@ -3332,7 +3339,35 @@ function UI:RefreshDetail(sourceFocus)
                     self.SetDetailTab == setter and addon.L == localize and addon.db == database and
                     (not database or rawget(database,"locale") == locale)
             end
-            local width, height = (contentWidth-8)/3, 26
+            local backControl, back = self.detailBackButton, self.BackQuest
+            if not current() or not backControl or self.detailBackButton ~= backControl or not backControl.label or type(back) ~= "function" then return end
+            local history, historyCount = self.detailHistory, #self.detailHistory
+            local historyLast = rawget(history, historyCount)
+            local navigation, tabRevision = self.detailNavigationRevision, self.detailTabRevision
+            local reader, shownGetter = addon.Read, frame.IsShown
+            local backBinding = {}
+            local function backCurrent()
+                return current() and self.detailBackButton == backControl and self.detailBackBinding == backBinding and
+                    self.BackQuest == back and type(back) == "function" and self.detailHistory == history and #history == historyCount and
+                    rawequal(rawget(history, historyCount), historyLast) and self.detailNavigationRevision == navigation and
+                    self.detailTabRevision == tabRevision and addon.Read == reader and frame.IsShown == shownGetter
+            end
+            self.detailBackBinding = backBinding
+            backBinding.current = sourceCallback(backCurrent)
+            local function backWrite(object, method, ...) return sourceWrite(backCurrent, object, method, nil, ...) end
+            setFont(backControl.label,20)
+            if not backCurrent() or not backWrite(backControl.label,"SetText","‹") or
+                not backWrite(backControl.label,"SetTextColor",.96,.83,.59) then return end
+            local width, height = (contentWidth-40)/3, math.max(26,measuredHeight(backControl.label,20)+4)
+            if not backCurrent() or not backWrite(backControl,"SetSize",28,height) or
+                not backWrite(backControl,"ClearAllPoints") or not backWrite(backControl,"SetPoint","TOPLEFT",4,-y) or
+                not backWrite(backControl,"SetEnabled",true) or not backWrite(backControl,"SetScript","OnClick",function()
+                    if not backCurrent() then return end
+                    local shown=reader(shownGetter,"boolean",frame)
+                    if shown==true and backCurrent() then back(self) end
+                end) then return end
+            styleRow(backControl,"control",false)
+            if not backCurrent() or not backWrite(backControl,"Show") then return end
             for index, entry in ipairs(keys) do
                 local key, localeKey = entry[1], entry[2]
                 local control = buttons[key]
@@ -3356,12 +3391,13 @@ function UI:RefreshDetail(sourceFocus)
                 local function owned() return current() and buttons[key] == control end
                 local function write(object,method,...) return self:QuestListWrite(object,method,owned,...) end
                 if not write(control,"SetSize",width,height) or not write(control,"ClearAllPoints") or
-                    not write(control,"SetPoint","TOPLEFT",4+(index-1)*(width+4),-y) or not write(control,"SetEnabled",true) then return end
+                    not write(control,"SetPoint","TOPLEFT",36+(index-1)*(width+4),-y) or not write(control,"SetEnabled",true) then return end
                 styleRow(control,"control",detailTab == key)
                 if not owned() or not write(control,"SetScript","OnClick",function()
                     if addon.Read(frame.IsShown,"boolean",frame) == true and owned() then setter(self,key) end
                 end) or not write(control,"Show") then return end
             end
+            if not backWrite(backControl,"SetHeight",height) then return end
             y = y + height + 8
         end
         local offerGetter = addon.CurrentOffer
@@ -5775,6 +5811,11 @@ function UI:Create()
     self.catalogNotice = label(self.catalog, "", 4, 0, 202, 13)
     self.questList, self.questScroll = scrolling(frame, 278, -100, 370, 588)
     self.detail, self.detailScroll = scrolling(frame, 674, -66, 400, 622)
+    self.detailBackButton = button(self.detail, "", 28, nil)
+    self.detailBackButton.label = label(self.detailBackButton,"",0,-2,28,20)
+    self.detailBackButton.label:SetJustifyH("CENTER")
+    self.detailBackButton.footerLabelKey = "BACK"
+    self.detailBackButton:Hide()
     self.overviewMapControl = button(self.detail, "", 392, nil)
     self.overviewMapControl:SetHeight(32)
     self.overviewMapControl.filterCaption = label(self.overviewMapControl, "", 8, -6, 376, 15)
@@ -5828,6 +5869,8 @@ function UI:Create()
             local resolvedBodyKey = bodyKey == true and control.footerLabelKey or bodyKey
             local isTurnin = control == self.turnin
             local turninBinding = isTurnin and self.turninBinding
+            local isBack = control == self.detailBackButton
+            local backBinding = isBack and self.detailBackBinding
             if control.footerIcon then control.footerHovered = true; self:RefreshFooterIcon(control) end
             self:HideNavigationHint()
             local quest, dungeon, generation = self.quest, self.dungeon, self.rewardGeneration
@@ -5840,7 +5883,9 @@ function UI:Create()
                 for _, proof in ipairs(nameProofs) do if addon.Read(proof, "boolean") ~= true then return false end end
                 local turninCurrent = not isTurnin or (self.turnin == control and turninBinding and self.turninBinding == turninBinding and
                     addon.Read(turninBinding.current, "boolean") == true)
-                return (not isCatalogToggle or (self.catalogToggle == control and self.layoutRevision == revision)) and turninCurrent and addon.UI == self and self.frame == frame and self.quest == quest and self.dungeon == dungeon and
+                local backCurrent = not isBack or (self.detailBackButton == control and backBinding and self.detailBackBinding == backBinding and
+                    addon.Read(backBinding.current, "boolean") == true)
+                return backCurrent and (not isBack or (self.detailBackButton == control and self.detailBackBinding == backBinding)) and (not isCatalogToggle or (self.catalogToggle == control and self.layoutRevision == revision)) and turninCurrent and addon.UI == self and self.frame == frame and self.quest == quest and self.dungeon == dungeon and
                     self.rewardGeneration == generation and addon.SourceAreaName == areaGetter and addon.SourceName == sourceGetter and addon.L == localize and addon.db == database and
                     (not database or rawget(database, "locale") == locale) and GameTooltip == tip and shown == true
             end
@@ -5878,7 +5923,9 @@ function UI:Create()
             local title = control.footerLabelKey and addon.L(control.footerLabelKey) or addon.Read(control.GetText, "string", control)
             if not text or not title or not current() then return end
             local held = { tip = tip, button = control }; self.navigationTooltip = held
-            for _, call in ipairs({ { "SetOwner", control, "ANCHOR_RIGHT" }, { "SetText", title }, { "AddLine", text, 1, 1, 1, true }, { "Show" } }) do
+            local calls = isBack and { { "SetOwner", control, "ANCHOR_RIGHT" }, { "SetText", title }, { "Show" } } or
+                { { "SetOwner", control, "ANCHOR_RIGHT" }, { "SetText", title }, { "AddLine", text, 1, 1, 1, true }, { "Show" } }
+            for _, call in ipairs(calls) do
                 if not current() or self.navigationTooltip ~= held then return end
                 local fn = addon.Clean(tip[call[1]], "function")
                 if not fn or not pcall(fn, tip, unpack(call, 2)) then self:HideNavigationHint(held); return end
@@ -5894,6 +5941,7 @@ function UI:Create()
     navigationHint(self.giver, function() local action = self:NavigationDestination(false); return action and action.place end)
     navigationHint(self.turnin, function() local binding = self.turninBinding; return binding and binding.current() and binding.action.place end)
     navigationHint(self.source, nil, "COPY")
+    navigationHint(self.detailBackButton, nil, "BACK")
     navigationHint(self.catalogToggle, nil, true)
     self.capacityStatus = label(frame, "", 350, -22, 220, 12)
     self.capacityStatus:Hide()

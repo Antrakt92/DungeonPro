@@ -41,7 +41,9 @@ These matches identify the quest; directions remain tied to its known sources.
 Development builds split quest details into three tabs: **Quest** for objectives,
 rewards and the next action; **Sources** for known pickup methods and alternative
 locations; **Story** for available or previously saved quest text. Each tab
-keeps its reading position. Use the small arrow beside the dungeon list to
+keeps its reading position. Use the back arrow to revisit the previous quest, tab
+and reading position. With no earlier quest in the window's history, it opens the
+dungeon overview. Use the small arrow beside the dungeon list to
 collapse it and give long quest chains more room; use the arrow again to restore
 the list.
 

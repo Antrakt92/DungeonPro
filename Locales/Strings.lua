@@ -218,3 +218,6 @@ function addon.L(key, ...)
     if select("#", ...) > 0 then return string.format(text, ...) end
     return text
 end
+
+strings.enUS.BACK = strings.enUS.DETAIL_BACK
+strings.ruRU.BACK = strings.ruRU.DETAIL_BACK
