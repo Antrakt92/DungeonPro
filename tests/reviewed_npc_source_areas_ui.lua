@@ -64,8 +64,20 @@ end
 render(7044)
 local q=a.quests[7044]
 assert(field(a.L("DETAIL_TURNIN")..": "..q.finish.name.." — Maraudon"),"Celebras area belongs to this quest's turn-in, not its different starting NPC")
-assert(field(a.L("GIVER_LOCATION_UNKNOWN"))and not field(a.L("SOURCE_POSITION_UNKNOWN")),"unknown Cavindra start does not borrow Celebras's known area")
-assert(not row(7044).navigationControl.enabled and not ui.giver.enabled)
+assert(field(a.L("GIVER_LOCATION_UNKNOWN"))and ui.giverUnavailableKey=="GIVER_LOCATION_UNKNOWN" and
+ not field(q.start.name.." — Maraudon"),"unknown Cavindra start does not borrow Celebras's known area")
+local finishLine=assert(field(a.L("DETAIL_TURNIN")..": "..q.finish.name.." — Maraudon"))
+local finishWarning
+for index,v in ipairs(ui.details)do
+ if v==finishLine then
+  for nextIndex=index+1,#ui.details do if ui.details[nextIndex]:IsShown()then finishWarning=ui.details[nextIndex];break end end
+  break
+ end
+end
+assert(finishWarning and finishWarning.text==a.L("SOURCE_POSITION_UNKNOWN")and finishWarning.detailStyle=="warning",
+ "the distinct known Maraudon finisher explains its own missing exact position")
+assert(not row(7044).navigationControl.enabled and not ui.giver.enabled and not ui:NavigationDestination(false) and not ui.turnin.enabled,
+ "neither the unknown pickup nor the finisher area fabricates a route")
 -- Standalone Warosh is inspected explicitly, without creating a natural dungeon association.
 assert(not owners[4867])
 for _,sample in ipairs({{4867,10799},{5160,10740},{5047,10776}})do
