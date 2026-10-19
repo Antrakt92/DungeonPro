@@ -171,7 +171,7 @@ local function planSummary()
 end
 local function planCoverage()
     local p=ui.currentPlan
-    return addon.L(not p and "PICK"or p.notice or(p.unknown and "PARTIAL"or(p.ready and "PREPARED"or"NOT_PREPARED")))
+    return addon.L(not p and "PICK"or p.notice or(p.unknown and "PARTIAL"or(p.ready and "PREPARED"or"NOT_PREPARED")), p and p.notice == "NO_CHARACTER_QUESTS" and addon.L("FILTER_QUEST_ALL") or nil)
 end
 local function check(name, fn)
     local ok, err = pcall(fn)
@@ -203,7 +203,7 @@ check("Dungeon Pro uses the localized product title and its own escape-close fra
 end)
 check("Character filters default safely and reject non-boolean saved values", function()
     assert(not ui.range and not ui.preparation and not ui.includeUnavailable)
-    assert(addon.L(ui.characterButton.filterLabelKey) == addon.L("MY_CHARACTER"))
+    assert(addon.L(ui.characterButton.filterLabelKey) == addon.L("FILTER_QUEST_MINE"))
     assert(addon.char.filters.includeUnavailable == "true" and addon.char.filters.other == "preserve")
 end)
 check("Window fits a short screen and clamps a stale saved position", function()
@@ -537,7 +537,7 @@ check("All-character browsing preserves restricted quests for inspection without
     assert(#visibleRows() == 7)
     ui.characterButton.scripts.OnClick()
     assert(ui.includeUnavailable and addon.char.filters.includeUnavailable == true)
-    assert(addon.L(ui.characterButton.filterLabelKey) == addon.L("ALL_CHARACTERS") and #visibleRows() == 8)
+    assert(addon.L(ui.characterButton.filterLabelKey) == addon.L("FILTER_QUEST_ALL") and #visibleRows() == 8)
     local function selectRestricted()
         for _, row in ipairs(visibleRows()) do
             if row.title.text == "Quest 300" then
@@ -580,10 +580,10 @@ check("Filtered-out quests are distinguished from missing dungeon data", functio
     addon.quests[301] = { id = 301, minLevel = 1, requirementsKnown = true, factions = { "Horde" } }
     ui.dungeon = { name = "Faction fixture", coverage = "reviewed", quests = { 301 } }
     ui:Refresh()
-    assert(#visibleRows() == 0 and planCoverage() == addon.L("NO_CHARACTER_QUESTS"))
+    assert(#visibleRows() == 0 and planCoverage() == addon.L("NO_CHARACTER_QUESTS", addon.L("FILTER_QUEST_ALL")))
     ui.characterButton.scripts.OnClick()
     assert(#visibleRows() == 1 and visibleRows()[1].title.text == "Quest 301")
-    assert(planCoverage() ~= addon.L("NO_CHARACTER_QUESTS") and planCoverage() ~= addon.L("EMPTY"))
+    assert(planCoverage() ~= addon.L("NO_CHARACTER_QUESTS", addon.L("FILTER_QUEST_ALL")) and planCoverage() ~= addon.L("EMPTY"))
     ui.characterButton.scripts.OnClick()
     ui.dungeon.quests = {}; ui:Refresh()
     assert(#visibleRows() == 0 and planCoverage() == addon.L("EMPTY"))
@@ -4786,11 +4786,11 @@ check("Catalogue level and quest character filters retain distinct readable mode
     for code in pairs(addon.locales)do
         addon.db.locale=code;ui.range=false;ui.includeUnavailable=true;ui:Refresh()
         assert(ui.rangeButton.filterLabelKey=="ALL" and not ui.rangeButton.filterSelected)
-        assert(ui.characterButton.filterLabelKey=="ALL_CHARACTERS" and not ui.characterButton.filterSelected)
+        assert(ui.characterButton.filterLabelKey=="FILTER_QUEST_ALL" and not ui.characterButton.filterSelected)
         ui.rangeButton.scripts.OnClick(ui.rangeButton);ui.characterButton.scripts.OnClick(ui.characterButton)
         assert(ui.range and not ui.includeUnavailable and addon.char.filters.range and not addon.char.filters.includeUnavailable)
         assert(ui.rangeButton.filterLabelKey=="RANGE" and ui.rangeButton.filterSelected)
-        assert(ui.characterButton.filterLabelKey=="MY_CHARACTER" and ui.characterButton.filterSelected)
+        assert(ui.characterButton.filterLabelKey=="FILTER_QUEST_MINE" and ui.characterButton.filterSelected)
         assert(ui.rangeButton.text==addon.L("FILTER_LEVEL_CURRENT")and ui.rangeButton.width==160 and ui.rangeButton.height==32 and not ui.rangeButton.filterIcon)
         local control=ui.characterButton
         assert(control.text==""and control.width==100 and control.height==32 and control.filterCaption.text==addon.L("FILTER_QUEST_MINE"))
@@ -6453,7 +6453,7 @@ check("Direct quest browsing localizes and preserves genuinely empty or excluded
     assert(detailHas(addon.L("EMPTY")) and not detailHas(addon.L("PREPARATION_EMPTY",addon.L("QUESTS"))))
     addon.quests={[30001]={id=30001,name="Foreign faction",requirementsKnown=true,minLevel=1,factions={"Horde"}}}
     ui.dungeon={key="foreign-guidance",name="Foreign targets",minLevel=1,maxLevel=60,coverage="reviewed",quests={30001}}
-    ui:Refresh();assert(#ui.currentPlan.rows==0 and not ui.currentPlan.preparationEmpty and planCoverage()==addon.L("NO_CHARACTER_QUESTS"))
+    ui:Refresh();assert(#ui.currentPlan.rows==0 and not ui.currentPlan.preparationEmpty and planCoverage()==addon.L("NO_CHARACTER_QUESTS", addon.L("FILTER_QUEST_ALL")))
     ui.characterButton.scripts.OnClick(ui.characterButton,"LeftButton")
     assert(#ui.currentPlan.rows==1 and #visibleRows()==1 and not ui.currentPlan.preparationEmpty,"completed foreign history is directly inspectable in all-character view")
     finish()
@@ -6501,25 +6501,25 @@ check("Actual source-empty Shapers and character-excluded RFC overview prompts e
         addon.db.locale=code;ui.dungeon=dungeons.shapers;ui:Refresh()
         assert(#ui.dungeon.quests==0 and #ui.currentPlan.rows==0 and #visibleRows()==0)
         assert(detailOccurrences(addon.L("EMPTY"))==1 and not detailHas(addon.L("OVERVIEW_PICK")))
-        assert(planCoverage()==addon.L("EMPTY") and not detailHas(addon.L("NO_CHARACTER_QUESTS")))
+        assert(planCoverage()==addon.L("EMPTY") and not detailHas(addon.L("NO_CHARACTER_QUESTS", addon.L("FILTER_QUEST_ALL"))))
         ui.dungeon=dungeons.rfc;ui:Refresh()
         assert(#ui.dungeon.quests==6 and #ui.currentPlan.rows==0 and #visibleRows()==0)
-        assert(detailHas(addon.L("NO_CHARACTER_QUESTS")) and not detailHas(addon.L("OVERVIEW_PICK")) and not detailHas(addon.L("EMPTY")))
-        assert(planCoverage()==addon.L("NO_CHARACTER_QUESTS") and not ui.action and ui.quest==nil and #ui.detailHistory==0)
+        assert(detailHas(addon.L("NO_CHARACTER_QUESTS", addon.L("FILTER_QUEST_ALL"))) and not detailHas(addon.L("OVERVIEW_PICK")) and not detailHas(addon.L("EMPTY")))
+        assert(planCoverage()==addon.L("NO_CHARACTER_QUESTS", addon.L("FILTER_QUEST_ALL")) and not ui.action and ui.quest==nil and #ui.detailHistory==0)
     end
     finish()
 end)
 check("Overview empty guidance recovers through real character toggle and preserves unknown-character and no-match selected contexts",function()
     local finish,dungeons,character=overviewStateFixture();ui.dungeon=dungeons.rfc;ui:Refresh()
     ui.characterButton.scripts.OnClick(ui.characterButton,"LeftButton")
-    assert(#visibleRows()==6 and detailHas(addon.L("OVERVIEW_PICK")) and not detailHas(addon.L("NO_CHARACTER_QUESTS")))
+    assert(#visibleRows()==6 and detailHas(addon.L("OVERVIEW_PICK")) and not detailHas(addon.L("NO_CHARACTER_QUESTS", addon.L("FILTER_QUEST_ALL"))))
     ui.characterButton.scripts.OnClick(ui.characterButton,"LeftButton")
     character.faction="Horde";ui:Refresh();assert(#visibleRows()==6 and detailHas(addon.L("OVERVIEW_PICK")))
     character.faction=nil;ui:Refresh();assert(#visibleRows()==6 and detailHas(addon.L("OVERVIEW_PICK")))
     local plan=ui.currentPlan;ui.search="NoMatchingDungeonOrQuestXYZ";ui:RefreshDungeons();ui:RefreshDetail()
     assert(ui.dungeon==dungeons.rfc and ui.currentPlan==plan and ui.catalogNotice.shown and detailHas(addon.L("OVERVIEW_PICK")))
     assert(not ui.action and ui.quest==nil)
-    ui.dungeon=nil;ui:Refresh();assert(detailHas(addon.L("PICK")) and not detailHas(addon.L("NO_CHARACTER_QUESTS")))
+    ui.dungeon=nil;ui:Refresh();assert(detailHas(addon.L("PICK")) and not detailHas(addon.L("NO_CHARACTER_QUESTS", addon.L("FILTER_QUEST_ALL"))))
     finish()
 end)
 check("Excluded-character overview localization and prompt setters cannot overwrite a newer usable overview",function()
@@ -6531,13 +6531,13 @@ check("Excluded-character overview localization and prompt setters cannot overwr
         if stage=="localization"then
             addon.L=function(key,...)local text=originalL(key,...);if key=="NO_CHARACTER_QUESTS"then replace()end;return text end
         else
-            for _,fs in ipairs(ui.details)do if fs.shown and fs.text==addon.L("NO_CHARACTER_QUESTS")then field=fs end end
+            for _,fs in ipairs(ui.details)do if fs.shown and fs.text==addon.L("NO_CHARACTER_QUESTS", addon.L("FILTER_QUEST_ALL"))then field=fs end end
             assert(field);originalSet=field.SetText
-            field.SetText=function(self,value)originalSet(self,value);if value==addon.L("NO_CHARACTER_QUESTS")then replace()end end
+            field.SetText=function(self,value)originalSet(self,value);if value==addon.L("NO_CHARACTER_QUESTS", addon.L("FILTER_QUEST_ALL"))then replace()end end
         end
         ui:RefreshDetail();addon.L=originalL;if field then field.SetText=originalSet end
         assert(ui.dungeon~=dungeons.rfc and #visibleRows()>0 and detailHas(addon.L("OVERVIEW_PICK")))
-        assert(not detailHas(addon.L("NO_CHARACTER_QUESTS")))
+        assert(not detailHas(addon.L("NO_CHARACTER_QUESTS", addon.L("FILTER_QUEST_ALL"))))
         finish()
     end
 end)

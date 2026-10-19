@@ -130,7 +130,7 @@ local empty = ui.overviewBinding
 if empty and empty.model then
     assert(empty.model.shownRoots == 0 and #empty.model.steps == 0 and not empty.model.knownPrepared)
 else
-    assert(textVisible(addon.L("NO_CHARACTER_QUESTS")), "empty Mine must explain the absence of listed character quests")
+    assert(textVisible(addon.L("NO_CHARACTER_QUESTS", addon.L("FILTER_QUEST_ALL"))), "empty Mine must explain the absence of listed character quests")
 end
 -- A locale getter runs after the dynamic list proof. Its late mutation must also
 -- expire borrowed raw source associations before the final inspection dispatch.

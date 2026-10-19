@@ -61,7 +61,7 @@ for _, allMode in ipairs({ false, true }) do
     ui.includeUnavailable = allMode; ui:Refresh()
     ui.characterButton.scripts.OnEnter()
     assert(tip.shown and tip.owner == ui.characterButton and tip.heading == addon.L("CHARACTER_FILTER"))
-    assert(tip.body:find(addon.L(allMode and "MY_CHARACTER" or "ALL_CHARACTERS"), 1, true),
+    assert(tip.body:find(addon.L(allMode and "FILTER_QUEST_MINE" or "FILTER_QUEST_ALL"), 1, true),
         "hover explains which mode the direct toggle will select")
     tip.owner = {}; ui.characterButton.scripts.OnLeave(); assert(tip.shown, "borrowed tooltips stay owned by their new surface")
 end

@@ -80,6 +80,7 @@ def main():
     run(lua, "tests/preparation_overview_composition_ui.lua")
     run(lua, "tests/preparation_overview_support_ui.lua")
     run(lua, "tests/preparation_priority_ui.lua")
+    run(lua, "tests/filter_label_guidance_ui.lua")
     run(lua, "tests/recorded_objectives_ui.lua")
     run(lua, "tests/ready_turnin_navigation_ui.lua")
     run(lua, "tests/ready_turnin_retirement_ui.lua")

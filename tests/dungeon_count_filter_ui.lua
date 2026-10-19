@@ -74,7 +74,7 @@ ui.includeUnavailable=false
 -- A populated dungeon with no matching roots is not missing catalogue data.
 a.quests[8].classes={"WARRIOR"};d.quests={8};epoch=epoch+1;ui:Refresh();assertCount(0)
 local function has(text)for _,line in ipairs(ui.details)do if line.shown and line.text==text then return true end end end
-assert(has(a.L("NO_CHARACTER_QUESTS")) and not has(a.L("EMPTY")))
+assert(has(a.L("NO_CHARACTER_QUESTS", a.L("FILTER_QUEST_ALL"))) and not has(a.L("EMPTY")))
 ui.characterButton.scripts.OnClick(ui.characterButton);assertCount(1)
 -- Localization may mutate a previously excluded root while preparing the count.
 ui.includeUnavailable=false;d.quests={1,2};epoch=epoch+1;ui:Refresh()

@@ -191,8 +191,8 @@ function UI:RefreshFilterControls()
     self.rangeButton.filterTargetKey = range and "ALL" or "RANGE"
     self.rangeButton.filterCaptionKey = range and "FILTER_LEVEL_CURRENT" or "FILTER_LEVEL_ALL"
     self.rangeButton.filterSelected = range
-    self.characterButton.filterLabelKey = all and "ALL_CHARACTERS" or "MY_CHARACTER"
-    self.characterButton.filterTargetKey = all and "MY_CHARACTER" or "ALL_CHARACTERS"
+    self.characterButton.filterLabelKey = all and "FILTER_QUEST_ALL" or "FILTER_QUEST_MINE"
+    self.characterButton.filterTargetKey = all and "FILTER_QUEST_MINE" or "FILTER_QUEST_ALL"
     self.characterButton.filterCaptionKey = all and "FILTER_QUEST_ALL" or "FILTER_QUEST_MINE"
     self.characterButton.filterSelected = not all
     local theme = addon.Clean(addon.Theme, "table")
@@ -2051,7 +2051,7 @@ function UI:RefreshQuests()
             entries = { { heading = "PREPARATION_EMPTY", argument = addon.L("QUESTS") } }
         elseif #plan.rows == 0 then
             self.currentPlan.notice = #d.quests > 0 and "NO_CHARACTER_QUESTS" or "EMPTY"
-            entries = { { heading = self.currentPlan.notice } }
+            entries = { { heading = self.currentPlan.notice, argument = self.currentPlan.notice == "NO_CHARACTER_QUESTS" and addon.L("FILTER_QUEST_ALL") or nil } }
         end
         local tree, treeBuilder = nil, addon.Clean(addon.QuestTree, "table")
         if not preparation and self.questTreeDungeon == d and self.questTreeRoot and treeBuilder then
@@ -5493,7 +5493,7 @@ function UI:RefreshDetail(sourceFocus)
                 if count == 0 then
                     local roots = addon.Clean(renderDungeon.quests, "table")
                     local emptyKey = renderIncludeUnavailable ~= true and roots and #roots > 0 and "NO_CHARACTER_QUESTS" or "EMPTY"
-                    if line(addon.L(emptyKey), nil, nil, nil, countCurrent) == false then return end
+                    if line(addon.L(emptyKey, emptyKey == "NO_CHARACTER_QUESTS" and addon.L("FILTER_QUEST_ALL") or nil), nil, nil, nil, countCurrent) == false then return end
                 end
             end
             local function promptCurrent()
@@ -5503,7 +5503,7 @@ function UI:RefreshDetail(sourceFocus)
             local emptyPreparation = preparation and ownedPlan and plan.preparationEmpty == true and #plan.rows > 0
             if count and count > 0 then
                 local prompt = emptyPreparation and addon.L("PREPARATION_EMPTY", addon.L("QUESTS")) or
-                    addon.L(ownedPlan and #plan.rows == 0 and "NO_CHARACTER_QUESTS" or "OVERVIEW_PICK")
+                    addon.L(ownedPlan and #plan.rows == 0 and "NO_CHARACTER_QUESTS" or "OVERVIEW_PICK", ownedPlan and #plan.rows == 0 and addon.L("FILTER_QUEST_ALL") or nil)
                 if not promptCurrent() or line(prompt, nil, nil, nil, promptCurrent) == false then return end
             end
         else line(addon.L("PICK")) end
