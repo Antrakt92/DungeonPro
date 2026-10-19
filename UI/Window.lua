@@ -827,16 +827,30 @@ function UI:BackQuest()
     self.detailTabQuest, self.detailTabDungeon, self.detailTabCharacter = previous, dungeon, character
     self.detailTab, self.detailTabOffsets, self.detailTabRevision = savedTab, saved and savedTab == saved.tab and saved.tabOffsets or {}, {}
     local tab, tabRevision = self.detailTab, self.detailTabRevision
-    self:RefreshDetail()
+    local frame, scroll, tabOffsets = self.frame, self.detailScroll, self.detailTabOffsets
+    local preparation, includeUnavailable, range, search = self.preparation, self.includeUnavailable, self.range, self.search
+    local layoutRevision, refreshList, refreshDetail = self.layoutRevision, self.RefreshQuests, self.RefreshDetail
+    local function owned()
+        return addon.UI == self and self.detailNavigationRevision == revision and self.quest == previous and
+            self.dungeon == dungeon and self.detailHistory == history and addon.char == character and self.frame == frame and
+            self.detailScroll == scroll and self.detailTab == tab and self.detailTabRevision == tabRevision and
+            self.detailTabOffsets == tabOffsets and self.preparation == preparation and self.includeUnavailable == includeUnavailable and
+            self.range == range and self.search == search and self.layoutRevision == layoutRevision and
+            self.RefreshQuests == refreshList and self.RefreshDetail == refreshDetail
+    end
+    refreshList(self)
+    -- History has already advanced; a newer view owns any remaining painting.
+    if not owned() then return true end
+    local engine = self.engine
+    local rendered = refreshDetail(self)
+    if not owned() or self.engine ~= engine or not rendered or self.rewardGeneration ~= rendered then return true end
     local offset = saved and saved.quest == previous and (saved.character == nil or saved.character == character) and addon.Clean(saved.offset, "number")
-    if previous and offset and offset >= 0 and self.detailNavigationRevision == revision and self.quest == previous and
-        self.dungeon == dungeon and self.detailHistory == history and addon.char == character and self.detailTab == tab and
-        self.detailTabRevision == tabRevision and addon.Read(self.frame.IsShown, "boolean", self.frame) == true then
+    if previous and offset and offset >= 0 and owned() and addon.Read(frame.IsShown, "boolean", frame) == true then
         local generation, checker, scroll = self.rewardGeneration, issecretvalue, self.detailScroll
         local content = addon.Read(self.detail.GetHeight, "number", self.detail)
         local viewport = addon.Read(scroll.GetHeight, "number", scroll)
         local function current()
-            return self.detailNavigationRevision == revision and self.rewardGeneration == generation and issecretvalue == checker and
+            return owned() and self.engine == engine and self.rewardGeneration == generation and issecretvalue == checker and
                 addon.char == character and self.detailTab == tab and self.detailTabRevision == tabRevision and self.quest == previous and self.dungeon == dungeon and self.detailHistory == history and self.detailScroll == scroll
         end
         if current() and content and viewport and content >= 0 and viewport > 0 then

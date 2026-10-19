@@ -4,6 +4,8 @@
 
 ### 19-Oct-2026
 
+- Keep the quest list selection in sync when returning to a previous quest or
+  the dungeon overview, while preserving the previous tab and reading position.
 - Add a dungeon map view with floor controls when the game client supplies a
   verified map; unavailable maps have an explicit retry and return action.
 - Translate Westfall into Russian consistently across quest locations and guidance.
