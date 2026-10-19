@@ -221,3 +221,9 @@ end
 
 strings.enUS.BACK = strings.enUS.DETAIL_BACK
 strings.ruRU.BACK = strings.ruRU.DETAIL_BACK
+
+local moreLabels = {
+    enUS = {"Show more (%d)","Show fewer"},
+    ruRU = {"Показать ещё (%d)","Показать меньше"},
+}
+for locale,values in pairs(moreLabels) do addon.locales[locale].OVERVIEW_SHOW_MORE=values[1];addon.locales[locale].OVERVIEW_SHOW_FEWER=values[2] end

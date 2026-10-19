@@ -5431,7 +5431,7 @@ function UI:RefreshDetail(sourceFocus)
                 line(addon.L("DUNGEON_ENTRANCE_SHARED"))
             end
             local offset = self:RenderPreparationOverview(portraitCardCurrent, contentWidth, y,
-                { label = label, setFont = setFont, measuredHeight = measuredHeight, styles = DETAIL_STYLES })
+                { label = label, setFont = setFont, measuredHeight = measuredHeight, styles = DETAIL_STYLES, geometryWrite = sourceGeometryWrite })
             if not offset then return end
             y = offset
             local control, opener = self.overviewMapControl, self.OpenDungeonMap

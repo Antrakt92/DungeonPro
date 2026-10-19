@@ -3,7 +3,7 @@ local Overview = {}
 addon.DungeonOverview = Overview
 
 -- Project a completed, caller-owned plan; never resolve prerequisites a second time.
-function Overview.Get(plan, dungeon, engine, ownerCurrent)
+function Overview.Get(plan, dungeon, engine, ownerCurrent, stepLimit)
     local clean, read, checker, provider = addon.Clean, addon.Read, issecretvalue, Overview.Get
     if type(clean) ~= "function" or type(read) ~= "function" then return nil end
     local snapshots, arrays = {}, {}
@@ -82,6 +82,9 @@ function Overview.Get(plan, dungeon, engine, ownerCurrent)
     end
     local result
     local ok = pcall(function()
+        if not ordinary(stepLimit) then error("restricted overview limit") end
+        local limit = stepLimit == nil and 6 or clean(stepLimit,"number")
+        if not limit or limit % 1 ~= 0 or limit < 6 or limit > 1024 then error("invalid overview limit") end
         -- Ordinary classification precedes structural reads; snapshots precede later callbacks.
         local input = fields(plan, { "engine", "dungeon", "rows", "actions", "unknown", "ready" })
         local source = fields(dungeon, { "quests" })
@@ -136,17 +139,17 @@ function Overview.Get(plan, dungeon, engine, ownerCurrent)
                 (action.kind == "turnin" and status == "READY")) then
                 seenSteps[id], stepCount = true, stepCount + 1
                 local group = status == "READY" and readySteps or activeSteps
-                if #group < 6 then group[#group + 1] = { id = id, kind = action.kind, status = status, listedTarget = rootIDs[id] == true } end
+                if #group < limit then group[#group + 1] = { id = id, kind = action.kind, status = status, listedTarget = rootIDs[id] == true } end
             end
         end
         for _, group in ipairs({ readySteps, activeSteps }) do
-            for _, step in ipairs(group) do if #steps < 6 then steps[#steps + 1] = step end end
+            for _, step in ipairs(group) do if #steps < limit then steps[#steps + 1] = step end end
         end
         result = { counts = counts, shownRoots = rowCount, unknown = input.unknown,
             knownPrepared = input.ready and not input.unknown, steps = steps, remainingSteps = stepCount - #steps }
         fields(result, { "counts", "shownRoots", "unknown", "knownPrepared", "steps", "remainingSteps" })
         fields(counts, statusKeys)
-        sequence(steps, 6)
+        sequence(steps, limit)
         for _, step in ipairs(steps) do fields(step, { "id", "kind", "status", "listedTarget" }) end
         if ownerCurrent ~= nil and (not ordinary(ownerCurrent) or type(ownerCurrent) ~= "function" or
             read(ownerCurrent, "boolean") ~= true) then error("expired overview owner") end

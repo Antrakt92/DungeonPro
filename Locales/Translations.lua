@@ -618,3 +618,15 @@ end
 for _, locale in ipairs({"deDE","frFR","esES","itIT","ptBR","koKR","zhCN","zhTW"}) do
     addon.locales[locale].BACK = addon.locales[locale].DETAIL_BACK
 end
+
+local moreLabels = {
+    deDE = {"Mehr anzeigen (%d)","Weniger anzeigen"},
+    frFR = {"Afficher plus (%d)","Afficher moins"},
+    esES = {"Mostrar más (%d)","Mostrar menos"},
+    itIT = {"Mostra altri (%d)","Mostra meno"},
+    ptBR = {"Mostrar mais (%d)","Mostrar menos"},
+    koKR = {"더 보기 (%d)","간략히 보기"},
+    zhCN = {"显示更多（%d）","收起"},
+    zhTW = {"顯示更多（%d）","收起"},
+}
+for locale,values in pairs(moreLabels) do addon.locales[locale].OVERVIEW_SHOW_MORE=values[1];addon.locales[locale].OVERVIEW_SHOW_FEWER=values[2] end

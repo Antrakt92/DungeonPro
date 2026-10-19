@@ -4,11 +4,12 @@ addon.PreparationOverviewUI = UI
 
 -- Pooled physical write records survive; their obsolete render lease does not.
 function UI:ReleasePreparationOverview()
+    if self.overviewControlReset then self.overviewControlReset.current = nil; self.overviewControlReset = nil end
     local previous = self.overviewBinding
     self.overviewBinding = nil
     if previous then
         previous.released = true
-        for _, key in ipairs({ "model", "modelCurrent", "modelRaw", "base", "listCurrent", "listRaw", "engine", "plan", "titles", "presentation" }) do previous[key] = nil end
+        for _, key in ipairs({ "model", "modelCurrent", "modelRaw", "base", "listCurrent", "listRaw", "engine", "plan", "titles", "presentation", "geometryWrite" }) do previous[key] = nil end
     end
 end
 
@@ -34,6 +35,20 @@ function UI:ResetPreparationOverviewControls(ownerCurrent)
         end
         if not writer(self,fs,"Hide",current) then return false end
     end
+    local scope = { current = ownerCurrent }
+    self.overviewControlReset = scope
+    for _, key in ipairs({"overviewMoreButton","overviewFewerButton"}) do
+        local control = self[key]
+        if control then
+            local function current()
+                if not scope.current or not supported() then return false end
+                local value = scope.current()
+                return value == true and scope.current ~= nil and supported() and self[key] == control
+            end
+            if not writer(self,control,"Hide",current) or not writer(self,control,"SetEnabled",current,false) or
+                not writer(self,control,"SetScript",current,"OnClick",nil) then return false end
+        end
+    end
     return supported() and ownerCurrent() and supported()
 end
 
@@ -52,13 +67,23 @@ function UI:RenderPreparationOverview(ownerCurrent, width, offset, presentation)
         type(rawget(DETAIL_STYLES,"body")) ~= "table" or type(rawget(DETAIL_STYLES,"caption")) ~= "table" or type(rawget(DETAIL_STYLES,"warning")) ~= "table" then return offset end
     if self.RenderPreparationOverview ~= renderer or addon.PreparationOverviewUI ~= UI or type(writer) ~= "function" or
         type(makeRow) ~= "function" or type(layoutRow) ~= "function" or type(release) ~= "function" or type(reset) ~= "function" then return offset end
+    if rawget(presentation,"geometryWrite") ~= nil and type(rawget(presentation,"geometryWrite")) ~= "function" then return offset end
     local portraitCardCurrent, contentWidth, y = ownerCurrent, width, offset
     local plan, provider = self.currentPlan, addon.DungeonOverview
     local get = type(provider) == "table" and provider.Get
     local listCurrent, listRaw = plan and plan.current, plan and plan.rawCurrent
     if type(get) == "function" and type(listCurrent) == "function" and type(listRaw) == "function" and
         plan.engine == renderEngine and plan.dungeon == renderDungeon and plan.includeUnavailable == renderIncludeUnavailable then
-        local binding = { presentation = presentation, plan = plan, engine = renderEngine, base = portraitCardCurrent, listCurrent = listCurrent, listRaw = listRaw, titles = {} }
+        local limits = self.overviewStepLimits
+        if type(limits) ~= "table" then limits = {}; self.overviewStepLimits = limits end
+        local limitState = rawget(limits,renderDungeon)
+        if type(limitState) ~= "table" then limitState = { limit = 6 }; limits[renderDungeon] = limitState end
+        local limitCleaner = addon.Clean
+        local stepLimit = limitCleaner(rawget(limitState,"limit"),"number")
+        if not portraitCardCurrent() or addon.Clean ~= limitCleaner or self.currentPlan ~= plan or self.dungeon ~= renderDungeon or self.engine ~= renderEngine then return end
+        if not stepLimit or stepLimit % 1 ~= 0 or stepLimit < 6 or stepLimit > 1024 then return offset end
+        local refresh = self.RefreshDetail
+        local binding = { geometryWrite = rawget(presentation,"geometryWrite"), presentation = presentation, plan = plan, engine = renderEngine, base = portraitCardCurrent, listCurrent = listCurrent, listRaw = listRaw, titles = {} }
         local localize, read, clean, checker = addon.L, addon.Read, addon.Clean, issecretvalue
         local inspect, keyGetter, dictionaryGetter = self.InspectQuest, self.CatalogLanguageKey, addon.GetNameTranslations
         local database, language, frame = addon.db, addon.Language, self.frame
@@ -70,12 +95,15 @@ function UI:RenderPreparationOverview(ownerCurrent, width, offset, presentation)
         local locale = read(keyGetter,"string",self)
         if locale == "enGB" then locale = "enUS" elseif locale == "esMX" then locale = "esES" end
         local function base()
-            return not binding.released and self.overviewBinding == binding and binding.base and binding.base() and
+            return not binding.released and self.overviewBinding == binding and self.overviewStepLimits == limits and
+                rawequal(rawget(limits,renderDungeon),limitState) and rawequal(rawget(limitState,"limit"),stepLimit) and
+                self.RefreshDetail == refresh and binding.base and binding.base() and
                 addon.PreparationOverviewUI == UI and UI.RenderPreparationOverview == renderer and self.RenderPreparationOverview == renderer and
                 self.ReleasePreparationOverview == release and self.ResetPreparationOverviewControls == reset and
                 self.QuestListWrite == writer and self.MakeRow == makeRow and self.LayoutRow == layoutRow and
                 binding.presentation and rawget(binding.presentation,"label") == label and rawget(binding.presentation,"setFont") == setFont and
                 rawget(binding.presentation,"measuredHeight") == measuredHeight and rawget(binding.presentation,"styles") == DETAIL_STYLES and
+                rawequal(rawget(binding.presentation,"geometryWrite"),binding.geometryWrite) and
                 addon.UI == self and self.frame == frame and self.currentPlan == binding.plan and binding.plan.current == binding.listCurrent and binding.plan.rawCurrent == binding.listRaw and
                 addon.DungeonOverview == provider and provider.Get == get and addon.L == localize and addon.Read == read and
                 addon.Clean == clean and issecretvalue == checker and self.InspectQuest == inspect and self.CatalogLanguageKey == keyGetter and
@@ -106,7 +134,7 @@ function UI:RenderPreparationOverview(ownerCurrent, width, offset, presentation)
             if selected == "enGB" then selected = "enUS" elseif selected == "esMX" then selected = "esES" end
             return selected == locale and binding.rawProof()
         end
-        local ok, model, proof, raw = pcall(get,plan,renderDungeon,renderEngine,binding.current)
+        local ok, model, proof, raw = pcall(get,plan,renderDungeon,renderEngine,binding.current,stepLimit)
         if not base() then return end
         if ok and type(model)=="table" and type(proof)=="function" and type(raw)=="function" then
             binding.model, binding.modelCurrent, binding.modelRaw = model, proof, raw
@@ -185,6 +213,56 @@ function UI:RenderPreparationOverview(ownerCurrent, width, offset, presentation)
                 end) or not write(row,"Show") then return end
             end
             if model.remainingSteps>0 and not summaryLine(localize("OVERVIEW_MORE_STEPS",model.remainingSteps)) then return end
+            local controls = {}
+            if model.remainingSteps > 0 then controls[#controls+1] = {key="overviewMoreButton",caption="OVERVIEW_SHOW_MORE",amount=math.min(6,model.remainingSteps),limit=math.min(1024,stepLimit+6)} end
+            if #model.steps > 6 then controls[#controls+1] = {key="overviewFewerButton",caption="OVERVIEW_SHOW_FEWER",limit=6} end
+            if #controls > 0 and type(refresh) ~= "function" then return end
+            local controlHeight, controlY = 26, y
+            for index, entry in ipairs(controls) do
+                if not binding.current() then return end
+                local key, nextLimit = entry.key, entry.limit
+                local control = self[key]
+                if not control then
+                    control=CreateFrame("Button",nil,self.detail)
+                    if not binding.current() then return end
+                    self[key]=control
+                    control.label=label(control,"",4,-4,contentWidth-8,13)
+                    if not binding.current() then return end
+                end
+                local function owned() return binding.rawProof() and self[key]==control end
+                local function write(object,method,...)
+                    if method == "ClearAllPoints" and binding.geometryWrite then return binding.geometryWrite(owned,object,method,...) end
+                    return writer(self,object,method,owned,...)
+                end
+                local caption=entry.amount and localize(entry.caption,entry.amount) or localize(entry.caption)
+                if not binding.current() then return end
+                setFont(control.label,13)
+                local buttonWidth=(contentWidth-(#controls-1)*4)/#controls
+                if not binding.current() or not write(control.label,"SetWidth",buttonWidth-8) or
+                    not write(control.label,"SetText",caption) then return end
+                controlHeight=math.max(controlHeight,measuredHeight(control.label,18)+8)
+                if not binding.current() then return end
+                local theme, style=addon.Theme, addon.Theme and addon.Theme.StyleRow
+                if type(style)=="function" then read(style,"boolean",control,{kind="control",selected=false}) end
+                if not binding.current() or addon.Theme~=theme or (theme and theme.StyleRow~=style) then return end
+                if not write(control,"SetSize",buttonWidth,controlHeight) or not write(control,"ClearAllPoints") or
+                    not write(control,"SetPoint","TOPLEFT",4+(index-1)*(buttonWidth+4),-controlY) or
+                    not write(control,"SetEnabled",true) or not write(control,"SetScript","OnClick",function()
+                        if not binding.current() or not owned() then return end
+                        local shownGetter, visibleGetter=frame.IsShown, control.IsShown
+                        local shown=read(shownGetter,"boolean",frame)
+                        local visible=read(visibleGetter,"boolean",control)
+                        if shown~=true or visible~=true or frame.IsShown~=shownGetter or control.IsShown~=visibleGetter or not binding.current() or not owned() then return end
+                        limitState.limit=nextLimit
+                        refresh(self)
+                    end) or not write(control,"Show") then return end
+            end
+            for _, entry in ipairs(controls) do
+                local control=self[entry.key]
+                local function owned() return binding.rawProof() and self[entry.key]==control end
+                if not writer(self,control,"SetHeight",owned,controlHeight) then return end
+            end
+            if #controls>0 then y=controlY+controlHeight+8 end
         else
             binding.released=true
             self.overviewBinding=nil

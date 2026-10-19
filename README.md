@@ -49,7 +49,9 @@ the list.
 
 Dungeon overviews in development builds show progress for the listed quests and
 known steps already in your quest log. Open a step to inspect its details; shared
-steps appear once. Supporting quests have their own label; progress counts cover
+steps appear once. Ready turn-ins appear first. The compact view shows up to six
+steps; use **Show more** to reveal up to six more or **Show fewer** to return to
+the compact list. Supporting quests have their own label; progress counts cover
 only the main listed quests. Unverified conditions remain marked, and a short or empty
 step list does not mean that every quest is ready to pick up.
 
