@@ -4,6 +4,7 @@
 
 ### 19-Oct-2026
 
+- Keep dungeon artwork aligned when the selected dungeon changes during a refresh.
 - Prevent an older dungeon illustration from appearing over newer quest details.
 - Keep the current dungeon artwork and map button when switching dungeons.
 - Avoid retaining previous quest material details after switching quests.

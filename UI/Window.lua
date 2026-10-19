@@ -5425,10 +5425,10 @@ function UI:RefreshDetail(sourceFocus)
                 self.overviewArt = self.detail:CreateTexture(nil, "ARTWORK")
             end
             local overviewArt = self.overviewArt
-            self.overviewArt:SetSize(contentWidth, contentWidth)
-            if not portraitCardCurrent() then return end
-            self.overviewArt:ClearAllPoints(); self.overviewArt:SetPoint("TOPLEFT", 4, -y)
-            if not portraitCardCurrent() then return end
+            local function artCurrent() return portraitCardCurrent() and self.overviewArt == overviewArt end
+            if not sourceGeometryWrite(artCurrent, overviewArt, "SetSize", contentWidth, contentWidth) or
+                not sourceGeometryWrite(artCurrent, overviewArt, "ClearAllPoints") or
+                not sourceGeometryWrite(artCurrent, overviewArt, "SetPoint", "TOPLEFT", 4, -y) then return end
             local painter = addon.Clean(addon.PaintDungeonArt, "function")
             local ok, painted, kind, aspect
             local function showOwned(texture)
@@ -5447,10 +5447,9 @@ function UI:RefreshDetail(sourceFocus)
                 local height = kind == "art" and aspect and aspect > 0 and addon.Clean(contentWidth / aspect, "number") or nil
                 if not portraitCardCurrent() then return end
                 height = height and height > 0 and height or contentWidth
-                self.overviewArt:SetSize(compact and 48 or contentWidth, compact and 48 or height)
-                if not portraitCardCurrent() then return end
-                self.overviewArt:ClearAllPoints(); self.overviewArt:SetPoint("TOPLEFT", compact and (contentWidth - 48) / 2 + 4 or 4, -y)
-                if not portraitCardCurrent() then return end
+                if not sourceGeometryWrite(artCurrent, overviewArt, "SetSize", compact and 48 or contentWidth, compact and 48 or height) or
+                    not sourceGeometryWrite(artCurrent, overviewArt, "ClearAllPoints") or
+                    not sourceGeometryWrite(artCurrent, overviewArt, "SetPoint", "TOPLEFT", compact and (contentWidth - 48) / 2 + 4 or 4, -y) then return end
                 local function current() return portraitCardCurrent() and self.overviewArt == overviewArt end
                 if not sourceWrite(current, overviewArt, "Show", nil) then return end
                 y = y + (compact and 56 or height + 8)
