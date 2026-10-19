@@ -4,6 +4,7 @@
 
 ### 19-Oct-2026
 
+- Label supporting quests separately in the dungeon overview without adding them to the main quest counts.
 - Keep dungeon artwork aligned when the selected dungeon changes during a refresh.
 - Prevent an older dungeon illustration from appearing over newer quest details.
 - Keep the current dungeon artwork and map button when switching dungeons.

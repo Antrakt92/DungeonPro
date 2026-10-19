@@ -163,13 +163,17 @@ function UI:RenderPreparationOverview(ownerCurrent, width, offset, presentation)
                 local stepID=step.id
                 local row=self:MakeRow(self.detail,self.actionInspectButtons,index,48,binding.current,true)
                 if not binding.current() then return end
+                local listedTarget=step.listedTarget
                 row.questID,row.overviewStep=step.id,step
                 local function owned() return binding.rawProof() and self.actionInspectButtons[index]==row and row.questID==stepID and row.overviewStep==binding.model.steps[index] end
                 local function write(object,method,...) return self:QuestListWrite(object,method,owned,...) end
                 setFont(row.title,15);setFont(row.note,13)
+                local note=localize(step.status).." · "..localize("BRANCH_INSPECT")
+                if not binding.current() then return end
+                if listedTarget == false then note=localize("OVERVIEW_SUPPORTING_QUEST").." · "..note end
                 if not binding.current() or not write(row,"SetWidth",contentWidth) or not write(row.title,"SetWidth",contentWidth-16) or
                     not write(row.note,"SetWidth",contentWidth-16) or not write(row.title,"SetText",binding.titles[index].text) or
-                    not write(row.note,"SetText",localize(step.status).." · "..localize("BRANCH_INSPECT")) then return end
+                    not write(row.note,"SetText",note) then return end
                 local offset=self:LayoutRow(row,48,y,owned,write)
                 if not offset or not binding.current() then return end
                 y=offset

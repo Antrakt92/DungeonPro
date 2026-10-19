@@ -134,7 +134,7 @@ function Overview.Get(plan, dungeon, engine, ownerCurrent)
             if not seenSteps[id] and ((action.kind == "complete" and status == "ACTIVE") or
                 (action.kind == "turnin" and status == "READY")) then
                 seenSteps[id], stepCount = true, stepCount + 1
-                if #steps < 6 then steps[#steps + 1] = { id = id, kind = action.kind, status = status } end
+                if #steps < 6 then steps[#steps + 1] = { id = id, kind = action.kind, status = status, listedTarget = rootIDs[id] == true } end
             end
         end
         result = { counts = counts, shownRoots = rowCount, unknown = input.unknown,
@@ -142,7 +142,7 @@ function Overview.Get(plan, dungeon, engine, ownerCurrent)
         fields(result, { "counts", "shownRoots", "unknown", "knownPrepared", "steps", "remainingSteps" })
         fields(counts, statusKeys)
         sequence(steps, 6)
-        for _, step in ipairs(steps) do fields(step, { "id", "kind", "status" }) end
+        for _, step in ipairs(steps) do fields(step, { "id", "kind", "status", "listedTarget" }) end
         if ownerCurrent ~= nil and (not ordinary(ownerCurrent) or type(ownerCurrent) ~= "function" or
             read(ownerCurrent, "boolean") ~= true) then error("expired overview owner") end
         if not current() then error("expired overview plan") end
