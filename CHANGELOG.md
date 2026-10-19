@@ -4,6 +4,7 @@
 
 ### 19-Oct-2026
 
+- Keep the current dungeon artwork and map button when switching dungeons.
 - Avoid retaining previous quest material details after switching quests.
 - Keep newly shown quest portraits when an older refresh finishes.
 - Preserve the turn-in arrow position when changing ready quests.

@@ -3007,7 +3007,11 @@ function UI:RefreshDetail(sourceFocus)
             end
         end
     end
-    if self.overviewArt then self.overviewArt:Hide() end
+    if self.overviewArt then
+        local art = self.overviewArt
+        local function current() return portraitCardCurrent() and self.overviewArt == art end
+        if not sourceWrite(current, art, "Hide", nil) then return end
+    end
     self.overviewMapBinding = nil
     if self.overviewMapControl then
         if not self:QuestListWrite(self.overviewMapControl, "Hide", portraitCardCurrent) or
@@ -5420,6 +5424,7 @@ function UI:RefreshDetail(sourceFocus)
             if not self.overviewArt then
                 self.overviewArt = self.detail:CreateTexture(nil, "ARTWORK")
             end
+            local overviewArt = self.overviewArt
             self.overviewArt:SetSize(contentWidth, contentWidth)
             if not portraitCardCurrent() then return end
             self.overviewArt:ClearAllPoints(); self.overviewArt:SetPoint("TOPLEFT", 4, -y)
@@ -5439,6 +5444,8 @@ function UI:RefreshDetail(sourceFocus)
                 if not portraitCardCurrent() then return end
                 self.overviewArt:ClearAllPoints(); self.overviewArt:SetPoint("TOPLEFT", compact and (contentWidth - 48) / 2 + 4 or 4, -y)
                 if not portraitCardCurrent() then return end
+                local function current() return portraitCardCurrent() and self.overviewArt == overviewArt end
+                if not sourceWrite(current, overviewArt, "Show", nil) then return end
                 y = y + (compact and 56 or height + 8)
             end
             local minimum, maximum = addon.Clean(renderDungeon.minLevel, "number"), addon.Clean(renderDungeon.maxLevel, "number")
