@@ -22,6 +22,7 @@ Core\QuestRowInfo.lua
 Core\Search.lua
 Core\SearchRelations.lua
 Core\Client.lua
+Core\DungeonArt.lua
 Core\DungeonMap.lua
 Core\DialogueText.lua
 Core\QuestPayment.lua

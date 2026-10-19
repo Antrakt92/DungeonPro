@@ -158,6 +158,7 @@ def main():
     run(lua, "tests/giver_portraits.lua")
     run(lua, "tests/offered_portraits.lua")
     run(lua, "tests/dungeon_art.lua")
+    run(lua, "tests/dungeon_art_module.lua")
     run(lua, "tests/dungeon_names.lua")
     run(lua, "tests/source_area_names.lua")
     run(lua, "tests/npc_names.lua")

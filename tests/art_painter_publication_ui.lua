@@ -103,6 +103,7 @@ print("Independent final owned art Show tails: PASS "..total)
 local a={}
 assert(loadfile("Core/Namespace.lua"))("DungeonPro",a)
 assert(loadfile("Core/Client.lua"))("DungeonPro",a)
+assert(loadfile("Core/DungeonArt.lua"))("DungeonPro",a)
 local function canvas()
  return {shows=0,SetTexture=function(self,v)self.texture=v;return true end,
  SetTexCoord=function(self,...)self.coords={...}end,

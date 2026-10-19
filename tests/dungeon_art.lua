@@ -1,6 +1,6 @@
 local addon, total = {}, 0
 assert(loadfile("Core/Namespace.lua"))("DungeonPro", addon)
-assert(loadfile("Core/Client.lua"))("DungeonPro", addon)
+assert(loadfile("Core/DungeonArt.lua"))("DungeonPro", addon)
 local secret, state = {}, {}
 local generic = "Interface\\Icons\\INV_Misc_Map_01"
 local function tuple(map, art)
