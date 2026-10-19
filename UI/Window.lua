@@ -936,6 +936,9 @@ function UI:RefreshDungeons()
     self.pendingSearch = nil
     local generation = {}
     self.catalogGeneration = generation
+    local previousRelease = self.catalogSearchRelease
+    self.catalogSearchRelease = nil
+    if previousRelease then previousRelease() end
     local catalogue, definitions, character, database = addon.dungeons, addon.quests, addon.char, addon.db
     local search, range, locale, catalogScroll = self.search, self.range, addon.db.locale, self.catalogScroll
     local includeUnavailable = self.includeUnavailable
@@ -959,6 +962,14 @@ function UI:RefreshDungeons()
         end
     end
     local sourceReady = true
+    local titleMemo = {}
+    if self.catalogGeneration ~= generation then return end
+    -- Pooled write records must survive native setter tails, but need not retain
+    -- obsolete request snapshots once a newer catalogue owns the view.
+    self.catalogSearchRelease = function()
+        sourceReady = false
+        memo, sourceMemo, sourceMatches, relationMemo, relationMatches, titleMemo = {}, {}, {}, {}, {}, {}
+    end
     local function baseCurrent(sourceOnly)
         local ok, valid = pcall(function()
             if context.current ~= contextCurrent or addon.QuestSourceSearchTerms ~= sourceGetter or
@@ -1134,7 +1145,6 @@ function UI:RefreshDungeons()
         end
         return cached
     end
-    local titleMemo={}
     local function searchTitle(id,definition)
         local previous=titleMemo[id]
         if previous then

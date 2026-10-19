@@ -4,6 +4,8 @@
 
 ### 19-Oct-2026
 
+- Release snapshots from previous searches while keeping current results and
+  reused controls intact.
 - Keep search-result quest captions in the selected language when searching by
   original quest names, NPCs or places.
 - Find dungeons by recorded NPCs and places in prerequisite or story steps,
