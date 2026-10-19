@@ -1,49 +1,102 @@
 local _, addon = ...
 local function probeNavigation()
-    local navigation = addon.Clean(addon.Navigation, "table")
-    local getter = navigation and addon.Clean(navigation.ProbeGeometry, "function")
-    local report = addon.Read(getter, "table")
-    if not report or addon.Clean(rawget(report, "status"), "string") ~= "known" then
-        print("Dungeon Pro nav: snapshot unknown"); return
-    end
-    local frames = addon.Clean(rawget(report, "frames"), "table")
-    local strata = { BACKGROUND = true, LOW = true, MEDIUM = true, HIGH = true, DIALOG = true,
-        FULLSCREEN = true, FULLSCREEN_DIALOG = true, TOOLTIP = true }
-    local lines = {}
-    for _, key in ipairs({ "hud", "planner", "worldMap" }) do
-        local row = frames and addon.Clean(rawget(frames, key), "table")
-        local prefix = "Dungeon Pro nav/" .. key .. ": "
-        local known = row and addon.Clean(rawget(row, "status"), "string") == "known"
-        if not known then
-            lines[#lines + 1] = prefix .. "unknown"
-        else
-            local function flag(field)
-                local value = addon.Clean(rawget(row, field), "boolean")
-                if value == nil then return "unknown" end
-                return value and "true" or "false"
+    local clean, read, checker = addon.Clean, addon.Read, issecretvalue
+    local navigation = rawget(addon, "Navigation")
+    local getter = type(navigation) == "table" and rawget(navigation, "ProbeGeometry")
+    local snapshots = {}
+    local function current()
+        local ok, same = pcall(function()
+            if not rawequal(rawget(addon, "Clean"), clean) or not rawequal(rawget(addon, "Read"), read) or
+                not rawequal(rawget(_G, "issecretvalue"), checker) or not rawequal(rawget(addon, "Navigation"), navigation) or
+                (type(navigation) == "table" and not rawequal(rawget(navigation, "ProbeGeometry"), getter)) then return false end
+            for _, snapshot in ipairs(snapshots) do
+                for _, key in ipairs(snapshot.keys) do
+                    -- A conclusively ordinary NaN contributes only "unknown". Do not
+                    -- inspect or compare its possibly restricted replacement in this raw tail.
+                    if not snapshot.nan[key] and not rawequal(rawget(snapshot.object, key), snapshot.values[key]) then return false end
+                end
             end
-            local function number(field, format)
-                local value = addon.Clean(rawget(row, field), "number")
-                if not value or value < -1000000 or value > 1000000 or
-                    ((field == "width" or field == "height" or field == "level") and value < 0) or
-                    (field == "level" and value % 1 ~= 0) or (field == "scale" and value <= 0) then return "unknown" end
-                return string.format(format, value)
-            end
-            local layer = addon.Clean(rawget(row, "strata"), "string")
-            layer = layer and strata[layer] and layer or "unknown"
-            lines[#lines + 1] = prefix .. "shown=" .. flag("shown") .. " visible=" .. flag("visible") ..
-                " strata=" .. layer .. " level=" .. number("level", "%.0f") .. " scale=" .. number("scale", "%.3f") ..
-                " uiUnit=(" .. number("left", "%.2f") .. "," .. number("bottom", "%.2f") ..
-                "," .. number("width", "%.2f") .. "," .. number("height", "%.2f") .. ")"
-        end
-        if key == "worldMap" then
-            local mapID = known and addon.Clean(rawget(row, "shown"), "boolean") == true and
-                addon.Clean(rawget(row, "displayedMapID"), "number")
-            local displayed = "unknown"
-            if mapID and mapID > 0 and mapID <= 9007199254740991 and mapID % 1 == 0 then displayed = string.format("%.0f", mapID) end
-            lines[#lines] = lines[#lines] .. " mapID=" .. displayed
-        end
+            return true
+        end)
+        return ok and same == true
     end
+    local function sanitized(value, kind)
+        local result = clean(value, kind)
+        if not current() then error("retired diagnostic snapshot") end
+        return result
+    end
+    local function capture(value, keys)
+        if not sanitized(value, "table") then return nil end
+        local values, nan = {}, {}
+        for _, key in ipairs(keys) do values[key] = rawget(value, key) end
+        for _, key in ipairs(keys) do
+            local field = values[key]
+            if type(field) == "number" then
+                local ordinary = true
+                if type(checker) == "function" then
+                    local ok, restricted = pcall(checker, field)
+                    ordinary = ok and restricted == false
+                end
+                if not current() then error("retired diagnostic field") end
+                -- Classified NaN stays an individual unknown, rather than invalidating every row.
+                if ordinary then nan[key] = field ~= field end
+            end
+        end
+        snapshots[#snapshots + 1] = { object = value, keys = keys, values = values, nan = nan }
+        if not current() then error("changed diagnostic fields") end
+        return values
+    end
+    local ok, lines = pcall(function()
+        if type(clean) ~= "function" or type(read) ~= "function" or not current() then return nil end
+        local source = sanitized(navigation, "table")
+        local method = source and sanitized(getter, "function")
+        local report = read(method, "table")
+        if not current() then return nil end
+        local reportFields = capture(report, { "status", "frames" })
+        if not reportFields or sanitized(reportFields.status, "string") ~= "known" then return nil end
+        local frameFields = capture(reportFields.frames, { "hud", "planner", "worldMap" })
+        local strata = { BACKGROUND = true, LOW = true, MEDIUM = true, HIGH = true, DIALOG = true,
+            FULLSCREEN = true, FULLSCREEN_DIALOG = true, TOOLTIP = true }
+        local output = {}
+        for _, key in ipairs({ "hud", "planner", "worldMap" }) do
+            local fields = { "status", "shown", "visible", "strata", "level", "scale", "left", "bottom", "width", "height" }
+            if key == "worldMap" then fields[#fields + 1] = "displayedMapID" end
+            local row = frameFields and capture(frameFields[key], fields)
+            local prefix = "Dungeon Pro nav/" .. key .. ": "
+            local known = row and sanitized(row.status, "string") == "known"
+            if not known then
+                output[#output + 1] = prefix .. "unknown"
+            else
+                local function flag(field)
+                    local value = sanitized(row[field], "boolean")
+                    if value == nil then return "unknown" end
+                    return value and "true" or "false"
+                end
+                local function number(field, format)
+                    local value = sanitized(row[field], "number")
+                    if not value or value < -1000000 or value > 1000000 or
+                        ((field == "width" or field == "height" or field == "level") and value < 0) or
+                        (field == "level" and value % 1 ~= 0) or (field == "scale" and value <= 0) then return "unknown" end
+                    return string.format(format, value)
+                end
+                local layer = sanitized(row.strata, "string")
+                layer = layer and strata[layer] and layer or "unknown"
+                output[#output + 1] = prefix .. "shown=" .. flag("shown") .. " visible=" .. flag("visible") ..
+                    " strata=" .. layer .. " level=" .. number("level", "%.0f") .. " scale=" .. number("scale", "%.3f") ..
+                    " uiUnit=(" .. number("left", "%.2f") .. "," .. number("bottom", "%.2f") ..
+                    "," .. number("width", "%.2f") .. "," .. number("height", "%.2f") .. ")"
+            end
+            if key == "worldMap" then
+                local mapID = known and sanitized(row.shown, "boolean") == true and sanitized(row.displayedMapID, "number")
+                local displayed = "unknown"
+                if mapID and mapID > 0 and mapID <= 9007199254740991 and mapID % 1 == 0 then displayed = string.format("%.0f", mapID) end
+                output[#output] = output[#output] .. " mapID=" .. displayed
+            end
+        end
+        -- All formatting callbacks precede this final callback-free ownership proof.
+        return current() and output or nil
+    end)
+    if not ok or not lines then print("Dungeon Pro nav: snapshot unknown"); return end
     for _, line in ipairs(lines) do print(line) end
 end
 
