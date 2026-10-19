@@ -990,8 +990,13 @@ check("Inventory updates refresh actual starter counts and hidden reopen reads c
         reads = reads + 1; return count
     end }
     local function shown(value)
-        for _, line in ipairs(ui.details) do if line.shown and line.text == addon.L("ITEM_CARRIED", value) then return true end end
-        return false
+        local expected, count = addon.L("ITEM_CARRIED", value), 0
+        for _, line in ipairs(ui.details) do
+            local text = line.text
+            local suffix = " · " .. expected
+            if line.shown and (text == expected or text:sub(-#suffix) == suffix) then count = count + 1 end
+        end
+        return count == 1
     end
     assert(eventFrame.events.BAG_UPDATE_DELAYED)
     ui:InspectQuest(373); ui:Refresh()
