@@ -9984,4 +9984,47 @@ check("DP-3 G3 fully unknown starter keeps one honest acquisition row without do
     addon.ItemName, addon.CarriedItemCount = oldItemName, oldCarried
     showDetail(2)
 end)
+check("Overview keeps held log steps and next actions under separate headers", function()
+    if not addon.DungeonOverview then assert(loadfile("Core/DungeonOverview.lua"))("DungeonPro", addon) end
+    local provider = assert(addon.DungeonOverview)
+    local originalGet = provider.Get
+    local savedDungeon, savedQuest = ui.dungeon, ui.quest
+    ui.dungeon, ui.quest = addon.dungeons[1], nil
+    ui:Refresh()
+    local function stub(steps)
+        provider.Get = function()
+            return { counts = { READY = 0, ACTIVE = 1, COMPLETED = 0, UNKNOWN = 0, LOCKED = 0, AVAILABLE = 1, UNAVAILABLE = 0 },
+                shownRoots = 2, unknown = false, knownPrepared = false, steps = steps, remainingSteps = 0 },
+                function() return true end, function() return true end
+        end
+    end
+    local function shownHeaders()
+        local seen = {}
+        for _, fs in ipairs(ui.overviewTexts or {}) do
+            if fs.shown then seen[#seen + 1] = fs.text end
+        end
+        return seen
+    end
+    local function position(list, value)
+        for index, text in ipairs(list) do if text == value then return index end end
+    end
+    local held = { id = 6, kind = "complete", status = "ACTIVE", listedTarget = true }
+    local nextAction = { id = 2, kind = "pickup", status = "AVAILABLE", listedTarget = true }
+    stub({ held, nextAction }); ui:RefreshDetail()
+    local seen = shownHeaders()
+    local heldAt, nextAt = position(seen, addon.L("OVERVIEW_KNOWN_STEPS")), position(seen, addon.L("OVERVIEW_NEXT_STEPS"))
+    assert(addon.L("OVERVIEW_NEXT_STEPS") ~= "OVERVIEW_NEXT_STEPS", "next actions need their own translated header")
+    assert(heldAt and nextAt and heldAt < nextAt, "held log steps keep their header before next actions")
+    stub({ nextAction }); ui:RefreshDetail()
+    seen = shownHeaders()
+    assert(position(seen, addon.L("OVERVIEW_NEXT_STEPS")) and not position(seen, addon.L("OVERVIEW_KNOWN_STEPS")),
+        "pickup-only overviews must not claim journal steps")
+    stub({}); ui:RefreshDetail()
+    seen = shownHeaders()
+    assert(position(seen, addon.L("OVERVIEW_NO_KNOWN_STEPS")) and not position(seen, addon.L("OVERVIEW_KNOWN_STEPS")) and
+        not position(seen, addon.L("OVERVIEW_NEXT_STEPS")), "the empty hint appears only when both groups are empty")
+    provider.Get = originalGet
+    ui.dungeon, ui.quest = savedDungeon, savedQuest
+    ui:Refresh()
+end)
 print("Preparation UI modeled checks passed: " .. total .. " (no native layout validation)")

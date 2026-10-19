@@ -187,9 +187,22 @@ function UI:RenderPreparationOverview(ownerCurrent, width, offset, presentation)
             end
             if model.unknown and not summaryLine(localize("OVERVIEW_UNCERTAIN"),"warning") then return end
             if #model.steps>0 then
-                if not summaryLine(localize("OVERVIEW_KNOWN_STEPS"),"caption") then return end
+                local heldSteps = 0
+                for _, grouped in ipairs(model.steps) do
+                    if type(grouped) == "table" and (grouped.status == "READY" or grouped.status == "ACTIVE") then
+                        heldSteps = heldSteps + 1
+                    end
+                end
+                if heldSteps > 0 and not summaryLine(localize("OVERVIEW_KNOWN_STEPS"),"caption") then return end
             elseif not summaryLine(localize("OVERVIEW_NO_KNOWN_STEPS")) then return end
+            local nextHeaderShown = false
             for index, step in ipairs(model.steps) do
+                if type(step) ~= "table" or (step.status ~= "READY" and step.status ~= "ACTIVE") then
+                    if not nextHeaderShown then
+                        nextHeaderShown = true
+                        if not summaryLine(localize("OVERVIEW_NEXT_STEPS"),"caption") then return end
+                    end
+                end
                 local stepID=step.id
                 local row=self:MakeRow(self.detail,self.actionInspectButtons,index,48,binding.current,true)
                 if not binding.current() then return end
