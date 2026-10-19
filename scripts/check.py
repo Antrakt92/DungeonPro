@@ -131,6 +131,7 @@ def main():
     run(lua, "tests/source_controls_retention_ui.lua")
     run(lua, "tests/source_geometry_retirement_ui.lua")
     run(lua, "tests/inline_turnin_retention_ui.lua")
+    run(lua, "tests/primary_giver_retirement_ui.lua")
     run(lua, "tests/minimal_detail_ui.lua")
     run(lua, "tests/right_pane_ui.lua")
     run(lua, "tests/item_starter_copy_ui.lua")

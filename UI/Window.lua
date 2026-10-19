@@ -2747,6 +2747,7 @@ function UI:RefreshDetail(sourceFocus)
     local renderQuest, renderDungeon = self.quest, self.dungeon
     local renderIncludeUnavailable = self.includeUnavailable
     local renderEngine, renderCharacter, pendingAction, pendingGiver, pendingTurnin = self.engine, addon.char, nil, nil, nil
+    local primaryGiver = self.giver
     local sameDetailOwner = self.detailTabQuest == renderQuest and self.detailTabDungeon == renderDungeon and self.detailTabCharacter == renderCharacter
     if not sameDetailOwner then
         self.detailTabQuest, self.detailTabDungeon, self.detailTabCharacter = renderQuest, renderDungeon, renderCharacter
@@ -2844,6 +2845,100 @@ function UI:RefreshDetail(sourceFocus)
         if rowWriter then return rowWriter(owner, object, method, ...) end
         return self:QuestListWrite(object, method, owner, ...)
     end
+    local primaryLocalize, primaryRefreshIcon = addon.L, self.RefreshFooterIcon
+    local primaryCaption = primaryGiver and primaryGiver.caption
+    local function primaryRaw()
+        return addon.UI == self and self.giver == primaryGiver and primaryGiver ~= nil and
+            primaryGiver.caption == primaryCaption and addon.L == primaryLocalize and self.RefreshFooterIcon == primaryRefreshIcon and
+            type(primaryLocalize) == "function" and type(primaryRefreshIcon) == "function" and
+            not sourceControlsLease.released and self.sourceControlsLease == sourceControlsLease
+    end
+    local function primaryCurrent(owner)
+        if not primaryRaw() then return false end
+        local current = owner or portraitCardCurrent
+        return current() == true and primaryRaw()
+    end
+    local function primaryEnabled(enabled, owner)
+        if not primaryCurrent(owner) then return false end
+        primaryGiver.footerEnabled = enabled == true
+        if not primaryGiver.footerEnabled then primaryGiver.footerPressed, primaryGiver.footerHovered = false, false end
+        local function current() return primaryCurrent(owner) end
+        if not sourceWrite(current, primaryGiver, "SetEnabled", nil, enabled == true) or not current() then return false end
+        primaryRefreshIcon(self, primaryGiver)
+        return current()
+    end
+    local function primaryLabel(key, owner)
+        if not primaryCurrent(owner) then return false end
+        primaryGiver.footerLabelKey = key
+        local function current() return primaryCurrent(owner) end
+        if not sourceWrite(current, primaryGiver, "SetText", nil, "") then return false end
+        if primaryCaption then
+            local value = primaryLocalize(key)
+            if not current() or not sourceWrite(current, primaryCaption, "SetText", nil, value) then return false end
+        end
+        return current()
+    end
+    local function locationWrite(current, object, method, ...)
+        return sourceWrite(current, object, method, nil, ...)
+    end
+    local function sourceGeometryWrite(current, object, method, ...)
+        local fresh = locationWrite(current, object, method, ...)
+        if fresh or method ~= "ClearAllPoints" or object.sourceGeometryRepair then return fresh end
+        local registry = object.questListWrites
+        local point = type(registry) == "table" and rawget(registry, "SetPoint")
+        local owner = type(point) == "table" and rawget(point, "current")
+        local args, count = type(point) == "table" and rawget(point, "args"), type(point) == "table" and rawget(point, "count")
+        local setter, recordSetter = object.SetPoint, type(point) == "table" and rawget(point, "setter")
+        local writer, reader, clean, checker = self.QuestListWrite, addon.Read, addon.Clean, issecretvalue
+        if type(owner) ~= "function" or type(args) ~= "table" or type(count) ~= "number" or count < 1 or count > 5 or count % 1 ~= 0 or
+            type(writer) ~= "function" or type(reader) ~= "function" or type(clean) ~= "function" then return false end
+        local values = {}; for index = 1, count do values[index] = rawget(args, index) end
+        local repair = {}; object.sourceGeometryRepair = repair
+        local cell = {}
+        local function repairOwner()
+            local current = cell.current
+            return current ~= nil and current() == true
+        end
+        local ownPoint, ownArgs, validating
+        local function baseSame()
+            if not rawequal(object.sourceGeometryRepair, repair) or not rawequal(object.questListWrites, registry) or
+                not rawequal(rawget(point, "current"), owner) or not rawequal(rawget(point, "args"), args) or not rawequal(rawget(point, "count"), count) or
+                not rawequal(rawget(point, "setter"), recordSetter) or not rawequal(object.SetPoint, setter) or
+                self.QuestListWrite ~= writer or addon.Read ~= reader or addon.Clean ~= clean or issecretvalue ~= checker then return false end
+            for index = 1, count do if not rawequal(rawget(args, index), values[index]) then return false end end
+            return true
+        end
+        local function publication(record, arguments)
+            if not baseSame() or not rawequal(rawget(registry, "SetPoint"), record) then return false end
+            if rawequal(record, point) then return rawequal(arguments, args) end
+            if type(record) ~= "table" or type(arguments) ~= "table" or (ownPoint and not rawequal(record, ownPoint)) or
+                not rawequal(rawget(record, "current"), repairOwner) or not rawequal(rawget(record, "setter"), setter) or
+                not rawequal(rawget(record, "count"), count) or not rawequal(rawget(record, "args"), arguments) then return false end
+            for index = 1, count do if not rawequal(rawget(arguments, index), values[index]) then return false end end
+            return true
+        end
+        cell.current = function()
+            if validating then return false end
+            local record = rawget(registry, "SetPoint")
+            local arguments = type(record) == "table" and rawget(record, "args")
+            if not publication(record, arguments) then return false end
+            if not rawequal(record, point) and not ownPoint then ownPoint, ownArgs = record, arguments end
+            validating = true
+            local current = reader(owner, "boolean") == true
+            validating = false
+            return current and publication(record, arguments)
+        end
+        local native, recorded = clean(setter, "function"), clean(recordSetter, "function")
+        local succeeded = false
+        if type(native) == "function" and type(recorded) == "function" and rawequal(native, setter) and rawequal(recorded, recordSetter) and rawequal(native, recorded) and
+            repairOwner() then
+            local ok, wrote = pcall(writer, self, object, "SetPoint", repairOwner, unpack(values, 1, count))
+            succeeded = ok and wrote == true and ownPoint ~= nil and publication(ownPoint, ownArgs)
+        end
+        cell.current = succeeded and owner or nil
+        if object.sourceGeometryRepair == repair then object.sourceGeometryRepair = nil end
+        return false
+    end
     for _, buttons in ipairs({ self.reportedToggles, self.reportedRows }) do
         for index, row in ipairs(buttons) do
             local function current() return portraitCardCurrent() and buttons[index] == row end
@@ -2920,10 +3015,10 @@ function UI:RefreshDetail(sourceFocus)
     end
     self.action = nil
     self.giverAction, self.giverHasCoordinates, self.giverBinding = nil, false, nil
-    self:SetFooterEnabled(self.giver, false)
-    self:SetFooterLabel(self.giver, "VISIT_GIVER")
+    if not primaryCurrent() then return end
     self.giverUnavailableKey = nil
-    self.giver:Hide()
+    if not primaryEnabled(false) or not primaryLabel("VISIT_GIVER") or
+        not sourceWrite(function() return primaryCurrent() end, primaryGiver, "Hide", nil) then return end
     local rewardIndex, objectiveIndex = 0, 0
     local function line(value, style, reward, objective, ownerCurrent, navigation)
         if detailTextLease.released or self.detailTextLease ~= detailTextLease or (ownerCurrent and not ownerCurrent()) then return false end
@@ -2982,9 +3077,12 @@ function UI:RefreshDetail(sourceFocus)
             not write(fs, "ClearAllPoints") or not write(fs, "SetPoint", "TOPLEFT", navigation and 36 or 4, -y) or
             not write(fs, "SetText", value) or not write(fs, "Show") then return false end
         if navigation then
-            local control = navigation == true and self.giver or navigation
+            local control = navigation == true and primaryGiver or navigation
+            local primary = control == primaryGiver
             local function position(method, ...)
-                if control == self.giver then return write(control, method, ...) end
+                if primary then
+                    return sourceGeometryWrite(function() return primaryCurrent(ownerCurrent) end, control, method, ...)
+                end
                 return sourceWrite(ownerCurrent or portraitCardCurrent, control, method, nil, ...)
             end
             if not position("ClearAllPoints") or not position("SetPoint", "TOPLEFT", self.detail, "TOPLEFT", 4, -y) or
@@ -3309,67 +3407,6 @@ function UI:RefreshDetail(sourceFocus)
                 addon.SourceAreaName == sourceAreaGetter and addon.SourceName == sourceNameGetter and addon.db == metadataDB and addon.L == metadataLocalize and
                 (not metadataDB or rawget(metadataDB, "locale") == metadataLocale)
         end
-        local function locationWrite(current, object, method, ...)
-            return sourceWrite(current, object, method, nil, ...)
-        end
-        local function sourceGeometryWrite(current, object, method, ...)
-            local fresh = locationWrite(current, object, method, ...)
-            if fresh or method ~= "ClearAllPoints" or object.sourceGeometryRepair then return fresh end
-            local registry = object.questListWrites
-            local point = type(registry) == "table" and rawget(registry, "SetPoint")
-            local owner = type(point) == "table" and rawget(point, "current")
-            local args, count = type(point) == "table" and rawget(point, "args"), type(point) == "table" and rawget(point, "count")
-            local setter, recordSetter = object.SetPoint, type(point) == "table" and rawget(point, "setter")
-            local writer, reader, clean, checker = self.QuestListWrite, addon.Read, addon.Clean, issecretvalue
-            if type(owner) ~= "function" or type(args) ~= "table" or type(count) ~= "number" or count < 1 or count > 5 or count % 1 ~= 0 or
-                type(writer) ~= "function" or type(reader) ~= "function" or type(clean) ~= "function" then return false end
-            local values = {}; for index = 1, count do values[index] = rawget(args, index) end
-            local repair = {}; object.sourceGeometryRepair = repair
-            local cell = {}
-            local function repairOwner()
-                local current = cell.current
-                return current ~= nil and current() == true
-            end
-            local ownPoint, ownArgs, validating
-            local function baseSame()
-                if not rawequal(object.sourceGeometryRepair, repair) or not rawequal(object.questListWrites, registry) or
-                    not rawequal(rawget(point, "current"), owner) or not rawequal(rawget(point, "args"), args) or not rawequal(rawget(point, "count"), count) or
-                    not rawequal(rawget(point, "setter"), recordSetter) or not rawequal(object.SetPoint, setter) or
-                    self.QuestListWrite ~= writer or addon.Read ~= reader or addon.Clean ~= clean or issecretvalue ~= checker then return false end
-                for index = 1, count do if not rawequal(rawget(args, index), values[index]) then return false end end
-                return true
-            end
-            local function publication(record, arguments)
-                if not baseSame() or not rawequal(rawget(registry, "SetPoint"), record) then return false end
-                if rawequal(record, point) then return rawequal(arguments, args) end
-                if type(record) ~= "table" or type(arguments) ~= "table" or (ownPoint and not rawequal(record, ownPoint)) or
-                    not rawequal(rawget(record, "current"), repairOwner) or not rawequal(rawget(record, "setter"), setter) or
-                    not rawequal(rawget(record, "count"), count) or not rawequal(rawget(record, "args"), arguments) then return false end
-                for index = 1, count do if not rawequal(rawget(arguments, index), values[index]) then return false end end
-                return true
-            end
-            cell.current = function()
-                if validating then return false end
-                local record = rawget(registry, "SetPoint")
-                local arguments = type(record) == "table" and rawget(record, "args")
-                if not publication(record, arguments) then return false end
-                if not rawequal(record, point) and not ownPoint then ownPoint, ownArgs = record, arguments end
-                validating = true
-                local current = reader(owner, "boolean") == true
-                validating = false
-                return current and publication(record, arguments)
-            end
-            local native, recorded = clean(setter, "function"), clean(recordSetter, "function")
-            local succeeded = false
-            if type(native) == "function" and type(recorded) == "function" and rawequal(native, setter) and rawequal(recorded, recordSetter) and rawequal(native, recorded) and
-                repairOwner() then
-                local ok, wrote = pcall(writer, self, object, "SetPoint", repairOwner, unpack(values, 1, count))
-                succeeded = ok and wrote == true and ownPoint ~= nil and publication(ownPoint, ownArgs)
-            end
-            cell.current = succeeded and owner or nil
-            if object.sourceGeometryRepair == repair then object.sourceGeometryRepair = nil end
-            return false
-        end
         local function areaName(canonical, current, proofs)
             if type(sourceAreaGetter) ~= "function" then return nil end
             local ok, name, proof = pcall(sourceAreaGetter, canonical, current)
@@ -3590,8 +3627,9 @@ function UI:RefreshDetail(sourceFocus)
         end
         local pendingStarterCarried
         if detailTab ~= "story" then
+        if not primaryCurrent() then return end
         self.giverUnavailableKey = missingStart and "QUEST_START_UNKNOWN" or itemStarter and "START_ITEM_LOCATION_UNKNOWN" or q.startAlternatives and "GIVER_CHOICES_REQUIRED" or "GIVER_LOCATION_UNKNOWN"
-        if missingStart then self:SetFooterLabel(self.giver, "SOURCE_DETAILS") end
+        if missingStart and not primaryLabel("SOURCE_DETAILS", missingStartCurrent) then return end
         if not itemStarter and line(addon.L(missingStart and "SOURCE_DETAILS" or "DETAIL_GIVER"), "caption", nil, nil, missingStart and missingStartCurrent or portraitCardCurrent, not start and q.startAlternatives ~= nil) == false then return end
         if start then
             local nameProofs = {}
@@ -3649,13 +3687,14 @@ function UI:RefreshDetail(sourceFocus)
                 if line(addon.L("START_ITEM_LOCATION_UNKNOWN"), "warning", nil, nil, giverCurrent) == false then return end
             end
             if startSummon then
+                if not primaryCurrent(giverCurrent) then return end
                 self.giverUnavailableKey = "SOURCE_SUMMON_HINT"
                 if not summonInstruction(start,"start",giverCurrent,startSummon) then return end
             end
             if not itemStarter and not startSummon and (not pendingGiver or not pendingGiver.coordinates) then
                 local area = addon.Clean(rawget(start, "zoneName"), "string")
                 if not area or not area:find("%S") then area = addon.Clean(rawget(start, "locationName"), "string") end
-                if not giverCurrent() then return end
+                if not primaryCurrent(giverCurrent) then return end
                 local warning = pendingGiver and "GIVER_COORDINATES_UNKNOWN" or
                     area and area:find("%S") and "SOURCE_POSITION_UNKNOWN" or "GIVER_LOCATION_UNKNOWN"
                 self.giverUnavailableKey = warning
@@ -5498,18 +5537,20 @@ function UI:RefreshDetail(sourceFocus)
     if giverPlace and pendingGiver.same() and addon.quests[renderQuest] == pendingGiver.source and pendingGiver.source.start == giverPlace and
         addon.Clean(giverPlace.mapID, "number") == pendingGiver.map and addon.Clean(giverPlace.x, "number") == pendingGiver.x and
         addon.Clean(giverPlace.y, "number") == pendingGiver.y then
+        if not primaryCurrent() then return end
         self.giverAction, self.giverHasCoordinates = pendingGiver.action, pendingGiver.coordinates
         local binding = { action = pendingGiver.action }
-        binding.current = function()
+        binding.current = sourceCallback(function()
+            if not primaryCurrent() then return false end
             local fresh = not renderEngine.Current or addon.Read(renderEngine.Current, "boolean", renderEngine) == true
-            return fresh and portraitCardCurrent() and pendingGiver.same() and addon.UI == self and self.giverBinding == binding
+            return fresh and primaryCurrent() and pendingGiver.same() and addon.UI == self and self.giverBinding == binding
                 and self.giverAction == binding.action and addon.quests[renderQuest] == pendingGiver.source
                 and pendingGiver.source.start == giverPlace and addon.Clean(giverPlace.mapID, "number") == pendingGiver.map
-                and addon.Clean(giverPlace.x, "number") == pendingGiver.x and addon.Clean(giverPlace.y, "number") == pendingGiver.y
-        end
+                and addon.Clean(giverPlace.x, "number") == pendingGiver.x and addon.Clean(giverPlace.y, "number") == pendingGiver.y and primaryCurrent()
+        end)
         self.giverBinding = binding
-        self:SetFooterLabel(self.giver, pendingGiver.coordinates and "VISIT_GIVER" or "GIVER_MAP")
-        self:SetFooterEnabled(self.giver, true)
+        if not primaryLabel(pendingGiver.coordinates and "VISIT_GIVER" or "GIVER_MAP", binding.current) or
+            not primaryEnabled(true, binding.current) then return end
     end
     if pendingTurnin and pendingTurnin.current() and pendingAction and pendingAction.kind == "turnin" and
         pendingAction.id == renderQuest and pendingAction.place == pendingTurnin.place then
