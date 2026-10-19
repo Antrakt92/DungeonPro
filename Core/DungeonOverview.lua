@@ -128,21 +128,27 @@ function Overview.Get(plan, dungeon, engine, ownerCurrent, stepLimit)
             counts[cachedRow.status] = counts[cachedRow.status] + 1
         end
         local kinds = { complete = true, turnin = true, pickup = true, inside = true, level = true }
-        local seenSteps, steps, stepCount = {}, {}, 0
-        local readySteps, activeSteps = {}, {}
+        local seenSteps, stepCount = {}, 0
+        local readySteps, activeSteps, pickupSteps, insideSteps, levelSteps, unknownSteps = {}, {}, {}, {}, {}, {}
         for index = 1, actionCount do
             local action = fields(actions[index], { "id", "kind" })
             local id = number(action.id)
             if not ordinary(action.kind) or type(action.kind) ~= "string" or not kinds[action.kind] then error("invalid overview action") end
             local status = cachedState(id).status
-            if not seenSteps[id] and ((action.kind == "complete" and status == "ACTIVE") or
-                (action.kind == "turnin" and status == "READY")) then
+            local group
+            if action.kind == "turnin" and status == "READY" then group = readySteps
+            elseif action.kind == "complete" and status == "ACTIVE" then group = activeSteps
+            elseif action.kind == "pickup" and status == "AVAILABLE" then group = pickupSteps
+            elseif action.kind == "inside" and status == "AVAILABLE" then group = insideSteps
+            elseif action.kind == "level" and status == "LOCKED" then group = levelSteps
+            elseif status == "UNKNOWN" then group = unknownSteps end
+            if group and not seenSteps[id] then
                 seenSteps[id], stepCount = true, stepCount + 1
-                local group = status == "READY" and readySteps or activeSteps
                 if #group < limit then group[#group + 1] = { id = id, kind = action.kind, status = status, listedTarget = rootIDs[id] == true } end
             end
         end
-        for _, group in ipairs({ readySteps, activeSteps }) do
+        local steps = {}
+        for _, group in ipairs({ readySteps, activeSteps, pickupSteps, insideSteps, levelSteps, unknownSteps }) do
             for _, step in ipairs(group) do if #steps < limit then steps[#steps + 1] = step end end
         end
         result = { counts = counts, shownRoots = rowCount, unknown = input.unknown,

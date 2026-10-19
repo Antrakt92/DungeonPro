@@ -9735,4 +9735,98 @@ check("Back after filter drift during list refresh keeps the history entry inste
     ui.quest, ui.detailHistory = quest, history
     ui:RefreshDetail()
 end)
+-- DP-5 dungeon overview pickup steps: isolated projection fixtures, not new catalogue facts.
+local function overviewFixture()
+    local fixture = {}
+    assert(loadfile("Core/Namespace.lua"))("DungeonPro", fixture)
+    assert(loadfile("Core/Planner.lua"))("DungeonPro", fixture)
+    assert(loadfile("Core/DungeonOverview.lua"))("DungeonPro", fixture)
+    return fixture
+end
+local function overviewInput(fixture, quests, dungeon, ctx, all)
+    local engine = fixture.Planner.New(quests, ctx)
+    local plan = engine:Dungeon(dungeon, { includeUnavailable = all == true })
+    plan.engine, plan.dungeon = engine, dungeon
+    return plan, engine
+end
+local function overviewModel(fixture, plan, dungeon, engine, limit)
+    local model, current, raw = fixture.DungeonOverview.Get(plan, dungeon, engine, nil, limit)
+    assert(model and type(current) == "function" and type(raw) == "function" and current() and raw())
+    return model
+end
+check("Overview lists pickup steps when no quest is held", function()
+    local fixture = overviewFixture()
+    local quests = {
+        [1] = { id = 1, minLevel = 1, requirementsKnown = true },
+        [2] = { id = 2, minLevel = 1, requirementsKnown = true },
+    }
+    local ctx = { level = 20, current = function() return true end,
+        active = function() return false end, ready = function() return false end,
+        completed = function() return false end }
+    local dungeon = { quests = { 1, 2 }, coverage = "reviewed" }
+    local plan, engine = overviewInput(fixture, quests, dungeon, ctx)
+    local model = overviewModel(fixture, plan, dungeon, engine)
+    assert(model.counts.AVAILABLE == 2 and model.counts.ACTIVE == 0 and model.counts.READY == 0)
+    assert(#model.steps == 2 and model.remainingSteps == 0)
+    assert(model.steps[1].id == 1 and model.steps[1].kind == "pickup" and model.steps[1].status == "AVAILABLE")
+    assert(model.steps[2].id == 2 and model.steps[2].kind == "pickup" and model.steps[2].status == "AVAILABLE")
+    assert(model.steps[1].listedTarget and model.steps[2].listedTarget)
+end)
+check("Overview keeps held steps first and paginates the full pickup list", function()
+    local fixture = overviewFixture()
+    local quests = {}
+    for id = 1, 6 do quests[id] = { id = id, minLevel = 1, requirementsKnown = true } end
+    quests[7] = { id = 7, minLevel = 1, requirementsKnown = true }
+    quests[8] = { id = 8, minLevel = 1, requirementsKnown = true }
+    quests[9] = { id = 9, minLevel = 1, requirementsKnown = true, startsInside = true }
+    quests[10] = { id = 10, minLevel = 100, requirementsKnown = true }
+    local ctx = { level = 60, current = function() return true end,
+        active = function(id) return id == 7 or id == 8 end,
+        ready = function(id) return id == 8 end,
+        completed = function() return false end }
+    local dungeon = { quests = { 1, 2, 3, 4, 5, 6, 9, 10, 7, 8 }, coverage = "reviewed" }
+    local plan, engine = overviewInput(fixture, quests, dungeon, ctx)
+    local model = overviewModel(fixture, plan, dungeon, engine)
+    assert(model.counts.READY == 1 and model.counts.ACTIVE == 1)
+    assert(model.counts.AVAILABLE == 7 and model.counts.LOCKED == 1)
+    assert(#model.steps == 6 and model.remainingSteps == 4)
+    local expected = { 8, 7, 1, 2, 3, 4 }
+    local kinds = { "turnin", "complete", "pickup", "pickup", "pickup", "pickup" }
+    for index, id in ipairs(expected) do
+        assert(model.steps[index].id == id and model.steps[index].kind == kinds[index])
+    end
+    assert(model.steps[1].status == "READY" and model.steps[2].status == "ACTIVE")
+    local expanded = overviewModel(fixture, plan, dungeon, engine, 12)
+    assert(#expanded.steps == 10 and expanded.remainingSteps == 0)
+    local full = { 8, 7, 1, 2, 3, 4, 5, 6, 9, 10 }
+    for index, id in ipairs(full) do assert(expanded.steps[index].id == id) end
+    assert(expanded.steps[9].kind == "inside" and expanded.steps[10].kind == "level")
+end)
+check("Overview keeps Mine/All steps stable and never invents UNKNOWN pickups", function()
+    local fixture = overviewFixture()
+    local quests = {
+        [1] = { id = 1, minLevel = 1, requirementsKnown = true },
+        [2] = { id = 2, minLevel = 1, requirementsKnown = true },
+        [7] = { id = 7, minLevel = 1, requirementsKnown = true },
+        [11] = { id = 11, minLevel = 1, requirementsKnown = true, factions = { "Horde" } },
+        [12] = { id = 12, minLevel = 1, requirementsKnown = false },
+    }
+    local ctx = { level = 60, faction = "Alliance", current = function() return true end,
+        active = function(id) return id == 7 end, ready = function() return false end,
+        completed = function() return false end }
+    local dungeon = { quests = { 1, 2, 7, 11, 12 }, coverage = "reviewed" }
+    local minePlan, mineEngine = overviewInput(fixture, quests, dungeon, ctx, false)
+    local allPlan, allEngine = overviewInput(fixture, quests, dungeon, ctx, true)
+    local mine = overviewModel(fixture, minePlan, dungeon, mineEngine)
+    local all = overviewModel(fixture, allPlan, dungeon, allEngine)
+    assert(mine.counts.UNAVAILABLE == 0 and all.counts.UNAVAILABLE == 1)
+    assert(mine.shownRoots == 4 and all.shownRoots == 5)
+    assert(#mine.steps == 3 and #all.steps == 3)
+    for _, model in ipairs({ mine, all }) do
+        assert(model.steps[1].id == 7 and model.steps[1].kind == "complete")
+        assert(model.steps[2].id == 1 and model.steps[3].id == 2)
+        for _, step in ipairs(model.steps) do assert(step.id ~= 11 and step.id ~= 12) end
+    end
+    assert(mine.unknown and all.unknown)
+end)
 print("Preparation UI modeled checks passed: " .. total .. " (no native layout validation)")

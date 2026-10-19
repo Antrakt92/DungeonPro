@@ -70,12 +70,13 @@ assert(addon.Context==nativeContext and addon.Planner==nativePlanner and addon.N
 assert(dungeon.quests==catalogue and #catalogue==9 and target.requires==group1 and other.requires==group2 and classQuest.classes==classes and classQuest.start==start and support.finish==finish)
 print("Preparation priority: PASS (actual late READY373 visible, stable mixed/all-ready/all-active order, shared155 counts, cap6, no automatic actions)")
 
--- Controlled eligibility fixture, not new catalogue facts: pickup/level work stays outside the held-log subset.
+-- Controlled eligibility fixture, not new catalogue facts: actionable pickup/level
+-- work joins the overview subset after held READY/ACTIVE without changing counts.
 local a={};assert(loadfile("Core/Namespace.lua"))("DungeonPro",a);assert(loadfile("Core/Planner.lua"))("DungeonPro",a);assert(loadfile("Core/DungeonOverview.lua"))("DungeonPro",a)
 local q={};for id=1,4 do q[id]={id=id,minLevel=id==2 and 100 or 1,requirementsKnown=true}end
 local ctx={level=60,class="MAGE",faction="Alliance",current=function()return true end,active=function(id)return id==3 or id==4 end,ready=function(id)return id==4 end,completed=function()return false end}
 local d={quests={1,2,3,4},coverage="reviewed"};local e=a.Planner.New(q,ctx);local p=e:Dungeon(d,{includeUnavailable=true});p.engine,p.dungeon=e,d
 local model,current,raw=a.DungeonOverview.Get(p,d,e)
 assert(model and current()and raw()and model.counts.AVAILABLE==1 and model.counts.LOCKED==1 and model.counts.ACTIVE==1 and model.counts.READY==1)
-order(model,{4,3});assert(model.remainingSteps==0 and not model.knownPrepared)
-print("PASS controlled mixed AVAILABLE/LOCKED/ACTIVE/READY preserves counts and held-only priority")
+order(model,{4,3,1,2});assert(model.remainingSteps==0 and not model.knownPrepared)
+print("PASS controlled mixed AVAILABLE/LOCKED/ACTIVE/READY preserves counts and full actionable priority")
