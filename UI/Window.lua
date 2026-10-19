@@ -3610,6 +3610,16 @@ function UI:RefreshDetail(sourceFocus)
                         end
                         if line(addon.L("DETAIL_TURNIN") .. ": " .. ending, "caption", nil, nil, endingCurrent,
                             pendingTurnin and self.turnin) == false then return end
+                        local area = addon.Clean(values.zoneName, "string")
+                        local map, x, gy = addon.Clean(values.mapID, "number"), addon.Clean(values.x, "number"), addon.Clean(values.y, "number")
+                        local mapped = map and map > 0 and map <= 9007199254740991 and map % 1 == 0
+                        local exact = mapped and x and gy and x >= 0 and x <= 100 and gy >= 0 and gy <= 100
+                        local readable = type(endpointChecker) ~= "function" or
+                            (addon.Read(endpointChecker, "boolean", alternatives) == false and addon.Read(endpointChecker, "boolean", declaredSummon) == false)
+                        if not endingCurrent() then return end
+                        if readable and alternatives == nil and declaredSummon == nil and not exact and (mapped or area and area:find("%S")) then
+                            if line(addon.L("SOURCE_POSITION_UNKNOWN"), "warning", nil, nil, endingCurrent) == false then return end
+                        end
                     end
                 end
                 local finishSummon = addon.Read(summonGetter,"table",self,finish)
