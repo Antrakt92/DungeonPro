@@ -4836,7 +4836,7 @@ check("Known item-drop NPC locations retain both actual sources and all twelve e
     assert(detailHas(addon.L("ITEM_DROP_LOCATIONS")) and #visits==0 and #maps==0)
     assert(ui.dropButtons~=ui.containerButtons and ui.dropButtons~=ui.startButtons)
     for i,drop in ipairs(drops)do
-        assert(detailHas(addon.L("ITEM_DROP_SOURCE",drop.name,"Dun Morogh")))
+        assert(not detailHas(addon.L("ITEM_DROP_SOURCE",drop.name,"Dun Morogh")),"mapped drop button owns its row without a duplicate text row")
         local row=ui.dropButtons[i];assert(row.shown and row.enabled and row.title.text==drop.name)
         row.scripts.OnClick(row,"LeftButton",false)
         assert(visits[i].kind=="visit" and visits[i].place==drop and visits[i].place.npcID==drop.npcID)
@@ -9828,5 +9828,160 @@ check("Overview keeps Mine/All steps stable and never invents UNKNOWN pickups", 
         for _, step in ipairs(model.steps) do assert(step.id ~= 11 and step.id ~= 12) end
     end
     assert(mine.unknown and all.unknown)
+end)
+check("DP-3 G1 narrative fallback retires stale dialogue and story text on one pool", function()
+    local oldDescription, oldDialogue = addon.Description, addon.DialogueText
+    local old166, old4903 = addon.quests[166], addon.quests[4903]
+    local prose = "Covered G1 prose."
+    local dialogue = "Covered G1 dialogue."
+    addon.quests[166] = { id = 166, minLevel = 1, requirementsKnown = true,
+        start = { mapID = 1, x = 10, y = 20, name = "Covered giver" } }
+    addon.quests[4903] = { id = 4903, minLevel = 1, requirementsKnown = false,
+        start = { itemID = 12563, name = "Uncovered starter" } }
+    addon.Description = function(id) if id == 166 then return prose end end
+    addon.DialogueText = function(id)
+        if id == 166 then return { source = "dialogue", stage = "progress", text = dialogue, current = function() return true end } end
+    end
+    local pool = ui.details
+    local function countVisible(value)
+        local found = 0
+        for _, fs in ipairs(pool) do if fs.shown and audienceText(fs.text) == value then found = found + 1 end end
+        return found
+    end
+    local function countContaining(value)
+        local found = 0
+        for _, fs in ipairs(pool) do if fs.shown and audienceText(fs.text):find(value, 1, true) then found = found + 1 end end
+        return found
+    end
+    showDetail(166)
+    assert(detailHas(dialogue), "covered Quest keeps its dialogue row")
+    assert(ui.details == pool, "detail pool is reused across cards")
+    showDetail(4903)
+    assert(countContaining(dialogue) == 0, "uncovered Quest keeps zero covered dialogue rows")
+    assert(countVisible(addon.L("DIALOGUE_PROGRESS_TEXT")) == 0 and countVisible(addon.L("DIALOGUE_TURNIN_TEXT")) == 0, "uncovered Quest keeps zero dialogue headings")
+    assert(countVisible(addon.L("DETAIL_STORY_UNAVAILABLE")) == 0, "story fallback never leaks onto Quest")
+    assert(countVisible(addon.L("NO_TEXT")) == 0 and countContaining(addon.L("NO_TEXT")) == 0, "raw NO_TEXT never renders on Quest")
+    showStory(4903)
+    assert(countVisible(addon.L("DETAIL_STORY_UNAVAILABLE")) == 1, "uncovered Story shows exactly one honest fallback row")
+    assert(countContaining(prose) == 0, "covered prose never leaks onto uncovered Story")
+    assert(countVisible(addon.L("NO_TEXT")) == 0 and countContaining(addon.L("NO_TEXT")) == 0, "raw NO_TEXT never renders on Story")
+    showDetail(166)
+    assert(detailHas(dialogue), "returning to the covered Quest restores its dialogue row")
+    showStory(166)
+    assert(detailHas(prose), "returning to the covered Story restores its prose row")
+    assert(countVisible(addon.L("DETAIL_STORY_UNAVAILABLE")) == 0, "covered Story shows no fallback row")
+    addon.Description, addon.DialogueText = oldDescription, oldDialogue
+    addon.quests[166], addon.quests[4903] = old166, old4903
+    showDetail(2)
+end)
+check("DP-3 G2 portrait caption retires with its texture without native and source doubles", function()
+    local oldPortrait, oldDialoguePortrait, oldTurnInPortrait = addon.QuestPortrait, addon.DialoguePortrait, addon.DialogueTurnInPortrait
+    local oldGiverPortrait = addon.GiverPortrait
+    local oldRenderer = SetPortraitTextureFromCreatureDisplayID
+    local old166, old4764 = addon.quests[166], addon.quests[4764]
+    addon.quests[166] = { id = 166, minLevel = 1, requirementsKnown = true,
+        start = { npcID = 234, name = "Portrait giver", mapID = 1, x = 10, y = 20,
+            creatureDisplayID = 1690, portraitSource = "g2source" } }
+    addon.quests[4764] = { id = 4764, minLevel = 1, requirementsKnown = false,
+        start = { mapID = 1, x = 12, y = 22, name = "Plain giver" } }
+    addon.QuestPortrait = function(id) if id == 166 then return { displayID = 1111 } end end
+    addon.DialoguePortrait, addon.DialogueTurnInPortrait = nil, nil
+    addon.GiverPortrait = function(point)
+        if point and point.npcID == 234 then return { npcID = 234, displayID = 1690, source = "g2source", name = "Portrait giver" } end
+    end
+    SetPortraitTextureFromCreatureDisplayID = function(texture) texture:SetTexture("G2 portrait") end
+    local pool = ui.details
+    local function countVisible(value)
+        local found = 0
+        for _, fs in ipairs(pool) do if fs.shown and audienceText(fs.text) == value then found = found + 1 end end
+        return found
+    end
+    showDetail(166)
+    assert(ui.portrait.shown and ui.portrait.texture == "G2 portrait", "covered portrait paints its texture")
+    assert(countVisible(addon.L("QUEST_PORTRAIT")) == 1, "covered portrait keeps exactly one native caption row")
+    local captionRow
+    for _, fs in ipairs(pool) do if fs.shown and audienceText(fs.text) == addon.L("QUEST_PORTRAIT") then captionRow = fs end end
+    assert(captionRow, "caption row is a pooled detail row")
+    showDetail(4764)
+    assert(not ui.portrait.shown and ui.portrait.texture == nil, "uncovered card retires the texture")
+    assert(countVisible(addon.L("QUEST_PORTRAIT")) == 0, "caption row retires together with its texture")
+    assert(not captionRow.shown or audienceText(captionRow.text) ~= addon.L("QUEST_PORTRAIT"), "pooled caption row no longer shows the retired caption")
+    showDetail(166)
+    assert(ui.portrait.shown and countVisible(addon.L("QUEST_PORTRAIT")) == 1, "returning restores one native caption row")
+    showSources(166)
+    local sourceCaption = addon.L("GIVER_REFERENCE_PORTRAIT", "Portrait giver")
+    assert(ui.giverPortrait.shown, "source portrait paints its texture on Sources")
+    assert(countVisible(sourceCaption) == 1, "source portrait keeps exactly one caption row")
+    assert(countVisible(addon.L("QUEST_PORTRAIT")) == 0, "native caption never doubles a source caption")
+    local sourceCaptionRow
+    for _, fs in ipairs(pool) do if fs.shown and audienceText(fs.text) == sourceCaption then sourceCaptionRow = fs end end
+    assert(sourceCaptionRow, "source caption row is a pooled detail row")
+    showSources(4764)
+    assert(not ui.giverPortrait.shown and ui.giverPortrait.texture == nil, "source texture retires cross-quest")
+    assert(countVisible(sourceCaption) == 0, "source caption row retires together with its texture")
+    assert(not sourceCaptionRow.shown or audienceText(sourceCaptionRow.text) ~= sourceCaption, "pooled source row no longer shows the retired caption")
+    showSources(166)
+    assert(ui.giverPortrait.shown and countVisible(sourceCaption) == 1, "returning restores one source caption row")
+    assert(countVisible(addon.L("QUEST_PORTRAIT")) == 0, "native and source captions never double on one card")
+    addon.DialoguePortrait = function(id) if id == 166 then return { hidden = true } end end
+    showDetail(166)
+    assert(not ui.portrait.shown and countVisible(addon.L("QUEST_PORTRAIT")) == 0, "explicit hidden suppresses the selected-log fallback portrait")
+    addon.QuestPortrait, addon.DialoguePortrait, addon.DialogueTurnInPortrait = oldPortrait, oldDialoguePortrait, oldTurnInPortrait
+    addon.GiverPortrait = oldGiverPortrait
+    SetPortraitTextureFromCreatureDisplayID = oldRenderer
+    addon.quests[166], addon.quests[4764] = old166, old4764
+    showDetail(2)
+end)
+check("DP-3 G3 fully unknown starter keeps one honest acquisition row without doubles", function()
+    local old1100, old6522, old98423, old4764 = addon.quests[1100], addon.quests[6522], addon.quests[98423], addon.quests[4764]
+    local oldItemName, oldCarried = addon.ItemName, addon.CarriedItemCount
+    addon.quests[98423] = { id = 98423, minLevel = 1, requirementsKnown = false,
+        start = { itemID = 281030, name = "Unknown treaty" } }
+    addon.quests[1100] = { id = 1100, minLevel = 1, requirementsKnown = false,
+        start = { itemID = 5791, name = "Journal starter",
+            containerSource = { objectID = 19861, name = "Journal container", zoneName = "Container zone", mapID = 1, x = 30, y = 24 } } }
+    addon.quests[6522] = { id = 6522, minLevel = 1, requirementsKnown = false,
+        start = { itemID = 17008, name = "Scroll starter",
+            dropSources = { { npcID = 4421, name = "Single dropper", locationName = "Single zone", mapID = 1, x = 10, y = 20 } } } }
+    addon.quests[4764] = { id = 4764, minLevel = 1, requirementsKnown = false,
+        start = { mapID = 1, x = 10, y = 20, name = "Objective giver" },
+        objectiveItems = { { itemID = 12352, name = "Unknown clasp" } } }
+    addon.ItemName, addon.CarriedItemCount = nil, nil
+    local function countVisible(value)
+        local found = 0
+        for _, fs in ipairs(ui.details) do if fs.shown and audienceText(fs.text) == value then found = found + 1 end end
+        return found
+    end
+    for _, view in ipairs({ showDetail, showSources }) do
+        view(98423)
+        assert(countVisible(addon.L("START_ITEM_LOCATION_UNKNOWN")) == 1, "fully unknown starter shows exactly one honest row")
+        assert(countVisible(addon.L("ITEM_ACQUISITION")) == 0, "no acquisition heading without routes")
+    end
+    showSources(6522)
+    local dropText = addon.L("ITEM_DROP_SOURCE", "Single dropper", "Single zone")
+    local textRows = 0
+    for _, fs in ipairs(ui.details) do if fs.shown and audienceText(fs.text) == dropText then textRows = textRows + 1 end end
+    local dropButtons = 0
+    for _, row in ipairs(ui.dropButtons) do if row.shown then dropButtons = dropButtons + 1 end end
+    assert(textRows + dropButtons == 1, "one mapped drop keeps exactly one honest row, not text plus button")
+    for _, row in ipairs(ui.dropButtons) do
+        if row.shown then assert(not row.note.text:find("%(0%.0, 0%.0%)", 1, true), "no coordinates from thin air") end
+    end
+    showSources(1100)
+    assert(ui.containerButtons[1].shown, "container source paints its button")
+    showSources(98423)
+    assert(not ui.containerButtons[1].shown and not ui.containerButtons[1].scripts.OnClick, "cross-quest container rows retire")
+    for _, row in ipairs(ui.dropButtons) do assert(not row.shown, "cross-quest drop rows retire") end
+    assert(countVisible(addon.L("START_ITEM_LOCATION_UNKNOWN")) == 1, "unknown card still shows exactly one row after container retirement")
+    showDetail(4764)
+    assert(detailHas(unknownObjective("Unknown clasp")), "unknown quantity stays unknown and never becomes one")
+    assert(not detailHas(addon.L("OBJECTIVE_ITEM", "Unknown clasp", 1)), "unknown quantity never renders as carried one")
+    addon.ItemName = function(id) if id == 12352 then return "Unknown clasp" end end
+    addon.CarriedItemCount = function(id) if id == 12352 then return 2 end end
+    ui:RefreshDetail()
+    assert(detailHas(unknownObjective("Unknown clasp") .. " · " .. addon.L("ITEM_CARRIED", 2)), "carried count stays a separate honest component")
+    addon.quests[1100], addon.quests[6522], addon.quests[98423], addon.quests[4764] = old1100, old6522, old98423, old4764
+    addon.ItemName, addon.CarriedItemCount = oldItemName, oldCarried
+    showDetail(2)
 end)
 print("Preparation UI modeled checks passed: " .. total .. " (no native layout validation)")

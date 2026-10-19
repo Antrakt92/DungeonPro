@@ -5250,14 +5250,17 @@ function UI:RefreshDetail(sourceFocus)
                             if not acquisitionCurrent() then return end
                             location = areaName(location, acquisitionCurrent, nameProofs) or location
                             if not acquisitionCurrent() then return end
-                            routes[#routes + 1] = { text = addon.L("ITEM_DROP_SOURCE", name, location) }
+                            routes[#routes + 1] = { text = addon.L("ITEM_DROP_SOURCE", name, location), drop = drop }
                             local map = positive(rawget(drop, "mapID"))
                             local reportedPoints = reportedPlaces(drop)
                             local ok, npcOnly = pcall(function()
                                 return rawget(drop, "objectID") == nil and rawget(drop, "itemID") == nil and true or false
                             end)
                             if not acquisitionCurrent() then return end
-                            if ok and npcOnly == true and drop.npcID <= 4294967295 and (map or reportedPoints) then mappedDrops[#mappedDrops + 1] = drop end
+                            if ok and npcOnly == true and drop.npcID <= 4294967295 and (map or reportedPoints) then
+                                mappedDrops[#mappedDrops + 1] = drop
+                                routes[#routes].mapped = true
+                            end
                         end
                     end
                 end
@@ -5297,6 +5300,8 @@ function UI:RefreshDetail(sourceFocus)
                     end
                 elseif route.container then
                     if alternativePlaces({ route.container }, self.containerButtons, "CONTAINER_SOURCE", "container:", acquisitionCurrent, nil, nil, nil, true) == false then return end
+                elseif not summary and route.mapped then do end
+                    -- The mapped drop button below owns this drop; a second text row would double it.
                 elseif line(route.text, summary and "caption" or nil, nil, nil, acquisitionCurrent) == false then return end
                 if not acquisitionCurrent() then return end
             end
