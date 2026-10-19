@@ -758,16 +758,32 @@ function N.Start(action)
     if not tomtomUID and N.Valid(p) and C_Map and type(C_Map.SetUserWaypoint) == "function" and UiMapPoint and
         type(UiMapPoint.CreateFromCoordinates) == "function" then
         local mapOwner, factory, checker = C_Map, UiMapPoint, issecretvalue
+        local clean, read = addon.Clean, addon.Read
         local getter, setter, canSet, create = C_Map.GetUserWaypoint, C_Map.SetUserWaypoint,
             C_Map.CanSetUserWaypointOnMap, UiMapPoint.CreateFromCoordinates
-        local mapID, pointX, pointY = addon.Clean(p.mapID, "number"), addon.Clean(p.x, "number"), addon.Clean(p.y, "number")
+        local mapID, pointX, pointY = clean(p.mapID, "number"), clean(p.x, "number"), clean(p.y, "number")
         local x, y = pointX and pointX / 100, pointY and pointY / 100
+        local function nativeCurrent(includePoint)
+            local ok, same = pcall(function()
+                -- Native capability tables use their own slots; an inherited method
+                -- cannot run a callback inside this final ownership proof.
+                return current() and rawequal(rawget(action, "place"), p) and
+                    rawequal(rawget(_G, "C_Map"), mapOwner) and rawequal(rawget(_G, "UiMapPoint"), factory) and
+                    rawequal(rawget(_G, "issecretvalue"), checker) and rawequal(rawget(addon, "Clean"), clean) and
+                    rawequal(rawget(addon, "Read"), read) and rawequal(rawget(mapOwner, "GetUserWaypoint"), getter) and
+                    rawequal(rawget(mapOwner, "SetUserWaypoint"), setter) and
+                    rawequal(rawget(mapOwner, "CanSetUserWaypointOnMap"), canSet) and
+                    rawequal(rawget(factory, "CreateFromCoordinates"), create) and
+                    (not includePoint or (rawequal(rawget(p, "mapID"), mapID) and
+                        rawequal(rawget(p, "x"), pointX) and rawequal(rawget(p, "y"), pointY)))
+            end)
+            return ok and same == true
+        end
         local function capabilitiesCurrent()
-            return mapID and x and y and C_Map == mapOwner and UiMapPoint == factory and issecretvalue == checker and
-                mapOwner.GetUserWaypoint == getter and mapOwner.SetUserWaypoint == setter and
-                mapOwner.CanSetUserWaypointOnMap == canSet and factory.CreateFromCoordinates == create and
-                addon.Clean(p.mapID, "number") == mapID and addon.Clean(p.x, "number") == pointX and
-                addon.Clean(p.y, "number") == pointY
+            local valid = mapID and x and y and nativeCurrent() and
+                clean(p.mapID, "number") == mapID and clean(p.x, "number") == pointX and clean(p.y, "number") == pointY
+            -- Sanitizers can start or cancel a guide; effects use only the final raw lease.
+            return valid and nativeCurrent(true)
         end
         -- A guide can use its own arrow without replacing the player's map pin.
         local empty = nativeWaypointEmpty(getter)

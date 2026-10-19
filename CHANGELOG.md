@@ -4,6 +4,7 @@
 
 ### 19-Oct-2026
 
+- Keep the newer quest waypoint when an earlier guide finishes validating.
 - Match filter tooltips and empty-list guidance to the Mine and All quests buttons.
 - Show ready turn-ins before unfinished quests in the dungeon overview.
 - Discard navigation diagnostic snapshots if their source changes during formatting.
