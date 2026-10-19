@@ -2482,19 +2482,25 @@ function UI:ResetRewardPresentation()
     if self.rewardGeneration ~= generation then return nil end
     self:ReleaseObjectiveTooltip()
     if self.rewardGeneration ~= generation then return nil end
+    local function current() return self.rewardGeneration == generation end
+    -- Share native write ownership with icon publication so a late clear restores the newest arguments.
+    local function clear(button, bindingKey)
+        button[bindingKey] = nil
+        for _, script in ipairs({ "OnEnter", "OnLeave", "OnHide" }) do
+            if not self:QuestListWrite(button, "SetScript", current, script, nil) then return false end
+        end
+        if not self:QuestListWrite(button, "Hide", current) or
+            not self:QuestListWrite(button.icon, "Hide", current) then return false end
+        self:SetRewardTexture(button.icon, nil)
+        return current()
+    end
     self.rewardButtons = self.rewardButtons or {}
     for _, button in ipairs(self.rewardButtons) do
-        button.rewardBinding = nil
-        button:SetScript("OnEnter", nil); button:SetScript("OnLeave", nil); button:SetScript("OnHide", nil)
-        button:Hide(); button.icon:Hide(); self:SetRewardTexture(button.icon, nil)
-        if self.rewardGeneration ~= generation then return nil end
+        if not clear(button, "rewardBinding") then return nil end
     end
     self.objectiveButtons = self.objectiveButtons or {}
     for _, button in ipairs(self.objectiveButtons) do
-        button.objectiveBinding = nil
-        button:SetScript("OnEnter", nil); button:SetScript("OnLeave", nil); button:SetScript("OnHide", nil)
-        button:Hide(); button.icon:Hide(); self:SetRewardTexture(button.icon, nil)
-        if self.rewardGeneration ~= generation then return nil end
+        if not clear(button, "objectiveBinding") then return nil end
     end
     return generation
 end
@@ -2539,9 +2545,9 @@ function UI:EnterReward(button, binding)
             tooltipMethod(tooltip, "IsOwned") == held.isOwned and tooltipMethod(tooltip, "Hide") == held.hide and
             self:RewardBindingCurrent(button, binding) and self.rewardTooltip == held
     end
-    button:SetScript("OnLeave", function()
+    if not self:QuestListWrite(button, "SetScript", current, "OnLeave", function()
         if self.rewardGeneration == binding.generation and button.rewardBinding == binding then self:ReleaseRewardTooltip(held) end
-    end)
+    end) then self:ReleaseRewardTooltip(held); return end
     local ok = pcall(held.setOwner, tooltip, button, "ANCHOR_RIGHT")
     if not ok or not current() then self:ReleaseRewardTooltip(held); return end
     local owned = addon.Read(held.isOwned, "boolean", tooltip, button)
@@ -2600,9 +2606,9 @@ function UI:EnterObjective(button, binding)
             tooltipMethod(tooltip, "AddLine") == held.addLine and tooltipMethod(tooltip, "Show") == held.show and
             self:ObjectiveBindingCurrent(button, binding) and self.objectiveTooltip == held
     end
-    button:SetScript("OnLeave", function()
+    if not self:QuestListWrite(button, "SetScript", current, "OnLeave", function()
         if self.rewardGeneration == binding.generation and button.objectiveBinding == binding then self:ReleaseObjectiveTooltip(held) end
-    end)
+    end) then self:ReleaseObjectiveTooltip(held); return end
     local ok = pcall(held.setOwner, tooltip, button, "ANCHOR_RIGHT")
     if not ok or not current() then self:ReleaseObjectiveTooltip(held); return end
     local owned = addon.Read(held.isOwned, "boolean", tooltip, button)
@@ -2867,17 +2873,26 @@ function UI:RefreshDetail(sourceFocus)
                     origin = reward.origin, source = reward.source, kind = reward.kind, index = reward.index,
                     dialogue = addon.DialogueRewards, log = addon.QuestRewards, cache = addon.CachedQuestRewards }
                 b.rewardBinding = binding
-                b:ClearAllPoints(); b:SetPoint("TOPLEFT", 4, -y); b.icon:Show(); b:Show()
-                b:SetScript("OnEnter", function() self:EnterReward(b, binding) end)
-                b:SetScript("OnHide", function()
-                    local held = self.rewardTooltip
-                    if held and held.binding == binding and b.rewardBinding == binding then self:ReleaseRewardTooltip(held) end
-                end)
+                local function iconCurrent()
+                    return self.rewardGeneration == rewardGeneration and self.quest == renderQuest and b.rewardBinding == binding
+                end
+                local function configure(object, method, ...) return self:QuestListWrite(object, method, iconCurrent, ...) end
+                b:ClearAllPoints(); b:SetPoint("TOPLEFT", 4, -y)
+                if not configure(b.icon, "Show") or not configure(b, "Show") or
+                    not configure(b, "SetScript", "OnEnter", function() self:EnterReward(b, binding) end) or
+                    not configure(b, "SetScript", "OnHide", function()
+                        local held = self.rewardTooltip
+                        if held and held.binding == binding and b.rewardBinding == binding then self:ReleaseRewardTooltip(held) end
+                    end) then return false end
                 b:SetSize(32, 32)
+                if not iconCurrent() then return false end
                 fs:SetWidth(contentWidth - 40); fs:ClearAllPoints(); fs:SetPoint("TOPLEFT", 44, -y)
                 height = math.max(height or 18, 32)
             else
-                b.icon:Hide(); self:SetRewardTexture(b.icon, nil)
+                if not self:QuestListWrite(b.icon, "Hide", function()
+                    return self.rewardGeneration == rewardGeneration and self.quest == renderQuest
+                end) then return false end
+                self:SetRewardTexture(b.icon, nil)
                 if self.rewardGeneration ~= rewardGeneration or self.quest ~= renderQuest then return false end
             end
         end
@@ -2893,16 +2908,24 @@ function UI:RefreshDetail(sourceFocus)
             if self.rewardGeneration ~= rewardGeneration or self.quest ~= renderQuest or not objective.current() then return false end
             if rendered then
                 objective.generation = rewardGeneration; button.objectiveBinding = objective
-                button:ClearAllPoints(); button:SetPoint("TOPLEFT", 4, -y); button.icon:Show(); button:Show()
-                button:SetScript("OnEnter", function() self:EnterObjective(button, objective) end)
-                button:SetScript("OnHide", function()
-                    local held = self.objectiveTooltip
-                    if held and held.binding == objective and button.objectiveBinding == objective then self:ReleaseObjectiveTooltip(held) end
-                end)
+                local function iconCurrent()
+                    return self.rewardGeneration == rewardGeneration and self.quest == renderQuest and button.objectiveBinding == objective
+                end
+                local function configure(object, method, ...) return self:QuestListWrite(object, method, iconCurrent, ...) end
+                button:ClearAllPoints(); button:SetPoint("TOPLEFT", 4, -y)
+                if not configure(button.icon, "Show") or not configure(button, "Show") or
+                    not configure(button, "SetScript", "OnEnter", function() self:EnterObjective(button, objective) end) or
+                    not configure(button, "SetScript", "OnHide", function()
+                        local held = self.objectiveTooltip
+                        if held and held.binding == objective and button.objectiveBinding == objective then self:ReleaseObjectiveTooltip(held) end
+                    end) then return false end
                 fs:SetWidth(contentWidth - 30); fs:ClearAllPoints(); fs:SetPoint("TOPLEFT", 34, -y)
                 height = math.max(height or 18, 24)
             else
-                button.icon:Hide(); self:SetRewardTexture(button.icon, nil)
+                if not self:QuestListWrite(button.icon, "Hide", function()
+                    return self.rewardGeneration == rewardGeneration and self.quest == renderQuest
+                end) then return false end
+                self:SetRewardTexture(button.icon, nil)
                 if self.rewardGeneration ~= rewardGeneration or self.quest ~= renderQuest or not objective.current() then return false end
             end
         end

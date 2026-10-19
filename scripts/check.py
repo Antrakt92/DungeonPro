@@ -55,6 +55,7 @@ def main():
     run(lua, "tests/catalog_search_release_ui.lua")
     run(lua, "tests/catalog_click_retirement_ui.lua")
     run(lua, "tests/window_hide_retirement_ui.lua")
+    run(lua, "tests/reward_reset_retirement_ui.lua")
     run(lua, "tests/catalog_status_release_ui.lua")
     run(lua, "tests/catalog_search_data_ui.lua")
     run(lua, "tests/catalog_data_batch_ui.lua")
