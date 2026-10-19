@@ -4,6 +4,7 @@
 
 ### 19-Oct-2026
 
+- Avoid repeating bag counts for quest-starting items also supplied by the quest.
 - Explain when a known turn-in area has no exact position.
 - Release obsolete dungeon overview state when leaving or closing the map control.
 - Show listed quest progress and known next steps above dungeon overview artwork.

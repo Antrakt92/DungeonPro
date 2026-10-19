@@ -45,6 +45,13 @@ local function contains(text)
     end
     return false
 end
+local function occurrences(text)
+    local count = 0
+    for _, field in ipairs(ui.details) do
+        if field:IsShown() and field.text:find(text, 1, true) then count = count + 1 end
+    end
+    return count
+end
 local function render(id, turnin, inspectionDungeon)
     selected, ready = id, turnin == true
     ui.dungeon, ui.quest = assert(inspectionDungeon or owners[id]), id
@@ -69,7 +76,7 @@ for _,locale in ipairs({"enUS","ruRU","deDE","frFR","esES","ptBR","koKR","zhCN",
    if b.id==sample[2]and b.current()then roles[b.role]=b.sourceField end
   end end
   assert(roles.starter=="start"and roles.provided=="providedItems","both distinct recorded item roles survive caption simplification")
-  assert(visible(addon.L("ITEM_CARRIED",0)),"starter carried count remains visible")
+  assert(occurrences(addon.L("ITEM_CARRIED",0))==1,"starter carried count remains visible once across both recorded roles")
   if sample[1]==7508 or sample[1]==98423 then assert(visible(addon.L("START_ITEM_LOCATION_UNKNOWN")),"unknown starter source remains explicit")end
  end
  render(214);assert(visible(addon.L("DETAIL_GIVER")),"NPC giver keeps its heading")

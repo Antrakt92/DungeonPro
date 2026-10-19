@@ -3475,6 +3475,7 @@ function UI:RefreshDetail(sourceFocus)
             return metadataCurrent() and portraitCardCurrent() and addon.quests[id] == definition and
                 rawequal(rawget(q, "start"), nil) and rawequal(rawget(q, "startAlternatives"), nil)
         end
+        local pendingStarterCarried
         if detailTab ~= "story" then
         self.giverUnavailableKey = missingStart and "QUEST_START_UNKNOWN" or itemStarter and "START_ITEM_LOCATION_UNKNOWN" or q.startAlternatives and "GIVER_CHOICES_REQUIRED" or "GIVER_LOCATION_UNKNOWN"
         if missingStart then self:SetFooterLabel(self.giver, "SOURCE_DETAILS") end
@@ -3517,7 +3518,20 @@ function UI:RefreshDetail(sourceFocus)
             end
             local giverInlinePlaced = description and description ~= addon.L("UNKNOWN_PLACE")
             if giverInlinePlaced and line(description, nil, nil, starterBinding, giverCurrent, not itemStarter and not declaredSummon) == false then return end
-            if starterCarried and line(starterCarried, "caption", nil, nil, giverCurrent) == false then return end
+            if starterCarried then
+                local duplicateCandidate = false
+                if detailTab == "quest" then
+                    local provided = addon.Clean(rawget(q, "providedItems"), "table")
+                    for index = 1, math.min(provided and #provided or 0, 100) do
+                        local entry = addon.Clean(rawget(provided, index), "table")
+                        if entry and addon.Clean(rawget(entry, "itemID"), "number") == startItemID then duplicateCandidate = true; break end
+                    end
+                end
+                if not giverCurrent() then return end
+                if duplicateCandidate then
+                    pendingStarterCarried = { id = startItemID, value = starterCarried, current = giverCurrent }
+                elseif line(starterCarried, "caption", nil, nil, giverCurrent) == false then return end
+            end
             if itemStarter and rawget(start, "containerSource") == nil and rawget(start, "dropNPCID") == nil and rawget(start, "dropSources") == nil then
                 if line(addon.L("START_ITEM_LOCATION_UNKNOWN"), "warning", nil, nil, giverCurrent) == false then return end
             end
@@ -4505,11 +4519,20 @@ function UI:RefreshDetail(sourceFocus)
                     end
                     local text = quantityUnknown and (name .. " ×?") or addon.L("OBJECTIVE_ITEM", name, quantity)
                     if count then text = text .. " · " .. count end
-                    if line(text, nil, nil, binding) == false then return end
+                    if line(text, nil, nil, binding, entryCurrent) == false then return end
+                    if sourceRole == "provided" and pendingStarterCarried and itemID == pendingStarterCarried.id and count then
+                        if not pendingStarterCarried.current() or not entryCurrent() then return end
+                        pendingStarterCarried = nil
+                    end
                 end
             end
         end
 
+        if pendingStarterCarried then
+            local pending = pendingStarterCarried
+            if not pending.current() or line(pending.value, "caption", nil, nil, pending.current) == false then return end
+            pendingStarterCarried = nil
+        end
         end
         local function acquisitionObjectives()
         do
