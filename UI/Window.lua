@@ -2889,9 +2889,9 @@ function UI:RefreshDetail(sourceFocus)
         end
         local sourceAreaGetter, sourceNameGetter = addon.SourceAreaName, addon.SourceName
         local function namesCurrent(proofs)
-            if addon.SourceName ~= sourceNameGetter then return false end
+            if addon.SourceName ~= sourceNameGetter or addon.SourceAreaName ~= sourceAreaGetter then return false end
             for _, proof in ipairs(proofs) do if addon.Read(proof, "boolean") ~= true then return false end end
-            return addon.SourceName == sourceNameGetter and portraitCardCurrent() and self.reportedGeneration == reportedGeneration and
+            return addon.SourceName == sourceNameGetter and addon.SourceAreaName == sourceAreaGetter and portraitCardCurrent() and self.reportedGeneration == reportedGeneration and
                 addon.db == metadataDB and addon.L == metadataLocalize and (not metadataDB or rawget(metadataDB, "locale") == metadataLocale)
         end
         local function locationCurrent()
@@ -2902,6 +2902,17 @@ function UI:RefreshDetail(sourceFocus)
         end
         local function locationWrite(current, object, method, ...)
             return self:QuestListWrite(object, method, current, ...)
+        end
+        local function areaName(canonical, current, proofs)
+            if type(sourceAreaGetter) ~= "function" then return nil end
+            local ok, name, proof = pcall(sourceAreaGetter, canonical, current)
+            if not current() then return nil end
+            proof = addon.Clean(proof, "function")
+            if proof then
+                if proofs then proofs[#proofs + 1] = proof end
+                if addon.Read(proof, "boolean") ~= true or not current() then return nil end
+            end
+            if ok then return addon.Clean(name, "string") end
         end
         local function reported(parent, key, ownerCurrent)
             local nameProofs = {}
@@ -2931,9 +2942,12 @@ function UI:RefreshDetail(sourceFocus)
             y = nextY
             if not expanded then return end
             line(addon.L("REPORTED_NOTICE"))
+            local parentCurrent = current
             for _, destination in ipairs(places) do
                 local point = destination
-                local zoneName = addon.Read(sourceAreaGetter, "string", point.zoneName, current)
+                local areaProofs = {}
+                local function current() return parentCurrent() and namesCurrent(areaProofs) end
+                local zoneName = areaName(point.zoneName, current, areaProofs)
                 if not current() then return false end
                 if not zoneName then
                     local zone = addon.Read(C_Map and C_Map.GetMapInfo, "table", point.mapID)
@@ -2968,7 +2982,7 @@ function UI:RefreshDetail(sourceFocus)
             local function current() return locationCurrent() and (not ownerCurrent or ownerCurrent()) end
             if not p then return addon.L("UNKNOWN_PLACE") end
             local canonical = addon.Clean(p.zoneName, "string")
-            local zoneName = addon.Read(sourceAreaGetter, "string", canonical, current)
+            local zoneName = areaName(canonical, current, nameProofs)
             if not current() then return nil end
             if not zoneName then
                 local zone = p.mapID and addon.Read(C_Map and C_Map.GetMapInfo, "table", p.mapID)
@@ -3022,7 +3036,7 @@ function UI:RefreshDetail(sourceFocus)
                 local mapID = addon.Clean(destination.mapID, "number")
                 local validMap = mapID ~= nil and mapID > 0 and mapID % 1 == 0
                 local canonical = addon.Clean(destination.zoneName, "string")
-                local area = reader(sourceAreaGetter, "string", canonical, current)
+                local area = areaName(canonical, current, nameProofs)
                 if not current() then return false end
                 if not area then
                     local zone = validMap and reader(mapGetter, "table", mapID)
@@ -4642,7 +4656,7 @@ function UI:RefreshDetail(sourceFocus)
                         if positive(drop.npcID) and name and name:find("%S") and location and location:find("%S") then
                             name = giverName(drop, acquisitionCurrent, nameProofs)
                             if not acquisitionCurrent() then return end
-                            location = addon.Read(sourceAreaGetter, "string", location, acquisitionCurrent) or location
+                            location = areaName(location, acquisitionCurrent, nameProofs) or location
                             if not acquisitionCurrent() then return end
                             routes[#routes + 1] = { text = addon.L("ITEM_DROP_SOURCE", name, location) }
                             local map = positive(rawget(drop, "mapID"))
@@ -5233,7 +5247,18 @@ function UI:Create()
             if not tip or (not point and not resolvedBodyKey and not reason) or not current() then return end
             local text = (resolvedBodyKey or reason) and addon.L(resolvedBodyKey or reason) or addon.Read(giverName, "string", point, current, nameProofs)
             local canonical = point and addon.Clean(point.zoneName, "string")
-            local zone = canonical and (addon.Read(areaGetter, "string", canonical, current) or canonical)
+            local zone
+            if canonical and type(areaGetter) == "function" then
+                local ok, label, proof = pcall(areaGetter, canonical, current)
+                if not current() then return end
+                proof = addon.Clean(proof, "function")
+                if proof then
+                    nameProofs[#nameProofs + 1] = proof
+                    if addon.Read(proof, "boolean") ~= true or not current() then return end
+                end
+                if ok then zone = addon.Clean(label, "string") end
+            end
+            zone = zone or canonical
             local x, y = point and addon.Clean(point.x, "number"), point and addon.Clean(point.y, "number")
             if text and zone and zone:find("%S") then text = text .. " — " .. zone end
             if text and x and y and x >= 0 and x <= 100 and y >= 0 and y <= 100 then text = text .. string.format(" (%.1f, %.1f)", x, y) end

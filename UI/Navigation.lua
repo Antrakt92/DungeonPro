@@ -511,6 +511,7 @@ local function context(action, generation)
     local mapGetter = library and addon.Clean(library.GetMapInfo, "function")
     local giverGetter, questGetter = addon.Clean(addon.GiverName, "function"), addon.Clean(addon.QuestName, "function")
     local sourceGetter, sourceProof = addon.SourceName, nil
+    local areaGetter, areaProof = addon.SourceAreaName, nil
     local database = addon.Clean(addon.db, "table")
     local choice = database and addon.Clean(database.locale, "string")
     local languages = addon.Clean(addon.Language, "table")
@@ -518,7 +519,7 @@ local function context(action, generation)
     local selection = addon.Read(selectionGetter, "string", languages)
     local locale = addon.Read(localeGetter, "string")
     local function current()
-        if addon.SourceName ~= sourceGetter then return false end
+        if addon.SourceName ~= sourceGetter or addon.SourceAreaName ~= areaGetter then return false end
         if GetLocale ~= localeGetter or issecretvalue ~= checker then return false end
         local liveLocale = addon.Read(localeGetter, "string")
         if liveLocale ~= locale or GetLocale ~= localeGetter or issecretvalue ~= checker then return false end
@@ -534,6 +535,7 @@ local function context(action, generation)
             addon.Clean(addon.GiverName, "function") == giverGetter and addon.Clean(addon.QuestName, "function") == questGetter and
             addon.Clean(addon.db, "table") == database and (not database or addon.Clean(database.locale, "string") == choice) and
             (not sourceProof or addon.Read(sourceProof, "boolean") == true) and addon.SourceName == sourceGetter and
+            (not areaProof or addon.Read(areaProof, "boolean") == true) and addon.SourceAreaName == areaGetter and
             navigationGeneration == generation and rawequal(target, action) and rawequal(action.place, place) and
             rawequal(rawget(place, "mapID"), mapID) and rawequal(rawget(place, "x"), x) and rawequal(rawget(place, "y"), y)
     end
@@ -551,9 +553,20 @@ local function context(action, generation)
     end
     if not giver or #giver > 1024 or not giver:find("%S") then giver = kind ~= "entrance" and addon.Read(giverGetter, "string", place) or name end
     if not current() then return nil end
-    local info = addon.Read(mapGetter, "table", mapID)
+    local region
+    if type(areaGetter) == "function" then
+        local ok, localized, proof = pcall(areaGetter, zone, current)
+        if not current() then return nil end
+        proof = addon.Clean(proof, "function")
+        if proof then
+            if addon.Read(proof, "boolean") ~= true or not current() then return nil end
+            areaProof = proof
+        end
+        if ok then region = addon.Clean(localized, "string") end
+    end
+    local info = not region and addon.Read(mapGetter, "table", mapID)
     if not current() then return nil end
-    local region = info and addon.Clean(info.name, "string") or zone
+    region = region or (info and addon.Clean(info.name, "string")) or zone
     local function text(value)
         return value and #value <= 1024 and value:find("%S") and value or nil
     end

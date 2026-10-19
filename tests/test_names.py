@@ -49,7 +49,72 @@ def source_fixture():
             "url": names.ENDPOINT.format(kind="object", id=142702, locale=7)}}, "npcs": {}}}}
 
 
+def area_fixture():
+    return {"schema": 1, "checked": "2026-10-19", "provenance": {
+        "provider": "Wowhead", "extraction": "world-area-name-only", "englishIndex": "https://www.wowhead.com/forever/zones",
+        "localeIndexes": dict(names.AREA_INDEXES), "indexRows": 144}, "sources": {"The Hinterlands": [47, 16029]},
+        "locales": {"ruRU": {"The Hinterlands": {"source": "The Hinterlands", "name": "Внутренние земли",
+            "observations": {"47": "Внутренние земли", "16029": "Внутренние земли"}}}}}
+
+
 class NamesTests(unittest.TestCase):
+    def test_area_aliases_require_every_reviewed_homonym_to_agree(self):
+        _, catalog = fixture()
+        catalog["quests"][0]["start"] = {"zoneName": "The Hinterlands"}
+        data = area_fixture()
+        self.assertIs(names.validate_areas(data, catalog), data)
+        for mutation in (
+            lambda d: d.update(schema=True),
+            lambda d: d.update(checked="2026-99-99"),
+            lambda d: d["provenance"].update(indexRows=True),
+            lambda d: d["provenance"].update(indexRows=1),
+            lambda d: d["provenance"]["localeIndexes"].update(ruRU=names.AREA_INDEXES["zhCN"]),
+            lambda d: d["provenance"].update(englishIndex="https://example.com/zones"),
+            lambda d: d["sources"].update({"The Hinterlands": [47, 47]}),
+            lambda d: d["sources"].update({"The Hinterlands": [16029, 47]}),
+            lambda d: d["sources"].update({"The Hinterlands": [True]}),
+            lambda d: d["sources"].update({"The Hinterlands": [4294967296]}),
+            lambda d: d["sources"].update({"The Hinterlands": []}),
+            lambda d: d["locales"].update(xxXX={}),
+            lambda d: d["locales"]["ruRU"]["The Hinterlands"].update(source="Other zone"),
+            lambda d: d["locales"]["ruRU"]["The Hinterlands"].update(name="[The Hinterlands]"),
+            lambda d: d["locales"]["ruRU"]["The Hinterlands"].update(name="The Hinterlands"),
+            lambda d: d["locales"]["ruRU"]["The Hinterlands"].update(name="bad\ud800label"),
+            lambda d: d["locales"]["ruRU"]["The Hinterlands"].update(name="界" * 400),
+            lambda d: d["locales"]["ruRU"]["The Hinterlands"].update(mapID=1425),
+            lambda d: d["locales"]["ruRU"]["The Hinterlands"]["observations"].pop("16029"),
+            lambda d: d["locales"]["ruRU"]["The Hinterlands"]["observations"].update({"16029": "Different phase label"}),
+            lambda d: d["locales"]["ruRU"]["The Hinterlands"]["observations"].update({"1425": "Внутренние земли"}),
+        ):
+            candidate = copy.deepcopy(data)
+            mutation(candidate)
+            with self.subTest(mutation=mutation), self.assertRaises(ValueError):
+                names.validate_areas(candidate, catalog)
+        catalog["quests"][0]["finish"] = {"zoneName": "Ironforge"}
+        data["sources"]["Ironforge"] = [47]
+        with self.assertRaises(ValueError):
+            names.validate_areas(data, catalog)
+
+    def test_area_aliases_are_sparse_exact_recorded_labels_not_route_facts(self):
+        _, catalog = fixture()
+        data = area_fixture()
+        with self.assertRaises(ValueError):
+            names.validate_areas(data, catalog)
+        catalog["quests"][0]["start"] = {"zoneName": "The Hinterlands"}
+        for name in ("the hinterlands", "Hinterlands", "The Hinterlands, Eastern Kingdoms"):
+            candidate = copy.deepcopy(data)
+            candidate["sources"] = {name: candidate["sources"].pop("The Hinterlands")}
+            with self.subTest(name=name), self.assertRaises(ValueError):
+                names.validate_areas(candidate, catalog)
+        data["locales"] = {}
+        self.assertIs(names.validate_areas(data, catalog), data)
+        empty = dict(area_fixture(), sources={}, locales={})
+        self.assertIs(names.validate_areas(empty, catalog), empty)
+        catalog["quests"][0]["finish"] = {"zoneName": "The Deadmines"}
+        duplicate_dungeon = dict(area_fixture(), sources={"The Deadmines": [1581]}, locales={})
+        with self.assertRaises(ValueError):
+            names.validate_areas(duplicate_dungeon, catalog)
+
     def test_sparse_source_names_require_exact_typed_catalogue_identity(self):
         data, catalog = fixture()
         sources = source_fixture()
@@ -96,12 +161,12 @@ class NamesTests(unittest.TestCase):
 
     def test_invalid_source_input_cannot_replace_previously_generated_bytes(self):
         data, catalog = fixture()
-        catalog["quests"][0]["start"] = {"objectID": 142702, "name": "Venom Bottle"}
+        catalog["quests"][0]["start"] = {"objectID": 142702, "name": "Venom Bottle", "zoneName": "The Hinterlands"}
         authored = authored_fixture(data, catalog)
         italian = copy.deepcopy(authored)
         italian["locales"] = {"itIT": italian["locales"]["itIT"]}
         authored["locales"].pop("itIT")
-        inputs = {"source_name_translations.json": source_fixture(), "catalog.json": catalog,
+        inputs = {"area_name_translations.json": area_fixture(), "source_name_translations.json": source_fixture(), "catalog.json": catalog,
                   "name_translations.json": data, "name_translation_supplements.json": authored,
                   "name_translation_itIT.json": italian}
         with tempfile.TemporaryDirectory() as folder:
@@ -126,6 +191,17 @@ class NamesTests(unittest.TestCase):
                         result = subprocess.run([sys.executable, str(root / "scripts/names.py"), *options], capture_output=True)
                         self.assertNotEqual(result.returncode, 0)
                         self.assertEqual(target.read_bytes(), original)
+            (root / "data/source_name_translations.json").write_text(json.dumps(inputs["source_name_translations.json"]), encoding="utf-8")
+            for field, value in (("name", "bad\ud800label"), ("source", "Other area"),
+                                 ("observations", {"47": "Внутренние земли", "16029": "Different label"}), ("mapID", 1425)):
+                candidate = area_fixture()
+                candidate["locales"]["ruRU"]["The Hinterlands"][field] = value
+                (root / "data/area_name_translations.json").write_text(json.dumps(candidate), encoding="utf-8")
+                for options in ([], ["--check"]):
+                    with self.subTest(area_field=field, options=options):
+                        result = subprocess.run([sys.executable, str(root / "scripts/names.py"), *options], capture_output=True)
+                        self.assertNotEqual(result.returncode, 0)
+                        self.assertEqual(target.read_bytes(), original)
 
     def test_invalid_unicode_inputs_preserve_generated_names_in_write_and_check_modes(self):
         data, catalog = fixture()
@@ -133,7 +209,8 @@ class NamesTests(unittest.TestCase):
         italian = copy.deepcopy(authored)
         italian["locales"] = {"itIT": italian["locales"]["itIT"]}
         authored["locales"].pop("itIT")
-        inputs = {"source_name_translations.json": dict(source_fixture(), locales={}), "catalog.json": catalog, "name_translations.json": data,
+        inputs = {"area_name_translations.json": dict(area_fixture(), sources={}, locales={}),
+                  "source_name_translations.json": dict(source_fixture(), locales={}), "catalog.json": catalog, "name_translations.json": data,
                   "name_translation_supplements.json": authored, "name_translation_itIT.json": italian}
         with tempfile.TemporaryDirectory() as folder:
             root = Path(folder)
@@ -171,7 +248,8 @@ class NamesTests(unittest.TestCase):
         italian = copy.deepcopy(authored)
         italian["locales"] = {"itIT": italian["locales"]["itIT"]}
         authored["locales"].pop("itIT")
-        inputs = {"source_name_translations.json": dict(source_fixture(), locales={}), "catalog.json": catalog, "name_translations.json": data,
+        inputs = {"area_name_translations.json": dict(area_fixture(), sources={}, locales={}),
+                  "source_name_translations.json": dict(source_fixture(), locales={}), "catalog.json": catalog, "name_translations.json": data,
                   "name_translation_supplements.json": authored, "name_translation_itIT.json": italian}
         with tempfile.TemporaryDirectory() as folder:
             root = Path(folder)
@@ -326,14 +404,21 @@ class NamesTests(unittest.TestCase):
         lines = ['local addon={} local function load(...)', names.generate(data), 'end load("DungeonPro",addon)',
                  'assert(next(addon.nameTranslations)==nil and getmetatable(addon.nameTranslations)==nil)',
                  'local total=0']
+        lines += ['local areas=0 for key,entry in pairs(addon.sourceAreaNames)do '
+                  'assert(type(key)=="string" and entry.name==key) '
+                  'local fields=0 for field in pairs(entry)do assert(field=="name");fields=fields+1 end '
+                  'assert(fields==1);areas=areas+1 end', f'assert(areas=={len(data.get("sourceAreas", {}))})']
         for locale, payload in sorted(data["locales"].items()):
             lines.append(f'local dictionary=addon.nameTranslationFactories.loaders.{locale}()')
             for kind, entries in payload.items():
                 lines.append(f'local count=0 for _ in pairs(dictionary.{kind})do count=count+1 end assert(count=={len(entries)})')
                 for key, entry in entries.items():
-                    index = names.quoted(key) if kind == "dungeons" else key
+                    index = names.quoted(key) if kind in ("dungeons", "areas") else key
                     lines.append(f'assert(dictionary.{kind}[{index}].source=={names.quoted(entry["source"])} and '
                                  f'dictionary.{kind}[{index}].name=={names.quoted(entry["name"])}) total=total+1')
+                    if kind == "areas":
+                        lines.append(f'do local fields=0 for key in pairs(dictionary.areas[{index}])do '
+                                     'assert(key=="source"or key=="name");fields=fields+1 end assert(fields==2) end')
         count = sum(len(entries) for payload in data["locales"].values() for entries in payload.values())
         lines.append(f'assert(total=={count} and next(addon.nameTranslations)==nil)')
         lua = shutil.which("lua5.1")

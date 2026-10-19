@@ -1,0 +1,2380 @@
+{
+  "schema": 1,
+  "checked": "2026-10-19",
+  "provenance": {
+    "provider": "Wowhead",
+    "extraction": "world-area-name-only",
+    "englishIndex": "https://www.wowhead.com/forever/zones",
+    "localeIndexes": {
+      "deDE": "https://www.wowhead.com/forever/de/zones",
+      "frFR": "https://www.wowhead.com/forever/fr/zones",
+      "esES": "https://www.wowhead.com/forever/es/zones",
+      "itIT": "https://www.wowhead.com/forever/it/zones",
+      "ptBR": "https://www.wowhead.com/forever/pt/zones",
+      "ruRU": "https://www.wowhead.com/forever/ru/zones",
+      "koKR": "https://www.wowhead.com/forever/ko/zones",
+      "zhCN": "https://www.wowhead.com/forever/cn/zones",
+      "zhTW": "https://www.wowhead.com/forever/tw/zones"
+    },
+    "indexRows": 144
+  },
+  "sources": {
+    "Alterac Mountains": [
+      36
+    ],
+    "Arathi Highlands": [
+      45
+    ],
+    "Ashenvale": [
+      331,
+      16169
+    ],
+    "Azshara": [
+      16,
+      16003
+    ],
+    "Badlands": [
+      3
+    ],
+    "Blackrock Mountain": [
+      25
+    ],
+    "Blasted Lands": [
+      4,
+      16115
+    ],
+    "Burning Steppes": [
+      46,
+      16508
+    ],
+    "Darkshore": [
+      148
+    ],
+    "Darnassus": [
+      1657
+    ],
+    "Desolace": [
+      405,
+      16017
+    ],
+    "Dun Morogh": [
+      1
+    ],
+    "Durotar": [
+      14
+    ],
+    "Duskwood": [
+      10,
+      16119,
+      16148
+    ],
+    "Dustwallow Marsh": [
+      15
+    ],
+    "Eastern Plaguelands": [
+      139,
+      16028
+    ],
+    "Elwynn Forest": [
+      12,
+      16118,
+      16147,
+      16510
+    ],
+    "Felwood": [
+      361,
+      15809
+    ],
+    "Feralas": [
+      357,
+      16018
+    ],
+    "Hillsbrad Foothills": [
+      267,
+      16562
+    ],
+    "Ironforge": [
+      1537
+    ],
+    "Loch Modan": [
+      38
+    ],
+    "Moonglade": [
+      493
+    ],
+    "Mulgore": [
+      215
+    ],
+    "Orgrimmar": [
+      1637
+    ],
+    "Redridge Mountains": [
+      44,
+      16113
+    ],
+    "Silverpine Forest": [
+      130
+    ],
+    "Stonetalon Mountains": [
+      406
+    ],
+    "Stormwind City": [
+      1519,
+      16509
+    ],
+    "Stranglethorn Vale": [
+      33,
+      16117
+    ],
+    "Swamp of Sorrows": [
+      8,
+      16116
+    ],
+    "Tanaris": [
+      440
+    ],
+    "Teldrassil": [
+      141
+    ],
+    "The Barrens": [
+      17
+    ],
+    "The Hinterlands": [
+      47,
+      16029
+    ],
+    "Thousand Needles": [
+      400
+    ],
+    "Thunder Bluff": [
+      1638
+    ],
+    "Tirisfal Glades": [
+      85
+    ],
+    "Un'Goro Crater": [
+      490
+    ],
+    "Undercity": [
+      1497
+    ],
+    "Western Plaguelands": [
+      28
+    ],
+    "Westfall": [
+      40,
+      16149
+    ],
+    "Wetlands": [
+      11
+    ],
+    "Winterspring": [
+      618
+    ]
+  },
+  "locales": {
+    "ruRU": {
+      "Alterac Mountains": {
+        "source": "Alterac Mountains",
+        "name": "Альтеракские горы",
+        "observations": {
+          "36": "Альтеракские горы"
+        }
+      },
+      "Arathi Highlands": {
+        "source": "Arathi Highlands",
+        "name": "Нагорье Арати",
+        "observations": {
+          "45": "Нагорье Арати"
+        }
+      },
+      "Ashenvale": {
+        "source": "Ashenvale",
+        "name": "Ясеневый лес",
+        "observations": {
+          "331": "Ясеневый лес",
+          "16169": "Ясеневый лес"
+        }
+      },
+      "Azshara": {
+        "source": "Azshara",
+        "name": "Азшара",
+        "observations": {
+          "16": "Азшара",
+          "16003": "Азшара"
+        }
+      },
+      "Badlands": {
+        "source": "Badlands",
+        "name": "Бесплодные земли",
+        "observations": {
+          "3": "Бесплодные земли"
+        }
+      },
+      "Blackrock Mountain": {
+        "source": "Blackrock Mountain",
+        "name": "Черная гора",
+        "observations": {
+          "25": "Черная гора"
+        }
+      },
+      "Blasted Lands": {
+        "source": "Blasted Lands",
+        "name": "Выжженные земли",
+        "observations": {
+          "4": "Выжженные земли",
+          "16115": "Выжженные земли"
+        }
+      },
+      "Burning Steppes": {
+        "source": "Burning Steppes",
+        "name": "Пылающие степи",
+        "observations": {
+          "46": "Пылающие степи",
+          "16508": "Пылающие степи"
+        }
+      },
+      "Darkshore": {
+        "source": "Darkshore",
+        "name": "Темные берега",
+        "observations": {
+          "148": "Темные берега"
+        }
+      },
+      "Darnassus": {
+        "source": "Darnassus",
+        "name": "Дарнасс",
+        "observations": {
+          "1657": "Дарнасс"
+        }
+      },
+      "Desolace": {
+        "source": "Desolace",
+        "name": "Пустоши",
+        "observations": {
+          "405": "Пустоши",
+          "16017": "Пустоши"
+        }
+      },
+      "Dun Morogh": {
+        "source": "Dun Morogh",
+        "name": "Дун Морог",
+        "observations": {
+          "1": "Дун Морог"
+        }
+      },
+      "Durotar": {
+        "source": "Durotar",
+        "name": "Дуротар",
+        "observations": {
+          "14": "Дуротар"
+        }
+      },
+      "Duskwood": {
+        "source": "Duskwood",
+        "name": "Сумеречный лес",
+        "observations": {
+          "10": "Сумеречный лес",
+          "16119": "Сумеречный лес",
+          "16148": "Сумеречный лес"
+        }
+      },
+      "Dustwallow Marsh": {
+        "source": "Dustwallow Marsh",
+        "name": "Пылевые топи",
+        "observations": {
+          "15": "Пылевые топи"
+        }
+      },
+      "Eastern Plaguelands": {
+        "source": "Eastern Plaguelands",
+        "name": "Восточные Чумные земли",
+        "observations": {
+          "139": "Восточные Чумные земли",
+          "16028": "Восточные Чумные земли"
+        }
+      },
+      "Elwynn Forest": {
+        "source": "Elwynn Forest",
+        "name": "Элвиннский лес",
+        "observations": {
+          "12": "Элвиннский лес",
+          "16118": "Элвиннский лес",
+          "16147": "Элвиннский лес",
+          "16510": "Элвиннский лес"
+        }
+      },
+      "Felwood": {
+        "source": "Felwood",
+        "name": "Оскверненный лес",
+        "observations": {
+          "361": "Оскверненный лес",
+          "15809": "Оскверненный лес"
+        }
+      },
+      "Feralas": {
+        "source": "Feralas",
+        "name": "Фералас",
+        "observations": {
+          "357": "Фералас",
+          "16018": "Фералас"
+        }
+      },
+      "Hillsbrad Foothills": {
+        "source": "Hillsbrad Foothills",
+        "name": "Предгорья Хилсбрада",
+        "observations": {
+          "267": "Предгорья Хилсбрада",
+          "16562": "Предгорья Хилсбрада"
+        }
+      },
+      "Ironforge": {
+        "source": "Ironforge",
+        "name": "Стальгорн",
+        "observations": {
+          "1537": "Стальгорн"
+        }
+      },
+      "Loch Modan": {
+        "source": "Loch Modan",
+        "name": "Лок Модан",
+        "observations": {
+          "38": "Лок Модан"
+        }
+      },
+      "Moonglade": {
+        "source": "Moonglade",
+        "name": "Лунная поляна",
+        "observations": {
+          "493": "Лунная поляна"
+        }
+      },
+      "Mulgore": {
+        "source": "Mulgore",
+        "name": "Мулгор",
+        "observations": {
+          "215": "Мулгор"
+        }
+      },
+      "Orgrimmar": {
+        "source": "Orgrimmar",
+        "name": "Оргриммар",
+        "observations": {
+          "1637": "Оргриммар"
+        }
+      },
+      "Redridge Mountains": {
+        "source": "Redridge Mountains",
+        "name": "Красногорье",
+        "observations": {
+          "44": "Красногорье",
+          "16113": "Красногорье"
+        }
+      },
+      "Silverpine Forest": {
+        "source": "Silverpine Forest",
+        "name": "Серебряный бор",
+        "observations": {
+          "130": "Серебряный бор"
+        }
+      },
+      "Stonetalon Mountains": {
+        "source": "Stonetalon Mountains",
+        "name": "Когтистые горы",
+        "observations": {
+          "406": "Когтистые горы"
+        }
+      },
+      "Stormwind City": {
+        "source": "Stormwind City",
+        "name": "Штормград",
+        "observations": {
+          "1519": "Штормград",
+          "16509": "Штормград"
+        }
+      },
+      "Stranglethorn Vale": {
+        "source": "Stranglethorn Vale",
+        "name": "Тернистая долина",
+        "observations": {
+          "33": "Тернистая долина",
+          "16117": "Тернистая долина"
+        }
+      },
+      "Swamp of Sorrows": {
+        "source": "Swamp of Sorrows",
+        "name": "Болото Печали",
+        "observations": {
+          "8": "Болото Печали",
+          "16116": "Болото Печали"
+        }
+      },
+      "Tanaris": {
+        "source": "Tanaris",
+        "name": "Танарис",
+        "observations": {
+          "440": "Танарис"
+        }
+      },
+      "Teldrassil": {
+        "source": "Teldrassil",
+        "name": "Тельдрассил",
+        "observations": {
+          "141": "Тельдрассил"
+        }
+      },
+      "The Barrens": {
+        "source": "The Barrens",
+        "name": "Степи",
+        "observations": {
+          "17": "Степи"
+        }
+      },
+      "The Hinterlands": {
+        "source": "The Hinterlands",
+        "name": "Внутренние земли",
+        "observations": {
+          "47": "Внутренние земли",
+          "16029": "Внутренние земли"
+        }
+      },
+      "Thousand Needles": {
+        "source": "Thousand Needles",
+        "name": "Тысяча Игл",
+        "observations": {
+          "400": "Тысяча Игл"
+        }
+      },
+      "Thunder Bluff": {
+        "source": "Thunder Bluff",
+        "name": "Громовой Утес",
+        "observations": {
+          "1638": "Громовой Утес"
+        }
+      },
+      "Tirisfal Glades": {
+        "source": "Tirisfal Glades",
+        "name": "Тирисфальские леса",
+        "observations": {
+          "85": "Тирисфальские леса"
+        }
+      },
+      "Un'Goro Crater": {
+        "source": "Un'Goro Crater",
+        "name": "Кратер Ун'Горо",
+        "observations": {
+          "490": "Кратер Ун'Горо"
+        }
+      },
+      "Undercity": {
+        "source": "Undercity",
+        "name": "Подгород",
+        "observations": {
+          "1497": "Подгород"
+        }
+      },
+      "Western Plaguelands": {
+        "source": "Western Plaguelands",
+        "name": "Западные Чумные земли",
+        "observations": {
+          "28": "Западные Чумные земли"
+        }
+      },
+      "Wetlands": {
+        "source": "Wetlands",
+        "name": "Болотина",
+        "observations": {
+          "11": "Болотина"
+        }
+      },
+      "Winterspring": {
+        "source": "Winterspring",
+        "name": "Зимние Ключи",
+        "observations": {
+          "618": "Зимние Ключи"
+        }
+      }
+    },
+    "zhCN": {
+      "Alterac Mountains": {
+        "source": "Alterac Mountains",
+        "name": "奥特兰克山脉",
+        "observations": {
+          "36": "奥特兰克山脉"
+        }
+      },
+      "Arathi Highlands": {
+        "source": "Arathi Highlands",
+        "name": "阿拉希高地",
+        "observations": {
+          "45": "阿拉希高地"
+        }
+      },
+      "Ashenvale": {
+        "source": "Ashenvale",
+        "name": "灰谷",
+        "observations": {
+          "331": "灰谷",
+          "16169": "灰谷"
+        }
+      },
+      "Azshara": {
+        "source": "Azshara",
+        "name": "艾萨拉",
+        "observations": {
+          "16": "艾萨拉",
+          "16003": "艾萨拉"
+        }
+      },
+      "Badlands": {
+        "source": "Badlands",
+        "name": "荒芜之地",
+        "observations": {
+          "3": "荒芜之地"
+        }
+      },
+      "Blackrock Mountain": {
+        "source": "Blackrock Mountain",
+        "name": "黑石山",
+        "observations": {
+          "25": "黑石山"
+        }
+      },
+      "Blasted Lands": {
+        "source": "Blasted Lands",
+        "name": "诅咒之地",
+        "observations": {
+          "4": "诅咒之地",
+          "16115": "诅咒之地"
+        }
+      },
+      "Burning Steppes": {
+        "source": "Burning Steppes",
+        "name": "燃烧平原",
+        "observations": {
+          "46": "燃烧平原",
+          "16508": "燃烧平原"
+        }
+      },
+      "Darkshore": {
+        "source": "Darkshore",
+        "name": "黑海岸",
+        "observations": {
+          "148": "黑海岸"
+        }
+      },
+      "Darnassus": {
+        "source": "Darnassus",
+        "name": "达纳苏斯",
+        "observations": {
+          "1657": "达纳苏斯"
+        }
+      },
+      "Desolace": {
+        "source": "Desolace",
+        "name": "凄凉之地",
+        "observations": {
+          "405": "凄凉之地",
+          "16017": "凄凉之地"
+        }
+      },
+      "Dun Morogh": {
+        "source": "Dun Morogh",
+        "name": "丹莫罗",
+        "observations": {
+          "1": "丹莫罗"
+        }
+      },
+      "Durotar": {
+        "source": "Durotar",
+        "name": "杜隆塔尔",
+        "observations": {
+          "14": "杜隆塔尔"
+        }
+      },
+      "Duskwood": {
+        "source": "Duskwood",
+        "name": "暮色森林",
+        "observations": {
+          "10": "暮色森林",
+          "16119": "暮色森林",
+          "16148": "暮色森林"
+        }
+      },
+      "Dustwallow Marsh": {
+        "source": "Dustwallow Marsh",
+        "name": "尘泥沼泽",
+        "observations": {
+          "15": "尘泥沼泽"
+        }
+      },
+      "Eastern Plaguelands": {
+        "source": "Eastern Plaguelands",
+        "name": "东瘟疫之地",
+        "observations": {
+          "139": "东瘟疫之地",
+          "16028": "东瘟疫之地"
+        }
+      },
+      "Elwynn Forest": {
+        "source": "Elwynn Forest",
+        "name": "艾尔文森林",
+        "observations": {
+          "12": "艾尔文森林",
+          "16118": "艾尔文森林",
+          "16147": "艾尔文森林",
+          "16510": "艾尔文森林"
+        }
+      },
+      "Felwood": {
+        "source": "Felwood",
+        "name": "费伍德森林",
+        "observations": {
+          "361": "费伍德森林",
+          "15809": "费伍德森林"
+        }
+      },
+      "Feralas": {
+        "source": "Feralas",
+        "name": "菲拉斯",
+        "observations": {
+          "357": "菲拉斯",
+          "16018": "菲拉斯"
+        }
+      },
+      "Hillsbrad Foothills": {
+        "source": "Hillsbrad Foothills",
+        "name": "希尔斯布莱德丘陵",
+        "observations": {
+          "267": "希尔斯布莱德丘陵",
+          "16562": "希尔斯布莱德丘陵"
+        }
+      },
+      "Ironforge": {
+        "source": "Ironforge",
+        "name": "铁炉堡",
+        "observations": {
+          "1537": "铁炉堡"
+        }
+      },
+      "Loch Modan": {
+        "source": "Loch Modan",
+        "name": "洛克莫丹",
+        "observations": {
+          "38": "洛克莫丹"
+        }
+      },
+      "Moonglade": {
+        "source": "Moonglade",
+        "name": "月光林地",
+        "observations": {
+          "493": "月光林地"
+        }
+      },
+      "Mulgore": {
+        "source": "Mulgore",
+        "name": "莫高雷",
+        "observations": {
+          "215": "莫高雷"
+        }
+      },
+      "Orgrimmar": {
+        "source": "Orgrimmar",
+        "name": "奥格瑞玛",
+        "observations": {
+          "1637": "奥格瑞玛"
+        }
+      },
+      "Redridge Mountains": {
+        "source": "Redridge Mountains",
+        "name": "赤脊山",
+        "observations": {
+          "44": "赤脊山",
+          "16113": "赤脊山"
+        }
+      },
+      "Silverpine Forest": {
+        "source": "Silverpine Forest",
+        "name": "银松森林",
+        "observations": {
+          "130": "银松森林"
+        }
+      },
+      "Stonetalon Mountains": {
+        "source": "Stonetalon Mountains",
+        "name": "石爪山脉",
+        "observations": {
+          "406": "石爪山脉"
+        }
+      },
+      "Stormwind City": {
+        "source": "Stormwind City",
+        "name": "暴风城",
+        "observations": {
+          "1519": "暴风城",
+          "16509": "暴风城"
+        }
+      },
+      "Stranglethorn Vale": {
+        "source": "Stranglethorn Vale",
+        "name": "荆棘谷",
+        "observations": {
+          "33": "荆棘谷",
+          "16117": "荆棘谷"
+        }
+      },
+      "Swamp of Sorrows": {
+        "source": "Swamp of Sorrows",
+        "name": "悲伤沼泽",
+        "observations": {
+          "8": "悲伤沼泽",
+          "16116": "悲伤沼泽"
+        }
+      },
+      "Tanaris": {
+        "source": "Tanaris",
+        "name": "塔纳利斯",
+        "observations": {
+          "440": "塔纳利斯"
+        }
+      },
+      "Teldrassil": {
+        "source": "Teldrassil",
+        "name": "泰达希尔",
+        "observations": {
+          "141": "泰达希尔"
+        }
+      },
+      "The Barrens": {
+        "source": "The Barrens",
+        "name": "贫瘠之地",
+        "observations": {
+          "17": "贫瘠之地"
+        }
+      },
+      "The Hinterlands": {
+        "source": "The Hinterlands",
+        "name": "辛特兰",
+        "observations": {
+          "47": "辛特兰",
+          "16029": "辛特兰"
+        }
+      },
+      "Thousand Needles": {
+        "source": "Thousand Needles",
+        "name": "千针石林",
+        "observations": {
+          "400": "千针石林"
+        }
+      },
+      "Thunder Bluff": {
+        "source": "Thunder Bluff",
+        "name": "雷霆崖",
+        "observations": {
+          "1638": "雷霆崖"
+        }
+      },
+      "Tirisfal Glades": {
+        "source": "Tirisfal Glades",
+        "name": "提瑞斯法林地",
+        "observations": {
+          "85": "提瑞斯法林地"
+        }
+      },
+      "Un'Goro Crater": {
+        "source": "Un'Goro Crater",
+        "name": "安戈洛环形山",
+        "observations": {
+          "490": "安戈洛环形山"
+        }
+      },
+      "Undercity": {
+        "source": "Undercity",
+        "name": "幽暗城",
+        "observations": {
+          "1497": "幽暗城"
+        }
+      },
+      "Western Plaguelands": {
+        "source": "Western Plaguelands",
+        "name": "西瘟疫之地",
+        "observations": {
+          "28": "西瘟疫之地"
+        }
+      },
+      "Westfall": {
+        "source": "Westfall",
+        "name": "西部荒野",
+        "observations": {
+          "40": "西部荒野",
+          "16149": "西部荒野"
+        }
+      },
+      "Wetlands": {
+        "source": "Wetlands",
+        "name": "湿地",
+        "observations": {
+          "11": "湿地"
+        }
+      },
+      "Winterspring": {
+        "source": "Winterspring",
+        "name": "冬泉谷",
+        "observations": {
+          "618": "冬泉谷"
+        }
+      }
+    },
+    "zhTW": {
+      "Alterac Mountains": {
+        "source": "Alterac Mountains",
+        "name": "奧特蘭克山脈",
+        "observations": {
+          "36": "奧特蘭克山脈"
+        }
+      },
+      "Arathi Highlands": {
+        "source": "Arathi Highlands",
+        "name": "阿拉希高地",
+        "observations": {
+          "45": "阿拉希高地"
+        }
+      },
+      "Ashenvale": {
+        "source": "Ashenvale",
+        "name": "梣谷",
+        "observations": {
+          "331": "梣谷",
+          "16169": "梣谷"
+        }
+      },
+      "Azshara": {
+        "source": "Azshara",
+        "name": "艾薩拉",
+        "observations": {
+          "16": "艾薩拉",
+          "16003": "艾薩拉"
+        }
+      },
+      "Badlands": {
+        "source": "Badlands",
+        "name": "荒蕪之地",
+        "observations": {
+          "3": "荒蕪之地"
+        }
+      },
+      "Blackrock Mountain": {
+        "source": "Blackrock Mountain",
+        "name": "黑石山",
+        "observations": {
+          "25": "黑石山"
+        }
+      },
+      "Blasted Lands": {
+        "source": "Blasted Lands",
+        "name": "詛咒之地",
+        "observations": {
+          "4": "詛咒之地",
+          "16115": "詛咒之地"
+        }
+      },
+      "Burning Steppes": {
+        "source": "Burning Steppes",
+        "name": "燃燒平原",
+        "observations": {
+          "46": "燃燒平原",
+          "16508": "燃燒平原"
+        }
+      },
+      "Darkshore": {
+        "source": "Darkshore",
+        "name": "黑海岸",
+        "observations": {
+          "148": "黑海岸"
+        }
+      },
+      "Darnassus": {
+        "source": "Darnassus",
+        "name": "達納蘇斯",
+        "observations": {
+          "1657": "達納蘇斯"
+        }
+      },
+      "Desolace": {
+        "source": "Desolace",
+        "name": "淒涼之地",
+        "observations": {
+          "405": "淒涼之地",
+          "16017": "淒涼之地"
+        }
+      },
+      "Dun Morogh": {
+        "source": "Dun Morogh",
+        "name": "丹莫洛",
+        "observations": {
+          "1": "丹莫洛"
+        }
+      },
+      "Durotar": {
+        "source": "Durotar",
+        "name": "杜洛塔",
+        "observations": {
+          "14": "杜洛塔"
+        }
+      },
+      "Duskwood": {
+        "source": "Duskwood",
+        "name": "暮色森林",
+        "observations": {
+          "10": "暮色森林",
+          "16119": "暮色森林",
+          "16148": "暮色森林"
+        }
+      },
+      "Dustwallow Marsh": {
+        "source": "Dustwallow Marsh",
+        "name": "塵泥沼澤",
+        "observations": {
+          "15": "塵泥沼澤"
+        }
+      },
+      "Eastern Plaguelands": {
+        "source": "Eastern Plaguelands",
+        "name": "東瘟疫之地",
+        "observations": {
+          "139": "東瘟疫之地",
+          "16028": "東瘟疫之地"
+        }
+      },
+      "Elwynn Forest": {
+        "source": "Elwynn Forest",
+        "name": "艾爾文森林",
+        "observations": {
+          "12": "艾爾文森林",
+          "16118": "艾爾文森林",
+          "16147": "艾爾文森林",
+          "16510": "艾爾文森林"
+        }
+      },
+      "Felwood": {
+        "source": "Felwood",
+        "name": "費伍德森林",
+        "observations": {
+          "361": "費伍德森林",
+          "15809": "費伍德森林"
+        }
+      },
+      "Feralas": {
+        "source": "Feralas",
+        "name": "菲拉斯",
+        "observations": {
+          "357": "菲拉斯",
+          "16018": "菲拉斯"
+        }
+      },
+      "Hillsbrad Foothills": {
+        "source": "Hillsbrad Foothills",
+        "name": "希爾斯布萊德丘陵",
+        "observations": {
+          "267": "希爾斯布萊德丘陵",
+          "16562": "希爾斯布萊德丘陵"
+        }
+      },
+      "Ironforge": {
+        "source": "Ironforge",
+        "name": "鐵爐堡",
+        "observations": {
+          "1537": "鐵爐堡"
+        }
+      },
+      "Loch Modan": {
+        "source": "Loch Modan",
+        "name": "洛克莫丹",
+        "observations": {
+          "38": "洛克莫丹"
+        }
+      },
+      "Moonglade": {
+        "source": "Moonglade",
+        "name": "月光林地",
+        "observations": {
+          "493": "月光林地"
+        }
+      },
+      "Mulgore": {
+        "source": "Mulgore",
+        "name": "莫高雷",
+        "observations": {
+          "215": "莫高雷"
+        }
+      },
+      "Orgrimmar": {
+        "source": "Orgrimmar",
+        "name": "奧格瑪",
+        "observations": {
+          "1637": "奧格瑪"
+        }
+      },
+      "Redridge Mountains": {
+        "source": "Redridge Mountains",
+        "name": "赤脊山",
+        "observations": {
+          "44": "赤脊山",
+          "16113": "赤脊山"
+        }
+      },
+      "Silverpine Forest": {
+        "source": "Silverpine Forest",
+        "name": "銀松森林",
+        "observations": {
+          "130": "銀松森林"
+        }
+      },
+      "Stonetalon Mountains": {
+        "source": "Stonetalon Mountains",
+        "name": "石爪山脈",
+        "observations": {
+          "406": "石爪山脈"
+        }
+      },
+      "Stormwind City": {
+        "source": "Stormwind City",
+        "name": "暴風城",
+        "observations": {
+          "1519": "暴風城",
+          "16509": "暴風城"
+        }
+      },
+      "Stranglethorn Vale": {
+        "source": "Stranglethorn Vale",
+        "name": "荊棘谷",
+        "observations": {
+          "33": "荊棘谷",
+          "16117": "荊棘谷"
+        }
+      },
+      "Swamp of Sorrows": {
+        "source": "Swamp of Sorrows",
+        "name": "悲傷沼澤",
+        "observations": {
+          "8": "悲傷沼澤",
+          "16116": "悲傷沼澤"
+        }
+      },
+      "Tanaris": {
+        "source": "Tanaris",
+        "name": "塔納利斯",
+        "observations": {
+          "440": "塔納利斯"
+        }
+      },
+      "Teldrassil": {
+        "source": "Teldrassil",
+        "name": "泰達希爾",
+        "observations": {
+          "141": "泰達希爾"
+        }
+      },
+      "The Barrens": {
+        "source": "The Barrens",
+        "name": "貧瘠之地",
+        "observations": {
+          "17": "貧瘠之地"
+        }
+      },
+      "The Hinterlands": {
+        "source": "The Hinterlands",
+        "name": "辛特蘭",
+        "observations": {
+          "47": "辛特蘭",
+          "16029": "辛特蘭"
+        }
+      },
+      "Thousand Needles": {
+        "source": "Thousand Needles",
+        "name": "千針石林",
+        "observations": {
+          "400": "千針石林"
+        }
+      },
+      "Thunder Bluff": {
+        "source": "Thunder Bluff",
+        "name": "雷霆崖",
+        "observations": {
+          "1638": "雷霆崖"
+        }
+      },
+      "Tirisfal Glades": {
+        "source": "Tirisfal Glades",
+        "name": "提里斯法林地",
+        "observations": {
+          "85": "提里斯法林地"
+        }
+      },
+      "Un'Goro Crater": {
+        "source": "Un'Goro Crater",
+        "name": "安戈洛環形山",
+        "observations": {
+          "490": "安戈洛環形山"
+        }
+      },
+      "Undercity": {
+        "source": "Undercity",
+        "name": "幽暗城",
+        "observations": {
+          "1497": "幽暗城"
+        }
+      },
+      "Western Plaguelands": {
+        "source": "Western Plaguelands",
+        "name": "西瘟疫之地",
+        "observations": {
+          "28": "西瘟疫之地"
+        }
+      },
+      "Westfall": {
+        "source": "Westfall",
+        "name": "西部荒野",
+        "observations": {
+          "40": "西部荒野",
+          "16149": "西部荒野"
+        }
+      },
+      "Wetlands": {
+        "source": "Wetlands",
+        "name": "濕地",
+        "observations": {
+          "11": "濕地"
+        }
+      },
+      "Winterspring": {
+        "source": "Winterspring",
+        "name": "冬泉谷",
+        "observations": {
+          "618": "冬泉谷"
+        }
+      }
+    },
+    "deDE": {
+      "Alterac Mountains": {
+        "source": "Alterac Mountains",
+        "name": "Alteracgebirge",
+        "observations": {
+          "36": "Alteracgebirge"
+        }
+      },
+      "Arathi Highlands": {
+        "source": "Arathi Highlands",
+        "name": "Arathihochland",
+        "observations": {
+          "45": "Arathihochland"
+        }
+      },
+      "Badlands": {
+        "source": "Badlands",
+        "name": "Ödland",
+        "observations": {
+          "3": "Ödland"
+        }
+      },
+      "Blackrock Mountain": {
+        "source": "Blackrock Mountain",
+        "name": "Der Blackrock",
+        "observations": {
+          "25": "Der Blackrock"
+        }
+      },
+      "Blasted Lands": {
+        "source": "Blasted Lands",
+        "name": "Verwüstete Lande",
+        "observations": {
+          "4": "Verwüstete Lande",
+          "16115": "Verwüstete Lande"
+        }
+      },
+      "Burning Steppes": {
+        "source": "Burning Steppes",
+        "name": "Brennende Steppe",
+        "observations": {
+          "46": "Brennende Steppe",
+          "16508": "Brennende Steppe"
+        }
+      },
+      "Darkshore": {
+        "source": "Darkshore",
+        "name": "Dunkelküste",
+        "observations": {
+          "148": "Dunkelküste"
+        }
+      },
+      "Duskwood": {
+        "source": "Duskwood",
+        "name": "Dämmerwald",
+        "observations": {
+          "10": "Dämmerwald",
+          "16119": "Dämmerwald",
+          "16148": "Dämmerwald"
+        }
+      },
+      "Dustwallow Marsh": {
+        "source": "Dustwallow Marsh",
+        "name": "Marschen von Dustwallow",
+        "observations": {
+          "15": "Marschen von Dustwallow"
+        }
+      },
+      "Eastern Plaguelands": {
+        "source": "Eastern Plaguelands",
+        "name": "Östliche Pestländer",
+        "observations": {
+          "139": "Östliche Pestländer",
+          "16028": "Östliche Pestländer"
+        }
+      },
+      "Elwynn Forest": {
+        "source": "Elwynn Forest",
+        "name": "Wald von Elwynn",
+        "observations": {
+          "12": "Wald von Elwynn",
+          "16118": "Wald von Elwynn",
+          "16147": "Wald von Elwynn",
+          "16510": "Wald von Elwynn"
+        }
+      },
+      "Felwood": {
+        "source": "Felwood",
+        "name": "Teufelswald",
+        "observations": {
+          "361": "Teufelswald",
+          "15809": "Teufelswald"
+        }
+      },
+      "Hillsbrad Foothills": {
+        "source": "Hillsbrad Foothills",
+        "name": "Vorgebirge von Hillsbrad",
+        "observations": {
+          "267": "Vorgebirge von Hillsbrad",
+          "16562": "Vorgebirge von Hillsbrad"
+        }
+      },
+      "Redridge Mountains": {
+        "source": "Redridge Mountains",
+        "name": "Rotkammgebirge",
+        "observations": {
+          "44": "Rotkammgebirge",
+          "16113": "Rotkammgebirge"
+        }
+      },
+      "Silverpine Forest": {
+        "source": "Silverpine Forest",
+        "name": "Silberwald",
+        "observations": {
+          "130": "Silberwald"
+        }
+      },
+      "Stonetalon Mountains": {
+        "source": "Stonetalon Mountains",
+        "name": "Steinkrallengebirge",
+        "observations": {
+          "406": "Steinkrallengebirge"
+        }
+      },
+      "Stranglethorn Vale": {
+        "source": "Stranglethorn Vale",
+        "name": "Schlingendorntal",
+        "observations": {
+          "33": "Schlingendorntal",
+          "16117": "Schlingendorntal"
+        }
+      },
+      "Swamp of Sorrows": {
+        "source": "Swamp of Sorrows",
+        "name": "Sümpfe des Elends",
+        "observations": {
+          "8": "Sümpfe des Elends",
+          "16116": "Sümpfe des Elends"
+        }
+      },
+      "The Barrens": {
+        "source": "The Barrens",
+        "name": "Brachland",
+        "observations": {
+          "17": "Brachland"
+        }
+      },
+      "The Hinterlands": {
+        "source": "The Hinterlands",
+        "name": "Hinterland",
+        "observations": {
+          "47": "Hinterland",
+          "16029": "Hinterland"
+        }
+      },
+      "Thousand Needles": {
+        "source": "Thousand Needles",
+        "name": "Tausend Nadeln",
+        "observations": {
+          "400": "Tausend Nadeln"
+        }
+      },
+      "Tirisfal Glades": {
+        "source": "Tirisfal Glades",
+        "name": "Tirisfal",
+        "observations": {
+          "85": "Tirisfal"
+        }
+      },
+      "Un'Goro Crater": {
+        "source": "Un'Goro Crater",
+        "name": "Un'Goro-Krater",
+        "observations": {
+          "490": "Un'Goro-Krater"
+        }
+      },
+      "Western Plaguelands": {
+        "source": "Western Plaguelands",
+        "name": "Westliche Pestländer",
+        "observations": {
+          "28": "Westliche Pestländer"
+        }
+      },
+      "Wetlands": {
+        "source": "Wetlands",
+        "name": "Sumpfland",
+        "observations": {
+          "11": "Sumpfland"
+        }
+      }
+    },
+    "frFR": {
+      "Alterac Mountains": {
+        "source": "Alterac Mountains",
+        "name": "Montagnes d'Alterac",
+        "observations": {
+          "36": "Montagnes d'Alterac"
+        }
+      },
+      "Arathi Highlands": {
+        "source": "Arathi Highlands",
+        "name": "Hautes-terres Arathies",
+        "observations": {
+          "45": "Hautes-terres Arathies"
+        }
+      },
+      "Ashenvale": {
+        "source": "Ashenvale",
+        "name": "Orneval",
+        "observations": {
+          "331": "Orneval",
+          "16169": "Orneval"
+        }
+      },
+      "Badlands": {
+        "source": "Badlands",
+        "name": "Terres ingrates (Badlands)",
+        "observations": {
+          "3": "Terres ingrates (Badlands)"
+        }
+      },
+      "Blackrock Mountain": {
+        "source": "Blackrock Mountain",
+        "name": "Mont Rochenoire",
+        "observations": {
+          "25": "Mont Rochenoire"
+        }
+      },
+      "Blasted Lands": {
+        "source": "Blasted Lands",
+        "name": "Terres foudroyées",
+        "observations": {
+          "4": "Terres foudroyées",
+          "16115": "Terres foudroyées"
+        }
+      },
+      "Darkshore": {
+        "source": "Darkshore",
+        "name": "Sombrivage (Darkshore)",
+        "observations": {
+          "148": "Sombrivage (Darkshore)"
+        }
+      },
+      "Dustwallow Marsh": {
+        "source": "Dustwallow Marsh",
+        "name": "Marécage d'Âprefange",
+        "observations": {
+          "15": "Marécage d'Âprefange"
+        }
+      },
+      "Hillsbrad Foothills": {
+        "source": "Hillsbrad Foothills",
+        "name": "Contreforts de Hautebrande",
+        "observations": {
+          "267": "Contreforts de Hautebrande",
+          "16562": "Contreforts de Hautebrande"
+        }
+      },
+      "Ironforge": {
+        "source": "Ironforge",
+        "name": "Forgefer",
+        "observations": {
+          "1537": "Forgefer"
+        }
+      },
+      "Moonglade": {
+        "source": "Moonglade",
+        "name": "Reflet-de-Lune",
+        "observations": {
+          "493": "Reflet-de-Lune"
+        }
+      },
+      "Redridge Mountains": {
+        "source": "Redridge Mountains",
+        "name": "Les Carmines",
+        "observations": {
+          "44": "Les Carmines",
+          "16113": "Les Carmines"
+        }
+      },
+      "Silverpine Forest": {
+        "source": "Silverpine Forest",
+        "name": "Forêt des Pins argentés (Silverpine Forest)",
+        "observations": {
+          "130": "Forêt des Pins argentés (Silverpine Forest)"
+        }
+      },
+      "Stonetalon Mountains": {
+        "source": "Stonetalon Mountains",
+        "name": "Les Serres-Rocheuses",
+        "observations": {
+          "406": "Les Serres-Rocheuses"
+        }
+      },
+      "Stormwind City": {
+        "source": "Stormwind City",
+        "name": "Hurlevent",
+        "observations": {
+          "1519": "Hurlevent",
+          "16509": "Hurlevent"
+        }
+      },
+      "Stranglethorn Vale": {
+        "source": "Stranglethorn Vale",
+        "name": "Vallée de Strangleronce",
+        "observations": {
+          "33": "Vallée de Strangleronce",
+          "16117": "Vallée de Strangleronce"
+        }
+      },
+      "Swamp of Sorrows": {
+        "source": "Swamp of Sorrows",
+        "name": "Marais des Chagrins",
+        "observations": {
+          "8": "Marais des Chagrins",
+          "16116": "Marais des Chagrins"
+        }
+      },
+      "The Barrens": {
+        "source": "The Barrens",
+        "name": "Les Tarides",
+        "observations": {
+          "17": "Les Tarides"
+        }
+      },
+      "The Hinterlands": {
+        "source": "The Hinterlands",
+        "name": "Les Hinterlands",
+        "observations": {
+          "47": "Les Hinterlands",
+          "16029": "Les Hinterlands"
+        }
+      },
+      "Thousand Needles": {
+        "source": "Thousand Needles",
+        "name": "Mille pointes",
+        "observations": {
+          "400": "Mille pointes"
+        }
+      },
+      "Tirisfal Glades": {
+        "source": "Tirisfal Glades",
+        "name": "Clairières de Tirisfal",
+        "observations": {
+          "85": "Clairières de Tirisfal"
+        }
+      },
+      "Un'Goro Crater": {
+        "source": "Un'Goro Crater",
+        "name": "Cratère d'Un'Goro",
+        "observations": {
+          "490": "Cratère d'Un'Goro"
+        }
+      },
+      "Undercity": {
+        "source": "Undercity",
+        "name": "Fossoyeuse",
+        "observations": {
+          "1497": "Fossoyeuse"
+        }
+      },
+      "Western Plaguelands": {
+        "source": "Western Plaguelands",
+        "name": "Maleterres de l’ouest",
+        "observations": {
+          "28": "Maleterres de l’ouest"
+        }
+      },
+      "Wetlands": {
+        "source": "Wetlands",
+        "name": "Les Paluns",
+        "observations": {
+          "11": "Les Paluns"
+        }
+      },
+      "Winterspring": {
+        "source": "Winterspring",
+        "name": "Berceau-de-l’Hiver",
+        "observations": {
+          "618": "Berceau-de-l’Hiver"
+        }
+      }
+    },
+    "esES": {
+      "Alterac Mountains": {
+        "source": "Alterac Mountains",
+        "name": "Montañas de Alterac",
+        "observations": {
+          "36": "Montañas de Alterac"
+        }
+      },
+      "Arathi Highlands": {
+        "source": "Arathi Highlands",
+        "name": "Tierras Altas de Arathi",
+        "observations": {
+          "45": "Tierras Altas de Arathi"
+        }
+      },
+      "Ashenvale": {
+        "source": "Ashenvale",
+        "name": "Vallefresno",
+        "observations": {
+          "331": "Vallefresno",
+          "16169": "Vallefresno"
+        }
+      },
+      "Badlands": {
+        "source": "Badlands",
+        "name": "Tierras Inhóspitas",
+        "observations": {
+          "3": "Tierras Inhóspitas"
+        }
+      },
+      "Blackrock Mountain": {
+        "source": "Blackrock Mountain",
+        "name": "Montaña Roca Negra",
+        "observations": {
+          "25": "Montaña Roca Negra"
+        }
+      },
+      "Blasted Lands": {
+        "source": "Blasted Lands",
+        "name": "Las Tierras Devastadas",
+        "observations": {
+          "4": "Las Tierras Devastadas",
+          "16115": "Las Tierras Devastadas"
+        }
+      },
+      "Burning Steppes": {
+        "source": "Burning Steppes",
+        "name": "Las Estepas Ardientes",
+        "observations": {
+          "46": "Las Estepas Ardientes",
+          "16508": "Las Estepas Ardientes"
+        }
+      },
+      "Darkshore": {
+        "source": "Darkshore",
+        "name": "Costa Oscura",
+        "observations": {
+          "148": "Costa Oscura"
+        }
+      },
+      "Duskwood": {
+        "source": "Duskwood",
+        "name": "Bosque del Ocaso",
+        "observations": {
+          "10": "Bosque del Ocaso",
+          "16119": "Bosque del Ocaso",
+          "16148": "Bosque del Ocaso"
+        }
+      },
+      "Dustwallow Marsh": {
+        "source": "Dustwallow Marsh",
+        "name": "Marjal Revolcafango",
+        "observations": {
+          "15": "Marjal Revolcafango"
+        }
+      },
+      "Eastern Plaguelands": {
+        "source": "Eastern Plaguelands",
+        "name": "Tierras de la Peste del Este",
+        "observations": {
+          "139": "Tierras de la Peste del Este",
+          "16028": "Tierras de la Peste del Este"
+        }
+      },
+      "Elwynn Forest": {
+        "source": "Elwynn Forest",
+        "name": "Bosque de Elwynn",
+        "observations": {
+          "12": "Bosque de Elwynn",
+          "16118": "Bosque de Elwynn",
+          "16147": "Bosque de Elwynn",
+          "16510": "Bosque de Elwynn"
+        }
+      },
+      "Felwood": {
+        "source": "Felwood",
+        "name": "Frondavil",
+        "observations": {
+          "361": "Frondavil",
+          "15809": "Frondavil"
+        }
+      },
+      "Hillsbrad Foothills": {
+        "source": "Hillsbrad Foothills",
+        "name": "Laderas de Trabalomas",
+        "observations": {
+          "267": "Laderas de Trabalomas",
+          "16562": "Laderas de Trabalomas"
+        }
+      },
+      "Ironforge": {
+        "source": "Ironforge",
+        "name": "Forjaz",
+        "observations": {
+          "1537": "Forjaz"
+        }
+      },
+      "Moonglade": {
+        "source": "Moonglade",
+        "name": "Claro de la Luna",
+        "observations": {
+          "493": "Claro de la Luna"
+        }
+      },
+      "Redridge Mountains": {
+        "source": "Redridge Mountains",
+        "name": "Montañas Crestagrana",
+        "observations": {
+          "44": "Montañas Crestagrana",
+          "16113": "Montañas Crestagrana"
+        }
+      },
+      "Silverpine Forest": {
+        "source": "Silverpine Forest",
+        "name": "Bosque de Argénteos",
+        "observations": {
+          "130": "Bosque de Argénteos"
+        }
+      },
+      "Stonetalon Mountains": {
+        "source": "Stonetalon Mountains",
+        "name": "Sierra Espolón",
+        "observations": {
+          "406": "Sierra Espolón"
+        }
+      },
+      "Stormwind City": {
+        "source": "Stormwind City",
+        "name": "Ciudad de Ventormenta",
+        "observations": {
+          "1519": "Ciudad de Ventormenta",
+          "16509": "Ciudad de Ventormenta"
+        }
+      },
+      "Stranglethorn Vale": {
+        "source": "Stranglethorn Vale",
+        "name": "Vega de Tuercespina",
+        "observations": {
+          "33": "Vega de Tuercespina",
+          "16117": "Vega de Tuercespina"
+        }
+      },
+      "Swamp of Sorrows": {
+        "source": "Swamp of Sorrows",
+        "name": "Pantano de las Penas",
+        "observations": {
+          "8": "Pantano de las Penas",
+          "16116": "Pantano de las Penas"
+        }
+      },
+      "The Barrens": {
+        "source": "The Barrens",
+        "name": "Los Baldíos",
+        "observations": {
+          "17": "Los Baldíos"
+        }
+      },
+      "The Hinterlands": {
+        "source": "The Hinterlands",
+        "name": "Tierras del Interior",
+        "observations": {
+          "47": "Tierras del Interior",
+          "16029": "Tierras del Interior"
+        }
+      },
+      "Thousand Needles": {
+        "source": "Thousand Needles",
+        "name": "Las Mil Agujas",
+        "observations": {
+          "400": "Las Mil Agujas"
+        }
+      },
+      "Thunder Bluff": {
+        "source": "Thunder Bluff",
+        "name": "Cima del Trueno",
+        "observations": {
+          "1638": "Cima del Trueno"
+        }
+      },
+      "Tirisfal Glades": {
+        "source": "Tirisfal Glades",
+        "name": "Claros de Tirisfal",
+        "observations": {
+          "85": "Claros de Tirisfal"
+        }
+      },
+      "Un'Goro Crater": {
+        "source": "Un'Goro Crater",
+        "name": "Cráter de Un'Goro",
+        "observations": {
+          "490": "Cráter de Un'Goro"
+        }
+      },
+      "Undercity": {
+        "source": "Undercity",
+        "name": "Entrañas",
+        "observations": {
+          "1497": "Entrañas"
+        }
+      },
+      "Western Plaguelands": {
+        "source": "Western Plaguelands",
+        "name": "Tierras de la Peste del Oeste",
+        "observations": {
+          "28": "Tierras de la Peste del Oeste"
+        }
+      },
+      "Westfall": {
+        "source": "Westfall",
+        "name": "Páramos de Poniente",
+        "observations": {
+          "40": "Páramos de Poniente",
+          "16149": "Páramos de Poniente"
+        }
+      },
+      "Wetlands": {
+        "source": "Wetlands",
+        "name": "Los Humedales",
+        "observations": {
+          "11": "Los Humedales"
+        }
+      },
+      "Winterspring": {
+        "source": "Winterspring",
+        "name": "Cuna del Invierno",
+        "observations": {
+          "618": "Cuna del Invierno"
+        }
+      }
+    },
+    "ptBR": {
+      "Alterac Mountains": {
+        "source": "Alterac Mountains",
+        "name": "Montanhas de Alterac",
+        "observations": {
+          "36": "Montanhas de Alterac"
+        }
+      },
+      "Arathi Highlands": {
+        "source": "Arathi Highlands",
+        "name": "Planalto Arathi",
+        "observations": {
+          "45": "Planalto Arathi"
+        }
+      },
+      "Ashenvale": {
+        "source": "Ashenvale",
+        "name": "Vale Gris",
+        "observations": {
+          "331": "Vale Gris",
+          "16169": "Vale Gris"
+        }
+      },
+      "Badlands": {
+        "source": "Badlands",
+        "name": "Ermos",
+        "observations": {
+          "3": "Ermos"
+        }
+      },
+      "Blackrock Mountain": {
+        "source": "Blackrock Mountain",
+        "name": "Montanha Rocha Negra",
+        "observations": {
+          "25": "Montanha Rocha Negra"
+        }
+      },
+      "Blasted Lands": {
+        "source": "Blasted Lands",
+        "name": "Barreira do Inferno",
+        "observations": {
+          "4": "Barreira do Inferno",
+          "16115": "Barreira do Inferno"
+        }
+      },
+      "Burning Steppes": {
+        "source": "Burning Steppes",
+        "name": "Estepes Ardentes",
+        "observations": {
+          "46": "Estepes Ardentes",
+          "16508": "Estepes Ardentes"
+        }
+      },
+      "Darkshore": {
+        "source": "Darkshore",
+        "name": "Costa Negra",
+        "observations": {
+          "148": "Costa Negra"
+        }
+      },
+      "Desolace": {
+        "source": "Desolace",
+        "name": "Desolação",
+        "observations": {
+          "405": "Desolação",
+          "16017": "Desolação"
+        }
+      },
+      "Duskwood": {
+        "source": "Duskwood",
+        "name": "Floresta do Crepúsculo",
+        "observations": {
+          "10": "Floresta do Crepúsculo",
+          "16119": "Floresta do Crepúsculo",
+          "16148": "Floresta do Crepúsculo"
+        }
+      },
+      "Dustwallow Marsh": {
+        "source": "Dustwallow Marsh",
+        "name": "Pântano Vadeoso",
+        "observations": {
+          "15": "Pântano Vadeoso"
+        }
+      },
+      "Eastern Plaguelands": {
+        "source": "Eastern Plaguelands",
+        "name": "Terras Pestilentas Orientais",
+        "observations": {
+          "139": "Terras Pestilentas Orientais",
+          "16028": "Terras Pestilentas Orientais"
+        }
+      },
+      "Elwynn Forest": {
+        "source": "Elwynn Forest",
+        "name": "Floresta de Elwynn",
+        "observations": {
+          "12": "Floresta de Elwynn",
+          "16118": "Floresta de Elwynn",
+          "16147": "Floresta de Elwynn",
+          "16510": "Floresta de Elwynn"
+        }
+      },
+      "Felwood": {
+        "source": "Felwood",
+        "name": "Selva Maleva",
+        "observations": {
+          "361": "Selva Maleva",
+          "15809": "Selva Maleva"
+        }
+      },
+      "Hillsbrad Foothills": {
+        "source": "Hillsbrad Foothills",
+        "name": "Contraforte de Eira dos Montes",
+        "observations": {
+          "267": "Contraforte de Eira dos Montes",
+          "16562": "Contraforte de Eira dos Montes"
+        }
+      },
+      "Ironforge": {
+        "source": "Ironforge",
+        "name": "Altaforja",
+        "observations": {
+          "1537": "Altaforja"
+        }
+      },
+      "Moonglade": {
+        "source": "Moonglade",
+        "name": "Clareira da Lua",
+        "observations": {
+          "493": "Clareira da Lua"
+        }
+      },
+      "Redridge Mountains": {
+        "source": "Redridge Mountains",
+        "name": "Montanhas Cristarrubra",
+        "observations": {
+          "44": "Montanhas Cristarrubra",
+          "16113": "Montanhas Cristarrubra"
+        }
+      },
+      "Silverpine Forest": {
+        "source": "Silverpine Forest",
+        "name": "Floresta de Pinhaprata",
+        "observations": {
+          "130": "Floresta de Pinhaprata"
+        }
+      },
+      "Stonetalon Mountains": {
+        "source": "Stonetalon Mountains",
+        "name": "Cordilheira das Torres de Pedra",
+        "observations": {
+          "406": "Cordilheira das Torres de Pedra"
+        }
+      },
+      "Stormwind City": {
+        "source": "Stormwind City",
+        "name": "Ventobravo",
+        "observations": {
+          "1519": "Ventobravo",
+          "16509": "Ventobravo"
+        }
+      },
+      "Stranglethorn Vale": {
+        "source": "Stranglethorn Vale",
+        "name": "Selva do Espinhaço",
+        "observations": {
+          "33": "Selva do Espinhaço",
+          "16117": "Selva do Espinhaço"
+        }
+      },
+      "Swamp of Sorrows": {
+        "source": "Swamp of Sorrows",
+        "name": "Pântano das Mágoas",
+        "observations": {
+          "8": "Pântano das Mágoas",
+          "16116": "Pântano das Mágoas"
+        }
+      },
+      "The Barrens": {
+        "source": "The Barrens",
+        "name": "Sertões",
+        "observations": {
+          "17": "Sertões"
+        }
+      },
+      "The Hinterlands": {
+        "source": "The Hinterlands",
+        "name": "Terras Agrestes",
+        "observations": {
+          "47": "Terras Agrestes",
+          "16029": "Terras Agrestes"
+        }
+      },
+      "Thousand Needles": {
+        "source": "Thousand Needles",
+        "name": "Mil Agulhas",
+        "observations": {
+          "400": "Mil Agulhas"
+        }
+      },
+      "Thunder Bluff": {
+        "source": "Thunder Bluff",
+        "name": "Penhasco do Trovão",
+        "observations": {
+          "1638": "Penhasco do Trovão"
+        }
+      },
+      "Tirisfal Glades": {
+        "source": "Tirisfal Glades",
+        "name": "Clareiras de Tirisfal",
+        "observations": {
+          "85": "Clareiras de Tirisfal"
+        }
+      },
+      "Un'Goro Crater": {
+        "source": "Un'Goro Crater",
+        "name": "Cratera Un'Goro",
+        "observations": {
+          "490": "Cratera Un'Goro"
+        }
+      },
+      "Undercity": {
+        "source": "Undercity",
+        "name": "Cidade Baixa",
+        "observations": {
+          "1497": "Cidade Baixa"
+        }
+      },
+      "Western Plaguelands": {
+        "source": "Western Plaguelands",
+        "name": "Terras Pestilentas Ocidentais",
+        "observations": {
+          "28": "Terras Pestilentas Ocidentais"
+        }
+      },
+      "Westfall": {
+        "source": "Westfall",
+        "name": "Cerro Oeste",
+        "observations": {
+          "40": "Cerro Oeste",
+          "16149": "Cerro Oeste"
+        }
+      },
+      "Wetlands": {
+        "source": "Wetlands",
+        "name": "Pantanal",
+        "observations": {
+          "11": "Pantanal"
+        }
+      },
+      "Winterspring": {
+        "source": "Winterspring",
+        "name": "Hibérnia",
+        "observations": {
+          "618": "Hibérnia"
+        }
+      }
+    },
+    "koKR": {
+      "Alterac Mountains": {
+        "source": "Alterac Mountains",
+        "name": "알터랙 산맥",
+        "observations": {
+          "36": "알터랙 산맥"
+        }
+      },
+      "Arathi Highlands": {
+        "source": "Arathi Highlands",
+        "name": "아라시 고원",
+        "observations": {
+          "45": "아라시 고원"
+        }
+      },
+      "Ashenvale": {
+        "source": "Ashenvale",
+        "name": "잿빛 골짜기",
+        "observations": {
+          "331": "잿빛 골짜기",
+          "16169": "잿빛 골짜기"
+        }
+      },
+      "Azshara": {
+        "source": "Azshara",
+        "name": "아즈샤라",
+        "observations": {
+          "16": "아즈샤라",
+          "16003": "아즈샤라"
+        }
+      },
+      "Badlands": {
+        "source": "Badlands",
+        "name": "황야의 땅",
+        "observations": {
+          "3": "황야의 땅"
+        }
+      },
+      "Blackrock Mountain": {
+        "source": "Blackrock Mountain",
+        "name": "검은바위 산",
+        "observations": {
+          "25": "검은바위 산"
+        }
+      },
+      "Blasted Lands": {
+        "source": "Blasted Lands",
+        "name": "저주받은 땅",
+        "observations": {
+          "4": "저주받은 땅",
+          "16115": "저주받은 땅"
+        }
+      },
+      "Burning Steppes": {
+        "source": "Burning Steppes",
+        "name": "불타는 평원",
+        "observations": {
+          "46": "불타는 평원",
+          "16508": "불타는 평원"
+        }
+      },
+      "Darkshore": {
+        "source": "Darkshore",
+        "name": "어둠의 해안",
+        "observations": {
+          "148": "어둠의 해안"
+        }
+      },
+      "Darnassus": {
+        "source": "Darnassus",
+        "name": "다르나서스",
+        "observations": {
+          "1657": "다르나서스"
+        }
+      },
+      "Desolace": {
+        "source": "Desolace",
+        "name": "잊혀진 땅",
+        "observations": {
+          "405": "잊혀진 땅",
+          "16017": "잊혀진 땅"
+        }
+      },
+      "Dun Morogh": {
+        "source": "Dun Morogh",
+        "name": "던 모로",
+        "observations": {
+          "1": "던 모로"
+        }
+      },
+      "Durotar": {
+        "source": "Durotar",
+        "name": "듀로타",
+        "observations": {
+          "14": "듀로타"
+        }
+      },
+      "Duskwood": {
+        "source": "Duskwood",
+        "name": "그늘숲",
+        "observations": {
+          "10": "그늘숲",
+          "16119": "그늘숲",
+          "16148": "그늘숲"
+        }
+      },
+      "Dustwallow Marsh": {
+        "source": "Dustwallow Marsh",
+        "name": "먼지진흙 습지대",
+        "observations": {
+          "15": "먼지진흙 습지대"
+        }
+      },
+      "Eastern Plaguelands": {
+        "source": "Eastern Plaguelands",
+        "name": "동부 역병지대",
+        "observations": {
+          "139": "동부 역병지대",
+          "16028": "동부 역병지대"
+        }
+      },
+      "Elwynn Forest": {
+        "source": "Elwynn Forest",
+        "name": "엘윈 숲",
+        "observations": {
+          "12": "엘윈 숲",
+          "16118": "엘윈 숲",
+          "16147": "엘윈 숲",
+          "16510": "엘윈 숲"
+        }
+      },
+      "Felwood": {
+        "source": "Felwood",
+        "name": "악령의 숲",
+        "observations": {
+          "361": "악령의 숲",
+          "15809": "악령의 숲"
+        }
+      },
+      "Feralas": {
+        "source": "Feralas",
+        "name": "페랄라스",
+        "observations": {
+          "357": "페랄라스",
+          "16018": "페랄라스"
+        }
+      },
+      "Hillsbrad Foothills": {
+        "source": "Hillsbrad Foothills",
+        "name": "힐스브래드 구릉지",
+        "observations": {
+          "267": "힐스브래드 구릉지",
+          "16562": "힐스브래드 구릉지"
+        }
+      },
+      "Ironforge": {
+        "source": "Ironforge",
+        "name": "아이언포지",
+        "observations": {
+          "1537": "아이언포지"
+        }
+      },
+      "Loch Modan": {
+        "source": "Loch Modan",
+        "name": "모단 호수",
+        "observations": {
+          "38": "모단 호수"
+        }
+      },
+      "Moonglade": {
+        "source": "Moonglade",
+        "name": "달의 숲",
+        "observations": {
+          "493": "달의 숲"
+        }
+      },
+      "Mulgore": {
+        "source": "Mulgore",
+        "name": "멀고어",
+        "observations": {
+          "215": "멀고어"
+        }
+      },
+      "Orgrimmar": {
+        "source": "Orgrimmar",
+        "name": "오그리마",
+        "observations": {
+          "1637": "오그리마"
+        }
+      },
+      "Redridge Mountains": {
+        "source": "Redridge Mountains",
+        "name": "붉은마루 산맥",
+        "observations": {
+          "44": "붉은마루 산맥",
+          "16113": "붉은마루 산맥"
+        }
+      },
+      "Silverpine Forest": {
+        "source": "Silverpine Forest",
+        "name": "은빛소나무 숲",
+        "observations": {
+          "130": "은빛소나무 숲"
+        }
+      },
+      "Stonetalon Mountains": {
+        "source": "Stonetalon Mountains",
+        "name": "돌발톱 산맥",
+        "observations": {
+          "406": "돌발톱 산맥"
+        }
+      },
+      "Stormwind City": {
+        "source": "Stormwind City",
+        "name": "스톰윈드",
+        "observations": {
+          "1519": "스톰윈드",
+          "16509": "스톰윈드"
+        }
+      },
+      "Stranglethorn Vale": {
+        "source": "Stranglethorn Vale",
+        "name": "가시덤불 골짜기",
+        "observations": {
+          "33": "가시덤불 골짜기",
+          "16117": "가시덤불 골짜기"
+        }
+      },
+      "Swamp of Sorrows": {
+        "source": "Swamp of Sorrows",
+        "name": "슬픔의 늪",
+        "observations": {
+          "8": "슬픔의 늪",
+          "16116": "슬픔의 늪"
+        }
+      },
+      "Tanaris": {
+        "source": "Tanaris",
+        "name": "타나리스",
+        "observations": {
+          "440": "타나리스"
+        }
+      },
+      "Teldrassil": {
+        "source": "Teldrassil",
+        "name": "텔드랏실",
+        "observations": {
+          "141": "텔드랏실"
+        }
+      },
+      "The Barrens": {
+        "source": "The Barrens",
+        "name": "불모의 땅",
+        "observations": {
+          "17": "불모의 땅"
+        }
+      },
+      "The Hinterlands": {
+        "source": "The Hinterlands",
+        "name": "동부 내륙지",
+        "observations": {
+          "47": "동부 내륙지",
+          "16029": "동부 내륙지"
+        }
+      },
+      "Thousand Needles": {
+        "source": "Thousand Needles",
+        "name": "버섯구름 봉우리",
+        "observations": {
+          "400": "버섯구름 봉우리"
+        }
+      },
+      "Thunder Bluff": {
+        "source": "Thunder Bluff",
+        "name": "썬더 블러프",
+        "observations": {
+          "1638": "썬더 블러프"
+        }
+      },
+      "Tirisfal Glades": {
+        "source": "Tirisfal Glades",
+        "name": "티리스팔 숲",
+        "observations": {
+          "85": "티리스팔 숲"
+        }
+      },
+      "Un'Goro Crater": {
+        "source": "Un'Goro Crater",
+        "name": "운고로 분화구",
+        "observations": {
+          "490": "운고로 분화구"
+        }
+      },
+      "Undercity": {
+        "source": "Undercity",
+        "name": "언더시티",
+        "observations": {
+          "1497": "언더시티"
+        }
+      },
+      "Western Plaguelands": {
+        "source": "Western Plaguelands",
+        "name": "서부 역병지대",
+        "observations": {
+          "28": "서부 역병지대"
+        }
+      },
+      "Westfall": {
+        "source": "Westfall",
+        "name": "서부 몰락지대",
+        "observations": {
+          "40": "서부 몰락지대",
+          "16149": "서부 몰락지대"
+        }
+      },
+      "Wetlands": {
+        "source": "Wetlands",
+        "name": "저습지",
+        "observations": {
+          "11": "저습지"
+        }
+      },
+      "Winterspring": {
+        "source": "Winterspring",
+        "name": "여명의 설원",
+        "observations": {
+          "618": "여명의 설원"
+        }
+      }
+    }
+  }
+}

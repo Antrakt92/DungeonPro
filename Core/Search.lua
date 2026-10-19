@@ -45,7 +45,8 @@ function addon.QuestSourceSearchTerms(quest)
     local clean, folder, checker = addon.Clean, addon.SearchFold, issecretvalue
     local provider = addon.QuestSourceSearchTerms
     local sourceName = addon.SourceName
-    local terms, snapshots, visited, sources, aliases = {}, {}, {}, {}, {}
+    local areaName = addon.SourceAreaName
+    local terms, snapshots, visited, sources, aliases, areas = {}, {}, {}, {}, {}, {}
     local seen, nodes = { npc = {}, place = {} }, 0
     local function unavailable() return false end
     if type(clean) ~= "function" or type(folder) ~= "function" or not clean(quest, "table") then
@@ -60,7 +61,7 @@ function addon.QuestSourceSearchTerms(quest)
     end
     local function capabilities()
         return addon.Clean == clean and addon.SearchFold == folder and issecretvalue == checker and
-            addon.QuestSourceSearchTerms == provider and addon.SourceName == sourceName
+            addon.QuestSourceSearchTerms == provider and addon.SourceName == sourceName and addon.SourceAreaName == areaName
     end
     local function unchanged()
         local ok, result = pcall(function()
@@ -105,13 +106,15 @@ function addon.QuestSourceSearchTerms(quest)
     local function add(value, kind)
         if #terms >= 1024 then return end
         value = clean(value, "string")
-        if not value or #value > 2000 or not value:find("%S") or value:find("%c") or seen[kind][value] then return end
+        if not value or #value > 2000 or not value:find("%S") or value:find("%c") then return end
+        if seen[kind][value] then return value end
         local ok, folded = pcall(folder, value)
         if not ok or not clean(folded, "string") then return end
         seen[kind][value] = true
         local term = { text = value, kind = kind }
         terms[#terms + 1] = term
         capture(term, { "text", "kind" }, nil, true)
+        return value
     end
     local fields = { "npcID", "objectID", "itemID", "mapID", "name", "zoneName", "locationName",
         "dropNPCID", "dropName", "dropSources", "containerSource", "reportedLocations" }
@@ -156,8 +159,10 @@ function addon.QuestSourceSearchTerms(quest)
         elseif object then add(rawget(place, "name"), "place") end
         if npc or object then sources[#sources + 1] = { place = place, kind = npc and "npc" or "place" } end
         if npc or object or map then
-            add(rawget(place, "zoneName"), "place")
-            add(rawget(place, "locationName"), "place")
+            local zone = add(rawget(place, "zoneName"), "place")
+            local location = add(rawget(place, "locationName"), "place")
+            if zone then areas[#areas + 1] = zone end
+            if location then areas[#areas + 1] = location end
             -- A source may name its area only on its reported position records.
             if not objectOnly then list(rawget(place, "reportedLocations"), false) end
         end
@@ -225,6 +230,21 @@ function addon.QuestSourceSearchTerms(quest)
             end
             -- Every physical source remains in the snapshots even when its label shares a lookup.
             if cached and cached.name ~= nil then add(cached.name, source.kind) end
+        end
+    end
+    if type(areaName) == "function" then
+        local memo = {}
+        for _, area in ipairs(areas) do
+            if #terms >= 1024 then break end
+            local canonical = clean(area,"string")
+            if canonical and not memo[canonical] then
+                local ok, name, proof, raw = pcall(areaName,canonical)
+                if ok and type(proof) == "function" and type(raw) == "function" then
+                    memo[canonical] = true
+                    aliases[#aliases + 1] = { current = proof, raw = raw }
+                    if name ~= nil then add(name,"place") end
+                end
+            end
         end
     end
     local indexes = {}

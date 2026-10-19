@@ -10,6 +10,9 @@ ROOT = Path(__file__).resolve().parents[1]
 LOCALES = {"deDE": 3, "frFR": 2, "esES": 6, "itIT": 9, "ptBR": 8,
            "ruRU": 7, "koKR": 1, "zhCN": 4, "zhTW": 10}
 ENDPOINT = "https://nether.wowhead.com/forever/tooltip/{kind}/{id}?locale={locale}"
+AREA_LOCALE_PATHS = {"deDE": "de", "frFR": "fr", "esES": "es", "itIT": "it", "ptBR": "pt",
+                     "ruRU": "ru", "koKR": "ko", "zhCN": "cn", "zhTW": "tw"}
+AREA_INDEXES = {locale: f"https://www.wowhead.com/forever/{path}/zones" for locale, path in AREA_LOCALE_PATHS.items()}
 UNKNOWN = {"unknown", "sconosciuto", "inconnu", "unbekannt", "desconocido", "desconhecido",
            "未知", "未知任务", "未知任務", "알 수 없음"}
 
@@ -152,6 +155,67 @@ def validate_sources(data, catalog):
     return data
 
 
+def validate_areas(data, catalog):
+    """A shared text alias requires agreement across every reviewed homonym."""
+    validate_unicode(data)
+    if (type(data) is not dict or set(data) != {"schema", "checked", "provenance", "sources", "locales"} or
+            type(data["schema"]) is not int or data["schema"] != 1):
+        raise ValueError("Invalid area-name schema")
+    if type(data["checked"]) is not str or not re.fullmatch(r"\d{4}-\d{2}-\d{2}", data["checked"]):
+        raise ValueError("Invalid area-name date")
+    datetime.date.fromisoformat(data["checked"])
+    provenance = data["provenance"]
+    if (type(provenance) is not dict or set(provenance) != {"provider", "extraction", "englishIndex", "localeIndexes", "indexRows"} or
+            provenance["provider"] != "Wowhead" or provenance["extraction"] != "world-area-name-only" or
+            provenance["englishIndex"] != "https://www.wowhead.com/forever/zones" or
+            provenance["localeIndexes"] != AREA_INDEXES or type(provenance["indexRows"]) is not int or
+            not 0 < provenance["indexRows"] <= 10000):
+        raise ValueError("Invalid area-name provenance")
+    recorded = set()
+
+    def visit(value):
+        if isinstance(value, dict):
+            for field in ("zoneName", "locationName"):
+                if title(value.get(field)):
+                    recorded.add(value[field])
+            for child in value.values():
+                visit(child)
+        elif isinstance(value, list):
+            for child in value:
+                visit(child)
+
+    visit(catalog["quests"])
+    sources, seen = data["sources"], set()
+    dungeon_names = {d["name"] for d in catalog["dungeons"]}
+    if type(sources) is not dict:
+        raise ValueError("Invalid area-name sources")
+    for source, identities in sources.items():
+        if (not title(source) or len(source.encode("utf-8")) > 1024 or source not in recorded or source in dungeon_names or
+                type(identities) is not list or not identities or len(identities) > 100 or
+                any(type(i) is not int or not 0 < i <= 4294967295 for i in identities) or
+                identities != sorted(set(identities)) or seen.intersection(identities)):
+            raise ValueError("Invalid area-name source identity")
+        seen.update(identities)
+    if len(seen) > provenance["indexRows"]:
+        raise ValueError("Area-name source count exceeds observed index")
+    locales = data["locales"]
+    if type(locales) is not dict or not set(locales) <= set(LOCALES):
+        raise ValueError("Invalid area-name locales")
+    for locale, entries in locales.items():
+        if type(entries) is not dict:
+            raise ValueError("Invalid area-name entries")
+        for source, entry in entries.items():
+            if (source not in sources or type(entry) is not dict or set(entry) != {"source", "name", "observations"} or
+                    entry["source"] != source or not title(entry["name"]) or len(entry["name"].encode("utf-8")) > 1024 or
+                    entry["name"] in (source, "[" + source + "]") or entry["name"].strip("[]").casefold() in UNKNOWN):
+                raise ValueError("Invalid area-name label")
+            observations = entry["observations"]
+            if (type(observations) is not dict or set(observations) != {str(i) for i in sources[source]} or
+                    any(label != entry["name"] for label in observations.values())):
+                raise ValueError("Area-name homonyms require complete matching observations")
+    return data
+
+
 def validate_supplement(data, catalog, expected_locales=None):
     validate_unicode(data)
     if (type(data) is not dict or set(data) != {"schema", "provenance", "locales"} or
@@ -226,23 +290,31 @@ def load_data(root=ROOT):
         for kind, entries in payload.items():
             if entries:
                 merged["locales"][locale][kind] = copy.deepcopy(entries)
+    areas = validate_areas(read("area_name_translations.json"), catalog)
+    merged["sourceAreas"] = copy.deepcopy(areas["sources"])
+    for locale, entries in areas["locales"].items():
+        if entries:
+            merged["locales"][locale]["areas"] = copy.deepcopy(entries)
     return merged
 
 
 def generate(data):
     lines = ["-- Localized names from public records and authored titles; runtime remains offline.",
-             "local _, addon = ...", "addon.nameTranslations = {}",
+             "local _, addon = ...", "addon.sourceAreaNames = {"]
+    for source in sorted(data.get("sourceAreas", {})):
+        lines.append(f"    [{quoted(source)}] = {{ name = {quoted(source)} }},")
+    lines += ["}", "addon.nameTranslations = {}",
              "addon.nameTranslationFactories = { root = addon.nameTranslations, loaders = {"]
     for locale in sorted(LOCALES):
         lines.append(f"    {locale} = function() return {{")
-        for kind in ("quests", "dungeons", "objects", "npcs"):
+        for kind in ("quests", "dungeons", "objects", "npcs", "areas"):
             if kind not in data["locales"][locale]:
                 continue
             lines.append(f"        {kind} = {{")
             entries = data["locales"][locale][kind]
-            for key in sorted(entries, key=str if kind == "dungeons" else int):
+            for key in sorted(entries, key=str if kind in ("dungeons", "areas") else int):
                 entry = entries[key]
-                index = quoted(key) if kind == "dungeons" else key
+                index = quoted(key) if kind in ("dungeons", "areas") else key
                 lines.append(f"            [{index}] = {{ source = {quoted(entry['source'])}, name = {quoted(entry['name'])} }},")
             lines.append("        },")
         lines.append("    } end,")

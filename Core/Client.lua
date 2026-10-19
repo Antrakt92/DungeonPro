@@ -1106,15 +1106,16 @@ end
 
 function addon.SourceAreaName(name, ownerCurrent)
     local clean, read, checker = addon.Clean, addon.Read, issecretvalue
+    local api, dictionaryGetter = addon.SourceAreaName, addon.GetNameTranslations
     name = clean(name, "string")
-    if not name or #name > 1024 or not name:find("%S") then return nil end
+    if not name or #name > 1024 or not name:find("%S") or name:find("%c") then return nil end
     if ownerCurrent ~= nil and not clean(ownerCurrent, "function") then return nil end
-    local roots, api = clean(addon.dungeons, "table"), addon.SourceAreaName
+    local roots = clean(addon.dungeons, "table")
     local locale, _, localeCurrent = nameLocaleScope()
     if not roots or not localeCurrent then return nil end
     local count = #roots
     if count > 100 then return nil end
-    local snapshots, match, key = {}, nil, nil
+    local snapshots, match, key, ambiguous = {}, nil, nil, false
     -- Snapshot source records before any callback-bearing field validation.
     for index = 1, count do
         local d = rawget(roots, index)
@@ -1124,31 +1125,25 @@ function addon.SourceAreaName(name, ownerCurrent)
         if not ok then return nil end
         snapshots[index] = snapshot
     end
-    local function lookupCurrent()
-        if addon.dungeons ~= roots or #roots ~= count or addon.Clean ~= clean or addon.Read ~= read or
-            issecretvalue ~= checker or addon.SourceAreaName ~= api then return false end
-        for index = 1, count do
-            local s = snapshots[index]
-            if not rawequal(rawget(roots, index), s.d) or not rawequal(rawget(s.d, "name"), s.name) or
-                not rawequal(rawget(s.d, "key"), s.key) then return false end
-        end
-        return true
-    end
+    local worldRoot = addon.sourceAreaNames
+    local worldEntry = type(worldRoot) == "table" and rawget(worldRoot,name)
+    local worldName = type(worldEntry) == "table" and rawget(worldEntry,"name")
     for index = 1, count do
         local snapshot = snapshots[index]
         local d = clean(snapshot.d, "table")
-        if not d or not lookupCurrent() then return nil end
+        if not d then return nil end
         local source = clean(snapshot.name, "string")
-        if not lookupCurrent() then return nil end
         local candidateKey = clean(snapshot.key, "string")
-        if not lookupCurrent() then return nil end
         if source == name then
-            if match or not candidateKey then return nil end
+            if match or not candidateKey then ambiguous = true end
             match, key = d, candidateKey
         end
     end
-    if not match then return nil end
-    local dictionaryGetter = addon.GetNameTranslations
+    local kind = "dungeons"
+    if not match and not ambiguous then
+        kind = "areas"
+        if clean(worldEntry,"table") and clean(worldName,"string") == name then match, key = worldEntry, name end
+    end
     local function rawSourceCurrent()
         local ok, same = pcall(function()
             if addon.Clean ~= clean or addon.Read ~= read or issecretvalue ~= checker or
@@ -1159,7 +1154,9 @@ function addon.SourceAreaName(name, ownerCurrent)
                 if not rawequal(rawget(roots, index), s.d) or not rawequal(rawget(s.d, "name"), s.name) or
                     not rawequal(rawget(s.d, "key"), s.key) then return false end
             end
-            return true
+            return rawequal(addon.sourceAreaNames,worldRoot) and
+                (type(worldRoot) ~= "table" or rawequal(rawget(worldRoot,name),worldEntry)) and
+                (type(worldEntry) ~= "table" or rawequal(rawget(worldEntry,"name"),worldName))
         end)
         return ok and same == true
     end
@@ -1168,34 +1165,50 @@ function addon.SourceAreaName(name, ownerCurrent)
         return localeCurrent() and rawSourceCurrent()
     end
     if not current() then return nil end
-    local result, reviewedCurrent
-    if locale == "enUS" then result = name
-    else result, reviewedCurrent = translatedName("dungeons", key, match, current, locale) end
-    if not result or not current() then return nil end
+    if match and not ambiguous and locale ~= "enUS" then
+        local root = clean(addon.nameTranslations,"table")
+        if root and not clean(rawget(root,locale),"table") then nameDictionary(locale,current) end
+    end
+    if not current() then return nil end
     local database, language, localeGetter = addon.db, addon.Language, GetLocale
     local choice = type(database) == "table" and rawget(database, "locale")
     local selection = type(language) == "table" and rawget(language, "GetSelection")
+    local session = type(language) == "table" and rawget(language,"session")
+    local preview = type(session) == "table" and rawget(session,"preview")
     local dictionaryRoot = addon.nameTranslations
     local dictionary = type(dictionaryRoot) == "table" and rawget(dictionaryRoot, locale)
-    local entries = type(dictionary) == "table" and rawget(dictionary, "dungeons")
-    local entry = type(entries) == "table" and rawget(entries, key)
+    local entries = type(dictionary) == "table" and rawget(dictionary, kind)
+    local entry = type(entries) == "table" and rawget(entries, key or name)
     local original = type(entry) == "table" and rawget(entry, "source")
     local translated = type(entry) == "table" and rawget(entry, "name")
-    if reviewedCurrent and not reviewedCurrent() then return nil end
-    if not current() then return nil end
-    -- No provider/localizer/checker callback after this primitive publication proof.
-    local ok, same = pcall(function()
+    local function rawCurrent()
+        local ok, same = pcall(function()
         return rawSourceCurrent() and addon.db == database and addon.Language == language and GetLocale == localeGetter and
             (type(database) ~= "table" or rawequal(rawget(database, "locale"), choice)) and
             (type(language) ~= "table" or rawequal(rawget(language, "GetSelection"), selection)) and
+            (type(language) ~= "table" or rawequal(rawget(language,"session"),session)) and
+            (type(session) ~= "table" or rawequal(rawget(session,"preview"),preview)) and
             rawequal(addon.nameTranslations, dictionaryRoot) and
             (type(dictionaryRoot) ~= "table" or rawequal(rawget(dictionaryRoot, locale), dictionary)) and
-            (type(dictionary) ~= "table" or rawequal(rawget(dictionary, "dungeons"), entries)) and
-            (type(entries) ~= "table" or rawequal(rawget(entries, key), entry)) and
+            (type(dictionary) ~= "table" or rawequal(rawget(dictionary, kind), entries)) and
+            (type(entries) ~= "table" or rawequal(rawget(entries, key or name), entry)) and
             (type(entry) ~= "table" or (rawequal(rawget(entry, "source"), original) and
                 rawequal(rawget(entry, "name"), translated)))
-    end)
-    if ok and same then return result end
+        end)
+        return ok and same == true
+    end
+    -- Retained proofs exclude the caller owner and include valid missing labels.
+    local function proof() return localeCurrent() and rawCurrent() end
+    local result
+    if match and not ambiguous then
+        if locale == "enUS" then result = name
+        elseif type(dictionary) == "table" then
+            result = translatedName(kind,key,match,function() return current() and rawCurrent() end,locale)
+        end
+    end
+    if not proof() or (ownerCurrent and read(ownerCurrent,"boolean") ~= true) or not rawCurrent() then return nil, proof, rawCurrent end
+    if result and locale ~= "enUS" and (original ~= name or translated ~= result) then return nil end
+    return result, proof, rawCurrent
 end
 
 local dungeonArtCache, dungeonArtReading

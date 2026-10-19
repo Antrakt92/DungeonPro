@@ -66,11 +66,12 @@ assert(sourceRow);sourceRow.navigationControl.scripts.OnEnter()
 assert(tip.body:find(label("zhCN","Maraudon"),1,true)and not tip.body:find("Opposite native label",1,true),"row hint uses the same reviewed canonical area")
 assert(ui:SetDetailTab("quest"));ui.giver.scripts.OnEnter();assert(tip.body:find(label("zhCN","Maraudon"),1,true),"detail route hint shares the selected source-area name")
 q.start=start;C_Map=mapRoot
--- World locations outside the dungeon dictionary keep native/raw fallback labels.
+-- Reviewed world-area aliases are independent of dungeon dictionary membership.
 render(1491);sourceRow=nil
 for _,row in ipairs(ui.rows)do if row:IsShown()and row.questID==1491 then sourceRow=row end end
 assert(sourceRow and sourceRow.navigationBinding.action);sourceRow.navigationControl.scripts.OnEnter()
-assert(tip.body:find(a.quests[1491].start.zoneName,1,true),"outside-catalogue world area retains its existing raw fallback in the source hint")
+local canonical=a.quests[1491].start.zoneName
+assert(tip.body:find(a.SourceAreaName(canonical)or canonical,1,true),"world source hint uses its reviewed area name when available")
 -- Resolver callbacks that replace source, locale, or helper cannot publish retired captions.
 local provider=a.SourceAreaName
 for _,mode in ipairs({"card","source","locale","method"})do

@@ -137,7 +137,7 @@ function UI:QuestRowNavigationHint(row, binding)
     self:HideNavigationHint()
     local tip, localize = addon.Clean(GameTooltip, "table") or addon.Clean(GameTooltip, "userdata"), addon.L
     local nameGetter, areaGetter, sourceGetter = addon.GiverName, addon.SourceAreaName, addon.SourceName
-    local sourceProof
+    local sourceProof, areaProof
     local frame, engine, character = self.frame, self.engine, addon.char
     local quest, dungeon, generation, listGeneration = self.quest, self.dungeon, self.rewardGeneration, self.questListGeneration
     local mapRoot = C_Map
@@ -155,6 +155,7 @@ function UI:QuestRowNavigationHint(row, binding)
             (not database or rawget(database, "locale") == locale) and GameTooltip == tip and
             addon.Read(row.IsShown, "boolean", row) == true and addon.Read(self.frame.IsShown, "boolean", self.frame) == true and
             (not sourceProof or addon.Read(sourceProof, "boolean") == true) and addon.SourceName == sourceGetter and
+            (not areaProof or addon.Read(areaProof, "boolean") == true) and addon.SourceAreaName == areaGetter and
             self.frame == frame and self.engine == engine and addon.char == character and self.quest == quest and self.dungeon == dungeon and
             self.rewardGeneration == generation and self.questListGeneration == listGeneration and row.navigationBinding == binding and GameTooltip == tip
     end
@@ -176,7 +177,18 @@ function UI:QuestRowNavigationHint(row, binding)
         if not text or #text > 1024 or not text:find("%S") then text = addon.Clean(rawget(point, "name"), "string") end
         if not text or #text > 1024 or not text:find("%S") then text = addon.Read(localize, "string", "UNKNOWN_PLACE") end
         local canonical = addon.Clean(rawget(point, "zoneName"), "string")
-        local zone = addon.Read(areaGetter, "string", canonical, current) or canonical or addon.Clean(rawget(point, "locationName"), "string")
+        local zone
+        if type(areaGetter) == "function" then
+            local ok, label, proof = pcall(areaGetter, canonical, current)
+            if not current() then return end
+            proof = addon.Clean(proof, "function")
+            if proof then
+                if addon.Read(proof, "boolean") ~= true or not current() then return end
+                areaProof = proof
+            end
+            if ok then zone = addon.Clean(label, "string") end
+        end
+        zone = zone or canonical or addon.Clean(rawget(point, "locationName"), "string")
         if not zone then
             local info = addon.Read(mapGetter, "table", binding.map)
             if not current() then return end

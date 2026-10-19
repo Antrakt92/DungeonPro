@@ -22,7 +22,8 @@ for _,locale in ipairs({"enUS","ruRU","deDE","frFR","esES","ptBR","koKR","zhCN",
  for _,pool in ipairs({ui.giverButtons,ui.finishButtons})do
   local known,unknown=assert(pool[1]),assert(pool[2])
   assert(known:IsShown()and unknown:IsShown()and known.title.text==unknown.title.text,"same-name NPC variants remain distinct source choices")
-  assert(known.note.text=="Burning Steppes — "..warning(a.L("SOURCE_POSITION_UNKNOWN")),"known area stays normal text beside a red missing-position warning")
+  local area=a.SourceAreaName("Burning Steppes")or"Burning Steppes"
+  assert(known.note.text==area.." — "..warning(a.L("SOURCE_POSITION_UNKNOWN")),"known translated area stays normal text beside a red missing-position warning")
   assert(unknown.note.text==warning(a.L("UNKNOWN_PLACE")),"wholly unknown source location is conspicuous without claiming a known area")
   assert(not known.enabled and not unknown.enabled and not known.scripts.OnClick and not unknown.scripts.OnClick,"warning adds no arbitrary route or availability claim")
  end
