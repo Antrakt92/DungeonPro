@@ -970,12 +970,15 @@ function UI:RefreshDungeons()
     local sourceReady = true
     local titleMemo = {}
     local nameLedger, nameScope, nameSnapshotCurrent, membershipSafe = {}, nil, nil, true
+    local statusProofs = {}
     if self.catalogGeneration ~= generation then return end
     -- Pooled write records must survive native setter tails, but need not retain
     -- obsolete request snapshots once a newer catalogue owns the view.
     self.catalogSearchRelease = function()
         sourceReady = false
         membershipSafe=false
+        for _, record in ipairs(statusProofs) do record.current = nil end
+        statusProofs = {}
         memo, sourceMemo, sourceMatches, relationMemo, relationMatches, titleMemo = {}, {}, {}, {}, {}, {}
         nameLedger,nameScope={},nil
     end
@@ -1501,7 +1504,16 @@ function UI:RefreshDungeons()
         if statusEngine then ok, dto, fresh = pcall(statusGetter, result.dungeon, statusEngine) end
         if not current() then return end
         if ok and addon.Clean(dto, "table") and addon.Clean(fresh, "function") then
-            result.statusDTO, result.statusCurrent = dto, fresh
+            local record = { current = fresh }
+            local read, clean, restriction = addon.Read, addon.Clean, issecretvalue
+            statusProofs[#statusProofs + 1] = record
+            result.statusDTO = dto
+            result.statusCurrent = function()
+                local proof = record.current
+                if not sourceReady or not proof or addon.Read ~= read or addon.Clean ~= clean or issecretvalue ~= restriction then return false end
+                local valid = read(proof, "boolean") == true
+                return sourceReady and record.current == proof and addon.Read == read and addon.Clean == clean and issecretvalue == restriction and valid
+            end
             result.count = includeUnavailable == true and dto.listedRoots or dto.characterRoots
             result.note = self:CatalogResultNote(result)
             if not current() or addon.Read(fresh, "boolean") ~= true then return end

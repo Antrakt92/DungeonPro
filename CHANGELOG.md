@@ -4,6 +4,8 @@
 
 ### 19-Oct-2026
 
+- Release obsolete dungeon status calculations after a new search while keeping
+  current results and reused controls intact.
 - Add reviewed name translations for Deliana, Mokvar, Lorekeeper Lydros,
   Archmage Xylem and Alba Fairmoon in quest details, source search and guidance.
 - Keep unchanged search results while quest or item details load, rebuilding when
