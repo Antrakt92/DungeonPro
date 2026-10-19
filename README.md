@@ -38,6 +38,14 @@ steps, marked as **Related step**. Use **View quest** to inspect the matching st
 Recorded enemy objectives are also searchable and labelled **Quest objective**.
 These matches identify the quest; directions remain tied to its known sources.
 
+Development builds split quest details into three tabs: **Quest** for objectives,
+rewards and the next action; **Sources** for known pickup methods and alternative
+locations; **Story** for available or previously saved quest text. Each tab
+keeps its reading position. **Back** returns to the previous inspected quest and
+its tab, or to the dungeon overview. Use the small arrow beside the dungeon list
+to collapse it and give long quest chains more room; use the arrow again to
+restore the list.
+
 Development builds offer **Dungeon map** in a dungeon's overview. It displays
 the map and floors supplied by the game, where available. Some dungeon wings
 share a map; maps currently have no quest markers. Availability and artwork
