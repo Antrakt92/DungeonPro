@@ -4,6 +4,7 @@
 
 ### 19-Oct-2026
 
+- Cancel catalogue clicks when the planner closes or a newer selection takes over.
 - Ignore stale entrance clicks if the selected view changes during validation.
 - Find quests by recorded enemy objective names, including related steps.
 - Free unused map data after changing floors or closing the map, while keeping

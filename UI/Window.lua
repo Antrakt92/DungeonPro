@@ -1042,6 +1042,21 @@ function UI:RefreshDungeons()
         end)
         return ok and valid == true
     end
+    local function captureClick(control)
+        local frame, quest, dungeon = self.frame, self.quest, self.dungeon
+        local tabRevision, navigationRevision = self.detailTabRevision, self.detailNavigationRevision
+        local frameShown, controlShown, read = frame and frame.IsShown, control.IsShown, addon.Read
+        local function raw()
+            return baseCurrent(true) and addon.UI == self and self.frame == frame and self.quest == quest and self.dungeon == dungeon and
+                self.detailTabRevision == tabRevision and self.detailNavigationRevision == navigationRevision and not self.catalogCollapsed and
+                addon.Read == read and frame and frame.IsShown == frameShown and control.IsShown == controlShown
+        end
+        local function visible()
+            return raw() and read(frameShown, "boolean", frame) == true and raw() and
+                read(controlShown, "boolean", control) == true and raw()
+        end
+        return visible, raw
+    end
     local function ownedWrite(ownerCurrent, skipUnchangedText, object, method, ...)
         if not ownerCurrent() then return false end
         local bindings = object.catalogWrites or {}
@@ -1669,8 +1684,8 @@ function UI:RefreshDungeons()
         if not current() then return end
         row.matchQuestID = result.questID
         if not write(row, "SetScript", "OnClick", function()
-            if self.catalogCollapsed or addon.Read(row.IsShown, "boolean", row) ~= true then return end
-            if not proveSources() then return end
+            local clickCurrent, clickRaw = captureClick(row)
+            if not clickCurrent() or not proveSources() or not clickRaw() then return end
             self:ResetHistoryReading()
             self.detailHistory = {}
             self.dungeon, self.quest = dungeon, nil
@@ -1716,8 +1731,8 @@ function UI:RefreshDungeons()
                 not write(inspect, "SetEnabled", true) then return end
             styleRow(inspect, "control", false)
             if not inspectCurrent() or not write(inspect, "SetScript", "OnClick", function()
-                local shown = addon.Read(self.frame.IsShown, "boolean", self.frame)
-                if self.catalogCollapsed or shown ~= true or not inspectCurrent() then return end
+                local clickCurrent, clickRaw = captureClick(inspect)
+                if not clickCurrent() or not inspectCurrent() then return end
                 local matches
                 if result.idMatch then
                     matches = queryID == questID
@@ -1734,7 +1749,7 @@ function UI:RefreshDungeons()
                         matches = cached and searchText(cached):find(needle, 1, true)
                     end
                 end
-                if addon.Read(row.IsShown, "boolean", row) ~= true or not matches or not inspectCurrent() or not proveSources() then return end
+                if addon.Read(row.IsShown, "boolean", row) ~= true or not matches or not inspectCurrent() or not proveSources() or not clickRaw() then return end
                 self:ResetHistoryReading(); self.detailHistory = {}
                 self.dungeon, self.quest = dungeon, questID
                 character.selectedDungeon = dungeon.key
@@ -5573,7 +5588,7 @@ function UI:Create()
             addon.Read(f.IsShown, "boolean", f) == true then self:Fit() end
     end)
     frame:SetScript("OnShow", function(f) raiseWindow(f); self:Fit(); self.preparation = false; self:Refresh(nil, true) end)
-    frame:SetScript("OnHide", function() if self.CloseDungeonMap then self:CloseDungeonMap(true) end; local pending = self.developerLinkRequest; self.developerLinkRequest = nil; if pending and type(StaticPopup_Hide) == "function" then pcall(StaticPopup_Hide, "DUNGEONPRO_COPY_DEVELOPER_LINK") end; self:HideNavigationHint(); local language = addon.Clean(addon.Language, "table"); if language then addon.Read(language.Cancel, "boolean", language, self) end; self.pendingSearch = nil; self.detailTabQuest, self.detailTabRevision = nil, {}; self.detailReferencesExpanded, self.detailNarrativeExpanded, self.detailObjectivesExpanded = false, false, false; if not self:ResetQuestLogControl() then return end; self.detailActionChoice = nil; self.languageMenuRevision = {}; self:ResetHistoryReading(); self:ResetRewardPresentation(); self:CloseCopyLink() end)
+    frame:SetScript("OnHide", function() self.detailTabQuest, self.detailTabRevision = nil, {}; if self.CloseDungeonMap then self:CloseDungeonMap(true) end; local pending = self.developerLinkRequest; self.developerLinkRequest = nil; if pending and type(StaticPopup_Hide) == "function" then pcall(StaticPopup_Hide, "DUNGEONPRO_COPY_DEVELOPER_LINK") end; self:HideNavigationHint(); local language = addon.Clean(addon.Language, "table"); if language then addon.Read(language.Cancel, "boolean", language, self) end; self.pendingSearch = nil; self.detailReferencesExpanded, self.detailNarrativeExpanded, self.detailObjectivesExpanded = false, false, false; if not self:ResetQuestLogControl() then return end; self.detailActionChoice = nil; self.languageMenuRevision = {}; self:ResetHistoryReading(); self:ResetRewardPresentation(); self:CloseCopyLink() end)
     self:ApplyTheme()
     frame:Hide()
 end
