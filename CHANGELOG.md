@@ -2,6 +2,27 @@
 
 ## Unreleased
 
+## 0.2.0 - 19-Oct-2026 — Quest planning and navigation Beta
+
+- Organize quest details into Quest, Sources and Story tabs, with a visible back
+  arrow that restores the previous quest, tab and reading position.
+- Collapse the dungeon catalogue to give long quest chains more room.
+- Show dungeon quest progress and relevant steps from your quest log. Ready
+  turn-ins appear first; supporting steps are labelled separately. Expand or
+  collapse longer lists, with gold ready statuses and blue in-progress statuses.
+- Find more quests by recorded NPCs, places and objective enemies, including
+  related chain steps. Add reviewed translations for source names and locations.
+- Keep known prerequisites distinct from story steps and show useful actions for
+  prerequisites already in your quest log or ready to turn in.
+- Improve refresh, navigation and window cleanup so older updates do not replace
+  the current quest, artwork, waypoint, copied link or reading position.
+- Hide the experimental interior-map button: working Forever dungeon maps are
+  not included. Known quest-location and dungeon-entrance directions remain.
+
+This remains an early beta. Quest coverage and requirements are incomplete;
+missing locations and conditions stay explicit. Unseen quest text depends on
+what the client can supply. More data fixes and interface improvements will follow.
+
 ### 19-Oct-2026
 
 - Hide the experimental dungeon-map button until interior maps work in Forever.
