@@ -189,23 +189,58 @@ local function refreshMapMarker()
 end
 
 function N.Map(point)
-    local mapID = type(point) == "table" and mapIdentity(point.mapID)
-    if not mapID then return false end
-    local generation = clearMapMarker()
-    local x = addon.Read(function() return point.x end, "number")
-    local y = addon.Read(function() return point.y end, "number")
-    local opened = false
-    if C_Map and type(C_Map.OpenWorldMap) == "function" then opened = pcall(C_Map.OpenWorldMap, mapID)
-    elseif type(OpenWorldMap) == "function" then opened = pcall(OpenWorldMap, mapID) end
-    if not opened or markerGeneration ~= generation then return opened end
-    local map = markerObject(WorldMapFrame)
-    if x and y and x >= 0 and x <= 100 and y >= 0 and y <= 100 and map
-        and markerMethod(map, "GetCanvas") and markerMethod(map, "GetMapID") and markerMethod(map, "IsShown") then
+    local generation = markerGeneration
+    local clean, read, checker, provider = addon.Clean, addon.Read, issecretvalue, N.Map
+    local mapOwner = rawget(_G, "C_Map")
+    local nativeOpen = type(mapOwner) == "table" and rawget(mapOwner, "OpenWorldMap")
+    local fallbackOpen = rawget(_G, "OpenWorldMap")
+    local function current()
+        local ok, same = pcall(function()
+            return markerGeneration == generation and rawequal(rawget(addon, "Navigation"), N) and
+                rawequal(rawget(N, "Map"), provider) and rawequal(rawget(addon, "Clean"), clean) and
+                rawequal(rawget(addon, "Read"), read) and rawequal(rawget(_G, "issecretvalue"), checker) and
+                rawequal(rawget(_G, "C_Map"), mapOwner) and rawequal(rawget(_G, "OpenWorldMap"), fallbackOpen) and
+                (type(mapOwner) ~= "table" or rawequal(rawget(mapOwner, "OpenWorldMap"), nativeOpen))
+        end)
+        return ok and same == true
+    end
+    if type(clean) ~= "function" or type(read) ~= "function" then return false end
+    point = clean(point, "table")
+    if not point or not current() then return false end
+    local mapID = mapIdentity(point.mapID)
+    if not mapID or not current() then return false end
+    generation = clearMapMarker()
+    if not current() then return false end
+    local x = read(function() return point.x end, "number")
+    if not current() then return false end
+    local y = read(function() return point.y end, "number")
+    if not current() then return false end
+    local opener = clean(nativeOpen, "function")
+    if not current() then return false end
+    if not opener then opener = clean(fallbackOpen, "function") end
+    if not current() then return false end
+    local opened = opener and pcall(opener, mapID) or false
+    if not opened or not current() then return opened end
+    local rawMap = rawget(_G, "WorldMapFrame")
+    local map = markerObject(rawMap)
+    local function mapCurrent()
+        return current() and rawequal(rawget(_G, "WorldMapFrame"), rawMap)
+    end
+    if not mapCurrent() then return opened end
+    local canvasGetter = map and markerMethod(map, "GetCanvas")
+    if not mapCurrent() then return opened end
+    local mapGetter = map and markerMethod(map, "GetMapID")
+    if not mapCurrent() then return opened end
+    local shownGetter = map and markerMethod(map, "IsShown")
+    if not mapCurrent() then return opened end
+    if x and y and x >= 0 and x <= 100 and y >= 0 and y <= 100 and map and canvasGetter and mapGetter and shownGetter then
         mapMarkerState = { generation = generation, point = point, mapID = mapID, x = x, y = y }
         if not mapMarkerTicker then
             local ok, created = pcall(CreateFrame, "Frame", nil, UIParent)
-            if markerGeneration ~= generation then return opened end
-            mapMarkerTicker = ok and markerObject(created) or nil
+            if not mapCurrent() then return opened end
+            created = ok and markerObject(created) or nil
+            if not mapCurrent() then return opened end
+            mapMarkerTicker = created
             if mapMarkerTicker then
                 mapMarkerTicker:SetScript("OnUpdate", function(_, delta)
                     delta = addon.Clean(delta, "number")

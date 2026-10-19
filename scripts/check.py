@@ -198,6 +198,7 @@ def main():
     run(lua, "tests/probe.lua")
     run(lua, "tests/navigation.lua")
     run(lua, "tests/native_navigation_supersession_ui.lua")
+    run(lua, "tests/map_request_supersession_ui.lua")
     run(lua, "tests/tomtom_ownership.lua")
     run(lua, "tests/map_marker.lua")
     run(lua, "tests/map_clicks.lua")
