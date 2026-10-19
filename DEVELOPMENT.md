@@ -43,6 +43,18 @@ the default requires completion. Preserve unknown requirements, quantities and
 locations until supported by evidence. Catalogue coordinates are percentages
 from 0 to 100.
 
+Keep pickup, turn-in and starter-item acquisition sources separate. Record the
+NPC, object or item identity, zone, exact percentage coordinates and quest stage
+only when supported. A known zone does not supply a missing point or map ID.
+
+Distinguish quest-starting, quest-provided, objective-required and reward items.
+Record quantities only when observed; possession or a supplied item alone does
+not prove a pickup requirement. Leave unverified quantities and locations unknown.
+
+Describe the observation behind each requirement and its quest stage. A story
+list or guide order alone is not an acceptance condition. Keep observations
+separate from assumptions, and retain their Forever quest/source evidence.
+
 Interface strings live in `Locales/`. Name translations and Unicode search data
 have separate generators:
 
@@ -83,8 +95,13 @@ icons, interface scale and gameplay still require in-game verification.
 
 ## Reports and permissions
 
-Report incorrect data with the quest ID, dungeon, client language and supporting
-evidence. Original code uses the Antrakt Attribution and CurseForge Rewards
+Use the issue templates for quest/source observations and reproducible interface
+problems. Include the quest ID, dungeon, addon build and selected language when
+known. For layout reports, include the view, Mine/All filter, collapsed-list state,
+window size and interface scale. Redact account and character identifiers; do not
+attach SavedVariables or character settings files.
+
+Original code uses the Antrakt Attribution and CurseForge Rewards
 License 1.2. Forks and substantial reuse require attribution, with reward-sharing
 conditions for derivatives that earn CurseForge Reward Points; see the
 [full license](LICENSE). Third-party material retains its separate terms.

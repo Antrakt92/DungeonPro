@@ -16,10 +16,18 @@ assignees: ''
 3.
 
 **Context**
-- Dungeon Pro version:
+
+- Dungeon Pro version; release ZIP or development commit, if known:
 - WoW Forever client version:
-- Interface language:
+- Game language and selected addon language:
 - Dungeon and quest name or ID, if relevant:
 - Character level, class and faction, if relevant:
+- View: dungeon overview, Quest, Sources or Story:
+- Quest filter: Mine or All quests:
+- For layout problems: window size, interface scale, dungeon list collapsed
+  or expanded:
 
 **Screenshot or Lua error, if available**
+
+Redact account and character identifiers from screenshots or errors. Do not attach
+SavedVariables or character settings files.
