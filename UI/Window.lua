@@ -5431,7 +5431,14 @@ function UI:RefreshDetail(sourceFocus)
             if not portraitCardCurrent() then return end
             local painter = addon.Clean(addon.PaintDungeonArt, "function")
             local ok, painted, kind, aspect
-            if painter then ok, painted, kind, aspect = pcall(painter, self.overviewArt, renderDungeon, "overview") end
+            local function showOwned(texture)
+                local function current()
+                    return portraitCardCurrent() and self.overviewArt == overviewArt and addon.PaintDungeonArt == painter
+                end
+                if texture ~= overviewArt or not current() then return false end
+                return sourceWrite(current, overviewArt, "Show", nil)
+            end
+            if painter then ok, painted, kind, aspect = pcall(painter, overviewArt, renderDungeon, "overview", showOwned) end
             painted, kind = ok and addon.Clean(painted, "boolean"), ok and addon.Clean(kind, "string")
             aspect = ok and addon.Clean(aspect, "number")
             if not portraitCardCurrent() or addon.PaintDungeonArt ~= painter then return end

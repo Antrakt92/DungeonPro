@@ -1299,10 +1299,20 @@ function addon.DungeonArt(d)
 end
 
 local dungeonArtPaints = setmetatable({}, { __mode = "k" })
-function addon.PaintDungeonArt(texture, dungeon, mode)
+function addon.PaintDungeonArt(texture, dungeon, mode, showOwned)
     local token = {}
     dungeonArtPaints[texture] = token
     local checker = issecretvalue
+    if type(checker) == "function" then
+        local ok, restricted = pcall(checker, showOwned)
+        if not ok or restricted ~= false then return false end
+    end
+    if issecretvalue ~= checker or dungeonArtPaints[texture] ~= token then return false end
+    if type(showOwned) ~= "nil" then
+        showOwned = addon.Clean(showOwned, "function")
+        if not showOwned then return false end
+    end
+    if issecretvalue ~= checker or dungeonArtPaints[texture] ~= token then return false end
     local overview = addon.Clean(mode, "string") == "overview"
     dungeon = addon.Clean(dungeon, "table") or {}
     local art = addon.Clean(dungeon.art, "table")
@@ -1384,7 +1394,10 @@ function addon.PaintDungeonArt(texture, dungeon, mode)
         pcall(coordinates, texture, left, right, top, bottom)
         if not current() then return abandon() end
     end
-    texture:Show()
+    if showOwned then
+        local ok, shown = pcall(showOwned, texture)
+        if not ok or addon.Clean(shown, "boolean") ~= true then return false end
+    else texture:Show() end
     local success = current()
     local aspect = overview and kind == "art" and image == fileID and artMap and
         (not mapID or mapID == artMap) and previewWidth and previewHeight and previewWidth / previewHeight or nil
