@@ -7,6 +7,8 @@ end
 local function fixture()
     local f = assert(loadfile("tests/client_ui.lua"))("fixture")
     local a, ui = f.addon, f.addon.UI
+-- Controlled component opt-in; not native map availability.
+    a.experimentalDungeonMaps = true
     local pins, routes, selections, accepts, opens, opened = 0, 0, 0, 0, 0
     issecretvalue = function() return false end
     GetLocale = function() return "enUS" end

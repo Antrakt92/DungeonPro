@@ -5447,13 +5447,13 @@ function UI:RefreshDetail(sourceFocus)
             y = offset
             local control, opener = self.overviewMapControl, self.OpenDungeonMap
             local gameMap = addon.Clean(renderDungeon.instanceID, "number")
-            if control and type(opener) == "function" and gameMap and gameMap > 0 and gameMap <= 4294967295 and gameMap % 1 == 0 then
+            if rawget(addon, "experimentalDungeonMaps") == true and control and type(opener) == "function" and gameMap and gameMap > 0 and gameMap <= 4294967295 and gameMap % 1 == 0 then
                 local binding = { owner = portraitCardCurrent }
                 self.overviewMapBinding = binding
                 local function current()
-                    return not binding.released and binding.owner and binding.owner() and addon.UI == self and self.overviewMapBinding == binding and
+                    return rawget(addon, "experimentalDungeonMaps") == true and not binding.released and binding.owner and binding.owner() and addon.UI == self and self.overviewMapBinding == binding and
                         self.overviewMapControl == control and self.OpenDungeonMap == opener and
-                        rawequal(rawget(renderDungeon, "instanceID"), gameMap)
+                        rawequal(rawget(renderDungeon, "instanceID"), gameMap) and rawget(addon, "experimentalDungeonMaps") == true
                 end
                 local mapLabel = addon.L("DUNGEON_MAP_OPEN")
                 if not current() then return end

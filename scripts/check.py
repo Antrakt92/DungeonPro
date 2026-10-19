@@ -41,6 +41,7 @@ def main():
     run(lua, "tests/dungeon_map_release_ui.lua")
     run(lua, "tests/dungeon_map_theme_ui.lua")
     run(lua, "tests/dungeon_map_integration_ui.lua")
+    run(lua, "tests/dungeon_map_default_off_ui.lua")
     run(lua, "tests/dungeon_map_input_ownership_ui.lua")
     run(lua, "tests/overview_map_retention_ui.lua")
     run(lua, "tests/overview_art_retirement_ui.lua")

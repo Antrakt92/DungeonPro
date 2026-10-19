@@ -1,6 +1,8 @@
 -- Actual TOC and planner controls with controlled native artwork, not coverage proof.
 local f=assert(loadfile("tests/client_ui.lua"))("fixture")
 local a,ui=f.addon,f.addon.UI
+-- Controlled component opt-in; not native map availability.
+a.experimentalDungeonMaps=true
 local calls,effects,total=0,0,0
 local game,journal,base,upper,group=389,910001,920001,920002,930001
 local oldInfo=C_Map.GetMapInfo

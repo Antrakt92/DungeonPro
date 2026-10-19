@@ -3,6 +3,8 @@ addon.name = name
 addon.version = "0.1.0"
 addon.quests, addon.dungeons = {}, {}
 addon.listeners = {}
+-- Keep unverified interior-map controls out of the normal planner.
+addon.experimentalDungeonMaps = false
 
 -- Unknown and restricted values cannot authorize availability or map decisions.
 function addon.Clean(value, expected)

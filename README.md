@@ -55,10 +55,9 @@ the compact list. Supporting quests have their own label; progress counts cover
 only the main listed quests. Unverified conditions remain marked, and a short or empty
 step list does not mean that every quest is ready to pick up.
 
-Development builds offer **Dungeon map** in a dungeon's overview. It displays
-the map and floors supplied by the game, where available. Some dungeon wings
-share a map; maps currently have no quest markers. Availability and artwork
-loading still need testing in the Forever client.
+Interior dungeon maps are not currently available. Dungeon overviews show an
+illustration, not a floor map. Quest-location and dungeon-entrance directions
+remain separate navigation actions.
 
 <details>
 <summary>Quest chains, objectives and rewards in game</summary>

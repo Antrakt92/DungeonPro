@@ -4,6 +4,7 @@
 
 ### 19-Oct-2026
 
+- Hide the experimental dungeon-map button until interior maps work in Forever.
 - Ignore dungeon-map controls when their action handlers change during validation.
 - Highlight ready turn-ins in gold and in-progress steps in blue in the dungeon overview.
 - Avoid retaining old quest-reading state after switching views or closing the planner.

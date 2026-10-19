@@ -4,6 +4,8 @@ local loader=loadfile
 if override then loadfile=function(path)return loader(path=="UI/Window.lua"and override or path)end end
 local f=assert(loader("tests/client_ui.lua"))("fixture");loadfile=loader
 local a,u=f.addon,f.addon.UI
+-- Controlled component opt-in; not native map availability.
+a.experimentalDungeonMaps=true
 issecretvalue=function()return false end
 C_Timer={After=function()end}
 GetLocale=function()return "enUS"end
