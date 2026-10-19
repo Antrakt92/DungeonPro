@@ -2720,7 +2720,19 @@ local function releaseDetailText(ui)
     lease.bindings = {}
 end
 
+local function releaseSourceControls(ui)
+    local lease = ui.sourceControlsLease
+    ui.sourceControlsLease = nil
+    if not lease then return end
+    lease.released = true
+    for _, cell in ipairs(lease.cells) do cell.callback = nil end
+    lease.cells, lease.memo = {}, {}
+end
+
 function UI:RefreshDetail(sourceFocus)
+    releaseSourceControls(self)
+    local sourceControlsLease = { cells = {}, memo = {} }
+    self.sourceControlsLease = sourceControlsLease
     releaseDetailText(self)
     local detailTextLease = { bindings = {} }
     self.detailTextLease = detailTextLease
@@ -2798,9 +2810,6 @@ function UI:RefreshDetail(sourceFocus)
     self.reportedToggles, self.reportedRows = self.reportedToggles or {}, self.reportedRows or {}
     local reportedGeneration, toggleIndex, reportIndex = {}, 0, 0
     self.reportedGeneration = reportedGeneration
-    for _, buttons in ipairs({ self.reportedToggles, self.reportedRows }) do
-        for _, row in ipairs(buttons) do row:Hide(); row:SetEnabled(false); row:SetScript("OnClick", nil) end
-    end
     local function portraitCardCurrent()
         return self.detailTabRevision == tabRevision and self.detailTab == detailTab and self.layoutRevision == layoutRevision and self.quest == renderQuest and self.dungeon == renderDungeon and self.engine == renderEngine and
             self.includeUnavailable == renderIncludeUnavailable and addon.char == renderCharacter and self.rewardGeneration == rewardGeneration and
@@ -2809,6 +2818,39 @@ function UI:RefreshDetail(sourceFocus)
             (self.detailObjectivesExpanded == true) == objectivesExpanded
     end
     if detailTextLease.released or self.detailTextLease ~= detailTextLease or not portraitCardCurrent() then return end
+    local function sourceCallback(callback)
+        local existing = sourceControlsLease.memo[callback]
+        if existing then return existing end
+        local cell = { callback = callback }
+        sourceControlsLease.cells[#sourceControlsLease.cells + 1] = cell
+        local function retained(...)
+            local current = cell.callback
+            if sourceControlsLease.released or not current then return false end
+            local result = current(...)
+            return not sourceControlsLease.released and cell.callback == current and result
+        end
+        sourceControlsLease.memo[callback] = retained
+        return retained
+    end
+    local function sourceWrite(current, object, method, rowWriter, ...)
+        if sourceControlsLease.released or self.sourceControlsLease ~= sourceControlsLease then return false end
+        local owner = sourceCallback(current)
+        if method == "Show" or method == "Hide" or method == "SetEnabled" or method == "SetScript" then rowWriter = nil end
+        if method == "SetScript" and type(select(2, ...)) == "function" then
+            local event, action = ...
+            if rowWriter then return rowWriter(owner, object, method, event, sourceCallback(action)) end
+            return self:QuestListWrite(object, method, owner, event, sourceCallback(action))
+        end
+        if rowWriter then return rowWriter(owner, object, method, ...) end
+        return self:QuestListWrite(object, method, owner, ...)
+    end
+    for _, buttons in ipairs({ self.reportedToggles, self.reportedRows }) do
+        for index, row in ipairs(buttons) do
+            local function current() return portraitCardCurrent() and buttons[index] == row end
+            if not sourceWrite(current,row,"Hide") or not sourceWrite(current,row,"SetEnabled",nil,false) or
+                not sourceWrite(current,row,"SetScript",nil,"OnClick",nil) then return end
+        end
+    end
     for _, tab in pairs(self.detailTabButtons or {}) do
         if not self:QuestListWrite(tab,"Hide",portraitCardCurrent) or not self:QuestListWrite(tab,"SetEnabled",portraitCardCurrent,false) or
             not self:QuestListWrite(tab,"SetScript",portraitCardCurrent,"OnClick",nil) then return end
@@ -3049,8 +3091,10 @@ function UI:RefreshDetail(sourceFocus)
             not self:QuestListWrite(row,"SetScript",current,"OnClick",nil) then return end
     end
     for _, buttons in ipairs({ self.startButtons, self.finishButtons, self.containerButtons, self.dropButtons, self.objectiveContainerButtons, self.giverButtons }) do
-        for _, b in ipairs(buttons) do
-            b:Hide(); b:SetEnabled(false); b:SetScript("OnClick", nil)
+        for index, row in ipairs(buttons) do
+            local function current() return portraitCardCurrent() and buttons[index] == row end
+            if not sourceWrite(current,row,"Hide") or not sourceWrite(current,row,"SetEnabled",nil,false) or
+                not sourceWrite(current,row,"SetScript",nil,"OnClick",nil) then return end
         end
     end
     if not self:ResetQuestLogControl() or not portraitCardCurrent() then return end
@@ -3266,7 +3310,7 @@ function UI:RefreshDetail(sourceFocus)
                 (not metadataDB or rawget(metadataDB, "locale") == metadataLocale)
         end
         local function locationWrite(current, object, method, ...)
-            return self:QuestListWrite(object, method, current, ...)
+            return sourceWrite(current, object, method, nil, ...)
         end
         local function areaName(canonical, current, proofs)
             if type(sourceAreaGetter) ~= "function" then return nil end
@@ -3291,7 +3335,7 @@ function UI:RefreshDetail(sourceFocus)
             local parentName = giverName(parent, current, nameProofs)
             if not current() then return false end
             toggleIndex = toggleIndex + 1
-            local toggle = self:MakeRow(self.detail, self.reportedToggles, toggleIndex, 40)
+            local toggle = self:MakeRow(self.detail, self.reportedToggles, toggleIndex, 40, sourceCallback(current), true)
             if not current() then return false end
             toggle.locationKey, toggle.heading = key, true
             local expanded = self.reportedExpanded[key] == true
@@ -3305,6 +3349,7 @@ function UI:RefreshDetail(sourceFocus)
             local nextY = self:LayoutRow(toggle, 40, y, current)
             if not nextY then return false end
             y = nextY
+            if not locationWrite(current, toggle, "Show") then return false end
             if not expanded then return end
             line(addon.L("REPORTED_NOTICE"))
             local parentCurrent = current
@@ -3321,7 +3366,7 @@ function UI:RefreshDetail(sourceFocus)
                 end
                 if not current() then return false end
                 reportIndex = reportIndex + 1
-                local row = self:MakeRow(self.detail, self.reportedRows, reportIndex, 59)
+                local row = self:MakeRow(self.detail, self.reportedRows, reportIndex, 59, sourceCallback(current), true)
                 if not current() then return false end
                 row.locationKey, row.destination, row.heading = key, point, nil
                 if not locationWrite(current, row.title, "SetText", zoneName .. string.format(" (%.1f, %.1f)", point.x, point.y)) or
@@ -3335,6 +3380,7 @@ function UI:RefreshDetail(sourceFocus)
                 local nextY = self:LayoutRow(row, 59, y, current)
                 if not nextY then return false end
                 y = nextY
+                if not locationWrite(current, row, "Show") then return false end
             end
         end
         local function carried(itemID)
@@ -3392,8 +3438,7 @@ function UI:RefreshDetail(sourceFocus)
                     return true
                 end
                 local function write(object, method, ...)
-                    if rowWriter then return rowWriter(current, object, method, ...) end
-                    return locationWrite(current, object, method, ...)
+                    return sourceWrite(current, object, method, rowWriter, ...)
                 end
                 if not current() then return false end
                 local title = giverName(destination, current, nameProofs)
@@ -3419,7 +3464,7 @@ function UI:RefreshDetail(sourceFocus)
                         addon.L(area and "SOURCE_POSITION_UNKNOWN" or "UNKNOWN_PLACE") .. "|r"
                 end
                 if not current() then return false end
-                local row = self:MakeRow(self.detail, buttons, (offset or 0) + index, 59)
+                local row = self:MakeRow(self.detail, buttons, (offset or 0) + index, 59, sourceCallback(current), true)
                 if not current() then return false end
                 if not write(row.title, "SetText", title) or
                     not write(row.note, "SetText", note) or
@@ -3433,7 +3478,7 @@ function UI:RefreshDetail(sourceFocus)
                 local nextY = self:LayoutRow(row, 59, y, current)
                 if not nextY then return false end
                 y = nextY
-                if reported(destination, slot .. index, current) == false or not current() then return false end
+                if reported(destination, slot .. index, current) == false or not current() or not write(row, "Show") then return false end
             end
         end
         local summonGetter = self.SummonSource
@@ -5785,6 +5830,7 @@ function UI:Create()
         end
         -- Cleanup callbacks may reopen and render the planner; that newer view owns its state.
         if not current() then return end
+        releaseSourceControls(self)
         releaseDetailText(self)
         self:ReleasePreparationOverview()
         if not current() then return end
