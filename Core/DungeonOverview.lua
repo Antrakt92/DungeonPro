@@ -126,6 +126,7 @@ function Overview.Get(plan, dungeon, engine, ownerCurrent)
         end
         local kinds = { complete = true, turnin = true, pickup = true, inside = true, level = true }
         local seenSteps, steps, stepCount = {}, {}, 0
+        local readySteps, activeSteps = {}, {}
         for index = 1, actionCount do
             local action = fields(actions[index], { "id", "kind" })
             local id = number(action.id)
@@ -134,8 +135,12 @@ function Overview.Get(plan, dungeon, engine, ownerCurrent)
             if not seenSteps[id] and ((action.kind == "complete" and status == "ACTIVE") or
                 (action.kind == "turnin" and status == "READY")) then
                 seenSteps[id], stepCount = true, stepCount + 1
-                if #steps < 6 then steps[#steps + 1] = { id = id, kind = action.kind, status = status, listedTarget = rootIDs[id] == true } end
+                local group = status == "READY" and readySteps or activeSteps
+                if #group < 6 then group[#group + 1] = { id = id, kind = action.kind, status = status, listedTarget = rootIDs[id] == true } end
             end
+        end
+        for _, group in ipairs({ readySteps, activeSteps }) do
+            for _, step in ipairs(group) do if #steps < 6 then steps[#steps + 1] = step end end
         end
         result = { counts = counts, shownRoots = rowCount, unknown = input.unknown,
             knownPrepared = input.ready and not input.unknown, steps = steps, remainingSteps = stepCount - #steps }

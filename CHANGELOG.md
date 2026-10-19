@@ -4,6 +4,7 @@
 
 ### 19-Oct-2026
 
+- Show ready turn-ins before unfinished quests in the dungeon overview.
 - Discard navigation diagnostic snapshots if their source changes during formatting.
 - Label supporting quests separately in the dungeon overview without adding them to the main quest counts.
 - Keep dungeon artwork aligned when the selected dungeon changes during a refresh.
