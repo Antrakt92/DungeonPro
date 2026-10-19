@@ -1,0 +1,202 @@
+{
+  "schema": 1,
+  "checked": "2026-10-19",
+  "provenance": {
+    "provider": "Wowhead",
+    "endpoint": "https://nether.wowhead.com/forever/tooltip/{kind}/{id}?locale={locale}",
+    "extraction": "name-only",
+    "localeIDs": {
+      "deDE": 3,
+      "frFR": 2,
+      "esES": 6,
+      "itIT": 9,
+      "ptBR": 8,
+      "ruRU": 7,
+      "koKR": 1,
+      "zhCN": 4,
+      "zhTW": 10
+    }
+  },
+  "locales": {
+    "ruRU": {
+      "objects": {
+        "142702": {
+          "source": "Venom Bottle",
+          "name": "Флакон с ядом",
+          "url": "https://nether.wowhead.com/forever/tooltip/object/142702?locale=7"
+        },
+        "142703": {
+          "source": "Venom Bottle",
+          "name": "Флакон с ядом",
+          "url": "https://nether.wowhead.com/forever/tooltip/object/142703?locale=7"
+        },
+        "142704": {
+          "source": "Venom Bottle",
+          "name": "Флакон с ядом",
+          "url": "https://nether.wowhead.com/forever/tooltip/object/142704?locale=7"
+        },
+        "142705": {
+          "source": "Venom Bottle",
+          "name": "Флакон с ядом",
+          "url": "https://nether.wowhead.com/forever/tooltip/object/142705?locale=7"
+        },
+        "142706": {
+          "source": "Venom Bottle",
+          "name": "Флакон с ядом",
+          "url": "https://nether.wowhead.com/forever/tooltip/object/142706?locale=7"
+        },
+        "142707": {
+          "source": "Venom Bottle",
+          "name": "Флакон с ядом",
+          "url": "https://nether.wowhead.com/forever/tooltip/object/142707?locale=7"
+        },
+        "142708": {
+          "source": "Venom Bottle",
+          "name": "Флакон с ядом",
+          "url": "https://nether.wowhead.com/forever/tooltip/object/142708?locale=7"
+        },
+        "142710": {
+          "source": "Venom Bottle",
+          "name": "Флакон с ядом",
+          "url": "https://nether.wowhead.com/forever/tooltip/object/142710?locale=7"
+        },
+        "142711": {
+          "source": "Venom Bottle",
+          "name": "Флакон с ядом",
+          "url": "https://nether.wowhead.com/forever/tooltip/object/142711?locale=7"
+        },
+        "142712": {
+          "source": "Venom Bottle",
+          "name": "Флакон с ядом",
+          "url": "https://nether.wowhead.com/forever/tooltip/object/142712?locale=7"
+        },
+        "142713": {
+          "source": "Venom Bottle",
+          "name": "Флакон с ядом",
+          "url": "https://nether.wowhead.com/forever/tooltip/object/142713?locale=7"
+        },
+        "142714": {
+          "source": "Venom Bottle",
+          "name": "Флакон с ядом",
+          "url": "https://nether.wowhead.com/forever/tooltip/object/142714?locale=7"
+        },
+        "112877": {
+          "source": "Talvash's Scrying Bowl",
+          "name": "Гадальная чаша Талваша",
+          "url": "https://nether.wowhead.com/forever/tooltip/object/112877?locale=7"
+        },
+        "19861": {
+          "source": "Henrig Lonebrow's Journal",
+          "name": "Дневник Хенрига Хмурня",
+          "url": "https://nether.wowhead.com/forever/tooltip/object/19861?locale=7"
+        }
+      },
+      "npcs": {}
+    },
+    "deDE": {
+      "objects": {
+        "112877": {
+          "source": "Talvash's Scrying Bowl",
+          "name": "Talvashs Wahrsageschale",
+          "url": "https://nether.wowhead.com/forever/tooltip/object/112877?locale=3"
+        },
+        "19861": {
+          "source": "Henrig Lonebrow's Journal",
+          "name": "Henrik Lonebrows Tagebuch",
+          "url": "https://nether.wowhead.com/forever/tooltip/object/19861?locale=3"
+        }
+      },
+      "npcs": {}
+    },
+    "frFR": {
+      "objects": {
+        "112877": {
+          "source": "Talvash's Scrying Bowl",
+          "name": "Coupe de divination de Talvash",
+          "url": "https://nether.wowhead.com/forever/tooltip/object/112877?locale=2"
+        },
+        "19861": {
+          "source": "Henrig Lonebrow's Journal",
+          "name": "Journal d'Henrig Lonebrow",
+          "url": "https://nether.wowhead.com/forever/tooltip/object/19861?locale=2"
+        }
+      },
+      "npcs": {}
+    },
+    "esES": {
+      "objects": {
+        "112877": {
+          "source": "Talvash's Scrying Bowl",
+          "name": "Cuenco de visión de Talvash",
+          "url": "https://nether.wowhead.com/forever/tooltip/object/112877?locale=6"
+        },
+        "19861": {
+          "source": "Henrig Lonebrow's Journal",
+          "name": "Diario de Henrig Soliceja",
+          "url": "https://nether.wowhead.com/forever/tooltip/object/19861?locale=6"
+        }
+      },
+      "npcs": {}
+    },
+    "ptBR": {
+      "objects": {
+        "112877": {
+          "source": "Talvash's Scrying Bowl",
+          "name": "Bacia de Vidência do Didiê",
+          "url": "https://nether.wowhead.com/forever/tooltip/object/112877?locale=8"
+        },
+        "19861": {
+          "source": "Henrig Lonebrow's Journal",
+          "name": "Diário de Henrig Monocelha",
+          "url": "https://nether.wowhead.com/forever/tooltip/object/19861?locale=8"
+        }
+      },
+      "npcs": {}
+    },
+    "koKR": {
+      "objects": {
+        "112877": {
+          "source": "Talvash's Scrying Bowl",
+          "name": "탈바쉬의 수정점 그릇",
+          "url": "https://nether.wowhead.com/forever/tooltip/object/112877?locale=1"
+        },
+        "19861": {
+          "source": "Henrig Lonebrow's Journal",
+          "name": "헨리그 론브로우의 일지",
+          "url": "https://nether.wowhead.com/forever/tooltip/object/19861?locale=1"
+        }
+      },
+      "npcs": {}
+    },
+    "zhCN": {
+      "objects": {
+        "112877": {
+          "source": "Talvash's Scrying Bowl",
+          "name": "塔瓦斯德的占卜之碗",
+          "url": "https://nether.wowhead.com/forever/tooltip/object/112877?locale=4"
+        },
+        "19861": {
+          "source": "Henrig Lonebrow's Journal",
+          "name": "亨里格·独眉的日记",
+          "url": "https://nether.wowhead.com/forever/tooltip/object/19861?locale=4"
+        }
+      },
+      "npcs": {}
+    },
+    "zhTW": {
+      "objects": {
+        "112877": {
+          "source": "Talvash's Scrying Bowl",
+          "name": "塔瓦斯德的占卜之碗",
+          "url": "https://nether.wowhead.com/forever/tooltip/object/112877?locale=10"
+        },
+        "19861": {
+          "source": "Henrig Lonebrow's Journal",
+          "name": "亨里格·獨眉的日記",
+          "url": "https://nether.wowhead.com/forever/tooltip/object/19861?locale=10"
+        }
+      },
+      "npcs": {}
+    }
+  }
+}

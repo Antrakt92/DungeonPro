@@ -1,4 +1,4 @@
--- Localized titles from public records and authored translations; runtime remains offline.
+-- Localized names from public records and authored titles; runtime remains offline.
 local _, addon = ...
 addon.nameTranslations = {}
 addon.nameTranslationFactories = { root = addon.nameTranslations, loaders = {
@@ -607,6 +607,10 @@ addon.nameTranslationFactories = { root = addon.nameTranslations, loaders = {
             ["wc"] = { source = "Wailing Caverns", name = "Die Höhlen des Wehklagens" },
             ["zf"] = { source = "Zul'Farrak", name = "Zul'Farrak" },
         },
+        objects = {
+            [19861] = { source = "Henrig Lonebrow's Journal", name = "Henrik Lonebrows Tagebuch" },
+            [112877] = { source = "Talvash's Scrying Bowl", name = "Talvashs Wahrsageschale" },
+        },
     } end,
     esES = function() return {
         quests = {
@@ -1213,6 +1217,10 @@ addon.nameTranslationFactories = { root = addon.nameTranslations, loaders = {
             ["wc"] = { source = "Wailing Caverns", name = "Cuevas de los Lamentos" },
             ["zf"] = { source = "Zul'Farrak", name = "Zul'Farrak" },
         },
+        objects = {
+            [19861] = { source = "Henrig Lonebrow's Journal", name = "Diario de Henrig Soliceja" },
+            [112877] = { source = "Talvash's Scrying Bowl", name = "Cuenco de visión de Talvash" },
+        },
     } end,
     frFR = function() return {
         quests = {
@@ -1818,6 +1826,10 @@ addon.nameTranslationFactories = { root = addon.nameTranslations, loaders = {
             ["ulda"] = { source = "Uldaman", name = "Uldaman" },
             ["wc"] = { source = "Wailing Caverns", name = "Cavernes des lamentations" },
             ["zf"] = { source = "Zul'Farrak", name = "Zul'Farrak" },
+        },
+        objects = {
+            [19861] = { source = "Henrig Lonebrow's Journal", name = "Journal d'Henrig Lonebrow" },
+            [112877] = { source = "Talvash's Scrying Bowl", name = "Coupe de divination de Talvash" },
         },
     } end,
     itIT = function() return {
@@ -3031,6 +3043,10 @@ addon.nameTranslationFactories = { root = addon.nameTranslations, loaders = {
             ["wc"] = { source = "Wailing Caverns", name = "통곡의 동굴" },
             ["zf"] = { source = "Zul'Farrak", name = "줄파락" },
         },
+        objects = {
+            [19861] = { source = "Henrig Lonebrow's Journal", name = "헨리그 론브로우의 일지" },
+            [112877] = { source = "Talvash's Scrying Bowl", name = "탈바쉬의 수정점 그릇" },
+        },
     } end,
     ptBR = function() return {
         quests = {
@@ -3636,6 +3652,10 @@ addon.nameTranslationFactories = { root = addon.nameTranslations, loaders = {
             ["ulda"] = { source = "Uldaman", name = "Uldaman" },
             ["wc"] = { source = "Wailing Caverns", name = "Caverna Ululante" },
             ["zf"] = { source = "Zul'Farrak", name = "Zul'Farrak" },
+        },
+        objects = {
+            [19861] = { source = "Henrig Lonebrow's Journal", name = "Diário de Henrig Monocelha" },
+            [112877] = { source = "Talvash's Scrying Bowl", name = "Bacia de Vidência do Didiê" },
         },
     } end,
     ruRU = function() return {
@@ -4243,6 +4263,22 @@ addon.nameTranslationFactories = { root = addon.nameTranslations, loaders = {
             ["wc"] = { source = "Wailing Caverns", name = "Пещеры Стенаний" },
             ["zf"] = { source = "Zul'Farrak", name = "Зул'Фаррак" },
         },
+        objects = {
+            [19861] = { source = "Henrig Lonebrow's Journal", name = "Дневник Хенрига Хмурня" },
+            [112877] = { source = "Talvash's Scrying Bowl", name = "Гадальная чаша Талваша" },
+            [142702] = { source = "Venom Bottle", name = "Флакон с ядом" },
+            [142703] = { source = "Venom Bottle", name = "Флакон с ядом" },
+            [142704] = { source = "Venom Bottle", name = "Флакон с ядом" },
+            [142705] = { source = "Venom Bottle", name = "Флакон с ядом" },
+            [142706] = { source = "Venom Bottle", name = "Флакон с ядом" },
+            [142707] = { source = "Venom Bottle", name = "Флакон с ядом" },
+            [142708] = { source = "Venom Bottle", name = "Флакон с ядом" },
+            [142710] = { source = "Venom Bottle", name = "Флакон с ядом" },
+            [142711] = { source = "Venom Bottle", name = "Флакон с ядом" },
+            [142712] = { source = "Venom Bottle", name = "Флакон с ядом" },
+            [142713] = { source = "Venom Bottle", name = "Флакон с ядом" },
+            [142714] = { source = "Venom Bottle", name = "Флакон с ядом" },
+        },
     } end,
     zhCN = function() return {
         quests = {
@@ -4849,6 +4885,10 @@ addon.nameTranslationFactories = { root = addon.nameTranslations, loaders = {
             ["wc"] = { source = "Wailing Caverns", name = "哀嚎洞穴" },
             ["zf"] = { source = "Zul'Farrak", name = "祖尔法拉克" },
         },
+        objects = {
+            [19861] = { source = "Henrig Lonebrow's Journal", name = "亨里格·独眉的日记" },
+            [112877] = { source = "Talvash's Scrying Bowl", name = "塔瓦斯德的占卜之碗" },
+        },
     } end,
     zhTW = function() return {
         quests = {
@@ -5454,6 +5494,10 @@ addon.nameTranslationFactories = { root = addon.nameTranslations, loaders = {
             ["ulda"] = { source = "Uldaman", name = "奧達曼" },
             ["wc"] = { source = "Wailing Caverns", name = "哀嚎洞穴" },
             ["zf"] = { source = "Zul'Farrak", name = "祖爾法拉克" },
+        },
+        objects = {
+            [19861] = { source = "Henrig Lonebrow's Journal", name = "亨里格·獨眉的日記" },
+            [112877] = { source = "Talvash's Scrying Bowl", name = "塔瓦斯德的占卜之碗" },
         },
     } end,
 } }

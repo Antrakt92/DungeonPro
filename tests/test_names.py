@@ -42,14 +42,98 @@ def authored_fixture(data, catalog):
     return supplement
 
 
+def source_fixture():
+    return {"schema": 1, "checked": "2026-10-19", "provenance": {
+        "provider": "Wowhead", "endpoint": names.ENDPOINT, "extraction": "name-only", "localeIDs": dict(names.LOCALES)},
+        "locales": {"ruRU": {"objects": {"142702": {"source": "Venom Bottle", "name": "Флакон с ядом",
+            "url": names.ENDPOINT.format(kind="object", id=142702, locale=7)}}, "npcs": {}}}}
+
+
 class NamesTests(unittest.TestCase):
+    def test_sparse_source_names_require_exact_typed_catalogue_identity(self):
+        data, catalog = fixture()
+        sources = source_fixture()
+        catalog["quests"][0]["start"] = {"objectID": 142702, "name": "Venom Bottle"}
+        self.assertIs(names.validate_sources(sources, catalog), sources)
+        for mutation in (
+            lambda s: s.update(schema=True),
+            lambda s: s.update(checked="2026-99-99"),
+            lambda s: s["provenance"].update(extraction="tooltip"),
+            lambda s: s["provenance"]["localeIDs"].update(ruRU=1),
+            lambda s: s["locales"].update(xxXX={"objects": {}, "npcs": {}}),
+            lambda s: s["locales"]["ruRU"].update(zones={}),
+            lambda s: s["locales"]["ruRU"]["objects"]["142702"].update(source="Other bottle"),
+            lambda s: s["locales"]["ruRU"]["objects"]["142702"].update(source=[]),
+            lambda s: s["locales"]["ruRU"]["objects"]["142702"].update(name="bad\ud800name"),
+            lambda s: s["locales"]["ruRU"]["objects"]["142702"].update(name="|cffffffffObject"),
+            lambda s: s["locales"]["ruRU"]["objects"]["142702"].update(name="Unknown"),
+            lambda s: s["locales"]["ruRU"]["objects"]["142702"].update(name="界" * 400),
+            lambda s: s["locales"]["ruRU"]["objects"]["142702"].update(mapID=1425),
+            lambda s: s["locales"]["ruRU"]["objects"]["142702"].update(url=names.ENDPOINT.format(kind="quest", id=142702, locale=7)),
+            lambda s: s["locales"]["ruRU"]["objects"].update({"0142702": s["locales"]["ruRU"]["objects"].pop("142702")}),
+        ):
+            candidate = copy.deepcopy(sources)
+            mutation(candidate)
+            with self.subTest(mutation=mutation), self.assertRaises(ValueError):
+                names.validate_sources(candidate, catalog)
+        for identity in ({"npcID": 142702}, {"itemID": 142702}, {"objectID": 142702, "npcID": 1},
+                         {"objectID": 142702, "dropNPCID": 1}, {"objectID": True}):
+            catalog["quests"][0]["start"] = dict(identity, name="Venom Bottle")
+            with self.subTest(identity=identity), self.assertRaises(ValueError):
+                names.validate_sources(sources, catalog)
+        catalog["quests"][0]["start"] = {"objectID": 142702, "name": "Venom Bottle"}
+        catalog["quests"][0]["finish"] = {"objectID": 142702, "name": "Conflicting canonical name"}
+        with self.assertRaises(ValueError):
+            names.validate_sources(sources, catalog)
+
+    def test_source_names_are_sparse_and_do_not_require_unobserved_names_or_locales(self):
+        sources, (_, catalog) = source_fixture(), fixture()
+        catalog["quests"][0]["start"] = {"objectID": 142702, "name": "Venom Bottle"}
+        sources["locales"]["ruRU"]["objects"]["142702"]["name"] = "Venom Bottle"
+        self.assertIs(names.validate_sources(sources, catalog), sources)
+        sources["locales"] = {}
+        self.assertIs(names.validate_sources(sources, catalog), sources)
+
+    def test_invalid_source_input_cannot_replace_previously_generated_bytes(self):
+        data, catalog = fixture()
+        catalog["quests"][0]["start"] = {"objectID": 142702, "name": "Venom Bottle"}
+        authored = authored_fixture(data, catalog)
+        italian = copy.deepcopy(authored)
+        italian["locales"] = {"itIT": italian["locales"]["itIT"]}
+        authored["locales"].pop("itIT")
+        inputs = {"source_name_translations.json": source_fixture(), "catalog.json": catalog,
+                  "name_translations.json": data, "name_translation_supplements.json": authored,
+                  "name_translation_itIT.json": italian}
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            for name in ("scripts", "data", "Database"):
+                (root / name).mkdir()
+            shutil.copy2(ROOT / "scripts/names.py", root / "scripts/names.py")
+            target = root / "Database/NameTranslations.lua"
+            for name, payload in inputs.items():
+                (root / "data" / name).write_text(json.dumps(payload), encoding="utf-8")
+            result = subprocess.run([sys.executable, str(root / "scripts/names.py")], capture_output=True)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            original = target.read_bytes()
+            self.assertIn("Флакон с ядом".encode("utf-8"), original)
+            for field, value in (("name", "bad\ud800label"), ("source", "Stale bottle"),
+                                 ("url", names.ENDPOINT.format(kind="npc", id=142702, locale=7)), ("quantity", 1)):
+                candidate = copy.deepcopy(inputs["source_name_translations.json"])
+                candidate["locales"]["ruRU"]["objects"]["142702"][field] = value
+                (root / "data/source_name_translations.json").write_text(json.dumps(candidate), encoding="utf-8")
+                for options in ([], ["--check"]):
+                    with self.subTest(field=field, options=options):
+                        result = subprocess.run([sys.executable, str(root / "scripts/names.py"), *options], capture_output=True)
+                        self.assertNotEqual(result.returncode, 0)
+                        self.assertEqual(target.read_bytes(), original)
+
     def test_invalid_unicode_inputs_preserve_generated_names_in_write_and_check_modes(self):
         data, catalog = fixture()
         authored = authored_fixture(data, catalog)
         italian = copy.deepcopy(authored)
         italian["locales"] = {"itIT": italian["locales"]["itIT"]}
         authored["locales"].pop("itIT")
-        inputs = {"catalog.json": catalog, "name_translations.json": data,
+        inputs = {"source_name_translations.json": dict(source_fixture(), locales={}), "catalog.json": catalog, "name_translations.json": data,
                   "name_translation_supplements.json": authored, "name_translation_itIT.json": italian}
         with tempfile.TemporaryDirectory() as folder:
             root = Path(folder)
@@ -87,7 +171,7 @@ class NamesTests(unittest.TestCase):
         italian = copy.deepcopy(authored)
         italian["locales"] = {"itIT": italian["locales"]["itIT"]}
         authored["locales"].pop("itIT")
-        inputs = {"catalog.json": catalog, "name_translations.json": data,
+        inputs = {"source_name_translations.json": dict(source_fixture(), locales={}), "catalog.json": catalog, "name_translations.json": data,
                   "name_translation_supplements.json": authored, "name_translation_itIT.json": italian}
         with tempfile.TemporaryDirectory() as folder:
             root = Path(folder)
@@ -247,7 +331,7 @@ class NamesTests(unittest.TestCase):
             for kind, entries in payload.items():
                 lines.append(f'local count=0 for _ in pairs(dictionary.{kind})do count=count+1 end assert(count=={len(entries)})')
                 for key, entry in entries.items():
-                    index = key if kind == "quests" else names.quoted(key)
+                    index = names.quoted(key) if kind == "dungeons" else key
                     lines.append(f'assert(dictionary.{kind}[{index}].source=={names.quoted(entry["source"])} and '
                                  f'dictionary.{kind}[{index}].name=={names.quoted(entry["name"])}) total=total+1')
         count = sum(len(entries) for payload in data["locales"].values() for entries in payload.values())

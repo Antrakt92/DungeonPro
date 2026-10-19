@@ -62,7 +62,8 @@ for _,locale in ipairs({"enUS","ruRU","deDE","frFR","esES","ptBR","koKR","zhCN",
  a.db.locale=locale
  for _,sample in ipairs({{2204,"start.summonItem"},{2201,"finish.summonItem"}})do
   carried=0;render(sample[1])
-  local text=a.L("SOURCE_SUMMON_ITEM","Item 7667",a.quests[sample[1]][sample[1]==2204 and"start"or"finish"].name)
+  local endpoint=a.quests[sample[1]][sample[1]==2204 and"start"or"finish"]
+  local text=a.L("SOURCE_SUMMON_ITEM","Item 7667",a.SourceName(endpoint)or endpoint.name)
   assert(text~="SOURCE_SUMMON_ITEM"and visible(text),"localized instruction identifies exact source item and object")
   if sample[1]==2204 then assert(not ui.giver:IsShown()and not visible(a.L("GIVER_LOCATION_UNKNOWN")),"created source replaces the false fixed-location warning and route icon")end
   local _,position=visible(text)

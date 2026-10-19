@@ -595,6 +595,82 @@ local function translatedName(kind, key, definition, current, locale)
     if fresh() then return name, fresh end
 end
 
+function addon.SourceName(place, ownerCurrent)
+    local clean, read, checker = addon.Clean, addon.Read, issecretvalue
+    local api, dictionaryGetter = addon.SourceName, addon.GetNameTranslations
+    local fields = { "npcID", "objectID", "itemID", "dropNPCID", "name" }
+    local ok, values = pcall(function()
+        local snapshot = {}; for _, field in ipairs(fields) do snapshot[field] = rawget(place, field) end
+        return snapshot
+    end)
+    if not ok then return nil end
+    local function sourceCurrent()
+        local valid, same = pcall(function()
+            if addon.SourceName ~= api or addon.GetNameTranslations ~= dictionaryGetter or addon.Clean ~= clean or
+                addon.Read ~= read or issecretvalue ~= checker then return false end
+            for _, field in ipairs(fields) do
+                if not rawequal(rawget(place, field), values[field]) then return false end
+            end
+            return true
+        end)
+        return valid and same == true
+    end
+    if not clean(place,"table") or not sourceCurrent() then return nil end
+    for _, field in ipairs(fields) do
+        if type(checker) == "function" and read(checker,"boolean",values[field]) ~= false then return nil end
+        if not sourceCurrent() then return nil end
+    end
+    local npc, object = clean(values.npcID,"number"), clean(values.objectID,"number")
+    if not sourceCurrent() or values.itemID ~= nil or values.dropNPCID ~= nil or
+        (values.npcID ~= nil and values.objectID ~= nil) then return nil end
+    local id, kind = npc or object, npc and "npcs" or "objects"
+    if not id or id <= 0 or id > 4294967295 or id % 1 ~= 0 then return nil end
+    local name, owner = clean(values.name,"string"), clean(ownerCurrent,"function")
+    if not name or #name > 1024 or not name:find("%S") or name:find("%c") or
+        (ownerCurrent ~= nil and not owner) or not sourceCurrent() then return nil end
+    local locale, _, localeCurrent = nameLocaleScope()
+    if not localeCurrent then return nil end
+    local function current()
+        if owner and read(owner,"boolean") ~= true then return false end
+        return localeCurrent() and sourceCurrent()
+    end
+    if not current() then return nil end
+    local result
+    if locale == "enUS" then result = name
+    else result = translatedName(kind,id,place,current,locale) end
+    if not result or not current() then return nil end
+    local database, language, gameGetter = addon.db, addon.Language, GetLocale
+    local choice = type(database) == "table" and rawget(database,"locale")
+    local selection = type(language) == "table" and rawget(language,"GetSelection")
+    local captured, dictionary = pcall(function()
+        local root = addon.nameTranslations
+        local localized = type(root) == "table" and rawget(root,locale)
+        local entries = type(localized) == "table" and rawget(localized,kind)
+        local entry = type(entries) == "table" and rawget(entries,id)
+        return { root=root, localized=localized, entries=entries, entry=entry,
+            source=type(entry) == "table" and rawget(entry,"source"), name=type(entry) == "table" and rawget(entry,"name") }
+    end)
+    if not captured or (locale ~= "enUS" and (dictionary.source ~= name or dictionary.name ~= result)) then return nil end
+    local function rawCurrent()
+        local valid, same = pcall(function()
+            return sourceCurrent() and addon.db == database and addon.Language == language and GetLocale == gameGetter and
+                (type(database) ~= "table" or rawequal(rawget(database,"locale"),choice)) and
+                (type(language) ~= "table" or rawequal(rawget(language,"GetSelection"),selection)) and
+                rawequal(addon.nameTranslations,dictionary.root) and
+                (type(dictionary.root) ~= "table" or rawequal(rawget(dictionary.root,locale),dictionary.localized)) and
+                (type(dictionary.localized) ~= "table" or rawequal(rawget(dictionary.localized,kind),dictionary.entries)) and
+                (type(dictionary.entries) ~= "table" or rawequal(rawget(dictionary.entries,id),dictionary.entry)) and
+                (type(dictionary.entry) ~= "table" or (rawequal(rawget(dictionary.entry,"source"),dictionary.source) and
+                    rawequal(rawget(dictionary.entry,"name"),dictionary.name)))
+        end)
+        return valid and same == true
+    end
+    -- Retained proof excludes the caller owner; UI scopes compose it with their own ownership.
+    local function proof() return localeCurrent() and rawCurrent() end
+    if not proof() or (owner and read(owner,"boolean") ~= true) or not rawCurrent() then return nil end
+    return result, proof
+end
+
 -- Bulk browsing reads an existing native title or a reviewed locale label;
 -- neither route starts quest hydration.
 function addon.CachedQuestName(id)

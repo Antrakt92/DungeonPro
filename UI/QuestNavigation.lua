@@ -136,7 +136,10 @@ function UI:QuestRowNavigationHint(row, binding)
     if row.navigationBinding ~= binding or not binding.current() then return end
     self:HideNavigationHint()
     local tip, localize = addon.Clean(GameTooltip, "table") or addon.Clean(GameTooltip, "userdata"), addon.L
-    local nameGetter, areaGetter = addon.GiverName, addon.SourceAreaName
+    local nameGetter, areaGetter, sourceGetter = addon.GiverName, addon.SourceAreaName, addon.SourceName
+    local sourceProof
+    local frame, engine, character = self.frame, self.engine, addon.char
+    local quest, dungeon, generation, listGeneration = self.quest, self.dungeon, self.rewardGeneration, self.questListGeneration
     local mapRoot = C_Map
     local mapNamespace = addon.Clean(mapRoot, "table")
     local mapGetter = mapNamespace and rawget(mapNamespace, "GetMapInfo")
@@ -146,18 +149,29 @@ function UI:QuestRowNavigationHint(row, binding)
     local locale = database and rawget(database, "locale")
     local function current()
         local language = addon.Read(localeGetter, "string")
-        return row.navigationBinding == binding and binding.current() and addon.L == localize and addon.GiverName == nameGetter and addon.SourceAreaName == areaGetter and addon.db == database and
+        return row.navigationBinding == binding and binding.current() and addon.L == localize and addon.GiverName == nameGetter and addon.SourceAreaName == areaGetter and addon.SourceName == sourceGetter and addon.db == database and
             C_Map == mapRoot and (not mapNamespace or rawget(mapNamespace, "GetMapInfo") == mapGetter) and
             GetLocale == localeGetter and language == gameLocale and
             (not database or rawget(database, "locale") == locale) and GameTooltip == tip and
-            addon.Read(row.IsShown, "boolean", row) == true and addon.Read(self.frame.IsShown, "boolean", self.frame) == true
+            addon.Read(row.IsShown, "boolean", row) == true and addon.Read(self.frame.IsShown, "boolean", self.frame) == true and
+            (not sourceProof or addon.Read(sourceProof, "boolean") == true) and addon.SourceName == sourceGetter and
+            self.frame == frame and self.engine == engine and addon.char == character and self.quest == quest and self.dungeon == dungeon and
+            self.rewardGeneration == generation and self.questListGeneration == listGeneration and row.navigationBinding == binding and GameTooltip == tip
     end
     if not tip or not current() then return end
     local title = addon.Read(localize, "string", (binding.inspect or binding.reason == "QUEST_START_UNKNOWN") and "SOURCE_DETAILS" or binding.action and (binding.mapOnly and "GIVER_MAP" or "VISIT_GIVER") or "DETAIL_GIVER")
     local text = binding.reason and addon.Read(localize, "string", binding.reason)
     if not text and binding.action then
         local point = binding.action.place
-        text = addon.Read(nameGetter, "string", point)
+        if type(sourceGetter) == "function" then
+            local ok, name, proof = pcall(sourceGetter, point, current)
+            if not current() then return end
+            proof = addon.Clean(proof, "function")
+            if ok and proof and addon.Read(proof, "boolean") == true then
+                sourceProof, text = proof, addon.Clean(name, "string")
+            end
+        end
+        if not text or #text > 1024 or not text:find("%S") then text = addon.Read(nameGetter, "string", point) end
         if not current() then return end
         if not text or #text > 1024 or not text:find("%S") then text = addon.Clean(rawget(point, "name"), "string") end
         if not text or #text > 1024 or not text:find("%S") then text = addon.Read(localize, "string", "UNKNOWN_PLACE") end

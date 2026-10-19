@@ -4,6 +4,8 @@
 
 ### 19-Oct-2026
 
+- Show selected-language names for reviewed quest-starting objects in details
+  and navigation guidance.
 - Organize quest details into Quest, Sources and Story tabs, with separate
   reading positions and a return to the previous view when going back.
 - Let the dungeon list collapse to give quest names and expanded chains more

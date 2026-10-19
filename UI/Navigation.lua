@@ -510,6 +510,7 @@ local function context(action, generation)
     local library, checker, localeGetter = C_Map, issecretvalue, GetLocale
     local mapGetter = library and addon.Clean(library.GetMapInfo, "function")
     local giverGetter, questGetter = addon.Clean(addon.GiverName, "function"), addon.Clean(addon.QuestName, "function")
+    local sourceGetter, sourceProof = addon.SourceName, nil
     local database = addon.Clean(addon.db, "table")
     local choice = database and addon.Clean(database.locale, "string")
     local languages = addon.Clean(addon.Language, "table")
@@ -517,12 +518,13 @@ local function context(action, generation)
     local selection = addon.Read(selectionGetter, "string", languages)
     local locale = addon.Read(localeGetter, "string")
     local function current()
+        if addon.SourceName ~= sourceGetter then return false end
         if GetLocale ~= localeGetter or issecretvalue ~= checker then return false end
         local liveLocale = addon.Read(localeGetter, "string")
         if liveLocale ~= locale or GetLocale ~= localeGetter or issecretvalue ~= checker then return false end
         return navigationGeneration == generation and rawequal(target, action) and addon.Clean(action.place, "table") == place and
             addon.Clean(action.id, "number") == id and action.kind == kind and action.dungeon == dungeon and
-            addon.DungeonName == dungeonGetter and addon.Language == languages and
+            addon.DungeonName == dungeonGetter and addon.SourceName == sourceGetter and addon.Language == languages and
             (not languages or addon.Clean(languages.GetSelection, "function") == selectionGetter) and
             addon.Read(selectionGetter, "string", languages) == selection and addon.Clean(place.mapID, "number") == mapID and
             addon.Clean(place.name, "string") == name and addon.Clean(place.zoneName, "string") == zone and
@@ -530,12 +532,24 @@ local function context(action, generation)
             addon.Clean(place.y, "number") == y and addon.Clean(place.objectID, "number") == objectID and C_Map == library and issecretvalue == checker and
             GetLocale == localeGetter and (not library or addon.Clean(library.GetMapInfo, "function") == mapGetter) and
             addon.Clean(addon.GiverName, "function") == giverGetter and addon.Clean(addon.QuestName, "function") == questGetter and
-            addon.Clean(addon.db, "table") == database and (not database or addon.Clean(database.locale, "string") == choice)
+            addon.Clean(addon.db, "table") == database and (not database or addon.Clean(database.locale, "string") == choice) and
+            (not sourceProof or addon.Read(sourceProof, "boolean") == true) and addon.SourceName == sourceGetter and
+            navigationGeneration == generation and rawequal(target, action) and rawequal(action.place, place) and
+            rawequal(rawget(place, "mapID"), mapID) and rawequal(rawget(place, "x"), x) and rawequal(rawget(place, "y"), y)
     end
     if not current() then return nil end
     local title = actionTitle(action)
     if not current() then return nil end
-    local giver = kind ~= "entrance" and addon.Read(giverGetter, "string", place) or name
+    local giver
+    if kind ~= "entrance" and type(sourceGetter) == "function" then
+        local ok, localized, proof = pcall(sourceGetter, place, current)
+        if not current() then return nil end
+        proof = addon.Clean(proof, "function")
+        if ok and proof and addon.Read(proof, "boolean") == true then
+            sourceProof, giver = proof, addon.Clean(localized, "string")
+        end
+    end
+    if not giver or #giver > 1024 or not giver:find("%S") then giver = kind ~= "entrance" and addon.Read(giverGetter, "string", place) or name end
     if not current() then return nil end
     local info = addon.Read(mapGetter, "table", mapID)
     if not current() then return nil end

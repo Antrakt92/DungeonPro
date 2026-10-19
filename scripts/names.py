@@ -1,4 +1,4 @@
-"""Validate title-only source data and generate the offline localized name table."""
+"""Validate localized titles and typed source labels for the offline name table."""
 import argparse
 import copy
 import datetime
@@ -98,6 +98,60 @@ def quoted(value):
     return '"' + value.replace("\\", "\\\\").replace('"', '\\"') + '"'
 
 
+def validate_sources(data, catalog):
+    """Sparse typed labels never replace quest titles or establish source roles."""
+    validate_unicode(data)
+    if (type(data) is not dict or set(data) != {"schema", "checked", "provenance", "locales"} or
+            type(data["schema"]) is not int or data["schema"] != 1):
+        raise ValueError("Invalid source-name schema")
+    if type(data["checked"]) is not str or not re.fullmatch(r"\d{4}-\d{2}-\d{2}", data["checked"]):
+        raise ValueError("Invalid source-name date")
+    datetime.date.fromisoformat(data["checked"])
+    expected = {"provider": "Wowhead", "endpoint": ENDPOINT, "extraction": "name-only", "localeIDs": LOCALES}
+    if (data["provenance"] != expected or
+            any(type(value) is not int for value in data["provenance"]["localeIDs"].values())):
+        raise ValueError("Invalid source-name provenance")
+    definitions = {"objects": {}, "npcs": {}}
+
+    def visit(value):
+        if isinstance(value, dict):
+            for kind, field, other in (("objects", "objectID", "npcID"), ("npcs", "npcID", "objectID")):
+                identity, name = value.get(field), value.get("name")
+                if (type(identity) is int and 0 < identity <= 4294967295 and title(name) and
+                        value.get(other) is None and value.get("itemID") is None and value.get("dropNPCID") is None):
+                    definitions[kind].setdefault(str(identity), set()).add(name)
+            for child in value.values():
+                visit(child)
+        elif isinstance(value, list):
+            for child in value:
+                visit(child)
+
+    visit(catalog["quests"])
+    locales = data["locales"]
+    if type(locales) is not dict or not set(locales) <= set(LOCALES):
+        raise ValueError("Invalid source-name locales")
+    for locale, payload in locales.items():
+        if type(payload) is not dict or set(payload) != {"objects", "npcs"}:
+            raise ValueError("Invalid source-name payload")
+        for kind, entries in payload.items():
+            if type(entries) is not dict:
+                raise ValueError("Invalid source-name entries")
+            for key, entry in entries.items():
+                if (type(key) is not str or not re.fullmatch(r"[1-9][0-9]*", key) or
+                        int(key) > 4294967295 or type(entry) is not dict or set(entry) != {"source", "name", "url"}):
+                    raise ValueError("Invalid source-name identity or fields")
+                canonical = definitions[kind].get(key)
+                if (not title(entry["source"]) or not title(entry["name"]) or
+                        len(entry["source"].encode("utf-8")) > 1024 or len(entry["name"].encode("utf-8")) > 1024 or
+                        canonical != {entry["source"]}) or (
+                        entry["name"].strip("[]").casefold() in UNKNOWN or entry["name"] == "[" + entry["source"] + "]"):
+                    raise ValueError("Invalid source-name label or canonical identity")
+                url = ENDPOINT.format(kind="object" if kind == "objects" else "npc", id=key, locale=LOCALES[locale])
+                if entry["url"] != url:
+                    raise ValueError("Invalid source-name URL")
+    return data
+
+
 def validate_supplement(data, catalog, expected_locales=None):
     validate_unicode(data)
     if (type(data) is not dict or set(data) != {"schema", "provenance", "locales"} or
@@ -166,21 +220,29 @@ def load_data(root=ROOT):
     italian = read("name_translation_itIT.json")
     validate_supplement(supplements, catalog, set(LOCALES) - {"itIT"})
     validate_supplement(italian, catalog, {"itIT"})
-    return merge(data, catalog, supplements, italian)
+    merged = merge(data, catalog, supplements, italian)
+    sources = validate_sources(read("source_name_translations.json"), catalog)
+    for locale, payload in sources["locales"].items():
+        for kind, entries in payload.items():
+            if entries:
+                merged["locales"][locale][kind] = copy.deepcopy(entries)
+    return merged
 
 
 def generate(data):
-    lines = ["-- Localized titles from public records and authored translations; runtime remains offline.",
+    lines = ["-- Localized names from public records and authored titles; runtime remains offline.",
              "local _, addon = ...", "addon.nameTranslations = {}",
              "addon.nameTranslationFactories = { root = addon.nameTranslations, loaders = {"]
     for locale in sorted(LOCALES):
         lines.append(f"    {locale} = function() return {{")
-        for kind in ("quests", "dungeons"):
+        for kind in ("quests", "dungeons", "objects", "npcs"):
+            if kind not in data["locales"][locale]:
+                continue
             lines.append(f"        {kind} = {{")
             entries = data["locales"][locale][kind]
-            for key in sorted(entries, key=int if kind == "quests" else str):
+            for key in sorted(entries, key=str if kind == "dungeons" else int):
                 entry = entries[key]
-                index = key if kind == "quests" else quoted(key)
+                index = quoted(key) if kind == "dungeons" else key
                 lines.append(f"            [{index}] = {{ source = {quoted(entry['source'])}, name = {quoted(entry['name'])} }},")
             lines.append("        },")
         lines.append("    } end,")
