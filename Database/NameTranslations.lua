@@ -4600,6 +4600,7 @@ addon.nameTranslationFactories = { root = addon.nameTranslations, loaders = {
             ["Un'Goro Crater"] = { source = "Un'Goro Crater", name = "Кратер Ун'Горо" },
             ["Undercity"] = { source = "Undercity", name = "Подгород" },
             ["Western Plaguelands"] = { source = "Western Plaguelands", name = "Западные Чумные земли" },
+            ["Westfall"] = { source = "Westfall", name = "Западный Край" },
             ["Wetlands"] = { source = "Wetlands", name = "Болотина" },
             ["Winterspring"] = { source = "Winterspring", name = "Зимние Ключи" },
         },

@@ -205,13 +205,25 @@ def validate_areas(data, catalog):
         if type(entries) is not dict:
             raise ValueError("Invalid area-name entries")
         for source, entry in entries.items():
-            if (source not in sources or type(entry) is not dict or set(entry) != {"source", "name", "observations"} or
+            fields = {"source", "name", "observations"}
+            if (source not in sources or type(entry) is not dict or set(entry) not in (fields, fields | {"caseVariantSelection"}) or
                     entry["source"] != source or not title(entry["name"]) or len(entry["name"].encode("utf-8")) > 1024 or
                     entry["name"] in (source, "[" + source + "]") or entry["name"].strip("[]").casefold() in UNKNOWN):
                 raise ValueError("Invalid area-name label")
+            case_choice = "caseVariantSelection" in entry
+            if case_choice and entry["caseVariantSelection"] is not True:
+                raise ValueError("Invalid area-name case selection")
             observations = entry["observations"]
             if (type(observations) is not dict or set(observations) != {str(i) for i in sources[source]} or
-                    any(label != entry["name"] for label in observations.values())):
+                    any(not title(label) or len(label.encode("utf-8")) > 1024 for label in observations.values())):
+                raise ValueError("Area-name homonyms require complete matching observations")
+            if case_choice:
+                # A reviewed display choice keeps every observation, including its original case.
+                labels = set(observations.values())
+                if (len(labels) < 2 or entry["name"] not in labels or
+                        any(len(label) != len(entry["name"]) or label.lower() != entry["name"].lower() for label in labels)):
+                    raise ValueError("Area-name case selection requires observed case-only variants")
+            elif any(label != entry["name"] for label in observations.values()):
                 raise ValueError("Area-name homonyms require complete matching observations")
     return data
 

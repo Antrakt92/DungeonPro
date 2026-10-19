@@ -4,6 +4,7 @@
 
 ### 19-Oct-2026
 
+- Translate Westfall into Russian consistently across quest locations and guidance.
 - Show reviewed translated NPC names in quest details, search and guidance.
 - Show reviewed world-area translations in quest locations, search and guidance.
 - Find quests by reviewed translated source names as well as their original names.

@@ -480,6 +480,15 @@
           "28": "Западные Чумные земли"
         }
       },
+      "Westfall": {
+        "source": "Westfall",
+        "name": "Западный Край",
+        "caseVariantSelection": true,
+        "observations": {
+          "40": "Западный Край",
+          "16149": "Западный край"
+        }
+      },
       "Wetlands": {
         "source": "Wetlands",
         "name": "Болотина",

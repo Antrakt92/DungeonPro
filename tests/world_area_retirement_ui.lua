@@ -51,7 +51,8 @@ C_QuestLog.RequestLoadQuestByID=function()hydration=hydration+1;error("area capt
 a.ItemName=function()hydration=hydration+1;error("area captions do not query items")end
 a.GiverName=function()hydration=hydration+1;error("area captions do not query NPCs")end
 assert(a.SourceAreaName(area)==translated and hydration==0)
-assert(a.SourceAreaName("Blackrock Spire")==nil and a.SourceAreaName("Westfall")==nil,"ambiguous broad area and withheld Russian alias remain unreviewed")
+assert(a.SourceAreaName("Blackrock Spire")==nil,"ambiguous broad area remains unreviewed")
+assert(a.SourceAreaName("Westfall")=="Западный Край","explicit reviewed case choice supplies the observed Russian spelling")
 a.db.locale="itIT";assert(a.SourceAreaName(area)==nil,"missing reviewed Italian world-area data keeps fallback semantics")
 C_QuestLog.RequestLoadQuestByID,a.ItemName,a.GiverName=request,item,npc
 local function reset()

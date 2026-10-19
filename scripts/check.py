@@ -132,6 +132,7 @@ def main():
     run(lua, "tests/world_area_search.lua")
     run(lua, "tests/world_area_names_ui.lua")
     run(lua, "tests/world_area_retirement_ui.lua")
+    run(lua, "tests/world_area_case_variant_ui.lua")
     run(lua, "tests/restriction_names.lua")
     run(lua, "tests/items.lua")
     run(lua, "tests/carried_items.lua")
