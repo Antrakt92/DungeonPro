@@ -38,7 +38,7 @@ assert(find("Doomrigger's Clasp ×?") and not find(addon.L("OBJECTIVE_ITEM_UNKNO
 assert(find(addon.L("DETAIL_OBJECTIVES")) and not find(addon.L("OBJECTIVE_ITEMS_NOTICE")))
 assert(not ui.referenceToggle or not ui.referenceToggle:IsShown(), "plain source facts do not produce a generic details drawer")
 assert(not ui.storyToggle or not ui.storyToggle:IsShown())
-for _, row in ipairs(ui.chainButtons) do assert(not row:IsShown(), "left hierarchy is not copied into details") end
+for _, row in ipairs(ui.chainButtons or {}) do assert(not row:IsShown(), "left hierarchy is not copied into details") end
 local originalRepeatable=addon.quests[4764].repeatable
 addon.quests[4764].repeatable=true
 render()

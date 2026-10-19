@@ -389,7 +389,7 @@ check("Compact OR context never selects an arbitrary mandatory predecessor and d
     addon.quests[99230].requires = { { ids = { 99231, 99232 } } }
     addon.quests[99230].start = { mapID = 1, x = 20, y = 30 }
     ui.dungeon = { key = "compact-or", quests = { 99230 } }; showCompactDetail(99230)
-    assert(not(ui.branchButtons[1]and ui.branchButtons[1].shown))
+    assert(not(ui.branchButtons and ui.branchButtons[1]and ui.branchButtons[1].shown))
     local action, status = ui.action, ui.engine:State(99230).status
     ui.questTreeRoot,ui.questTreeDungeon=99230,ui.dungeon;ui:RefreshQuests();ui:RefreshDetail()
     local seen={};for _,row in ipairs(ui.rows)do if row.shown and row.questTreeNode and row.questID then seen[row.questID]=true end end
@@ -683,7 +683,7 @@ check("Middle OR controls preserve persisted choices automatic reset and safe st
     assert(ui.action.id == 401 and choices[400][1] == 402)
     assert(ui.action.id==401,"a removed saved preference must fall back to the current automatic route")
     ui.quest = 2; ui:RefreshDetail()
-    for _, b in ipairs(ui.branchButtons) do assert(not b.shown) end
+    for _, b in ipairs(ui.branchButtons or {}) do assert(not b.shown) end
     for _, id in ipairs({ 400, 401, 402, 403, 404 }) do addon.quests[id] = nil end
     addon.Context, addon.char.choices, ui.dungeon = originalContext, originalChoices, originalDungeon
     ui.questTreeRoot,ui.questTreeDungeon=nil,nil;ui.quest = nil; ui:Refresh()
@@ -1766,7 +1766,7 @@ check("Requirement wording does not replace other unknown reasons or explicit st
     local story = addon.quests[3].storyline
     addon.quests[3].storyline = { 3 }
     showDetail(3, { level = 20, active = function() return false end, completed = function() return false end })
-    assert(not(ui.chainButtons[1] and ui.chainButtons[1].shown) and not(ui.storyToggle and ui.storyToggle.shown), "the inspected quest is not repeated as a one-entry story")
+    assert(not(ui.chainButtons and ui.chainButtons[1] and ui.chainButtons[1].shown) and not(ui.storyToggle and ui.storyToggle.shown), "the inspected quest is not repeated as a one-entry story")
     addon.quests[3].storyline = story; showDetail(2)
 end)
 check("Requirement label is translated in every locale and held or completed evidence keeps its status", function()

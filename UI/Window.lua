@@ -3174,16 +3174,7 @@ function UI:RefreshDetail(sourceFocus)
             if not self:QuestListWrite(self.narrativeToggle, operation[1], portraitCardCurrent, unpack(operation, 2)) then return end
         end
     end
-    if self.storyToggle then self.storyToggle:Hide(); self.storyToggle:SetEnabled(false); self.storyToggle:SetScript("OnClick", nil) end
-    if self.referenceToggle then self.referenceToggle:Hide(); self.referenceToggle:SetEnabled(false); self.referenceToggle:SetScript("OnClick", nil) end
-    for _, b in ipairs(self.chainButtons) do b:Hide(); b:SetEnabled(false); b:SetScript("OnClick", nil) end
-    for _, buttons in ipairs({ self.actionButtons, self.preparationForButtons }) do
-        for _, b in ipairs(buttons) do b:Hide(); b:SetEnabled(false); b:SetScript("OnClick", nil) end
-    end
     if not self:ResetPreparationOverviewControls(portraitCardCurrent) then return end
-    for _, b in ipairs(self.branchButtons) do b:Hide() end
-    for _, b in ipairs(self.branchInspectButtons) do b:Hide(); b:SetEnabled(false); b:SetScript("OnClick", nil) end
-    for _, b in ipairs(self.requirementButtons) do b:Hide(); b:SetEnabled(false); b:SetScript("OnClick", nil) end
     for index, row in ipairs(self.materialButtons) do
         local function current() return portraitCardCurrent() and self.materialButtons[index] == row end
         if not self:QuestListWrite(row,"Hide",current) or not self:QuestListWrite(row,"SetEnabled",current,false) or
@@ -5893,10 +5884,9 @@ function UI:Create()
     navigationHint(self.catalogToggle, nil, true)
     self.capacityStatus = label(frame, "", 350, -22, 220, 12)
     self.capacityStatus:Hide()
-    self.frame, self.cards, self.rows, self.details, self.chainButtons, self.branchButtons = frame, {}, {}, {}, {}, {}
+    self.frame, self.cards, self.rows, self.details = frame, {}, {}, {}
     self.materialButtons, self.catalogInspectButtons = {}, {}
-    self.requirementButtons, self.branchInspectButtons = {}, {}
-    self.actionButtons, self.actionInspectButtons, self.preparationForButtons = {}, {}, {}
+    self.actionInspectButtons = {}
     self.startButtons, self.finishButtons, self.containerButtons, self.dropButtons, self.giverButtons = {}, {}, {}, {}, {}
     self.objectiveContainerButtons = {}
     UISpecialFrames[#UISpecialFrames + 1] = "DungeonProWindow"
