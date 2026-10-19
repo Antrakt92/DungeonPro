@@ -4,6 +4,8 @@
 
 ### 19-Oct-2026
 
+- Keep unchanged search results while quest or item details load, rebuilding when
+  matching names, sources or character state change.
 - Release snapshots from previous searches while keeping current results and
   reused controls intact.
 - Keep search-result quest captions in the selected language when searching by

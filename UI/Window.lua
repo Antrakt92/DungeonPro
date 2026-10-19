@@ -839,12 +839,17 @@ function UI:RefreshCatalogData()
     local function current()
         return self.catalogLanguageView == view and view and view.current()
     end
-    if not view or view.query ~= "" or not locale or view.uiLanguage ~= locale or not current() then return false end
+    if not view or(view.query~=""and view.queryID)or not locale or view.uiLanguage ~= locale or not current() then return false end
+    local function membership()
+        if view.query==""then return true end
+        return not view.queryID and addon.Read(view.membershipCurrent,"boolean")==true and current()
+    end
+    if not membership()then return false, self.catalogLanguageView~=view and "superseded"or nil end
     for _, result in ipairs(view.results) do
         if result.statusCurrent and addon.Read(result.statusCurrent, "boolean") ~= true then return false end
         if not current() then return false end
     end
-    if self:CatalogLanguageKey() ~= locale or not current() then return false end
+    if self:CatalogLanguageKey() ~= locale or not current() then return false, self.catalogLanguageView~=view and "superseded"or nil end
     local selected = self.dungeon
     if selected ~= view.selectedDungeon then
         for _, result in ipairs(view.results) do
@@ -864,7 +869,8 @@ function UI:RefreshCatalogData()
         end
         view.selectedDungeon = selected
     end
-    return current()
+    if not current()or not membership()or self.dungeon~=selected then return false,self.catalogLanguageView~=view and "superseded"or nil end
+    return true
 end
 
 function UI:RefreshCatalogLanguage()
@@ -963,12 +969,15 @@ function UI:RefreshDungeons()
     end
     local sourceReady = true
     local titleMemo = {}
+    local nameLedger, nameScope, nameSnapshotCurrent, membershipSafe = {}, nil, nil, true
     if self.catalogGeneration ~= generation then return end
     -- Pooled write records must survive native setter tails, but need not retain
     -- obsolete request snapshots once a newer catalogue owns the view.
     self.catalogSearchRelease = function()
         sourceReady = false
+        membershipSafe=false
         memo, sourceMemo, sourceMatches, relationMemo, relationMatches, titleMemo = {}, {}, {}, {}, {}, {}
+        nameLedger,nameScope={},nil
     end
     local function baseCurrent(sourceOnly)
         local ok, valid = pcall(function()
@@ -1098,6 +1107,7 @@ function UI:RefreshDungeons()
             if cached.current and not unchanged(cached) then return expireSources() end
         end
         for _,record in ipairs(relationMemo)do if not relationRaw(record) then return expireSources() end end
+        if nameSnapshotCurrent and not nameSnapshotCurrent()then return expireSources()end
         return baseCurrent("full")
     end
     local function scanMember(input, index, member, other)
@@ -1142,8 +1152,143 @@ function UI:RefreshDungeons()
                     if ready == true then cached.terms, cached.current, cached.entries, cached.unchanged = terms, owner, entries, proof end
                 end
             end
+            if not cached.current then membershipSafe=false end
         end
         return cached
+    end
+    local textMembership=false
+    local function scopeRaw()
+        local scope=nameScope
+        return sourceReady and scope and baseCurrent(true) and addon.Clean==scope.clean and addon.Read==scope.read and
+            issecretvalue==scope.checker and self.CatalogLanguageKey==scope.keyGetter and addon.GetNameTranslations==scope.dictionaryGetter and
+            addon.Language==scope.language and addon.db==scope.database and GetLocale==scope.gameGetter and UnitGUID==scope.guidGetter and
+            C_QuestLog==scope.native and GetRealZoneText==scope.zoneGetter and
+            (type(scope.native)~="table"or rawequal(rawget(scope.native,"GetTitleForQuestID"),scope.titleGetter)) and
+            (type(scope.database)~="table"or rawequal(rawget(scope.database,"locale"),scope.choice)) and
+            (type(scope.language)~="table"or(rawequal(rawget(scope.language,"GetSelection"),scope.selection)and
+                rawequal(rawget(scope.language,"session"),scope.session)))and
+            (type(scope.session)~="table"or rawequal(rawget(scope.session,"preview"),scope.preview))
+    end
+    local function ledgerRaw(record)
+        if not scopeRaw()then return false end
+        local ok,fresh=pcall(function()
+            for _,field in ipairs(record.fields)do
+                if not rawequal(rawget(record.subject,field.key),field.value)then return false end
+            end
+            if record.art then
+                for _,field in ipairs(record.artFields)do
+                    if not rawequal(rawget(record.art,field.key),field.value)then return false end
+                end
+            end
+            if record.wingKey and(addon.L~=record.localize or not rawequal(addon.locales,record.strings)or
+                not rawequal(rawget(record.strings,nameScope.locale),record.interface)or
+                not rawequal(rawget(record.strings,"enUS"),record.english)or
+                (type(record.interface)=="table"and not rawequal(rawget(record.interface,record.wingKey),record.selectedWing))or
+                not rawequal(rawget(record.english,record.wingKey),record.defaultWing))then return false end
+            return rawequal(addon.nameTranslations,record.root)and
+                (type(record.root)~="table"or rawequal(rawget(record.root,nameScope.locale),record.dictionary))and
+                (type(record.dictionary)~="table"or rawequal(rawget(record.dictionary,record.kind),record.entries))and
+                (type(record.entries)~="table"or rawequal(rawget(record.entries,record.key),record.entry))and
+                (type(record.entry)~="table"or(rawequal(rawget(record.entry,"source"),record.source)and
+                    rawequal(rawget(record.entry,"name"),record.name)))
+        end)
+        return ok and fresh==true
+    end
+    nameSnapshotCurrent=function()
+        if not textMembership then return true end
+        for _,record in ipairs(nameLedger)do if not ledgerRaw(record)then return false end end
+        return true
+    end
+    local function catalogName(kind,argument,subject)
+        local provider=kind=="quests"and getter or dungeonGetter
+        if not textMembership then return addon.Read(provider,"string",argument)end
+        if not nameScope then
+            local clean,read,keyGetter,dictionaryGetter=addon.Clean,addon.Read,self.CatalogLanguageKey,addon.GetNameTranslations
+            local selected=read(keyGetter,"string",self)
+            if selected=="enGB"then selected="enUS"elseif selected=="esMX"then selected="esES"end
+            if not current(true)then return end
+            if selected~="enUS"and type(dictionaryGetter)=="function"then read(dictionaryGetter,"table",selected,function()return current(true)end)end
+            if not current(true)then return end
+            local language,database,native=addon.Language,addon.db,C_QuestLog
+            local session=type(language)=="table"and rawget(language,"session")
+            nameScope={clean=clean,read=read,checker=issecretvalue,keyGetter=keyGetter,dictionaryGetter=dictionaryGetter,
+                locale=selected,language=language,database=database,session=session,
+                choice=type(database)=="table"and rawget(database,"locale"),selection=type(language)=="table"and rawget(language,"GetSelection"),
+                preview=type(session)=="table"and rawget(session,"preview"),native=native,
+                titleGetter=type(native)=="table"and rawget(native,"GetTitleForQuestID"),
+                gameGetter=GetLocale,guidGetter=UnitGUID,zoneGetter=GetRealZoneText}
+            nameScope.game=read(nameScope.gameGetter,"string")
+            if not scopeRaw()then return end
+            nameScope.player=read(nameScope.guidGetter,"string","player")
+            if not scopeRaw()then return end
+            local function supported(value)
+                if value=="enGB"then value="enUS"elseif value=="esMX"then value="esES"end
+                return value=="enUS"or value=="ruRU"or value=="deDE"or value=="frFR"or value=="esES"or
+                    value=="itIT"or value=="ptBR"or value=="koKR"or value=="zhCN"or value=="zhTW"
+            end
+            if not supported(selected)or not supported(nameScope.game)or not nameScope.player or
+                #nameScope.player>256 or not nameScope.player:find("%S")then nameScope.invalid=true end
+        end
+        local record={kind=kind,argument=argument,subject=subject,provider=provider,fields={}}
+        if not scopeRaw()then return end
+        if type(provider)~="function"or type(subject)~="table"then nameScope.invalid=true;return addon.Read(provider,"string",argument)end
+        for _,key in ipairs(kind=="quests"and{"id","name"}or{"key","name","wing","instanceID","art"})do
+            record.fields[#record.fields+1]={key=key,value=rawget(subject,key)}
+        end
+        if kind=="quests"then
+            local id=addon.Clean(argument,"number")
+            record.key=id and id>0 and id<=9007199254740991 and id%1==0 and id or nil
+        else record.key=addon.Clean(rawget(subject,"key"),"string")end
+        record.art=kind=="dungeons"and addon.Clean(rawget(subject,"art"),"table")or nil
+        local wing=kind=="dungeons"and addon.Clean(rawget(subject,"wing"),"string")
+        if not scopeRaw()then return end
+        record.artFields={}
+        if record.art then for _,key in ipairs({"fileID","gameMapID"})do record.artFields[#record.artFields+1]={key=key,value=rawget(record.art,key)}end end
+        record.root=addon.nameTranslations
+        record.dictionary=type(record.root)=="table"and rawget(record.root,nameScope.locale)
+        record.entries=type(record.dictionary)=="table"and rawget(record.dictionary,kind)
+        record.entry=type(record.entries)=="table"and record.key and rawget(record.entries,record.key)
+        record.source=type(record.entry)=="table"and rawget(record.entry,"source")
+        record.name=type(record.entry)=="table"and rawget(record.entry,"name")
+        if wing=="lower"or wing=="upper"then
+            record.wingKey="DUNGEON_WING_"..wing
+            record.localize=addon.L
+            record.strings=addon.locales
+            record.interface=type(record.strings)=="table"and rawget(record.strings,nameScope.locale)
+            record.english=type(record.strings)=="table"and rawget(record.strings,"enUS")
+            if type(record.strings)~="table"or type(record.english)~="table"then membershipSafe=false;record.wingKey=nil
+            else
+                record.selectedWing=type(record.interface)=="table"and rawget(record.interface,record.wingKey)
+                record.defaultWing=rawget(record.english,record.wingKey)
+            end
+        end
+        if not record.key then nameScope.invalid=true end
+        nameLedger[#nameLedger+1]=record
+        record.value=addon.Read(provider,"string",argument)
+        return record.value
+    end
+    local function membershipCurrent()
+        if not textMembership or not membershipSafe or not scopeRaw()or nameScope.invalid then return false end
+        local function scopeCurrent()
+            if not scopeRaw()then return false end
+            local scope=nameScope
+            local selected=addon.Read(scope.keyGetter,"string",self)
+            if not scopeRaw()then return false end
+            if selected=="enGB"then selected="enUS"elseif selected=="esMX"then selected="esES"end
+            if selected~=scope.locale then return false end
+            local game=addon.Read(scope.gameGetter,"string")
+            if not scopeRaw()or game~=scope.game then return false end
+            local player=addon.Read(scope.guidGetter,"string","player")
+            return scopeRaw()and player==scope.player
+        end
+        if not scopeCurrent()then return false end
+        for _,record in ipairs(nameLedger)do
+            if not scopeRaw()or not ledgerRaw(record)then return false end
+            local value=addon.Read(record.provider,"string",record.argument)
+            if not scopeRaw()or value~=record.value then return false end
+        end
+        if not scopeCurrent()or not proveSources()then return false end
+        return nameSnapshotCurrent()and scopeRaw()
     end
     local function searchTitle(id,definition)
         local previous=titleMemo[id]
@@ -1193,7 +1338,7 @@ function UI:RefreshDungeons()
             local language=normalize(read(keyGetter,"string",self))
             return language==selected and raw()
         end
-        local title=read(getter,"string",id)
+        local title=catalogName("quests",id,definition)
         if not fresh()then return end
         if not title or #title>1024 or not title:find("%S")then title=clean(source,"string")or("#"..id)end
         if not fresh()then return end
@@ -1206,6 +1351,7 @@ function UI:RefreshDungeons()
     local queryID = addon.Read(idParser, "number", query)
     if queryID and (queryID <= 0 or queryID > 9007199254740991 or queryID % 1 ~= 0) then queryID = nil end
     if not current() then return end
+    textMembership=query~=""and not queryID
     for inputIndex, input in ipairs(inputs) do
         local dungeon = input.dungeon
         if not range or (context.level and context.level >= input.minimum - 3 and context.level <= input.maximum + 3) then
@@ -1233,7 +1379,7 @@ function UI:RefreshDungeons()
             end
             local name, matches = "", false
             if not queryID or matchedID then
-                name = addon.Read(dungeonGetter, "string", dungeon) or addon.Clean(input.name, "string") or ""
+                name = catalogName("dungeons",dungeon,dungeon) or addon.Clean(input.name, "string") or ""
                 if not current(true) then return end
                 if not queryID then matches = query == "" or searchText(name):find(needle, 1, true) or searchText(input.name):find(needle, 1, true) end
             end
@@ -1251,7 +1397,7 @@ function UI:RefreshDungeons()
                     if not scanMember(input, inputIndex, member, memberIndex) then return end
                     local cached = memo[member.id]
                     if not cached then
-                        cached = { name = addon.Read(getter, "string", member.id) }
+                        cached = { name = catalogName("quests",member.id,member.quest) }
                         memo[member.id] = cached
                     end
                     if not current(true) then return end
@@ -1289,6 +1435,7 @@ function UI:RefreshDungeons()
                         relationMemo[#relationMemo+1]=record
                         if addon.Read(proof,"boolean")~=true or not relationRaw(record) or not current(true) then return end
                     end
+                    if not record then membershipSafe=false end
                     model=addon.Clean(model,"table")
                     local nodes=model and addon.Clean(rawget(model,"nodes"),"table")
                     if record and nodes and addon.Clean(rawget(model,"rootTargetID"),"number")==member.id and #nodes<=79 then
@@ -1582,6 +1729,7 @@ function UI:RefreshDungeons()
     local uiLanguage = self:CatalogLanguageKey()
     if not proveSources() then return retire() end
     self.catalogLanguageView = { current = proveSources, owned = function() return baseCurrent(true) end,
+        membershipCurrent = membershipCurrent,
         write = ownedWrite, query = query, queryID = queryID, results = results,
         uiLanguage = uiLanguage, selectedDungeon = self.dungeon }
 end
