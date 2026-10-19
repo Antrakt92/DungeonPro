@@ -44,7 +44,8 @@ end
 function addon.QuestSourceSearchTerms(quest)
     local clean, folder, checker = addon.Clean, addon.SearchFold, issecretvalue
     local provider = addon.QuestSourceSearchTerms
-    local terms, snapshots, visited = {}, {}, {}
+    local sourceName = addon.SourceName
+    local terms, snapshots, visited, sources, aliases = {}, {}, {}, {}, {}
     local seen, nodes = { npc = {}, place = {} }, 0
     local function unavailable() return false end
     if type(clean) ~= "function" or type(folder) ~= "function" or not clean(quest, "table") then
@@ -59,7 +60,7 @@ function addon.QuestSourceSearchTerms(quest)
     end
     local function capabilities()
         return addon.Clean == clean and addon.SearchFold == folder and issecretvalue == checker and
-            addon.QuestSourceSearchTerms == provider
+            addon.QuestSourceSearchTerms == provider and addon.SourceName == sourceName
     end
     local function unchanged()
         local ok, result = pcall(function()
@@ -74,6 +75,7 @@ function addon.QuestSourceSearchTerms(quest)
                     if not rawequal(rawget(snapshot.object, field), snapshot.values[field]) then return false end
                 end
             end
+            for _, alias in ipairs(aliases) do if alias.raw() ~= true then return false end end
             return capabilities()
         end)
         return ok and result == true
@@ -91,6 +93,7 @@ function addon.QuestSourceSearchTerms(quest)
                     end
                 end
             end
+            for _, alias in ipairs(aliases) do if alias.current() ~= true then return false end end
             return unchanged()
         end)
         return ok and result == true
@@ -151,6 +154,7 @@ function addon.QuestSourceSearchTerms(quest)
         if objectOnly and not object then return end
         if npc then add(rawget(place, "name"), "npc")
         elseif object then add(rawget(place, "name"), "place") end
+        if npc or object then sources[#sources + 1] = { place = place, kind = npc and "npc" or "place" } end
         if npc or object or map then
             add(rawget(place, "zoneName"), "place")
             add(rawget(place, "locationName"), "place")
@@ -200,6 +204,29 @@ function addon.QuestSourceSearchTerms(quest)
         for _, containers in ipairs(routes) do list(containers, false, true) end
     end
     objectiveSources()
+    -- Preserve every canonical term first; reviewed aliases share the remaining budget.
+    if type(sourceName) == "function" then
+        local memo = { npc = {}, place = {} }
+        for _, source in ipairs(sources) do
+            if #terms >= 1024 then break end
+            local id = positive(rawget(source.place, source.kind == "npc" and "npcID" or "objectID"), 4294967295)
+            local canonical = clean(rawget(source.place, "name"), "string")
+            local bucket = id and memo[source.kind][id]
+            local cached = canonical and bucket and bucket[canonical]
+            if not cached then
+                local ok, name, proof, raw = pcall(sourceName, source.place)
+                if ok and type(proof) == "function" and type(raw) == "function" then
+                    cached = { name = name, current = proof, raw = raw }
+                    aliases[#aliases + 1] = cached
+                    if id and canonical then
+                        bucket = bucket or {}; memo[source.kind][id] = bucket; bucket[canonical] = cached
+                    end
+                end
+            end
+            -- Every physical source remains in the snapshots even when its label shares a lookup.
+            if cached and cached.name ~= nil then add(cached.name, source.kind) end
+        end
+    end
     local indexes = {}
     for index = 1, #terms do indexes[index] = index end
     capture(terms, indexes, true, true)

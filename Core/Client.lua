@@ -635,13 +635,17 @@ function addon.SourceName(place, ownerCurrent)
         return localeCurrent() and sourceCurrent()
     end
     if not current() then return nil end
-    local result
-    if locale == "enUS" then result = name
-    else result = translatedName(kind,id,place,current,locale) end
-    if not result or not current() then return nil end
+    -- Resolve a lazy dictionary before owning its entry, including an absent entry.
+    if locale ~= "enUS" then
+        local root = clean(addon.nameTranslations,"table")
+        if root and not clean(rawget(root,locale),"table") then nameDictionary(locale,current) end
+    end
+    if not current() then return nil end
     local database, language, gameGetter = addon.db, addon.Language, GetLocale
     local choice = type(database) == "table" and rawget(database,"locale")
     local selection = type(language) == "table" and rawget(language,"GetSelection")
+    local session = type(language) == "table" and rawget(language,"session")
+    local preview = type(session) == "table" and rawget(session,"preview")
     local captured, dictionary = pcall(function()
         local root = addon.nameTranslations
         local localized = type(root) == "table" and rawget(root,locale)
@@ -650,12 +654,14 @@ function addon.SourceName(place, ownerCurrent)
         return { root=root, localized=localized, entries=entries, entry=entry,
             source=type(entry) == "table" and rawget(entry,"source"), name=type(entry) == "table" and rawget(entry,"name") }
     end)
-    if not captured or (locale ~= "enUS" and (dictionary.source ~= name or dictionary.name ~= result)) then return nil end
+    if not captured then return nil end
     local function rawCurrent()
         local valid, same = pcall(function()
             return sourceCurrent() and addon.db == database and addon.Language == language and GetLocale == gameGetter and
                 (type(database) ~= "table" or rawequal(rawget(database,"locale"),choice)) and
                 (type(language) ~= "table" or rawequal(rawget(language,"GetSelection"),selection)) and
+                (type(language) ~= "table" or rawequal(rawget(language,"session"),session)) and
+                (type(session) ~= "table" or rawequal(rawget(session,"preview"),preview)) and
                 rawequal(addon.nameTranslations,dictionary.root) and
                 (type(dictionary.root) ~= "table" or rawequal(rawget(dictionary.root,locale),dictionary.localized)) and
                 (type(dictionary.localized) ~= "table" or rawequal(rawget(dictionary.localized,kind),dictionary.entries)) and
@@ -667,8 +673,15 @@ function addon.SourceName(place, ownerCurrent)
     end
     -- Retained proof excludes the caller owner; UI scopes compose it with their own ownership.
     local function proof() return localeCurrent() and rawCurrent() end
-    if not proof() or (owner and read(owner,"boolean") ~= true) or not rawCurrent() then return nil end
-    return result, proof
+    local result
+    if locale == "enUS" then result = name
+    elseif type(dictionary.localized) == "table" then
+        result = translatedName(kind,id,place,function() return current() and rawCurrent() end,locale)
+    end
+    if not proof() or (owner and read(owner,"boolean") ~= true) or not rawCurrent() then return nil, proof, rawCurrent end
+    if result and locale ~= "enUS" and (dictionary.source ~= name or dictionary.name ~= result) then return nil end
+    -- A valid missing label also owns its absence until the dictionary or locale changes.
+    return result, proof, rawCurrent
 end
 
 -- Bulk browsing reads an existing native title or a reviewed locale label;
