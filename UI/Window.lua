@@ -2997,7 +2997,8 @@ function UI:RefreshDetail(sourceFocus)
     for _, field in ipairs({ "portrait", "giverPortrait" }) do
         local texture = self[field]
         if texture then
-            texture:Hide()
+            local function current() return portraitCardCurrent() and self[field] == texture end
+            if not sourceWrite(current, texture, "Hide", nil) then return end
             if not self.portraitRenderBusy then
                 self.portraitRenderBusy = true
                 pcall(texture.SetTexture, texture, nil)
@@ -3995,8 +3996,7 @@ function UI:RefreshDetail(sourceFocus)
                 if captionWritten == false then return retireOwnedImage() end
                 texture:SetPoint("TOPLEFT", 4, -y)
                 if not imageCurrent() then return retireOwnedImage() end
-                texture:Show()
-                if not imageCurrent() then return retireOwnedImage() end
+                if not sourceWrite(imageCurrent, texture, "Show", nil) or not imageCurrent() then return retireOwnedImage() end
                 y = y + 64 + 8
             else
                 self.portraitRenderBusy = true; pcall(texture.SetTexture, texture, nil); self.portraitRenderBusy = nil
