@@ -64,7 +64,14 @@ for _,value in ipairs(ui.details)do if value:IsShown() then
     if value.text and value.text:find("Tree giver 71003",1,true)then giverLines=giverLines+1 end
     if value.text and value.text:find("Cached reward",1,true)then rewardLine=true end
 end end
-assert(description and giverLines==1 and rewardLine,"default details keep the actual selected description giver and rewards without duplicated references")
+assert(not description and giverLines==1 and rewardLine,"Quest keeps the selected giver and rewards while description belongs to Story")
+assert(ui:SetDetailTab("story"))
+local storyDescriptions=0
+for _,value in ipairs(ui.details)do if value:IsShown()and value.text=="Selected quest description 71003"then storyDescriptions=storyDescriptions+1 end end
+assert(storyDescriptions==1 and ui.quest==71003 and ui.questTreeRoot==71003,
+    "Story displays the actual selected description once without changing the opened chain")
+assert(ui:SetDetailTab("quest")and ui.giverAction.id==71003 and ui.questTreeRoot==71003,
+    "returning to Quest restores its own giver without changing the selected chain")
 assert(not ui.referenceToggle or not ui.referenceToggle:IsShown(),"NPC-only facts do not invent an empty acquisition disclosure")
 assert(target.title:GetWidth()<=target:GetWidth()-22-26-20-18,"cached reward and status icons reserve real title space")
 local reward

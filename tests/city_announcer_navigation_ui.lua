@@ -47,8 +47,9 @@ for _,id in ipairs({7492,7494})do
     assert(#visits==count and #maps==mapCount,"old pooled source callbacks expire on another quest")
     assert(ui.renderedQuest==id and not ui.giverAction,"multiple givers never choose a first NPC implicitly")
     local roots=#ui.currentPlan.rows
-    assert(#shown(ui.giverButtons)==2 and #shown(ui.startButtons)==0)
-    assert(ui.referenceToggle:IsShown());ui.referenceToggle.scripts.OnClick()
+    assert(ui.detailTab=="quest" and #shown(ui.giverButtons)==0 and #shown(ui.startButtons)==0)
+    assert(ui:SetDetailTab("sources"))
+    assert(ui.detailTab=="sources")
     assert(#shown(ui.giverButtons)==2 and #shown(ui.startButtons)==1,"compact two plus disclosure expose exactly three sources")
     local rows=shown(ui.giverButtons);rows[#rows+1]=shown(ui.startButtons)[1]
     for index,point in ipairs(q.startAlternatives)do

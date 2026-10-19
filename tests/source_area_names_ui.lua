@@ -11,6 +11,7 @@ local owners,dungeons={},{}
 for _,d in ipairs(a.dungeons)do dungeons[d.name]=d;for _,id in ipairs(d.quests)do owners[id]=owners[id]or d end end
 local function render(id,inspection)
  ui.dungeon,ui.quest=assert(inspection or owners[id]),id;ui:Refresh()
+ if ui.detailTab~="quest"then assert(ui:SetDetailTab("quest"))end
  assert(ui.quest==id and ui.renderedQuest==id,"actual source identity remains inspected")
 end
 local function field(text)
@@ -43,7 +44,7 @@ end
 -- Controlled renderer variants retain the actual Maraudon NPC, without publishing a new source fact.
 a.db.locale="zhCN"
 local q=a.quests[7046];local start,alternatives=q.start,q.startAlternatives
-q.start=nil;q.startAlternatives={start};render(7046)
+q.start=nil;q.startAlternatives={start};render(7046);assert(ui:SetDetailTab("sources"))
 assert(ui.giverButtons[1]:IsShown()and ui.giverButtons[1].note.text:find(label("zhCN","Maraudon"),1,true),"alternative source captions use the same reviewed area name")
 q.start,q.startAlternatives=start,alternatives
 -- A formatter-only mapped fixture opposes the canonical source label to the native map name.
@@ -53,7 +54,7 @@ local point={npcID=start.npcID,name=start.name,zoneName=start.zoneName,mapID=wor
  reportedLocations={{mapID=world.mapID,x=world.x,y=world.y,zoneName=start.zoneName},{mapID=world.mapID,x=world.x,y=world.y+0.1,zoneName=start.zoneName}}}
 q.start=point
 local mapRoot=C_Map;C_Map={GetMapInfo=function()return{name="Opposite native label"}end}
-render(7046);ui.reportedExpanded["start"]=true;ui.detailReferencesExpanded=true;ui:RefreshDetail()
+render(7046);ui.reportedExpanded["start"]=true;assert(ui:SetDetailTab("sources"));ui:RefreshDetail()
 local reported=0
 for _,button in ipairs(ui.reportedRows)do if button:IsShown()then
  reported=reported+1;assert(button.title.text:find(label("zhCN","Maraudon"),1,true)and not button.title.text:find("Opposite native label",1,true),"reported source area prefers selected dictionary over native map language")
@@ -63,7 +64,7 @@ local sourceRow
 for _,row in ipairs(ui.rows)do if row:IsShown()and row.questID==7046 then sourceRow=row end end
 assert(sourceRow);sourceRow.navigationControl.scripts.OnEnter()
 assert(tip.body:find(label("zhCN","Maraudon"),1,true)and not tip.body:find("Opposite native label",1,true),"row hint uses the same reviewed canonical area")
-ui.giver.scripts.OnEnter();assert(tip.body:find(label("zhCN","Maraudon"),1,true),"detail route hint shares the selected source-area name")
+assert(ui:SetDetailTab("quest"));ui.giver.scripts.OnEnter();assert(tip.body:find(label("zhCN","Maraudon"),1,true),"detail route hint shares the selected source-area name")
 q.start=start;C_Map=mapRoot
 -- World locations outside the dungeon dictionary keep native/raw fallback labels.
 render(1491);sourceRow=nil

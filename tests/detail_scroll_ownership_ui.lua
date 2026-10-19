@@ -13,7 +13,7 @@ for _,mode in ipairs({"back","escape","copy","acquisition","reset"})do
  ui.dungeon=a.dungeons[1];ui.quest=nil;ui.detailHistory={};ui:ResetHistoryReading();ui:Refresh()
  if mode=="acquisition"then
   ui:InspectQuest(3801);scroll:SetVerticalScroll(300)
-  assert(ui.referenceToggle and ui.referenceToggle.shown,"actual Dark Iron Legacy exposes additional giver locations")
+  assert(ui.detailTabButtons.sources:IsShown(), "actual Dark Iron Legacy exposes its Sources view")
  else
   ui:InspectQuest(65);scroll:SetVerticalScroll(300)
   if mode=="back"then ui:InspectQuest(66)
@@ -24,7 +24,7 @@ for _,mode in ipairs({"back","escape","copy","acquisition","reset"})do
  scroll.SetVerticalScroll=function(self,value)
   depth=depth+1;maxDepth=math.max(maxDepth,depth)
   assert(depth<5,"scroll repair remains bounded")
-  if not fired and (value>0 or mode=="reset")then
+  if not fired and (value>0 or mode=="reset" or mode=="acquisition")then
    fired=true
    if mode=="reset"then assert(ui:BackQuest())else assert(ui:InspectQuest(67))end
   end
@@ -33,7 +33,7 @@ for _,mode in ipairs({"back","escape","copy","acquisition","reset"})do
  if mode=="back"then ui:BackQuest()
  elseif mode=="escape"then ui:EscapeCopyLink()
  elseif mode=="copy"then ui:CopyLink(65)
- elseif mode=="acquisition"then ui.referenceToggle.scripts.OnClick(ui.referenceToggle)
+ elseif mode=="acquisition"then ui:SetDetailTab("sources")
  else ui:InspectQuest(68)end
  assert(fired,"native scroll setter reentry must execute: "..mode)
  assert(ui.quest==67 and scroll.verticalScroll==(mode=="reset"and 125 or 0),

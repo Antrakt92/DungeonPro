@@ -12,7 +12,8 @@ for _,d in ipairs(a.dungeons)do for _,id in ipairs(d.quests)do owners[id]=owners
 local function render(id,expanded)
  -- Standalone2933 is explicit pane inspection; no catalogue association is added.
  ui.dungeon,ui.quest=assert(owners[id]or(id==2933 and owners[3801])),id;ui:Refresh()
- if expanded then ui.detailReferencesExpanded=true;ui:RefreshDetail()end
+ if ui.detailTab~="quest"then assert(ui:SetDetailTab("quest"))end
+ if expanded then assert(ui:SetDetailTab("sources")) end
  assert(ui.quest==id and ui.renderedQuest==id)
 end
 local function warning(text)return"|cffff594d"..text.."|r"end

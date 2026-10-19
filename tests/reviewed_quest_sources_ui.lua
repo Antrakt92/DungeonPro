@@ -51,6 +51,7 @@ local function render(id, turnin, inspectionDungeon)
     if inspectionDungeon then ui.questTreeRoot, ui.questTreeDungeon = nil, nil
     else ui.questTreeRoot, ui.questTreeDungeon = 92819, ui.dungeon end
     ui:Refresh()
+    if ui.detailTab ~= "quest" then assert(ui:SetDetailTab("quest")) end
     assert(ui.quest==id and ui.renderedQuest==id, "render keeps inspected quest identity")
 end
 local function giver(id, npc)
@@ -84,8 +85,7 @@ assert(addon.quests[214].start.x==56.6 and addon.quests[214].start.y==47.4 and
 for _,sample in ipairs({{96394,264943,5},{96403,265003,6}}) do
     local id,npc,count=unpack(sample)
     giver(id,npc); finish(id,npc)
-    assert(ui.referenceToggle and ui.referenceToggle:IsShown(), "reported source choices are reachable")
-    ui.referenceToggle.scripts.OnClick()
+    assert(ui:SetDetailTab("sources"), "reported source choices are reachable in Sources")
     local toggle
     for _,button in ipairs(ui.reportedToggles) do if button:IsShown() and button.locationKey=="start" then toggle=button end end
     assert(toggle and toggle.title.text:find("("..count..")",1,true), "every reported NPC point is offered")

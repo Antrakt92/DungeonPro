@@ -17,6 +17,7 @@ addon.CarriedItemCount = function() return 0 end
 local function render(id)
     ui.dungeon, ui.quest = dungeon, id or 4764
     ui:Refresh()
+    if ui.detailTab ~= "quest" then assert(ui:SetDetailTab("quest")) end
 end
 local function lines()
     local result = {}
@@ -96,27 +97,27 @@ quest.finish = finish
 local start, reported = quest.start, quest.start.reportedLocations
 start.reportedLocations = { {mapID=1428,x=84.8,y=69}, {mapID=1428,x=85,y=70} }
 render()
-assert(ui.referenceToggle:IsShown() and ui.referenceToggle.label.text:find(addon.L("DETAIL_ACQUISITION"), 1, true))
-local stale = ui.referenceToggle.scripts.OnClick
+assert(ui.detailTabButtons.sources:IsShown(), "reported locations have an explicit Sources view")
+local stale = ui.detailTabButtons.sources.scripts.OnClick
 local kills,objects,events=quest.objectiveKills,quest.objectiveObjects,quest.objectiveEvents
 quest.objectiveKills={{npcID=1234,name="Listed target"},{npcID=1235,name="Known target",quantity=2}}
 quest.objectiveObjects={{objectID=4321,name="Listed object"}}
 quest.objectiveEvents={{npcID=4532,name="Listed event"}}
-render();stale=ui.referenceToggle.scripts.OnClick
-stale()
+render();stale=ui.detailTabButtons.sources.scripts.OnClick
 assert(find("Listed target ×?") and find("Listed object ×?") and find("Listed event ×?") and find("Known target ×2"),
     "typed goals share a compact unknown marker without inventing or dropping known quantities")
 assert(not find(addon.L("OBJECTIVE_KILLS_NOTICE")) and not find(addon.L("OBJECTIVE_OBJECTS_NOTICE")),
     "source expansion does not inject generic objective prose into the practical pane")
 quest.objectiveKills,quest.objectiveObjects,quest.objectiveEvents=kills,objects,events
-assert(ui.detailReferencesExpanded and not (ui.storyToggle and ui.storyToggle:IsShown()))
-assert(occurrences(addon.L("REPEATABLE"))==1, "expanding source facts never repeats repeatability metadata")
-local lore, disclosure = find("A short optional story."), ui.referenceToggle
-assert(lore and -disclosure.point[3] > -lore.point[3], "optional source facts follow practical information and lore")
+assert(occurrences(addon.L("REPEATABLE"))==1, "Quest keeps repeatability metadata exactly once")
+assert(not find("A short optional story."), "optional prose does not crowd practical Quest information")
+stale();assert(ui.detailTab=="sources" and not (ui.storyToggle and ui.storyToggle:IsShown()))
+assert(not find("Listed target ×?"), "recorded practical goals remain on Quest instead of repeating inside Sources")
 assert(occurrences("Mayara Brightwing") == 1 and ui.reportedToggles[1]:IsShown(), "expanded sources keep the primary giver once and expose reported points separately")
+assert(ui:SetDetailTab("story"));assert(find("A short optional story."), "optional prose remains available in Story")
 render(4765)
 stale()
-assert(ui.quest == 4765 and not ui.detailReferencesExpanded, "saved acquisition controls cannot open another quest")
+assert(ui.quest == 4765 and ui.detailTab=="quest", "saved Sources controls cannot change another quest's view")
 start.reportedLocations = reported
 quest.repeatable=originalRepeatable
 
@@ -134,8 +135,8 @@ local function starterRows()
     end
     return result
 end
-assert(#starterRows()==2)
-ui.referenceToggle.scripts.OnClick()
+assert(#starterRows()==0 and ui.detailTab=="quest", "Quest leaves manual source choices to Sources")
+assert(ui:SetDetailTab("sources"))
 assert(#starterRows()==5, "the actual five starter alternatives are each shown once after expansion")
 local names={}
 for _,row in ipairs(starterRows())do
@@ -146,7 +147,9 @@ end
 local realAlternatives=addon.quests[8151].startAlternatives
 addon.quests[8151].startAlternatives={realAlternatives[1],realAlternatives[2]}
 render(4764);render(8151)
-assert(#starterRows()==2 and (not ui.referenceToggle or not ui.referenceToggle:IsShown()), "fully visible starter previews do not create an empty drawer")
+assert(#starterRows()==0 and ui.detailTab=="quest")
+assert(ui:SetDetailTab("sources"))
+assert(#starterRows()==2 and (not ui.referenceToggle or not ui.referenceToggle:IsShown()), "Sources shows both alternatives without a redundant drawer")
 addon.quests[8151].startAlternatives=realAlternatives
 local mapped={}
 for index,point in ipairs(realAlternatives)do
@@ -157,7 +160,7 @@ for index,point in ipairs(realAlternatives)do
 end
 addon.quests[8151].startAlternatives=mapped
 render(4764);render(8151)
-ui.referenceToggle.scripts.OnClick()
+assert(ui:SetDetailTab("sources"))
 assert(#starterRows()==5)
 local navigation,visits=addon.Navigation,{}
 addon.Navigation={Start=function(action)visits[#visits+1]=action.place;return true end,Map=function(point)visits[#visits+1]=point;return true end}

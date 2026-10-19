@@ -7,6 +7,7 @@ function methods:SetParent(parent) self.parent = parent end
 function methods:SetVerticalScroll(value) self.verticalScroll = value; self.scrollWrites = (self.scrollWrites or 0) + 1 end
 function methods:GetWidth() return self.width or 340 end
 function methods:GetHeight() return self.height or 100 end
+function methods:GetVerticalScroll() return self.verticalScroll or 0 end
 function methods:SetPoint(...) self.point = { ... } end
 function methods:GetPoint() return unpack(self.point or { "CENTER", nil, "CENTER", 0, 0 }) end
 function methods:ClearAllPoints() self.point = nil end
@@ -75,25 +76,9 @@ for line in io.lines("DungeonPro.toc") do
     if line:match("%.lua$") then assert(loadfile((line:gsub("\\", "/"))))("DungeonPro", addon) end
 end
 -- Reuse the actual TOC and native-shaped controls without executing this file's
--- independent integration scenarios or its expanded-reference presentation hook.
+-- independent integration scenarios.
 if ... == "fixture" then
     return { addon = addon, objects = objects, eventFrame = objects[#objects], methods = methods }
-end
--- Source-data cases explicitly open the conditional acquisition disclosure.
-local expandedReferenceFixture, expandingReference = true, false
-local detailRefresh = addon.UI.RefreshDetail
-addon.UI.RefreshDetail = function(self, ...)
-    local requested = self.quest
-    local result = detailRefresh(self, ...)
-    local toggle = self.referenceToggle
-    if expandedReferenceFixture and not expandingReference and self.quest == requested and self.frame and self.frame:IsShown() and
-        toggle and toggle:IsShown() and self.detailReferencesExpanded ~= true then
-        expandingReference = true
-        local ok, message = pcall(toggle.scripts.OnClick)
-        expandingReference = false
-        assert(ok, message)
-    end
-    return result
 end
 local function expandKnownChain()
     local ui = addon.UI
@@ -175,19 +160,18 @@ check("Actual Defias data stays uncertain even after every known parent is compl
 end)
 check("Default compact quest card retains the real next step and explicit giver action", function()
     local ui = addon.UI
-    expandedReferenceFixture = false
     ui:InspectQuest(373); ui:InspectQuest(166)
-    assert(ui.detailReferencesExpanded == false)
-    assert(ui.referenceToggle and ui.referenceToggle:IsShown() and ui.giver.enabled and ui.giverAction.place == addon.quests[166].start,
-        "reported giver positions stay reachable while the compact card remains collapsed")
+    assert(ui.detailTab == "quest")
+    assert(ui.detailTabButtons.sources:IsShown() and ui.giver.enabled and ui.giverAction.place == addon.quests[166].start,
+        "reported giver positions stay reachable from Sources while Quest retains its primary giver")
     assert(ui.engine:State(166).status == "UNKNOWN" and not ui.action)
     withKnownDefias(function()
         ui:Refresh()
-        assert(ui.detailReferencesExpanded == false)
+        assert(ui.detailTab == "quest")
         assert(ui.action.id == 65 and ui.giver.enabled)
         assert(ui.giverAction.place == addon.quests[166].start and ui.quest == 166)
     end)
-    expandedReferenceFixture = true; ui:Refresh()
+    ui:Refresh()
 end)
 check("Known graph fixture guides to the initial Defias step", function()
     withKnownDefias(function()
@@ -453,13 +437,13 @@ check("Alternative map-only starters pass a direct place to the actual navigatio
     q.start = nil
     q.startAlternatives = { { npcID = 234, name = "Map-only giver", mapID = 1436 },
         { objectID = 123, name = "Unknown object" } }
-    ui.quest = 166; ui:Refresh()
+    ui.quest = 166; ui:Refresh(); assert(ui:SetDetailTab("sources"))
     local before = mapCalls
     assert(ui.giverButtons[1].enabled and not ui.giverButtons[2].enabled)
     ui.giverButtons[1].scripts.OnClick()
     assert(mapCalls == before + 1)
     assert(ui.frame:IsShown() and ui.quest == 166 and mapCalls == before + 1, "accepted alternative map requests leave preparation open")
-    q.start, q.startAlternatives = start, alternatives; ui:Refresh()
+    q.start, q.startAlternatives = start, alternatives; ui:SetDetailTab("quest"); ui:Refresh()
 end)
 check("Alternative turn-in rows reach actual map and waypoint adapters without changing preparation", function()
     local q, ui = addon.quests[166], addon.UI
@@ -467,7 +451,7 @@ check("Alternative turn-in rows reach actual map and waypoint adapters without c
     q.finish = nil
     q.finishAlternatives = { { npcID = 234, name = "Map-only turn-in", mapID = 1 },
         { npcID = 235, name = "Located turn-in", mapID = 1, x = 10, y = 20 } }
-    ui.quest = 166; ui:Refresh()
+    ui.quest = 166; ui:Refresh(); assert(ui:SetDetailTab("sources"))
     local beforeMaps, beforePins = mapCalls, #waypoints
     local action, status = ui.action, ui.engine:State(166).status
     ui.finishButtons[1].scripts.OnClick()
@@ -479,7 +463,7 @@ check("Alternative turn-in rows reach actual map and waypoint adapters without c
     assert(ui.action == action and ui.engine:State(166).status == status)
     assert(ui.frame:IsShown() and ui.quest == 166 and #waypoints == beforePins + 1, "located turn-in visits leave preparation open")
     addon.Navigation.Stop()
-    q.finish, q.finishAlternatives = finish, alternatives; ui:Refresh()
+    q.finish, q.finishAlternatives = finish, alternatives; ui:SetDetailTab("quest"); ui:Refresh()
 end)
 check("Broken refresh scheduler falls back once and never sticks or recursively notifies", function()
     local timer, notify = C_Timer, addon.Notify
@@ -834,7 +818,7 @@ check("Reported giver clicks route the chosen sourced point through native navig
     local q = addon.quests[8927]
     assert(q.start.npcID == 16012 and #q.start.reportedLocations == 4)
     local before, maps, primaryX = #waypoints, mapCalls, q.start.x
-    ui:InspectQuest(q.id)
+    ui:InspectQuest(q.id); assert(ui:SetDetailTab("sources"))
     local toggle
     for _, row in ipairs(ui.reportedToggles) do if row.shown and row.locationKey == "start" then toggle = row end end
     assert(toggle and #waypoints == before)
@@ -866,7 +850,7 @@ check("The sourced journal container guides independently of the item-started qu
     assert(q.start.itemID == 5791 and not q.start.objectID and q.requirementsKnown == false)
     assert(addon.quests[3374].start.itemID == 10589)
     local container, before = q.start.containerSource, #waypoints
-    ui:InspectQuest(1100)
+    ui:InspectQuest(1100); assert(ui:SetDetailTab("sources"))
     assert(container.objectID == 19861 and container.mapID == 1441)
     assert(ui.containerButtons[1].shown and ui.containerButtons[1].enabled)
     assert(ui.giverAction == nil and #waypoints == before)
@@ -1581,7 +1565,7 @@ check("Actual objective acquisition stays separate from client quest lifecycle a
     local ui=addon.UI
     local saved={quest=ui.quest,dungeon=ui.dungeon,history=ui.detailHistory,search=ui.search,
         shown=ui.frame:IsShown(),offset=ui.detailScroll.verticalScroll or 0,nav=addon.Navigation,
-        expanded=expandedReferenceFixture,level=UnitLevel,faction=UnitFactionGroup,class=UnitClass,race=UnitRace,
+        tab=ui.detailTab,heightGetter=ui.detailScroll.GetHeight,level=UnitLevel,faction=UnitFactionGroup,class=UnitClass,race=UnitRace,
         active=C_QuestLog.IsOnQuest,ready=C_QuestLog.ReadyForTurnIn,completed=C_QuestLog.IsQuestFlaggedCompleted,
         objectives=C_QuestLog.GetQuestObjectives}
     -- Earlier cases may leave a navigation mock; compose this case with the real module.
@@ -1619,26 +1603,32 @@ check("Actual objective acquisition stays separate from client quest lifecycle a
     for _,dungeon in ipairs(addon.dungeons)do
         for _,id in ipairs(dungeon.quests)do if id==1221 then ui.dungeon=dungeon end end
     end
-    expandedReferenceFixture=true;ui.frame:Show();ui.quest=1221;ui.search="";ui:Refresh()
+    ui.detailScroll.GetHeight=function()return 100 end
+    ui.frame:Show();ui.quest=1221;ui.search="";ui:Refresh();assert(ui:SetDetailTab("sources"))
     ui.detailScroll:SetVerticalScroll(77)
+    local function progress(text, expected)
+        assert(ui:SetDetailTab("quest"))
+        assert(contains(text)==expected,"native progress belongs to Quest, separately from source locations")
+        assert(ui:SetDetailTab("sources") and ui.detailScroll.verticalScroll==77)
+    end
     local pins=#waypoints
     assert(#rows()==3 and ui.engine:State(1221).status=="UNKNOWN" and not ui.action);roles()
     local stale=rows()[1].scripts.OnClick
     held=true;eventFrame.scripts.OnEvent(eventFrame,"QUEST_ACCEPTED",1221)
     assert(ui.quest==1221 and ui.frame:IsShown() and ui.engine:State(1221).status=="ACTIVE" and #rows()==3)
-    stale();assert(#waypoints==pins and contains("Native tubers 0/6") and ui.detailScroll.verticalScroll==77);roles()
+    stale();assert(#waypoints==pins and ui.detailScroll.verticalScroll==77);progress("Native tubers 0/6",true);roles()
     stale=rows()[1].scripts.OnClick;fulfilled=6
     eventFrame.scripts.OnEvent(eventFrame,"QUEST_LOG_UPDATE")
-    assert(ui.engine:State(1221).status=="ACTIVE" and contains("Native tubers 6/6"))
-    stale();assert(#waypoints==pins);roles()
+    assert(ui.engine:State(1221).status=="ACTIVE" and #rows()==3)
+    stale();assert(#waypoints==pins);progress("Native tubers 6/6",true);roles()
     stale=rows()[1].scripts.OnClick;ready=true
     eventFrame.scripts.OnEvent(eventFrame,"QUEST_LOG_UPDATE")
-    assert(ui.engine:State(1221).status=="READY" and contains("Native tubers 6/6") and #rows()==3)
-    stale();assert(#waypoints==pins and ui.detailScroll.verticalScroll==77);roles()
+    assert(ui.engine:State(1221).status=="READY" and #rows()==3)
+    stale();assert(#waypoints==pins and ui.detailScroll.verticalScroll==77);progress("Native tubers 6/6",true);roles()
     stale=rows()[1].scripts.OnClick;held=false;ready=false
     eventFrame.scripts.OnEvent(eventFrame,"QUEST_REMOVED",1221)
     assert(ui.quest==1221 and ui.frame:IsShown() and ui.engine:State(1221).status=="UNKNOWN" and #rows()==3)
-    stale();assert(#waypoints==pins and not contains("Native tubers 6/6") and ui.detailScroll.verticalScroll==77);roles()
+    stale();assert(#waypoints==pins and ui.detailScroll.verticalScroll==77);progress("Native tubers 6/6",false);roles()
     rows()[1].scripts.OnClick()
     local pin=waypoints[#waypoints]
     assert(#waypoints==pins+1 and pin.mapID==1413 and pin.x==.623 and pin.y==.376)
@@ -1647,9 +1637,9 @@ check("Actual objective acquisition stays separate from client quest lifecycle a
     UnitLevel,UnitFactionGroup,UnitClass,UnitRace=saved.level,saved.faction,saved.class,saved.race
     C_QuestLog.IsOnQuest,C_QuestLog.ReadyForTurnIn,C_QuestLog.IsQuestFlaggedCompleted,C_QuestLog.GetQuestObjectives=
         saved.active,saved.ready,saved.completed,saved.objectives
-    expandedReferenceFixture=saved.expanded
+    ui.detailScroll.GetHeight=saved.heightGetter
     ui.quest,ui.dungeon,ui.detailHistory,ui.search=saved.quest,saved.dungeon,saved.history,saved.search
-    ui:Refresh();ui.detailScroll:SetVerticalScroll(saved.offset)
+    ui:Refresh();if saved.tab then ui:SetDetailTab(saved.tab)end;ui.detailScroll:SetVerticalScroll(saved.offset)
     if not saved.shown then ui.frame:Hide()end
 end)
 print("Client/UI modeled checks passed: " .. total .. " (no pixel or native-client validation)")

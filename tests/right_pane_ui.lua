@@ -15,6 +15,7 @@ local function fields(text)
     return result
 end
 render()
+assert(ui.detailTab=="quest", "critical unknown-source warnings stay in the default Quest view")
 assert(not ui.giver.caption and ui.giver.navigationGold and #ui.giver.footerIconParts == 3, "giver action is a high-contrast compact navigation icon")
 assert(ui.giver.width == 24 and ui.giver.height == 24 and ui.giver:IsShown() and not ui.giver.enabled)
 local warnings = fields(addon.L("GIVER_LOCATION_UNKNOWN"))

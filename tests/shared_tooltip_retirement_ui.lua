@@ -30,7 +30,7 @@ for _, dungeon in ipairs(a.dungeons) do
     for _, id in ipairs(dungeon.quests) do if id == 1654 then ui.dungeon = dungeon end end
 end
 ui.quest, ui.includeUnavailable = 1654, true; ui:Refresh()
-ui.detailReferencesExpanded = true; ui:RefreshDetail()
+assert(ui.detailTab=="quest", "reward and objective tooltips stay on the practical Quest view")
 local reward, objective = ui.rewardButtons[1], ui.objectiveButtons[1]
 assert(reward and reward.shown and objective and objective.shown)
 local list

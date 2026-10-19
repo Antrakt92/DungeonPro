@@ -38,6 +38,7 @@ assert(originalStart.name=="Talvash's Phial of Scrying"and originalFinish.name==
 local tool=originalStart
 local function render(id)
  ui.dungeon,ui.quest=owners[id]or inspection,id;ui:Refresh()
+ if ui.detailTab~="quest"then assert(ui:SetDetailTab("quest"))end
  assert(ui.quest==id and ui.renderedQuest==id,"own quest stays inspected")
 end
 local function visible(text)
@@ -112,7 +113,7 @@ assert(not ui:SummonSource(q2204.start),"summoned-object relation cannot coexist
 click();assert(inspections==inspected,"changed endpoint evidence cannot dispatch old source inspection")
 local originalMap,originalX,originalY=q2204.start.mapID,q2204.start.x,q2204.start.y
 q2204.start.mapID,q2204.start.x,q2204.start.y=1455,36,3.4
-render(2204);ui.detailReferencesExpanded=true;ui:RefreshDetail()
+render(2204);assert(ui.detailTab=="quest", "summoning-tool safety remains visible on Quest");ui:RefreshDetail()
 assert(not visible(a.L("SOURCE_SUMMON_ITEM","Item 7667",q2204.start.name)),"invalid mixed fixed-spawn relation does not publish a creation instruction")
 local invalidControl=row(2204).navigationControl
 assert(not invalidControl.enabled,"declared created object cannot fall back to a precise or map route")

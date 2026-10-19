@@ -85,6 +85,10 @@ if arg and arg[4] == "collapsed" then
     assert(ui:SetCatalogCollapsed(true) ~= false)
     assert(ui.catalogCollapsed == true and ui.quest == questID)
 end
+if arg and arg[5] and arg[5] ~= "" then
+    assert(ui:SetDetailTab(arg[5]) ~= false)
+    assert(ui.detailTab == arg[5] and ui.quest == questID)
+end
 assert(ui.quest == questID and ui.detailScroll:GetWidth() > 300 and ui.detailScroll:GetHeight() > 0)
 local visibleRewards = 0
 for _, button in ipairs(ui.rewardButtons) do
@@ -96,7 +100,11 @@ for _, button in ipairs(ui.rewardButtons) do
         assert(raw[2] + button.rewardTileWidth <= ui.detail:GetWidth() + 8, "reward tile stays within the real content width")
     end
 end
-assert(visibleRewards == 3, "both choices and the guaranteed reward remain present")
+if ui.detailTab == "quest" then
+    assert(visibleRewards == 3, "both choices and the guaranteed reward remain present on Quest")
+else
+    assert(visibleRewards == 0, "secondary views do not retain Quest reward tiles")
+end
 if checking then print("Offline detail geometry: PASS (actual anchors, three reward tiles; native rendering unverified)"); return end
 local ids = {}; for index, object in ipairs(fixture.objects) do ids[object] = index end
 local function point(raw, owner)
@@ -116,6 +124,7 @@ for index, object in ipairs(fixture.objects) do
 end
 local roles = {}
 for _, key in ipairs({"frame","catalogScroll","questScroll","detailScroll","detail","narrativeToggle","referenceToggle","title","giver","source","catalogToggle"}) do roles[key]=ids[ui[key]] end
+for key, control in pairs(ui.detailTabButtons or {}) do roles["detailTab_" .. key] = ids[control] end
 local function quote(value)
     return '"' .. value:gsub('[%z\1-\31\\"]',function(char)
         local escapes = {['"']='\\"',['\\']='\\\\',['\n']='\\n',['\r']='\\r',['\t']='\\t'}
@@ -131,4 +140,4 @@ local function json(value)
     else for key,item in pairs(value)do fields[#fields+1]=quote(tostring(key))..":"..json(item)end;table.sort(fields)end
     return (array and "[" or "{")..table.concat(fields,",")..(array and "]" or "}")
 end
-print(json({questID=questID,locale=locale,fixtureRewards=true,offline=true,catalogCollapsed=ui.catalogCollapsed==true,objects=objects,roles=roles,metrics=requests}))
+print(json({questID=questID,locale=locale,fixtureRewards=true,offline=true,catalogCollapsed=ui.catalogCollapsed==true,detailTab=ui.detailTab or "quest",objects=objects,roles=roles,metrics=requests}))

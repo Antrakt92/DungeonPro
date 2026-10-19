@@ -35,6 +35,7 @@ local function render(id, locale)
  addon.db.locale = locale or "enUS"
  ui.dungeon, ui.quest = dungeon, id or 166
  ui:Refresh()
+ if ui.detailTab ~= "quest" then assert(ui:SetDetailTab("quest")) end
 end
 local function lines()
  local result={}
@@ -51,8 +52,7 @@ local function count(value)
  local n=0;for _,fs in ipairs(lines())do if fs.text==value then n=n+1 end end;return n
 end
 local function storyBody()
- local heading=exact(addon.L("DETAIL_STORY"));assert(heading,"separate story caption")
- local list=lines();for index,fs in ipairs(list)do if fs==heading then return list[index+1]end end
+ for _,fs in ipairs(lines())do if fs.detailStyle=="story"then return fs end end
  error("missing story body")
 end
 local function validUTF8(text)
@@ -72,6 +72,8 @@ assert(contains(addon.L("DETAIL_LEVEL",addon.quests[166].level)).fontSize==13)
 assert(contains(addon.L("DETAIL_MIN_LEVEL",addon.quests[166].minLevel)).fontSize==13)
 assert(exact(addon.L("DETAIL_GIVER")) and count(addon.L("DETAIL_GIVER"))==1)
 assert(exact(addon.L("DETAIL_GIVER")).fontSize==13)
+assert(not contains(description),"Quest keeps practical information separate from Story")
+assert(ui:SetDetailTab("story"))
 assert(storyBody().text==description and storyBody().fontSize==14)
 assert(not ui.narrativeToggle or not ui.narrativeToggle:IsShown(),"short story is complete without disclosure")
 assert(not contains(addon.L("REWARD_UNAVAILABLE")) and not contains(addon.L("NO_TEXT")))
@@ -93,35 +95,39 @@ for _,locale in ipairs({"ruRU","zhCN","koKR"})do
  local unit=locale=="ruRU" and "История " or locale=="zhCN" and "冒险故事" or "모험이야기"
  description=string.rep(unit,100)
  render(166,locale)
- local body=storyBody();assert(body.text~=description and body.text:sub(-3)=="…" and #body.text<#description)
- assert(validUTF8(body.text),"excerpt ends at a complete UTF-8 codepoint")
- assert(not body.text:find("\239\191\189",1,true),"excerpt never introduces replacement characters")
- assert(ui.narrativeToggle and ui.narrativeToggle:IsShown())
- stale=ui.narrativeToggle.scripts.OnClick
+ assert(ui.detailTabButtons.story:IsShown())
+ stale=ui.detailTabButtons.story.scripts.OnClick
  stale();assert(ui.quest==166 and storyBody().text==description)
- ui.narrativeToggle.scripts.OnClick();assert(storyBody().text~=description)
+ local body=storyBody()
+ assert(validUTF8(body.text) and body.text==description,"Story retains every UTF-8 codepoint without truncating the text")
+ assert(not body.text:find("\239\191\189",1,true),"Story never introduces replacement characters")
+ assert(ui:SetDetailTab("quest"));assert(not contains(description))
 end
-render(214,"enUS");stale();assert(ui.quest==214 and not ui.detailNarrativeExpanded,"stale disclosure cannot expand another quest")
+render(214,"enUS");stale();assert(ui.quest==214 and ui.detailTab=="quest","stale Story control cannot switch another quest")
 render(166)
-ui.narrativeToggle.scripts.OnClick();assert(ui.detailNarrativeExpanded)
+assert(ui:SetDetailTab("story"));assert(ui.detailTab=="story")
 local priorDungeon=dungeon
 for _,candidate in ipairs(addon.dungeons)do if candidate~=priorDungeon then ui.dungeon=candidate;break end end
 ui:Refresh()
-assert(not ui.detailNarrativeExpanded,"the same quest in a different dungeon starts collapsed")
+assert(ui.detailTab=="quest","the same quest in a different dungeon starts on Quest")
 render(166)
-ui.narrativeToggle.scripts.OnClick();assert(ui.detailNarrativeExpanded)
+assert(ui:SetDetailTab("story"));assert(ui.detailTab=="story")
 ui.frame:Hide();ui.frame.scripts.OnHide(ui.frame);ui.frame:Show();ui:Refresh()
-assert(not ui.detailNarrativeExpanded,"closing the window resets expanded narrative reading")
+assert(ui.detailTab=="quest","closing the window resets the reading view")
 
 description="|cffffffff" .. string.rep("Markup-safe story ",50) .. "|r"
 render(166)
+assert(ui:SetDetailTab("story"))
 assert(storyBody().text==description,"markup is retained whole instead of broken by truncation")
 description=nil;rewardDTO={source="cache",items={},choices={},xp=0,money=0}
 render()
 assert(not exact(addon.L("DETAIL_STORY_EMPTY")) and not exact(addon.L("DETAIL_STORY")), "unavailable lore does not create an empty section")
 assert(not exact(addon.L("NO_TEXT")) and not exact(addon.L("REWARD_NO_ITEMS")) and not exact(addon.L("REWARD_UNAVAILABLE")))
-assert(not ui.narrativeToggle:IsShown())
+assert(not ui.narrativeToggle or not ui.narrativeToggle:IsShown())
 assert(not ui.referenceToggle or not ui.referenceToggle:IsShown(), "decorative portraits do not create an acquisition disclosure")
 assert(not ui.storyToggle or not ui.storyToggle:IsShown(), "story chains are not duplicated in the detail pane")
 assert(ui.quest==166)
-print("Actual quest detail: PASS (hierarchy, metadata, grouped rewards, safe narrative disclosure, stale state, quiet empty data)")
+assert(ui:SetDetailTab("story"))
+assert(exact(addon.L("DETAIL_STORY_UNAVAILABLE")),"empty Story explains the actual missing prose")
+assert(ui:SetDetailTab("quest"));assert(not exact(addon.L("DETAIL_STORY_UNAVAILABLE")))
+print("Actual quest detail: PASS (hierarchy, metadata, grouped rewards, full Story, stale state and truthful empty data)")

@@ -21,11 +21,12 @@ for _,d in ipairs(a.dungeons)do dungeons[d.key]=d;local seen={};for _,id in ipai
 local function shown(pool)local out={};for _,r in ipairs(pool or{})do if r:IsShown()then out[#out+1]=r end end;return out end
 local function render(id,inspection)
  ui.dungeon,ui.quest=assert(owners[id]or inspection),id;ui.questTreeRoot,ui.questTreeDungeon=nil,nil
- ui.detailReferencesExpanded=false;ui:Refresh()
+ ui:Refresh()
+ if ui.detailTab~="quest"then assert(ui:SetDetailTab("quest"))end
  assert(ui.quest==id and ui.renderedQuest==id,"actual object quest remains inspected")
 end
 local function expand()
- if not ui.detailReferencesExpanded then assert(ui.referenceToggle:IsShown());ui.referenceToggle.scripts.OnClick()end
+ assert(ui:SetDetailTab("sources"))
 end
 local function click(button,id,object,map,x,y)
  assert(button.enabled and type(button.scripts.OnClick)=="function","recorded point has an explicit enabled action")
@@ -63,7 +64,8 @@ local expected={
  {142706,23.4,58.8},{142707,23.2,58.5},{142708,31.6,57.8},{142710,31.6,57.7},
  {142711,31.6,57.8},{142712,31.6,57.8},{142713,23.1,57.7},{142714,23,57.8}}
 render(2933,assert(dungeons.ulda));n=#visits;retired();assert(#visits==n,"retired reported source cannot route a different quest")
-assert(not ui.giverAction and #shown(ui.giverButtons)==2,"twelve alternatives never auto-select one source")
+assert(not ui.giverAction and #shown(ui.giverButtons)==0 and ui.detailTab=="quest","twelve alternatives never auto-select one source on Quest")
+expand()
 local compact=shown(ui.giverButtons)
 for i,b in ipairs(compact)do local e=expected[i];click(b,2933,e[1],1425,e[2],e[3])end
 expand();local remainder=shown(ui.startButtons);assert(#remainder==10,"all ten remaining bottle objects stay manually reachable")

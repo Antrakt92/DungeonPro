@@ -19,6 +19,7 @@ end
 for _,d in ipairs(a.dungeons)do local seen={};for _,id in ipairs(d.quests)do own(id,d,seen)end end
 local function render(id,isReady,inspection)
  selected,ready=id,isReady==true;ui.dungeon,ui.quest=assert(inspection or owners[id]),id;ui:Refresh()
+ if ui.detailTab~="quest"then assert(ui:SetDetailTab("quest"))end
  assert(ui.quest==id and ui.renderedQuest==id)
 end
 local function field(text)
@@ -33,7 +34,7 @@ for _,id in ipairs({3801,3802})do
  local control=row(id).navigationControl
  assert(control.enabled and control.sourceInspect,"manual alternatives remain source inspection rather than an arbitrary NPC route")
  control.scripts.OnClick()
- assert(ui.quest==id and ui.renderedQuest==id and ui.detailReferencesExpanded,"source inspection opens its own choice details")
+ assert(ui.quest==id and ui.renderedQuest==id and ui.detailTab=="sources","source inspection opens its own choice details")
  local known,unknown=assert(ui.giverButtons[1]),assert(ui.giverButtons[2])
  assert(known:IsShown()and unknown:IsShown()and known.title.text==unknown.title.text,"same-name typed NPC alternatives stay separate choices")
  assert(known.note.text=="Burning Steppes — |cffff594d"..a.L("SOURCE_POSITION_UNKNOWN").."|r"and unknown.note.text=="|cffff594d"..a.L("UNKNOWN_PLACE").."|r","only NPC8888 receives the verified area; each missing position is visible and NPC184290 stays unknown")

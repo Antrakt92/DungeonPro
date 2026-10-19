@@ -169,6 +169,30 @@ addon.locales.zhCN.CATALOG_HIDE = "隐藏地下城列表"
 addon.locales.zhCN.CATALOG_SHOW = "显示地下城列表"
 addon.locales.zhTW.CATALOG_HIDE = "隱藏地城列表"
 addon.locales.zhTW.CATALOG_SHOW = "顯示地城列表"
+addon.locales.deDE.TAB_QUEST, addon.locales.deDE.TAB_SOURCES, addon.locales.deDE.TAB_STORY = "Quest", "Quellen", "Geschichte"
+addon.locales.frFR.TAB_QUEST, addon.locales.frFR.TAB_SOURCES, addon.locales.frFR.TAB_STORY = "Quête", "Sources", "Histoire"
+addon.locales.esES.TAB_QUEST, addon.locales.esES.TAB_SOURCES, addon.locales.esES.TAB_STORY = "Misión", "Fuentes", "Historia"
+addon.locales.itIT.TAB_QUEST, addon.locales.itIT.TAB_SOURCES, addon.locales.itIT.TAB_STORY = "Missione", "Fonti", "Storia"
+addon.locales.ptBR.TAB_QUEST, addon.locales.ptBR.TAB_SOURCES, addon.locales.ptBR.TAB_STORY = "Missão", "Fontes", "História"
+addon.locales.koKR.TAB_QUEST, addon.locales.koKR.TAB_SOURCES, addon.locales.koKR.TAB_STORY = "퀘스트", "출처", "이야기"
+addon.locales.zhCN.TAB_QUEST, addon.locales.zhCN.TAB_SOURCES, addon.locales.zhCN.TAB_STORY = "任务", "来源", "故事"
+addon.locales.zhTW.TAB_QUEST, addon.locales.zhTW.TAB_SOURCES, addon.locales.zhTW.TAB_STORY = "任務", "來源", "故事"
+addon.locales.deDE.DETAIL_STORY_UNAVAILABLE = "Der Questtext ist noch nicht verfügbar. Öffne das Questangebot, um ihn zu speichern."
+addon.locales.frFR.DETAIL_STORY_UNAVAILABLE = "Le texte de la quête n’est pas encore disponible. Ouvrez l’offre de quête pour l’enregistrer."
+addon.locales.esES.DETAIL_STORY_UNAVAILABLE = "El texto de la misión aún no está disponible. Abre la oferta de la misión para guardarlo."
+addon.locales.itIT.DETAIL_STORY_UNAVAILABLE = "Il testo della missione non è ancora disponibile. Apri la finestra di offerta della missione per salvarlo."
+addon.locales.ptBR.DETAIL_STORY_UNAVAILABLE = "O texto da missão ainda não está disponível. Abra a oferta da missão para salvá-lo."
+addon.locales.koKR.DETAIL_STORY_UNAVAILABLE = "퀘스트 내용이 아직 없습니다. 퀘스트 수락 창을 열면 저장됩니다."
+addon.locales.zhCN.DETAIL_STORY_UNAVAILABLE = "任务文本暂不可用。打开任务接受窗口即可保存。"
+addon.locales.zhTW.DETAIL_STORY_UNAVAILABLE = "任務文字尚未提供。開啟任務接受視窗即可儲存。"
+addon.locales.deDE.ITEM_SOURCE_SUMMARY = "Erfasste Quellen: %d. Siehe %s."
+addon.locales.frFR.ITEM_SOURCE_SUMMARY = "Sources répertoriées : %d. Voir %s."
+addon.locales.esES.ITEM_SOURCE_SUMMARY = "Fuentes registradas: %d. Ver %s."
+addon.locales.itIT.ITEM_SOURCE_SUMMARY = "Fonti elencate: %d. Vedi %s."
+addon.locales.ptBR.ITEM_SOURCE_SUMMARY = "Fontes listadas: %d. Veja %s."
+addon.locales.koKR.ITEM_SOURCE_SUMMARY = "등록된 출처: %d곳. %s 탭을 확인하세요."
+addon.locales.zhCN.ITEM_SOURCE_SUMMARY = "已列来源：%d 个。查看“%s”。"
+addon.locales.zhTW.ITEM_SOURCE_SUMMARY = "已列來源：%d 個。查看「%s」。"
 addon.locales.deDE.REPORT_ISSUE, addon.locales.deDE.SUPPORT_AUTHOR, addon.locales.deDE.CLOSE = "Problem melden", "Projekt unterstützen", "Schließen"
 addon.locales.frFR.REPORT_ISSUE, addon.locales.frFR.SUPPORT_AUTHOR, addon.locales.frFR.CLOSE = "Signaler un problème", "Soutenir le projet", "Fermer"
 addon.locales.esES.REPORT_ISSUE, addon.locales.esES.SUPPORT_AUTHOR, addon.locales.esES.CLOSE = "Informar de un problema", "Apoyar el proyecto", "Cerrar"
@@ -319,16 +343,16 @@ local requirementOwners = { enUS = "Required for: %s", ruRU = "Нужно для
 for locale, value in pairs(requirementOwners) do addon.locales[locale].REQUIREMENT_FOR = value end
 
 local directNavigationHints = {
-    enUS = { "Choose a quest giver in the quest details.", "Navigation is currently unavailable.", "Starts from an item. Click to see its source details." },
-    ruRU = { "Выберите квестодателя в подробностях задания.", "Навигация сейчас недоступна.", "Задание начинается предметом. Нажмите, чтобы узнать его источник." },
-    deDE = { "Wähle einen Questgeber in den Questdetails.", "Navigation ist derzeit nicht verfügbar.", "Beginnt durch einen Gegenstand. Klicken, um die Quelle anzuzeigen." },
-    frFR = { "Choisissez un donneur dans les détails de la quête.", "La navigation est actuellement indisponible.", "Cette quête commence par un objet. Cliquez pour voir sa source." },
-    esES = { "Elige un dador en los detalles de la misión.", "La navegación no está disponible en este momento.", "Se inicia con un objeto. Haz clic para ver su origen." },
-    itIT = { "Scegli un personaggio nei dettagli della missione.", "La navigazione non è al momento disponibile.", "Inizia con un oggetto. Clicca per vedere la sua provenienza." },
-    ptBR = { "Escolha quem oferece a missão nos detalhes.", "A navegação está indisponível no momento.", "Começa com um item. Clique para ver sua origem." },
-    koKR = { "퀘스트 상세 정보에서 제공자를 선택하세요.", "현재 길 안내를 사용할 수 없습니다.", "아이템으로 시작하는 퀘스트입니다. 클릭하여 획득처를 확인하세요." },
-    zhCN = { "请在任务详情中选择任务给予者。", "导航暂时不可用。", "此任务由物品触发。点击查看物品来源。" },
-    zhTW = { "請在任務詳情中選擇任務給予者。", "導航暫時無法使用。", "此任務由物品觸發。點擊查看物品來源。" },
+    enUS = { "Choose a starting point on Sources.", "Navigation is currently unavailable.", "Starts from an item. Click to see its source details." },
+    ruRU = { "Выберите место получения на вкладке «Источники».", "Навигация сейчас недоступна.", "Задание начинается предметом. Нажмите, чтобы узнать его источник." },
+    deDE = { "Wähle einen Startpunkt unter Quellen.", "Navigation ist derzeit nicht verfügbar.", "Beginnt durch einen Gegenstand. Klicken, um die Quelle anzuzeigen." },
+    frFR = { "Choisissez un point de départ dans Sources.", "La navigation est actuellement indisponible.", "Cette quête commence par un objet. Cliquez pour voir sa source." },
+    esES = { "Elige un punto de inicio en Fuentes.", "La navegación no está disponible en este momento.", "Se inicia con un objeto. Haz clic para ver su origen." },
+    itIT = { "Scegli un punto di partenza nella scheda Fonti.", "La navigazione non è al momento disponibile.", "Inizia con un oggetto. Clicca per vedere la sua provenienza." },
+    ptBR = { "Escolha um ponto de início em Fontes.", "A navegação está indisponível no momento.", "Começa com um item. Clique para ver sua origem." },
+    koKR = { "출처 탭에서 퀘스트 시작 지점을 선택하세요.", "현재 길 안내를 사용할 수 없습니다.", "아이템으로 시작하는 퀘스트입니다. 클릭하여 획득처를 확인하세요." },
+    zhCN = { "请在“来源”中选择任务起始点。", "导航暂时不可用。", "此任务由物品触发。点击查看物品来源。" },
+    zhTW = { "請在「來源」中選擇任務起始點。", "導航暫時無法使用。", "此任務由物品觸發。點擊查看物品來源。" },
 }
 for locale, values in pairs(directNavigationHints) do
     addon.locales[locale].GIVER_CHOICES_REQUIRED, addon.locales[locale].NAVIGATION_UNAVAILABLE,

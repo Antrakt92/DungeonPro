@@ -24,7 +24,7 @@ assert(ui.giverAction.id==6402 and ui.giverAction.place==quest.start and quest.s
     "quest giver remains the separate Marshal Maxwell endpoint")
 ui.giver.scripts.OnClick()
 assert(#visits==2 and visits[2].place==quest.start)
-assert(ui.referenceToggle:IsShown());ui.referenceToggle.scripts.OnClick()
+assert(ui:SetDetailTab("sources"))
 local toggle
 for _,row in ipairs(ui.reportedToggles)do if row:IsShown()and row.locationKey=="finish"then toggle=row end end
 assert(toggle and toggle.title.text:find("Reginald Windsor",1,true))

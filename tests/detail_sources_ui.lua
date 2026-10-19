@@ -12,7 +12,7 @@ for _, dungeon in ipairs(addon.dungeons) do
 end
 local function render()
     ui.quest = 971; ui:Refresh()
-    if not ui.detailReferencesExpanded then ui.referenceToggle.scripts.OnClick() end
+    assert(ui:SetDetailTab("sources"))
 end
 local function toggles()
     local result = {}
