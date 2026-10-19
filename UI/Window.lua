@@ -516,15 +516,25 @@ function UI:ShowDeveloperLink(key)
 end
 
 function UI:CloseCopyLink()
-    self.copyRevision = {}
+    local revision = {}; self.copyRevision = revision
     self.copyQuest, self.copyReturn = nil, nil
-    if self.copy then self.copy:SetText(""); self.copy:Hide(); self.copy:ClearFocus() end
-    if self.copyHint then self.copyHint:SetText(""); self.copyHint:Hide() end
+    local box, hint, frame, character = self.copy, self.copyHint, self.frame, addon.char
+    local writer, checker = self.QuestListWrite, issecretvalue
+    local function current()
+        return addon.UI == self and self.copyRevision == revision and self.copyQuest == nil and self.copyReturn == nil and
+            self.copy == box and self.copyHint == hint and self.frame == frame and addon.char == character and
+            self.QuestListWrite == writer and issecretvalue == checker
+    end
+    local function write(object, method, ...)
+        return not object or writer(self, object, method, current, ...)
+    end
+    if not write(box, "SetText", "") or not write(box, "Hide") or not write(box, "ClearFocus") then return false end
+    if not write(hint, "SetText", "") or not write(hint, "Hide") then return false end
 end
 
 function UI:EscapeCopyLink()
     local saved = self.copyReturn
-    self:CloseCopyLink()
+    if self:CloseCopyLink() == false then return end
     local revision = self.copyRevision
     self:RefreshDetail()
     if self.copyRevision ~= revision or not saved or self.quest ~= saved.quest or self.copyQuest ~= nil or
@@ -543,50 +553,73 @@ function UI:EscapeCopyLink()
 end
 
 function UI:CopyLink(id)
-    id = addon.Clean(id, "number")
-    if not id or id < 1 or id % 1 ~= 0 or id ~= self.quest or
-        addon.Read(self.frame.IsShown, "boolean", self.frame) ~= true then return false end
-    if self.copyQuest ~= id then
-        local scroll, generation, checker = self.detailScroll, self.rewardGeneration, issecretvalue
+    local previous, frame, quest, dungeon, engine, character = self.copyRevision, self.frame, self.quest, self.dungeon, self.engine, addon.char
+    local scroll, detail, generation = self.detailScroll, self.detail, self.rewardGeneration
+    local clean, read, checker, writer, refresh = addon.Clean, addon.Read, issecretvalue, self.QuestListWrite, self.RefreshDetail
+    local initialShown = frame and frame.IsShown
+    local function initial()
+        return addon.UI == self and self.copyRevision == previous and self.frame == frame and self.quest == quest and
+            self.dungeon == dungeon and self.engine == engine and addon.char == character and self.detailScroll == scroll and
+            self.detail == detail and self.rewardGeneration == generation and addon.Clean == clean and addon.Read == read and
+            issecretvalue == checker and self.QuestListWrite == writer and self.RefreshDetail == refresh and frame and frame.IsShown == initialShown
+    end
+    id = clean(id, "number")
+    if not initial() or not id or id < 1 or id % 1 ~= 0 or id ~= quest or read(initialShown, "boolean", frame) ~= true or not initial() then return false end
+    local revision = {}; self.copyRevision = revision
+    local copyQuest, box, hint = self.copyQuest, self.copy, self.copyHint
+    local function requestCurrent()
+        return addon.UI == self and self.copyRevision == revision and self.frame == frame and self.quest == id and
+            self.dungeon == dungeon and self.engine == engine and addon.char == character and self.detailScroll == scroll and
+            self.detail == detail and self.copyQuest == copyQuest and self.copy == box and self.copyHint == hint and
+            addon.Clean == clean and addon.Read == read and issecretvalue == checker and self.QuestListWrite == writer and self.RefreshDetail == refresh
+    end
+    if copyQuest ~= id then
         local getter = scroll.GetVerticalScroll
-        local offset = addon.Read(getter, "number", scroll)
-        if self.quest ~= id or self.rewardGeneration ~= generation or self.detailScroll ~= scroll or scroll.GetVerticalScroll ~= getter or issecretvalue ~= checker then return false end
+        local offset = read(getter, "number", scroll)
+        if not requestCurrent() or self.rewardGeneration ~= generation or scroll.GetVerticalScroll ~= getter then return false end
         self.copyReturn = offset and offset >= 0 and { quest = id, offset = offset } or nil
     end
-    if not self.copy then
-        local box = CreateFrame("EditBox", nil, self.detail, "InputBoxTemplate")
-        box:SetSize(326, 26)
-        setInputFont(box)
-        box:SetAutoFocus(false)
-        box:SetScript("OnEscapePressed", function() self:EscapeCopyLink() end)
-        self.copy, self.copyHint = box, label(box, "", 0, -34, 326, 13)
+    if not box then
+        local made = CreateFrame("EditBox", nil, detail, "InputBoxTemplate")
+        if not requestCurrent() then return false end
+        made:SetSize(326, 26); setInputFont(made); made:SetAutoFocus(false)
+        if not requestCurrent() then return false end
+        made:SetScript("OnEscapePressed", function() self:EscapeCopyLink() end)
+        if not requestCurrent() then return false end
+        local caption = label(made, "", 0, -34, 326, 13)
+        if not requestCurrent() then return false end
+        box, hint = made, caption
+        self.copy, self.copyHint = box, hint
     end
-    self.copyQuest = id
-    self.copy:SetText("https://www.wowhead.com/forever/quest=" .. id)
-    self:RefreshDetail()
-    local frame, box, detail, scroll = self.frame, self.copy, self.detail, self.detailScroll
-    local dungeon, engine, character = self.dungeon, self.engine, addon.char
-    local revision, generation, checker = self.copyRevision, self.rewardGeneration, issecretvalue
+    copyQuest = id; self.copyQuest = id
+    if not writer(self, box, "SetText", requestCurrent, "https://www.wowhead.com/forever/quest=" .. id) then return false end
+    refresh(self)
+    if not requestCurrent() then return false end
+    generation = self.rewardGeneration
     local shown, contentGetter, viewportGetter = box.IsShown, detail.GetHeight, scroll.GetHeight
     local scrollSetter, focus, highlight = scroll.SetVerticalScroll, box.SetFocus, box.HighlightText
     local function current()
-        return addon.UI == self and self.frame == frame and self.copy == box and self.detail == detail and
-            self.detailScroll == scroll and self.quest == id and self.copyQuest == id and self.dungeon == dungeon and
-            self.engine == engine and addon.char == character and self.copyRevision == revision and
-            self.rewardGeneration == generation and issecretvalue == checker and box.IsShown == shown and
+        return requestCurrent() and self.rewardGeneration == generation and box.IsShown == shown and
             detail.GetHeight == contentGetter and scroll.GetHeight == viewportGetter and
             scroll.SetVerticalScroll == scrollSetter and box.SetFocus == focus and box.HighlightText == highlight
     end
-    if not current() or addon.Read(shown, "boolean", box) ~= true or not current() then return false end
-    local content = addon.Read(contentGetter, "number", detail)
+    if not current() or read(shown, "boolean", box) ~= true or not current() then return false end
+    local content = read(contentGetter, "number", detail)
     if not current() then return false end
-    local viewport = addon.Read(viewportGetter, "number", scroll)
+    local viewport = read(viewportGetter, "number", scroll)
     if not current() then return false end
     if content and viewport and content >= 0 and viewport > 0 then
         if not self:WriteDetailScroll(scroll, math.max(0, content - viewport), current) or not current() then return false end
     end
-    if not pcall(focus, box) or not current() then return false end
-    return pcall(highlight, box) and current()
+    local function focusCurrent()
+        return addon.UI == self and self.copyRevision == revision and self.copyQuest == id and self.quest == id and
+            self.copy == box and self.frame == frame and addon.char == character and box.SetFocus == focus and issecretvalue == checker
+    end
+    if not writer(self, box, "SetFocus", focusCurrent) or not current() then return false end
+    local function highlightCurrent()
+        return focusCurrent() and box.HighlightText == highlight
+    end
+    return writer(self, box, "HighlightText", highlightCurrent) and current()
 end
 
 -- Share the bounded owned writer with list layout; direct user scrolling stays native.
@@ -613,7 +646,8 @@ function UI:QuestListWrite(object, method, ownerCurrent, ...)
     if not ownerCurrent() then return false end
     local bindings = object.questListWrites or {}; object.questListWrites = bindings
     local key = (method == "Show" or method == "Hide" or method == "SetShown") and "visibility" or
-        (method == "SetScript" and "script:" .. tostring((...)) or method)
+        ((method == "SetFocus" or method == "ClearFocus") and "focus" or
+        (method == "SetScript" and "script:" .. tostring((...)) or method))
     local binding = { current = ownerCurrent, setter = object[method], args = { ... }, count = select("#", ...) }
     bindings[key] = binding
     local ok = pcall(binding.setter, object, ...)
@@ -5224,10 +5258,24 @@ function UI:RefreshDetail(sourceFocus)
         else line(addon.L("PICK")) end
     end
     if renderQuest and self.copyQuest == renderQuest and self.copy then
-        self.copy:ClearAllPoints(); self.copy:SetPoint("TOPLEFT", 8, -(y + 6))
-        setFont(self.copyHint, 13); self.copyHint:SetText(addon.L("COPY")); self.copyHint:Show()
-        self.copy:Show()
-        y = y + 6 + 26 + 8 + measuredHeight(self.copyHint, 18) + 8
+        local box, hint, revision = self.copy, self.copyHint, self.copyRevision
+        local function copyCurrent()
+            return portraitCardCurrent() and self.copy == box and self.copyHint == hint and self.copyQuest == renderQuest and self.copyRevision == revision
+        end
+        local function copyWrite(object, method, ...) return self:QuestListWrite(object, method, copyCurrent, ...) end
+        local textGetter = box.GetText
+        local value = addon.Read(textGetter, "string", box)
+        if not copyCurrent() or box.GetText ~= textGetter or not value then return end
+        if not copyWrite(box, "SetText", value) then return end
+        box:ClearAllPoints()
+        if not copyCurrent() then return end
+        box:SetPoint("TOPLEFT", 8, -(y + 6))
+        if not copyCurrent() then return end
+        setFont(hint, 13)
+        if not copyCurrent() then return end
+        local text = addon.L("COPY")
+        if not copyCurrent() or not copyWrite(hint, "SetText", text) or not copyWrite(hint, "Show") or not copyWrite(box, "Show") then return end
+        y = y + 6 + 26 + 8 + measuredHeight(hint, 18) + 8
     end
     if self.quest ~= renderQuest or self.dungeon ~= renderDungeon or self.rewardGeneration ~= rewardGeneration or
         self.engine ~= renderEngine or addon.char ~= renderCharacter then return end

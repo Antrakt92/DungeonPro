@@ -4,6 +4,7 @@
 
 ### 19-Oct-2026
 
+- Keep the current copied link and keyboard focus when older close actions finish.
 - Keep newly displayed reward and objective icons when an older refresh finishes.
 - Preserve reopened quest details when an older window close finishes.
 - Cancel catalogue clicks when the planner closes or a newer selection takes over.
