@@ -70,8 +70,8 @@ English, Russian, German, French, Spanish, Italian, Portuguese, Korean,
 Simplified Chinese and Traditional Chinese are supported. British English and
 Latin American Spanish use the English and Spanish translations.
 
-Dungeon and quest titles follow your selection. Item names and quest text
-supplied by the game stay in your client's language.
+Dungeon and quest titles follow your selection. Item names, map and floor names,
+and quest text supplied by the game stay in your client's language.
 
 ## Still in beta
 

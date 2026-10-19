@@ -4,6 +4,8 @@
 
 ### 19-Oct-2026
 
+- Match map controls to the planner's button style and dim unavailable floor
+  directions so they are easier to distinguish from active controls.
 - Keep the quest list selection in sync when returning to a previous quest or
   the dungeon overview, while preserving the previous tab and reading position.
 - Add a dungeon map view with floor controls when the game client supplies a

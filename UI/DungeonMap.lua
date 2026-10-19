@@ -11,7 +11,7 @@ local function paint(self, dungeon, requestedMapID, inputCurrent)
     local preview = session and session.preview
     local localeGetter = GetLocale
     local theme, writer = addon.Theme, self.QuestListWrite
-    local font = theme and theme.ApplyFont
+    local font, style = theme and theme.ApplyFont, theme and theme.StyleFilter
     local provider, clean, read, checker, localizer = addon.DungeonMapSnapshot, addon.Clean, addon.Read, issecretvalue, addon.L
     local state = { dungeon = dungeon, requestedMapID = requestedMapID, elapsed = 0 }
     self.dungeonMapState = state
@@ -21,7 +21,7 @@ local function paint(self, dungeon, requestedMapID, inputCurrent)
             addon.char == character and addon.db == db and (not db or db.locale == locale) and addon.Language == language and
             (not language or language.session == session) and (not session or session.preview == preview) and addon.DungeonMapSnapshot == provider and
             addon.Clean == clean and addon.Read == read and issecretvalue == checker and addon.L == localizer and
-            GetLocale == localeGetter and addon.Theme == theme and (not theme or theme.ApplyFont == font) and
+            GetLocale == localeGetter and addon.Theme == theme and (not theme or (theme.ApplyFont == font and theme.StyleFilter == style)) and
             self.QuestListWrite == writer and (not state.overlay or self.dungeonMap == state.overlay)
     end
     state.same = same
@@ -61,6 +61,7 @@ local function paint(self, dungeon, requestedMapID, inputCurrent)
             local b = CreateFrame("Button", nil, overlay, "UIPanelButtonTemplate")
             b:SetSize(170, 26); b.label = b:CreateFontString(nil,"OVERLAY","GameFontNormal")
             b.label:SetAllPoints(b); b.label:SetJustifyH("CENTER")
+            b.filterCaption = b.label
             return b
         end
         overlay.back, overlay.retry, overlay.previous, overlay.next = button(), button(), button(), button()
@@ -110,6 +111,12 @@ local function paint(self, dungeon, requestedMapID, inputCurrent)
         if font then pcall(font,b.label,12) end
         if not raw() or not write(b,"SetScript","OnClick",function() if (clickCurrent or current)() then fn() end end) or
             not write(b,"SetEnabled",enabled) then return false end
+        local styled = false
+        if type(style) == "function" then
+            styled = read(style,"boolean",b,false) == true
+        end
+        if not raw() then return false end
+        if type(b.label.SetAlpha) == "function" and not write(b.label,"SetAlpha",(styled or enabled) and 1 or .5) then return false end
         return write(b,"Show")
     end
     local function backCurrent()
