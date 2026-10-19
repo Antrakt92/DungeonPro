@@ -406,8 +406,8 @@ check("Detail tabs reset on a different card and stale callbacks cannot change i
     showCompactDetail(2); assert(ui.detailTab == "quest")
     old(); assert(ui.quest == 2 and ui.detailTab == "quest")
     local current = ui.detailTabButtons.sources.scripts.OnClick
-    ui.frame.scripts.OnHide(); current(); assert(ui.detailTab == "quest")
-    ui.frame.scripts.OnShow();addon.quests[1].startAlternatives,addon.quests[2].startAlternatives=first,second;showDetail(2)
+    ui.frame:Hide(); ui.frame.scripts.OnHide(); current(); assert(ui.detailTab == "quest")
+    ui.frame:Show(); ui.frame.scripts.OnShow();addon.quests[1].startAlternatives,addon.quests[2].startAlternatives=first,second;showDetail(2)
 end)
 check("Tab offset getters cannot transfer a view or restoration to a replaced scroll owner", function()
     local alternatives=addon.quests[100].startAlternatives;addon.quests[100].startAlternatives={addon.quests[100].start}

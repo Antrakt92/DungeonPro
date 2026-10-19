@@ -5588,7 +5588,56 @@ function UI:Create()
             addon.Read(f.IsShown, "boolean", f) == true then self:Fit() end
     end)
     frame:SetScript("OnShow", function(f) raiseWindow(f); self:Fit(); self.preparation = false; self:Refresh(nil, true) end)
-    frame:SetScript("OnHide", function() self.detailTabQuest, self.detailTabRevision = nil, {}; if self.CloseDungeonMap then self:CloseDungeonMap(true) end; local pending = self.developerLinkRequest; self.developerLinkRequest = nil; if pending and type(StaticPopup_Hide) == "function" then pcall(StaticPopup_Hide, "DUNGEONPRO_COPY_DEVELOPER_LINK") end; self:HideNavigationHint(); local language = addon.Clean(addon.Language, "table"); if language then addon.Read(language.Cancel, "boolean", language, self) end; self.pendingSearch = nil; self.detailReferencesExpanded, self.detailNarrativeExpanded, self.detailObjectivesExpanded = false, false, false; if not self:ResetQuestLogControl() then return end; self.detailActionChoice = nil; self.languageMenuRevision = {}; self:ResetHistoryReading(); self:ResetRewardPresentation(); self:CloseCopyLink() end)
+    frame:SetScript("OnHide", function()
+        self.detailTabQuest, self.detailTabRevision = nil, {}
+        local revision, character, quest, dungeon, engine = self.detailTabRevision, addon.char, self.quest, self.dungeon, self.engine
+        local clean, read, shown, checker = addon.Clean, addon.Read, frame.IsShown, issecretvalue
+        local methodKeys = { "CloseDungeonMap", "HideNavigationHint", "ResetQuestLogControl", "ResetHistoryReading", "ResetRewardPresentation", "CloseCopyLink" }
+        local methods = {}
+        for _, key in ipairs(methodKeys) do methods[key] = self[key] end
+        local generation = self.rewardGeneration
+        local function rawCurrent()
+            for _, key in ipairs(methodKeys) do if self[key] ~= methods[key] then return false end end
+            return addon.UI == self and self.frame == frame and self.detailTabRevision == revision and
+                addon.char == character and self.quest == quest and self.dungeon == dungeon and self.engine == engine and
+                self.rewardGeneration == generation and addon.Clean == clean and addon.Read == read and issecretvalue == checker and frame.IsShown == shown
+        end
+        local function current()
+            if not rawCurrent() then return false end
+            local visible = read(shown, "boolean", frame)
+            return visible == false and rawCurrent()
+        end
+        -- Cleanup callbacks may reopen and render the planner; that newer view owns its state.
+        if not current() then return end
+        if self.CloseDungeonMap then self:CloseDungeonMap(true); if not current() then return end end
+        local pending = self.developerLinkRequest
+        self.developerLinkRequest = nil
+        if pending and type(StaticPopup_Hide) == "function" then
+            pcall(StaticPopup_Hide, "DUNGEONPRO_COPY_DEVELOPER_LINK")
+            if not current() then return end
+        end
+        self:HideNavigationHint()
+        if not current() then return end
+        local language = clean(addon.Language, "table")
+        if not current() then return end
+        if language then
+            read(language.Cancel, "boolean", language, self)
+            if not current() then return end
+        end
+        self.pendingSearch = nil
+        self.detailReferencesExpanded, self.detailNarrativeExpanded, self.detailObjectivesExpanded = false, false, false
+        if not self:ResetQuestLogControl() or not current() then return end
+        self.detailActionChoice = nil
+        self.languageMenuRevision = {}
+        self:ResetHistoryReading()
+        if not current() then return end
+        local reset = self:ResetRewardPresentation()
+        if not reset then return end
+        generation = reset
+        if not current() then return end
+        self:CloseCopyLink()
+        if not current() then return end
+    end)
     self:ApplyTheme()
     frame:Hide()
 end

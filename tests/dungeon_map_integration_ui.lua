@@ -78,9 +78,10 @@ test("Normal language commit closes the old native view",function()
 end)
 test("Window hide clears map callbacks and pooled artwork",function()
  local b=open();local before=calls
- ui.frame.scripts.OnHide(ui.frame)
+ ui.frame:Hide();ui.frame.scripts.OnHide(ui.frame)
  assert(not b.shown and not b.scripts.OnUpdate and ui.dungeonMapState==nil and calls==before)
  for _,tile in ipairs(b.tiles)do assert(not tile.shown and tile.texture==nil)end
+ ui.frame:Show()
 end)
 test("Unavailable native capability keeps explicit retry and back usable",function()
  overview();local join=C_EncounterJournal.GetInstanceForGameMap;C_EncounterJournal.GetInstanceForGameMap=nil
