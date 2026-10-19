@@ -43,8 +43,8 @@ def lua_quote(text: str) -> str:
     return '"' + text.replace("\\", "\\\\").replace('"', '\\"').replace("\r", "\\r").replace("\n", "\\n").replace("\t", "\\t") + '"'
 
 
-def capture(lua: str, quest: int, locale: str, metrics_path: Path | None = None, catalog_collapsed: bool = False, detail_tab: str = "quest") -> dict:
-    args = [lua, "tests/detail_visual.lua", str(quest), locale]
+def capture(lua: str, quest: int, locale: str, metrics_path: Path | None = None, catalog_collapsed: bool = False, detail_tab: str = "quest", overview: str | None = None, ready_quests: tuple[int, ...] = ()) -> dict:
+    args = [lua, "tests/detail_visual.lua", "overview:" + overview if overview else str(quest), locale]
     if metrics_path:
         args.append(str(metrics_path))
     if catalog_collapsed:
@@ -55,6 +55,10 @@ def capture(lua: str, quest: int, locale: str, metrics_path: Path | None = None,
         while len(args) < 6:
             args.append("")
         args.append(detail_tab)
+    if overview:
+        while len(args) < 7:
+            args.append("")
+        args.append(",".join(map(str, ready_quests)))
     completed = subprocess.run(args, cwd=ROOT, check=True, capture_output=True, encoding="utf-8")
     return json.loads(completed.stdout)
 
@@ -147,8 +151,12 @@ def render(snapshot: dict, target: Path) -> None:
             paint.rectangle((x, y, x+w, y+h), fill="#365963", outline="#789aa5")
         image.alpha_composite(layer.crop(clip), (clip[0], clip[1]))
     draw = ImageDraw.Draw(image)
-    draw.text((12, 710), f"OFFLINE APPROXIMATION  |  quest {snapshot['questID']}  |  {snapshot['locale']}  |  sample narrative and rewards", font=ImageFont.truetype(str(FONT), 13), fill="#b6c4d0")
-    draw.text((12, 729), "Actual Lua anchors + Pillow metrics; native rendering, icons and gameplay are unverified.", font=ImageFont.truetype(str(FONT), 12), fill="#91a1b0")
+    subject = (f"overview {snapshot['dungeonKey']}  |  {snapshot['locale']}  |  actual catalogue, simulated held quest log"
+               if snapshot.get("mode") == "overview" else f"quest {snapshot['questID']}  |  {snapshot['locale']}  |  sample narrative and rewards")
+    draw.text((12, 710), "OFFLINE APPROXIMATION  |  " + subject, font=ImageFont.truetype(str(FONT), 13), fill="#b6c4d0")
+    limits = ("Actual Lua anchors + Pillow metrics; artwork unrendered; native fonts, scale, icons and gameplay unverified."
+              if snapshot.get("mode") == "overview" else "Actual Lua anchors + Pillow metrics; native rendering, icons and gameplay are unverified.")
+    draw.text((12, 729), limits, font=ImageFont.truetype(str(FONT), 12), fill="#91a1b0")
     image.convert("RGB").save(target)
 
 
@@ -157,9 +165,30 @@ def main() -> None:
     parser.add_argument("--lua", default=shutil.which("lua5.1") or shutil.which("lua5.1.exe"))
     parser.add_argument("--output", type=Path, default=ROOT / "dist/preview")
     parser.add_argument("--catalog-collapsed", action="store_true", help="Capture the wider quest list with the dungeon catalogue hidden")
-    parser.add_argument("--detail-tab", choices=("quest", "sources", "story"), default="quest", help="Capture one contextual quest-detail view")
+    parser.add_argument("--detail-tab", choices=("quest", "sources", "story"), default=None, help="Capture one contextual quest-detail view")
     parser.add_argument("--quest", type=int, action="append", help="Quest ID to capture; repeat for multiple quests (default: 4764 and 4766)")
+    parser.add_argument("--overview", metavar="DUNGEON_KEY", help="Capture actual dungeon progress with a simulated held quest log")
+    parser.add_argument("--ready-quest", type=int, action="append", default=[], help="Known quest ID simulated as held and ready; overview mode only")
     args = parser.parse_args()
+    if args.overview is not None and not args.overview:
+        parser.error("--overview requires a nonblank known dungeon key")
+    if args.overview and (args.quest or args.detail_tab is not None):
+        parser.error("--overview cannot be combined with --quest or --detail-tab")
+    if args.ready_quest and not args.overview:
+        parser.error("--ready-quest requires --overview")
+    if any(q <= 0 or q > 4294967295 for q in args.ready_quest):
+        parser.error("--ready-quest IDs must be positive uint32 values")
+    args.ready_quest = list(dict.fromkeys(args.ready_quest))
+    if not args.lua:
+        parser.error("Lua 5.1 is required; pass --lua with the existing executable")
+    first_overview = None
+    if args.overview:
+        try:
+            first_overview = capture(args.lua, 0, "enUS", catalog_collapsed=args.catalog_collapsed,
+                                     overview=args.overview, ready_quests=tuple(args.ready_quest))
+        except subprocess.CalledProcessError as error:
+            parser.error(error.stderr.strip())
+
     global Image, ImageDraw, ImageFont
     try:
         from PIL import Image, ImageDraw, ImageFont
@@ -168,18 +197,19 @@ def main() -> None:
     if not args.lua:
         parser.error("Lua 5.1 is required; pass --lua with the existing executable")
     args.output.mkdir(parents=True, exist_ok=True)
-    for quest in args.quest or (4764, 4766):
+    for quest in ([0] if args.overview else args.quest or (4764, 4766)):
+        stem = "overview-" + args.overview if args.overview else str(quest)
         for locale in ("enUS", "ruRU"):
-            snapshot = capture(args.lua, quest, locale, catalog_collapsed=args.catalog_collapsed, detail_tab=args.detail_tab)
+            snapshot = first_overview if args.overview and locale == "enUS" else capture(args.lua, quest, locale, catalog_collapsed=args.catalog_collapsed, detail_tab=args.detail_tab or "quest", overview=args.overview, ready_quests=tuple(args.ready_quest))
             entries = []
             for key, row in snapshot["metrics"].items():
                 _, height, width = layout(row["text"], row["size"], row["width"])
                 entries.append(f"[{lua_quote(key)}]={{height={height},width={width}}}")
-            metrics_path = args.output / f"{quest}-{locale}-metrics.lua"
+            metrics_path = args.output / f"{stem}-{locale}-metrics.lua"
             metrics_path.write_text("return {" + ",".join(entries) + "}", encoding="utf-8")
-            snapshot = capture(args.lua, quest, locale, metrics_path, catalog_collapsed=args.catalog_collapsed, detail_tab=args.detail_tab)
-            (args.output / f"{quest}-{locale}.json").write_text(json.dumps(snapshot, ensure_ascii=False, indent=2), encoding="utf-8")
-            target = args.output / f"{quest}-{locale}.png"
+            snapshot = capture(args.lua, quest, locale, metrics_path, catalog_collapsed=args.catalog_collapsed, detail_tab=args.detail_tab or "quest", overview=args.overview, ready_quests=tuple(args.ready_quest))
+            (args.output / f"{stem}-{locale}.json").write_text(json.dumps(snapshot, ensure_ascii=False, indent=2), encoding="utf-8")
+            target = args.output / f"{stem}-{locale}.png"
             render(snapshot, target)
             print(target)
 

@@ -1,10 +1,24 @@
 -- Offline native-shaped layout capture. Sample prose/rewards are fixture data.
-local checking = arg and arg[1] == "check"
+local overviewKey = arg and arg[1] and arg[1]:match("^overview:([%w_-]+)$")
+assert(not(arg and arg[1]and arg[1]:match("^overview:"))or overviewKey,"invalid overview dungeon key")
+local checking = arg and (arg[1] == "check" or overviewKey and arg[7] == "check")
 local questID, locale, metricsPath = tonumber(arg and arg[1]) or 4764, arg and arg[2] or "enUS", arg and arg[3]
 if metricsPath == "" then metricsPath = nil end
 local metrics = metricsPath and assert(loadfile(metricsPath))() or {}
 local fixture = assert(loadfile("tests/client_ui.lua"))("fixture")
 local addon, ui, methods = fixture.addon, fixture.addon.UI, fixture.methods
+local readyIDs, held, ready, pending = {}, {}, {}, {}
+if overviewKey then
+    local found=false; for _,d in ipairs(addon.dungeons)do if d.key==overviewKey then found=true end end
+    assert(found,"unknown overview dungeon key")
+    local raw=arg[6] or ""
+    assert(raw=="" or raw:match("^%d+[,%d]*$") and raw:sub(-1)~=",","invalid ready quest IDs")
+    for token in raw:gmatch("[^,]+")do
+        local id=tonumber(token)
+        assert(id and id>0 and id<=4294967295 and id%1==0 and addon.quests[id],"ready quest must be a known positive catalogue ID")
+        assert(not ready[id],"duplicate ready quest ID");ready[id]=true;readyIDs[#readyIDs+1]=id
+    end
+end
 local requests = {}
 local function plain(value)
     return (value or ""):gsub("|c%x%x%x%x%x%x%x%x", ""):gsub("|r", ""):gsub("|T.-|t", "[coin]"):gsub("|A.-|a", "")
@@ -43,12 +57,43 @@ for _, key in ipairs({"CreateFontString", "CreateTexture"}) do
     local original = methods[key]
     methods[key] = function(self, ...) local object = original(self, ...); object.parent = self; object.shown = true; return object end
 end
-C_Timer = {After = function() end}
+C_Timer = {After = function(delay,callback)if overviewKey and delay==0.1 then pending[#pending+1]=callback end end}
+local function drain()local n=0;while #pending>0 do n=n+1;assert(n<100,"overview event queue must settle");table.remove(pending,1)()end end
+local effects=0
+local providerCalls, rewardResults = {}, 0
+if overviewKey then
+    UnitGUID=function()return "Player-Offline-Overview"end
+    UnitLevel=function()return 60 end;UnitClass=function()return "Mage","MAGE",8 end
+    UnitRace=function()return "Human","Human",1 end;UnitFactionGroup=function()return "Alliance"end
+    C_QuestLog.IsOnQuest=function(id)return held[id]==true end
+    C_QuestLog.ReadyForTurnIn=function(id)return held[id]==true and ready[id]==true end
+    C_QuestLog.IsQuestFlaggedCompleted=function()return false end
+    C_QuestLog.GetTitleForQuestID=function(id)return addon.quests[id]and addon.quests[id].name end
+    local function forbidden()effects=effects+1;error("overview capture cannot perform a quest or navigation action")end
+    C_Map.SetUserWaypoint=forbidden;AcceptQuest=forbidden;CompleteQuest=forbidden;GetQuestReward=forbidden
+    C_QuestLog.SetSelectedQuest=forbidden;SelectQuestLogEntry=forbidden
+    addon.Navigation.Start=forbidden;addon.Navigation.Map=forbidden
+    GetQuestID,GetQuestText,GetObjectiveText,GetRealZoneText=nil,nil,nil,nil
+    C_Map.GetMapInfo=nil
+    HaveQuestRewardData,GetNumQuestLogRewards,GetNumQuestLogChoices=nil,nil,nil
+    GetQuestLogRewardInfo,GetQuestLogChoiceInfo,GetQuestLogRewardMoney=nil,nil,nil
+    GetNumQuestRewards,GetNumQuestChoices,GetQuestItemInfo,GetRewardMoney,GetRewardXP=nil,nil,nil,nil,nil
+    for _,name in ipairs({"Description","QuestObjectives","QuestRewards","DialogueRewards","CachedQuestRewards"})do
+        local getter=addon[name]
+        if type(getter)=="function"then addon[name]=function(...)
+            providerCalls[name]=(providerCalls[name]or 0)+1
+            local value=getter(...)
+            if name=="CachedQuestRewards"and value~=nil then rewardResults=rewardResults+1 end
+            return value
+        end end
+    end
+end
 issecretvalue = function() return false end
 GetScreenHeight = function() return 900 end
 UIParent.width, UIParent.height = 1920, 900
 fixture.eventFrame.scripts.OnEvent(fixture.eventFrame, "ADDON_LOADED", "DungeonPro")
 addon.db.locale = locale
+if not overviewKey then
 addon.Description = function()
     if locale == "ruRU" then return string.rep("Отправляйтесь в подземелье, найдите пропавшую реликвию и верните её владельцу. Это пример длинного текста для проверки переноса строк. ", 5) end
     return string.rep("Enter the dungeon, recover the missing relic, and return it to its owner. This sample narrative checks line wrapping and the reading disclosure. ", 5)
@@ -68,7 +113,13 @@ for _, definition in pairs(addon.quests) do
 end
 C_Map.GetMapInfo = function(id) return {name=mapNames[id] or "Map "..id} end
 GetCoinTextureString = function(amount) return amount .. " copper" end
+end
 ui:Toggle()
+if overviewKey then
+    for _,dungeon in ipairs(addon.dungeons)do if dungeon.key==overviewKey then ui.dungeon=dungeon end end
+    ui.quest=nil;ui.includeUnavailable=true;ui.range=false;ui:Refresh();drain()
+    for _,id in ipairs(readyIDs)do held[id]=true;fixture.eventFrame.scripts.OnEvent(fixture.eventFrame,"QUEST_ACCEPTED",id);drain()end
+else
 for _, dungeon in ipairs(addon.dungeons) do
     for _, id in ipairs(dungeon.quests) do if id == questID then ui.dungeon = dungeon end end
 end
@@ -81,15 +132,16 @@ if not ui.dungeon then
 end
 assert(ui.dungeon and addon.quests[questID], "capture requires a listed quest")
 ui.quest = questID; ui:Refresh()
+end
 if arg and arg[4] == "collapsed" then
     assert(ui:SetCatalogCollapsed(true) ~= false)
-    assert(ui.catalogCollapsed == true and ui.quest == questID)
+    assert(ui.catalogCollapsed == true and (overviewKey and ui.quest==nil or not overviewKey and ui.quest == questID))
 end
-if arg and arg[5] and arg[5] ~= "" then
+if not overviewKey and arg and arg[5] and arg[5] ~= "" then
     assert(ui:SetDetailTab(arg[5]) ~= false)
     assert(ui.detailTab == arg[5] and ui.quest == questID)
 end
-assert(ui.quest == questID and ui.detailScroll:GetWidth() > 300 and ui.detailScroll:GetHeight() > 0)
+assert((overviewKey and ui.quest==nil or not overviewKey and ui.quest==questID)and ui.detailScroll:GetWidth()>300 and ui.detailScroll:GetHeight()>0)
 local visibleRewards = 0
 for _, button in ipairs(ui.rewardButtons) do
     if button:IsShown() then
@@ -100,10 +152,21 @@ for _, button in ipairs(ui.rewardButtons) do
         assert(raw[2] + button.rewardTileWidth <= ui.detail:GetWidth() + 8, "reward tile stays within the real content width")
     end
 end
-if ui.detailTab == "quest" then
+if not overviewKey and ui.detailTab == "quest" then
     assert(visibleRewards == 3, "both choices and the guaranteed reward remain present on Quest")
 else
     assert(visibleRewards == 0, "secondary views do not retain Quest reward tiles")
+end
+local overview
+if overviewKey then
+    local binding=assert(ui.overviewBinding);assert(binding.current()and binding.rawProof()and effects==0)
+    assert(not providerCalls.Description and not providerCalls.QuestObjectives and not providerCalls.QuestRewards and not providerCalls.DialogueRewards and rewardResults==0,"overview cannot display sample quest detail or native reward data")
+    overview=binding.model
+    assert(overview.shownRoots==#ui.currentPlan.rows and overview.unknown and not overview.knownPrepared)
+    if overviewKey=="dm"and #readyIDs==1 and readyIDs[1]==155 then
+        assert(overview.counts.READY==0 and #overview.steps==1 and overview.steps[1].id==155 and overview.steps[1].listedTarget==false)
+    end
+    if checking then print("Offline overview geometry: PASS (actual catalogue/planner, simulated held log; native rendering unverified)");return end
 end
 if checking then print("Offline detail geometry: PASS (actual anchors, three reward tiles; native rendering unverified)"); return end
 local ids = {}; for index, object in ipairs(fixture.objects) do ids[object] = index end
@@ -140,4 +203,4 @@ local function json(value)
     else for key,item in pairs(value)do fields[#fields+1]=quote(tostring(key))..":"..json(item)end;table.sort(fields)end
     return (array and "[" or "{")..table.concat(fields,",")..(array and "]" or "}")
 end
-print(json({questID=questID,locale=locale,fixtureRewards=true,offline=true,catalogCollapsed=ui.catalogCollapsed==true,detailTab=ui.detailTab or "quest",objects=objects,roles=roles,metrics=requests}))
+print(json({questID=not overviewKey and questID or nil,locale=locale,fixtureRewards=not overviewKey,mode=overviewKey and "overview"or"quest",dungeonKey=overviewKey,readyQuestIDs=readyIDs,overview=overview,providerCalls=providerCalls,fixtureCharacter=overviewKey and "Alliance Human Mage 60"or nil,offline=true,catalogCollapsed=ui.catalogCollapsed==true,detailTab=ui.detailTab or "quest",objects=objects,roles=roles,metrics=requests}))

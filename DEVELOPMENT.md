@@ -68,6 +68,19 @@ tools stay out. This command builds locally; it does not publish a release.
 It needs Pillow in addition to the tools above. Pillow is not required for the
 normal checks or packaging. A generated preview is not an in-game screenshot.
 
+To preview a dungeon overview with a simulated ready quest:
+
+```text
+python scripts/render-detail-preview.py --overview dm --ready-quest 155
+```
+
+The overview fixture is a level-60 Alliance Human Mage. It uses the catalogue
+and a simulated quest log, without the quest preview's sample prose and rewards.
+Use `--catalog-collapsed` to preview the wider quest list. Existing quest IDs
+can be repeated with `--ready-quest`; they do not add catalogue associations.
+Overview previews omit game artwork and approximate font metrics. Native fonts,
+icons, interface scale and gameplay still require in-game verification.
+
 ## Reports and permissions
 
 Report incorrect data with the quest ID, dungeon, client language and supporting

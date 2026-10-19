@@ -149,6 +149,8 @@ def main():
     run(lua, "tests/quest_level_colors_ui.lua")
     run(lua, "tests/detail_sources_ui.lua")
     run(lua, "tests/detail_visual.lua", "check")
+    run(lua, "tests/detail_visual.lua", "overview:dm", "enUS", "", "", "", "155", "check")
+    run(lua, "tests/detail_visual.lua", "overview:dm", "ruRU", "", "collapsed", "", "155", "check")
     run(lua, "tests/quest_payment.lua")
     run(lua, "tests/held_quest_payment.lua")
     run(lua, "tests/held_quest_waypoint.lua")
