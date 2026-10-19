@@ -4,6 +4,7 @@
 
 ### 19-Oct-2026
 
+- Highlight ready turn-ins in gold and in-progress steps in blue in the dungeon overview.
 - Avoid retaining old quest-reading state after switching views or closing the planner.
 - Expand quest-log steps in the dungeon overview in groups of six, or collapse them.
 - Keep the back arrow anchored when quest details change during layout.

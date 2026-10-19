@@ -46,7 +46,8 @@ assert(model.counts.READY==0 and model.counts.UNKNOWN==7 and #model.steps==1)
 assert(r.note.text:find("Supporting quest",1,true),"a visible support cue must explain the READY step beside zero READY primary targets")
 assert(model.steps[1].listedTarget==false,"a held support step must be identified separately from listed primary targets")
 local function note(status,supporting)
- return (supporting and addon.L("OVERVIEW_SUPPORTING_QUEST").." · "or "")..addon.L(status).." · "..addon.L("BRANCH_INSPECT")
+ local color=assert(({READY="ffe066",ACTIVE="88bfff"})[status])
+ return (supporting and addon.L("OVERVIEW_SUPPORTING_QUEST").." · "or "").."|cff"..color..addon.L(status).."|r · "..addon.L("BRANCH_INSPECT")
 end
 assert(r.note.text==note("READY",true)and routes==0 and selections==0 and accepts==0)
 for _,all in ipairs({true,false})do

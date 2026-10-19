@@ -9,7 +9,7 @@ function UI:ReleasePreparationOverview()
     self.overviewBinding = nil
     if previous then
         previous.released = true
-        for _, key in ipairs({ "model", "modelCurrent", "modelRaw", "base", "listCurrent", "listRaw", "engine", "plan", "titles", "presentation", "geometryWrite" }) do previous[key] = nil end
+        for _, key in ipairs({ "model", "modelCurrent", "modelRaw", "base", "listCurrent", "listRaw", "engine", "plan", "titles", "presentation", "geometryWrite", "formatStatus" }) do previous[key] = nil end
     end
 end
 
@@ -68,6 +68,7 @@ function UI:RenderPreparationOverview(ownerCurrent, width, offset, presentation)
     if self.RenderPreparationOverview ~= renderer or addon.PreparationOverviewUI ~= UI or type(writer) ~= "function" or
         type(makeRow) ~= "function" or type(layoutRow) ~= "function" or type(release) ~= "function" or type(reset) ~= "function" then return offset end
     if rawget(presentation,"geometryWrite") ~= nil and type(rawget(presentation,"geometryWrite")) ~= "function" then return offset end
+    if type(rawget(presentation,"formatStatus")) ~= "nil" and type(rawget(presentation,"formatStatus")) ~= "function" then return offset end
     local portraitCardCurrent, contentWidth, y = ownerCurrent, width, offset
     local plan, provider = self.currentPlan, addon.DungeonOverview
     local get = type(provider) == "table" and provider.Get
@@ -83,7 +84,7 @@ function UI:RenderPreparationOverview(ownerCurrent, width, offset, presentation)
         if not portraitCardCurrent() or addon.Clean ~= limitCleaner or self.currentPlan ~= plan or self.dungeon ~= renderDungeon or self.engine ~= renderEngine then return end
         if not stepLimit or stepLimit % 1 ~= 0 or stepLimit < 6 or stepLimit > 1024 then return offset end
         local refresh = self.RefreshDetail
-        local binding = { geometryWrite = rawget(presentation,"geometryWrite"), presentation = presentation, plan = plan, engine = renderEngine, base = portraitCardCurrent, listCurrent = listCurrent, listRaw = listRaw, titles = {} }
+        local binding = { formatStatus = rawget(presentation,"formatStatus"), geometryWrite = rawget(presentation,"geometryWrite"), presentation = presentation, plan = plan, engine = renderEngine, base = portraitCardCurrent, listCurrent = listCurrent, listRaw = listRaw, titles = {} }
         local localize, read, clean, checker = addon.L, addon.Read, addon.Clean, issecretvalue
         local inspect, keyGetter, dictionaryGetter = self.InspectQuest, self.CatalogLanguageKey, addon.GetNameTranslations
         local database, language, frame = addon.db, addon.Language, self.frame
@@ -104,6 +105,7 @@ function UI:RenderPreparationOverview(ownerCurrent, width, offset, presentation)
                 binding.presentation and rawget(binding.presentation,"label") == label and rawget(binding.presentation,"setFont") == setFont and
                 rawget(binding.presentation,"measuredHeight") == measuredHeight and rawget(binding.presentation,"styles") == DETAIL_STYLES and
                 rawequal(rawget(binding.presentation,"geometryWrite"),binding.geometryWrite) and
+                rawequal(rawget(binding.presentation,"formatStatus"),binding.formatStatus) and
                 addon.UI == self and self.frame == frame and self.currentPlan == binding.plan and binding.plan.current == binding.listCurrent and binding.plan.rawCurrent == binding.listRaw and
                 addon.DungeonOverview == provider and provider.Get == get and addon.L == localize and addon.Read == read and
                 addon.Clean == clean and issecretvalue == checker and self.InspectQuest == inspect and self.CatalogLanguageKey == keyGetter and
@@ -191,12 +193,18 @@ function UI:RenderPreparationOverview(ownerCurrent, width, offset, presentation)
                 local stepID=step.id
                 local row=self:MakeRow(self.detail,self.actionInspectButtons,index,48,binding.current,true)
                 if not binding.current() then return end
-                local listedTarget=step.listedTarget
+                local listedTarget, stepStatus=step.listedTarget, step.status
                 row.questID,row.overviewStep=step.id,step
                 local function owned() return binding.rawProof() and self.actionInspectButtons[index]==row and row.questID==stepID and row.overviewStep==binding.model.steps[index] end
                 local function write(object,method,...) return self:QuestListWrite(object,method,owned,...) end
                 setFont(row.title,15);setFont(row.note,13)
-                local note=localize(step.status).." · "..localize("BRANCH_INSPECT")
+                local statusText=localize(stepStatus)
+                if not binding.current() then return end
+                if binding.formatStatus then
+                    statusText=read(binding.formatStatus,"string",stepStatus,statusText)
+                    if not binding.current() or not statusText then return end
+                end
+                local note=statusText.." · "..localize("BRANCH_INSPECT")
                 if not binding.current() then return end
                 if listedTarget == false then note=localize("OVERVIEW_SUPPORTING_QUEST").." · "..note end
                 if not binding.current() or not write(row,"SetWidth",contentWidth) or not write(row.title,"SetWidth",contentWidth-16) or
