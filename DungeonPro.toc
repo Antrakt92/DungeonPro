@@ -20,6 +20,7 @@ Core\QuestTree.lua
 Core\QuestRowInfo.lua
 Core\Search.lua
 Core\Client.lua
+Core\DungeonMap.lua
 Core\DialogueText.lua
 Core\QuestPayment.lua
 Core\HeldQuestPayment.lua
@@ -31,6 +32,7 @@ UI\QuestStatus.lua
 UI\QuestListRewards.lua
 UI\RewardCache.lua
 UI\QuestNavigation.lua
+UI\DungeonMap.lua
 UI\Window.lua
 UI\Navigation.lua
 Core\Entrances.lua

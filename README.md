@@ -33,6 +33,11 @@ follow their prerequisites and find the next pickup or turn-in.
 Search by dungeon, quest name, known NPC or place. You can also enter a quest ID
 to find dungeons that list it.
 
+Development builds also offer **Dungeon map** in a dungeon's overview. It displays
+the map and floors supplied by the game, where available. Some dungeon wings
+share a map; maps currently have no quest markers. Availability and artwork
+loading still need testing in the Forever client.
+
 <details>
 <summary>Quest chains, objectives and rewards in game</summary>
 

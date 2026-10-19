@@ -30,6 +30,7 @@ local function styleRow(row, kind, selected)
 end
 
 for name, method in pairs(addon.QuestNavigation) do UI[name] = method end
+for name, method in pairs(addon.DungeonMapUI or {}) do UI[name] = method end
 
 function UI:QuestLevelPalette(questLevel, ownerCurrent)
     local levelGetter, effectiveGetter, trivialGetter = UnitLevel, UnitEffectiveLevel, UnitQuestTrivialLevelRange
@@ -2398,6 +2399,7 @@ function UI:ResetQuestLogControl()
 end
 
 function UI:RefreshDetail(sourceFocus)
+    if self.SyncDungeonMapContext then self:SyncDungeonMapContext() end
     local layoutRevision = self.layoutRevision
     local renderQuest, renderDungeon = self.quest, self.dungeon
     local renderIncludeUnavailable = self.includeUnavailable
@@ -2536,6 +2538,12 @@ function UI:RefreshDetail(sourceFocus)
         end
     end
     if self.overviewArt then self.overviewArt:Hide() end
+    self.overviewMapBinding = nil
+    if self.overviewMapControl then
+        if not self:QuestListWrite(self.overviewMapControl, "Hide", portraitCardCurrent) or
+            not self:QuestListWrite(self.overviewMapControl, "SetEnabled", portraitCardCurrent, false) or
+            not self:QuestListWrite(self.overviewMapControl, "SetScript", portraitCardCurrent, "OnClick", nil) then return end
+    end
     self.action = nil
     self.giverAction, self.giverHasCoordinates, self.giverBinding = nil, false, nil
     self:SetFooterEnabled(self.giver, false)
@@ -4849,6 +4857,32 @@ function UI:RefreshDetail(sourceFocus)
             if entrancePoint and addon.Clean(entrancePoint.scope, "string") == "shared" then
                 line(addon.L("DUNGEON_ENTRANCE_SHARED"))
             end
+            local control, opener = self.overviewMapControl, self.OpenDungeonMap
+            local gameMap = addon.Clean(renderDungeon.instanceID, "number")
+            if control and type(opener) == "function" and gameMap and gameMap > 0 and gameMap <= 4294967295 and gameMap % 1 == 0 then
+                local binding = {}
+                self.overviewMapBinding = binding
+                local function current()
+                    return portraitCardCurrent() and addon.UI == self and self.overviewMapBinding == binding and
+                        self.overviewMapControl == control and self.OpenDungeonMap == opener and
+                        rawequal(rawget(renderDungeon, "instanceID"), gameMap)
+                end
+                local mapLabel = addon.L("DUNGEON_MAP_OPEN")
+                if not current() then return end
+                setFont(control.filterCaption, 15)
+                if not current() or not self:QuestListWrite(control.filterCaption, "SetText", current, mapLabel) or
+                    not self:QuestListWrite(control, "ClearAllPoints", current) or
+                    not self:QuestListWrite(control, "SetPoint", current, "TOPLEFT", 4, -y) or
+                    not self:QuestListWrite(control, "SetWidth", current, contentWidth) or
+                    not self:QuestListWrite(control.filterCaption, "SetWidth", current, contentWidth - 16) or
+                    not self:QuestListWrite(control, "SetEnabled", current, true) or
+                    not self:QuestListWrite(control, "SetScript", current, "OnClick", function()
+                        if current() and addon.Read(control.IsShown, "boolean", control) == true and current() then
+                            opener(self, renderDungeon)
+                        end
+                    end) or not self:QuestListWrite(control, "Show", current) then return end
+                y = y + 38
+            end
             if not self.overviewArt then
                 self.overviewArt = self.detail:CreateTexture(nil, "ARTWORK")
             end
@@ -5178,6 +5212,11 @@ function UI:Create()
     self.catalogNotice = label(self.catalog, "", 4, 0, 202, 13)
     self.questList, self.questScroll = scrolling(frame, 278, -100, 370, 588)
     self.detail, self.detailScroll = scrolling(frame, 674, -66, 400, 622)
+    self.overviewMapControl = button(self.detail, "", 392, nil)
+    self.overviewMapControl:SetHeight(32)
+    self.overviewMapControl.filterCaption = label(self.overviewMapControl, "", 8, -6, 376, 15)
+    self.overviewMapControl:Hide()
+    if addon.Theme and addon.Theme.StyleFilter then addon.Theme.StyleFilter(self.overviewMapControl, false) end
     self.source = button(self.detail, "", 32, function() if self.quest then self:CopyLink(self.quest) end end)
     self.source:SetPoint("TOPRIGHT", self.detail, "TOPRIGHT", -4, 0)
     self.giver = button(self.detail, "", 32, function()
@@ -5310,7 +5349,7 @@ function UI:Create()
             addon.Read(f.IsShown, "boolean", f) == true then self:Fit() end
     end)
     frame:SetScript("OnShow", function(f) raiseWindow(f); self:Fit(); self.preparation = false; self:Refresh(nil, true) end)
-    frame:SetScript("OnHide", function() local pending = self.developerLinkRequest; self.developerLinkRequest = nil; if pending and type(StaticPopup_Hide) == "function" then pcall(StaticPopup_Hide, "DUNGEONPRO_COPY_DEVELOPER_LINK") end; self:HideNavigationHint(); local language = addon.Clean(addon.Language, "table"); if language then addon.Read(language.Cancel, "boolean", language, self) end; self.pendingSearch = nil; self.detailTabQuest, self.detailTabRevision = nil, {}; self.detailReferencesExpanded, self.detailNarrativeExpanded, self.detailObjectivesExpanded = false, false, false; if not self:ResetQuestLogControl() then return end; self.detailActionChoice = nil; self.languageMenuRevision = {}; self:ResetHistoryReading(); self:ResetRewardPresentation(); self:CloseCopyLink() end)
+    frame:SetScript("OnHide", function() if self.CloseDungeonMap then self:CloseDungeonMap(true) end; local pending = self.developerLinkRequest; self.developerLinkRequest = nil; if pending and type(StaticPopup_Hide) == "function" then pcall(StaticPopup_Hide, "DUNGEONPRO_COPY_DEVELOPER_LINK") end; self:HideNavigationHint(); local language = addon.Clean(addon.Language, "table"); if language then addon.Read(language.Cancel, "boolean", language, self) end; self.pendingSearch = nil; self.detailTabQuest, self.detailTabRevision = nil, {}; self.detailReferencesExpanded, self.detailNarrativeExpanded, self.detailObjectivesExpanded = false, false, false; if not self:ResetQuestLogControl() then return end; self.detailActionChoice = nil; self.languageMenuRevision = {}; self:ResetHistoryReading(); self:ResetRewardPresentation(); self:CloseCopyLink() end)
     self:ApplyTheme()
     frame:Hide()
 end

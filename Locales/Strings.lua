@@ -167,6 +167,23 @@ strings.ruRU.REPORT_ISSUE, strings.ruRU.SUPPORT_AUTHOR, strings.ruRU.CLOSE = "С
 strings.enUS.LEVEL_FILTER, strings.enUS.CHARACTER_FILTER, strings.enUS.FILTER_SWITCH = "Level filter", "Character filter", "Click: %s"
 strings.ruRU.LEVEL_FILTER, strings.ruRU.CHARACTER_FILTER, strings.ruRU.FILTER_SWITCH = "Фильтр уровня", "Фильтр персонажа", "Нажатие: %s"
 strings.enUS.DUNGEON_QUEST_SHORT, strings.ruRU.DUNGEON_QUEST_SHORT = "Dungeon", "В данж"
+strings.enUS.DUNGEON_MAP_OPEN = "Dungeon map"
+strings.enUS.DUNGEON_MAP_BACK = "Back to details"
+strings.enUS.DUNGEON_MAP_RETRY = "Retry"
+strings.enUS.DUNGEON_MAP_UNAVAILABLE = "A map is not available for this dungeon."
+strings.enUS.DUNGEON_MAP_SHARED = "This map covers multiple dungeon wings."
+strings.enUS.DUNGEON_MAP_FLOOR = "Floor %d"
+strings.enUS.DUNGEON_MAP_PREVIOUS = "Previous floor"
+strings.enUS.DUNGEON_MAP_NEXT = "Next floor"
+strings.ruRU.DUNGEON_MAP_OPEN = "Карта подземелья"
+strings.ruRU.DUNGEON_MAP_BACK = "Назад к описанию"
+strings.ruRU.DUNGEON_MAP_RETRY = "Повторить"
+strings.ruRU.DUNGEON_MAP_UNAVAILABLE = "Карта этого подземелья недоступна."
+strings.ruRU.DUNGEON_MAP_SHARED = "Общая карта нескольких крыльев подземелья."
+strings.ruRU.DUNGEON_MAP_FLOOR = "Этаж %d"
+strings.ruRU.DUNGEON_MAP_PREVIOUS = "Предыдущий этаж"
+strings.ruRU.DUNGEON_MAP_NEXT = "Следующий этаж"
+
 function addon.L(key, ...)
     local locale = addon.db and addon.db.locale or "auto"
     local language = addon.Clean and addon.Clean(addon.Language, "table")
