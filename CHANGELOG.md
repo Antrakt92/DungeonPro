@@ -4,6 +4,8 @@
 
 ### 19-Oct-2026
 
+- Find dungeons by recorded NPCs and places in prerequisite or story steps,
+  with a clear related-step label and a link to inspect the matching quest.
 - Match map controls to the planner's button style and dim unavailable floor
   directions so they are easier to distinguish from active controls.
 - Keep the quest list selection in sync when returning to a previous quest or

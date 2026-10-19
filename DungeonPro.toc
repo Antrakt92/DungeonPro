@@ -19,6 +19,7 @@ Core\DungeonStatus.lua
 Core\QuestTree.lua
 Core\QuestRowInfo.lua
 Core\Search.lua
+Core\SearchRelations.lua
 Core\Client.lua
 Core\DungeonMap.lua
 Core\DialogueText.lua

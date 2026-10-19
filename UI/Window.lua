@@ -818,7 +818,7 @@ function UI:CatalogResultNote(result, matchedName)
     local note = result.count ~= nil and addon.L("CATALOG_COMPACT_META", result.minimum, result.maximum, result.count) or
         addon.L("CATALOG_LEVELS", result.minimum, result.maximum)
     matchedName = matchedName or result.matchedName
-    if matchedName then note = note .. "\n" .. addon.L("SEARCH_QUEST_MATCH", matchedName) end
+    if matchedName then note = note .. "\n" .. addon.L(result.related and "SEARCH_RELATED_STEP" or "SEARCH_QUEST_MATCH", matchedName) end
     if result.sourceMatch then
         note = note .. "\n" .. addon.L(result.sourceMatch.kind == "npc" and "SEARCH_NPC_MATCH" or "SEARCH_PLACE_MATCH", result.sourceMatch.text)
     end
@@ -945,8 +945,9 @@ function UI:RefreshDungeons()
     local query = (addon.Clean(search, "string") or ""):gsub("^%s+", ""):gsub("%s+$", "")
     local needle = searchText(query)
     local inputs, results, memo, sourceMemo, sourceMatches = {}, {}, {}, {}, {}
+    local relationMemo, relationMatches = {}, {}
     local renderInput, inputByDungeon, staging = nil, {}, true
-    local sourceGetter, idParser = addon.QuestSourceSearchTerms, addon.SearchQuestID
+    local sourceGetter, idParser, relationGetter = addon.QuestSourceSearchTerms, addon.SearchQuestID, addon.QuestSearchRelations
     for index, dungeon in ipairs(catalogue) do
         local targets = dungeon.quests
         local input = { dungeon = dungeon, name = dungeon.name, key = dungeon.key, wing = dungeon.wing,
@@ -961,7 +962,7 @@ function UI:RefreshDungeons()
     local function baseCurrent(sourceOnly)
         local ok, valid = pcall(function()
             if context.current ~= contextCurrent or addon.QuestSourceSearchTerms ~= sourceGetter or
-                addon.SearchQuestID ~= idParser then return false end
+                addon.SearchQuestID ~= idParser or addon.QuestSearchRelations ~= relationGetter then return false end
             if self.catalogGeneration ~= generation or self.search ~= search or self.range ~= range or self.includeUnavailable ~= includeUnavailable or self.catalogScroll ~= catalogScroll or
                 addon.dungeons ~= catalogue or addon.quests ~= definitions or addon.char ~= character or
                 addon.db ~= database or database.locale ~= locale or addon.CachedQuestName ~= getter or
@@ -1052,6 +1053,10 @@ function UI:RefreshDungeons()
         end)
         return ok and valid == true
     end
+    local function relationRaw(record)
+        local ok,fresh=pcall(record.raw)
+        return ok and fresh==true
+    end
     local function current(sourceOnly)
         -- Full member validation follows callbacks; keep the entry guard cheap.
         if not sourceReady or not baseCurrent(true) then return false end
@@ -1062,6 +1067,10 @@ function UI:RefreshDungeons()
         for _, cached in ipairs(sourceMatches) do
             if not unchanged(cached) then return expireSources() end
         end
+        -- Pure scans use raw graph ownership; publication and input preflight every consulted graph.
+        for _, record in ipairs(relationMatches) do
+            if (sourceOnly~=true and addon.Read(record.current,"boolean")~=true) or not relationRaw(record) then return expireSources() end
+        end
         return baseCurrent(sourceOnly)
     end
     local function proveSources()
@@ -1069,11 +1078,15 @@ function UI:RefreshDungeons()
         for _, cached in pairs(sourceMemo) do
             if cached.current and addon.Read(cached.current, "boolean") ~= true then return expireSources() end
         end
+        for _, record in ipairs(relationMemo) do
+            if addon.Read(record.current,"boolean")~=true then return expireSources() end
+        end
         if not current("full") then return false end
         -- Complete callback preflights before the callback-free ownership pass.
         for _, cached in pairs(sourceMemo) do
             if cached.current and not unchanged(cached) then return expireSources() end
         end
+        for _,record in ipairs(relationMemo)do if not relationRaw(record) then return expireSources() end end
         return baseCurrent("full")
     end
     local function scanMember(input, index, member, other)
@@ -1087,6 +1100,89 @@ function UI:RefreshDungeons()
         end)
         return ok and valid == true
     end
+    local function sourcesFor(id,quest)
+        local cached = sourceMemo[id]
+        if not cached then
+            cached = {}; sourceMemo[id] = cached
+            local ok, terms, owner, proof = false, nil, nil, nil
+            if quest then ok, terms, owner, proof = pcall(sourceGetter, quest) end
+            terms, owner, proof = addon.Clean(terms, "table"), addon.Clean(owner, "function"), addon.Clean(proof, "function")
+            if ok and terms and owner and proof and #terms <= 1024 then
+                local entries, valid = {}, true
+                local length, count = #terms, 0
+                for key in next, terms do
+                    local index = addon.Clean(key, "number")
+                    if not index or index < 1 or index > length or index % 1 ~= 0 then valid = false; break end
+                    count = count + 1
+                end
+                if count ~= length then valid = false end
+                for index = 1, length do
+                    if not valid then break end
+                    local term = addon.Clean(rawget(terms, index), "table")
+                    local text = term and addon.Clean(rawget(term, "text"), "string")
+                    local kind = term and addon.Clean(rawget(term, "kind"), "string")
+                    if not text or #text > 2000 or not text:find("%S") or (kind ~= "npc" and kind ~= "place") then
+                        valid = false; break
+                    end
+                    entries[index] = { term = term, text = text, kind = kind }
+                end
+                if valid then
+                    local ready = addon.Read(owner, "boolean")
+                    if ready == true then cached.terms, cached.current, cached.entries, cached.unchanged = terms, owner, entries, proof end
+                end
+            end
+        end
+        return cached
+    end
+    local function relatedTitle(id,definition)
+        local keyGetter,dictionaryGetter=self.CatalogLanguageKey,addon.GetNameTranslations
+        local read,clean=addon.Read,addon.Clean
+        local function normalize(value)
+            if value=="enGB"then value="enUS"elseif value=="esMX"then value="esES"end
+            if value=="enUS"or value=="ruRU"or value=="deDE"or value=="frFR"or value=="esES"or
+                value=="itIT"or value=="ptBR"or value=="koKR"or value=="zhCN"or value=="zhTW"then return value end
+            return "enUS"
+        end
+        local selected=normalize(read(keyGetter,"string",self))
+        if not current(true) then return end
+        if selected~="enUS" and type(dictionaryGetter)=="function" then
+            read(dictionaryGetter,"table",selected,function()return current(true)end)
+            if not current(true) then return end
+        end
+        -- Own only the title entry actually consulted, including a missing entry.
+        local root=addon.nameTranslations
+        local dictionary=type(root)=="table"and rawget(root,selected)
+        local entries=type(dictionary)=="table"and rawget(dictionary,"quests")
+        local entry=type(entries)=="table"and rawget(entries,id)
+        local original=type(entry)=="table"and rawget(entry,"source")
+        local translated=type(entry)=="table"and rawget(entry,"name")
+        local source=rawget(definition,"name")
+        local native,gameGetter,guidGetter=C_QuestLog,GetLocale,UnitGUID
+        local nativeGetter=type(native)=="table"and rawget(native,"GetTitleForQuestID")
+        local function raw()
+            local ok,fresh=pcall(function()
+                return baseCurrent(true) and self.CatalogLanguageKey==keyGetter and addon.GetNameTranslations==dictionaryGetter and
+                    addon.Read==read and addon.Clean==clean and GetLocale==gameGetter and UnitGUID==guidGetter and C_QuestLog==native and
+                    (type(native)~="table"or rawequal(rawget(native,"GetTitleForQuestID"),nativeGetter)) and
+                    rawequal(rawget(definitions,id),definition) and rawequal(rawget(definition,"name"),source) and
+                    rawequal(addon.nameTranslations,root) and (type(root)~="table"or rawequal(rawget(root,selected),dictionary)) and
+                    (type(dictionary)~="table"or rawequal(rawget(dictionary,"quests"),entries)) and
+                    (type(entries)~="table"or rawequal(rawget(entries,id),entry)) and
+                    (type(entry)~="table"or(rawequal(rawget(entry,"source"),original)and rawequal(rawget(entry,"name"),translated)))
+            end)
+            return ok and fresh==true
+        end
+        local function fresh()
+            if not raw()then return false end
+            local language=normalize(read(keyGetter,"string",self))
+            return language==selected and raw()
+        end
+        local title=read(getter,"string",id)
+        if not fresh()then return end
+        if not title or #title>1024 or not title:find("%S")then title=clean(source,"string")or("#"..id)end
+        if not fresh()then return end
+        return title,{current=fresh,raw=raw}
+    end
     local queryID = addon.Read(idParser, "number", query)
     if queryID and (queryID <= 0 or queryID > 9007199254740991 or queryID % 1 ~= 0) then queryID = nil end
     if not current() then return end
@@ -1094,7 +1190,7 @@ function UI:RefreshDungeons()
         local dungeon = input.dungeon
         if not range or (context.level and context.level >= input.minimum - 3 and context.level <= input.maximum + 3) then
             if not scanMember(input, inputIndex) then return end
-            local matchedName, matchedID, sourceMatch, idMatch, idFallbackName
+            local matchedName, matchedID, sourceMatch, idMatch, idFallbackName, relatedRootID
             if queryID then
                 for memberIndex, member in ipairs(input.members) do
                     if not scanMember(input, inputIndex, member, memberIndex) then return end
@@ -1147,37 +1243,7 @@ function UI:RefreshDungeons()
             if not queryID and not matches and not matchedName and addon.Clean(sourceGetter, "function") then
                 for memberIndex, member in ipairs(input.members) do
                     if not scanMember(input, inputIndex, member, memberIndex) then return end
-                    local cached = sourceMemo[member.id]
-                    if not cached then
-                        cached = {}; sourceMemo[member.id] = cached
-                        local ok, terms, owner, proof = false, nil, nil, nil
-                        if member.quest then ok, terms, owner, proof = pcall(sourceGetter, member.quest) end
-                        terms, owner, proof = addon.Clean(terms, "table"), addon.Clean(owner, "function"), addon.Clean(proof, "function")
-                        if ok and terms and owner and proof and #terms <= 1024 then
-                            local entries, valid = {}, true
-                            local length, count = #terms, 0
-                            for key in next, terms do
-                                local index = addon.Clean(key, "number")
-                                if not index or index < 1 or index > length or index % 1 ~= 0 then valid = false; break end
-                                count = count + 1
-                            end
-                            if count ~= length then valid = false end
-                            for index = 1, length do
-                                if not valid then break end
-                                local term = addon.Clean(rawget(terms, index), "table")
-                                local text = term and addon.Clean(rawget(term, "text"), "string")
-                                local kind = term and addon.Clean(rawget(term, "kind"), "string")
-                                if not text or #text > 2000 or not text:find("%S") or (kind ~= "npc" and kind ~= "place") then
-                                    valid = false; break
-                                end
-                                entries[index] = { term = term, text = text, kind = kind }
-                            end
-                            if valid then
-                                local ready = addon.Read(owner, "boolean")
-                                if ready == true then cached.terms, cached.current, cached.entries, cached.unchanged = terms, owner, entries, proof end
-                            end
-                        end
-                    end
+                    local cached = sourcesFor(member.id,member.quest)
                     for _, entry in ipairs(cached.entries or {}) do
                         local found = searchText(entry.text):find(needle, 1, true)
                         if found then
@@ -1191,10 +1257,55 @@ function UI:RefreshDungeons()
                     if matchedName then break end
                 end
             end
+            if not queryID and query~="" and not matches and not matchedName and addon.Clean(relationGetter,"function") then
+                for memberIndex,member in ipairs(input.members)do
+                    if not scanMember(input,inputIndex,member,memberIndex) then return end
+                    local ok,model,proof,raw=pcall(relationGetter,dungeon,member.id,function()return current(true)end)
+                    proof,raw=addon.Clean(proof,"function"),addon.Clean(raw,"function")
+                    if not current(true) then return end
+                    local record
+                    if ok and proof and raw then
+                        record={current=proof,raw=raw}
+                        relationMemo[#relationMemo+1]=record
+                        if addon.Read(proof,"boolean")~=true or not relationRaw(record) or not current(true) then return end
+                    end
+                    model=addon.Clean(model,"table")
+                    local nodes=model and addon.Clean(rawget(model,"nodes"),"table")
+                    if record and nodes and addon.Clean(rawget(model,"rootTargetID"),"number")==member.id and #nodes<=79 then
+                        for index=1,#nodes do
+                            local node=addon.Clean(rawget(nodes,index),"table")
+                            local id=node and addon.Clean(rawget(node,"questID"),"number")
+                            local root=node and addon.Clean(rawget(node,"rootTargetID"),"number")
+                            local relation=node and addon.Clean(rawget(node,"relation"),"string")
+                            local definition=id and addon.Clean(definitions[id],"table")
+                            if not current(true) then return end
+                            if id and id>0 and id<=9007199254740991 and id%1==0 and id~=member.id and root==member.id and
+                                relation=="related" and definition and addon.Clean(rawget(definition,"id"),"number")==id then
+                                local cached=sourcesFor(id,definition)
+                                for _,entry in ipairs(cached.entries or{})do
+                                    if searchText(entry.text):find(needle,1,true) then
+                                        local title,titleProof=relatedTitle(id,definition)
+                                        if not titleProof then return expireSources()end
+                                        if not current(true)then return end
+                                        relationMemo[#relationMemo+1]=titleProof
+                                        relationMatches[#relationMatches+1]=titleProof
+                                        matchedName,matchedID,sourceMatch,relatedRootID=title,id,entry,member.id
+                                        if not cached.matched then cached.matched=true;sourceMatches[#sourceMatches+1]=cached end
+                                        relationMatches[#relationMatches+1]=record
+                                        break
+                                    end
+                                end
+                            end
+                            if matchedName then break end
+                        end
+                    end
+                    if matchedName then break end
+                end
+            end
             if not current(true) then return end
             if matches or matchedName then
                 local result = { dungeon = dungeon, title = name, questID = matchedID, sourceMatch = sourceMatch,
-                    idMatch = idMatch, idFallbackName = idFallbackName, includeUnavailable = includeUnavailable, minimum = input.minimum, maximum = input.maximum, count = includeUnavailable == true and #input.members or nil, matchedName = matchedName }
+                    idMatch = idMatch, idFallbackName = idFallbackName, related = relatedRootID~=nil, relatedRootID = relatedRootID, includeUnavailable = includeUnavailable, minimum = input.minimum, maximum = input.maximum, count = includeUnavailable == true and #input.members or nil, matchedName = matchedName }
                 result.note = self:CatalogResultNote(result)
                 if not current(true) then return end
                 results[#results + 1] = result
@@ -1349,6 +1460,7 @@ function UI:RefreshDungeons()
         if not offset then return end
         if result.questID then
             local questID, definition = result.questID, definitions[result.questID]
+            local related, relatedRoot = result.related, result.relatedRootID
             local localeGetter, nativeRoot, guidGetter = GetLocale, C_QuestLog, UnitGUID
             local native = addon.Clean(nativeRoot, "table")
             local titleGetter = native and rawget(native, "GetTitleForQuestID")
@@ -1358,6 +1470,7 @@ function UI:RefreshDungeons()
                 if not current() then return false end
                 return GetLocale == localeGetter and language == gameLocale and C_QuestLog == nativeRoot and
                     UnitGUID == guidGetter and (not native or rawget(native, "GetTitleForQuestID") == titleGetter) and
+                    result.related==related and result.relatedRootID==relatedRoot and
                     definitions[questID] == definition and definition and rawget(definition, "id") == questID
             end
             if not inspectCurrent() then return end
@@ -1403,6 +1516,7 @@ function UI:RefreshDungeons()
                 self:ResetHistoryReading(); self.detailHistory = {}
                 self.dungeon, self.quest = dungeon, questID
                 character.selectedDungeon = dungeon.key
+                if related then self.questTreeRoot,self.questTreeDungeon=relatedRoot,dungeon end
                 self:Refresh()
             end) or not write(inspect, "Hide") then return end
             offset = offset + height + 6

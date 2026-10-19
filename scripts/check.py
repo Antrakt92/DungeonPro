@@ -48,6 +48,8 @@ def main():
     run(lua, "tests/language.lua")
     run(lua, "tests/language_hover.lua")
     run(lua, "tests/search.lua")
+    run(lua, "tests/search_relations.lua")
+    run(lua, "tests/related_search_ui.lua")
     run(lua, "tests/overnight_search_reported_places.lua")
     run(lua, "tests/objective_source_search_ui.lua")
     run(lua, "tests/search_typography_ui.lua")

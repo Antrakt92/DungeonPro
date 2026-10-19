@@ -504,3 +504,17 @@ local dungeonMapLabels = {
 for locale, values in pairs(dungeonMapLabels) do
     for key, value in pairs(values) do addon.locales[locale][key] = value end
 end
+
+local relatedSearchLabels = {
+    deDE = "Zugehöriger Schritt: %s",
+    frFR = "Étape liée : %s",
+    esES = "Paso relacionado: %s",
+    itIT = "Passaggio collegato: %s",
+    ptBR = "Etapa relacionada: %s",
+    koKR = "관련 단계: %s",
+    zhCN = "相关步骤：%s",
+    zhTW = "相關步驟：%s",
+}
+for locale, value in pairs(relatedSearchLabels) do
+    addon.locales[locale].SEARCH_RELATED_STEP = value
+end

@@ -184,6 +184,9 @@ strings.ruRU.DUNGEON_MAP_FLOOR = "Этаж %d"
 strings.ruRU.DUNGEON_MAP_PREVIOUS = "Предыдущий этаж"
 strings.ruRU.DUNGEON_MAP_NEXT = "Следующий этаж"
 
+strings.enUS.SEARCH_RELATED_STEP = "Related step: %s"
+strings.ruRU.SEARCH_RELATED_STEP = "Связанный шаг: %s"
+
 function addon.L(key, ...)
     local locale = addon.db and addon.db.locale or "auto"
     local language = addon.Clean and addon.Clean(addon.Language, "table")
