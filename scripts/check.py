@@ -79,6 +79,7 @@ def main():
     run(lua, "tests/quest_row_markers_ui.lua")
     run(lua, "tests/quest_class_icons_ui.lua")
     run(lua, "tests/quest_row_navigation_ui.lua")
+    run(lua, "tests/quest_row_release_ui.lua")
     run(lua, "tests/quest_row_sources_ui.lua")
     run(lua, "tests/source_location_warnings_ui.lua")
     run(lua, "tests/summon_sources_ui.lua")

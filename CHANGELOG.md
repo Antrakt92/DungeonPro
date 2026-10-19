@@ -4,6 +4,8 @@
 
 ### 19-Oct-2026
 
+- Release unused quest-list calculations when changing dungeons or returning
+  to the overview, preserving the current selection and controls.
 - Reduce repeated work when quest or item details load, keeping search results
   and the selected dungeon in sync.
 - Find reviewed Chinese NPC names with either common middle-dot separator,

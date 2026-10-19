@@ -1778,7 +1778,9 @@ function UI:RefreshDungeons()
         uiLanguage = uiLanguage, selectedDungeon = self.dungeon }
 end
 
-function UI:PaintQuestRowStatus(row, entry, engine, ownerCurrent)
+function UI:PaintQuestRowStatus(row, entry, engine, ownerCurrent, engineLease)
+    local heldEngine = engineLease or { engine = engine }
+    engine = nil
     local id, state, heading = entry.id, entry.state, entry.heading
     local status = state and state.status
     local compactRole = row.compact and status ~= "ACTIVE" and status ~= "READY"
@@ -1789,7 +1791,8 @@ function UI:PaintQuestRowStatus(row, entry, engine, ownerCurrent)
     row.statusGeneration = token
     local function current()
         if not ownerCurrent() then return false end
-        local fresh = not eligible or not engine.Current or addon.Read(engine.Current, "boolean", engine) == true
+        local engine = heldEngine.engine
+        local fresh = not eligible or (engine and (not engine.Current or addon.Read(engine.Current, "boolean", engine) == true))
         local ok, same = pcall(function()
             return fresh and ownerCurrent() and row.statusGeneration == token and row.questID == id and row.heading == heading and
                 entry.id == id and entry.state == state and (not state or state.status == status) and
@@ -1850,23 +1853,35 @@ function UI:PaintQuestRowStatus(row, entry, engine, ownerCurrent)
 end
 
 function UI:RefreshQuests()
+    local request, previousRelease = {}, self.questListRelease
+    self.questListRequest = request
+    if previousRelease then previousRelease() end
     local layoutRevision = self.layoutRevision
-    if not self:ApplyColumns() or self.layoutRevision ~= layoutRevision then return end
+    if not self:ApplyColumns() or self.layoutRevision ~= layoutRevision or self.questListRequest ~= request then return end
     local d, character, previousGeneration = self.dungeon, addon.char, self.questListGeneration
     local preparation, includeUnavailable = self.preparation, self.includeUnavailable
     local targets, targetIDs, targetSet = d and d.quests, {}, {}
     for index, id in ipairs(targets or {}) do targetIDs[index] = id; targetSet[id] = true end
     local needsEngine = d ~= nil or self.quest ~= nil
     local context = needsEngine and addon.Context() or nil
-    if self.dungeon ~= d or addon.char ~= character or self.questListGeneration ~= previousGeneration then return end
+    if self.questListRequest ~= request or self.dungeon ~= d or addon.char ~= character or self.questListGeneration ~= previousGeneration then return end
     local engine = needsEngine and addon.Planner.New(addon.quests, context, addon.Clean(character.choices, "table")) or nil
+    if self.questListRequest ~= request then return end
+    local engineLease = { engine = engine }
     self.engine = engine
     self.currentPlan = nil
     local generation, treeCurrent, treeFailed, rendering = {}, nil, false, true
     local infoProofs, infoFailed = {}, false
     self.questListGeneration = generation
+    local released, read, clean, checker = false, addon.Read, addon.Clean, issecretvalue
+    self.questListRelease = function()
+        released = true
+        engineLease.engine, engine, context, treeCurrent = nil, nil, nil, nil
+        infoProofs = {}
+    end
     local proveTree
     local function current()
+        if released or self.questListRequest ~= request or addon.Read ~= read or addon.Clean ~= clean or issecretvalue ~= checker then return false end
         local owned = self.layoutRevision == layoutRevision and self.questListGeneration == generation and self.engine == engine and self.dungeon == d and addon.char == character and
             self.preparation == preparation and self.includeUnavailable == includeUnavailable
         if not owned or treeFailed or infoFailed then return false end
@@ -2212,7 +2227,7 @@ function UI:RefreshQuests()
             end
             row.statusBaseWidth = math.max(24, audienceSpace - row.factionReserve - row.classReserve)
             if not current() then return end
-            if not self:PaintQuestRowStatus(row, entry, engine, current) then return end
+            if not self:PaintQuestRowStatus(row, entry, engine, current, engineLease) then return end
             if not writeText(row.title, title) or not writeText(row.note, note) or
                 not write(row, "SetEnabled", not entry.heading) then return end
             if entry.heading then
