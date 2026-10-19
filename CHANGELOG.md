@@ -4,6 +4,7 @@
 
 ### 19-Oct-2026
 
+- Preserve the turn-in arrow position when changing ready quests.
 - Keep the quest-giver button and its destination in sync when changing quests.
 - Keep source rows aligned when a quest changes during layout.
 - Release obsolete turn-in navigation contexts after changing quests.

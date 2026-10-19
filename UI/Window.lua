@@ -3083,7 +3083,7 @@ function UI:RefreshDetail(sourceFocus)
                 if primary then
                     return sourceGeometryWrite(function() return primaryCurrent(ownerCurrent) end, control, method, ...)
                 end
-                return sourceWrite(ownerCurrent or portraitCardCurrent, control, method, nil, ...)
+                return sourceGeometryWrite(ownerCurrent or portraitCardCurrent, control, method, ...)
             end
             if not position("ClearAllPoints") or not position("SetPoint", "TOPLEFT", self.detail, "TOPLEFT", 4, -y) or
                 not position("SetSize", 24, 24) or not position("Show") then return false end

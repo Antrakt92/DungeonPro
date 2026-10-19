@@ -41,7 +41,7 @@ do
  assert(not record.current());assert(reads==0 and #visits==1,"retired native owner and click cannot read providers or guide")
  a.Clean=original;cases=cases+1
 end
-for _,target in ipairs({6981,6402})do for _,method in ipairs({"SetPoint","SetSize","Show"})do for _,phase in ipairs({"before","after"})do
+for _,target in ipairs({6981,6402})do for _,method in ipairs({"ClearAllPoints","SetPoint","SetSize","Show"})do for _,phase in ipairs({"before","after"})do
  local a,u,e,held,ready,drain,visits=fixture()
  local control=u.turnin;local setter,fired,completed=control[method],false,false
  local newerPoint,newerBinding,newerClick
