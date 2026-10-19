@@ -155,6 +155,7 @@ assert(loadfile("Core/DungeonStatus.lua"))("DungeonPro", addon)
 assert(loadfile("UI/QuestListRewards.lua"))("DungeonPro", addon)
 assert(loadfile("UI/QuestNavigation.lua"))("DungeonPro", addon)
 assert(loadfile("UI/QuestHistory.lua"))("DungeonPro", addon)
+assert(loadfile("UI/PreparationOverview.lua"))("DungeonPro", addon)
 assert(loadfile("UI/Window.lua"))("DungeonPro", addon)
 function methods:SetToplevel(value) self.topLevel=value end
 function methods:Raise() self.raises=(self.raises or 0)+1 end
@@ -7806,6 +7807,7 @@ check("Main close styling is optional and preserves native close tooltip geometr
             return result
         end
         assert(loadfile("UI/QuestHistory.lua"))("DungeonPro",fresh)
+        assert(loadfile("UI/PreparationOverview.lua"))("DungeonPro", fresh)
         assert(loadfile("UI/Window.lua"))("DungeonPro",fresh);fresh.UI:Create();CreateFrame=create
         local current=fresh.UI;current.search="retained close query";current.quest=ui.quest;current.dungeon=ui.dungeon
         local selected,dungeon=current.quest,current.dungeon
@@ -8035,6 +8037,7 @@ check("First catalogue render does not reset an existing initial reading offset"
     fresh.listeners={}
     local global,specialCount=_G.DungeonProWindow,#UISpecialFrames
     assert(loadfile("UI/QuestHistory.lua"))("DungeonPro",fresh)
+    assert(loadfile("UI/PreparationOverview.lua"))("DungeonPro", fresh)
     assert(loadfile("UI/Window.lua"))("DungeonPro",fresh)
     fresh.UI:Create();fresh.UI.range=false;fresh.UI.search="Alpha"
     fresh.UI.catalogScroll:SetVerticalScroll(300)

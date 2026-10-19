@@ -36,6 +36,7 @@ UI\RewardCache.lua
 UI\QuestNavigation.lua
 UI\QuestHistory.lua
 UI\DungeonMap.lua
+UI\PreparationOverview.lua
 UI\Window.lua
 UI\Navigation.lua
 Core\Entrances.lua

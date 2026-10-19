@@ -70,6 +70,7 @@ def main():
     run(lua, "tests/source_separator_search_ui.lua")
     run(lua, "tests/quest_id_search_localization_ui.lua")
     run(lua, "tests/ui_preparation.lua")
+    run(lua, "tests/preparation_overview_module.lua")
     run(lua, "tests/preparation_overview_ui.lua")
     run(lua, "tests/preparation_overview_composition_ui.lua")
     run(lua, "tests/recorded_objectives_ui.lua")
