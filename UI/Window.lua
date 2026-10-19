@@ -2709,6 +2709,9 @@ function UI:ResetQuestLogControl()
 end
 
 function UI:RefreshDetail(sourceFocus)
+    local previousMap = self.overviewMapBinding
+    self.overviewMapBinding = nil
+    if previousMap then previousMap.released, previousMap.owner = true, nil end
     local previousOverview = self.overviewBinding
     self.overviewBinding = nil
     if previousOverview then
@@ -5334,10 +5337,10 @@ function UI:RefreshDetail(sourceFocus)
             local control, opener = self.overviewMapControl, self.OpenDungeonMap
             local gameMap = addon.Clean(renderDungeon.instanceID, "number")
             if control and type(opener) == "function" and gameMap and gameMap > 0 and gameMap <= 4294967295 and gameMap % 1 == 0 then
-                local binding = {}
+                local binding = { owner = portraitCardCurrent }
                 self.overviewMapBinding = binding
                 local function current()
-                    return portraitCardCurrent() and addon.UI == self and self.overviewMapBinding == binding and
+                    return not binding.released and binding.owner and binding.owner() and addon.UI == self and self.overviewMapBinding == binding and
                         self.overviewMapControl == control and self.OpenDungeonMap == opener and
                         rawequal(rawget(renderDungeon, "instanceID"), gameMap)
                 end
@@ -5864,6 +5867,9 @@ function UI:Create()
             previousOverview.released = true
             for _, key in ipairs({ "model", "modelCurrent", "modelRaw", "base", "listCurrent", "listRaw", "engine", "plan", "titles" }) do previousOverview[key] = nil end
         end
+        local previousMap = self.overviewMapBinding
+        self.overviewMapBinding = nil
+        if previousMap then previousMap.released, previousMap.owner = true, nil end
         if self.CloseDungeonMap then self:CloseDungeonMap(true); if not current() then return end end
         local pending = self.developerLinkRequest
         self.developerLinkRequest = nil
