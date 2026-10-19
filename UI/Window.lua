@@ -3177,8 +3177,8 @@ function UI:RefreshDetail(sourceFocus)
     if not self:ResetPreparationOverviewControls(portraitCardCurrent) then return end
     for index, row in ipairs(self.materialButtons) do
         local function current() return portraitCardCurrent() and self.materialButtons[index] == row end
-        if not self:QuestListWrite(row,"Hide",current) or not self:QuestListWrite(row,"SetEnabled",current,false) or
-            not self:QuestListWrite(row,"SetScript",current,"OnClick",nil) then return end
+        if not sourceWrite(current,row,"Hide",nil) or not sourceWrite(current,row,"SetEnabled",nil,false) or
+            not sourceWrite(current,row,"SetScript",nil,"OnClick",nil) then return end
     end
     for _, buttons in ipairs({ self.startButtons, self.finishButtons, self.containerButtons, self.dropButtons, self.objectiveContainerButtons, self.giverButtons }) do
         for index, row in ipairs(buttons) do
@@ -5331,13 +5331,13 @@ function UI:RefreshDetail(sourceFocus)
                 local note = "|cff" .. COLOR[status] .. statusLabel(state) .. "|r\n" .. itemName ..
                     (addon.Clean(rawUnknown,"boolean") == true and status ~= "UNKNOWN" and (" — " .. addon.L("UNKNOWN")) or "") ..
                     (count and ("\n" .. count) or "")
-                local row = self:MakeRow(self.detail, buttons, index, 59, entryCurrent, true)
+                local row = self:MakeRow(self.detail, buttons, index, 59, sourceCallback(entryCurrent), true)
                 if not entryCurrent() then return end
                 row.questID, row.itemID = other, itemID
                 local function rowCurrent()
                     return entryCurrent() and self.materialButtons == buttons and buttons[index] == row and row.questID == other and row.itemID == itemID
                 end
-                local function write(object,method,...)return self:QuestListWrite(object,method,rowCurrent,...)end
+                local function write(object,method,...)return sourceWrite(rowCurrent,object,method,nil,...)end
                 if not write(row.title,"SetText",title) or not write(row.note,"SetText",note) or not write(row,"SetEnabled",true) or
                     not write(row,"SetScript","OnClick",function()
                         if rowCurrent() and addon.Read(materialFrame.IsShown,"boolean",materialFrame) == true and rowCurrent() then inspector(self,other) end

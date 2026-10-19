@@ -4,6 +4,7 @@
 
 ### 19-Oct-2026
 
+- Avoid retaining previous quest material details after switching quests.
 - Keep newly shown quest portraits when an older refresh finishes.
 - Preserve the turn-in arrow position when changing ready quests.
 - Keep the quest-giver button and its destination in sync when changing quests.
