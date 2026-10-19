@@ -2,8 +2,16 @@ local _, addon = ...
 local UI = {}
 addon.DungeonMapUI = UI
 
+-- Retired physical owners leave pooled widget repair records in place.
+local function release(state)
+    if not state then return end
+    state.released = true
+    state.model, state.proof, state.raw = nil, nil, nil
+end
+
 -- Map artwork is requested only by an explicit open or floor change.
 local function paint(self, dungeon, requestedMapID, inputCurrent)
+    local previous = self.dungeonMapState
     local intent = {}; self.dungeonMapIntent = intent
     local frame, scroll, quest, selected, character = self.frame, self.detailScroll, self.quest, self.dungeon, addon.char
     local db, locale, language = addon.db, addon.db and addon.db.locale, addon.Language
@@ -15,8 +23,9 @@ local function paint(self, dungeon, requestedMapID, inputCurrent)
     local provider, clean, read, checker, localizer = addon.DungeonMapSnapshot, addon.Clean, addon.Read, issecretvalue, addon.L
     local state = { dungeon = dungeon, requestedMapID = requestedMapID, elapsed = 0 }
     self.dungeonMapState = state
+    release(previous)
     local function same()
-        return inputCurrent() and addon.UI == self and self.dungeonMapIntent == intent and self.dungeonMapState == state and
+        return not state.released and inputCurrent() and addon.UI == self and self.dungeonMapIntent == intent and self.dungeonMapState == state and
             self.frame == frame and self.detailScroll == scroll and self.quest == quest and self.dungeon == selected and
             addon.char == character and addon.db == db and (not db or db.locale == locale) and addon.Language == language and
             (not language or language.session == session) and (not session or session.preview == preview) and addon.DungeonMapSnapshot == provider and
@@ -254,7 +263,9 @@ function UI:OpenDungeonMap(dungeon, requestedMapID)
 end
 
 function UI:CloseDungeonMap(skipRefresh)
+    local previous=self.dungeonMapState
     local intent={};self.dungeonMapIntent=intent;self.dungeonMapState=nil
+    release(previous)
     local overlay,scroll=self.dungeonMap,self.detailScroll
     local function current()return addon.UI==self and self.dungeonMapIntent==intent and self.dungeonMapState==nil and
         self.dungeonMap==overlay and self.detailScroll==scroll end

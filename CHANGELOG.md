@@ -4,6 +4,8 @@
 
 ### 19-Oct-2026
 
+- Free unused map data after changing floors or closing the map, while keeping
+  the current map and reused controls intact.
 - Release unused quest-list calculations when changing dungeons or returning
   to the overview, preserving the current selection and controls.
 - Reduce repeated work when quest or item details load, keeping search results
