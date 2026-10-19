@@ -3312,6 +3312,64 @@ function UI:RefreshDetail(sourceFocus)
         local function locationWrite(current, object, method, ...)
             return sourceWrite(current, object, method, nil, ...)
         end
+        local function sourceGeometryWrite(current, object, method, ...)
+            local fresh = locationWrite(current, object, method, ...)
+            if fresh or method ~= "ClearAllPoints" or object.sourceGeometryRepair then return fresh end
+            local registry = object.questListWrites
+            local point = type(registry) == "table" and rawget(registry, "SetPoint")
+            local owner = type(point) == "table" and rawget(point, "current")
+            local args, count = type(point) == "table" and rawget(point, "args"), type(point) == "table" and rawget(point, "count")
+            local setter, recordSetter = object.SetPoint, type(point) == "table" and rawget(point, "setter")
+            local writer, reader, clean, checker = self.QuestListWrite, addon.Read, addon.Clean, issecretvalue
+            if type(owner) ~= "function" or type(args) ~= "table" or type(count) ~= "number" or count < 1 or count > 5 or count % 1 ~= 0 or
+                type(writer) ~= "function" or type(reader) ~= "function" or type(clean) ~= "function" then return false end
+            local values = {}; for index = 1, count do values[index] = rawget(args, index) end
+            local repair = {}; object.sourceGeometryRepair = repair
+            local cell = {}
+            local function repairOwner()
+                local current = cell.current
+                return current ~= nil and current() == true
+            end
+            local ownPoint, ownArgs, validating
+            local function baseSame()
+                if not rawequal(object.sourceGeometryRepair, repair) or not rawequal(object.questListWrites, registry) or
+                    not rawequal(rawget(point, "current"), owner) or not rawequal(rawget(point, "args"), args) or not rawequal(rawget(point, "count"), count) or
+                    not rawequal(rawget(point, "setter"), recordSetter) or not rawequal(object.SetPoint, setter) or
+                    self.QuestListWrite ~= writer or addon.Read ~= reader or addon.Clean ~= clean or issecretvalue ~= checker then return false end
+                for index = 1, count do if not rawequal(rawget(args, index), values[index]) then return false end end
+                return true
+            end
+            local function publication(record, arguments)
+                if not baseSame() or not rawequal(rawget(registry, "SetPoint"), record) then return false end
+                if rawequal(record, point) then return rawequal(arguments, args) end
+                if type(record) ~= "table" or type(arguments) ~= "table" or (ownPoint and not rawequal(record, ownPoint)) or
+                    not rawequal(rawget(record, "current"), repairOwner) or not rawequal(rawget(record, "setter"), setter) or
+                    not rawequal(rawget(record, "count"), count) or not rawequal(rawget(record, "args"), arguments) then return false end
+                for index = 1, count do if not rawequal(rawget(arguments, index), values[index]) then return false end end
+                return true
+            end
+            cell.current = function()
+                if validating then return false end
+                local record = rawget(registry, "SetPoint")
+                local arguments = type(record) == "table" and rawget(record, "args")
+                if not publication(record, arguments) then return false end
+                if not rawequal(record, point) and not ownPoint then ownPoint, ownArgs = record, arguments end
+                validating = true
+                local current = reader(owner, "boolean") == true
+                validating = false
+                return current and publication(record, arguments)
+            end
+            local native, recorded = clean(setter, "function"), clean(recordSetter, "function")
+            local succeeded = false
+            if type(native) == "function" and type(recorded) == "function" and rawequal(native, setter) and rawequal(recorded, recordSetter) and rawequal(native, recorded) and
+                repairOwner() then
+                local ok, wrote = pcall(writer, self, object, "SetPoint", repairOwner, unpack(values, 1, count))
+                succeeded = ok and wrote == true and ownPoint ~= nil and publication(ownPoint, ownArgs)
+            end
+            cell.current = succeeded and owner or nil
+            if object.sourceGeometryRepair == repair then object.sourceGeometryRepair = nil end
+            return false
+        end
         local function areaName(canonical, current, proofs)
             if type(sourceAreaGetter) ~= "function" then return nil end
             local ok, name, proof = pcall(sourceAreaGetter, canonical, current)
@@ -3346,7 +3404,7 @@ function UI:RefreshDetail(sourceFocus)
                 self.reportedExpanded[key] = not expanded
                 self:RefreshDetail()
             end) then return false end
-            local nextY = self:LayoutRow(toggle, 40, y, current)
+            local nextY = self:LayoutRow(toggle, 40, y, current, function(object, method, ...) return sourceGeometryWrite(current, object, method, ...) end)
             if not nextY then return false end
             y = nextY
             if not locationWrite(current, toggle, "Show") then return false end
@@ -3377,7 +3435,7 @@ function UI:RefreshDetail(sourceFocus)
                         self:DispatchDetail({ id = id, kind = "visit", place = point }, false, nil, current)
                     end
                 end) then return false end
-                local nextY = self:LayoutRow(row, 59, y, current)
+                local nextY = self:LayoutRow(row, 59, y, current, function(object, method, ...) return sourceGeometryWrite(current, object, method, ...) end)
                 if not nextY then return false end
                 y = nextY
                 if not locationWrite(current, row, "Show") then return false end
@@ -3475,7 +3533,7 @@ function UI:RefreshDetail(sourceFocus)
                     local function visitCurrent() return current() and (not clickCurrent or clickCurrent()) end
                     self:DispatchDetail(visit, not coordinates, nil, visitCurrent)
                 end or nil) then return false end
-                local nextY = self:LayoutRow(row, 59, y, current)
+                local nextY = self:LayoutRow(row, 59, y, current, function(object, method, ...) return sourceGeometryWrite(current, object, method, ...) end)
                 if not nextY then return false end
                 y = nextY
                 if reported(destination, slot .. index, current) == false or not current() or not write(row, "Show") then return false end

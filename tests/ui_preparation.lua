@@ -4993,7 +4993,9 @@ check("Each mapped source row publication boundary preserves a newer source note
         ui:RefreshDetail();target[key]=original
         assert(not armed and row.title.text=="New source",boundary)
         assert(row.note.text:find("8.0, 9.0",1,true),boundary.." retained an older source note")
-        assert(row.height==nestedHeight and row.point==nestedPoint,boundary.." overwrote newer layout")
+        assert(row.height==nestedHeight and type(row.point)=="table"and type(nestedPoint)=="table",boundary.." overwrote newer layout")
+        for key,value in next,row.point do assert(rawequal(rawget(nestedPoint,key),value),boundary.." retained a different native anchor argument")end
+        for key,value in next,nestedPoint do assert(rawequal(rawget(row.point,key),value),boundary.." omitted a native anchor argument")end
         if boundary=="measure"then assert(row.height==59)end
         local nav,captured=addon.Navigation;addon.Navigation={Start=function(a)captured=a end}
         row.scripts.OnClick(row,"LeftButton",false)
@@ -5021,7 +5023,9 @@ check("Reported source point publication and layout preserve the replacement sou
         end
         ui:RefreshDetail();target[key]=original
         assert(not armed and row.title.text:find("8.0, 9.0",1,true),boundary)
-        assert(row.height==nestedHeight and row.point==nestedPoint,boundary.." overwrote newer point layout")
+        assert(row.height==nestedHeight and type(row.point)=="table"and type(nestedPoint)=="table",boundary.." overwrote newer point layout")
+        for key,value in next,row.point do assert(rawequal(rawget(nestedPoint,key),value),boundary.." retained a different native anchor argument")end
+        for key,value in next,nestedPoint do assert(rawequal(rawget(row.point,key),value),boundary.." omitted a native anchor argument")end
         if boundary=="measure"then assert(row.height==59)end
         local nav,captured=addon.Navigation;addon.Navigation={Start=function(a)captured=a end}
         row.scripts.OnClick(row,"LeftButton",false)
