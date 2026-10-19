@@ -176,6 +176,31 @@
           "source": "Betina Bigglezink",
           "name": "Бетина Биггльцинк",
           "url": "https://nether.wowhead.com/forever/tooltip/npc/11035?locale=7"
+        },
+        "16013": {
+          "source": "Deliana",
+          "name": "Делиана",
+          "url": "https://nether.wowhead.com/forever/tooltip/npc/16013?locale=7"
+        },
+        "16012": {
+          "source": "Mokvar",
+          "name": "Моквар",
+          "url": "https://nether.wowhead.com/forever/tooltip/npc/16012?locale=7"
+        },
+        "14368": {
+          "source": "Lorekeeper Lydros",
+          "name": "Сказитель Лидрос",
+          "url": "https://nether.wowhead.com/forever/tooltip/npc/14368?locale=7"
+        },
+        "8379": {
+          "source": "Archmage Xylem",
+          "name": "Верховный маг Ксилем",
+          "url": "https://nether.wowhead.com/forever/tooltip/npc/8379?locale=7"
+        },
+        "253092": {
+          "source": "Alba Fairmoon",
+          "name": "Альба Светлая Луна",
+          "url": "https://nether.wowhead.com/forever/tooltip/npc/253092?locale=7"
         }
       }
     },
@@ -217,6 +242,16 @@
           "source": "Gryphon Master Talonaxe",
           "name": "Greifenmeister Talonaxe",
           "url": "https://nether.wowhead.com/forever/tooltip/npc/5636?locale=3"
+        },
+        "14368": {
+          "source": "Lorekeeper Lydros",
+          "name": "Hüter des Wissens Lydros",
+          "url": "https://nether.wowhead.com/forever/tooltip/npc/14368?locale=3"
+        },
+        "8379": {
+          "source": "Archmage Xylem",
+          "name": "Erzmagier Xylem",
+          "url": "https://nether.wowhead.com/forever/tooltip/npc/8379?locale=3"
         }
       }
     },
@@ -263,6 +298,21 @@
           "source": "Gryphon Master Talonaxe",
           "name": "Maître des gryphons Talonaxe",
           "url": "https://nether.wowhead.com/forever/tooltip/npc/5636?locale=2"
+        },
+        "14368": {
+          "source": "Lorekeeper Lydros",
+          "name": "Gardien du savoir Lydros",
+          "url": "https://nether.wowhead.com/forever/tooltip/npc/14368?locale=2"
+        },
+        "8379": {
+          "source": "Archmage Xylem",
+          "name": "Archimage Xylem",
+          "url": "https://nether.wowhead.com/forever/tooltip/npc/8379?locale=2"
+        },
+        "253092": {
+          "source": "Alba Fairmoon",
+          "name": "Alba Lunepâle",
+          "url": "https://nether.wowhead.com/forever/tooltip/npc/253092?locale=2"
         }
       }
     },
@@ -329,6 +379,21 @@
           "source": "Tonga Runetotem",
           "name": "Tonga Runatótem",
           "url": "https://nether.wowhead.com/forever/tooltip/npc/3448?locale=6"
+        },
+        "14368": {
+          "source": "Lorekeeper Lydros",
+          "name": "Tradicionalista Lydros",
+          "url": "https://nether.wowhead.com/forever/tooltip/npc/14368?locale=6"
+        },
+        "8379": {
+          "source": "Archmage Xylem",
+          "name": "Archimago Xylem",
+          "url": "https://nether.wowhead.com/forever/tooltip/npc/8379?locale=6"
+        },
+        "253092": {
+          "source": "Alba Fairmoon",
+          "name": "Alba Lunajusta",
+          "url": "https://nether.wowhead.com/forever/tooltip/npc/253092?locale=6"
         }
       }
     },
@@ -405,6 +470,21 @@
           "source": "Betina Bigglezink",
           "name": "Betina Bigozinco",
           "url": "https://nether.wowhead.com/forever/tooltip/npc/11035?locale=8"
+        },
+        "14368": {
+          "source": "Lorekeeper Lydros",
+          "name": "Erudito Lydros",
+          "url": "https://nether.wowhead.com/forever/tooltip/npc/14368?locale=8"
+        },
+        "8379": {
+          "source": "Archmage Xylem",
+          "name": "Arquimago Tauriel",
+          "url": "https://nether.wowhead.com/forever/tooltip/npc/8379?locale=8"
+        },
+        "253092": {
+          "source": "Alba Fairmoon",
+          "name": "Alba Belua",
+          "url": "https://nether.wowhead.com/forever/tooltip/npc/253092?locale=8"
         }
       }
     },
@@ -506,6 +586,31 @@
           "source": "Betina Bigglezink",
           "name": "베티나 비글징크",
           "url": "https://nether.wowhead.com/forever/tooltip/npc/11035?locale=1"
+        },
+        "16013": {
+          "source": "Deliana",
+          "name": "델리아나",
+          "url": "https://nether.wowhead.com/forever/tooltip/npc/16013?locale=1"
+        },
+        "16012": {
+          "source": "Mokvar",
+          "name": "모크바르",
+          "url": "https://nether.wowhead.com/forever/tooltip/npc/16012?locale=1"
+        },
+        "14368": {
+          "source": "Lorekeeper Lydros",
+          "name": "현자 리드로스",
+          "url": "https://nether.wowhead.com/forever/tooltip/npc/14368?locale=1"
+        },
+        "8379": {
+          "source": "Archmage Xylem",
+          "name": "대마법사 실렘",
+          "url": "https://nether.wowhead.com/forever/tooltip/npc/8379?locale=1"
+        },
+        "253092": {
+          "source": "Alba Fairmoon",
+          "name": "알바 페어문",
+          "url": "https://nether.wowhead.com/forever/tooltip/npc/253092?locale=1"
         }
       }
     },
@@ -607,6 +712,31 @@
           "source": "Betina Bigglezink",
           "name": "贝蒂娜·比格辛克",
           "url": "https://nether.wowhead.com/forever/tooltip/npc/11035?locale=4"
+        },
+        "16013": {
+          "source": "Deliana",
+          "name": "德莉亚娜",
+          "url": "https://nether.wowhead.com/forever/tooltip/npc/16013?locale=4"
+        },
+        "16012": {
+          "source": "Mokvar",
+          "name": "莫克瓦尔",
+          "url": "https://nether.wowhead.com/forever/tooltip/npc/16012?locale=4"
+        },
+        "14368": {
+          "source": "Lorekeeper Lydros",
+          "name": "博学者莱德罗斯",
+          "url": "https://nether.wowhead.com/forever/tooltip/npc/14368?locale=4"
+        },
+        "8379": {
+          "source": "Archmage Xylem",
+          "name": "大法师克希雷姆",
+          "url": "https://nether.wowhead.com/forever/tooltip/npc/8379?locale=4"
+        },
+        "253092": {
+          "source": "Alba Fairmoon",
+          "name": "阿尔巴·晴月",
+          "url": "https://nether.wowhead.com/forever/tooltip/npc/253092?locale=4"
         }
       }
     },
@@ -708,6 +838,31 @@
           "source": "Betina Bigglezink",
           "name": "貝蒂娜·比格辛克",
           "url": "https://nether.wowhead.com/forever/tooltip/npc/11035?locale=10"
+        },
+        "16013": {
+          "source": "Deliana",
+          "name": "德莉娜",
+          "url": "https://nether.wowhead.com/forever/tooltip/npc/16013?locale=10"
+        },
+        "16012": {
+          "source": "Mokvar",
+          "name": "莫克瓦",
+          "url": "https://nether.wowhead.com/forever/tooltip/npc/16012?locale=10"
+        },
+        "14368": {
+          "source": "Lorekeeper Lydros",
+          "name": "博學者萊德羅斯",
+          "url": "https://nether.wowhead.com/forever/tooltip/npc/14368?locale=10"
+        },
+        "8379": {
+          "source": "Archmage Xylem",
+          "name": "大法師克希雷姆",
+          "url": "https://nether.wowhead.com/forever/tooltip/npc/8379?locale=10"
+        },
+        "253092": {
+          "source": "Alba Fairmoon",
+          "name": "艾芭‧皎月",
+          "url": "https://nether.wowhead.com/forever/tooltip/npc/253092?locale=10"
         }
       }
     }

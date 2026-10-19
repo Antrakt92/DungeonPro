@@ -139,6 +139,7 @@ def main():
     run(lua, "tests/npc_source_names.lua")
     run(lua, "tests/npc_source_names_ui.lua")
     run(lua, "tests/additional_npc_names_ui.lua")
+    run(lua, "tests/beta_giver_names_ui.lua")
     run(lua, "tests/localized_source_search.lua")
     run(lua, "tests/localized_source_search_ui.lua")
     run(lua, "tests/world_area_names.lua")
