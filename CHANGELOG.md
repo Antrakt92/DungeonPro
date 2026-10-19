@@ -4,6 +4,7 @@
 
 ### 19-Oct-2026
 
+- Release obsolete turn-in navigation contexts after changing quests.
 - Release retired quest-source callbacks and keep current source controls intact during refreshes.
 - Release obsolete quest-detail text contexts after changing quests or closing the planner.
 - Avoid repeating bag counts for quest-starting items also supplied by the quest.

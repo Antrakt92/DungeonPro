@@ -2985,7 +2985,7 @@ function UI:RefreshDetail(sourceFocus)
             local control = navigation == true and self.giver or navigation
             local function position(method, ...)
                 if control == self.giver then return write(control, method, ...) end
-                return self:QuestListWrite(control, method, ownerCurrent or portraitCardCurrent, ...)
+                return sourceWrite(ownerCurrent or portraitCardCurrent, control, method, nil, ...)
             end
             if not position("ClearAllPoints") or not position("SetPoint", "TOPLEFT", self.detail, "TOPLEFT", 4, -y) or
                 not position("SetSize", 24, 24) or not position("Show") then return false end
