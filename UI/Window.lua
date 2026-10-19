@@ -625,13 +625,16 @@ end
 
 -- Share the bounded owned writer with list layout; direct user scrolling stays native.
 function UI:WriteDetailScroll(scroll, value, ownerCurrent)
+    local previous, scope = self.detailScrollOwner, {}
+    self.detailScrollOwner = scope
+    if previous then previous.current = nil end
     local frame, quest, dungeon, engine, character = self.frame, self.quest, self.dungeon, self.engine, addon.char
     local generation, revision, checker = self.rewardGeneration, self.detailNavigationRevision, issecretvalue
     local setter = addon.Clean(scroll.SetVerticalScroll, "function")
     value = addon.Clean(value, "number")
-    if not setter or not value or value < 0 then return false end
+    if self.detailScrollOwner ~= scope or not setter or not value or value < 0 then return false end
     local function same()
-        return addon.UI == self and self.frame == frame and self.detailScroll == scroll and self.quest == quest and
+        return self.detailScrollOwner == scope and addon.UI == self and self.frame == frame and self.detailScroll == scroll and self.quest == quest and
             self.dungeon == dungeon and self.engine == engine and addon.char == character and
             self.rewardGeneration == generation and self.detailNavigationRevision == revision and
             scroll.SetVerticalScroll == setter and issecretvalue == checker
@@ -640,7 +643,12 @@ function UI:WriteDetailScroll(scroll, value, ownerCurrent)
         return same() and (not ownerCurrent or ownerCurrent()) and
             addon.Read(frame.IsShown, "boolean", frame) == true and same()
     end
-    return self:QuestListWrite(scroll, "SetVerticalScroll", current, value)
+    scope.current = current
+    -- Native repair records keep a releasable cell instead of the old detail owner.
+    local function owned() return scope.current and scope.current() or false end
+    local ok = self:QuestListWrite(scroll, "SetVerticalScroll", owned, value)
+    if not ok then scope.current = nil end
+    return ok
 end
 
 function UI:QuestListWrite(object, method, ownerCurrent, ...)
@@ -2730,6 +2738,9 @@ local function releaseSourceControls(ui)
 end
 
 function UI:RefreshDetail(sourceFocus)
+    local previousScroll = self.detailScrollOwner
+    self.detailScrollOwner = nil
+    if previousScroll then previousScroll.current = nil end
     releaseSourceControls(self)
     local sourceControlsLease = { cells = {}, memo = {} }
     self.sourceControlsLease = sourceControlsLease
@@ -5963,6 +5974,9 @@ function UI:Create()
     end)
     frame:SetScript("OnShow", function(f) raiseWindow(f); self:Fit(); self.preparation = false; self:Refresh(nil, true) end)
     frame:SetScript("OnHide", function()
+        local previousScroll = self.detailScrollOwner
+        self.detailScrollOwner = nil
+        if previousScroll then previousScroll.current = nil end
         self.detailTabQuest, self.detailTabRevision = nil, {}
         local revision, character, quest, dungeon, engine = self.detailTabRevision, addon.char, self.quest, self.dungeon, self.engine
         local clean, read, shown, checker = addon.Clean, addon.Read, frame.IsShown, issecretvalue

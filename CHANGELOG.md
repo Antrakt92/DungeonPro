@@ -4,6 +4,7 @@
 
 ### 19-Oct-2026
 
+- Avoid retaining old quest-reading state after switching views or closing the planner.
 - Expand quest-log steps in the dungeon overview in groups of six, or collapse them.
 - Keep the back arrow anchored when quest details change during layout.
 - Prevent an earlier map request from reopening an old area or hiding the newer quest marker.
