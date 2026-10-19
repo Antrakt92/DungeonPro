@@ -54,6 +54,7 @@ def main():
     run(lua, "tests/catalog_search_release_ui.lua")
     run(lua, "tests/catalog_status_release_ui.lua")
     run(lua, "tests/catalog_search_data_ui.lua")
+    run(lua, "tests/catalog_data_batch_ui.lua")
     run(lua, "tests/overnight_search_reported_places.lua")
     run(lua, "tests/objective_source_search_ui.lua")
     run(lua, "tests/search_typography_ui.lua")

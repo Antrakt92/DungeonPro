@@ -839,6 +839,38 @@ function UI:RefreshCatalogData()
     local function current()
         return self.catalogLanguageView == view and view and view.current()
     end
+    -- Batch pure reads before the final complete membership preflight.
+    if view and view.query ~= "" and not view.queryID and locale and view.uiLanguage == locale and
+        self.dungeon == view.selectedDungeon then
+        -- Snapshot selection before the callback-bearing initial proof.
+        local selected = self.dungeon
+        if not current() or self.dungeon ~= selected or view.selectedDungeon ~= selected then
+            return false, self.catalogLanguageView ~= view and "superseded" or nil
+        end
+        local read, clean, restriction = addon.Read, addon.Clean, issecretvalue
+        local owned, membership = view.owned, view.membershipCurrent
+        local generation = self.catalogGeneration
+        local function rawSame()
+            return self.catalogLanguageView == view and self.catalogGeneration == generation and
+                addon.Read == read and addon.Clean == clean and issecretvalue == restriction and
+                view.owned == owned and view.membershipCurrent == membership
+        end
+        local function same()
+            if not rawSame() then return false end
+            local valid = owned()
+            return rawSame() and valid
+        end
+        for _, result in ipairs(view.results) do
+            if result.statusCurrent and read(result.statusCurrent, "boolean") ~= true then return false end
+            if not same() then return false, self.catalogLanguageView ~= view and "superseded" or nil end
+        end
+        local currentLocale = self:CatalogLanguageKey()
+        if not same() or currentLocale ~= locale then return false, self.catalogLanguageView ~= view and "superseded" or nil end
+        if read(membership, "boolean") ~= true or not rawSame() or self.dungeon ~= selected then
+            return false, self.catalogLanguageView ~= view and "superseded" or nil
+        end
+        return true
+    end
     if not view or(view.query~=""and view.queryID)or not locale or view.uiLanguage ~= locale or not current() then return false end
     local function membership()
         if view.query==""then return true end

@@ -4,6 +4,8 @@
 
 ### 19-Oct-2026
 
+- Reduce repeated work when quest or item details load, keeping search results
+  and the selected dungeon in sync.
 - Find reviewed Chinese NPC names with either common middle-dot separator,
   preserving their original spelling on screen.
 - Release obsolete dungeon status calculations after a new search while keeping

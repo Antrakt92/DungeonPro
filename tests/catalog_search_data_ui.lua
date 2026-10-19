@@ -192,13 +192,13 @@ check('A final membership getter selection change repaints the latest catalogue 
     a.CachedQuestName=function(id)
         if armed and id==166 then
             reads=reads+1
-            if reads==2 then fired=true;ui.dungeon=other end
+            if reads==1 then fired=true;ui.dungeon=other end
         end
         return previous(id)
     end
     local generation=f.query('Gryphon Master Talonaxe');assert(ui.dungeon~=other)
     armed=true;f.event('ITEM_DATA_LOAD_RESULT');f.drain();armed=false
-    assert(fired and reads>=2,'the final dynamic membership pass must actually change selection')
+    assert(fired and reads>=1,'the final dynamic membership pass must actually change selection')
     assert(ui.dungeon==other and ui.catalogLanguageView.selectedDungeon==other and ui.catalogGeneration~=generation,
         'same-view selection supersession cannot leave the former selected-card paint')
     assert(f.find('zf')and f.hydration()==hydration,'catalogue membership itself adds no hydration')
@@ -211,7 +211,7 @@ check('A later getter cannot change an earlier native wing label template unnoti
     local previous=a.DungeonName;local armed,reads,fired=false,0,false
     a.DungeonName=function(dungeon)
         if armed and dungeon==lower then reads=reads+1
-        elseif armed and reads==2 and not fired then
+        elseif armed and reads==1 and not fired then
             fired=true;a.locales.enUS.DUNGEON_WING_lower='%s __Later wing template__'
         end
         return previous(dungeon)
