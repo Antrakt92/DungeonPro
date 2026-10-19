@@ -75,8 +75,8 @@ test("new inspection during Back list refresh supersedes the retired restore",fu
 end)
 test("native middle-row text reentry preserves the newer selected quest and reading view",function()
  reset(166,true);assert(ui:SetDetailTab("sources"));ui.detailScroll:SetVerticalScroll(31)
- assert(ui:InspectQuest(141,true))
- local title
+  assert(ui:InspectQuest(141,true))
+  local tab, scrollPos = ui.detailTab, ui.detailScroll:GetVerticalScroll()
  for _,row in ipairs(ui.rows)do if row:IsShown()and row.questID==166 then title=row.title;break end end
  assert(title)
  local original,fired=title.SetText,false
@@ -92,18 +92,45 @@ test("native middle-row text reentry preserves the newer selected quest and read
  selected(92753)
 end)
 
-test("same-quest owner changes during native list repaint retire the old detail restore",function()
- for _,field in ipairs({"includeUnavailable","range","preparation","search","frame","detailScroll"})do
+test("filter drift during Back list refresh rolls back instead of spending history",function()
+ for _,field in ipairs({"includeUnavailable","range","preparation","search"})do
+  reset(166,true);assert(ui:SetDetailTab("sources"));ui.detailScroll:SetVerticalScroll(31)
+  assert(ui:InspectQuest(141,true))
+  local tab, scrollPos = ui.detailTab, ui.detailScroll:GetVerticalScroll()
+  local title
+  for _,row in ipairs(ui.rows)do if row:IsShown()and row.questID==166 then title=row.title;break end end
+  assert(title)
+  local native,detail=title.SetText,ui.RefreshDetail
+  local before,replacement=ui[field]
+  if field=="search"then replacement="new search during Back"
+  else replacement=not before end
+  local fired,detailCalls=false,0
+  local history=ui.detailHistory;assert(#history==1 and history[1]==166)
+  ui.RefreshDetail=function(self,...)detailCalls=detailCalls+1;return detail(self,...)end
+  title.SetText=function(self,value)
+   if not fired then fired=true;ui[field]=replacement end
+   return native(self,value)
+  end
+  local restored=ui:BackQuest()
+  title.SetText,ui.RefreshDetail=native,detail
+  assert(fired and restored==true and detailCalls==0,"rolled-back Back stays handled while changed "..field.." skips old detail rendering")
+  assert(ui.detailHistory==history and #history==1 and history[1]==166,"filter drift must not spend the history entry")
+  assert(ui.quest==141 and ui.renderedQuest==141,"the card still shows the current quest after rollback")
+  assert(ui.detailTab==tab and ui.detailScroll:GetVerticalScroll()==scrollPos,"rollback preserves the current card view")
+  for _, id in ipairs(selection()) do assert(id~=166,"rollback must not leave selection on the abandoned quest") end
+  assert(ui[field]==replacement,"the same inspected quest must not hide owner drift")
+  ui[field]=before
+ end
+end)
+test("structural owner changes during native list repaint retire the old detail restore",function()
+ for _,field in ipairs({"frame","detailScroll"})do
   reset(166,true);assert(ui:SetDetailTab("sources"));ui.detailScroll:SetVerticalScroll(31)
   assert(ui:InspectQuest(141,true))
   local title
   for _,row in ipairs(ui.rows)do if row:IsShown()and row.questID==166 then title=row.title;break end end
   assert(title)
   local native,detail=title.SetText,ui.RefreshDetail
-  local before,replacement=ui[field]
-  if field=="frame"or field=="detailScroll"then replacement={}
-  elseif field=="search"then replacement="new search during Back"
-  else replacement=not before end
+  local before,replacement=ui[field],{}
   local fired,detailCalls=false,0
   local history=ui.detailHistory;assert(#history==1 and history[1]==166)
   ui.RefreshDetail=function(self,...)detailCalls=detailCalls+1;return detail(self,...)end

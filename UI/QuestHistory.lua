@@ -102,6 +102,10 @@ function UI:BackQuest()
     local previous = history[index]
     if not previous and not self:CanReturnToOverview() then return false end
     local saved = offsets[index]
+    local currentQuest = self.quest
+    local currentTab, currentTabOffsets, currentTabRevision = self.detailTab, self.detailTabOffsets, self.detailTabRevision
+    local currentTabQuest, currentTabDungeon, currentTabCharacter = self.detailTabQuest, self.detailTabDungeon, self.detailTabCharacter
+    local currentRevision = self.detailNavigationRevision
     offsets[index] = nil
     table.remove(history)
     local revision = {}
@@ -125,7 +129,27 @@ function UI:BackQuest()
     end
     refreshList(self)
     -- History has already advanced; a newer view owns any remaining painting.
-    if not owned() then return true end
+    if not owned() then
+        if addon.UI == self and self.detailNavigationRevision == revision and self.quest == previous and
+            self.dungeon == dungeon and self.detailHistory == history and #history == index - 1 and
+            self.frame == frame and self.detailScroll == scroll and self.detailTab == tab and
+            self.detailTabRevision == tabRevision and self.detailTabOffsets == tabOffsets and
+            self.layoutRevision == layoutRevision and self.RefreshQuests == refreshList and self.RefreshDetail == refreshDetail then
+            -- Same-destination filter/context drift: the newer list already owns
+            -- painting, so roll back the tentative navigation instead of
+            -- silently spending the history entry. Repaint the middle list
+            -- once more so row selection follows the restored quest under
+            -- the drifted filters; the detail pane still shows it.
+            history[#history + 1] = previous
+            if offsets[index] == nil then offsets[index] = saved end
+            self.quest = currentQuest
+            self.detailTabQuest, self.detailTabDungeon, self.detailTabCharacter = currentTabQuest, currentTabDungeon, currentTabCharacter
+            self.detailTab, self.detailTabOffsets, self.detailTabRevision = currentTab, currentTabOffsets, currentTabRevision
+            self.detailNavigationRevision = currentRevision
+            refreshList(self)
+        end
+        return true
+    end
     local engine = self.engine
     local rendered = refreshDetail(self)
     if not owned() or self.engine ~= engine or not rendered or self.rewardGeneration ~= rendered then return true end

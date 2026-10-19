@@ -9701,4 +9701,38 @@ check("Clearing a native EditBox search rebuilds the catalogue only once and exp
     assert(not ui:FlushPendingSearch(pending)and calls==1)
     ui.RefreshDungeons,ui.searchBox.SetText=refresh,setText;f:finish()
 end)
+check("Back after filter drift during list refresh keeps the history entry instead of a stale card", function()
+    local quest, history, includeUnavailable = ui.quest, ui.detailHistory, ui.includeUnavailable
+    local nativeRefresh = ui.RefreshQuests
+    ui.detailHistory = {}
+    showDetail(1)
+    assert(ui:InspectQuest(2, true))
+    assert(ui.quest == 2 and #ui.detailHistory == 1 and ui.detailHistory[1] == 1)
+    assert(ui:SetDetailTab("sources"))
+    ui.detailScroll:SetVerticalScroll(60)
+    local drifted = false
+    ui.RefreshQuests = function(self, ...)
+        local result = nativeRefresh(self, ...)
+        if not drifted then
+            drifted = true
+            self.includeUnavailable = not self.includeUnavailable
+        end
+        return result
+    end
+    local restored = ui:BackQuest()
+    ui.RefreshQuests = nativeRefresh
+    local staleSelection = false
+    for _, row in ipairs(ui.rows) do
+        if row.shown and row.questTreeSelected and (row.questID or row.anchorQuestID) == 1 then staleSelection = true end
+    end
+    local kept = ui.quest == 2 and ui.renderedQuest == 2
+        and #ui.detailHistory == 1 and ui.detailHistory[1] == 1 and canGoBack()
+        and ui.detailTab == "sources" and ui.detailScroll:GetVerticalScroll() == 60
+        and ui.includeUnavailable ~= includeUnavailable and not staleSelection
+    ui.includeUnavailable = includeUnavailable
+    assert(drifted and restored == true and kept,
+        "filter drift must not silently spend history while the card still shows the newer quest")
+    ui.quest, ui.detailHistory = quest, history
+    ui:RefreshDetail()
+end)
 print("Preparation UI modeled checks passed: " .. total .. " (no native layout validation)")
