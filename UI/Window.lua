@@ -1134,7 +1134,13 @@ function UI:RefreshDungeons()
         end
         return cached
     end
-    local function relatedTitle(id,definition)
+    local titleMemo={}
+    local function searchTitle(id,definition)
+        local previous=titleMemo[id]
+        if previous then
+            if addon.Read(previous.proof.current,"boolean")~=true or not relationRaw(previous.proof) or not current(true)then return end
+            return previous.name,previous.proof
+        end
         local keyGetter,dictionaryGetter=self.CatalogLanguageKey,addon.GetNameTranslations
         local read,clean=addon.Read,addon.Clean
         local function normalize(value)
@@ -1181,7 +1187,11 @@ function UI:RefreshDungeons()
         if not fresh()then return end
         if not title or #title>1024 or not title:find("%S")then title=clean(source,"string")or("#"..id)end
         if not fresh()then return end
-        return title,{current=fresh,raw=raw}
+        local proof={current=fresh,raw=raw}
+        titleMemo[id]={name=title,proof=proof}
+        relationMemo[#relationMemo+1]=proof
+        relationMatches[#relationMatches+1]=proof
+        return title,proof
     end
     local queryID = addon.Read(idParser, "number", query)
     if queryID and (queryID <= 0 or queryID > 9007199254740991 or queryID % 1 ~= 0) then queryID = nil end
@@ -1284,11 +1294,9 @@ function UI:RefreshDungeons()
                                 local cached=sourcesFor(id,definition)
                                 for _,entry in ipairs(cached.entries or{})do
                                     if searchText(entry.text):find(needle,1,true) then
-                                        local title,titleProof=relatedTitle(id,definition)
+                                        local title,titleProof=searchTitle(id,definition)
                                         if not titleProof then return expireSources()end
                                         if not current(true)then return end
-                                        relationMemo[#relationMemo+1]=titleProof
-                                        relationMatches[#relationMatches+1]=titleProof
                                         matchedName,matchedID,sourceMatch,relatedRootID=title,id,entry,member.id
                                         if not cached.matched then cached.matched=true;sourceMatches[#sourceMatches+1]=cached end
                                         relationMatches[#relationMatches+1]=record
@@ -1301,6 +1309,19 @@ function UI:RefreshDungeons()
                     end
                     if matchedName then break end
                 end
+            end
+            if matchedName and not idMatch and not relatedRootID then
+                local definition=addon.Clean(rawget(definitions,matchedID),"table")
+                if not current(true)then return end
+                if not definition then return expireSources()end
+                local title,proof=searchTitle(matchedID,definition)
+                if not proof then return expireSources()end
+                local canonical=addon.Clean(rawget(definition,"name"),"string")or""
+                if not current(true)then return end
+                if not sourceMatch and not searchText(canonical):find(needle,1,true) and
+                    not searchText(title):find(needle,1,true)then
+                    matchedName,matchedID=nil,nil
+                else matchedName=title end
             end
             if not current(true) then return end
             if matches or matchedName then

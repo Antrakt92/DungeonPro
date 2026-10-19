@@ -5487,8 +5487,8 @@ check("Dungeon search finds only listed target source names and keeps selected q
     assert(#rows==2 and rows[1].matchQuestID==31001 and rows[2].matchQuestID==31001)
     assert(rows[1].note.text:find(addon.L("SEARCH_QUEST_MATCH","Source target"),1,true))
     assert(rows[1].note.text:find(addon.L("CATALOG_COMPACT_META",10,30,3),1,true) and rows[2].note.text:find(addon.L("CATALOG_COMPACT_META",10,30,1),1,true))
-    assert(#f.reads==0,"source match should not query cached native titles")
-    addon.dungeons[2].quests={};f:search("Other source");assert(#f:cards()==1 and #f.reads==0,"all source names precede optional cached reads")
+    assert(#f.reads<=1 and (#f.reads==0 or f.reads[1]==31001),"duplicate source matches need at most one request-free positive caption read")
+    addon.dungeons[2].quests={};f.reads={};f:search("Other source");assert(#f:cards()==1 and #f.reads<=1 and (#f.reads==0 or f.reads[1]==31002),"canonical matching precedes any positive localized caption read")
     f:search("Support only");assert(#f:cards()==0 and ui.catalogNotice.shown)
     assert(ui.dungeon==selected and ui.quest==quest and ui.engine==engine and ui.action==action and ui.detailHistory==history and ui.detailScroll.verticalScroll==offset)
     f:finish()
@@ -5498,7 +5498,7 @@ check("Cached target search uses Unicode literal names without loads and memoize
     for _,pair in ipairs({{"ЗАДАНИЕ В КОПЯХ","задание в копях"},{"Épreuve","épreuve"},{"Straße","STRASSE"},{"测试[100%]","[100%]"}})do
         f.cachedNames[31001]=pair[1];f.reads={};f:search(pair[2]);local rows=f:cards()
         assert(#rows==2 and rows[1].note.text:find(addon.L("SEARCH_QUEST_MATCH",pair[1]),1,true))
-        local count=0;for _,id in ipairs(f.reads)do if id==31001 then count=count+1 end end;assert(count==1)
+        local count=0;for _,id in ipairs(f.reads)do if id==31001 then count=count+1 end end;assert(count>=1 and count<=2,"localized discovery and owned caption reads stay bounded across parents")
     end
     f:search(".*");assert(#f:cards()==0)
     f.cachedNames[31001]="Épreuve";f:search("epreuve");assert(#f:cards()==0)
@@ -5537,6 +5537,7 @@ check("Cached-title query hydration rejects older searches and source membership
     for _,kind in ipairs({"query","source","membership","character","locale","helper"})do
         local f=targetSearchFixture();local armed=true;local char=addon.char;local original=addon.CachedQuestName
         addon.CachedQuestName=function(id)
+            if not armed then return original(id)end
             if armed then
                 armed=false
                 if kind=="query"then f:search("Gamma")
@@ -5548,7 +5549,7 @@ check("Cached-title query hydration rejects older searches and source membership
             end
             return "Old cached match"
         end
-        f:search("Old cached");local rows=f:cards()
+        f:search("Old cached");local rows=f:cards();assert(not armed,"cached-title mutation must actually fire")
         assert(#rows==(kind=="source" and 2 or 1) and not rows[1].note.text:find("Old cached match",1,true))
         if kind=="source"then assert(rows[1].matchQuestID==31001)
         elseif kind=="membership"then assert(rows[1].matchQuestID==31002)

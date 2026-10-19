@@ -4,6 +4,8 @@
 
 ### 19-Oct-2026
 
+- Keep search-result quest captions in the selected language when searching by
+  original quest names, NPCs or places.
 - Find dungeons by recorded NPCs and places in prerequisite or story steps,
   with a clear related-step label and a link to inspect the matching quest.
 - Match map controls to the planner's button style and dim unavailable floor
