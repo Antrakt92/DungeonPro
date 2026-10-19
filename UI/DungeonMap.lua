@@ -19,6 +19,7 @@ local function paint(self, dungeon, requestedMapID, inputCurrent)
     local preview = session and session.preview
     local localeGetter = GetLocale
     local theme, writer = addon.Theme, self.QuestListWrite
+    local opener, closer = self.OpenDungeonMap, self.CloseDungeonMap
     local font, style = theme and theme.ApplyFont, theme and theme.StyleFilter
     local provider, clean, read, checker, localizer = addon.DungeonMapSnapshot, addon.Clean, addon.Read, issecretvalue, addon.L
     local state = { dungeon = dungeon, requestedMapID = requestedMapID, elapsed = 0 }
@@ -112,13 +113,17 @@ local function paint(self, dungeon, requestedMapID, inputCurrent)
         local value = read(localizer,"string",key,...)
         if raw() then return value or key end
     end
-    local function control(b,key,x,y,fn,enabled,clickCurrent)
+    local function control(b,key,x,y,fn,enabled,clickCurrent,method,dispatcher)
+        method, dispatcher = method or "OpenDungeonMap", dispatcher or opener
         if not write(b,"ClearAllPoints") or not write(b,"SetPoint","TOPLEFT",overlay,"TOPLEFT",x,-y) or
             not write(b,"SetWidth",(width-36)/2) then return false end
         local value = caption(key)
         if not value or not write(b.label,"SetText",value) then return false end
         if font then pcall(font,b.label,12) end
-        if not raw() or not write(b,"SetScript","OnClick",function() if (clickCurrent or current)() then fn() end end) or
+        if not raw() or not write(b,"SetScript","OnClick",function()
+            if self[method] ~= dispatcher then return end
+            if (clickCurrent or current)() and self[method] == dispatcher then fn(dispatcher) end
+        end) or
             not write(b,"SetEnabled",enabled) then return false end
         local styled = false
         if type(style) == "function" then
@@ -132,7 +137,7 @@ local function paint(self, dungeon, requestedMapID, inputCurrent)
         return addon.UI==self and self.dungeonMapIntent==intent and self.dungeonMapState==state and
             self.dungeonMap==overlay and self.frame==frame and self.detailScroll==scroll
     end
-    if not control(overlay.back,"DUNGEON_MAP_BACK",12,8,function() self:CloseDungeonMap() end,true,backCurrent) then return false end
+    if not control(overlay.back,"DUNGEON_MAP_BACK",12,8,function(dispatch) dispatch(self) end,true,backCurrent,"CloseDungeonMap",closer) then return false end
     local model, proof, rawProof
     if clean(provider,"function") and current() then
         local ok; ok,model,proof,rawProof = pcall(provider,dungeon,requestedMapID,current)
@@ -173,7 +178,7 @@ local function paint(self, dungeon, requestedMapID, inputCurrent)
     if not valid then
         if not same() then return false end
         state.proof, state.raw = nil,nil
-        if not control(overlay.retry,"DUNGEON_MAP_RETRY",width/2+6,8,function() self:OpenDungeonMap(dungeon,requestedMapID) end,true) or
+        if not control(overlay.retry,"DUNGEON_MAP_RETRY",width/2+6,8,function(dispatch) dispatch(self,dungeon,requestedMapID) end,true) or
             not text(overlay.title,caption("DUNGEON_MAP_OPEN"),12,44,16) or
             not text(overlay.message,caption("DUNGEON_MAP_UNAVAILABLE"),12,80,13) or
             not write(overlay,"SetScript","OnUpdate",nil) or not write(scroll,"Hide") or not write(overlay,"Show") then return false end
@@ -203,8 +208,8 @@ local function paint(self, dungeon, requestedMapID, inputCurrent)
         local floorHeight=measured(overlay.floor,18)
         if not floorHeight then return false end
         top=top+floorHeight+6
-        if not control(overlay.previous,"DUNGEON_MAP_PREVIOUS",12,top,function() self:OpenDungeonMap(dungeon,floorView[index-1].mapID) end,index>1) or
-            not control(overlay.next,"DUNGEON_MAP_NEXT",width/2+6,top,function() self:OpenDungeonMap(dungeon,floorView[index+1].mapID) end,index<#floorView) then return false end
+        if not control(overlay.previous,"DUNGEON_MAP_PREVIOUS",12,top,function(dispatch) dispatch(self,dungeon,floorView[index-1].mapID) end,index>1) or
+            not control(overlay.next,"DUNGEON_MAP_NEXT",width/2+6,top,function(dispatch) dispatch(self,dungeon,floorView[index+1].mapID) end,index<#floorView) then return false end
         top=top+36
     end
     local scale=math.min((width-24)/w,(height-top-12)/h)
