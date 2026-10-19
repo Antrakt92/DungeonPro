@@ -51,24 +51,47 @@ function UI:DispatchDetail(action, mapOnly, giver, ownerCurrent)
 end
 
 function UI:GetEntranceBinding(dungeon, ownerCurrent)
-    local provider = addon.Clean(addon.Entrances, "table")
-    local getter = provider and addon.Clean(provider.Get, "function")
-    local navigation = addon.Clean(addon.Navigation, "table")
-    local start = navigation and addon.Clean(navigation.StartEntrance, "function")
+    local clean, read, checker = addon.Clean, addon.Read, issecretvalue
+    local provider = clean(addon.Entrances, "table")
+    local getter = provider and clean(provider.Get, "function")
+    local navigation = clean(addon.Navigation, "table")
+    local start = navigation and clean(navigation.StartEntrance, "function")
+    local function rawOwned()
+        return addon.UI == self and addon.Clean == clean and addon.Read == read and issecretvalue == checker and
+            addon.Entrances == provider and provider and rawequal(rawget(provider, "Get"), getter) and
+            addon.Navigation == navigation and navigation and rawequal(rawget(navigation, "StartEntrance"), start)
+    end
     local function owned()
-        return addon.UI == self and ownerCurrent() and addon.Entrances == provider and
-            provider and provider.Get == getter and addon.Navigation == navigation and navigation and navigation.StartEntrance == start
+        return rawOwned() and ownerCurrent() and rawOwned()
     end
     if not dungeon or not getter or not start or not owned() then return end
     local ok, point, predicate = pcall(getter, dungeon)
-    point, predicate = ok and addon.Clean(point, "table"), ok and addon.Clean(predicate, "function")
+    point, predicate = ok and clean(point, "table"), ok and clean(predicate, "function")
     if not owned() or not point or not predicate then return end
-    local map, x, y = addon.Clean(point.mapID, "number"), addon.Clean(point.x, "number"), addon.Clean(point.y, "number")
+    local map, x, y = clean(point.mapID, "number"), clean(point.x, "number"), clean(point.y, "number")
     if not owned() or not map or map <= 0 or map % 1 ~= 0 or not x or not y or x < 0 or x > 100 or y < 0 or y > 100 then return end
+    local fields = { "frame", "dungeon", "quest", "engine", "catalogGeneration", "questListGeneration", "rewardGeneration",
+        "layoutRevision", "detailTabRevision", "range", "includeUnavailable", "preparation", "search" }
     local function current()
-        local valid = addon.Read(predicate, "boolean") == true
-        if not valid or not owned() then return false end
-        return addon.Clean(point.mapID, "number") == map and addon.Clean(point.x, "number") == x and addon.Clean(point.y, "number") == y
+        -- The catalogue may outlive selection changes; own context only for this read.
+        local values, character = {}, addon.char
+        for _, field in ipairs(fields) do values[field] = rawget(self, field) end
+        local function finalRaw(includePoint)
+            local ok, same = pcall(function()
+                if not rawOwned() or addon.char ~= character then return false end
+                for _, field in ipairs(fields) do
+                    if not rawequal(rawget(self, field), values[field]) then return false end
+                end
+                return not includePoint or (rawequal(rawget(point, "mapID"), map) and rawequal(rawget(point, "x"), x) and rawequal(rawget(point, "y"), y))
+            end)
+            return ok and same == true
+        end
+        if not finalRaw() then return false end
+        local valid = read(predicate, "boolean") == true
+        if not valid or not owned() or not finalRaw() then return false end
+        if clean(point.mapID, "number") ~= map or clean(point.x, "number") ~= x or clean(point.y, "number") ~= y then return false end
+        if not owned() then return false end
+        return finalRaw(true)
     end
     if current() then return { current = current, dungeon = dungeon, point = point, navigation = navigation, start = start } end
 end

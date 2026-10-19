@@ -170,6 +170,7 @@ def main():
     run(lua, "tests/map_marker.lua")
     run(lua, "tests/map_clicks.lua")
     run(lua, "tests/entrances.lua")
+    run(lua, "tests/entrance_action_retirement_ui.lua")
     run(lua, "tests/minimap.lua")
     run(sys.executable, "-m", "unittest", "discover", "-s", "tests", "-p", "test_*.py", "-v")
     run(sys.executable, "scripts/package.py")

@@ -4,6 +4,7 @@
 
 ### 19-Oct-2026
 
+- Ignore stale entrance clicks if the selected view changes during validation.
 - Find quests by recorded enemy objective names, including related steps.
 - Free unused map data after changing floors or closing the map, while keeping
   the current map and reused controls intact.
