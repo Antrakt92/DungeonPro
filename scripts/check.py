@@ -90,6 +90,7 @@ def main():
     run(lua, "tests/catalogue_layout_retirement_ui.lua")
     run(lua, "tests/detail_tabs_ui.lua")
     run(lua, "tests/detail_back_control_ui.lua")
+    run(lua, "tests/detail_back_geometry_ui.lua")
     run(lua, "tests/back_quest_selection_ui.lua")
     run(lua, "tests/quest_history_module.lua")
     run(lua, "tests/detail_tabs_retirement_ui.lua")

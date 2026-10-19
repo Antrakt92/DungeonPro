@@ -4,6 +4,7 @@
 
 ### 19-Oct-2026
 
+- Keep the back arrow anchored when quest details change during layout.
 - Prevent an earlier map request from reopening an old area or hiding the newer quest marker.
 - Add a back arrow beside quest tabs to revisit a previous quest or the dungeon overview.
 - Keep the newer quest waypoint when an earlier guide finishes validating.

@@ -3354,7 +3354,10 @@ function UI:RefreshDetail(sourceFocus)
             end
             self.detailBackBinding = backBinding
             backBinding.current = sourceCallback(backCurrent)
-            local function backWrite(object, method, ...) return sourceWrite(backCurrent, object, method, nil, ...) end
+            local function backWrite(object, method, ...)
+                if method == "ClearAllPoints" then return sourceGeometryWrite(backCurrent, object, method, ...) end
+                return sourceWrite(backCurrent, object, method, nil, ...)
+            end
             setFont(backControl.label,20)
             if not backCurrent() or not backWrite(backControl.label,"SetText","‹") or
                 not backWrite(backControl.label,"SetTextColor",.96,.83,.59) then return end
