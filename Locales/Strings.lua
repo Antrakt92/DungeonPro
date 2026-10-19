@@ -187,6 +187,23 @@ strings.ruRU.DUNGEON_MAP_NEXT = "Следующий этаж"
 strings.enUS.SEARCH_RELATED_STEP = "Related step: %s"
 strings.ruRU.SEARCH_RELATED_STEP = "Связанный шаг: %s"
 
+strings.enUS.OVERVIEW_PREPARATION = "Listed quest progress"
+strings.enUS.OVERVIEW_STATUS_ACTIVE = "Ready to turn in: %d · In progress: %d"
+strings.enUS.OVERVIEW_STATUS_RECORDED = "Completed: %d · Uncertain: %d"
+strings.enUS.OVERVIEW_STATUS_COUNT = "%s: %d"
+strings.enUS.OVERVIEW_KNOWN_STEPS = "From your quest log"
+strings.enUS.OVERVIEW_NO_KNOWN_STEPS = "No steps from your quest log are listed. Select a quest for details."
+strings.enUS.OVERVIEW_UNCERTAIN = "Some quest conditions or coverage remain unverified."
+strings.enUS.OVERVIEW_MORE_STEPS = "%d more quest-log steps are not shown here."
+strings.ruRU.OVERVIEW_PREPARATION = "Состояние заданий подземелья"
+strings.ruRU.OVERVIEW_STATUS_ACTIVE = "К сдаче: %d · Выполняются: %d"
+strings.ruRU.OVERVIEW_STATUS_RECORDED = "Выполнены: %d · Неизвестно: %d"
+strings.ruRU.OVERVIEW_STATUS_COUNT = "%s: %d"
+strings.ruRU.OVERVIEW_KNOWN_STEPS = "Шаги из журнала заданий"
+strings.ruRU.OVERVIEW_NO_KNOWN_STEPS = "Шагов из журнала заданий нет. Выберите задание, чтобы посмотреть подробности."
+strings.ruRU.OVERVIEW_UNCERTAIN = "Часть условий или сведений о заданиях пока не проверена."
+strings.ruRU.OVERVIEW_MORE_STEPS = "Ещё шагов из журнала не показано: %d."
+
 function addon.L(key, ...)
     local locale = addon.db and addon.db.locale or "auto"
     local language = addon.Clean and addon.Clean(addon.Language, "table")

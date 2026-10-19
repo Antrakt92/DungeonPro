@@ -334,4 +334,45 @@ check("Later engine callbacks cannot publish edits to an earlier private source 
         assert(addon.QuestTree.Build(quests,engine,1)==nil and changed,mode)
     end
 end)
+check("Published raw hierarchy proof never calls sanitizer checker or engine providers", function()
+    local quests = { [1] = { requires = { { ids = { 2 } } } }, [2] = {} }
+    local engine = fixture(quests)
+    local clean, read, armed, callbacks = addon.Clean, addon.Read, false, 0
+    addon.Clean = function(...) if armed then callbacks = callbacks + 1; error("raw called Clean") end; return clean(...) end
+    addon.Read = function(...) if armed then callbacks = callbacks + 1; error("raw called Read") end; return read(...) end
+    issecretvalue = function() if armed then callbacks = callbacks + 1; error("raw called checker") end; return false end
+    local current, state = engine.Current, engine.State
+    engine.Current = function(...) if armed then callbacks = callbacks + 1; error("raw called Current") end; return current(...) end
+    engine.State = function(...) if armed then callbacks = callbacks + 1; error("raw called State") end; return state(...) end
+    local tree = assert(addon.QuestTree.Build(quests, engine, 1))
+    assert(type(tree.rawCurrent) == "function" and tree.current())
+    armed = true
+    local ok, valid = pcall(tree.rawCurrent)
+    addon.Clean, addon.Read, issecretvalue = clean, read, nil
+    assert(ok and valid and callbacks == 0)
+end)
+check("Raw hierarchy companion rejects late source state and capability mutations", function()
+    for _, mutate in ipairs({
+        function(q) q[1].requires[1].ids[1] = 3 end,
+        function(q) q[1].requires[1].ids[2] = 3 end,
+        function(q) q[2] = {} end,
+        function(_, _, t) t[1].state.status = "READY" end,
+        function(_, e) e.context = {} end,
+        function(_, e) e.State = function() end end,
+    }) do
+        local quests = { [1] = { requires = { { ids = { 2 } } } }, [2] = {} }
+        local engine = fixture(quests)
+        local tree = assert(addon.QuestTree.Build(quests, engine, 1))
+        assert(type(tree.rawCurrent) == "function" and tree.current() and tree.rawCurrent())
+        mutate(quests, engine, tree); assert(not tree.rawCurrent() and not tree.current())
+    end
+end)
+check("A callback after dynamic hierarchy preflight cannot authorize an older raw snapshot", function()
+    local quests = { [1] = { storyline = { 1, 2 } }, [2] = {} }
+    local engine = fixture(quests)
+    local tree = assert(addon.QuestTree.Build(quests, engine, 1))
+    assert(type(tree.rawCurrent) == "function" and tree.current())
+    local function finalCallback() quests[1].storyline = {}; return true end
+    assert(finalCallback() and not tree.rawCurrent())
+end)
 print("Quest hierarchy modeled checks passed: "..total)

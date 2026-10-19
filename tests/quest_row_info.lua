@@ -143,4 +143,46 @@ test("Every actual catalogue claim has a second displayed tree ID and all single
     end
     assert(count==571 and claims>0);print("Catalogue roots "..count..", chain claims "..claims)
 end)
+test("Third return checks captured sources without Clean Read or checker callbacks", function()
+    local clean, read, armed, calls = addon.Clean, addon.Read, false, 0
+    addon.Clean = function(...) if armed then calls = calls + 1; error("raw proof called Clean") end; return clean(...) end
+    addon.Read = function(...) if armed then calls = calls + 1; error("raw proof called Read") end; return read(...) end
+    issecretvalue = function() if armed then calls = calls + 1; error("raw proof called checker") end; return false end
+    local dto, current, raw = get({ classes = { "PALADIN" }, requires = { { ids = { 2 } } } })
+    assert(dto and current() and type(raw) == "function", "callback-free companion is required")
+    armed = true
+    local ok, valid = pcall(raw)
+    addon.Clean, addon.Read, issecretvalue = clean, read, nil
+    assert(ok and valid and calls == 0)
+end)
+
+test("Raw companion rejects late field shape source and capability changes", function()
+    for _, mutate in ipairs({
+        function(q) q.classes[1] = "MAGE" end,
+        function(q) q.classes.extra = "MAGE" end,
+        function(q) q.requires[1].mode = "active" end,
+        function(q) q.requires[1].ids[2] = 3 end,
+        function(_, quests) quests[2] = {} end,
+        function(_, quests) quests[1] = {} end,
+        function(q) q.storyline = { 3 } end,
+    }) do
+        local quests = { [2] = {} }
+        local q = { classes = { "PALADIN" }, requires = { { ids = { 2 } } } }
+        local dto, current, raw = get(q, quests)
+        assert(dto and current() and type(raw) == "function" and raw())
+        mutate(q, quests); assert(not raw() and not current())
+    end
+    for _, field in ipairs({ "Clean", "Read", "QuestRowInfo" }) do
+        local _, _, raw = get({}); local previous = addon[field]
+        addon[field] = {}; assert(not raw()); addon[field] = previous
+    end
+end)
+
+test("Final callback mutations retire a successful dynamic preflight", function()
+    local q = { classes = { "PALADIN" } }
+    local _, current, raw = get(q)
+    assert(type(raw) == "function" and current() and raw())
+    local function finalCallback() q.classes[1] = "MAGE"; return true end
+    assert(finalCallback() and not raw())
+end)
 print("Quest row info: "..total.." checks passed")

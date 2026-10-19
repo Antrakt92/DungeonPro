@@ -16,6 +16,7 @@ Database\NameTranslations.lua
 Database\SearchCaseFold.lua
 Core\Planner.lua
 Core\DungeonStatus.lua
+Core\DungeonOverview.lua
 Core\QuestTree.lua
 Core\QuestRowInfo.lua
 Core\Search.lua

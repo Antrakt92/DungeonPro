@@ -20,6 +20,34 @@ function Tree.Build(quests, engine, rootID)
         if type(checker) == "function" and read(checker, "boolean", value) ~= false then return false end
         return value == previous
     end
+    local function rawCurrent()
+        local ok, valid = pcall(function()
+            if not rawequal(rawget(addon, "QuestTree"), Tree) or not rawequal(rawget(Tree, "Build"), builder) or not rawequal(rawget(addon, "Clean"), clean) or
+                not rawequal(rawget(addon, "Read"), read) or not rawequal(rawget(_G, "issecretvalue"), checker) or
+                not rawequal(rawget(engine, "State"), rawStateGetter) or not rawequal(rawget(engine, "Current"), rawContextGetter) or
+                not rawequal(rawget(engine, "quests"), engineQuests) or not rawequal(rawget(engine, "context"), engineContext) or
+                not rawequal(rawget(engine, "choices"), engineChoices) then return false end
+            if not building then
+                for _, source in ipairs(sources) do
+                    if not rawequal(rawget(quests, source.id), source.quest) then return false end
+                    for _, field in ipairs(source.fields) do
+                        if not rawequal(rawget(field.object, field.key), field.value) then return false end
+                    end
+                end
+                for _, state in ipairs(states) do
+                    if not rawequal(rawget(state.value, "status"), state.status) or
+                        not rawequal(rawget(state.value, "reason"), state.reason) or
+                        not rawequal(rawget(state.value, "completedHistory"), state.completedHistory) then return false end
+                end
+                -- A sparse extension can change # without touching the old nil sentinel.
+                for _, array in ipairs(arrays) do
+                    if #array.object ~= array.length then return false end
+                end
+            end
+            return true
+        end)
+        return ok and valid == true
+    end
     local function current()
         if addon.QuestTree ~= Tree or Tree.Build ~= builder or addon.Clean ~= clean or addon.Read ~= read or issecretvalue ~= checker or
             engine.State ~= stateGetter or engine.Current ~= contextGetter or not same(rawget(engine, "quests"), engineQuests) or
@@ -41,31 +69,8 @@ function Tree.Build(quests, engine, rootID)
                 end
             end
         end
-        -- Sanitizers and the context predicate can reenter after an earlier
-        -- field was inspected. Finish with a callback-free snapshot check.
-        if not rawequal(rawget(addon, "QuestTree"), Tree) or not rawequal(rawget(Tree, "Build"), builder) or not rawequal(rawget(addon, "Clean"), clean) or
-            not rawequal(rawget(addon, "Read"), read) or not rawequal(rawget(_G, "issecretvalue"), checker) or
-            not rawequal(rawget(engine, "State"), rawStateGetter) or not rawequal(rawget(engine, "Current"), rawContextGetter) or
-            not rawequal(rawget(engine, "quests"), engineQuests) or not rawequal(rawget(engine, "context"), engineContext) or
-            not rawequal(rawget(engine, "choices"), engineChoices) then return false end
-        if not building then
-            for _, source in ipairs(sources) do
-                if not rawequal(rawget(quests, source.id), source.quest) then return false end
-                for _, field in ipairs(source.fields) do
-                    if not rawequal(rawget(field.object, field.key), field.value) then return false end
-                end
-            end
-            for _, state in ipairs(states) do
-                if not rawequal(rawget(state.value, "status"), state.status) or
-                    not rawequal(rawget(state.value, "reason"), state.reason) or
-                    not rawequal(rawget(state.value, "completedHistory"), state.completedHistory) then return false end
-            end
-            -- A sparse extension can change # without touching the old nil sentinel.
-            for _, array in ipairs(arrays) do
-                if #array.object ~= array.length then return false end
-            end
-        end
-        return true
+        -- Callbacks may change earlier fields; end with the shared raw proof.
+        return rawCurrent()
     end
     local function keep(source, object, key)
         local value = rawget(object, key)
@@ -235,6 +240,6 @@ function Tree.Build(quests, engine, rootID)
     building = false
     if not current() then return nil, "expired" end
     nodes.presentation, nodes.targetID = presentation, rootID
-    nodes.current = current
+    nodes.current, nodes.rawCurrent = current, rawCurrent
     return nodes
 end

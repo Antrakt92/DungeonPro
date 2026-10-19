@@ -4,6 +4,7 @@
 
 ### 19-Oct-2026
 
+- Show listed quest progress and known next steps above dungeon overview artwork.
 - Keep the current copied link and keyboard focus when older close actions finish.
 - Keep newly displayed reward and objective icons when an older refresh finishes.
 - Preserve reopened quest details when an older window close finishes.

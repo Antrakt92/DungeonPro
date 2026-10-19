@@ -518,3 +518,91 @@ local relatedSearchLabels = {
 for locale, value in pairs(relatedSearchLabels) do
     addon.locales[locale].SEARCH_RELATED_STEP = value
 end
+
+do
+    local overviewLabels = {
+        deDE = {
+            OVERVIEW_PREPARATION = "Fortschritt der aufgeführten Quests",
+            OVERVIEW_STATUS_ACTIVE = "Abgabebereit: %d · In Arbeit: %d",
+            OVERVIEW_STATUS_RECORDED = "Abgeschlossen: %d · Ungeklärt: %d",
+            OVERVIEW_STATUS_COUNT = "%s: %d",
+            OVERVIEW_KNOWN_STEPS = "Aus eurem Questlog",
+            OVERVIEW_NO_KNOWN_STEPS = "Keine Schritte aus dem Questlog aufgeführt. Wählt eine Quest für Details.",
+            OVERVIEW_UNCERTAIN = "Einige Questbedingungen oder Angaben sind noch nicht bestätigt.",
+            OVERVIEW_MORE_STEPS = "%d weitere Schritte aus dem Questlog werden hier nicht angezeigt.",
+        },
+        frFR = {
+            OVERVIEW_PREPARATION = "Progression des quêtes listées",
+            OVERVIEW_STATUS_ACTIVE = "À rendre : %d · En cours : %d",
+            OVERVIEW_STATUS_RECORDED = "Terminées : %d · Incertaines : %d",
+            OVERVIEW_STATUS_COUNT = "%s : %d",
+            OVERVIEW_KNOWN_STEPS = "Dans votre journal de quêtes",
+            OVERVIEW_NO_KNOWN_STEPS = "Aucune étape de votre journal de quêtes n’est listée. Sélectionnez une quête pour les détails.",
+            OVERVIEW_UNCERTAIN = "Certaines conditions ou informations sur les quêtes restent à vérifier.",
+            OVERVIEW_MORE_STEPS = "%d autres étapes du journal de quêtes ne sont pas affichées ici.",
+        },
+        esES = {
+            OVERVIEW_PREPARATION = "Progreso de las misiones listadas",
+            OVERVIEW_STATUS_ACTIVE = "Para entregar: %d · En curso: %d",
+            OVERVIEW_STATUS_RECORDED = "Completadas: %d · Sin verificar: %d",
+            OVERVIEW_STATUS_COUNT = "%s: %d",
+            OVERVIEW_KNOWN_STEPS = "De tu registro de misiones",
+            OVERVIEW_NO_KNOWN_STEPS = "No se muestran pasos de tu registro de misiones. Selecciona una misión para ver los detalles.",
+            OVERVIEW_UNCERTAIN = "Algunas condiciones o información de las misiones aún no se han verificado.",
+            OVERVIEW_MORE_STEPS = "No se muestran aquí otros %d pasos del registro de misiones.",
+        },
+        itIT = {
+            OVERVIEW_PREPARATION = "Progressi delle missioni elencate",
+            OVERVIEW_STATUS_ACTIVE = "Da consegnare: %d · In corso: %d",
+            OVERVIEW_STATUS_RECORDED = "Completate: %d · Incerte: %d",
+            OVERVIEW_STATUS_COUNT = "%s: %d",
+            OVERVIEW_KNOWN_STEPS = "Dal registro missioni",
+            OVERVIEW_NO_KNOWN_STEPS = "Non sono elencati passi dal registro missioni. Seleziona una missione per i dettagli.",
+            OVERVIEW_UNCERTAIN = "Alcune condizioni o informazioni sulle missioni non sono ancora verificate.",
+            OVERVIEW_MORE_STEPS = "Altri %d passi del registro missioni non sono mostrati qui.",
+        },
+        ptBR = {
+            OVERVIEW_PREPARATION = "Progresso das missões listadas",
+            OVERVIEW_STATUS_ACTIVE = "Para entregar: %d · Em andamento: %d",
+            OVERVIEW_STATUS_RECORDED = "Concluídas: %d · Incertas: %d",
+            OVERVIEW_STATUS_COUNT = "%s: %d",
+            OVERVIEW_KNOWN_STEPS = "Do seu registro de missões",
+            OVERVIEW_NO_KNOWN_STEPS = "Nenhuma etapa do seu registro de missões está listada. Selecione uma missão para ver os detalhes.",
+            OVERVIEW_UNCERTAIN = "Algumas condições ou informações das missões ainda não foram verificadas.",
+            OVERVIEW_MORE_STEPS = "Outras %d etapas do registro de missões não são exibidas aqui.",
+        },
+        koKR = {
+            OVERVIEW_PREPARATION = "목록 퀘스트 진행 상황",
+            OVERVIEW_STATUS_ACTIVE = "완료 보고 가능: %d · 진행 중: %d",
+            OVERVIEW_STATUS_RECORDED = "완료: %d · 미확인: %d",
+            OVERVIEW_STATUS_COUNT = "%s: %d",
+            OVERVIEW_KNOWN_STEPS = "퀘스트 목록의 단계",
+            OVERVIEW_NO_KNOWN_STEPS = "퀘스트 목록에 표시할 단계가 없습니다. 퀘스트를 선택하여 세부 정보를 확인하세요.",
+            OVERVIEW_UNCERTAIN = "일부 퀘스트 조건이나 정보가 아직 확인되지 않았습니다.",
+            OVERVIEW_MORE_STEPS = "퀘스트 목록의 다른 단계 %d개는 여기에 표시되지 않습니다.",
+        },
+        zhCN = {
+            OVERVIEW_PREPARATION = "所列任务进度",
+            OVERVIEW_STATUS_ACTIVE = "可交付：%d · 进行中：%d",
+            OVERVIEW_STATUS_RECORDED = "已完成：%d · 未确认：%d",
+            OVERVIEW_STATUS_COUNT = "%s：%d",
+            OVERVIEW_KNOWN_STEPS = "任务日志中的步骤",
+            OVERVIEW_NO_KNOWN_STEPS = "没有列出的任务日志步骤。选择任务查看详情。",
+            OVERVIEW_UNCERTAIN = "部分任务条件或资料尚未核实。",
+            OVERVIEW_MORE_STEPS = "另有%d个任务日志步骤未在此显示。",
+        },
+        zhTW = {
+            OVERVIEW_PREPARATION = "所列任務進度",
+            OVERVIEW_STATUS_ACTIVE = "可交付：%d · 進行中：%d",
+            OVERVIEW_STATUS_RECORDED = "已完成：%d · 未確認：%d",
+            OVERVIEW_STATUS_COUNT = "%s：%d",
+            OVERVIEW_KNOWN_STEPS = "任務日誌中的步驟",
+            OVERVIEW_NO_KNOWN_STEPS = "沒有列出的任務日誌步驟。選擇任務查看詳細資訊。",
+            OVERVIEW_UNCERTAIN = "部分任務條件或資料尚未核實。",
+            OVERVIEW_MORE_STEPS = "另有%d個任務日誌步驟未在此顯示。",
+        },
+    }
+    for locale, labels in pairs(overviewLabels) do
+        for key, value in pairs(labels) do addon.locales[locale][key] = value end
+    end
+end

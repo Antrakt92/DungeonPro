@@ -102,6 +102,19 @@ function Info.Get(quests, questID)
     end
     -- The restriction predicate already returns a clean decision.
     local function ordinaryValue(value) return checker(value) == false end
+    local function rawCurrent()
+        local ok, same = pcall(function()
+            if unknown or not rawequal(rawget(addon, "QuestRowInfo"), Info) or not rawequal(rawget(Info, "Get"), getter) or
+                not rawequal(rawget(addon, "Clean"), clean) or not rawequal(rawget(addon, "Read"), read) or
+                not rawequal(rawget(_G, "issecretvalue"), checker) or not rawequal(rawget(quests, questID), definition) then return false end
+            for _, field in ipairs(fields) do
+                if not rawequal(rawget(field.object, field.key), field.value) then return false end
+            end
+            for _, length in ipairs(lengths) do if #length.object ~= length.length then return false end end
+            return classKeysCurrent()
+        end)
+        return ok and same == true
+    end
     local function current()
         if addon.QuestRowInfo ~= Info or Info.Get ~= getter or addon.Clean ~= clean or addon.Read ~= read or issecretvalue ~= checker or unknown then return false end
         if clean(rawget(quests, questID), "table") ~= definition then return false end
@@ -115,16 +128,8 @@ function Info.Get(quests, questID)
         end
         for _, length in ipairs(lengths) do if #length.object ~= length.length then return false end end
         if not classKeysCurrent() then return false end
-        if not rawequal(rawget(addon, "QuestRowInfo"), Info) or not rawequal(rawget(Info, "Get"), getter) or
-            not rawequal(rawget(addon, "Clean"), clean) or not rawequal(rawget(addon, "Read"), read) or
-            not rawequal(rawget(_G, "issecretvalue"), checker) or not rawequal(rawget(quests, questID), definition) then return false end
-        for _, field in ipairs(fields) do
-            if not rawequal(rawget(field.object, field.key), field.value) then return false end
-        end
-        for _, length in ipairs(lengths) do if #length.object ~= length.length then return false end end
-        if not classKeysCurrent() then return false end
-        return true
+        return rawCurrent()
     end
     if not current() then return nil end
-    return { faction = faction, classes = classes, chain = valid and found and true or false }, current
+    return { faction = faction, classes = classes, chain = valid and found and true or false }, current, rawCurrent
 end

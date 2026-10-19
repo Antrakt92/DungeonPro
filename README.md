@@ -46,6 +46,11 @@ its tab, or to the dungeon overview. Use the small arrow beside the dungeon list
 to collapse it and give long quest chains more room; use the arrow again to
 restore the list.
 
+Dungeon overviews in development builds show progress for the listed quests and
+known steps already in your quest log. Open a step to inspect its details; shared
+steps appear once. Unverified conditions remain marked, and a short or empty
+step list does not mean that every quest is ready to pick up.
+
 Development builds offer **Dungeon map** in a dungeon's overview. It displays
 the map and floors supplied by the game, where available. Some dungeon wings
 share a map; maps currently have no quest markers. Availability and artwork
