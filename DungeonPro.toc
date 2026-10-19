@@ -32,6 +32,7 @@ UI\QuestStatus.lua
 UI\QuestListRewards.lua
 UI\RewardCache.lua
 UI\QuestNavigation.lua
+UI\QuestHistory.lua
 UI\DungeonMap.lua
 UI\Window.lua
 UI\Navigation.lua
