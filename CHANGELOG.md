@@ -11,7 +11,7 @@
 - Add a dungeon map view with floor controls when the game client supplies a
   verified map; unavailable maps have an explicit retry and return action.
 - Translate Westfall into Russian consistently across quest locations and guidance.
-- Show reviewed translated NPC names in quest details, search and guidance.
+- Expand reviewed NPC name translations in quest details, search and guidance.
 - Show reviewed world-area translations in quest locations, search and guidance.
 - Find quests by reviewed translated source names as well as their original names.
 - Show selected-language names for reviewed quest-starting objects in details

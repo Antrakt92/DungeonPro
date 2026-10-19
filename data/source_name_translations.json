@@ -151,6 +151,31 @@
           "source": "Marshal Maxwell",
           "name": "Маршал Максвелл",
           "url": "https://nether.wowhead.com/forever/tooltip/npc/9560?locale=7"
+        },
+        "1855": {
+          "source": "Tirion Fordring",
+          "name": "Тирион Фордринг",
+          "url": "https://nether.wowhead.com/forever/tooltip/npc/1855?locale=7"
+        },
+        "5636": {
+          "source": "Gryphon Master Talonaxe",
+          "name": "Укротитель грифонов Разящий Коготь",
+          "url": "https://nether.wowhead.com/forever/tooltip/npc/5636?locale=7"
+        },
+        "3448": {
+          "source": "Tonga Runetotem",
+          "name": "Тонга Рунический Тотем",
+          "url": "https://nether.wowhead.com/forever/tooltip/npc/3448?locale=7"
+        },
+        "8579": {
+          "source": "Yeh'kinya",
+          "name": "Йе'кинья",
+          "url": "https://nether.wowhead.com/forever/tooltip/npc/8579?locale=7"
+        },
+        "11035": {
+          "source": "Betina Bigglezink",
+          "name": "Бетина Биггльцинк",
+          "url": "https://nether.wowhead.com/forever/tooltip/npc/11035?locale=7"
         }
       }
     },
@@ -187,6 +212,11 @@
           "source": "King Magni Bronzebeard",
           "name": "König Magni Bronzebeard",
           "url": "https://nether.wowhead.com/forever/tooltip/npc/2784?locale=3"
+        },
+        "5636": {
+          "source": "Gryphon Master Talonaxe",
+          "name": "Greifenmeister Talonaxe",
+          "url": "https://nether.wowhead.com/forever/tooltip/npc/5636?locale=3"
         }
       }
     },
@@ -228,6 +258,11 @@
           "source": "Marshal Maxwell",
           "name": "Maréchal Maxwell",
           "url": "https://nether.wowhead.com/forever/tooltip/npc/9560?locale=2"
+        },
+        "5636": {
+          "source": "Gryphon Master Talonaxe",
+          "name": "Maître des gryphons Talonaxe",
+          "url": "https://nether.wowhead.com/forever/tooltip/npc/5636?locale=2"
         }
       }
     },
@@ -279,6 +314,21 @@
           "source": "Marshal Maxwell",
           "name": "Alguacil Maxwell",
           "url": "https://nether.wowhead.com/forever/tooltip/npc/9560?locale=6"
+        },
+        "1855": {
+          "source": "Tirion Fordring",
+          "name": "Tirión Vadín",
+          "url": "https://nether.wowhead.com/forever/tooltip/npc/1855?locale=6"
+        },
+        "5636": {
+          "source": "Gryphon Master Talonaxe",
+          "name": "Maestro de grifos Garracha",
+          "url": "https://nether.wowhead.com/forever/tooltip/npc/5636?locale=6"
+        },
+        "3448": {
+          "source": "Tonga Runetotem",
+          "name": "Tonga Runatótem",
+          "url": "https://nether.wowhead.com/forever/tooltip/npc/3448?locale=6"
         }
       }
     },
@@ -340,6 +390,21 @@
           "source": "Marshal Maxwell",
           "name": "Oficial Maxwell",
           "url": "https://nether.wowhead.com/forever/tooltip/npc/9560?locale=8"
+        },
+        "5636": {
+          "source": "Gryphon Master Talonaxe",
+          "name": "Mestre de Grifos Garra-de-acha",
+          "url": "https://nether.wowhead.com/forever/tooltip/npc/5636?locale=8"
+        },
+        "3448": {
+          "source": "Tonga Runetotem",
+          "name": "Tonga Runa Totem",
+          "url": "https://nether.wowhead.com/forever/tooltip/npc/3448?locale=8"
+        },
+        "11035": {
+          "source": "Betina Bigglezink",
+          "name": "Betina Bigozinco",
+          "url": "https://nether.wowhead.com/forever/tooltip/npc/11035?locale=8"
         }
       }
     },
@@ -416,6 +481,31 @@
           "source": "Marshal Maxwell",
           "name": "치안대장 맥스웰",
           "url": "https://nether.wowhead.com/forever/tooltip/npc/9560?locale=1"
+        },
+        "1855": {
+          "source": "Tirion Fordring",
+          "name": "티리온 폴드링",
+          "url": "https://nether.wowhead.com/forever/tooltip/npc/1855?locale=1"
+        },
+        "5636": {
+          "source": "Gryphon Master Talonaxe",
+          "name": "그리핀 조련사 탈론액스",
+          "url": "https://nether.wowhead.com/forever/tooltip/npc/5636?locale=1"
+        },
+        "3448": {
+          "source": "Tonga Runetotem",
+          "name": "통가 룬토템",
+          "url": "https://nether.wowhead.com/forever/tooltip/npc/3448?locale=1"
+        },
+        "8579": {
+          "source": "Yeh'kinya",
+          "name": "예킨야",
+          "url": "https://nether.wowhead.com/forever/tooltip/npc/8579?locale=1"
+        },
+        "11035": {
+          "source": "Betina Bigglezink",
+          "name": "베티나 비글징크",
+          "url": "https://nether.wowhead.com/forever/tooltip/npc/11035?locale=1"
         }
       }
     },
@@ -492,6 +582,31 @@
           "source": "Marshal Maxwell",
           "name": "麦克斯韦尔元帅",
           "url": "https://nether.wowhead.com/forever/tooltip/npc/9560?locale=4"
+        },
+        "1855": {
+          "source": "Tirion Fordring",
+          "name": "提里奥·弗丁",
+          "url": "https://nether.wowhead.com/forever/tooltip/npc/1855?locale=4"
+        },
+        "5636": {
+          "source": "Gryphon Master Talonaxe",
+          "name": "狮鹫管理员沙拉克·鹰斧",
+          "url": "https://nether.wowhead.com/forever/tooltip/npc/5636?locale=4"
+        },
+        "3448": {
+          "source": "Tonga Runetotem",
+          "name": "图加·符文图腾",
+          "url": "https://nether.wowhead.com/forever/tooltip/npc/3448?locale=4"
+        },
+        "8579": {
+          "source": "Yeh'kinya",
+          "name": "叶基亚",
+          "url": "https://nether.wowhead.com/forever/tooltip/npc/8579?locale=4"
+        },
+        "11035": {
+          "source": "Betina Bigglezink",
+          "name": "贝蒂娜·比格辛克",
+          "url": "https://nether.wowhead.com/forever/tooltip/npc/11035?locale=4"
         }
       }
     },
@@ -568,6 +683,31 @@
           "source": "Marshal Maxwell",
           "name": "麥克斯韋爾元帥",
           "url": "https://nether.wowhead.com/forever/tooltip/npc/9560?locale=10"
+        },
+        "1855": {
+          "source": "Tirion Fordring",
+          "name": "提里奧·弗丁",
+          "url": "https://nether.wowhead.com/forever/tooltip/npc/1855?locale=10"
+        },
+        "5636": {
+          "source": "Gryphon Master Talonaxe",
+          "name": "獅鷲獸管理員沙拉克·鷹斧",
+          "url": "https://nether.wowhead.com/forever/tooltip/npc/5636?locale=10"
+        },
+        "3448": {
+          "source": "Tonga Runetotem",
+          "name": "圖加·符文圖騰",
+          "url": "https://nether.wowhead.com/forever/tooltip/npc/3448?locale=10"
+        },
+        "8579": {
+          "source": "Yeh'kinya",
+          "name": "葉基亞",
+          "url": "https://nether.wowhead.com/forever/tooltip/npc/8579?locale=10"
+        },
+        "11035": {
+          "source": "Betina Bigglezink",
+          "name": "貝蒂娜·比格辛克",
+          "url": "https://nether.wowhead.com/forever/tooltip/npc/11035?locale=10"
         }
       }
     }
