@@ -42,4 +42,5 @@ UI\Window.lua
 UI\Navigation.lua
 Core\Entrances.lua
 UI\Minimap.lua
+Core\Diagnostics.lua
 Core\Events.lua

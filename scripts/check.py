@@ -31,6 +31,7 @@ def main():
     run(lua, "tests/context.lua")
     run(lua, "tests/event_context.lua")
     run(lua, "tests/event_refresh.lua")
+    run(lua, "tests/diagnostics_module.lua")
     run(lua, "tests/catalog_contexts.lua")
     run(lua, "tests/client_ui.lua")
     run(lua, "tests/dungeon_map.lua")

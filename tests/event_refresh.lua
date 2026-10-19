@@ -24,6 +24,7 @@ local function model(timerMode)
         elseif timerMode == "throw" then error("timer unavailable")
         else queue[#queue + 1] = callback end
     end }
+    assert(loadfile("Core/Diagnostics.lua"))("DungeonPro", addon)
     assert(loadfile("Core/Events.lua"))("DungeonPro", addon)
     local function event(name) frame.scripts.OnEvent(frame, name, 166, true) end
     frame.scripts.OnEvent(frame, "ADDON_LOADED", "DungeonPro")

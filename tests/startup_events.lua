@@ -19,6 +19,7 @@ local function fixture()
     end
     addon.Navigation={QuestChanged=function(id)calls.navigation=id end}
     addon.Notify=function()notify=notify+1 end
+    assert(loadfile("Core/Diagnostics.lua"))("DungeonPro",addon)
     assert(loadfile("Core/Events.lua"))("DungeonPro",addon)
     local f={addon=addon,frame=frame,queue=queue,calls=calls}
     function f:event(...)frame.scripts.OnEvent(frame,...)end

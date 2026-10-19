@@ -12,6 +12,15 @@ if baseline then
                     "A baseline without DungeonArt.lua must provide both artwork APIs from its Client.lua")
             end
         end
+        if path == "Core/Diagnostics.lua" then
+            local file, message, code = io.open(baseline .. "/" .. path, "rb")
+            if file then file:close(); return originalLoad(baseline .. "/" .. path) end
+            if code ~= 2 then return nil, message end
+            return function(_, addon)
+                assert(rawget(addon, "Diagnostics") == nil,
+                    "A legacy Events.lua baseline cannot mix in a current diagnostics module")
+            end
+        end
         if path == "UI/Window.lua" or path == "UI/RewardCache.lua" or path == "Core/Client.lua" or
             path == "Core/DungeonStatus.lua" or path == "Core/Events.lua" or path == "Core/Namespace.lua" then
             return originalLoad(baseline .. "/" .. path)
