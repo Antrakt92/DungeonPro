@@ -95,6 +95,7 @@ def main():
     run(lua, "tests/quest_row_sources_ui.lua")
     run(lua, "tests/source_location_warnings_ui.lua")
     run(lua, "tests/finish_location_warning_ui.lua")
+    run(lua, "tests/identity_finish_warning_ui.lua")
     run(lua, "tests/summon_sources_ui.lua")
     run(lua, "tests/missing_start_sources_ui.lua")
     run(lua, "tests/reviewed_object_locations_ui.lua")

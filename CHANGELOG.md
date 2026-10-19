@@ -6,7 +6,7 @@
 
 - Release obsolete quest-detail text contexts after changing quests or closing the planner.
 - Avoid repeating bag counts for quest-starting items also supplied by the quest.
-- Explain when a known turn-in area has no exact position.
+- Explain missing exact positions for known turn-in sources.
 - Release obsolete dungeon overview state when leaving or closing the map control.
 - Show listed quest progress and known next steps above dungeon overview artwork.
 - Keep the current copied link and keyboard focus when older close actions finish.

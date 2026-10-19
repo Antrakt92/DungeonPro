@@ -3638,10 +3638,17 @@ function UI:RefreshDetail(sourceFocus)
                         local map, x, gy = addon.Clean(values.mapID, "number"), addon.Clean(values.x, "number"), addon.Clean(values.y, "number")
                         local mapped = map and map > 0 and map <= 9007199254740991 and map % 1 == 0
                         local exact = mapped and x and gy and x >= 0 and x <= 100 and gy >= 0 and gy <= 100
+                        local name = addon.Clean(values.name, "string")
+                        local npc, object = addon.Clean(values.npcID, "number"), addon.Clean(values.objectID, "number")
+                        local identityOK, identity = pcall(function()
+                            return name and #name <= 256 and name:find("%S") and
+                                ((npc and npc > 0 and npc <= 4294967295 and npc % 1 == 0 and values.objectID == nil and values.itemID == nil) or
+                                (object and object > 0 and object <= 4294967295 and object % 1 == 0 and values.npcID == nil and values.itemID == nil))
+                        end)
                         local readable = type(endpointChecker) ~= "function" or
                             (addon.Read(endpointChecker, "boolean", alternatives) == false and addon.Read(endpointChecker, "boolean", declaredSummon) == false)
                         if not endingCurrent() then return end
-                        if readable and alternatives == nil and declaredSummon == nil and not exact and (mapped or area and area:find("%S")) then
+                        if readable and alternatives == nil and declaredSummon == nil and not exact and (mapped or area and area:find("%S") or identityOK and identity == true) then
                             if line(addon.L("SOURCE_POSITION_UNKNOWN"), "warning", nil, nil, endingCurrent) == false then return end
                         end
                     end
