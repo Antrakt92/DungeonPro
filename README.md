@@ -41,10 +41,9 @@ These matches identify the quest; directions remain tied to its known sources.
 Development builds split quest details into three tabs: **Quest** for objectives,
 rewards and the next action; **Sources** for known pickup methods and alternative
 locations; **Story** for available or previously saved quest text. Each tab
-keeps its reading position. **Back** returns to the previous inspected quest and
-its tab, or to the dungeon overview. Use the small arrow beside the dungeon list
-to collapse it and give long quest chains more room; use the arrow again to
-restore the list.
+keeps its reading position. Use the small arrow beside the dungeon list to
+collapse it and give long quest chains more room; use the arrow again to restore
+the list.
 
 Dungeon overviews in development builds show progress for the listed quests and
 known steps already in your quest log. Open a step to inspect its details; shared
