@@ -126,6 +126,7 @@ def main():
     run(lua, "tests/quest_rewards_ui.lua")
     run(lua, "tests/quest_detail_ui.lua")
     run(lua, "tests/detail_scroll_ownership_ui.lua")
+    run(lua, "tests/detail_text_retention_ui.lua")
     run(lua, "tests/minimal_detail_ui.lua")
     run(lua, "tests/right_pane_ui.lua")
     run(lua, "tests/item_starter_copy_ui.lua")

@@ -4,6 +4,7 @@
 
 ### 19-Oct-2026
 
+- Release obsolete quest-detail text contexts after changing quests or closing the planner.
 - Avoid repeating bag counts for quest-starting items also supplied by the quest.
 - Explain when a known turn-in area has no exact position.
 - Release obsolete dungeon overview state when leaving or closing the map control.

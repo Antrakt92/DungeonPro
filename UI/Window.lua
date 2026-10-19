@@ -2709,12 +2709,28 @@ function UI:ResetQuestLogControl()
     return true
 end
 
+local function releaseDetailText(ui)
+    local lease = ui.detailTextLease
+    ui.detailTextLease = nil
+    if not lease then return end
+    lease.released = true
+    for _, record in ipairs(lease.bindings) do
+        record.scope.current, record.binding.engine = nil, nil
+    end
+    lease.bindings = {}
+end
+
 function UI:RefreshDetail(sourceFocus)
+    releaseDetailText(self)
+    local detailTextLease = { bindings = {} }
+    self.detailTextLease = detailTextLease
     local previousMap = self.overviewMapBinding
     self.overviewMapBinding = nil
     if previousMap then previousMap.released, previousMap.owner = true, nil end
     self:ReleasePreparationOverview()
+    if detailTextLease.released or self.detailTextLease ~= detailTextLease then return end
     if self.SyncDungeonMapContext then self:SyncDungeonMapContext() end
+    if detailTextLease.released or self.detailTextLease ~= detailTextLease then return end
     local layoutRevision = self.layoutRevision
     local renderQuest, renderDungeon = self.quest, self.dungeon
     local renderIncludeUnavailable = self.includeUnavailable
@@ -2792,6 +2808,7 @@ function UI:RefreshDetail(sourceFocus)
             (self.detailNarrativeExpanded == true) == narrativeExpanded and
             (self.detailObjectivesExpanded == true) == objectivesExpanded
     end
+    if detailTextLease.released or self.detailTextLease ~= detailTextLease or not portraitCardCurrent() then return end
     for _, tab in pairs(self.detailTabButtons or {}) do
         if not self:QuestListWrite(tab,"Hide",portraitCardCurrent) or not self:QuestListWrite(tab,"SetEnabled",portraitCardCurrent,false) or
             not self:QuestListWrite(tab,"SetScript",portraitCardCurrent,"OnClick",nil) then return end
@@ -2867,17 +2884,24 @@ function UI:RefreshDetail(sourceFocus)
     self.giver:Hide()
     local rewardIndex, objectiveIndex = 0, 0
     local function line(value, style, reward, objective, ownerCurrent, navigation)
-        if ownerCurrent and not ownerCurrent() then return false end
+        if detailTextLease.released or self.detailTextLease ~= detailTextLease or (ownerCurrent and not ownerCurrent()) then return false end
         local function write(object, method, ...)
-            if ownerCurrent and not ownerCurrent() then return false end
+            if detailTextLease.released or self.detailTextLease ~= detailTextLease or (ownerCurrent and not ownerCurrent()) then return false end
             local binding
             if method == "SetText" then
-                binding = { current = ownerCurrent or portraitCardCurrent, value = (...), quest = renderQuest,
+                local scope = { current = ownerCurrent or portraitCardCurrent }
+                local function current()
+                    if detailTextLease.released or self.detailTextLease ~= detailTextLease or not scope.current then return false end
+                    local fresh = scope.current()
+                    return fresh == true and not detailTextLease.released and self.detailTextLease == detailTextLease
+                end
+                binding = { current = current, scope = scope, value = (...), quest = renderQuest,
                     dungeon = renderDungeon, engine = renderEngine, character = renderCharacter, generation = rewardGeneration }
+                detailTextLease.bindings[#detailTextLease.bindings + 1] = { scope = scope, binding = binding }
                 object.detailTextBinding = binding
             end
             object[method](object, ...)
-            if ownerCurrent and not ownerCurrent() then
+            if detailTextLease.released or self.detailTextLease ~= detailTextLease or (ownerCurrent and not ownerCurrent()) then
                 local newer = binding and object.detailTextBinding
                 if newer and newer ~= binding and not object.detailTextRepair and addon.Read(newer.current, "boolean") == true and
                     object.detailTextBinding == newer then
@@ -3816,7 +3840,7 @@ function UI:RefreshDetail(sourceFocus)
                 local captionWritten = line(caption, nil, nil, nil, current)
                 local captionCandidate = pool[captionIndex]
                 local binding = captionCandidate and captionCandidate.detailTextBinding
-                if binding and binding.generation == rewardGeneration and binding.current == current then
+                if binding and binding.generation == rewardGeneration and binding.scope and binding.scope.current == current then
                     captionField, captionBinding = captionCandidate, binding
                 end
                 if captionWritten == false then return retireOwnedImage() end
@@ -5754,6 +5778,7 @@ function UI:Create()
         end
         -- Cleanup callbacks may reopen and render the planner; that newer view owns its state.
         if not current() then return end
+        releaseDetailText(self)
         self:ReleasePreparationOverview()
         if not current() then return end
         local previousMap = self.overviewMapBinding
