@@ -47,18 +47,52 @@ function addon.QuestSourceSearchTerms(quest)
     local sourceName = addon.SourceName
     local areaName = addon.SourceAreaName
     local terms, snapshots, visited, sources, aliases, areas = {}, {}, {}, {}, {}, {}
-    local seen, nodes = { npc = {}, place = {} }, 0
+    local seen, nodes = { npc = {}, place = {}, objective = {} }, 0
     local function unavailable() return false end
-    if type(clean) ~= "function" or type(folder) ~= "function" or not clean(quest, "table") then
+    if type(clean) ~= "function" or type(folder) ~= "function" then
         return terms, unavailable, unavailable
     end
-    local function capture(object, fields, list, exact)
+    local function capture(object, fields, list, exact, bound)
         local values, count = {}, 0
         for _, field in ipairs(fields) do values[field] = rawget(object, field) end
-        if exact then for _ in next, object do count = count + 1 end end
+        if exact then for _ in next, object do count = count + 1; if bound and count >= bound then break end end end
         snapshots[#snapshots + 1] = { object = object, fields = fields, values = values,
-            length = list and #object or nil, count = exact and count or nil }
+            length = list and #object or nil, count = exact and count or nil, bound = bound }
     end
+    -- Hold the parent slot first; authorize each table before structural reads.
+    local goalInput = {}
+    local function ordinaryGoal(value)
+        if type(checker) == "function" then
+            local ok, restricted = pcall(checker, value)
+            if not ok or restricted ~= false then return false end
+        end
+        return addon.Clean == clean and addon.SearchFold == folder and issecretvalue == checker and
+            addon.QuestSourceSearchTerms == provider and addon.SourceName == sourceName and addon.SourceAreaName == areaName
+    end
+    local goalCaptured = pcall(function()
+        capture(quest, { "objectiveKills" })
+        local value = rawget(quest, "objectiveKills")
+        goalInput.value = value
+        if not ordinaryGoal(quest) or not ordinaryGoal(value) or
+            not rawequal(rawget(quest, "objectiveKills"), value) then error("expired goal input") end
+        if type(value) ~= "table" then return end
+        local length, indexes = #value, {}
+        for index = 1, math.min(length, 100) do indexes[index] = index end
+        capture(value, indexes, true, true, 102)
+        goalInput.length, goalInput.count, goalInput.entries = length, snapshots[#snapshots].count, {}
+        for _, index in ipairs(indexes) do
+            local entry = rawget(value, index)
+            local held = { entry = entry }
+            goalInput.entries[index] = held
+            if not ordinaryGoal(entry) or not rawequal(rawget(value, index), entry) or
+                not rawequal(rawget(quest, "objectiveKills"), value) then error("expired goal member") end
+            if type(entry) == "table" then
+                capture(entry, { "npcID", "name", "objectID", "itemID", "dropNPCID" })
+                held.values = snapshots[#snapshots].values
+            end
+        end
+    end)
+    if not goalCaptured or not clean(quest, "table") then return terms, unavailable, unavailable end
     local function capabilities()
         return addon.Clean == clean and addon.SearchFold == folder and issecretvalue == checker and
             addon.QuestSourceSearchTerms == provider and addon.SourceName == sourceName and addon.SourceAreaName == areaName
@@ -69,7 +103,12 @@ function addon.QuestSourceSearchTerms(quest)
             for _, snapshot in ipairs(snapshots) do
                 if snapshot.length and #snapshot.object ~= snapshot.length then return false end
                 if snapshot.count then
-                    local count = 0; for _ in next, snapshot.object do count = count + 1; if count > snapshot.count then return false end end
+                    local count = 0
+                    for _ in next, snapshot.object do
+                        count = count + 1
+                        if count > snapshot.count then return false end
+                        if snapshot.bound and count >= snapshot.bound then break end
+                    end
                     if count ~= snapshot.count then return false end
                 end
                 for _, field in ipairs(snapshot.fields) do
@@ -247,6 +286,56 @@ function addon.QuestSourceSearchTerms(quest)
             end
         end
     end
+    -- Existing source and area terms keep their full order and budget.
+    -- Goals add name-only matches in the remaining slots; they never supply routes.
+    local function objectiveTargets()
+        local list = clean(goalInput.value, "table")
+        if not list or goalInput.length > 100 or goalInput.count ~= goalInput.length then return end
+        local goals, ids = {}, {}
+        for index = 1, goalInput.length do
+            local held = goalInput.entries[index]
+            local entry = held and clean(held.entry, "table")
+            local values = entry and held.values
+            if not values then return end
+            local id = positive(values.npcID, 4294967295)
+            local name = clean(values.name, "string")
+            if not id or ids[id] or not name or #name > 2000 or not name:find("%S") or name:find("%c") then return end
+            for _, field in ipairs({ "objectID", "itemID", "dropNPCID" }) do
+                if type(checker) == "function" then
+                    local ok, restricted = pcall(checker, values[field])
+                    if not ok or restricted ~= false then return end
+                end
+                if values[field] ~= nil then return end
+            end
+            local ok, folded = pcall(folder, name)
+            if not ok or not clean(folded, "string") then return end
+            ids[id] = true
+            goals[#goals + 1] = { entry = entry, id = id, name = name }
+        end
+        local emitted = {}
+        for _, goal in ipairs(goals) do
+            if #terms >= 1024 or nodes >= 1024 then break end
+            nodes = nodes + 1
+            if add(goal.name, "objective") then emitted[#emitted + 1] = goal end
+        end
+        if type(sourceName) ~= "function" then return end
+        local memo = {}
+        for _, goal in ipairs(emitted) do
+            if #terms >= 1024 then break end
+            local bucket = memo[goal.id]
+            local cached = bucket and bucket[goal.name]
+            if not cached then
+                local ok, name, proof, raw = pcall(sourceName, goal.entry)
+                if ok and type(proof) == "function" and type(raw) == "function" then
+                    cached = { name = name, current = proof, raw = raw }
+                    aliases[#aliases + 1] = cached
+                    bucket = bucket or {}; memo[goal.id] = bucket; bucket[goal.name] = cached
+                end
+            end
+            if cached then add(cached.name, "objective") end
+        end
+    end
+    objectiveTargets()
     local indexes = {}
     for index = 1, #terms do indexes[index] = index end
     capture(terms, indexes, true, true)

@@ -820,7 +820,7 @@ function UI:CatalogResultNote(result, matchedName)
     matchedName = matchedName or result.matchedName
     if matchedName then note = note .. "\n" .. addon.L(result.related and "SEARCH_RELATED_STEP" or "SEARCH_QUEST_MATCH", matchedName) end
     if result.sourceMatch then
-        note = note .. "\n" .. addon.L(result.sourceMatch.kind == "npc" and "SEARCH_NPC_MATCH" or "SEARCH_PLACE_MATCH", result.sourceMatch.text)
+        note = note .. "\n" .. addon.L(result.sourceMatch.kind == "objective" and "SEARCH_OBJECTIVE_MATCH" or result.sourceMatch.kind == "npc" and "SEARCH_NPC_MATCH" or "SEARCH_PLACE_MATCH", result.sourceMatch.text)
     end
     return note
 end
@@ -1177,7 +1177,7 @@ function UI:RefreshDungeons()
                     local term = addon.Clean(rawget(terms, index), "table")
                     local text = term and addon.Clean(rawget(term, "text"), "string")
                     local kind = term and addon.Clean(rawget(term, "kind"), "string")
-                    if not text or #text > 2000 or not text:find("%S") or (kind ~= "npc" and kind ~= "place") then
+                    if not text or #text > 2000 or not text:find("%S") or (kind ~= "npc" and kind ~= "place" and kind ~= "objective") then
                         valid = false; break
                     end
                     entries[index] = { term = term, text = text, kind = kind }

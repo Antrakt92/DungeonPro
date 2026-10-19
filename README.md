@@ -35,6 +35,8 @@ to find dungeons that list it.
 
 Development builds also find NPCs and places in recorded prerequisite and story
 steps, marked as **Related step**. Use **View quest** to inspect the matching step.
+Recorded enemy objectives are also searchable and labelled **Quest objective**.
+These matches identify the quest; directions remain tied to its known sources.
 
 Development builds offer **Dungeon map** in a dungeon's overview. It displays
 the map and floors supplied by the game, where available. Some dungeon wings
