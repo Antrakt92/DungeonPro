@@ -4,6 +4,8 @@
 
 ### 19-Oct-2026
 
+- Find reviewed Chinese NPC names with either common middle-dot separator,
+  preserving their original spelling on screen.
 - Release obsolete dungeon status calculations after a new search while keeping
   current results and reused controls intact.
 - Add reviewed name translations for Deliana, Mokvar, Lorekeeper Lydros,
