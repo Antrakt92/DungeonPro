@@ -137,12 +137,20 @@ Players only need the release ZIP.
 
 Free to use. Public forks, ports and substantial reuse of my original code
 require credit and a link to **Dungeon Pro**. If the derivative earns CurseForge
-Reward Points, share at least **10% of that project's points** with `antrakt92`;
-one share covers all my projects reused in it. No points earned means no payment.
+Reward Points, allocate a **positive share of that project's points** to `antrakt92`
+through Members. You choose the percentage, considering the extent and significance
+of the reused work; there is no fixed minimum. One share covers all my projects
+reused in it. No points earned means no payment. Personal income, donations and
+other revenue are excluded. Permission applies automatically: no prior contact,
+negotiation or approval is needed, and contacting me is optional. A pending Members
+invitation awaiting my acceptance does not block permission.
 
 See the [full license](LICENSE). This is the Antrakt Attribution and CurseForge
-Rewards License 1.2, based on MIT with additional conditions; it is not the
-standard MIT License. Earlier copies retain their original license grants.
+Rewards License 1.3, based on MIT with additional conditions; it is not the
+standard MIT License. Earlier grants remain; this permission replaces my fixed-minimum
+and separate-share requirements in all earlier custom versions with the same
+self-selected positive share. Other earlier terms, MIT grants and third-party
+rights remain unchanged.
 
 Noto Sans retains its SIL Open Font License, and Unicode data retains its separate
 notice. See [font credits](Media/Fonts/NOTICE.txt), [icon credits](Media/Icons/NOTICE.txt)
