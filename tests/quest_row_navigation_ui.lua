@@ -109,4 +109,50 @@ ui.questTreeRoot=990106;ui.questTreeDungeon=dungeon;ui:RefreshQuests();stale();a
 local step=row(990101);step.navigationControl.scripts.OnClick()
 assert(#routed==2 and routed[2].id==990101 and ui.quest==selected and ui.questTreeRoot==990106,"chain step visits its own giver without selecting it")
 ui.frame:Hide();step.navigationControl.scripts.OnClick();assert(#routed==2)
+-- DP-5 ROW-STARTER-REASON: invalid or mixed item starter stays unknown, never invents a giver.
+ui.frame:Show();ui.questTreeRoot=nil;ui.questTreeDungeon=nil;ui.search="";ui.quest=990104;ui:Refresh()
+local validStarter={itemID=801,name="Own starter"}
+local function checkUnknownStarter(label,start)
+ addon.quests[990104].start=start;ui.search="";ui.questTreeRoot=nil;ui.questTreeDungeon=nil;ui.quest=990104;ui.frame:Show();ui:Refresh()
+ local target=row(990104);local button=target.navigationControl;local binding=target.navigationBinding
+ assert(binding.reason=="QUEST_START_UNKNOWN",label.." keeps unknown start reason")
+ assert(binding.inspect==nil and binding.action==nil,label.." has no inspection or route")
+ assert(button:IsShown() and not button.enabled,label.." stays disabled")
+ button.scripts.OnEnter()
+ assert(tip.shown and tip.owner==button and tip.title==addon.L("SOURCE_DETAILS") and tip.body==addon.L("QUEST_START_UNKNOWN"),label.." explains unknown start under neutral source title")
+ local routedBefore,mappedBefore,keptQuest=#routed,#mapped,ui.quest
+ button.scripts.OnClick()
+ assert(#routed==routedBefore and #mapped==mappedBefore and ui.quest==keptQuest,label.." click dispatches no route and keeps selection")
+end
+checkUnknownStarter("zero itemID",{itemID=0,name="Own starter"})
+checkUnknownStarter("overflow itemID",{itemID=4294967296,name="Own starter"})
+checkUnknownStarter("fractional itemID",{itemID=1.5,name="Own starter"})
+checkUnknownStarter("non-numeric itemID",{itemID="801",name="Own starter"})
+addon.quests[990104].start=validStarter;ui:Refresh()
+local restored=row(990104);local restoredButton=restored.navigationControl
+assert(restored.navigationBinding.reason=="START_ITEM_NAVIGATION" and restored.navigationBinding.inspect==true,"valid starter restores item navigation")
+assert(restoredButton.enabled,"valid starter restores enabled control")
+restoredButton.scripts.OnEnter();assert(tip.title==addon.L("SOURCE_DETAILS") and tip.body==addon.L("START_ITEM_NAVIGATION"),"valid starter hint returns")
+checkUnknownStarter("mixed item+npc",{itemID=801,npcID=5,name="Mixed starter"})
+checkUnknownStarter("mixed item+object",{itemID=801,objectID=7,name="Mixed starter"})
+addon.quests[990104].start={itemID=801,npcID=5,name="Mixed starter"};ui.search="";ui.questTreeRoot=nil;ui.questTreeDungeon=nil;ui.quest=990104;ui.frame:Show();ui:Refresh()
+row(990104).navigationControl.scripts.OnEnter()
+assert(tip.body==addon.L("QUEST_START_UNKNOWN"),"mixed starter hint starts unknown")
+assert(ui:InspectQuest(990101,true),"card change keeps ownership")
+ui:Refresh();row(990104).navigationControl.scripts.OnEnter()
+assert(tip.body==addon.L("QUEST_START_UNKNOWN"),"card change does not restore old item hint")
+if type(ui.SetDetailTab)=="function" then ui:SetDetailTab("sources");ui:SetDetailTab("quest") end
+row(990104).navigationControl.scripts.OnEnter()
+assert(tip.body==addon.L("QUEST_START_UNKNOWN"),"tab change does not restore old item hint")
+assert(addon.Language:Open(ui));local starterSession=addon.Language.session
+for _,locale in ipairs({"ruRU","enUS"})do addon.Language:Preview(starterSession,locale);row(990104).navigationControl.scripts.OnEnter();assert(tip.body==addon.L("QUEST_START_UNKNOWN"),"language change does not restore old item hint")end
+addon.Language:Cancel(ui)
+addon.quests[990104].start=validStarter;ui.search="";ui.questTreeRoot=nil;ui.questTreeDungeon=nil;ui.quest=990104;ui.frame:Show();ui:Refresh()
+for _,case in ipairs({{990103,"GIVER_LOCATION_UNKNOWN","DETAIL_GIVER",false},{990104,"START_ITEM_NAVIGATION","SOURCE_DETAILS",true},{990105,"SOURCE_DETAILS_HINT","SOURCE_DETAILS",true}})do
+ local button=row(case[1]).navigationControl
+ assert(button:IsShown() and button.enabled==case[4],"existing case "..case[1].." keeps enabled state")
+ button.scripts.OnEnter()
+ assert(tip.title==addon.L(case[3]) and tip.body==addon.L(case[2]),"existing case "..case[1].." keeps hint")
+end
+assert(row(990101).navigationControl.enabled and row(990102).navigationControl.enabled,"existing visit and map-only rows stay enabled")
 print("Middle quest navigation checks passed (modeled, no native input or layout proof)")
