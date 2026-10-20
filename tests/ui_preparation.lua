@@ -10027,4 +10027,38 @@ check("Overview keeps held log steps and next actions under separate headers", f
     ui.dungeon, ui.quest = savedDungeon, savedQuest
     ui:Refresh()
 end)
+check("Overview hidden-tail copy stays neutral across held and pickup steps", function()
+    if not addon.DungeonOverview then assert(loadfile("Core/DungeonOverview.lua"))("DungeonPro", addon) end
+    local provider = assert(addon.DungeonOverview)
+    local originalGet = provider.Get
+    local savedDungeon, savedQuest, savedLocale = ui.dungeon, ui.quest, addon.db.locale
+    ui.dungeon, ui.quest = addon.dungeons[1], nil
+    ui:Refresh()
+    local held = { id = 6, kind = "complete", status = "ACTIVE", listedTarget = true }
+    local nextAction = { id = 2, kind = "pickup", status = "AVAILABLE", listedTarget = true }
+    provider.Get = function()
+        return { counts = { READY = 0, ACTIVE = 1, COMPLETED = 0, UNKNOWN = 0, LOCKED = 0, AVAILABLE = 1, UNAVAILABLE = 0 },
+            shownRoots = 2, unknown = false, knownPrepared = false, steps = { held, nextAction }, remainingSteps = 3 },
+            function() return true end, function() return true end
+    end
+    for _, locale in ipairs({ "enUS", "ruRU" }) do
+        addon.db.locale = locale
+        ui:RefreshDetail()
+        local expected = addon.L("OVERVIEW_MORE_STEPS", 3)
+        assert(expected:find("3", 1, true), locale .. " hidden-tail line must keep the %d count")
+        local folded = expected:lower()
+        assert(not folded:find("questlog", 1, true) and not folded:find("quest-log", 1, true)
+            and not folded:find("quest log", 1, true) and not folded:find("journal", 1, true)
+            and not expected:find("журнал", 1, true), locale .. " hidden tail covers pickup steps, not just the quest log: " .. expected)
+        local shown = false
+        for _, fs in ipairs(ui.overviewTexts or {}) do
+            if fs.shown and fs.text == expected then shown = true end
+        end
+        assert(shown, locale .. " paginated overview must render the neutral hidden-tail line")
+    end
+    provider.Get = originalGet
+    addon.db.locale = savedLocale
+    ui.dungeon, ui.quest = savedDungeon, savedQuest
+    ui:Refresh()
+end)
 print("Preparation UI modeled checks passed: " .. total .. " (no native layout validation)")
