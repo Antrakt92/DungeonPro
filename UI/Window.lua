@@ -3853,7 +3853,7 @@ function UI:RefreshDetail(sourceFocus)
                         local readable = type(endpointChecker) ~= "function" or
                             (addon.Read(endpointChecker, "boolean", alternatives) == false and addon.Read(endpointChecker, "boolean", declaredSummon) == false)
                         if not endingCurrent() then return end
-                        if readable and alternatives == nil and declaredSummon == nil and not exact and (mapped or area and area:find("%S") or identityOK and identity == true) then
+                        if readable and (alternatives == nil or isEmptyAlternatives(alternatives)) and declaredSummon == nil and not exact and (mapped or area and area:find("%S") or identityOK and identity == true) then
                             if line(addon.L("SOURCE_POSITION_UNKNOWN"), "warning", nil, nil, endingCurrent) == false then return end
                         end
                     end

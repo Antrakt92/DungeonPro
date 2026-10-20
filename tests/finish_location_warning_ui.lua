@@ -251,4 +251,32 @@ do
  render(5724)
  assert(finish(), "restored nil keeps the real turn-in caption")
 end
+-- DP-5 DETAIL-FINISH-POSITION-WARNING-EMPTY-ABSENT: {} counts as absent for the unknown-position warning.
+do
+ local quest4241 = a.quests[4241]
+ local saved4241 = quest4241.finishAlternatives
+ assert(saved4241 == nil, "4241 ships without finish alternatives")
+ quest4241.finishAlternatives = {}
+ local baseRoutes, baseMaps = #routes, #maps
+ render(4241, "READY")
+ warned()
+ assert(not u.turnin:IsShown() and not u.turnin.enabled, "empty alternatives keep the mapless finisher without a turn-in action")
+ assert(#routes == baseRoutes and #maps == baseMaps, "empty alternatives navigate nowhere")
+ quest4241.finishAlternatives = nil
+ render(4241, "READY")
+ warned()
+ quest4241.finishAlternatives = saved4241
+ local quest5724 = a.quests[5724]
+ local saved5724 = quest5724.finishAlternatives
+ assert(saved5724 == nil, "5724 ships without finish alternatives")
+ quest5724.finishAlternatives = {}
+ render(5724, "READY")
+ local caption, following = finish()
+ assert(caption, "exact finisher keeps the real turn-in caption with empty alternatives")
+ assert(not following:IsShown() or following.text ~= a.L("SOURCE_POSITION_UNKNOWN"), "exact finisher never warns about position")
+ assert(u.turnin:IsShown() and u.turnin.enabled, "exact finisher keeps the turn-in action with empty alternatives")
+ quest5724.finishAlternatives = saved5724
+ render(5724, "READY")
+ assert(finish(), "restored nil keeps the real turn-in caption")
+end
 print("Finish location warning UI: PASS (actual READY/ACTIVE, ten locales, exact/map-only sources, summon/alternatives, empty-alternative section and native retirement)")
