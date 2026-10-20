@@ -148,6 +148,22 @@ assert(addon.Language:Open(ui));local starterSession=addon.Language.session
 for _,locale in ipairs({"ruRU","enUS"})do addon.Language:Preview(starterSession,locale);row(990104).navigationControl.scripts.OnEnter();assert(tip.body==addon.L("QUEST_START_UNKNOWN"),"language change does not restore old item hint")end
 addon.Language:Cancel(ui)
 addon.quests[990104].start=validStarter;ui.search="";ui.questTreeRoot=nil;ui.questTreeDungeon=nil;ui.quest=990104;ui.frame:Show();ui:Refresh()
+-- DP-5 ROW-EMPTY-ALTERNATIVES: nil start + empty alternatives stays unknown, never invents a giver.
+addon.quests[990104].start=nil;addon.quests[990104].startAlternatives={}
+ui.search="";ui.questTreeRoot=nil;ui.questTreeDungeon=nil;ui.quest=990104;ui.frame:Show();ui:Refresh()
+do
+ local target=row(990104);local button=target.navigationControl;local binding=target.navigationBinding
+ assert(binding.reason=="QUEST_START_UNKNOWN","empty alternatives keeps unknown start reason")
+ assert(binding.inspect==nil and binding.action==nil,"empty alternatives has no inspection or route")
+ assert(button:IsShown() and not button.enabled,"empty alternatives stays disabled")
+ button.scripts.OnEnter()
+ assert(tip.shown and tip.owner==button and tip.title==addon.L("SOURCE_DETAILS") and tip.body==addon.L("QUEST_START_UNKNOWN"),"empty alternatives explains unknown start under neutral source title")
+ local routedBefore,mappedBefore,keptQuest=#routed,#mapped,ui.quest
+ button.scripts.OnClick()
+ assert(#routed==routedBefore and #mapped==mappedBefore and ui.quest==keptQuest,"empty alternatives click dispatches no route and keeps selection")
+end
+addon.quests[990104].start=validStarter;addon.quests[990104].startAlternatives=nil
+ui.search="";ui.questTreeRoot=nil;ui.questTreeDungeon=nil;ui.quest=990104;ui.frame:Show();ui:Refresh()
 for _,case in ipairs({{990103,"GIVER_LOCATION_UNKNOWN","DETAIL_GIVER",false},{990104,"START_ITEM_NAVIGATION","SOURCE_DETAILS",true},{990105,"SOURCE_DETAILS_HINT","SOURCE_DETAILS",true}})do
  local button=row(case[1]).navigationControl
  assert(button:IsShown() and button.enabled==case[4],"existing case "..case[1].." keeps enabled state")

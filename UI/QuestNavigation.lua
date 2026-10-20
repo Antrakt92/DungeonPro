@@ -357,7 +357,7 @@ function UI:BindQuestRowNavigation(row, id, ownerCurrent)
     local itemOnly = values.itemID and not values.npcID and not values.objectID
     if summon then binding.inspect, binding.reason = true, "SOURCE_DETAILS_HINT"
     elseif declaredSummon then binding.reason = "GIVER_LOCATION_UNKNOWN"
-    elseif definition and rawequal(rawStart, nil) and rawequal(alternatives, nil) then binding.reason = "QUEST_START_UNKNOWN"
+    elseif definition and rawequal(rawStart, nil) and alternativeCount == 0 then binding.reason = "QUEST_START_UNKNOWN"
     elseif rawValues.itemID ~= nil then
         if itemOnly and readable and values.itemID > 0 and values.itemID <= 4294967295 and values.itemID % 1 == 0 then
             binding.inspect, binding.reason = true, "START_ITEM_NAVIGATION"
