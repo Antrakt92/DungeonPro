@@ -221,11 +221,16 @@ function UI:RenderPreparationOverview(ownerCurrent, width, offset, presentation)
             local function isSummonPickup(stepID)
                 local starter = starterById[stepID]
                 if not starter then return false end
+                if starter.alternatives ~= nil then
+                    local alternativeList = clean(starter.alternatives,"table")
+                    if not alternativeList or #alternativeList ~= 0 then return false end
+                end
                 if type(starter.start) ~= "table" then return false end
                 if not clean(starter.start,"table") then return false end
                 if type(checker) == "function" then
                     if read(checker,"boolean",starter.start) ~= false then return false end
                     if read(checker,"boolean",starter.summonItem) ~= false then return false end
+                    if read(checker,"boolean",starter.alternatives) ~= false then return false end
                 end
                 local objectID = clean(starter.objectID,"number")
                 if not objectID or objectID % 1 ~= 0 or objectID < 1 or objectID > 4294967295 then return false end
