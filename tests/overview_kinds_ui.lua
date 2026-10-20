@@ -459,4 +459,76 @@ local _, emptyCompacted = summary()
 assert(#emptyCompacted.steps == 6 and emptyCompacted.remainingSteps == 2, "Fewer restores the empty-alternative cap")
 assert(noteOf(manyEmptyIds[1]):find(itemMark, 1, true) and not noteOf(manyEmptyIds[1]):find(outsideMark, 1, true), "empty-alternative mark survives Fewer")
 
+-- (10) DP-5 OVERVIEW-SUMMON-KIND-COHERENCE: summon pickups map to uncertain, not outside/item/inside.
+a.quests[9801] = { id = 9801, name = "Summon pickup", minLevel = 1, requirementsKnown = true, start = { objectID = 112877, summonItem = { itemID = 7667 } } }
+a.quests[9802] = { id = 9802, name = "Summon inside", minLevel = 1, requirementsKnown = true, startsInside = true, start = { objectID = 112877, summonItem = { itemID = 7667 } } }
+local summonDungeon = { key = "controlled-summon", name = "Summon fixture", minLevel = 1, maxLevel = 60, coverage = "partial", quests = { 9801, 9802 } }
+a.dungeons[#a.dungeons + 1] = summonDungeon
+render(summonDungeon)
+local _, summonModel = summary()
+assert(#summonModel.steps == 2 and summonModel.steps[1].id == 9801 and summonModel.steps[1].kind == "pickup", "summon pickup stays a listed pickup")
+assert(summonModel.steps[2].id == 9802 and summonModel.steps[2].kind == "inside", "summon inside stays a listed inside step")
+local summonUncertain = a.L("PREP_uncertain")
+assert(summonUncertain ~= "PREP_uncertain" and summonUncertain:find("%S"), "summon coherence needs the translated uncertain mark")
+local summonNote = noteOf(9801)
+assert(summonNote:find(summonUncertain, 1, true), "summon pickup carries PREP_uncertain")
+assert(not summonNote:find(outsideMark, 1, true), "summon pickup never shows PREP_outside")
+assert(not summonNote:find(itemMark, 1, true), "summon pickup never shows PREP_item")
+assert(summonNote:find(a.L("BRANCH_INSPECT"), 1, true), "summon pickup keeps the inspect action")
+local summonInsideNote = noteOf(9802)
+assert(summonInsideNote:find(summonUncertain, 1, true), "summon inside carries PREP_uncertain")
+assert(not summonInsideNote:find(insideMark, 1, true), "summon inside never shows PREP_inside")
+rowById(9801).scripts.OnClick()
+assert(u.quest == 9801 and u.dungeon == summonDungeon and routes == 0, "summon pickup click inspects its own card without routing")
+assert(u:BackQuest() and u.quest == nil)
+rowById(9802).scripts.OnClick()
+assert(u.quest == 9802 and u.dungeon == summonDungeon and routes == 0, "summon inside click inspects its own card without routing")
+assert(u:BackQuest() and u.quest == nil)
+
+-- (11) supporting summon keeps SUPPORTING·UNCERTAIN·STATUS·INSPECT exactly once.
+a.quests[9811] = { id = 9811, name = "Listed summon parent", minLevel = 1, requirementsKnown = true, requires = { { ids = { 9812 } } } }
+a.quests[9812] = { id = 9812, name = "Support summon", minLevel = 1, requirementsKnown = true, start = { objectID = 112877, summonItem = { itemID = 7667 } } }
+local supportSummonDungeon = { key = "controlled-support-summon", name = "Support summon fixture", minLevel = 1, maxLevel = 60, coverage = "partial", quests = { 9811 } }
+a.dungeons[#a.dungeons + 1] = supportSummonDungeon
+render(supportSummonDungeon)
+local _, supSummon = summary()
+assert(#supSummon.steps == 1 and supSummon.steps[1].id == 9812 and supSummon.steps[1].kind == "pickup" and supSummon.steps[1].status == "AVAILABLE" and supSummon.steps[1].listedTarget == false, "support summon appears once as a supporting pickup")
+assert(noteOf(9812) == expectedSupport("PREP_uncertain", "AVAILABLE", "ffe9b0"), "support-summon keeps the exact supporting composition")
+assertSupportOrder(9812, "PREP_uncertain", "AVAILABLE", "ffe9b0")
+do
+    local note = noteOf(9812)
+    assert(countOccurrences(note, summonUncertain) == 1, "supporting summon composition never doubles the uncertain mark")
+    assert(countOccurrences(note, supportingMark) == 1, "supporting summon composition keeps supporting once")
+    assert(not note:find(outsideMark, 1, true), "support-summon row never shows the outside mark")
+    assert(not note:find(itemMark, 1, true), "support-summon row never shows the item mark")
+end
+rowById(9812).scripts.OnClick()
+assert(u.quest == 9812 and u.dungeon == supportSummonDungeon and routes == 0, "support-summon click inspects its own card without routing")
+assert(u:BackQuest() and u.quest == nil)
+
+-- (12) summonItem mutation retires overview ownership.
+render(summonDungeon)
+local summonBinding = summary()
+assert(summonBinding.current() and summonBinding.rawProof(), "summon overview starts current")
+local staleSummonClick = rowById(9801).scripts.OnClick
+local originalSummon = a.quests[9801].start.summonItem
+a.quests[9801].start.summonItem = nil
+assert(summonBinding.rawProof() == false, "nil summonItem retires rawProof")
+assert(summonBinding.current() == false, "nil summonItem retires current")
+staleSummonClick()
+assert(u.quest == nil and routes == 0, "retired summon row cannot inspect after nil mutation")
+a.quests[9801].start.summonItem = originalSummon
+render(summonDungeon)
+local summonBinding2 = summary()
+assert(summonBinding2.current() and summonBinding2.rawProof(), "restored summon overview is current again")
+local staleSummonClick2 = rowById(9801).scripts.OnClick
+a.quests[9801].start.summonItem = { itemID = 99999 }
+assert(summonBinding2.rawProof() == false, "replaced summonItem retires rawProof")
+assert(summonBinding2.current() == false, "replaced summonItem retires current")
+staleSummonClick2()
+assert(u.quest == nil and routes == 0, "retired summon row cannot inspect after replacement")
+a.quests[9801].start.summonItem = originalSummon
+render(summonDungeon)
+assert(noteOf(9801):find(summonUncertain, 1, true), "composition recovers after the mutation probe")
+
 print("Overview kinds UI: PASS (pickup/inside distinct + order + clicks; level/unknown under NEXT without availability or green; More/Fewer and dungeon-switch ownership; supporting-kind composition without doubles)")

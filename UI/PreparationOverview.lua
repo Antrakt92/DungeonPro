@@ -137,7 +137,8 @@ function UI:RenderPreparationOverview(ownerCurrent, width, offset, presentation)
                     if not rawequal(rawget(starter.start,"itemID"),starter.itemID) then return false end
                     if not rawequal(rawget(starter.start,"npcID"),starter.npcID) then return false end
                     if not rawequal(rawget(starter.start,"objectID"),starter.objectID) then return false end
-                elseif starter.itemID ~= nil or starter.npcID ~= nil or starter.objectID ~= nil then return false end
+                    if not rawequal(rawget(starter.start,"summonItem"),starter.summonItem) then return false end
+                elseif starter.itemID ~= nil or starter.npcID ~= nil or starter.objectID ~= nil or starter.summonItem ~= nil then return false end
             end
             return binding.listRaw() and (not binding.modelRaw or binding.modelRaw()) and base()
         end
@@ -167,13 +168,14 @@ function UI:RenderPreparationOverview(ownerCurrent, width, offset, presentation)
                 binding.titles[#binding.titles+1]=title
                 local rawStart = rawget(definition,"start")
                 local rawAlternatives = rawget(definition,"startAlternatives")
-                local rawItemID, rawNpcID, rawObjectID
+                local rawItemID, rawNpcID, rawObjectID, rawSummonItem
                 if type(rawStart) == "table" then
                     rawItemID = rawget(rawStart,"itemID")
                     rawNpcID = rawget(rawStart,"npcID")
                     rawObjectID = rawget(rawStart,"objectID")
+                    rawSummonItem = rawget(rawStart,"summonItem")
                 end
-                binding.starters[#binding.starters+1] = { id=step.id,definition=definition,start=rawStart,alternatives=rawAlternatives,itemID=rawItemID,npcID=rawNpcID,objectID=rawObjectID }
+                binding.starters[#binding.starters+1] = { id=step.id,definition=definition,start=rawStart,alternatives=rawAlternatives,itemID=rawItemID,npcID=rawNpcID,objectID=rawObjectID,summonItem=rawSummonItem }
                 title.text=read(titleGetter,"string",step.id)
                 if not binding.current() then return end
                 title.text=title.text and #title.text<=1024 and title.text:find("%S") and title.text or clean(title.source,"string") or ("#"..step.id)
@@ -201,6 +203,17 @@ function UI:RenderPreparationOverview(ownerCurrent, width, offset, presentation)
                 local itemID = clean(starter.itemID,"number")
                 if not itemID or itemID % 1 ~= 0 or itemID < 1 or itemID > 4294967295 then return false end
                 return true
+            end
+            local function isSummonPickup(stepID)
+                local starter = starterById[stepID]
+                if not starter then return false end
+                if type(starter.start) ~= "table" then return false end
+                if not clean(starter.start,"table") then return false end
+                if type(checker) == "function" then
+                    if read(checker,"boolean",starter.start) ~= false then return false end
+                    if read(checker,"boolean",starter.summonItem) ~= false then return false end
+                end
+                return starter.summonItem ~= nil
             end
             local textIndex=0
             local function summaryLine(value,style)
@@ -263,8 +276,10 @@ function UI:RenderPreparationOverview(ownerCurrent, width, offset, presentation)
                 if stepStatus ~= "READY" and stepStatus ~= "ACTIVE" then
                     if stepStatus == "UNKNOWN" then kindKey = "PREP_uncertain"
                     elseif step.kind == "pickup" then
-                        if isItemOnlyPickup(step.id) then kindKey = "PREP_item" else kindKey = "PREP_outside" end
-                    elseif step.kind == "inside" then kindKey = "PREP_inside"
+                        if isSummonPickup(step.id) then kindKey = "PREP_uncertain"
+                        elseif isItemOnlyPickup(step.id) then kindKey = "PREP_item" else kindKey = "PREP_outside" end
+                    elseif step.kind == "inside" then
+                        if isSummonPickup(step.id) then kindKey = "PREP_uncertain" else kindKey = "PREP_inside" end
                     elseif step.kind == "level" then kindKey = "PREP_level"
                     end
                 end
