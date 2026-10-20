@@ -217,8 +217,22 @@ function UI:RenderPreparationOverview(ownerCurrent, width, offset, presentation)
                     statusText=read(binding.formatStatus,"string",stepStatus,statusText)
                     if not binding.current() or not statusText then return end
                 end
+                local kindKey = nil
+                if stepStatus ~= "READY" and stepStatus ~= "ACTIVE" then
+                    if stepStatus == "UNKNOWN" then kindKey = "PREP_uncertain"
+                    elseif step.kind == "pickup" then kindKey = "PREP_outside"
+                    elseif step.kind == "inside" then kindKey = "PREP_inside"
+                    elseif step.kind == "level" then kindKey = "PREP_level"
+                    end
+                end
+                local kindLabel = nil
+                if kindKey then
+                    kindLabel = localize(kindKey)
+                    if not binding.current() then return end
+                end
                 local note=statusText.." · "..localize("BRANCH_INSPECT")
                 if not binding.current() then return end
+                if kindLabel then note=kindLabel.." · "..note end
                 if listedTarget == false then note=localize("OVERVIEW_SUPPORTING_QUEST").." · "..note end
                 if not binding.current() or not write(row,"SetWidth",contentWidth) or not write(row.title,"SetWidth",contentWidth-16) or
                     not write(row.note,"SetWidth",contentWidth-16) or not write(row.title,"SetText",binding.titles[index].text) or
