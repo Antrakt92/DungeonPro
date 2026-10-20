@@ -5325,10 +5325,11 @@ function UI:RefreshDetail(sourceFocus)
             if not summary and #mappedDrops > 0 and alternativePlaces(mappedDrops, self.dropButtons, "ITEM_DROP_LOCATIONS", "dropSource:", acquisitionCurrent) == false then return end
         end
         if summary then return true end
-        if q.finishAlternatives then
+        if q.finishAlternatives ~= nil and not isEmptyAlternatives(q.finishAlternatives) then
             local finishes = q.finishAlternatives
+            local count = #finishes
             local function finishesCurrent()
-                return portraitCardCurrent() and addon.quests[id] == definition and q.finishAlternatives == finishes
+                return portraitCardCurrent() and addon.quests[id] == definition and q.finishAlternatives == finishes and #finishes == count
             end
             if alternativePlaces(finishes, self.finishButtons, "POSSIBLE_TURNINS", "finishAlternative:", finishesCurrent) == false then return end
         elseif q.finish and q.finish ~= q.start then

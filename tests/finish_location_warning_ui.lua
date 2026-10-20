@@ -99,4 +99,71 @@ token={};id,status=4241,"ACTIVE";u.dungeon,u.quest=owners[4241],4241;u:Refresh()
 source.finishAlternatives=previous;issecretvalue=function()return false end
 assert(checkerFired and u.quest==5724 and u.turnin.enabled,"presence classification reentry preserves the newer exact destination")
 local _,following=finish();assert(following.text~=a.L("SOURCE_POSITION_UNKNOWN"))
-print("Finish location warning UI: PASS (actual READY/ACTIVE, ten locales, exact/map-only sources, summon/alternatives and native retirement)")
+-- Empty finish alternatives are absence, not a turn-in choice section.
+do
+ local baseRoutes, baseMaps = #routes, #maps
+ local quest = a.quests[5724]
+ local previous = quest.finishAlternatives
+ assert(previous == nil, "5724 ships without finish alternatives")
+ local empty = {}
+ quest.finishAlternatives = empty
+ render(5724)
+ local caption = finish()
+ assert(caption and caption.text:find(a.SourceName(quest.finish) or quest.finish.name, 1, true),
+  "empty finish alternatives cannot hide the real turn-in caption")
+ assert(u:SetDetailTab("sources"))
+ local function headings()
+  local count = 0
+  for _, fs in ipairs(u.details) do
+   if fs:IsShown() and fs.text == a.L("POSSIBLE_TURNINS") then count = count + 1 end
+  end
+  return count
+ end
+ local function hiddenButtons()
+  for _, button in ipairs(u.finishButtons) do
+   assert(not button:IsShown(), "empty finish alternatives offer no choice buttons")
+  end
+ end
+ assert(headings() == 0, "empty finish alternatives must not draw an empty turn-in section")
+ hiddenButtons()
+ assert(#routes == baseRoutes and #maps == baseMaps, "empty alternatives navigate nowhere")
+ quest.finishAlternatives = previous
+ if u.detailTab ~= "quest" then assert(u:SetDetailTab("quest")) end
+ render(5724)
+ assert(finish(), "restored nil alternatives keep the real turn-in caption")
+ assert(u.turnin:IsShown() and u.turnin.enabled, "restored nil alternatives keep the turn-in action")
+ u.turnin.scripts.OnClick()
+ assert(#routes == baseRoutes + 1 and routes[#routes].kind == "turnin" and routes[#routes].place == quest.finish,
+  "restored nil alternatives keep the real turn-in route")
+ assert(u:SetDetailTab("sources"))
+ assert(headings() == 0, "nil alternatives show no turn-in section")
+ hiddenButtons()
+ quest.finishAlternatives = empty
+ empty[1] = { npcID = 990001, name = "Synthetic first turn-in", mapID = 1 }
+ empty[2] = { npcID = 990002, name = "Synthetic second turn-in", mapID = 1, x = 10, y = 20 }
+ u:RefreshDetail()
+ assert(headings() == 1, "grown finish alternatives show exactly one turn-in section")
+ local first, second = u.finishButtons[1], u.finishButtons[2]
+ assert(first:IsShown() and second:IsShown(), "grown finish alternatives show both choices")
+ assert(first.title.text == "Synthetic first turn-in" and second.title.text == "Synthetic second turn-in",
+  "grown finish alternatives keep their choice names")
+ assert(first.enabled and second.enabled, "mapped finish alternatives stay actionable")
+ first.scripts.OnClick()
+ assert(#maps == baseMaps + 1 and maps[#maps] == empty[1] and #routes == baseRoutes + 1,
+  "map-only finish choice dispatches its own known map")
+ second.scripts.OnClick()
+ assert(#routes == baseRoutes + 2 and routes[#routes].kind == "visit" and routes[#routes].place == empty[2] and #maps == baseMaps + 1,
+  "located finish choice visits its exact point")
+ empty[1], empty[2] = nil, nil
+ u:RefreshDetail()
+ assert(headings() == 0, "truncated finish alternatives retire the stale turn-in section")
+ hiddenButtons()
+ local reopened = finish()
+ assert(reopened and reopened.text:find(a.SourceName(quest.finish) or quest.finish.name, 1, true),
+  "truncated finish alternatives restore the real turn-in caption")
+ quest.finishAlternatives = previous
+ if u.detailTab ~= "quest" then assert(u:SetDetailTab("quest")) end
+ render(5724)
+ assert(#routes == baseRoutes + 2 and #maps == baseMaps + 1, "choice inspection never navigates automatically")
+end
+print("Finish location warning UI: PASS (actual READY/ACTIVE, ten locales, exact/map-only sources, summon/alternatives, empty-alternative section and native retirement)")
