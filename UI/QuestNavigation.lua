@@ -28,7 +28,7 @@ function UI:NavigationDestination(coordinates)
     if current() and available then return giver, true end
 end
 
-function UI:DispatchDetail(action, mapOnly, giver, ownerCurrent)
+function UI:DispatchDetail(action, mapOnly, giver, ownerCurrent, markerPurpose)
     if not action then return false end
     local frame, quest, dungeon, engine, character, generation = self.frame, self.quest, self.dungeon, self.engine, addon.char, self.rewardGeneration
     local navigation = addon.Clean(addon.Navigation, "table")
@@ -38,6 +38,7 @@ function UI:DispatchDetail(action, mapOnly, giver, ownerCurrent)
     local place, id, kind = action.place, action.id, action.kind
     local coordinates, checker = self.giverHasCoordinates, issecretvalue
     local giverBinding = giver and self.giverBinding
+    local purposeClean, purposeRead = addon.Clean, addon.Read
     local slot = giver and "giverAction" or "action"
     local function current()
         local fresh = not getter or addon.Read(getter, "boolean", engine) == true
@@ -48,10 +49,14 @@ function UI:DispatchDetail(action, mapOnly, giver, ownerCurrent)
             addon.Navigation == navigation and navigation[mapOnly and "Map" or "Start"] == method and
             frame.IsShown == shown and (not engine or engine.Current == getter) and
             (ownerCurrent ~= nil or self[slot] == action) and action.place == place and action.id == id and action.kind == kind and
-            (not giver or self.giverHasCoordinates == coordinates) and issecretvalue == checker
+            (not giver or self.giverHasCoordinates == coordinates) and issecretvalue == checker and addon.Clean == purposeClean and addon.Read == purposeRead
     end
     if not current() or addon.Read(shown, "boolean", frame) ~= true or not current() then return false end
-    return pcall(method, mapOnly and place or action)
+    if giverBinding then markerPurpose = purposeClean(giverBinding.markerPurpose, "string")
+    else markerPurpose = purposeClean(markerPurpose, "string") end
+    if not current() then return false end
+    if mapOnly then return pcall(method, place, markerPurpose, id, current) end
+    return pcall(method, action, markerPurpose, current)
 end
 
 function UI:GetEntranceBinding(dungeon, ownerCurrent)
@@ -307,7 +312,7 @@ function UI:BindQuestRowNavigation(row, id, ownerCurrent)
     local alternativeList = addon.Clean(alternatives, "table")
     local alternativeCount, alternativeMembers = alternativeList and #alternativeList or 0, {}
     for index = 1, math.min(alternativeCount, 100) do alternativeMembers[index] = rawget(alternativeList, index) end
-    local fields = { npcID = "number", objectID = "number", itemID = "number", name = "string", zoneName = "string", locationName = "string", mapID = "number", x = "number", y = "number" }
+    local fields = { npcID = "number", objectID = "number", itemID = "number", dropNPCID = "number", name = "string", zoneName = "string", locationName = "string", mapID = "number", x = "number", y = "number" }
     local values, rawValues, readable = {}, {}, true
     for field, kind in pairs(fields) do
         local raw = start and rawget(start, field)
@@ -359,6 +364,7 @@ function UI:BindQuestRowNavigation(row, id, ownerCurrent)
         return ok and same == true
     end
     binding.current = current
+    local markerPurpose
     local itemOnly = values.itemID and not values.npcID and not values.objectID
     if summon then binding.inspect, binding.reason = true, "SOURCE_DETAILS_HINT"
     elseif declaredSummon then binding.reason = "GIVER_LOCATION_UNKNOWN"
@@ -374,7 +380,12 @@ function UI:BindQuestRowNavigation(row, id, ownerCurrent)
         if not area or not area:find("%S") then area = values.locationName end
         binding.reason = readable and area and area:find("%S") and "SOURCE_POSITION_UNKNOWN" or "GIVER_LOCATION_UNKNOWN"
     elseif not method then binding.reason = "NAVIGATION_UNAVAILABLE"
-    else binding.action = { id = id, kind = "visit", place = start } end
+    else
+        binding.action = { id = id, kind = "visit", place = start }
+        local npc, object = values.npcID, values.objectID
+        local function typed(value) return value and value > 0 and value <= 4294967295 and value % 1 == 0 end
+        if ((typed(npc) and rawValues.objectID == nil) or (typed(object) and rawValues.npcID == nil)) and rawValues.dropNPCID == nil then markerPurpose = "quest-start" end
+    end
     if binding.inspect and not inspectMethod then binding.reason = "NAVIGATION_UNAVAILABLE" end
     local enabled = binding.action ~= nil or (binding.inspect == true and inspectMethod ~= nil)
     row.navigationReserve, row.navigationBinding = 32, binding
@@ -392,7 +403,7 @@ function UI:BindQuestRowNavigation(row, id, ownerCurrent)
             if not current() or addon.Read(row.IsShown, "boolean", row) ~= true or
                 addon.Read(self.frame.IsShown, "boolean", self.frame) ~= true or not current() then return end
             if binding.inspect and inspectMethod then pcall(inspectMethod, self, id, true, true)
-            elseif binding.action then self:DispatchDetail(binding.action, mapOnly, false, current) end
+            elseif binding.action then self:DispatchDetail(binding.action, mapOnly, false, current, markerPurpose) end
         end) or not write(control, "SetScript", "OnEnter", function() self:QuestRowNavigationHint(row, binding) end) or
         not write(control, "SetScript", "OnLeave", leave) or not write(control, "SetScript", "OnHide", leave) or
         not write(control, "Show") then return false end

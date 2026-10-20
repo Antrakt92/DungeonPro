@@ -48,9 +48,7 @@ local function markerMethod(owner, key)
     return owner and addon.Read(function() return owner[key] end, "function")
 end
 
-local function markerWrite(owner, method, current, ...)
-    if not current() then return false end
-    local setter = markerMethod(owner, method)
+local function markerWriteUsing(owner, method, current, setter, ...)
     if not setter or not current() then return false end
     local writes = markerWrites[owner] or {}; markerWrites[owner] = writes
     local key = (method == "Show" or method == "Hide") and "visibility"
@@ -71,19 +69,108 @@ local function markerWrite(owner, method, current, ...)
     return ok and fresh, result
 end
 
+local function markerWrite(owner, method, current, ...)
+    if not current() then return false end
+    local setter = markerMethod(owner, method)
+    if not setter or not current() then return false end
+    return markerWriteUsing(owner, method, current, setter, ...)
+end
+
 local function clearMapMarker()
+    local retired = mapMarkerState
     local generation = {}; markerGeneration, mapMarkerState = generation, nil
     local function current() return markerGeneration == generation and mapMarkerState == nil end
-    if mapMarker then markerWrite(mapMarker, "Hide", current) end
-    if mapMarkerTicker and current() then markerWrite(mapMarkerTicker, "Hide", current) end
+    if retired and retired.purpose then
+        if mapMarker then markerWriteUsing(mapMarker, "Hide", current, retired.hideMarker) end
+        if mapMarkerTicker and current() then markerWriteUsing(mapMarkerTicker, "Hide", current, retired.hideTicker) end
+    else
+        if mapMarker then markerWrite(mapMarker, "Hide", current) end
+        if mapMarkerTicker and current() then markerWrite(mapMarkerTicker, "Hide", current) end
+    end
     return generation
+end
+
+local function questMarkerSources(point)
+    local result = { point = point, rows = {}, fields = {} }
+    local ok = pcall(function()
+        result.catalogue = rawget(addon, "quests")
+        for _, key in ipairs({ "npcID", "objectID", "itemID", "dropNPCID" }) do result.fields[key] = { rawget(point, key) } end
+        for key, definition in next, result.catalogue do
+            if #result.rows >= 10000 then error("bounded quest marker source") end
+            result.rows[#result.rows + 1] = { key = key, definition = definition,
+                id = rawget(definition, "id"), start = rawget(definition, "start"), finish = rawget(definition, "finish") }
+        end
+    end)
+    return ok and result or nil
+end
+
+local function questMarkerPurpose(snapshot, point, purpose, questID, clean, current)
+    if purpose ~= "quest-start" and purpose ~= "quest-turnin" then return nil end
+    if not snapshot then return nil end
+    local checker, retainedRead = issecretvalue, addon.Read
+    local id = clean(questID, "number")
+    if not current() or not id or id <= 0 or id > 9007199254740991 or id % 1 ~= 0 then return nil end
+    local catalogue = clean(snapshot.catalogue, "table")
+    if not catalogue or not current() then return nil end
+    local record
+    for _, entry in ipairs(snapshot.rows) do
+        local key = clean(entry.key, "number")
+        if not current() then return nil end
+        if key == id then record = entry; break end
+    end
+    if not record then return nil end
+    local definition = clean(record.definition, "table")
+    if not definition or not current() then return nil end
+    local endpoint = purpose == "quest-start" and "start" or "finish"
+    local source = clean(record[endpoint], "table")
+    if not source or not current() or source ~= point then return nil end
+    local fields, values = snapshot.fields, {}
+    local definitionID = clean(record.id, "number")
+    if not current() or definitionID ~= id then return nil end
+    for _, key in ipairs({ "npcID", "objectID", "itemID", "dropNPCID" }) do
+        values[key] = clean(fields[key][1], "number")
+        if not current() then return nil end
+    end
+    local npc, object = values.npcID, values.objectID
+    local function typed(value) return value and value > 0 and value <= 4294967295 and value % 1 == 0 end
+    if not ((typed(npc) and type(fields.objectID[1]) == "nil") or (typed(object) and type(fields.npcID[1]) == "nil")) or
+        type(fields.itemID[1]) ~= "nil" or type(fields.dropNPCID[1]) ~= "nil" then return nil end
+    local function sourceCurrent()
+        local function sameValue(value, expected)
+            if type(checker) == "function" then
+                local ok, secret = pcall(checker, value)
+                if not ok or secret ~= false then return false end
+            end
+            return addon.Clean == clean and addon.Read == retainedRead and issecretvalue == checker and rawequal(value, expected)
+        end
+        local ok, same = pcall(function()
+            if addon.Clean ~= clean or addon.Read ~= retainedRead or issecretvalue ~= checker then return false end
+            if not sameValue(rawget(addon, "quests"), catalogue) or not sameValue(rawget(catalogue, id), definition) or
+                not sameValue(rawget(definition, "id"), record.id) or not sameValue(rawget(definition, endpoint), source) then return false end
+            for _, key in ipairs({ "npcID", "objectID", "itemID", "dropNPCID" }) do
+                if not sameValue(rawget(source, key), fields[key][1]) then return false end
+            end
+            -- All callback-capable readability probes precede the final raw proof.
+            if addon.Clean ~= clean or addon.Read ~= retainedRead or issecretvalue ~= checker or
+                not rawequal(rawget(addon, "quests"), catalogue) or not rawequal(rawget(catalogue, id), definition) or
+                not rawequal(rawget(definition, "id"), record.id) or not rawequal(rawget(definition, endpoint), source) then return false end
+            for _, key in ipairs({ "npcID", "objectID", "itemID", "dropNPCID" }) do
+                if not rawequal(rawget(source, key), fields[key][1]) then return false end
+            end
+            return true
+        end)
+        return ok and same == true
+    end
+    if not current() or not sourceCurrent() or not current() then return nil end
+    return purpose, sourceCurrent
 end
 
 local function refreshMapMarker()
     local state = mapMarkerState
     if not state then return end
     local function current()
-        if markerGeneration ~= state.generation or mapMarkerState ~= state or addon.Navigation ~= N then return false end
+        if markerGeneration ~= state.generation or mapMarkerState ~= state or addon.Navigation ~= N or
+            (state.purposeCurrent and not state.purposeCurrent()) or (state.initialCurrent and not state.initialCurrent()) then return false end
         local mapID = mapIdentity(addon.Read(function() return state.point.mapID end, "number"))
         local x = addon.Read(function() return state.point.x end, "number")
         local y = addon.Read(function() return state.point.y end, "number")
@@ -159,10 +246,18 @@ local function refreshMapMarker()
         markerWrite(icon, "SetAllPoints", owned, mapMarker)
     end
     if not mapMarker.icon or not owned() then return end
+    if state.purpose then
+        local hideMarker, hideTicker = markerMethod(mapMarker, "Hide"), markerMethod(mapMarkerTicker, "Hide")
+        if not owned() then return end
+        state.hideMarker, state.hideTicker = hideMarker, hideTicker
+    end
     if not state.appearance then
         local icon = mapMarker.icon
-        local wanted = state.entrance and "Dungeon" or "Waypoint-MapPin-Untracked"
-        if not markerWrite(icon, "SetTexture", owned, "Interface\\Icons\\INV_Misc_Map_01") then return end
+        local wanted = state.entrance and "Dungeon" or state.purpose == "quest-start" and "QuestNormal" or
+            state.purpose == "quest-turnin" and "UI-QuestPoi-QuestBangTurnIn" or "Waypoint-MapPin-Untracked"
+        local fallback = state.purpose == "quest-start" and "Interface\\GossipFrame\\AvailableQuestIcon" or
+            state.purpose == "quest-turnin" and "Interface\\GossipFrame\\ActiveQuestIcon" or "Interface\\Icons\\INV_Misc_Map_01"
+        if not markerWrite(icon, "SetTexture", owned, fallback) then return end
         local atlas = markerMethod(icon, "SetAtlas")
         if not owned() then return end
         if atlas then
@@ -171,7 +266,7 @@ local function refreshMapMarker()
             local actual = addon.Read(markerMethod(icon, "GetAtlas"), "string", icon)
             if not owned() then return end
             if not accepted or addon.Clean(result, "boolean") == false or actual ~= wanted then
-                if not owned() or not markerWrite(icon, "SetTexture", owned, "Interface\\Icons\\INV_Misc_Map_01") then return end
+                if not owned() or not markerWrite(icon, "SetTexture", owned, fallback) then return end
             end
         end
         if not owned() then return end
@@ -197,27 +292,48 @@ local function refreshMapMarker()
     state.geometry = { map = map, canvas = canvas, width = width, height = height, zoom = zoom }
 end
 
-function N.Map(point, markerRole)
+function N.Map(point, markerRole, questID, ownerCurrent)
+    local questSources = questMarkerSources(point)
     local generation = markerGeneration
     local clean, read, checker, provider = addon.Clean, addon.Read, issecretvalue, N.Map
     local mapOwner = rawget(_G, "C_Map")
     local nativeOpen = type(mapOwner) == "table" and rawget(mapOwner, "OpenWorldMap")
     local fallbackOpen = rawget(_G, "OpenWorldMap")
-    local function current()
+    local requestOwner, purposeCurrent
+    local function bindingsCurrent()
         local ok, same = pcall(function()
             return markerGeneration == generation and rawequal(rawget(addon, "Navigation"), N) and
                 rawequal(rawget(N, "Map"), provider) and rawequal(rawget(addon, "Clean"), clean) and
                 rawequal(rawget(addon, "Read"), read) and rawequal(rawget(_G, "issecretvalue"), checker) and
                 rawequal(rawget(_G, "C_Map"), mapOwner) and rawequal(rawget(_G, "OpenWorldMap"), fallbackOpen) and
-                (type(mapOwner) ~= "table" or rawequal(rawget(mapOwner, "OpenWorldMap"), nativeOpen))
+                (type(mapOwner) ~= "table" or rawequal(rawget(mapOwner, "OpenWorldMap"), nativeOpen)) and
+                (not purposeCurrent or purposeCurrent()) and markerGeneration == generation and addon.Navigation == N and addon.Clean == clean and addon.Read == read and issecretvalue == checker
         end)
         return ok and same == true
     end
+    local function current()
+        if not bindingsCurrent() then return false end
+        if requestOwner then
+            local ok, value = pcall(requestOwner)
+            if not bindingsCurrent() then return false end
+            local owned = ok and clean(value, "boolean")
+            if not bindingsCurrent() or owned ~= true then return false end
+        end
+        return bindingsCurrent()
+    end
     if type(clean) ~= "function" or type(read) ~= "function" then return false end
-    markerRole = clean(markerRole, "table")
+    requestOwner = clean(ownerCurrent, "function")
+    if not current() or (type(ownerCurrent) ~= "nil" and not requestOwner) then return false end
+    local roleToken = clean(markerRole, "table")
+    if not current() then return false end
+    local purpose = clean(markerRole, "string")
+    if not current() then return false end
+    markerRole = roleToken
     if not current() then return false end
     point = clean(point, "table")
     if not point or not current() then return false end
+    purpose, purposeCurrent = questMarkerPurpose(questSources, point, purpose, questID, clean, current)
+    if not current() then return false end
     local mapID = mapIdentity(point.mapID)
     if not mapID or not current() then return false end
     generation = clearMapMarker()
@@ -245,7 +361,7 @@ function N.Map(point, markerRole)
     local shownGetter = map and markerMethod(map, "IsShown")
     if not mapCurrent() then return opened end
     if x and y and x >= 0 and x <= 100 and y >= 0 and y <= 100 and map and canvasGetter and mapGetter and shownGetter then
-        mapMarkerState = { generation = generation, point = point, mapID = mapID, x = x, y = y, entrance = rawequal(markerRole, entranceMarker) }
+        mapMarkerState = { generation = generation, point = point, mapID = mapID, x = x, y = y, entrance = rawequal(markerRole, entranceMarker), purpose = purpose, purposeCurrent = purposeCurrent, initialCurrent = current }
         if not mapMarkerTicker then
             local ok, created = pcall(CreateFrame, "Frame", nil, UIParent)
             if not mapCurrent() then return opened end
@@ -254,6 +370,11 @@ function N.Map(point, markerRole)
             mapMarkerTicker = created
             if mapMarkerTicker then
                 mapMarkerTicker:SetScript("OnUpdate", function(_, delta)
+                    local state = mapMarkerState
+                    if state and state.purposeCurrent and not state.purposeCurrent() then
+                        if mapMarkerState == state then clearMapMarker() end
+                        return
+                    end
                     delta = addon.Clean(delta, "number")
                     if not delta or delta < 0 then return end
                     markerElapsed = markerElapsed + delta
@@ -267,7 +388,13 @@ function N.Map(point, markerRole)
             markerWrite(mapMarkerTicker, "Show", function() return markerGeneration == generation and mapMarkerState ~= nil end)
         end
         refreshMapMarker()
+        if not current() then
+            if mapMarkerState and mapMarkerState.generation == generation then clearMapMarker() end
+            return opened
+        end
+        if mapMarkerState and mapMarkerState.generation == generation then mapMarkerState.initialCurrent = nil end
     end
+    requestOwner = nil
     return opened
 end
 
@@ -755,22 +882,66 @@ local function update(_, delta)
     present(action, generation, addon.L("GUIDE_DISTANCE", math.floor(distance)))
 end
 
-function N.Start(action, markerRole)
-    local roleClean, roleChecker, roleStart = addon.Clean, issecretvalue, N.Start
+function N.Start(action, markerRole, ownerCurrent)
+    local questSources
+    pcall(function() questSources = questMarkerSources(rawget(action, "place")) end)
+    local roleClean, roleRead, roleChecker, roleStart = addon.Clean, addon.Read, issecretvalue, N.Start
+    local requestOwner, purpose, purposeCurrent, roleQuestID, rolePlace
     local roleNavigation, roleMarker = navigationGeneration, markerGeneration
-    local function roleCurrent()
-        return addon.Navigation == N and addon.Clean == roleClean and issecretvalue == roleChecker and N.Start == roleStart
+    local function roleBindingsCurrent()
+        return addon.Navigation == N and addon.Clean == roleClean and addon.Read == roleRead and issecretvalue == roleChecker and N.Start == roleStart
             and navigationGeneration == roleNavigation and markerGeneration == roleMarker
     end
+    local function roleCurrent()
+        if not roleBindingsCurrent() then return false end
+        if requestOwner then
+            local ok, value = pcall(requestOwner)
+            if not roleBindingsCurrent() then return false end
+            local owned = ok and roleClean(value, "boolean")
+            if not roleBindingsCurrent() or owned ~= true then return false end
+        end
+        return roleBindingsCurrent()
+    end
     if not roleCurrent() then return false end
-    markerRole = roleClean(markerRole, "table")
+    requestOwner = roleClean(ownerCurrent, "function")
+    if not roleCurrent() or (type(ownerCurrent) ~= "nil" and not requestOwner) then return false end
+    local roleToken = roleClean(markerRole, "table")
     if not roleCurrent() then return false end
+    purpose = roleClean(markerRole, "string")
+    if not roleCurrent() then return false end
+    markerRole = roleToken
+    if purpose == "quest-start" or purpose == "quest-turnin" then
+        local roleAction = roleClean(action, "table")
+        if not roleAction or not roleCurrent() then return false end
+        roleQuestID = roleClean(rawget(roleAction, "id"), "number")
+        if not roleCurrent() then return false end
+        rolePlace = roleClean(rawget(roleAction, "place"), "table")
+        if not roleCurrent() then return false end
+        purpose, purposeCurrent = questMarkerPurpose(questSources, rolePlace, purpose, roleQuestID, roleClean, roleCurrent)
+        if not roleCurrent() then return false end
+    end
     if not action or not N.Valid(action.place) then return false end
     local generation = N.Stop()
-    if not N.Valid(action.place) or target or navigationGeneration ~= generation then return false end
+    if not N.Valid(action.place) or target or navigationGeneration ~= generation or (purposeCurrent and not purposeCurrent()) then return false end
     target = action
+    local purposeMarkerGeneration = markerGeneration
     local function current()
-        return navigationGeneration == generation and rawequal(target, action)
+        local function raw()
+            local ok, same = pcall(function()
+                return addon.Navigation == N and N.Start == roleStart and addon.Clean == roleClean and addon.Read == roleRead and issecretvalue == roleChecker and
+                    navigationGeneration == generation and rawequal(target, action) and (not requestOwner or purposeMarkerGeneration == nil or markerGeneration == purposeMarkerGeneration) and
+                    (not purposeCurrent or ((purposeMarkerGeneration == nil or markerGeneration == purposeMarkerGeneration) and purposeCurrent() and rawequal(rawget(action, "id"), roleQuestID) and rawequal(rawget(action, "place"), rolePlace))) and navigationGeneration == generation and rawequal(target, action) and addon.Navigation == N and N.Start == roleStart and addon.Clean == roleClean and addon.Read == roleRead and issecretvalue == roleChecker
+            end)
+            return ok and same == true
+        end
+        if not raw() then return false end
+        if requestOwner then
+            local ok, value = pcall(requestOwner)
+            if not raw() then return false end
+            local owned = ok and roleClean(value, "boolean")
+            if not raw() or owned ~= true then return false end
+        end
+        return raw()
     end
     local p, owner = action.place, TomTom
     local title = actionTitle(action)
@@ -939,7 +1110,10 @@ function N.Start(action, markerRole)
     if not current() then return false end
     elapsed = 0.1; update(frame, 0)
     if not current() then return false end
-    N.Map(p, rawequal(markerRole, entranceMarker) and entranceMarker or nil)
+    purposeMarkerGeneration = nil
+    if purpose then N.Map(p, purpose, roleQuestID, requestOwner)
+    else N.Map(p, rawequal(markerRole, entranceMarker) and entranceMarker or nil, nil, requestOwner) end
+    purposeMarkerGeneration = markerGeneration
     return current()
 end
 

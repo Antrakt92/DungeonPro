@@ -3433,9 +3433,12 @@ function UI:RefreshDetail(sourceFocus)
             local x, gy = addon.Clean(start.x, "number"), addon.Clean(start.y, "number")
             pendingGiver = { action = { id = id, kind = "visit", place = start }, source = q, map = map, x = x, y = gy,
                 coordinates = x ~= nil and gy ~= nil and x >= 0 and x <= 100 and gy >= 0 and gy <= 100 }
-            local fields = { npcID = "number", objectID = "number", itemID = "number", name = "string", zoneName = "string" }
+            local fields = { npcID = "number", objectID = "number", itemID = "number", dropNPCID = "number", name = "string", zoneName = "string" }
             local values = {}
             for field, kind in pairs(fields) do values[field] = addon.Clean(rawget(start, field), kind) end
+            local function typed(value) return value and value > 0 and value <= 4294967295 and value % 1 == 0 end
+            if ((typed(values.npcID) and rawget(start, "objectID") == nil) or (typed(values.objectID) and rawget(start, "npcID") == nil)) and
+                rawget(start, "itemID") == nil and rawget(start, "dropNPCID") == nil then pendingGiver.markerPurpose = "quest-start" end
             pendingGiver.same = function()
                 local checker = issecretvalue
                 if not portraitCardCurrent() or addon.quests[id] ~= q or q.start ~= start then return false end
@@ -5632,11 +5635,12 @@ function UI:RefreshDetail(sourceFocus)
                 not primaryEnabled(false, portraitCardCurrent) then return end
         else
             self.giverAction, self.giverHasCoordinates = pendingGiver.action, pendingGiver.coordinates
-            local binding = { action = pendingGiver.action }
+            local markerPurpose = pendingGiver.markerPurpose
+            local binding = { action = pendingGiver.action, markerPurpose = markerPurpose }
             binding.current = sourceCallback(function()
                 if not primaryCurrent() then return false end
                 local fresh = not renderEngine.Current or addon.Read(renderEngine.Current, "boolean", renderEngine) == true
-                return fresh and primaryCurrent() and pendingGiver.same() and addon.UI == self and self.giverBinding == binding
+                return fresh and primaryCurrent() and pendingGiver.same() and addon.Clean(binding.markerPurpose, "string") == markerPurpose and addon.UI == self and self.giverBinding == binding
                     and self.giverAction == binding.action and addon.quests[renderQuest] == pendingGiver.source
                     and pendingGiver.source.start == giverPlace and addon.Clean(giverPlace.mapID, "number") == pendingGiver.map
                     and addon.Clean(giverPlace.x, "number") == pendingGiver.x and addon.Clean(giverPlace.y, "number") == pendingGiver.y and primaryCurrent()
@@ -5668,7 +5672,7 @@ function UI:RefreshDetail(sourceFocus)
             if not binding.current() or not self:QuestListWrite(control, "SetEnabled", binding.current, true) or
                 not self:QuestListWrite(control, "SetScript", binding.current, "OnClick", function()
                     if addon.Read(control.IsShown, "boolean", control) ~= true or not binding.current() then return end
-                    dispatch(self, action, not binding.coordinates, false, binding.current)
+                    dispatch(self, action, not binding.coordinates, false, binding.current, "quest-turnin")
                 end) then return end
         end
     end
