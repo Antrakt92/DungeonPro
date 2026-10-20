@@ -3421,7 +3421,12 @@ function UI:RefreshDetail(sourceFocus)
         if offeredNow and detailTab == "quest" then line(addon.L("OFFERED_NOW")) end
         local start = addon.Clean(q.start, "table")
         local map = start and addon.Clean(start.mapID, "number")
-        if detailTab ~= "story" and map and map > 0 and addon.Read(self.HasSummonSource,"boolean",self,start) == false then
+        local startRawItemID = start and rawget(start, "itemID")
+        local startCleanItemID = addon.Clean(startRawItemID, "number")
+        local startValidExclusiveItem = startCleanItemID and startCleanItemID > 0 and startCleanItemID <= 9007199254740991 and startCleanItemID % 1 == 0 and
+            rawget(start, "npcID") == nil and rawget(start, "objectID") == nil
+        local invalidItemStart = start ~= nil and startRawItemID ~= nil and not startValidExclusiveItem
+        if detailTab ~= "story" and map and map > 0 and not invalidItemStart and addon.Read(self.HasSummonSource,"boolean",self,start) == false then
             local x, gy = addon.Clean(start.x, "number"), addon.Clean(start.y, "number")
             pendingGiver = { action = { id = id, kind = "visit", place = start }, source = q, map = map, x = x, y = gy,
                 coordinates = x ~= nil and gy ~= nil and x >= 0 and x <= 100 and gy >= 0 and gy <= 100 }
@@ -3675,13 +3680,21 @@ function UI:RefreshDetail(sourceFocus)
             return metadataCurrent() and portraitCardCurrent() and addon.quests[id] == definition and
                 rawequal(rawget(q, "start"), nil) and (rawequal(rawget(q, "startAlternatives"), nil) or isEmptyAlternatives(q.startAlternatives))
         end
+        local unknownStart = missingStart or invalidItemStart
+        local function unknownStartCurrent()
+            if missingStartCurrent() then return true end
+            return metadataCurrent() and portraitCardCurrent() and addon.quests[id] == definition and q.start == start and
+                start ~= nil and rawget(start, "itemID") ~= nil and not (addon.Clean(rawget(start, "itemID"), "number") and
+                addon.Clean(rawget(start, "itemID"), "number") > 0 and addon.Clean(rawget(start, "itemID"), "number") <= 9007199254740991 and
+                addon.Clean(rawget(start, "itemID"), "number") % 1 == 0 and rawget(start, "npcID") == nil and rawget(start, "objectID") == nil)
+        end
         local pendingStarterCarried
         if detailTab ~= "story" then
         if not primaryCurrent() then return end
-        self.giverUnavailableKey = missingStart and "QUEST_START_UNKNOWN" or itemStarter and "START_ITEM_LOCATION_UNKNOWN" or (q.startAlternatives ~= nil and not isEmptyAlternatives(q.startAlternatives)) and "GIVER_CHOICES_REQUIRED" or "GIVER_LOCATION_UNKNOWN"
-        if missingStart and not primaryLabel("SOURCE_DETAILS", missingStartCurrent) then return end
-        if not itemStarter and line(addon.L(missingStart and "SOURCE_DETAILS" or "DETAIL_GIVER"), "caption", nil, nil, missingStart and missingStartCurrent or portraitCardCurrent, not start and q.startAlternatives ~= nil and not isEmptyAlternatives(q.startAlternatives)) == false then return end
-        if start then
+        self.giverUnavailableKey = unknownStart and "QUEST_START_UNKNOWN" or itemStarter and "START_ITEM_LOCATION_UNKNOWN" or (q.startAlternatives ~= nil and not isEmptyAlternatives(q.startAlternatives)) and "GIVER_CHOICES_REQUIRED" or "GIVER_LOCATION_UNKNOWN"
+        if unknownStart and not primaryLabel("SOURCE_DETAILS", unknownStartCurrent) then return end
+        if not itemStarter and line(addon.L(unknownStart and "SOURCE_DETAILS" or "DETAIL_GIVER"), "caption", nil, nil, unknownStart and unknownStartCurrent or portraitCardCurrent, not start and q.startAlternatives ~= nil and not isEmptyAlternatives(q.startAlternatives)) == false then return end
+        if start and not invalidItemStart then
             local nameProofs = {}
             local giverFields = { "npcID", "objectID", "itemID", "name", "zoneName", "locationName", "mapID", "x", "y" }
             local giverValues, nameGetter, itemGetter, iconGetter, countGetter, mapRoot, checker = {}, addon.GiverName, addon.ItemName, addon.ItemIcon, addon.CarriedItemCount, C_Map, issecretvalue
@@ -3768,7 +3781,7 @@ function UI:RefreshDetail(sourceFocus)
                 if alternativePlaces(preview, self.giverButtons, "START_ALTERNATIVES", "giverAlternative:", giverCurrent) == false then return end
                 if #remaining > 0 and alternativePlaces(remaining, self.startButtons, nil, "startAlternative:", giverCurrent) == false then return end
             elseif line(addon.L("GIVER_CHOICES_REQUIRED"),"caption",nil,nil,giverCurrent) == false then return end
-        elseif line(addon.L(missingStart and "QUEST_START_UNKNOWN" or "GIVER_LOCATION_UNKNOWN"), "warning", nil, nil, missingStart and missingStartCurrent or portraitCardCurrent, true) == false then return end
+        elseif line(addon.L(unknownStart and "QUEST_START_UNKNOWN" or "GIVER_LOCATION_UNKNOWN"), "warning", nil, nil, unknownStart and unknownStartCurrent or portraitCardCurrent, true) == false then return end
         do
             local finish = addon.Clean(q.finish, "table")
             local nameProofs = {}

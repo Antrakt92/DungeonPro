@@ -66,6 +66,42 @@ for _,locale in ipairs({"enUS","ruRU","deDE","frFR","esES","ptBR","koKR","zhCN",
   render(98423)
   assert(fields(a.L("START_ITEM_LOCATION_UNKNOWN"))==1 and fields(a.L("QUEST_START_UNKNOWN"))==0,"item starter retains its own unknown-acquisition warning")
  end
+ -- DP-5 DETAIL-INVALID-ITEM: raw invalid/mixed item starter reads as unknown, never a giver visit.
+ local qInvalid=assert(a.quests[98423])
+ local savedInvalidStart=qInvalid.start
+ for _,locale in ipairs({"enUS","ruRU","deDE","frFR","esES","ptBR","koKR","zhCN","zhTW","itIT"})do
+  a.db.locale=locale
+  assert(ui:SetDetailTab("quest"))
+  qInvalid.start={itemID=0}
+  render(98423)
+  assert(fields(a.L("QUEST_START_UNKNOWN"))==1,"invalid item starter keeps one unknown-start warning")
+  assert(fields(a.L("GIVER_LOCATION_UNKNOWN"))==0 and fields(a.L("GIVER_COORDINATES_UNKNOWN"))==0 and fields(a.L("SOURCE_POSITION_UNKNOWN"))==0 and fields(a.L("START_ITEM_LOCATION_UNKNOWN"))==0,"invalid item starter invents no giver or item-acquisition warning")
+  assert(fields(a.L("SOURCE_DETAILS"))==1,"invalid item starter keeps neutral source heading")
+  assert(ui.giverUnavailableKey=="QUEST_START_UNKNOWN" and not ui.giver.enabled and not ui:NavigationDestination(false),"invalid item starter dispatches no visit route")
+  assert(ui:SetDetailTab("sources"))
+  assert(fields(a.L("QUEST_START_UNKNOWN"))==1,"sources tab shows unknown start for invalid item starter")
+  assert(fields(a.L("GIVER_LOCATION_UNKNOWN"))==0 and fields(a.L("START_ITEM_LOCATION_UNKNOWN"))==0,"sources tab invents no giver visit for invalid item starter")
+  assert(not ui.giver.enabled and not ui:NavigationDestination(false),"sources tab dispatches no visit route for invalid item starter")
+  assert(ui:SetDetailTab("quest"))
+  qInvalid.start={itemID=801,npcID=5,name="Recorded NPC"}
+  render(98423)
+  assert(fields(a.L("QUEST_START_UNKNOWN"))==1,"mixed item starter keeps one unknown-start warning")
+  assert(fields(a.L("GIVER_LOCATION_UNKNOWN"))==0 and fields(a.L("GIVER_COORDINATES_UNKNOWN"))==0 and fields(a.L("SOURCE_POSITION_UNKNOWN"))==0 and fields(a.L("START_ITEM_LOCATION_UNKNOWN"))==0,"mixed item starter invents no giver or item-acquisition warning")
+  assert(fields(a.L("SOURCE_DETAILS"))==1,"mixed item starter keeps neutral source heading")
+  assert(ui.giverUnavailableKey=="QUEST_START_UNKNOWN" and not ui.giver.enabled and not ui:NavigationDestination(false),"mixed item starter dispatches no visit route")
+  assert(ui:SetDetailTab("sources"))
+  assert(fields(a.L("QUEST_START_UNKNOWN"))==1,"sources tab shows unknown start for mixed item starter")
+  assert(not ui.giver.enabled and not ui:NavigationDestination(false),"sources tab dispatches no visit route for mixed item starter")
+  assert(ui:SetDetailTab("quest"))
+ end
+ qInvalid.start=savedInvalidStart
+ render(98423)
+ assert(fields(a.L("START_ITEM_LOCATION_UNKNOWN"))==1 and fields(a.L("QUEST_START_UNKNOWN"))==0,"valid item starter retains its own unknown-acquisition warning")
+ assert(ui.giverUnavailableKey=="START_ITEM_LOCATION_UNKNOWN","valid item starter keeps its own unavailable key")
+ render(1486)
+ assert(fields(a.L("GIVER_LOCATION_UNKNOWN"))==1 and fields(a.L("QUEST_START_UNKNOWN"))==0,"mapless giver retains its precise existing warning")
+ a.db.locale="enUS"
+ assert(ui:SetDetailTab("quest"))
  -- Empty alternative lists count as absent: same unknown-start card, no invented choices.
  for _,locale in ipairs({"enUS","ruRU","deDE","frFR","esES","ptBR","koKR","zhCN","zhTW","itIT"})do
   a.db.locale=locale
