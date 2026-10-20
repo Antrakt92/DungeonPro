@@ -486,7 +486,7 @@ end
 -- This is a bearing to a coordinate, not a terrain or transport route.
 function N.Vector(point)
     if not N.Valid(point) then return nil end
-    local destination, px, py = addon.Clean(point.mapID, "number"), addon.Clean(point.x, "number"), addon.Clean(point.y, "number")
+    local destination, px, py = mapIdentity(point.mapID), addon.Clean(point.x, "number"), addon.Clean(point.y, "number")
     local library, checker = addon.Clean(C_Map, "table"), issecretvalue
     local best = library and addon.Clean(library.GetBestMapForUnit, "function")
     local locate = library and addon.Clean(library.GetPlayerMapPosition, "function")
@@ -499,11 +499,11 @@ function N.Vector(point)
             addon.Clean(library.GetBestMapForUnit, "function") == best and
             addon.Clean(library.GetPlayerMapPosition, "function") == locate and
             addon.Clean(library.GetWorldPosFromMapPos, "function") == convert and
-            addon.Clean(point.mapID, "number") == destination and addon.Clean(point.x, "number") == px and
+            mapIdentity(point.mapID) == destination and addon.Clean(point.x, "number") == px and
             addon.Clean(point.y, "number") == py and
             (not owned or (navigationGeneration == generation and rawequal(target, action) and rawequal(action.place, point)))
     end
-    if not destination or not px or not py or destination <= 0 or px < 0 or px > 100 or py < 0 or py > 100 or
+    if not destination or not px or not py or destination <= 0 or destination > 9007199254740991 or destination % 1 ~= 0 or px < 0 or px > 100 or py < 0 or py > 100 or
         not library or not best or not locate or not convert or not create or not current() then return nil end
     local mapID = addon.Read(best, "number", "player")
     if not current() or not mapID then return nil end
@@ -540,6 +540,7 @@ local function context(action, generation)
     local kind, dungeon = action.kind, action.dungeon
     local dungeonGetter = addon.DungeonName
     local mapID, name = addon.Clean(place.mapID, "number"), addon.Clean(place.name, "string")
+    local validMapID = mapIdentity(place.mapID)
     local zone, npc = addon.Clean(place.zoneName, "string"), addon.Clean(place.npcID, "number")
     local x, y, objectID = addon.Clean(place.x, "number"), addon.Clean(place.y, "number"), addon.Clean(place.objectID, "number")
     local library, checker, localeGetter = C_Map, issecretvalue, GetLocale
@@ -599,7 +600,7 @@ local function context(action, generation)
         end
         if ok then region = addon.Clean(localized, "string") end
     end
-    local info = not region and addon.Read(mapGetter, "table", mapID)
+    local info = not region and validMapID and addon.Read(mapGetter, "table", validMapID)
     if not current() then return nil end
     region = region or (info and addon.Clean(info.name, "string")) or zone
     local function text(value)

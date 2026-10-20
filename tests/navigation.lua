@@ -1622,4 +1622,43 @@ check("Nested cancellation retains only dormant old pin ownership without taking
         else assert(current and attempts == 1); if mode == "manual" then assert(current == manual) end end
     end
 end)
+check("Context map bound rejects 2^53 without native reads and keeps recorded zone", function()
+    local HUGE = 9007199254740992
+    local p = { mapID = 1, x = 60, y = 70, name = "Recorded giver", zoneName = "Recorded zone" }
+    local calls = 0
+    C_Map.GetMapInfo = function() calls = calls + 1; return { name = "Client zone" } end
+    assert(nav.Start({ id = 1, place = p }))
+    local card = hud()
+    assert(calls == 1 and card.note.text == "Recorded giver · Client zone")
+    calls = 0
+    p.mapID = HUGE
+    card.scripts.OnUpdate(card, 1.1)
+    assert(calls == 0, "huge mapID must not query native info")
+    assert(card.note.text == "Recorded giver · Recorded zone")
+end)
+check("Context map bound keeps 2^53-1 with exactly one native read", function()
+    local MAXSAFE = 9007199254740991
+    local p = { mapID = MAXSAFE, x = 60, y = 70, name = "Recorded giver", zoneName = "Recorded zone" }
+    local calls, seen = 0, nil
+    C_Map.GetMapInfo = function(id) calls = calls + 1; seen = id; return { name = "Client zone" } end
+    assert(nav.Start({ id = 1, place = p }))
+    assert(calls == 1 and seen == MAXSAFE, "boundary mapID needs exactly one native read")
+    assert(hud().note.text == "Recorded giver · Client zone")
+end)
+check("Context map bound rejects zero and fractional without native reads", function()
+    for _, bad in ipairs({ 0, 1.5 }) do
+        reset()
+        local p = { mapID = 1, x = 60, y = 70, name = "Recorded giver", zoneName = "Recorded zone" }
+        local calls = 0
+        C_Map.GetMapInfo = function() calls = calls + 1; return { name = "Client zone" } end
+        assert(nav.Start({ id = 1, place = p }))
+        assert(calls == 1)
+        calls = 0
+        p.mapID = bad
+        local card = hud()
+        card.scripts.OnUpdate(card, 1.1)
+        assert(calls == 0, "mapID " .. tostring(bad) .. " must not query native info")
+        assert(card.note.text == "Recorded giver · Recorded zone", "mapID " .. tostring(bad))
+    end
+end)
 print("Navigation modeled checks passed: " .. total .. " (no native map validation)")
