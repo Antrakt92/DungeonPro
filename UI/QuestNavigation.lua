@@ -12,10 +12,14 @@ function UI:NavigationDestination(coordinates)
     local function usable(action)
         local place = action and addon.Clean(action.place, "table")
         local map = place and addon.Clean(place.mapID, "number")
-        if not map or map <= 0 or map % 1 ~= 0 then return false end
-        if not coordinates then return true end
+        if not map or map <= 0 or map > 9007199254740991 or map % 1 ~= 0 then return false end
         local x, y = addon.Clean(place.x, "number"), addon.Clean(place.y, "number")
-        return x ~= nil and y ~= nil and x >= 0 and x <= 100 and y >= 0 and y <= 100
+        local hasCoordinates = x ~= nil and y ~= nil and x >= 0 and x <= 100 and y >= 0 and y <= 100
+        if coordinates and not hasCoordinates then return false end
+        local navigation = addon.Clean(addon.Navigation, "table")
+        local method = navigation and addon.Clean(navigation[hasCoordinates and "Start" or "Map"], "function")
+        if not method then return false end
+        return true
     end
     local binding = self.giverBinding
     local fresh = not binding or addon.Read(binding.current, "boolean") == true

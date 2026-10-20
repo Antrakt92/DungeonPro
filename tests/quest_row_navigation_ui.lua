@@ -235,4 +235,65 @@ do
  button.scripts.OnEnter()
  assert(tip.shown and tip.owner==button and tip.body==addon.L("SOURCE_DETAILS_HINT"),"truncated alternatives refresh the hint")
 end
+-- DP-5 NAV-DESTINATION-METHOD-GUARD: destination mirrors the row method guard, no new keys.
+do
+ local savedNavigation=addon.Navigation
+ local function refreshDetail(id)
+  ui.search="";ui.questTreeRoot=nil;ui.questTreeDungeon=nil;ui.dungeon=dungeon;ui.quest=id;ui.frame:Show();ui:Refresh()
+ end
+ local function refreshRows()
+  ui.search="";ui.questTreeRoot=nil;ui.questTreeDungeon=nil;ui.dungeon=dungeon;ui.quest=990104;ui.frame:Show();ui:Refresh()
+ end
+ -- (1) positive: full Navigation + valid giver answers both requests and dispatches.
+ addon.Navigation={Start=function(action)routed[#routed+1]=action;return true end,Map=function(point)mapped[#mapped+1]=point;return true end,StartEntrance=savedNavigation.StartEntrance}
+ refreshDetail(990101)
+ local coordAction=assert(ui.giverAction,"positive coordinate giver owns an action")
+ local destTrue,giverTrue=ui:NavigationDestination(true)
+ assert(destTrue==coordAction and giverTrue==true,"positive coordinate destination needs Start")
+ local destFalse,giverFalse=ui:NavigationDestination(false)
+ assert(destFalse==coordAction and giverFalse==true,"positive coordinate destination answers map request through Start")
+ local routedBefore=#routed
+ assert(ui:DispatchDetail(coordAction,false,true)~=false,"positive coordinate dispatch succeeds")
+ assert(#routed==routedBefore+1,"positive coordinate dispatch routes once")
+ refreshDetail(990102)
+ local mapAction=assert(ui.giverAction,"positive map-only giver owns an action")
+ local mapDest,mapGiver=ui:NavigationDestination(false)
+ assert(mapDest==mapAction and mapGiver==true,"positive map-only destination needs Map")
+ assert(ui:NavigationDestination(true)==nil,"positive map-only has no coordinate destination")
+ local mappedBefore=#mapped
+ assert(ui:DispatchDetail(mapAction,true,true)~=false,"positive map-only dispatch succeeds")
+ assert(#mapped==mappedBefore+1,"positive map-only dispatch routes once")
+ -- (2) Navigation=nil/{} keeps the stale coordinate destination empty and dispatches nothing.
+ refreshDetail(990101)
+ local staleAction=assert(ui.giverAction,"stale coordinate giver owns an action before Navigation loss")
+ for _,nav in ipairs({nil,{}})do
+  addon.Navigation=nav
+  assert(ui:NavigationDestination(true)==nil,"missing Navigation invents no stale coordinate destination")
+  assert(ui:NavigationDestination(false)==nil,"missing Navigation invents no stale map destination for a coordinate giver")
+  assert(ui:DispatchDetail(staleAction,false,true)==false,"missing Navigation dispatches no stale coordinate route")
+  refreshRows()
+  local staleRow=row(990101)
+  assert(staleRow.navigationBinding.reason=="NAVIGATION_UNAVAILABLE" and staleRow.navigationBinding.action==nil,"missing Navigation keeps row unavailable without route")
+  assert(not staleRow.navigationControl.enabled,"missing Navigation disables coordinate row")
+  -- Re-arm the same stale detail for the next Navigation shape without a refresh.
+  addon.Navigation={Start=function(action)routed[#routed+1]=action;return true end,Map=function(point)mapped[#mapped+1]=point;return true end,StartEntrance=savedNavigation.StartEntrance}
+  refreshDetail(990101)
+  staleAction=assert(ui.giverAction,"stale coordinate giver re-armed before next Navigation shape")
+ end
+ -- (3) split providers: coordinate needs Start, map-only needs Map.
+ refreshDetail(990101)
+ staleAction=assert(ui.giverAction,"split coordinate giver owns an action before Map-only provider")
+ addon.Navigation={Map=function(point)mapped[#mapped+1]=point;return true end}
+ assert(ui:NavigationDestination(true)==nil,"Map-only provider cannot serve a coordinate destination")
+ assert(ui:DispatchDetail(staleAction,false,true)==false,"Map-only provider dispatches no coordinate route")
+ refreshDetail(990102)
+ local staleMap=assert(ui.giverAction,"split map-only giver owns an action before Start-only provider")
+ addon.Navigation={Start=function(action)routed[#routed+1]=action;return true end}
+ assert(ui:NavigationDestination(false)==nil,"Start-only provider cannot serve a map-only destination")
+ assert(ui:NavigationDestination(true)==nil,"Start-only provider has no coordinate destination for a map-only giver")
+ assert(ui:DispatchDetail(staleMap,true,true)==false,"Start-only provider dispatches no map-only route")
+ addon.Navigation=savedNavigation
+ refreshRows()
+ assert(row(990101).navigationControl.enabled and row(990102).navigationControl.enabled,"restored Navigation re-enables visit rows")
+end
 print("Middle quest navigation checks passed (modeled, no native input or layout proof)")
