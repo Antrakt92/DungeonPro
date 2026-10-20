@@ -300,17 +300,18 @@ check("substituted owner helpers and swapped sources never authorize a glyph", f
         return guide, findMarker, methods, addon, spot, tick
     end
     for _, method in ipairs({ "Map", "Start" }) do
-        local guide, _, _, _, _, addon, spot = setup()
-        local changedCalls = 0
+        local guide, _, _, addon, spot = setup()
+        local changedCalls, replacementInstalled = 0, false
         local owner = function()
             addon.Clean = function() changedCalls = changedCalls + 1; error("substituted clean") end
+            replacementInstalled = true
             return true
         end
         local ok, result = pcall(function()
             if method == "Map" then return guide.Map(spot, "quest-start", 1, owner)
             else return guide.Start({ id = 1, kind = "visit", place = spot }, "quest-start", owner) end
         end)
-        assert(ok and result == false and changedCalls == 0, "owner cannot authorize substituted helpers " .. method)
+        assert(ok and result == false and changedCalls == 0 and replacementInstalled, "owner cannot authorize substituted helpers " .. method)
     end
     for _, method in ipairs({ "Map", "Start" }) do
         local guide, findMarker, _, addon, spot = setup()
