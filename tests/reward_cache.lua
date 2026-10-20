@@ -204,4 +204,30 @@ test("Malformed item hydration capability cannot create work after the polling c
     addon.RequestQuestRewardItems=3
     watch();tick();tick();tick();assert(#queue==0 and reads[1]==3)
 end)
+test("Huge quest ID above the safe-integer bound never schedules hydration", function()
+    local HUGE=9007199254740992
+    addon.quests[HUGE]={}
+    local hydrations=0
+    addon.RequestQuestRewardData=function() hydrations=hydrations+1 end
+    watch({HUGE})
+    assert(#queue==0 and reads[HUGE]==nil and hydrations==0)
+end)
+test("Safe-integer boundary quest still hydrates from cache", function()
+    local MAXSAFE=9007199254740991
+    addon.quests[MAXSAFE]={}
+    ready[MAXSAFE]=true
+    watch({MAXSAFE})
+    assert(#queue==1);tick()
+    assert(reads[MAXSAFE]==1 and notices==1 and #queue==0)
+end)
+test("Mixed valid and huge quest IDs hydrate only the bounded member", function()
+    local HUGE=9007199254740992
+    addon.quests[HUGE]={}
+    local hydrations=0
+    addon.RequestQuestRewardData=function() hydrations=hydrations+1 end
+    ready[1]=true
+    watch({1, HUGE})
+    assert(#queue==1);tick()
+    assert(reads[1]==1 and reads[HUGE]==nil and hydrations==0 and notices==1 and #queue==0)
+end)
 print("Reward cache: " .. total .. " checks passed")

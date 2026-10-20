@@ -171,7 +171,7 @@ function Cache.Watch(owner, coldIDs, ownerCurrent, refreshCallback)
         local id = addon.Clean(coldIDs[index], "number")
         local quest = id and addon.Clean(context.quests[id], "table")
         if requests[owner] ~= request then return end
-        if id and id > 0 and id % 1 == 0 and not seen[id] and quest then
+        if id and id > 0 and id <= 9007199254740991 and id % 1 == 0 and not seen[id] and quest then
             seen[id] = true; binding.ids[#binding.ids + 1] = id
             local entry = state.entries[id]
             if not entry or entry.quest ~= context.quests[id] then
