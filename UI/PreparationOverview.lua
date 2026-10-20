@@ -230,10 +230,24 @@ function UI:RenderPreparationOverview(ownerCurrent, width, offset, presentation)
                     kindLabel = localize(kindKey)
                     if not binding.current() then return end
                 end
-                local note=statusText.." · "..localize("BRANCH_INSPECT")
+                local supportingLabel = nil
+                if listedTarget == false then
+                    supportingLabel = localize("OVERVIEW_SUPPORTING_QUEST")
+                    if not binding.current() then return end
+                end
+                local inspectLabel = localize("BRANCH_INSPECT")
                 if not binding.current() then return end
-                if kindLabel then note=kindLabel.." · "..note end
-                if listedTarget == false then note=localize("OVERVIEW_SUPPORTING_QUEST").." · "..note end
+                -- Supporting steps keep the fixed SUPPORTING·KIND·STATUS·INSPECT
+                -- order; every mark is composed once from existing strings.
+                local noteParts = {}
+                local function pushNote(part)
+                    if type(part) == "string" and part:find("%S") then
+                        for _, kept in ipairs(noteParts) do if kept == part then return end end
+                        noteParts[#noteParts + 1] = part
+                    end
+                end
+                pushNote(supportingLabel); pushNote(kindLabel); pushNote(statusText); pushNote(inspectLabel)
+                local note = table.concat(noteParts, " · ")
                 if not binding.current() or not write(row,"SetWidth",contentWidth) or not write(row.title,"SetWidth",contentWidth-16) or
                     not write(row.note,"SetWidth",contentWidth-16) or not write(row.title,"SetText",binding.titles[index].text) or
                     not write(row.note,"SetText",note) then return end

@@ -151,4 +151,131 @@ assert(noteOf(9001):find(a.L("PREP_outside"), 1, true), "new dungeon keeps its o
 staleClick()
 assert(u.quest == nil and routes == 0, "retired many-dungeon row cannot inspect after the switch")
 
-print("Overview kinds UI: PASS (pickup/inside distinct + order + clicks; level/unknown under NEXT without availability or green; More/Fewer and dungeon-switch ownership)")
+-- (4) supporting x kind: shared support appears once as SUPPORTING·KIND·STATUS·INSPECT.
+a.quests[9301] = { id = 9301, name = "Listed one", minLevel = 1, requirementsKnown = true, requires = { { ids = { 9302 } } } }
+a.quests[9302] = { id = 9302, name = "Support outside", minLevel = 1, requirementsKnown = true }
+a.quests[9303] = { id = 9303, name = "Listed two", minLevel = 1, requirementsKnown = true, requires = { { ids = { 9304 } } } }
+a.quests[9304] = { id = 9304, name = "Support inside", minLevel = 1, requirementsKnown = true, startsInside = true }
+a.quests[9305] = { id = 9305, name = "Listed three", minLevel = 1, requirementsKnown = true, requires = { { ids = { 9306 } } } }
+a.quests[9306] = { id = 9306, name = "Support level", minLevel = 100, requirementsKnown = true }
+local supportDungeon = { key = "controlled-supporting", name = "Supporting fixture", minLevel = 1, maxLevel = 60, coverage = "partial", quests = { 9301, 9303, 9305 } }
+a.dungeons = { kindsDungeon, manyDungeon, supportDungeon }
+render(supportDungeon)
+local _, sup = summary()
+assert(sup.counts.LOCKED == 3 and sup.counts.AVAILABLE == 0, "listed parents stay level/requirement locked, support work is not a target count")
+assert(#sup.steps == 3, "one supporting step per listed parent")
+assert(sup.steps[1].id == 9302 and sup.steps[1].kind == "pickup" and sup.steps[1].status == "AVAILABLE" and sup.steps[1].listedTarget == false)
+assert(sup.steps[2].id == 9304 and sup.steps[2].kind == "inside" and sup.steps[2].status == "AVAILABLE" and sup.steps[2].listedTarget == false)
+assert(sup.steps[3].id == 9306 and sup.steps[3].kind == "level" and sup.steps[3].status == "LOCKED" and sup.steps[3].listedTarget == false)
+assert(sup.unknown and not sup.knownPrepared, "partial coverage never prepares through support work")
+local supportingMark, inspectMark = a.L("OVERVIEW_SUPPORTING_QUEST"), a.L("BRANCH_INSPECT")
+assert(supportingMark ~= "OVERVIEW_SUPPORTING_QUEST" and inspectMark ~= "BRANCH_INSPECT")
+local function colored(status, color) return "|cff" .. color .. a.L(status) .. "|r" end
+local function expectedSupport(kindKey, status, color)
+    return supportingMark .. " · " .. a.L(kindKey) .. " · " .. colored(status, color) .. " · " .. inspectMark
+end
+assert(noteOf(9302) == expectedSupport("PREP_outside", "AVAILABLE", "ffe9b0"), "support-outside keeps the exact supporting composition")
+assert(noteOf(9304) == expectedSupport("PREP_inside", "AVAILABLE", "ffe9b0"), "support-inside keeps the exact supporting composition")
+assert(noteOf(9306) == expectedSupport("PREP_level", "LOCKED", "f0b080"), "support-level keeps the exact supporting composition")
+local function countOccurrences(haystack, needle)
+    local count, start = 0, 1
+    while true do
+        local found = haystack:find(needle, start, true)
+        if not found then return count end
+        count, start = count + 1, found + #needle
+    end
+end
+local function assertSupportOrder(id, kindKey, status, color)
+    local note = noteOf(id)
+    local parts = { supportingMark, a.L(kindKey), colored(status, color), inspectMark }
+    local cursor = 1
+    for _, part in ipairs(parts) do
+        local at = note:find(part, cursor, true)
+        assert(at, "supporting row keeps SUPPORTING·KIND·STATUS·INSPECT order")
+        cursor = at + #part
+    end
+    for _, part in ipairs({ supportingMark, a.L(kindKey) }) do
+        assert(countOccurrences(note, part) == 1, "supporting composition never doubles a mark")
+    end
+end
+assertSupportOrder(9302, "PREP_outside", "AVAILABLE", "ffe9b0")
+assertSupportOrder(9304, "PREP_inside", "AVAILABLE", "ffe9b0")
+assertSupportOrder(9306, "PREP_level", "LOCKED", "f0b080")
+assert(not noteOf(9306):find(a.L("AVAILABLE"), 1, true), "support level gate must not promise availability")
+do
+    local seen = {}
+    for _, pool in ipairs({ u.overviewTexts or {}, u.details }) do
+        for _, fs in ipairs(pool) do if fs:IsShown() then seen[#seen + 1] = fs.text end end
+    end
+    local function position(value) for i, text in ipairs(seen) do if text == value then return i end end end
+    assert(position(a.L("OVERVIEW_NEXT_STEPS")), "supporting kind work stays under NEXT")
+    assert(not position(a.L("OVERVIEW_KNOWN_STEPS")), "no held steps means no held header beside support work")
+    assert(position(a.L("OVERVIEW_UNCERTAIN")), "unknown coverage stays explicit beside support work")
+end
+for _, r in ipairs(u.actionInspectButtons) do
+    if r:IsShown() then
+        assert(not r.note.text:find("|cff66dd99", 1, true), "supporting kind work never uses the completed green")
+    end
+end
+rowById(9302).scripts.OnClick()
+assert(u.quest == 9302 and u.dungeon == supportDungeon and routes == 0, "support-outside click inspects its own card without routing")
+assert(u:BackQuest() and u.quest == nil)
+rowById(9304).scripts.OnClick()
+assert(u.quest == 9304 and u.dungeon == supportDungeon and routes == 0, "support-inside click inspects its own card without routing")
+assert(u:BackQuest() and u.quest == nil)
+rowById(9306).scripts.OnClick()
+assert(u.quest == 9306 and u.dungeon == supportDungeon and routes == 0, "support-level click inspects its own card without routing")
+assert(u:BackQuest() and u.quest == nil)
+-- One shared support prerequisite serves two listed parents exactly once.
+a.quests[9311] = { id = 9311, name = "Listed four", minLevel = 1, requirementsKnown = true, requires = { { ids = { 9302 } } } }
+local sharedDungeon = { key = "controlled-shared", name = "Shared fixture", minLevel = 1, maxLevel = 60, coverage = "partial", quests = { 9301, 9311 } }
+a.dungeons = { kindsDungeon, manyDungeon, supportDungeon, sharedDungeon }
+render(sharedDungeon)
+local _, shared = summary()
+assert(#shared.steps == 1 and shared.steps[1].id == 9302 and shared.steps[1].listedTarget == false, "shared support appears once")
+assert(noteOf(9302) == expectedSupport("PREP_outside", "AVAILABLE", "ffe9b0"), "shared support keeps its composition")
+-- A kind label colliding with the supporting cue still renders a single mark.
+local realLocalize = a.L
+a.L = function(key, ...) if key == "PREP_outside" then return realLocalize("OVERVIEW_SUPPORTING_QUEST") end return realLocalize(key, ...) end
+render(supportDungeon)
+local collided = noteOf(9302)
+assert(countOccurrences(collided, supportingMark) == 1, "colliding kind/supporting marks never double")
+assert(collided == supportingMark .. " · " .. colored("AVAILABLE", "ffe9b0") .. " · " .. inspectMark, "collision keeps order without the doubled mark")
+a.L = realLocalize
+render(supportDungeon)
+assert(noteOf(9302) == expectedSupport("PREP_outside", "AVAILABLE", "ffe9b0"), "composition recovers after the collision probe")
+
+-- (5) More/Fewer and dungeon switches preserve supporting composition and retire stale clicks.
+local supTargets, supSupports = {}, {}
+for index = 1, 8 do
+    local target, support = 9410 + index, 9430 + index
+    supTargets[index], supSupports[index] = target, support
+    a.quests[target] = { id = target, name = "Support target " .. index, minLevel = 1, requirementsKnown = true, requires = { { ids = { support } } } }
+    a.quests[support] = { id = support, name = "Support pickup " .. index, minLevel = 1, requirementsKnown = true }
+end
+local supManyDungeon = { key = "controlled-support-many", name = "Support many fixture", minLevel = 1, maxLevel = 60, coverage = "partial", quests = supTargets }
+a.dungeons = { kindsDungeon, manyDungeon, supportDungeon, sharedDungeon, supManyDungeon }
+render(supManyDungeon)
+local _, supMany = summary()
+assert(#supMany.steps == 6 and supMany.remainingSteps == 2, "six-step cap paginates supporting work")
+local supMore = u.overviewMoreButton
+assert(supMore and supMore:IsShown(), "More control appears past the supporting cap")
+assert(noteOf(supSupports[1]) == expectedSupport("PREP_outside", "AVAILABLE", "ffe9b0"), "paged support row keeps its composition")
+supMore.scripts.OnClick(supMore)
+local _, supExpanded = summary()
+assert(#supExpanded.steps == 8 and supExpanded.remainingSteps == 0, "More reveals the supporting tail")
+assert(noteOf(supSupports[8]) == expectedSupport("PREP_outside", "AVAILABLE", "ffe9b0"), "supporting composition survives expansion")
+local supFewer = u.overviewFewerButton
+assert(supFewer and supFewer:IsShown(), "Fewer control appears after supporting expansion")
+supFewer.scripts.OnClick(supFewer)
+local _, supCompacted = summary()
+assert(#supCompacted.steps == 6 and supCompacted.remainingSteps == 2, "Fewer restores the supporting cap")
+assert(noteOf(supSupports[1]) == expectedSupport("PREP_outside", "AVAILABLE", "ffe9b0"), "supporting composition survives Fewer")
+local staleSupportClick = rowById(supSupports[1]).scripts.OnClick
+render(kindsDungeon)
+local _, supSwitched = summary()
+assert(supSwitched.steps[1].id == 9001, "dungeon switch publishes the new dungeon steps")
+staleSupportClick()
+assert(u.quest == nil and routes == 0, "retired supporting row cannot inspect after the switch")
+
+print("Overview kinds UI: PASS (pickup/inside distinct + order + clicks; level/unknown under NEXT without availability or green; More/Fewer and dungeon-switch ownership; supporting-kind composition without doubles)")
