@@ -1812,6 +1812,13 @@ function UI:RefreshDungeons()
                             if not baseCurrent("full") then return end
                         end
                         title = cached.name
+                        if queryID then
+                            local fallback = cleaner(rawget(definition, "name"), "string")
+                            if not baseCurrent("full") then return end
+                            fallback = fallback and #fallback <= 1024 and fallback:find("%S") and fallback or ("#" .. sharedID)
+                            idFallbackName = fallback .. " (#" .. query .. ")"
+                            if not title or #title > 1024 or not title:find("%S") then title = fallback end
+                        end
                         if not queryID then
                             found = title and searchText(title):find(needle, 1, true)
                         end
@@ -1836,8 +1843,8 @@ function UI:RefreshDungeons()
                         matchedID, sharedDiscovery = sharedID, true
                         matchedName = title or ("#" .. sharedID)
                         if queryID then
-                            idMatch, idFallbackName = true, matchedName .. " (#" .. query .. ")"
-                            matchedName = idFallbackName
+                            idMatch = true
+                            matchedName = matchedName .. " (#" .. query .. ")"
                         end
                         break
                     end
