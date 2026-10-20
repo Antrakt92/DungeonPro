@@ -5126,7 +5126,7 @@ function UI:RefreshDetail(sourceFocus)
             return ok and same == true
         end
         if not summary then
-        if q.startAlternatives and start then
+        if q.startAlternatives ~= nil and not isEmptyAlternatives(q.startAlternatives) and start then
             local alternatives, remaining, snapshot = q.startAlternatives, {}, {}
             local count = #alternatives
             local previewCount = not start and math.min(count, 2) or 0
@@ -5142,7 +5142,7 @@ function UI:RefreshDetail(sourceFocus)
             end
             local heading = previewCount == 0 and "START_ALTERNATIVES" or nil
             if #remaining > 0 and alternativePlaces(remaining, self.startButtons, heading, "startAlternative:", alternativesCurrent) == false then return end
-        elseif not q.startAlternatives then
+        elseif q.startAlternatives == nil or isEmptyAlternatives(q.startAlternatives) then
             if typedStarter and not starterCurrent() then return end
             local starting = place(q.start)
             if not starting or (typedStarter and not starterCurrent()) then return end
@@ -5333,7 +5333,7 @@ function UI:RefreshDetail(sourceFocus)
             end
             if alternativePlaces(finishes, self.finishButtons, "POSSIBLE_TURNINS", "finishAlternative:", finishesCurrent) == false then return end
         elseif q.finish and q.finish ~= q.start then
-            local starting = not q.startAlternatives and reportedPlaces(q.start)
+            local starting = (q.startAlternatives == nil or isEmptyAlternatives(q.startAlternatives)) and reportedPlaces(q.start)
             local ending = reportedPlaces(q.finish)
             if not locationCurrent() then return end
             local repeated = starting and ending and #starting == #ending

@@ -195,6 +195,50 @@ for _,locale in ipairs({"enUS","ruRU","deDE","frFR","esES","ptBR","koKR","zhCN",
   assert(ui:SetDetailTab("quest"))
   qUnknown.startAlternatives=nil
  end
+ -- DP-5 DETAIL-ACQUISITION-EMPTY-ALTERNATIVES-GUARD: sources acquisition treats {} like nil.
+ for _,locale in ipairs({"enUS","ruRU","deDE","frFR","esES","ptBR","koKR","zhCN","zhTW","itIT"})do
+  a.db.locale=locale
+  assert(ui:SetDetailTab("sources"))
+  local function startToggle(key)
+   for _,b in ipairs(ui.reportedToggles or {})do if b.shown and b.locationKey==key then return b end end
+  end
+  -- (1) NPC start + {} keeps the giver place and reported toggle, without a choice heading.
+  local qGiver=assert(a.quests[96987])
+  local savedGiverStart,savedGiverAlternatives=qGiver.start,qGiver.startAlternatives
+  qGiver.start={npcID=1234,name="Acquisition giver",mapID=1436,x=10,y=20,reportedLocations={{mapID=1436,x=11,y=21},{mapID=1436,x=12,y=22}}}
+  qGiver.startAlternatives={}
+  render(96987)
+  assert(ui.detailTab=="sources","acquisition guard stays on the sources tab")
+  assert(fields(a.L("START_ALTERNATIVES"))==0,"NPC start with empty alternatives claims no choice heading")
+  assert(startToggle("start")~=nil,"NPC start with empty alternatives keeps its reported toggle")
+  local choiceShown=false
+  for _,pool in ipairs({ui.giverButtons,ui.startButtons})do for _,button in ipairs(pool)do if button:IsShown()then choiceShown=true end end end
+  assert(not choiceShown,"NPC start with empty alternatives creates no choice buttons")
+  -- (2) nil start + {} keeps one unknown warning with no buttons and no crash.
+  qGiver.start=nil
+  qGiver.startAlternatives={}
+  render(96987)
+  assert(fields(a.L("QUEST_START_UNKNOWN"))==1,"nil start with empty alternatives keeps one unknown-start warning")
+  assert(fields(a.L("GIVER_CHOICES_REQUIRED"))==0,"nil start with empty alternatives claims no giver choice")
+  local emptyShown=false
+  for _,pool in ipairs({ui.giverButtons,ui.startButtons})do for _,button in ipairs(pool)do if button:IsShown()then emptyShown=true end end end
+  assert(not emptyShown,"nil start with empty alternatives creates no source buttons")
+  qGiver.start=savedGiverStart
+  qGiver.startAlternatives=savedGiverAlternatives
+  -- (3) Item starter + {} keeps its own acquisition warning, not unknown method or giver choice.
+  local qItem=assert(a.quests[98423])
+  local savedItemStart,savedItemAlternatives=qItem.start,qItem.startAlternatives
+  qItem.start={itemID=801}
+  qItem.startAlternatives={}
+  render(98423)
+  assert(fields(a.L("START_ITEM_LOCATION_UNKNOWN"))==1,"item starter with empty alternatives keeps its acquisition warning")
+  assert(fields(a.L("QUEST_START_UNKNOWN"))==0 and fields(a.L("GIVER_CHOICES_REQUIRED"))==0,"item starter with empty alternatives claims no unknown method or giver choice")
+  assert(ui.giverUnavailableKey=="START_ITEM_LOCATION_UNKNOWN","item starter with empty alternatives keeps its own unavailable key")
+  qItem.start=savedItemStart
+  qItem.startAlternatives=savedItemAlternatives
+  render(96987)
+ end
+ assert(ui:SetDetailTab("quest"))
  -- Stale empty-alternative warning cannot overwrite a newer card.
  local qStale=assert(a.quests[96987])
  qStale.startAlternatives={}
