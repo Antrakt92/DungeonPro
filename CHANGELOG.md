@@ -2,6 +2,20 @@
 
 ## Unreleased
 
+## 0.3.0 - 20-Oct-2026 — Quest details Beta
+
+- Read selected quest details in one stream, with objectives, items, rewards and
+  practical source information before available quest text.
+- Use separate pickup and turn-in contact rows, including recorded alternative
+  locations and clear explanations when exact positions are missing.
+- Distinguish quest pickups, turn-ins and dungeon entrances with map icons.
+- Browse Scarlet Monastery as four wings: Graveyard, Library, Armory and Cathedral.
+- Add reviewed giver portraits and recorded source locations for more quests.
+
+This remains an early beta. Quest coverage, requirements and some locations are
+incomplete. Unseen quest text depends on what the game client can provide;
+interior dungeon maps are not included.
+
 ## 0.2.0 - 19-Oct-2026 — Quest planning and navigation Beta
 
 - Organize quest details into Quest, Sources and Story tabs, with a visible back

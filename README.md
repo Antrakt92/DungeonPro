@@ -13,6 +13,8 @@ follow their prerequisites and find the next pickup or turn-in.
 
 **For WoW Forever. Early beta. TomTom is optional.**
 
+Screenshots below show an earlier beta.
+
 ![Dungeon browser with character quest filtering and a Wailing Caverns overview](https://raw.githubusercontent.com/Antrakt92/DungeonPro/main/screenshots/dungeon-browser.png)
 
 ## Plan your next dungeon
@@ -33,21 +35,20 @@ follow their prerequisites and find the next pickup or turn-in.
 Search by dungeon, quest name, known NPC or place. You can also enter a quest ID
 to find dungeons that list it.
 
-Development builds also find NPCs and places in recorded prerequisite and story
+Search also finds NPCs and places in recorded prerequisite and story
 steps, marked as **Related step**. Use **View quest** to inspect the matching step.
 Recorded enemy objectives are also searchable and labelled **Quest objective**.
 These matches identify the quest; directions remain tied to its known sources.
 
-Development builds split quest details into three tabs: **Quest** for objectives,
-rewards and the next action; **Sources** for known pickup methods and alternative
-locations; **Story** for available or previously saved quest text. Each tab
-keeps its reading position. Use the back arrow to revisit the previous quest, tab
-and reading position. With no earlier quest in the window's history, it opens the
-dungeon overview. Use the small arrow beside the dungeon list to
-collapse it and give long quest chains more room; use the arrow again to restore
-the list.
+Select a quest in the chain to read its details in one place. Objectives, useful
+items, rewards and known pickup or turn-in sources appear before available quest
+text. Pickup and turn-in contacts have separate rows, with location choices where
+recorded. Missing information stays marked.
 
-Dungeon overviews in development builds show progress for the listed quests and
+Use the small arrow beside the dungeon list to collapse it and give long quest
+chains more room; use the arrow again to restore the list.
+
+Dungeon overviews show progress for the listed quests and
 known steps already in your quest log. Open a step to inspect its details; shared
 steps appear once. Ready turn-ins appear first. The compact view shows up to six
 steps; use **Show more** to reveal up to six more or **Show fewer** to return to

@@ -1,6 +1,6 @@
 local name, addon = ...
 addon.name = name
-addon.version = "0.2.0"
+addon.version = "0.3.0"
 addon.quests, addon.dungeons = {}, {}
 addon.listeners = {}
 -- Keep unverified interior-map controls out of the normal planner.

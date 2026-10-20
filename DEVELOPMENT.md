@@ -102,6 +102,6 @@ window size and interface scale. Redact account and character identifiers; do no
 attach SavedVariables or character settings files.
 
 Original code uses the Antrakt Attribution and CurseForge Rewards
-License 1.2. Forks and substantial reuse require attribution, with reward-sharing
+License 1.3. Forks and substantial reuse require attribution, with reward-sharing
 conditions for derivatives that earn CurseForge Reward Points; see the
 [full license](LICENSE). Third-party material retains its separate terms.
