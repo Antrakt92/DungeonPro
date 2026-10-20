@@ -97,8 +97,8 @@ names, and quest text supplied by the game stay in your client's language.
 
 ## Still in beta
 
-The browser currently lists **29 dungeons**, including classic dungeons and
-new Forever locations. Quest coverage is incomplete: some pickup locations,
+The browser lists classic dungeons and new Forever locations, with separate
+entries for Scarlet Monastery's four wings. Quest coverage is incomplete: some pickup locations,
 requirements and other details are still missing. The addon marks those gaps,
 and a listed quest does not guarantee that your character can accept it.
 
