@@ -242,7 +242,7 @@ function UI:HasSummonSource(endpoint)
     endpoint = addon.Clean(endpoint, "table")
     if not endpoint then return false end
     local objectID = addon.Clean(rawget(endpoint, "objectID"), "number")
-    if not objectID or objectID <= 0 or objectID % 1 ~= 0 then return false end
+    if not objectID or objectID <= 0 or objectID > 4294967295 or objectID % 1 ~= 0 then return false end
     local relation = rawget(endpoint, "summonItem")
     if type(issecretvalue) == "function" and addon.Read(issecretvalue, "boolean", relation) ~= false then return true end
     return relation ~= nil

@@ -339,4 +339,51 @@ do
  ui.questEntrance.scripts.OnClick()
  assert(entrances==before+1,"ordinary 1453 still dispatches once")
 end
+-- DP-5 ROW-SUMMON-OBJECT-BOUND: HasSummonSource rejects objectID > 2^32-1 like SummonSource.
+do
+ local HUGE=4294967296
+ local MAXU32=4294967295
+ local savedStart=addon.quests[990101].start
+ local function summonEndpoint(objectID)
+  return {objectID=objectID,name="Scrying Bowl",summonItem={itemID=7667,name="Summon tool"}}
+ end
+ -- (1) huge objectID + valid mapped start must not suppress the route as an unknown summon.
+ addon.quests[990101].start={objectID=HUGE,name="Huge object",mapID=1453,x=10,y=20,summonItem={itemID=7667,name="Summon tool"}}
+ ui.search="";ui.questTreeRoot=nil;ui.questTreeDungeon=nil;ui.quest=990104;ui.frame:Show();ui:Refresh()
+ do
+  local target=row(990101);local button=target.navigationControl;local binding=target.navigationBinding
+  assert(binding.reason~="GIVER_LOCATION_UNKNOWN","huge objectID must not suppress a mapped start as unknown summon")
+  assert(binding.action~=nil and binding.action.kind=="visit" and binding.inspect==nil,"huge objectID keeps the mapped visit action without inspection")
+  assert(button:IsShown() and button.enabled,"huge objectID keeps the mapped row enabled")
+  local routedBefore=#routed
+  button.scripts.OnClick()
+  assert(#routed==routedBefore+1 and routed[#routed].id==990101,"huge objectID routes Start once")
+ end
+ -- (2) boundary: 2^32-1 stays a summon like 112877; huge/0/-1/fractional are not summons.
+ assert(ui:HasSummonSource(summonEndpoint(MAXU32))==true,"2^32-1 stays a declared summon")
+ assert(ui:SummonSource(summonEndpoint(MAXU32))~=nil,"2^32-1 keeps the informational summon relation")
+ assert(ui:HasSummonSource(summonEndpoint(112877))==true,"ordinary 112877 stays a declared summon")
+ assert(ui:SummonSource(summonEndpoint(112877))~=nil,"ordinary 112877 keeps the informational summon relation")
+ for _,bad in ipairs({HUGE,0,-1,1.5})do
+  assert(ui:HasSummonSource(summonEndpoint(bad))==false,"bad objectID "..tostring(bad).." is not a declared summon")
+  assert(ui:SummonSource(summonEndpoint(bad))==nil,"bad objectID "..tostring(bad).." keeps no summon relation")
+ end
+ -- (3) ordinary mapless 112877 summon stays inspect-only without Start/Map.
+ addon.quests[990101].start={objectID=112877,name="Scrying Bowl",summonItem={itemID=7667,name="Summon tool"}}
+ ui.search="";ui.questTreeRoot=nil;ui.questTreeDungeon=nil;ui.quest=990104;ui.frame:Show();ui:Refresh()
+ do
+  local target=row(990101);local button=target.navigationControl;local binding=target.navigationBinding
+  assert(binding.reason=="SOURCE_DETAILS_HINT","ordinary summon keeps details hint reason")
+  assert(binding.inspect==true and binding.action==nil,"ordinary summon has inspection without route")
+  assert(button:IsShown() and button.enabled,"ordinary summon stays enabled")
+  button.scripts.OnEnter()
+  assert(tip.shown and tip.owner==button and tip.title==addon.L("SOURCE_DETAILS") and tip.body==addon.L("SOURCE_DETAILS_HINT"),"ordinary summon explains inspection without navigation")
+  local routedBefore,mappedBefore=#routed,#mapped
+  button.scripts.OnClick()
+  assert(#routed==routedBefore and #mapped==mappedBefore,"ordinary summon click dispatches no Start or Map")
+  assert(ui.quest==990101 and ui.renderedQuest==990101,"ordinary summon click inspects its own details")
+ end
+ addon.quests[990101].start=savedStart
+ ui.search="";ui.questTreeRoot=nil;ui.questTreeDungeon=nil;ui.quest=990104;ui.frame:Show();ui:Refresh()
+end
 print("Middle quest navigation checks passed (modeled, no native input or layout proof)")
