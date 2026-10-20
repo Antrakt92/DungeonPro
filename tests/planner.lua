@@ -474,6 +474,24 @@ check("Runtime completion links bound malformed or excessive input without mutat
         { id = 2, itemID = 0 }, { id = 3, itemID = 7003 } }
     steps = e:CompletionSteps(1)
     eq(#steps, 1); eq(steps[1].id, 3)
+    quests[4294967295] = q(4294967295); quests[4294967296] = q(4294967296)
+    quests[1].completionQuests = { { id = 4294967296, itemID = 7000 } }
+    eq(#e:CompletionSteps(1), 0)
+    quests[1].completionQuests = { { id = 2, itemID = 4294967296 } }
+    eq(#e:CompletionSteps(1), 0)
+    quests[1].completionQuests = { { id = 4294967295, itemID = 7000 } }
+    steps = e:CompletionSteps(1)
+    eq(#steps, 1); eq(steps[1].id, 4294967295)
+    quests[1].completionQuests = { { id = 2, itemID = 4294967295 } }
+    steps = e:CompletionSteps(1)
+    eq(#steps, 1); eq(steps[1].itemID, 4294967295)
+    quests[4294967296].completionQuests = { { id = 2, itemID = 7000 } }
+    eq(#e:CompletionSteps(4294967296), 0)
+    quests[1].completionQuests = { false, { id = 1, itemID = 7 }, { id = "2", itemID = 7 },
+        { id = 2, itemID = 0 }, { id = 4294967296, itemID = 7000 },
+        { id = 2, itemID = 4294967296 }, { id = 3, itemID = 7003 } }
+    steps = e:CompletionSteps(1)
+    eq(#steps, 1); eq(steps[1].id, 3); eq(#quests[1].completionQuests, 7)
 end)
 check("Partial hard groups expose held and ready parent actions without certifying the child", function()
     local finish = { npcID = 7, mapID = 1, x = 10, y = 20 }

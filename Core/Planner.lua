@@ -175,7 +175,7 @@ function Planner.New(quests, context, choices)
     -- Material sources are informational completion links, never acceptance gates.
     function engine:CompletionSteps(id)
         id = addon.Clean(id, "number")
-        if not id or id < 1 or id % 1 ~= 0 then return {} end
+        if not id or id < 1 or id > 4294967295 or id % 1 ~= 0 then return {} end
         local q = self.quests[id]
         local related = q and addon.Clean(q.completionQuests, "table")
         local result, seen = {}, {}
@@ -184,8 +184,8 @@ function Planner.New(quests, context, choices)
             local entry = addon.Clean(related[i], "table")
             local other = entry and addon.Clean(entry.id, "number")
             local itemID = entry and addon.Clean(entry.itemID, "number")
-            if other and other > 0 and other % 1 == 0 and other ~= id and not seen[other] and
-                itemID and itemID > 0 and itemID % 1 == 0 then
+            if other and other > 0 and other <= 4294967295 and other % 1 == 0 and other ~= id and not seen[other] and
+                itemID and itemID > 0 and itemID <= 4294967295 and itemID % 1 == 0 then
                 seen[other] = true
                 local actions, unknown = self:Next(other)
                 result[#result + 1] = { id = other, itemID = itemID, state = self:State(other),
