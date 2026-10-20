@@ -171,4 +171,68 @@ for _,case in ipairs({{990103,"GIVER_LOCATION_UNKNOWN","DETAIL_GIVER",false},{99
  assert(tip.title==addon.L(case[3]) and tip.body==addon.L(case[2]),"existing case "..case[1].." keeps hint")
 end
 assert(row(990101).navigationControl.enabled and row(990102).navigationControl.enabled,"existing visit and map-only rows stay enabled")
+-- DP-5 ROW-LARGE-ALTERNATIVES: nil start + 101 alternatives stays inspect, never invents a giver.
+addon.quests[990105].start=nil
+local large101={}
+for i=1,101 do large101[i]={npcID=2000+i,name="Large giver "..i,mapID=1453,x=40,y=50} end
+addon.quests[990105].startAlternatives=large101
+ui.search="";ui.questTreeRoot=nil;ui.questTreeDungeon=nil;ui.quest=990104;ui.frame:Show();ui:Refresh()
+do
+ local target=row(990105);local button=target.navigationControl;local binding=target.navigationBinding
+ assert(binding.reason=="SOURCE_DETAILS_HINT","101 alternatives keeps details hint reason")
+ assert(binding.inspect==true and binding.action==nil,"101 alternatives has inspection without route")
+ assert(button:IsShown() and button.enabled,"101 alternatives stays enabled")
+ button.scripts.OnEnter()
+ assert(tip.shown and tip.owner==button and tip.title==addon.L("SOURCE_DETAILS") and tip.body==addon.L("SOURCE_DETAILS_HINT"),"101 alternatives explains choices under source title")
+ local routedBefore,mappedBefore=#routed,#mapped
+ button.scripts.OnClick()
+ assert(#routed==routedBefore and #mapped==mappedBefore,"101 alternatives click dispatches no route and no map")
+ assert(ui.quest==990105 and ui.renderedQuest==990105,"101 alternatives click inspects its own details")
+end
+-- Boundary 100 stays inspect (regression guard).
+local large100={}
+for i=1,100 do large100[i]={npcID=2000+i,name="Large giver "..i,mapID=1453,x=40,y=50} end
+addon.quests[990105].start=nil;addon.quests[990105].startAlternatives=large100
+ui.search="";ui.questTreeRoot=nil;ui.questTreeDungeon=nil;ui.quest=990104;ui.frame:Show();ui:Refresh()
+do
+ local target=row(990105);local button=target.navigationControl;local binding=target.navigationBinding
+ assert(binding.reason=="SOURCE_DETAILS_HINT","100 alternatives keeps details hint reason")
+ assert(binding.inspect==true and binding.action==nil,"100 alternatives has inspection without route")
+ assert(button:IsShown() and button.enabled,"100 alternatives stays enabled")
+ button.scripts.OnEnter()
+ assert(tip.shown and tip.owner==button and tip.title==addon.L("SOURCE_DETAILS") and tip.body==addon.L("SOURCE_DETAILS_HINT"),"100 alternatives explains choices under source title")
+ local routedBefore,mappedBefore=#routed,#mapped
+ button.scripts.OnClick()
+ assert(#routed==routedBefore and #mapped==mappedBefore,"100 alternatives click dispatches no route and no map")
+ assert(ui.quest==990105 and ui.renderedQuest==990105,"100 alternatives click inspects its own details")
+end
+-- Mutation 101->2 + locale change expires the old click/hint.
+addon.quests[990105].start=nil;addon.quests[990105].startAlternatives=large101
+ui.search="";ui.questTreeRoot=nil;ui.questTreeDungeon=nil;ui.quest=990104;ui.frame:Show();ui:Refresh()
+local staleTarget=row(990105);staleTarget.navigationControl.scripts.OnEnter()
+assert(tip.body==addon.L("SOURCE_DETAILS_HINT"),"large hint starts inspect")
+local staleClick=staleTarget.navigationControl.scripts.OnClick
+local staleEnter=staleTarget.navigationControl.scripts.OnEnter
+local staleBinding=staleTarget.navigationBinding
+assert(staleBinding.inspect==true and staleBinding.reason=="SOURCE_DETAILS_HINT","stale large binding starts inspect")
+addon.quests[990105].startAlternatives={{npcID=5,name="Alternative giver",mapID=1453,x=40,y=50},{npcID=6,name="Second giver",mapID=1453,x=41,y=51}}
+assert(addon.Language:Open(ui));local largeSession=addon.Language.session
+addon.Language:Preview(largeSession,"ruRU")
+ui.search="";ui.questTreeRoot=nil;ui.questTreeDungeon=nil;ui.quest=990104;ui.frame:Show();ui:Refresh()
+addon.Language:Cancel(ui)
+ui.search="";ui.questTreeRoot=nil;ui.questTreeDungeon=nil;ui.quest=990104;ui.frame:Show();ui:Refresh()
+do
+ local routedBefore,mappedBefore=#routed,#mapped
+ staleClick()
+ assert(#routed==routedBefore and #mapped==mappedBefore,"truncated alternatives reject the old large click")
+ assert(ui.quest==990104,"truncated alternatives keep selection after stale click")
+ tip.shown=false;tip.owner=nil;tip.title=nil;tip.body=nil
+ staleEnter()
+ assert(tip.shown~=true and tip.owner==nil,"truncated alternatives reject the old large hint")
+ local fresh=row(990105);local button=fresh.navigationControl;local binding=fresh.navigationBinding
+ assert(binding.inspect==true and binding.reason=="SOURCE_DETAILS_HINT","truncated alternatives keep inspect")
+ assert(button.enabled,"truncated alternatives stay enabled")
+ button.scripts.OnEnter()
+ assert(tip.shown and tip.owner==button and tip.body==addon.L("SOURCE_DETAILS_HINT"),"truncated alternatives refresh the hint")
+end
 print("Middle quest navigation checks passed (modeled, no native input or layout proof)")

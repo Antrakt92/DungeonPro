@@ -362,7 +362,7 @@ function UI:BindQuestRowNavigation(row, id, ownerCurrent)
         if itemOnly and readable and values.itemID > 0 and values.itemID <= 4294967295 and values.itemID % 1 == 0 then
             binding.inspect, binding.reason = true, "START_ITEM_NAVIGATION"
         else binding.reason = "QUEST_START_UNKNOWN" end
-    elseif not start and alternativeList and alternativeCount > 0 and alternativeCount <= 100 then binding.inspect, binding.reason = true, "SOURCE_DETAILS_HINT"
+    elseif not start and alternativeList and alternativeCount > 0 then binding.inspect, binding.reason = true, "SOURCE_DETAILS_HINT"
     elseif not readable or not start or not values.mapID or values.mapID <= 0 or values.mapID > 9007199254740991 or values.mapID % 1 ~= 0 then
         local area = values.zoneName
         if not area or not area:find("%S") then area = values.locationName end
