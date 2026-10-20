@@ -169,4 +169,103 @@ ui.dungeon,ui.quest=assert(owners[96987]),96987;ui:Refresh();a.L=localize
 assert(fired and fields(a.L("QUEST_START_UNKNOWN"))==0,"newly supplied typed source expires an absent-source warning during localization")
 quest.start=nil
 assert(starts==0 and maps==0)
+-- DP-5 DETAIL-GIVER-NAV-UNAVAILABLE: detail mirrors the row when the navigation method is absent.
+a.db.locale="enUS"
+assert(ui:SetDetailTab("quest"))
+local savedNavigation=a.Navigation
+local detailStarts,detailMaps=0,0
+local function fullNavigation()
+ return {Start=function(action) detailStarts=detailStarts+1; return true end, Map=function(point) detailMaps=detailMaps+1; return true end}
+end
+local function resetTip() tip.shown=false; tip.owner=nil; tip.title=nil; tip.body=nil end
+-- (1) pure-visit without Navigation: row and detail disabled, no visit route.
+a.Navigation=nil; ui.frame:Show()
+render(166)
+do
+ local keptQuest=ui.quest
+ assert(keptQuest==166,"pure visit keeps selection without navigation")
+ local r=row(166); local control=assert(r.navigationControl)
+ assert(control.enabled==false,"pure-visit row stays disabled without Navigation")
+ assert(r.navigationBinding.reason=="NAVIGATION_UNAVAILABLE" and r.navigationBinding.action==nil,"pure-visit row keeps unavailable reason without route")
+ resetTip(); control.scripts.OnEnter()
+ assert(tip.shown and tip.owner==control and tip.body==a.L("NAVIGATION_UNAVAILABLE"),"pure-visit row hint names unavailable navigation")
+ assert(tip.title==a.L("DETAIL_GIVER"),"pure-visit row hint keeps giver title without route")
+ local routedBefore, mappedBefore=starts, maps
+ control.scripts.OnClick()
+ assert(starts==routedBefore and maps==mappedBefore and ui.quest==keptQuest,"disabled pure-visit row click dispatches no route")
+ assert(ui.giverUnavailableKey=="NAVIGATION_UNAVAILABLE" and not ui.giver.enabled,"pure-visit detail stays disabled without Navigation")
+ assert(ui.giver.footerLabelKey=="SOURCE_DETAILS","unavailable detail keeps neutral source title instead of a visit promise")
+ assert(ui:NavigationDestination(false)==nil,"unavailable detail invents no visit destination")
+ resetTip(); ui.giver.scripts.OnEnter()
+ assert(tip.shown and tip.owner==ui.giver and tip.title==a.L("SOURCE_DETAILS") and tip.body==a.L("NAVIGATION_UNAVAILABLE"),"unavailable detail hint stays neutral without a visit promise")
+ local detailBeforeStarts, detailBeforeMaps=detailStarts, detailMaps
+ ui.giver.scripts.OnClick()
+ assert(detailStarts==detailBeforeStarts and detailMaps==detailBeforeMaps and starts==routedBefore and maps==mappedBefore,"disabled pure-visit detail click is a no-op")
+ assert(ui.quest==keptQuest,"disabled detail click keeps selection")
+end
+-- (2) map-only without x/y without Navigation.Map: same, GIVER_MAP never enables.
+do
+ local q=assert(a.quests[166]); local savedStart=q.start
+ q.start={npcID=1234,name="Map-only giver",mapID=1436}
+ a.Navigation={Start=function(action) detailStarts=detailStarts+1; return true end}
+ ui.frame:Show(); render(166)
+ local keptQuest=ui.quest
+ local r=row(166); local control=assert(r.navigationControl)
+ assert(control.enabled==false,"map-only row stays disabled without Navigation.Map")
+ assert(r.navigationBinding.reason=="NAVIGATION_UNAVAILABLE" and r.navigationBinding.action==nil,"map-only row keeps unavailable reason without map route")
+ assert(ui.giverUnavailableKey=="NAVIGATION_UNAVAILABLE" and not ui.giver.enabled,"map-only detail stays disabled without Navigation.Map")
+ assert(ui.giver.footerLabelKey=="SOURCE_DETAILS" and ui.giver.footerLabelKey~="GIVER_MAP","map-only detail never enables GIVER_MAP without a map method")
+ assert(ui:NavigationDestination(false)==nil,"map-only detail invents no destination without Navigation.Map")
+ resetTip(); ui.giver.scripts.OnEnter()
+ assert(tip.title==a.L("SOURCE_DETAILS") and tip.body==a.L("NAVIGATION_UNAVAILABLE"),"map-only detail hint stays neutral without a map promise")
+ local beforeStarts, beforeMaps=detailStarts, detailMaps
+ control.scripts.OnClick(); ui.giver.scripts.OnClick()
+ assert(detailStarts==beforeStarts and detailMaps==beforeMaps and ui.quest==keptQuest,"map-only clicks dispatch no route and keep selection")
+ q.start=savedStart
+end
+-- Inspect branch stays enabled without Navigation (quest_row_sources_ui.lua:65-68 protection).
+do
+ a.Navigation=nil
+ ui.dungeon=assert(owners[6981]); ui.quest=1491; ui.includeUnavailable=true; ui.frame:Show(); ui:Refresh()
+ local npc=row(6981); local control=assert(npc.navigationControl)
+ assert(control.enabled,"source inspection does not require a navigation capability")
+ local beforeStarts, beforeMaps=detailStarts, detailMaps
+ control.scripts.OnClick()
+ assert(ui.quest==6981 and ui.renderedQuest==6981,"source click still inspects its own quest without navigation")
+ assert(detailStarts==beforeStarts and detailMaps==beforeMaps,"source inspection dispatches no navigation route")
+end
+-- (3) Navigation returns: fresh controls enable, stale DispatchDetail/hover rejected.
+do
+ a.Navigation=fullNavigation()
+ ui.dungeon=assert(owners[166]); ui.quest=166; ui.frame:Show(); ui:Refresh()
+ assert(ui.giver.enabled and ui.giver.footerLabelKey=="VISIT_GIVER","returned Navigation re-enables the pure-visit detail")
+ assert(ui:NavigationDestination(false)~=nil,"returned Navigation restores the visit destination")
+ local freshBinding=assert(ui.giverBinding); local freshAction=assert(ui.giverAction); local freshCoords=ui.giverHasCoordinates
+ assert(freshBinding.current()==true,"fresh detail binding stays current")
+ local staleAction, staleCurrent=freshAction, freshBinding.current
+ local staleBinding=freshBinding
+ a.Navigation=nil; ui:Refresh()
+ assert(not ui.giver.enabled and ui.giverUnavailableKey=="NAVIGATION_UNAVAILABLE","removed Navigation disables the detail again")
+ assert(staleCurrent()==false,"removed Navigation retires the previous detail binding")
+ a.Navigation=fullNavigation(); ui:Refresh()
+ assert(ui.giver.enabled and ui.giver.footerLabelKey=="VISIT_GIVER","second Navigation return re-enables the detail")
+ local renewedBinding=assert(ui.giverBinding)
+ assert(renewedBinding~=staleBinding and renewedBinding.current()==true,"fresh return owns a new current binding")
+ assert(staleCurrent()==false,"old detail binding stays retired after the return")
+ local beforeStarts, beforeMaps=detailStarts, detailMaps
+ assert(ui:DispatchDetail(staleAction, not freshCoords, true, staleCurrent)==false,"stale DispatchDetail with a retired owner is rejected")
+ assert(detailStarts==beforeStarts and detailMaps==beforeMaps,"stale detail dispatch routes nothing")
+ resetTip(); ui.giver.scripts.OnEnter()
+ assert(tip.shown and tip.title==a.L("VISIT_GIVER") and tip.body~=a.L("NAVIGATION_UNAVAILABLE"),"fresh hover shows the restored visit destination instead of the retired hint")
+ ui.giver.scripts.OnClick()
+ assert((detailStarts+detailMaps)==(beforeStarts+beforeMaps+1),"fresh detail click routes once through the returned method")
+ assert(ui.quest==166,"fresh detail navigation keeps selection")
+end
+a.Navigation=savedNavigation
+a.quests[166].start=a.quests[166].start
+render(98423)
+a.db.locale="enUS"
+assert(ui:SetDetailTab("quest"))
+assert(starts==0 and maps==0)
 print("Unknown quest start method: PASS (actual TOC;10 locales, modeled UI only)")
+print("DP-5 DETAIL-GIVER-NAV-UNAVAILABLE: PASS (pure-visit, map-only, stale return; modeled UI only)")

@@ -251,14 +251,20 @@ check("Active quests stay in progress regardless of their original pickup locati
     addon.quests[6].startsInside = nil
 end)
 check("Any preparation action opens its own quest and navigation target", function()
+    local nav = addon.Navigation
+    addon.Navigation = { Start = function() end, Map = function() end }
     visibleRows()[2].scripts.OnClick()
     assert(ui.quest == 2 and ui.action.id == 2 and ui.action.place.x == 12 and hasDestination(true))
+    addon.Navigation = nav
 end)
 check("Unknown quests remain visible without an invented action", function()
+    local nav = addon.Navigation
+    addon.Navigation = { Start = function() end, Map = function() end }
     local row = visibleRows()[6]
     assert(row.title.text == "Quest 3" and row.note.text:find(addon.L("UNKNOWN_REQUIREMENTS"), 1, true))
     row.scripts.OnClick()
     assert(ui.quest == 3 and not ui.action and hasDestination(false) and hasDestination(true) and ui.giver.footerLabelKey=="VISIT_GIVER")
+    addon.Navigation = nav
 end)
 check("Quest progress removes a shared prerequisite from preparation", function()
     done[1] = true; ui:RefreshQuests(); ui:RefreshDetail()
@@ -365,7 +371,8 @@ local function showStory(id, context)
     if generation and ui.rewardGeneration == generation and ui.quest == id then return ui:SetDetailTab("story") end
 end
 check("Mandatory prerequisites live in the middle tree without a duplicate right-pane chain", function()
-    local dungeon = ui.dungeon
+    local dungeon, nav = ui.dungeon, addon.Navigation
+    addon.Navigation = { Start = function() end, Map = function() end }
     for _, id in ipairs({ 99220, 99221, 99222 }) do
         addon.quests[id] = { id = id, name = "Same title", minLevel = 1, requirementsKnown = true,
             start = { mapID = 1, x = 20, y = 30 } }
@@ -381,10 +388,11 @@ check("Mandatory prerequisites live in the middle tree without a duplicate right
     assert(seen[99220] and seen[99221] and seen[99222],"all exact prerequisite IDs remain inspectable in the middle pane")
     assert(not detailHas(addon.L("NEXT")) and not detailHas(addon.L("DETAIL_CHAIN")))
     for _, id in ipairs({ 99220, 99221, 99222 }) do addon.quests[id] = nil end
-    ui.questTreeRoot,ui.questTreeDungeon=nil,nil;ui.dungeon = dungeon; showDetail(2)
+    ui.questTreeRoot,ui.questTreeDungeon=nil,nil;ui.dungeon = dungeon; addon.Navigation = nav; showDetail(2)
 end)
 check("Compact OR context never selects an arbitrary mandatory predecessor and disclosures retain actions", function()
-    local dungeon = ui.dungeon
+    local dungeon, nav = ui.dungeon, addon.Navigation
+    addon.Navigation = { Start = function() end, Map = function() end }
     for _, id in ipairs({ 99230, 99231, 99232 }) do addon.quests[id] = { id = id, minLevel = 1, requirementsKnown = true } end
     addon.quests[99230].requires = { { ids = { 99231, 99232 } } }
     addon.quests[99230].start = { mapID = 1, x = 20, y = 30 }
@@ -396,7 +404,7 @@ check("Compact OR context never selects an arbitrary mandatory predecessor and d
     assert(seen[99231] and seen[99232] and ui.giver.enabled and ui.action.id == action.id and ui.action.kind == action.kind and ui.engine:State(99230).status == status)
     assert(not(ui.referenceToggle and ui.referenceToggle.shown) and not(ui.storyToggle and ui.storyToggle.shown))
     for _, id in ipairs({ 99230, 99231, 99232 }) do addon.quests[id] = nil end
-    ui.questTreeRoot,ui.questTreeDungeon=nil,nil;ui.dungeon = dungeon; showDetail(2)
+    ui.questTreeRoot,ui.questTreeDungeon=nil,nil;ui.dungeon = dungeon; addon.Navigation = nav; showDetail(2)
 end)
 check("Detail tabs reset on a different card and stale callbacks cannot change its successor", function()
     local first,second=addon.quests[1].startAlternatives,addon.quests[2].startAlternatives

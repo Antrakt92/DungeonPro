@@ -5615,19 +5615,31 @@ function UI:RefreshDetail(sourceFocus)
         addon.Clean(giverPlace.mapID, "number") == pendingGiver.map and addon.Clean(giverPlace.x, "number") == pendingGiver.x and
         addon.Clean(giverPlace.y, "number") == pendingGiver.y then
         if not primaryCurrent() then return end
-        self.giverAction, self.giverHasCoordinates = pendingGiver.action, pendingGiver.coordinates
-        local binding = { action = pendingGiver.action }
-        binding.current = sourceCallback(function()
-            if not primaryCurrent() then return false end
-            local fresh = not renderEngine.Current or addon.Read(renderEngine.Current, "boolean", renderEngine) == true
-            return fresh and primaryCurrent() and pendingGiver.same() and addon.UI == self and self.giverBinding == binding
-                and self.giverAction == binding.action and addon.quests[renderQuest] == pendingGiver.source
-                and pendingGiver.source.start == giverPlace and addon.Clean(giverPlace.mapID, "number") == pendingGiver.map
-                and addon.Clean(giverPlace.x, "number") == pendingGiver.x and addon.Clean(giverPlace.y, "number") == pendingGiver.y and primaryCurrent()
-        end)
-        self.giverBinding = binding
-        if not primaryLabel(pendingGiver.coordinates and "VISIT_GIVER" or "GIVER_MAP", binding.current) or
-            not primaryEnabled(true, binding.current) then return end
+        local navigationRoot = addon.Navigation
+        local navigation = addon.Clean(navigationRoot, "table")
+        local giverKey = pendingGiver.coordinates and "Start" or "Map"
+        local giverRawMethod = navigation and rawget(navigation, giverKey)
+        local giverMethod = addon.Clean(giverRawMethod, "function")
+        if not giverMethod then
+            self.giverUnavailableKey = "NAVIGATION_UNAVAILABLE"
+            if not primaryCurrent() then return end
+            if not primaryLabel("SOURCE_DETAILS", portraitCardCurrent) or
+                not primaryEnabled(false, portraitCardCurrent) then return end
+        else
+            self.giverAction, self.giverHasCoordinates = pendingGiver.action, pendingGiver.coordinates
+            local binding = { action = pendingGiver.action }
+            binding.current = sourceCallback(function()
+                if not primaryCurrent() then return false end
+                local fresh = not renderEngine.Current or addon.Read(renderEngine.Current, "boolean", renderEngine) == true
+                return fresh and primaryCurrent() and pendingGiver.same() and addon.UI == self and self.giverBinding == binding
+                    and self.giverAction == binding.action and addon.quests[renderQuest] == pendingGiver.source
+                    and pendingGiver.source.start == giverPlace and addon.Clean(giverPlace.mapID, "number") == pendingGiver.map
+                    and addon.Clean(giverPlace.x, "number") == pendingGiver.x and addon.Clean(giverPlace.y, "number") == pendingGiver.y and primaryCurrent()
+            end)
+            self.giverBinding = binding
+            if not primaryLabel(pendingGiver.coordinates and "VISIT_GIVER" or "GIVER_MAP", binding.current) or
+                not primaryEnabled(true, binding.current) then return end
+        end
     end
     if pendingTurnin and pendingTurnin.current() and pendingAction and pendingAction.kind == "turnin" and
         pendingAction.id == renderQuest and pendingAction.place == pendingTurnin.place then
