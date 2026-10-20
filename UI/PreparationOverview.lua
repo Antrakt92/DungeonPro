@@ -186,7 +186,10 @@ function UI:RenderPreparationOverview(ownerCurrent, width, offset, presentation)
             local function isItemOnlyPickup(stepID)
                 local starter = starterById[stepID]
                 if not starter then return false end
-                if starter.alternatives ~= nil then return false end
+                if starter.alternatives ~= nil then
+                    local alternativeList = clean(starter.alternatives,"table")
+                    if not alternativeList or #alternativeList ~= 0 then return false end
+                end
                 if starter.npcID ~= nil or starter.objectID ~= nil then return false end
                 if type(starter.start) ~= "table" then return false end
                 if not clean(starter.start,"table") then return false end

@@ -380,4 +380,83 @@ assert(noteOf(9001):find(outsideMark, 1, true), "new dungeon keeps its own outsi
 staleItemClick()
 assert(u.quest == nil and routes == 0, "retired item-dungeon row cannot inspect after the switch")
 
+-- (9) DP-5 OVERVIEW-EMPTY-START-ALTERNATIVES: empty list counts as absent, malformed/secret stay outside.
+a.quests[9731] = { id = 9731, name = "Empty alt item", minLevel = 1, requirementsKnown = true, start = { itemID = 50031 }, startAlternatives = {} }
+a.quests[9732] = { id = 9732, name = "Nil alt item", minLevel = 1, requirementsKnown = true, start = { itemID = 50032 } }
+a.quests[9733] = { id = 9733, name = "Nonempty alt item", minLevel = 1, requirementsKnown = true, start = { itemID = 50033 }, startAlternatives = { { npcID = 5678 } } }
+a.quests[9734] = { id = 9734, name = "Listed empty parent", minLevel = 1, requirementsKnown = true, requires = { { ids = { 9735 } } } }
+a.quests[9735] = { id = 9735, name = "Support empty alt item", minLevel = 1, requirementsKnown = true, start = { itemID = 50034 }, startAlternatives = {} }
+a.quests[9741] = { id = 9741, name = "Malformed alt item", minLevel = 1, requirementsKnown = true, start = { itemID = 50035 }, startAlternatives = 5 }
+local emptySingleDungeon = { key = "controlled-empty-single", name = "Empty single fixture", minLevel = 1, maxLevel = 60, coverage = "partial", quests = { 9731 } }
+local emptyGuardDungeon = { key = "controlled-empty-guard", name = "Empty guard fixture", minLevel = 1, maxLevel = 60, coverage = "partial", quests = { 9731, 9732, 9733 } }
+local supportEmptyDungeon = { key = "controlled-support-empty", name = "Support empty fixture", minLevel = 1, maxLevel = 60, coverage = "partial", quests = { 9734 } }
+local malformedDungeon = { key = "controlled-malformed-alt", name = "Malformed alt fixture", minLevel = 1, maxLevel = 60, coverage = "partial", quests = { 9741 } }
+a.dungeons = { kindsDungeon, manyDungeon, supportDungeon, sharedDungeon, supManyDungeon, itemSingleDungeon, itemMixedDungeon, supportItemDungeon, manyItemDungeon, emptySingleDungeon, emptyGuardDungeon, supportEmptyDungeon, malformedDungeon }
+render(emptySingleDungeon)
+local _, emptySingle = summary()
+assert(#emptySingle.steps == 1 and emptySingle.steps[1].id == 9731 and emptySingle.steps[1].kind == "pickup", "empty-alternative item stays a listed pickup")
+local emptyNote = noteOf(9731)
+assert(emptyNote:find(itemMark, 1, true) and not emptyNote:find(outsideMark, 1, true), "item + {} carries PREP_item without PREP_outside")
+assert(emptyNote:find(a.L("BRANCH_INSPECT"), 1, true), "empty-alternative item row keeps the inspect action")
+rowById(9731).scripts.OnClick()
+assert(u.quest == 9731 and u.dungeon == emptySingleDungeon and routes == 0, "empty-alternative item click inspects its own card without routing")
+assert(u:BackQuest() and u.quest == nil)
+render(emptyGuardDungeon)
+assert(noteOf(9732):find(itemMark, 1, true) and not noteOf(9732):find(outsideMark, 1, true), "item + nil stays PREP_item")
+assert(noteOf(9733):find(outsideMark, 1, true) and not noteOf(9733):find(itemMark, 1, true), "item + {{npcID}} stays PREP_outside")
+render(supportEmptyDungeon)
+local _, supEmpty = summary()
+assert(#supEmpty.steps == 1 and supEmpty.steps[1].id == 9735 and supEmpty.steps[1].listedTarget == false, "support item + {} appears once as a supporting pickup")
+assert(noteOf(9735) == expectedSupport("PREP_item", "AVAILABLE", "ffe9b0"), "support item + {} keeps the exact supporting composition")
+assertSupportOrder(9735, "PREP_item", "AVAILABLE", "ffe9b0")
+do
+    local note = noteOf(9735)
+    assert(countOccurrences(note, itemMark) == 1, "supporting empty-alternative composition never doubles the item mark")
+    assert(not note:find(outsideMark, 1, true), "support empty-alternative row never shows the outside mark")
+end
+rowById(9735).scripts.OnClick()
+assert(u.quest == 9735 and u.dungeon == supportEmptyDungeon and routes == 0, "support empty-alternative click inspects its own card without routing")
+assert(u:BackQuest() and u.quest == nil)
+render(malformedDungeon)
+local _, malformed = summary()
+assert(#malformed.steps == 1 and malformed.steps[1].id == 9741, "malformed alternatives keep a listed pickup step")
+assert(noteOf(9741):find(outsideMark, 1, true) and not noteOf(9741):find(itemMark, 1, true), "malformed alternatives stay PREP_outside without a crash")
+do
+    local secretAlt = {}
+    local savedChecker = issecretvalue
+    a.quests[9742] = { id = 9742, name = "Secret alt item", minLevel = 1, requirementsKnown = true, start = { itemID = 50036 }, startAlternatives = secretAlt }
+    issecretvalue = function(value) return value == secretAlt end
+    local secretDungeon = { key = "controlled-secret-alt", name = "Secret alt fixture", minLevel = 1, maxLevel = 60, coverage = "partial", quests = { 9742 } }
+    a.dungeons[#a.dungeons + 1] = secretDungeon
+    render(secretDungeon)
+    local _, secretModel = summary()
+    assert(#secretModel.steps == 1 and secretModel.steps[1].id == 9742, "secret alternatives keep a listed pickup step")
+    assert(noteOf(9742):find(outsideMark, 1, true) and not noteOf(9742):find(itemMark, 1, true), "secret alternatives stay PREP_outside without a crash")
+    issecretvalue = savedChecker
+end
+local manyEmptyIds = {}
+for index = 1, 8 do
+    local id = 9760 + index
+    manyEmptyIds[index] = id
+    a.quests[id] = { id = id, name = "Many empty step " .. index, minLevel = 1, requirementsKnown = true, start = { itemID = 60030 + index }, startAlternatives = {} }
+end
+local manyEmptyDungeon = { key = "controlled-empty-many", name = "Empty many fixture", minLevel = 1, maxLevel = 60, coverage = "partial", quests = manyEmptyIds }
+a.dungeons[#a.dungeons + 1] = manyEmptyDungeon
+render(manyEmptyDungeon)
+local _, manyEmpty = summary()
+assert(#manyEmpty.steps == 6 and manyEmpty.remainingSteps == 2, "six-step cap paginates empty-alternative work")
+local emptyMore = u.overviewMoreButton
+assert(emptyMore and emptyMore:IsShown(), "More control appears past the empty-alternative cap")
+assert(noteOf(manyEmptyIds[1]):find(itemMark, 1, true) and not noteOf(manyEmptyIds[1]):find(outsideMark, 1, true), "paged empty-alternative row keeps PREP_item")
+emptyMore.scripts.OnClick(emptyMore)
+local _, emptyExpanded = summary()
+assert(#emptyExpanded.steps == 8 and emptyExpanded.remainingSteps == 0, "More reveals the empty-alternative tail")
+assert(noteOf(manyEmptyIds[8]):find(itemMark, 1, true) and not noteOf(manyEmptyIds[8]):find(outsideMark, 1, true), "empty-alternative mark survives expansion")
+local emptyFewer = u.overviewFewerButton
+assert(emptyFewer and emptyFewer:IsShown(), "Fewer control appears after empty-alternative expansion")
+emptyFewer.scripts.OnClick(emptyFewer)
+local _, emptyCompacted = summary()
+assert(#emptyCompacted.steps == 6 and emptyCompacted.remainingSteps == 2, "Fewer restores the empty-alternative cap")
+assert(noteOf(manyEmptyIds[1]):find(itemMark, 1, true) and not noteOf(manyEmptyIds[1]):find(outsideMark, 1, true), "empty-alternative mark survives Fewer")
+
 print("Overview kinds UI: PASS (pickup/inside distinct + order + clicks; level/unknown under NEXT without availability or green; More/Fewer and dungeon-switch ownership; supporting-kind composition without doubles)")
