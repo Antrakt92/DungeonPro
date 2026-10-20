@@ -110,4 +110,46 @@ for _, locale in ipairs({"koKR", "ruRU", "enUS"}) do
 end
 addon.Language:Cancel(ui)
 fixture.methods.GetStringHeight = measure; ui:RefreshDungeons()
+-- Entrance portal glyph prefers the guarded native Dungeon atlas with a map-texture fallback.
+do
+    local methods = fixture.methods
+    local savedSetAtlas, savedGetAtlas = methods.SetAtlas, methods.GetAtlas
+    local fallback = "Interface\\Icons\\INV_Misc_Map_01"
+    local function freshCards()
+        for _, row in ipairs(ui.cards) do row.entranceControl = nil end
+        ui:RefreshDungeons()
+    end
+    local function icons()
+        local found = {}
+        for _, row in ipairs(ui.cards) do
+            local control = row.entranceControl
+            assert(control and control.footerIcon, "entrance glyph control exists")
+            found[#found + 1] = control.footerIcon
+        end
+        assert(#found == #addon.dungeons and #found > 0, "entrance glyph paints every dungeon card")
+        return found
+    end
+    methods.SetAtlas = function(self, v) self.atlas = v end
+    methods.GetAtlas = function(self) return self.atlas end
+    freshCards()
+    for _, icon in ipairs(icons()) do assert(icon.atlas == "Dungeon" and icon.texture ~= fallback, "accepted Dungeon atlas keeps the portal glyph") end
+    methods.SetAtlas, methods.GetAtlas = nil, nil
+    freshCards()
+    for _, icon in ipairs(icons()) do assert(icon.texture == fallback, "missing atlas falls back to the map texture") end
+    methods.SetAtlas = function() error("missing atlas") end
+    methods.GetAtlas = function() return nil end
+    freshCards()
+    for _, icon in ipairs(icons()) do assert(icon.texture == fallback, "throwing atlas falls back to the map texture") end
+    methods.SetAtlas = function(self, v) self.atlas = v; return false end
+    methods.GetAtlas = function(self) return self.atlas end
+    freshCards()
+    for _, icon in ipairs(icons()) do assert(icon.texture == fallback, "rejected atlas falls back to the map texture") end
+    methods.SetAtlas = function(self) self.atlas = "wrong" end
+    methods.GetAtlas = function(self) return self.atlas end
+    freshCards()
+    for _, icon in ipairs(icons()) do assert(icon.texture == fallback, "mismatched atlas readback falls back to the map texture") end
+    methods.SetAtlas, methods.GetAtlas = savedSetAtlas, savedGetAtlas
+    freshCards()
+    print("Entrance portal glyph: PASS (native Dungeon atlas with map-texture fallback)")
+end
 print("Actual dungeon cards: PASS (catalogue, warm locales, pooling, quest events, hidden reopen)")

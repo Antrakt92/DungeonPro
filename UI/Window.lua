@@ -1651,9 +1651,12 @@ function UI:RefreshDungeons()
             if type(control.SetMotionScriptsWhileDisabled) == "function" then control:SetMotionScriptsWhileDisabled(true) end
             local icon = control:CreateTexture(nil, "ARTWORK"); control.footerIcon = icon
             icon:SetSize(20, 20); icon:SetPoint("CENTER", control, "CENTER", 0, 0)
-            local atlas = "Waypoint-MapPin-Untracked"
-            local loaded = type(icon.SetAtlas) == "function" and pcall(icon.SetAtlas, icon, atlas)
-            if not loaded or addon.Read(icon.GetAtlas, "string", icon) ~= atlas then icon:SetTexture("Interface\\Icons\\INV_Misc_Map_01") end
+            local atlas = "Dungeon"
+            local loaded, accepted
+            if type(icon.SetAtlas) == "function" then loaded, accepted = pcall(icon.SetAtlas, icon, atlas) end
+            if not loaded or addon.Clean(accepted, "boolean") == false or addon.Read(icon.GetAtlas, "string", icon) ~= atlas then
+                icon:SetTexture("Interface\\Icons\\INV_Misc_Map_01")
+            end
             icon:Show()
             control:SetScript("OnEnter", function() if self.catalogCollapsed then return end; control.footerHovered = true; self:RefreshFooterIcon(control); self:CatalogEntranceHint(row) end)
             control:SetScript("OnLeave", function() control.footerHovered = false; self:RefreshFooterIcon(control); self:HideNavigationHint(control) end)
