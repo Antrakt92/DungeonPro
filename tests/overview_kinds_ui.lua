@@ -531,4 +531,73 @@ a.quests[9801].start.summonItem = originalSummon
 render(summonDungeon)
 assert(noteOf(9801):find(summonUncertain, 1, true), "composition recovers after the mutation probe")
 
+-- (13) DP-5 OVERVIEW-SUMMON-DECLARATION-STRICTNESS: mixed declarations stay outside, never uncertain.
+a.quests[9831] = { id = 9831, name = "Mixed npc summon", minLevel = 1, requirementsKnown = true, start = { objectID = 112877, npcID = 1234, summonItem = { itemID = 7667 } } }
+a.quests[9832] = { id = 9832, name = "Mixed map summon", minLevel = 1, requirementsKnown = true, start = { objectID = 112877, mapID = 1455, summonItem = { itemID = 7667 } } }
+local mixedSummonDungeon = { key = "controlled-mixed-summon", name = "Mixed summon fixture", minLevel = 1, maxLevel = 60, coverage = "partial", quests = { 9831, 9832 } }
+a.dungeons[#a.dungeons + 1] = mixedSummonDungeon
+render(mixedSummonDungeon)
+local _, mixedSummon = summary()
+assert(#mixedSummon.steps == 2 and mixedSummon.steps[1].kind == "pickup" and mixedSummon.steps[2].kind == "pickup", "mixed summon stays listed pickups")
+assert(noteOf(9831):find(outsideMark, 1, true) and not noteOf(9831):find(summonUncertain, 1, true), "objectID+npcID+summon stays PREP_outside without uncertain")
+assert(noteOf(9832):find(outsideMark, 1, true) and not noteOf(9832):find(summonUncertain, 1, true), "objectID+mapID+summon stays PREP_outside without uncertain")
+assert(not noteOf(9831):find(itemMark, 1, true) and not noteOf(9832):find(itemMark, 1, true), "mixed summon never shows the item mark")
+rowById(9831).scripts.OnClick()
+assert(u.quest == 9831 and u.dungeon == mixedSummonDungeon and routes == 0, "mixed npc summon click inspects its own card without routing")
+assert(u:BackQuest() and u.quest == nil)
+rowById(9832).scripts.OnClick()
+assert(u.quest == 9832 and u.dungeon == mixedSummonDungeon and routes == 0, "mixed map summon click inspects its own card without routing")
+assert(u:BackQuest() and u.quest == nil)
+
+-- (14) garbage summonItem stays outside; clean item-only stays item without impurities.
+a.quests[9841] = { id = 9841, name = "String summon", minLevel = 1, requirementsKnown = true, start = { objectID = 112877, summonItem = "cord" } }
+a.quests[9842] = { id = 9842, name = "Zero summon item", minLevel = 1, requirementsKnown = true, start = { objectID = 112877, summonItem = { itemID = 0 } } }
+a.quests[9843] = { id = 9843, name = "Huge summon item", minLevel = 1, requirementsKnown = true, start = { objectID = 112877, summonItem = { itemID = 4294967296 } } }
+a.quests[9844] = { id = 9844, name = "Numeric summon", minLevel = 1, requirementsKnown = true, start = { objectID = 112877, summonItem = 12345 } }
+a.quests[9845] = { id = 9845, name = "Clean item", minLevel = 1, requirementsKnown = true, start = { itemID = 50001 } }
+local garbageSummonDungeon = { key = "controlled-garbage-summon", name = "Garbage summon fixture", minLevel = 1, maxLevel = 60, coverage = "partial", quests = { 9841, 9842, 9843, 9844, 9845 } }
+a.dungeons[#a.dungeons + 1] = garbageSummonDungeon
+render(garbageSummonDungeon)
+local _, garbageSummon = summary()
+assert(#garbageSummon.steps == 5, "garbage summon keeps listed pickups")
+for _, id in ipairs({ 9841, 9842, 9843, 9844 }) do
+    local note = noteOf(id)
+    assert(note:find(outsideMark, 1, true) and not note:find(summonUncertain, 1, true), "garbage summon " .. id .. " stays PREP_outside without uncertain")
+    assert(not note:find(itemMark, 1, true), "garbage summon " .. id .. " never shows the item mark")
+end
+assert(noteOf(9845):find(itemMark, 1, true) and not noteOf(9845):find(outsideMark, 1, true), "clean item-only stays PREP_item without outside")
+assert(not noteOf(9845):find(summonUncertain, 1, true), "clean item-only never shows uncertain")
+rowById(9845).scripts.OnClick()
+assert(u.quest == 9845 and u.dungeon == garbageSummonDungeon and routes == 0, "clean item click inspects its own card without routing")
+assert(u:BackQuest() and u.quest == nil)
+
+-- (15) regression: 9801/9802 stay uncertain; inner itemID and mapID mutations retire ownership.
+render(summonDungeon)
+local _, summonRegress = summary()
+assert(#summonRegress.steps == 2, "summon fixture still lists both steps")
+assert(noteOf(9801):find(summonUncertain, 1, true) and not noteOf(9801):find(outsideMark, 1, true), "9801 stays PREP_uncertain without outside")
+assert(noteOf(9802):find(summonUncertain, 1, true) and not noteOf(9802):find(insideMark, 1, true), "9802 stays PREP_uncertain without inside")
+local regressBinding = summary()
+assert(regressBinding.current() and regressBinding.rawProof(), "regression overview starts current")
+local staleRegressClick = rowById(9801).scripts.OnClick
+a.quests[9801].start.summonItem.itemID = 0
+assert(regressBinding.rawProof() == false, "inner summon itemID mutation retires rawProof")
+assert(regressBinding.current() == false, "inner summon itemID mutation retires current")
+staleRegressClick()
+assert(u.quest == nil and routes == 0, "retired summon row cannot inspect after inner itemID mutation")
+a.quests[9801].start.summonItem.itemID = 7667
+render(summonDungeon)
+assert(noteOf(9801):find(summonUncertain, 1, true), "composition recovers after inner itemID restore")
+local mapBinding = summary()
+assert(mapBinding.current() and mapBinding.rawProof(), "map probe overview starts current")
+local staleMapClick = rowById(9801).scripts.OnClick
+a.quests[9801].start.mapID = 1455
+assert(mapBinding.rawProof() == false, "injected mapID retires rawProof")
+assert(mapBinding.current() == false, "injected mapID retires current")
+staleMapClick()
+assert(u.quest == nil and routes == 0, "retired summon row cannot inspect after mapID injection")
+a.quests[9801].start.mapID = nil
+render(summonDungeon)
+assert(noteOf(9801):find(summonUncertain, 1, true), "composition recovers after mapID removal")
+
 print("Overview kinds UI: PASS (pickup/inside distinct + order + clicks; level/unknown under NEXT without availability or green; More/Fewer and dungeon-switch ownership; supporting-kind composition without doubles)")

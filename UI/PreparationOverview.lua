@@ -138,7 +138,16 @@ function UI:RenderPreparationOverview(ownerCurrent, width, offset, presentation)
                     if not rawequal(rawget(starter.start,"npcID"),starter.npcID) then return false end
                     if not rawequal(rawget(starter.start,"objectID"),starter.objectID) then return false end
                     if not rawequal(rawget(starter.start,"summonItem"),starter.summonItem) then return false end
-                elseif starter.itemID ~= nil or starter.npcID ~= nil or starter.objectID ~= nil or starter.summonItem ~= nil then return false end
+                    if not rawequal(rawget(starter.start,"mapID"),starter.mapID) then return false end
+                    if not rawequal(rawget(starter.start,"x"),starter.x) then return false end
+                    if not rawequal(rawget(starter.start,"y"),starter.y) then return false end
+                    if not rawequal(rawget(starter.start,"reportedLocations"),starter.reportedLocations) then return false end
+                    local currentSummon = rawget(starter.start,"summonItem")
+                    local currentSummonID
+                    if type(currentSummon) == "table" then currentSummonID = rawget(currentSummon,"itemID") end
+                    if not rawequal(currentSummonID,starter.summonItemID) then return false end
+                elseif starter.itemID ~= nil or starter.npcID ~= nil or starter.objectID ~= nil or starter.summonItem ~= nil or
+                    starter.mapID ~= nil or starter.x ~= nil or starter.y ~= nil or starter.reportedLocations ~= nil or starter.summonItemID ~= nil then return false end
             end
             return binding.listRaw() and (not binding.modelRaw or binding.modelRaw()) and base()
         end
@@ -168,14 +177,19 @@ function UI:RenderPreparationOverview(ownerCurrent, width, offset, presentation)
                 binding.titles[#binding.titles+1]=title
                 local rawStart = rawget(definition,"start")
                 local rawAlternatives = rawget(definition,"startAlternatives")
-                local rawItemID, rawNpcID, rawObjectID, rawSummonItem
+                local rawItemID, rawNpcID, rawObjectID, rawSummonItem, rawMapID, rawX, rawY, rawReported, rawSummonItemID
                 if type(rawStart) == "table" then
                     rawItemID = rawget(rawStart,"itemID")
                     rawNpcID = rawget(rawStart,"npcID")
                     rawObjectID = rawget(rawStart,"objectID")
                     rawSummonItem = rawget(rawStart,"summonItem")
+                    rawMapID = rawget(rawStart,"mapID")
+                    rawX = rawget(rawStart,"x")
+                    rawY = rawget(rawStart,"y")
+                    rawReported = rawget(rawStart,"reportedLocations")
+                    if type(rawSummonItem) == "table" then rawSummonItemID = rawget(rawSummonItem,"itemID") end
                 end
-                binding.starters[#binding.starters+1] = { id=step.id,definition=definition,start=rawStart,alternatives=rawAlternatives,itemID=rawItemID,npcID=rawNpcID,objectID=rawObjectID,summonItem=rawSummonItem }
+                binding.starters[#binding.starters+1] = { id=step.id,definition=definition,start=rawStart,alternatives=rawAlternatives,itemID=rawItemID,npcID=rawNpcID,objectID=rawObjectID,summonItem=rawSummonItem,mapID=rawMapID,x=rawX,y=rawY,reportedLocations=rawReported,summonItemID=rawSummonItemID }
                 title.text=read(titleGetter,"string",step.id)
                 if not binding.current() then return end
                 title.text=title.text and #title.text<=1024 and title.text:find("%S") and title.text or clean(title.source,"string") or ("#"..step.id)
@@ -213,7 +227,14 @@ function UI:RenderPreparationOverview(ownerCurrent, width, offset, presentation)
                     if read(checker,"boolean",starter.start) ~= false then return false end
                     if read(checker,"boolean",starter.summonItem) ~= false then return false end
                 end
-                return starter.summonItem ~= nil
+                local objectID = clean(starter.objectID,"number")
+                if not objectID or objectID % 1 ~= 0 or objectID < 1 or objectID > 4294967295 then return false end
+                if starter.npcID ~= nil or starter.itemID ~= nil then return false end
+                if starter.mapID ~= nil or starter.x ~= nil or starter.y ~= nil or starter.reportedLocations ~= nil then return false end
+                if not clean(starter.summonItem,"table") then return false end
+                local summonItemID = clean(starter.summonItemID,"number")
+                if not summonItemID or summonItemID % 1 ~= 0 or summonItemID < 1 or summonItemID > 4294967295 then return false end
+                return true
             end
             local textIndex=0
             local function summaryLine(value,style)
