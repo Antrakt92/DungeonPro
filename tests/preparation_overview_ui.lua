@@ -54,7 +54,11 @@ assert(text(a.L("OVERVIEW_STATUS_COUNT",a.L("UNAVAILABLE"),2)),"positive non-hel
 active,ready=1654,1654;render(false);local _,held=summary();assert(held.shownRoots==8 and held.counts.READY==1);visible(1654)
 active,ready=155,nil;render(false);assert(visible(155).note.text:find(a.L("ACTIVE"),1,true))
 done=155;render(false);local _,complete=summary();for _,s in ipairs(complete.steps)do assert(s.id~=155)end
-done=nil;active,ready=nil,nil;render(false);local _,empty=summary();assert(#empty.steps==0 and text(a.L("OVERVIEW_NO_KNOWN_STEPS")))
+done=nil;active,ready=nil,nil;render(false);local _,empty=summary();assert(#empty.steps==0)
+do local hint=a.L("OVERVIEW_NO_KNOWN_STEPS");assert(text(hint),"empty overview must render the neutral hint")
+local count=0;for _,pool in ipairs({u.overviewTexts or {},u.details})do for _,fs in ipairs(pool)do if fs:IsShown()and fs.text==hint then count=count+1 end end end;assert(count==1,"empty hint appears exactly once")
+assert(not text(a.L("OVERVIEW_KNOWN_STEPS"))and not text(a.L("OVERVIEW_NEXT_STEPS")),"empty means no held and no next, so no group headers")
+local folded=hint:lower();assert(not folded:find("questlog",1,true)and not folded:find("quest-log",1,true)and not folded:find("quest log",1,true)and not folded:find("journal",1,true)and not hint:find("журнал",1,true)and not hint:find("Questlog",1,true)and not hint:find("%%",1,true),"empty hint stays neutral with no counters: "..hint) end
 active,ready="all","all";render(false);local _,many=summary()
 assert(#many.steps==6 and many.remainingSteps==3 and many.shownRoots==9)
 local shown=0;for _,r in ipairs(u.actionInspectButtons)do if r:IsShown()then shown=shown+1 end end;assert(shown==6)

@@ -10017,12 +10017,33 @@ check("Overview keeps held log steps and next actions under separate headers", f
     assert(heldAt and nextAt and heldAt < nextAt, "held log steps keep their header before next actions")
     stub({ nextAction }); ui:RefreshDetail()
     seen = shownHeaders()
-    assert(position(seen, addon.L("OVERVIEW_NEXT_STEPS")) and not position(seen, addon.L("OVERVIEW_KNOWN_STEPS")),
-        "pickup-only overviews must not claim journal steps")
+    assert(position(seen, addon.L("OVERVIEW_NEXT_STEPS")) and not position(seen, addon.L("OVERVIEW_KNOWN_STEPS")) and
+        not position(seen, addon.L("OVERVIEW_NO_KNOWN_STEPS")),
+        "pickup-only overviews keep NEXT without the empty hint")
     stub({}); ui:RefreshDetail()
     seen = shownHeaders()
-    assert(position(seen, addon.L("OVERVIEW_NO_KNOWN_STEPS")) and not position(seen, addon.L("OVERVIEW_KNOWN_STEPS")) and
-        not position(seen, addon.L("OVERVIEW_NEXT_STEPS")), "the empty hint appears only when both groups are empty")
+    local emptyHint = addon.L("OVERVIEW_NO_KNOWN_STEPS")
+    local emptyCount = 0
+    for _, text in ipairs(seen) do if text == emptyHint then emptyCount = emptyCount + 1 end end
+    assert(emptyCount == 1 and not position(seen, addon.L("OVERVIEW_KNOWN_STEPS")) and
+        not position(seen, addon.L("OVERVIEW_NEXT_STEPS")), "the empty hint appears exactly once only when both groups are empty")
+    local foldedEmpty = emptyHint:lower()
+    assert(not foldedEmpty:find("questlog", 1, true) and not foldedEmpty:find("quest-log", 1, true)
+        and not foldedEmpty:find("quest log", 1, true) and not foldedEmpty:find("journal", 1, true)
+        and not emptyHint:find("журнал", 1, true) and not emptyHint:find("Questlog", 1, true)
+        and not emptyHint:find("%d") and not emptyHint:find("%%", 1, true),
+        "empty means no held and no next, so the hint stays neutral with no counters: " .. emptyHint)
+    local savedLocale = addon.db.locale
+    for _, locale in ipairs({ "enUS", "ruRU" }) do
+        addon.db.locale = locale
+        local hint = addon.L("OVERVIEW_NO_KNOWN_STEPS")
+        local folded = hint:lower()
+        assert(not folded:find("questlog", 1, true) and not folded:find("quest-log", 1, true)
+            and not folded:find("quest log", 1, true) and not folded:find("journal", 1, true)
+            and not hint:find("журнал", 1, true) and not hint:find("%%", 1, true),
+            locale .. " empty hint covers missing held and next steps, not just the quest log: " .. hint)
+    end
+    addon.db.locale = savedLocale
     provider.Get = originalGet
     ui.dungeon, ui.quest = savedDungeon, savedQuest
     ui:Refresh()
