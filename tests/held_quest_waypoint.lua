@@ -100,4 +100,13 @@ check("A final locale read cannot publish after caller ownership expires",functi
  assert(reads==2 and lateLocale==2 and live==false)
  assert(dto==nil,"final locale callback expired caller after earlier check")
 end)
+check("Map identities above uint32 remain unknown without waypoint reads",function()
+ for _,value in ipairs({4294967296,9007199254740991})do setup();f.map=value;assert(addon.HeldQuestWaypoint(1654)==nil and f.positionReads==0)end
+end)
+check("Upper uint32 map boundary remains a valid client route",function()
+ setup();f.map=4294967295;local dto=assert(addon.HeldQuestWaypoint(1654));assert(dto.uiMapID==4294967295 and f.positionReads==1)
+end)
+check("Tampered map info above uint32 never authorizes a known map",function()
+ setup();C_Map.GetMapInfo=function()return{mapID=4294967296,name="Current UI map",mapType=4}end;assert(addon.HeldQuestWaypoint(1654)==nil and f.positionReads==0)
+end)
 print("Held quest waypoint modeled checks passed: "..total.."; no native-game validation")

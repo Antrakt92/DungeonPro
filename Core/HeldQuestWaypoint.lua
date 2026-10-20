@@ -15,6 +15,10 @@ local function waypoint(id, ownerCurrent)
         value = clean(value, "number")
         if value and value > 0 and value <= 9007199254740991 and value % 1 == 0 then return value end
     end
+    local function mapInteger(value)
+        value = clean(value, "number")
+        if value and value > 0 and value <= 4294967295 and value % 1 == 0 then return value end
+    end
     local function read(fn, kind, ...)
         if not clean(fn, "function") then return nil end
         local ok, value = pcall(fn, ...)
@@ -64,11 +68,11 @@ local function waypoint(id, ownerCurrent)
     end
     if not current() then return nil end
     -- Direct waypoint coordinates are deliberately ignored; only map candidate is used.
-    local mapID = integer(read(nextGetter, "number", id))
+    local mapID = mapInteger(read(nextGetter, "number", id))
     if not mapID or not current() then return nil end
     local info = read(mapGetter, "table", mapID)
     if not info or not current() then return nil end
-    local infoID = integer(rawget(info, "mapID"))
+    local infoID = mapInteger(rawget(info, "mapID"))
     if infoID ~= mapID or not current() then return nil end
     acceptedInfo, acceptedMap = info, mapID
     local ok, rawX, rawY = pcall(positionGetter, id, mapID)
@@ -79,7 +83,7 @@ local function waypoint(id, ownerCurrent)
     if text and (#text > 1024 or not text:find("%S")) then text = nil end
     if not current() then return nil end
     if integer(read(nextGetter, "number", id)) ~= mapID or not current() then return nil end
-    local freshInfoID = integer(rawget(info, "mapID"))
+    local freshInfoID = mapInteger(rawget(info, "mapID"))
     if freshInfoID ~= mapID or not current() then return nil end
     return { source = "clientWaypoint", questID = id, uiMapID = mapID, normalizedX = x, normalizedY = y, text = text }
 end
