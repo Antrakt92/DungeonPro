@@ -1,6 +1,9 @@
 -- World-area display aliases never supply a map identity or change a source point.
 local f=assert(loadfile("tests/client_ui.lua"))("fixture")
 local a,ui=f.addon,f.addon.UI
+-- Match native default visibility for newly created contact text regions.
+local createFontString=f.methods.CreateFontString
+function f.methods:CreateFontString(...)local value=createFontString(self,...);value.shown=true;return value end
 local actualAPI=a.SourceAreaName
 issecretvalue=function()return false end;GetLocale=function()return"enUS"end;C_Timer={After=function()end}
 f.eventFrame.scripts.OnEvent(f.eventFrame,"ADDON_LOADED","DungeonPro");ui:Toggle();ui.includeUnavailable=true
@@ -83,8 +86,12 @@ local selected;for _,r in ipairs(ui.rows)do if r:IsShown()and r.questID==166 the
 assert(selected and selected.navigationBinding.action)
 selected.navigationControl.scripts.OnEnter()
 assert(tip.shown and tip.body:find(labels["The Hinterlands"],1,true),"row hint retains the same selected area")
-ui.giver.scripts.OnEnter()
-assert(tip.shown and tip.body:find(labels["The Hinterlands"],1,true),"detail hint retains the same selected area")
+local contact=assert(ui.detailContactRows[1]);local binding=assert(contact.detailContactBinding)
+assert(contact:IsShown()and binding.current()and binding.questID==166 and binding.field=="start"and binding.endpoint==q.start and
+ binding.action.kind=="visit"and binding.action.place==q.start,"visible own contact retains the exact source route")
+assert(contact.detailPurpose:IsShown()and contact.detailPurpose.text==a.L("DETAIL_GIVER")and
+ contact.title.text==(a.SourceName(q.start)or q.start.name)and contact.note.text==labels["The Hinterlands"],"visible purpose, source actor and selected area remain distinct")
+assert(not ui.giver:IsShown()and not ui.giver.enabled and ui.giver.scripts.OnClick==nil,"retired giver cannot duplicate the actual contact action")
 q.start=original
 -- The real registry and lazy reviewed dictionary supply the production labels.
 a.SourceAreaName=actualAPI

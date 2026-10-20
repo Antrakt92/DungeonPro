@@ -24,7 +24,7 @@ end
 local function finish()
  local prefix=a.L("DETAIL_TURNIN")..": "
  local row=u.detailContactRows and u.detailContactRows[2]
- if row and row:IsShown()and row.title.text:find(prefix,1,true)==1 then
+ if row and row:IsShown()and row.detailPurpose and row.detailPurpose.text==a.L("DETAIL_TURNIN") then
   local binding=assert(row.detailContactBinding)
   assert(binding.field=="finish"and binding.questID==u.quest and binding.endpoint==a.quests[u.quest].finish and binding.current(),
    "the visible turn-in caption owns the exact selected current finisher")

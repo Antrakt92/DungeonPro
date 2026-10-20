@@ -85,7 +85,8 @@ for _,locale in ipairs({"enUS","ruRU","deDE","frFR","esES","ptBR","itIT","koKR",
  for _,field in ipairs(ui.details)do if field:IsShown()and field~=control and field.point and -field.point[3]>-control.point[3]then
   nextTop=math.min(nextTop or math.huge,-field.point[3])
  end end
- assert(nextTop and nextTop+control.point[3]>=control:GetStringHeight(),
+ local boundary=nextTop or ui.detail:GetHeight()
+ assert(boundary+control.point[3]>=control:GetStringHeight(),
   "the stream reserves the full wrapped ancestor caption height in every supported language")
 end
 a.db.locale="enUS"

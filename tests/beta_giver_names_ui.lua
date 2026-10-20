@@ -1,6 +1,9 @@
 -- Creature labels preserve typed identity, source certainty, and existing navigation facts.
 local f=assert(loadfile("tests/client_ui.lua"))("fixture")
 local a,u=f.addon,f.addon.UI
+-- Native FontStrings are shown on creation; journal purpose is its own region.
+local createFontString=f.methods.CreateFontString
+function f.methods:CreateFontString(...)local value=createFontString(self,...);value.shown=true;return value end
 issecretvalue=function()return false end;GetLocale=function()return"enUS"end;C_Timer={After=function()end}
 f.eventFrame.scripts.OnEvent(f.eventFrame,"ADDON_LOADED","DungeonPro");u:Toggle();u.includeUnavailable=true;u.range=false
 local samples={
@@ -53,6 +56,8 @@ local function ownContact(field)
  local q=assert(a.quests[u.quest]);local point=assert(q[field]);local contact=assert(u.detailContactRows[field=="start"and 1 or 2])
  local binding=assert(contact.detailContactBinding)
  assert(contact:IsShown()and binding.questID==q.id and binding.field==field and binding.endpoint==point and binding.current(),"actual contact owns exact selected source")
+ local purpose=assert(contact.detailPurpose,"contact purpose is a distinct region")
+ assert(purpose:IsShown()and purpose.text==a.L(field=="start"and "DETAIL_GIVER"or"DETAIL_TURNIN"),"current source purpose remains independently visible")
  return contact
 end
 local function sourceHint()
@@ -83,7 +88,7 @@ for _,locale in ipairs(locales)do
   if label then assert(translated==label,"missing reviewed creature label "..locale.."/"..s[1]);assert(current()and raw());aliases=aliases+1
   elseif locale=="enUS"then assert(translated==s[3],"English source identity remains canonical")
   else assert(translated==nil,"unchanged/placeholder response must remain a sparse fallback")end
-  render(s[2]);assert(ownContact("start").title.text==a.L("DETAIL_GIVER")..": "..(label or s[3]),"Quest summary loses own selected pickup source name")
+  render(s[2]);assert(ownContact("start").title.text==(label or s[3]),"Quest summary loses own selected pickup source name")
   assert(u:SetDetailTab("sources")and visible(label or s[3]),"Sources loses current selected source name")
  end
  for _,saved in ipairs(points)do

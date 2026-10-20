@@ -1,6 +1,9 @@
 -- Actual NPC identities retain independently recorded areas without invented interior routes.
 local f=assert(loadfile("tests/client_ui.lua"))("fixture")
 local a,ui=f.addon,f.addon.UI
+-- Native FontStrings are shown on creation; journal purpose is its own region.
+local createFontString=f.methods.CreateFontString
+function f.methods:CreateFontString(...)local value=createFontString(self,...);value.shown=true;return value end
 C_Timer={After=function()end};issecretvalue=function()return false end
 f.eventFrame.scripts.OnEvent(f.eventFrame,"ADDON_LOADED","DungeonPro");ui:Toggle();ui.includeUnavailable=true;a.db.locale="enUS"
 local selected,ready
@@ -31,6 +34,16 @@ local function field(text)
   elseif contact.title.text:find(text,1,true)then return contact end
  end end
 end
+local function ownContact(field,zone)
+ local point=assert(a.quests[ui.quest][field]);local contact=assert(ui.detailContactRows[field=="start"and 1 or 2])
+ local binding=assert(contact.detailContactBinding);local purpose=assert(contact.detailPurpose)
+ assert(contact:IsShown()and binding.current()and binding.questID==ui.quest and binding.field==field and binding.endpoint==point,
+  "reviewed area belongs to the exact selected typed endpoint")
+ assert(purpose:IsShown()and purpose.text==a.L(field=="start"and "DETAIL_GIVER"or"DETAIL_TURNIN")and contact.title.text==point.name,
+  "source purpose and actor are independently visible")
+ if zone then assert(contact.note.text==zone,"recorded own endpoint area stays immediately visible")end
+ return contact
+end
 local function row(id)
  for _,r in ipairs(ui.rows)do if r:IsShown()and r.questID==id then return r end end
  error("missing own quest row "..id)
@@ -50,7 +63,7 @@ for _,id in ipairs({3801,3802})do
   assert(finishKnown:IsShown()and finishUnknown:IsShown()and finishKnown.note.text=="Burning Steppes — |cffff594d"..a.L("SOURCE_POSITION_UNKNOWN").."|r"and finishUnknown.note.text=="|cffff594d"..a.L("UNKNOWN_PLACE").."|r","turn-in alternatives preserve the same independent NPC variant areas and visible unknown positions")
   assert(not finishKnown.enabled and not finishUnknown.enabled,"turn-in area facts do not become a fabricated map")
  else
-  assert(field(a.L("DETAIL_TURNIN")..": "..a.quests[id].finish.name.." — Blackrock Depths"),"second quest still turns in at its own object rather than either starting NPC")
+  assert(ownContact("finish","Blackrock Depths"),"second quest still turns in at its own object rather than either starting NPC")
  end
 end
 for _,sample in ipairs({{7046,13716},{7066,12238}})do
@@ -69,10 +82,10 @@ for _,sample in ipairs({{7046,13716},{7066,12238}})do
 end
 render(7044)
 local q=a.quests[7044]
-assert(field(a.L("DETAIL_TURNIN")..": "..q.finish.name.." — Maraudon"),"Celebras area belongs to this quest's turn-in, not its different starting NPC")
+assert(ownContact("finish","Maraudon"),"Celebras area belongs to this quest's turn-in, not its different starting NPC")
 assert(field(a.L("GIVER_LOCATION_UNKNOWN"))and ui.giverUnavailableKey=="GIVER_LOCATION_UNKNOWN" and
  not field(q.start.name.." — Maraudon"),"unknown Cavindra start does not borrow Celebras's known area")
-local finishLine=assert(field(a.L("DETAIL_TURNIN")..": "..q.finish.name.." — Maraudon"))
+local finishLine=assert(ownContact("finish","Maraudon"))
 local finishWarning
 if finishLine.detailContactBinding then
  local bottom= -assert(finishLine.point[3])+finishLine:GetHeight()
@@ -106,7 +119,7 @@ for _,sample in ipairs({{4867,10799},{5160,10740},{5047,10776}})do
   render(4867,true,assert(owners[4742]))
   assert(ui.action and ui.action.kind=="turnin"and ui.action.place==q.finish and ui.action.place.zoneName=="Blackrock Spire","Warosh remains the actual ready finisher, with no invented destination")
  else
-  assert(field(a.L("DETAIL_TURNIN")..": "..q.finish.name),"different Winterspring turn-in remains independent of the known starting area")
+  assert(ownContact("finish"),"different Winterspring turn-in remains independent of the known starting area")
  end
 end
 assert(routes==0 and maps==0,"eleven area facts enable no arbitrary pickup or turn-in route")

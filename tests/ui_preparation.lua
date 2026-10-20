@@ -105,7 +105,7 @@ local function object(kind, name, parent, template)
     return frame
 end
 function methods:CreateTexture() local texture = object(); texture.shown = true; return texture end
-function methods:CreateFontString() return object() end
+function methods:CreateFontString() local field = object(); field.shown = true; return field end
 CreateFrame = object
 UIParent, UISpecialFrames = object(), {}
 local screenWidth, screenHeight = 1920, 480
@@ -1058,7 +1058,10 @@ check("Known source zones display without inventing a client map or navigation",
     showDetail(2)
     local pickup,ending=assert(ui.detailContactRows[1]),assert(ui.detailContactRows[2])
     assert(pickup:IsShown()and pickup.title.text:find("Olvek",1,true)and pickup.note.text=="Alterac Mountains")
-    assert(ending:IsShown()and ending.title.text==addon.L("DETAIL_TURNIN")..": Other"and ending.note.text=="Known finish")
+    assert(ending:IsShown()and ending.title.text=="Other"and ending.detailPurpose:IsShown()and ending.detailPurpose.text==addon.L("DETAIL_TURNIN")and ending.note.text=="Known finish")
+    assert(pickup.detailPurpose:IsShown()and pickup.detailPurpose.text==addon.L("DETAIL_GIVER"),"pickup keeps its distinct visible purpose")
+    assert(pickup.detailContactBinding.questID==2 and pickup.detailContactBinding.endpoint==addon.quests[2].start and pickup.detailContactBinding.current())
+    assert(ending.detailContactBinding.questID==2 and ending.detailContactBinding.endpoint==addon.quests[2].finish and ending.detailContactBinding.current())
     assert(not pickup.enabled and not hasDestination(true)and not hasDestination(false))
     addon.quests[2].start.mapID=1
     C_Map={GetMapInfo=function()return{name="Native zone"}end}
@@ -1471,6 +1474,8 @@ local function detailIncludes(value)
     for _, fs in ipairs(ui.details) do if fs.shown and audienceText(fs.text):find(value, 1, true) then return true end end
     for _,row in ipairs(ui.detailContactRows or {})do if row.shown then
         for _,field in ipairs({row.title,row.note})do if field.text and audienceText(field.text):find(value,1,true)then return true end end
+        local purpose=row.detailPurpose
+        if purpose and purpose:IsShown()and purpose.text and audienceText(purpose.text):find(value,1,true)then return true end
     end end
     return false
 end
@@ -1493,7 +1498,8 @@ check("Current NPC names refresh start finish and preparation without changing p
     end end
     assert(marked, "preparation uses same fresh giver name")
     current = 102; ui:RefreshDetail()
-    assert(detailIncludes("Catalog start") and detailIncludes(addon.L("DETAIL_TURNIN")..": Native 102"))
+    assert(detailIncludes("Catalog start") and detailIncludes("Native 102")and detailIncludes(addon.L("DETAIL_TURNIN")))
+    local ending=assert(ui.detailContactRows[2]);assert(ending:IsShown()and ending.title.text=="Native 102"and ending.detailPurpose:IsShown()and ending.detailPurpose.text==addon.L("DETAIL_TURNIN")and ending.detailContactBinding.endpoint==finish and ending.detailContactBinding.current(),"native finish name and separate purpose belong to the current exact finisher")
     current = nil; ui:RefreshDetail()
     assert(not detailIncludes("Native 101") and not detailIncludes("Native 102") and detailIncludes("Catalog finish"))
     addon.quests[2].start, addon.quests[2].finish, addon.GiverName = oldStart, oldFinish, producer
@@ -3126,28 +3132,29 @@ check("Detail typography uses explicit title section and body styles and resets 
     addon.QuestRewards = function() return { items = { { id = 701, name = "Body reward", count = 1, texture = 123 } }, choices = {}, money = 0 } end
     showDetail(17001)
     local title = ui.details[1]
-    assert(title.text == addon.QuestName(17001) and title.fontSize == 22 and title.fontSizeAtText == 22 and title.fontResetBeforeText)
+    assert(title.text == addon.QuestName(17001) and title.fontSize == 27 and title.fontSizeAtText == 27 and title.fontResetBeforeText)
     local reward
     for _, fs in ipairs(ui.details)do if fs.shown and fs.text=="Body reward"then reward=fs end end
     local content=ui.detail:GetWidth()-8;local tile=content>=340 and (content-8)/2 or content
-    assert(reward and reward.fontSize == 15 and reward.fontResetBeforeText and reward.width == tile-40)
+    assert(reward and reward.fontSize == 13 and reward.fontResetBeforeText and reward.width == tile-40)
     local headingPath
-    for _, fs in ipairs(ui.details) do if fs.shown and fs.fontSize == 13 then
-        assert(fs.fontResetBeforeText); headingPath = fs.fontPath
+    for _, fs in ipairs(ui.details) do if fs.shown and fs.detailStyle == "caption" then
+        assert(fs.fontSize == 11 and fs.fontResetBeforeText); headingPath = fs.fontPath
     end end
     assert(headingPath, "Quest section captions use their explicit heading style")
     assert(ui:SetDetailTab("story"))
     local body
     for _, fs in ipairs(ui.details) do
-        if fs.shown and fs.text == addon.L("DETAIL_STORY") and fs.fontSize == 14 then body = fs end
+        if fs.shown and fs.text == addon.L("DETAIL_STORY") and fs.fontSize == 16 then body = fs end
     end
     assert(body and body.fontResetBeforeText, "native prose matching a heading stays body text without a redundant caption")
     assert(title.fontPath:find("NotoSans-Regular.ttf",1,true) and headingPath==title.fontPath and body.fontPath==title.fontPath)
     local titleColor = title.textColor[1]
+    title:SetTextColor(0.125,0.25,0.5) -- A recycled body must restore journal ink after an unrelated prior tint.
     title.measuredHeight = 90; measurement = function() error("cold measurement after style change") end
     ui.quest, ui.dungeon = nil, nil; ui:RefreshDetail()
-    assert(ui.details[1] == title and title.text == addon.L("PICK") and title.fontSize == 15 and title.fontSizeAtText == 15 and title.fontResetBeforeText)
-    assert(title.textColor[1] ~= titleColor and ui.detail.height < 90, "body recycling resets color and old title measurement")
+    assert(ui.details[1] == title and title.text == addon.L("PICK") and title.fontSize == 16 and title.fontSizeAtText == 16 and title.fontResetBeforeText)
+    assert(title.textColor[1] ~= titleColor and title.textColor[1] == 232/255 and title.textColor[1] ~= 0.125 and ui.detail.height < 90, "body recycling resets color and old title measurement")
     measurement = nil
     addon.Description, addon.QuestRewards = description, rewards
     addon.quests[17001], addon.quests[17002] = nil, nil
@@ -3159,14 +3166,14 @@ check("Large localized quest and overview titles measure wrapping without resett
     addon.QuestName = function(id) return id == 2 and long or questName(id) end
     measurement = function(fs) return fs.text == long and fs.fontSize * 3 or 18 end
     showDetail(2)
-    assert(ui.details[1].fontSize == 22 and ui.details[1].fontResetBeforeText)
+    assert(ui.details[1].fontSize == 27 and ui.details[1].fontResetBeforeText)
     assert(-ui.details[2].point[3] >= 68)
     ui.detailScroll:SetVerticalScroll(95); local writes = ui.detailScroll.scrollWrites
     ui:RefreshDetail(); ui.language.scripts.OnClick()
-    assert(ui.detailScroll.verticalScroll == 95 and ui.detailScroll.scrollWrites == writes and ui.details[1].fontSize == 22)
+    assert(ui.detailScroll.verticalScroll == 95 and ui.detailScroll.scrollWrites == writes and ui.details[1].fontSize == 27)
     ui.quest = nil; ui.dungeon = { key = "type-overview", name = "Overview title", minLevel = 1, maxLevel = 60, coverage = "partial", quests = {} }
     ui:RefreshDetail()
-    assert(ui.details[1].text == "Overview title" and ui.details[1].fontSize == 22 and ui.details[1].fontResetBeforeText)
+    assert(ui.details[1].text == "Overview title" and ui.details[1].fontSize == 27 and ui.details[1].fontResetBeforeText)
     measurement = nil; addon.QuestName, addon.db.locale = questName, locale
     ui.quest, ui.dungeon = quest, dungeon; ui:Refresh()
 end)
@@ -3527,7 +3534,7 @@ check("Native font families retain alphabet fallback while detail sizes and pool
     assert(row.note.fontFamily == family and row.note.fontSize == 14)
     showDetail(1)
     local title = ui.details[1]
-    assert(title.fontFamily == family and title.fontSize == 22 and title.fontSizeAtText == 22)
+    assert(title.fontFamily == family and title.fontSize == 27 and title.fontSizeAtText == 27)
     local oldFamily = family; ChatFontNormal = {}
     title.measuredHeight = 777
     ui:RefreshDetail()
@@ -3950,7 +3957,7 @@ check("Noto and probed CJK assets retain actual sizes and unscaled reusable rows
         local cjk={koKR="Fonts\\2002.ttf",zhCN="Fonts\\ARKai_T.ttf",zhTW="Fonts\\bHEI00M.ttf"}
         if cjk[code]then assert(title.fontPath==cjk[code] and title.fontFamily==nil)
         else assert(title.fontPath:find("NotoSans-Regular.ttf",1,true) and title.fontFamily==nil)end
-        assert(title.fontSize==22 and not title.scaledText and title.shadow[1]==0 and title.shadow[2]==0)
+        assert(title.fontSize==27 and not title.scaledText and title.shadow[1]==0 and title.shadow[2]==0)
     end
     addon.db.locale="enUS"
     local row=ui:MakeRow(ui.questList,{},1,59)
@@ -4383,8 +4390,8 @@ check("Optional objective icons retain exact collection text unknown amounts car
     local f=objectivePresentationFixture()
     local first,second=ui.objectiveButtons[1],ui.objectiveButtons[2]
     local line=objectiveText(addon.L("OBJECTIVE_ITEM","Objective 801",6))
-    assert(first.shown and first.width==24 and first.height==24 and first.icon.texture==1801 and second.icon.texture==1802)
-    assert(line.width==ui.detail:GetWidth()-38 and line.point[2]==34 and detailHas(unknownObjective("Objective 802")))
+    assert(first.shown and first.width==36 and first.height==36 and first.icon.texture==1801 and second.icon.texture==1802)
+    assert(line.width==ui.detail:GetWidth()-74 and line.point[2]==58 and detailHas(unknownObjective("Objective 802")))
     assert(detailHas(addon.L("ITEM_CARRIED",0)) and ui.engine:State(9970).status=="UNKNOWN" and not ui.action)
     local reads=0;addon.DialogueRewards=function()reads=reads+1;return{source="dialogue",hidden=true}end
     ui:RefreshDetail();assert(first.shown and not detailHas(addon.L("REWARD_HIDDEN")))
@@ -4398,13 +4405,13 @@ check("Missing cold malformed or failing objective icons leave ordinary text and
     for _,icon in ipairs({false,function()return nil end,function()return"Interface/Icons/no"end,function()return 0 end,
         function()return 4294967296 end,function()error("cold")end})do
         addon.ItemIcon=icon or nil;ui:RefreshDetail()
-        local text=objectiveText(value);assert(text and text.width==ui.detail:GetWidth()-8 and text.point[2]==4 and not first.shown and not first.objectiveBinding)
+        local text=objectiveText(value);assert(text and text.width==ui.detail:GetWidth()-32 and text.point[2]==16 and not first.shown and not first.objectiveBinding)
     end
     addon.ItemIcon=function()return 1801 end
     local setter=first.icon.SetTexture
     for _,failure in ipairs({"false","throw"})do
         first.icon.SetTexture=function(self,texture)if texture then if failure=="throw"then error("no texture")end;return false end;return setter(self,texture)end
-        ui:RefreshDetail();assert(not first.shown and objectiveText(value).width==ui.detail:GetWidth()-8 and not ui.rewardTextureBusy)
+        ui:RefreshDetail();assert(not first.shown and objectiveText(value).width==ui.detail:GetWidth()-32 and not ui.rewardTextureBusy)
     end
     first.icon.SetTexture=setter;ui:RefreshDetail();assert(first.shown)
     local before=#ui.objectiveButtons;for n=1,20 do ui:RefreshDetail()end;assert(#ui.objectiveButtons==before)
@@ -4479,7 +4486,7 @@ check("Objective icons reject restricted file IDs and keep Lua-safe oversized so
     local f=objectivePresentationFixture();local restricted={};local checker=issecretvalue
     issecretvalue=function(value)return value==restricted end
     addon.ItemIcon=function()return restricted end;ui:RefreshDetail()
-    assert(not ui.objectiveButtons[1].shown and objectiveText(addon.L("OBJECTIVE_ITEM","Objective 801",6)).width==ui.detail:GetWidth()-8)
+    assert(not ui.objectiveButtons[1].shown and objectiveText(addon.L("OBJECTIVE_ITEM","Objective 801",6)).width==ui.detail:GetWidth()-32)
     issecretvalue=checker
     local calls=0;addon.ItemIcon=function()calls=calls+1;return 1801 end
     addon.quests[9970].objectiveItems={{itemID=9007199254740991,name="Oversized source ID"}}
@@ -4742,7 +4749,15 @@ end)
 check("Starter objective provided and reward hovers remain source-distinct and stale starter leaves preserve newer owners",function()
     local f,q=starterPresentationFixture()
     q.objectiveItems={{itemID=801,name="Goal",quantity=6}};q.providedItems={{itemID=801,name="Supplied"}};ui:RefreshDetail()
-    local starter,objective,provided=ui.objectiveButtons[1],ui.objectiveButtons[2],ui.objectiveButtons[3]
+    local starter,objective,provided
+    for _,button in ipairs(ui.objectiveButtons)do if button.shown and button.objectiveBinding then
+        local binding=button.objectiveBinding
+        assert(binding.id==801 and binding.current(),"each visible role retains its current source identity")
+        if binding.role=="starter"then assert(not starter);starter=button
+        elseif binding.role=="objective"then assert(not objective);objective=button
+        elseif binding.role=="provided"then assert(not provided);provided=button end
+    end end
+    assert(starter and objective and provided and starter~=objective and starter~=provided and objective~=provided)
     assert(starter.objectiveBinding.role=="starter" and objective.objectiveBinding.role=="objective" and provided.objectiveBinding.role=="provided")
     starter.scripts.OnEnter();local oldLeave,oldEnter=starter.scripts.OnLeave,starter.scripts.OnEnter
     objective.scripts.OnEnter();local hides=f.tip.hides;oldLeave();assert(f.tip.hides==hides and f.tip.owner==objective)
@@ -5184,7 +5199,7 @@ check("Actual quest narrative occupies Story while missing-text guidance never b
     for code in pairs(addon.locales)do
         addon.db.locale=code;addon.Description=function()return"Actual narrative paragraph"end;showStory(9970)
         assert(ui.detailTab=="quest" and detailHas("Actual narrative paragraph"))
-        assert(objectiveText("Actual narrative paragraph").fontSize==14)
+        assert(objectiveText("Actual narrative paragraph").fontSize==16)
         addon.Description=function()return addon.L("NO_TEXT")end;ui:RefreshDetail()
         assert(not detailHas(addon.L("DETAIL_STORY_UNAVAILABLE")) and not detailHas(addon.L("NO_TEXT")) and not detailHas("Actual narrative paragraph"))
     end
@@ -5734,7 +5749,10 @@ check("Real catalogue target source search retains exact declared dungeon member
 end)
 local function detailSectionY(value)
     for _,fs in ipairs(ui.details)do if fs.shown and fs.text==value then return -fs.point[3] end end
-    for _,row in ipairs(ui.detailContactRows or {})do if row.shown and row.title.text:find(value..": ",1,true)==1 then return -row.point[3]end end
+    for _,row in ipairs(ui.detailContactRows or {})do
+        local purpose=row.detailPurpose
+        if row.shown and purpose and purpose:IsShown()and purpose.text==value then return -row.point[3]end
+    end
 end
 check("All twelve source locations remain unique below compact giver and acquisition sections",function()
     local f=rewardPresentationFixture();local actual={};assert(loadfile("Database/Catalog.lua"))("DungeonPro",actual)
@@ -6473,7 +6491,7 @@ check("Actual1654 accepted native progress precedes long source item goals provi
     local giverY=detailSectionY(addon.L("DETAIL_GIVER"));local progressY=detailSectionY(addon.L("OBJECTIVE_PROGRESS"))
     local dialogueY=detailSectionY(addon.L("OBJECTIVE_DIALOGUE"));local itemsY=detailSectionY(addon.L("DETAIL_OBJECTIVES"))
     local suppliedY=detailSectionY(addon.L("PROVIDED_ITEMS"));local startY=firstDetailPrefix("")
-    assert(giverY<progressY and progressY<dialogueY and dialogueY<itemsY and itemsY<suppliedY and not detailHas(addon.L("NEXT")))
+    assert(progressY<dialogueY and dialogueY<itemsY and itemsY<suppliedY and suppliedY<giverY and not detailHas(addon.L("NEXT")),"native goals and supplied tools precede the separate pickup contact")
     assert(progressY<ui.detailScroll:GetHeight() and detailHas("|cff88bfffCurrent native counter 0/1|r"))
     assert(q.requirementsKnown==false and ui.engine:State(1654).status=="ACTIVE" and ui.action.kind=="complete" and not ui.action.place)
     local material=assert(materialFields(addon.QuestName(q.completionQuests[1].id)))
@@ -6494,7 +6512,7 @@ check("Native-first hierarchy preserves actual source role text in all locales a
     end
     f.held=false;f.dialogue=nil;showDetail(1654,f.context)
     assert(ui.engine:State(1654).status=="UNKNOWN" and not ui.action and not detailHas(addon.L("OBJECTIVE_PROGRESS")))
-    assert(detailSectionY(addon.L("DETAIL_GIVER"))<detailSectionY(addon.L("DETAIL_OBJECTIVES")))
+    assert(detailSectionY(addon.L("DETAIL_OBJECTIVES"))<detailSectionY(addon.L("DETAIL_GIVER")),"recorded goals remain before pickup even without accepted native progress")
     addon.QuestObjectives,addon.DialogueObjectiveText=nil,nil;ui:RefreshDetail()
     assert(not detailHas(addon.L("OBJECTIVE_PROGRESS")) and not detailHas(addon.L("OBJECTIVE_DIALOGUE")))
     addon.db.locale=locale;f:restore()
@@ -6851,7 +6869,7 @@ check("Game waypoint is a separate optional manual destination after native obje
     assert(button and button.shown and button.enabled and button.label.text==addon.L("GAME_WAYPOINT_FOLLOW"),"game waypoint needs a separate explicit follow control")
     assert(detailHas(addon.L("GAME_WAYPOINT_NOTICE"))and detailHas("Native route instruction")and #f.visits==0)
     assert(detailSectionY(addon.L("OBJECTIVE_DIALOGUE"))<detailSectionY(addon.L("GAME_WAYPOINT")))
-    assert(detailSectionY(addon.L("DETAIL_GIVER"))<detailSectionY(addon.L("GAME_WAYPOINT")))
+    assert(detailSectionY(addon.L("GAME_WAYPOINT"))<detailSectionY(addon.L("DETAIL_GIVER")),"manual native goal destination precedes the separate recorded pickup")
     assert(action.id==9970 and action.kind=="complete" and giver.place==q.start and ui.engine:State(9970).status=="ACTIVE")
     button.scripts.OnClick(button,"LeftButton");local visit=f.visits[1]
     assert(visit.id==9970 and visit.kind=="visit" and visit.place.mapID==43 and visit.place.x==10 and visit.place.y==90)
@@ -7188,7 +7206,7 @@ check("current dialogue wraps long prose and ten language headings without shrin
     measurement=function(fs)return fs.text==f.text and 900 or 18 end
     for code in pairs(addon.locales)do addon.db.locale=code;ui:RefreshDetail()
         assert(detailHas(addon.L("DIALOGUE_PROGRESS_TEXT")))
-        for _,fs in ipairs(ui.details)do if fs.shown and fs.text==f.text then assert(fs.fontSize==15 and fs.measuredHeight==900)end end
+        for _,fs in ipairs(ui.details)do if fs.shown and fs.text==f.text then assert(fs.fontSize==16 and fs.measuredHeight==900)end end
     end
     measurement=nil;f:finish()
 end)
@@ -7310,7 +7328,7 @@ check("finish captions wrap in ten languages while one64pixel reference slot rec
     for code in pairs(addon.locales)do addon.db.locale=code;f:sources()
         assert(ui.giverPortrait==texture and texture.width==64 and texture.height==64)
         local caption=addon.L("TURNIN_REFERENCE_PORTRAIT","Finish Three");assert(detailHas(caption))
-        for _,fs in ipairs(ui.details)do if fs.shown and fs.text==caption then assert(fs.fontSize==15 and fs.measuredHeight==64)end end
+        for _,fs in ipairs(ui.details)do if fs.shown and fs.text==caption then assert(fs.fontSize==16 and fs.measuredHeight==64)end end
     end
     f.mode=1;f:sources();assert(texture.texture=="display:5001"and not detailHas(addon.L("TURNIN_REFERENCE_PORTRAIT","Finish Three")))
     f:finish()
@@ -7419,7 +7437,7 @@ check("recorded level and minimum wrap in ten locales at the existing readable b
     measurement=function(fs)return fs.text:find(" · ",1,true)and 54 or 18 end
     for code in pairs(addon.locales)do addon.db.locale=code;f:refresh()
         local value=addon.L("DETAIL_LEVEL",16).." · "..addon.L("DETAIL_MIN_LEVEL",9);local found=false
-        for _,fs in ipairs(ui.details)do if fs.shown and fs.text:find(value,1,true)then found=true;assert(fs.fontSize==13 and fs.measuredHeight==54)end end
+        for _,fs in ipairs(ui.details)do if fs.shown and fs.text:find(value,1,true)then found=true;assert(fs.fontSize==11 and fs.measuredHeight==54)end end
         assert(found)
     end
     q.level=nil;f:refresh();assert(not detailIncludes(addon.L("DETAIL_LEVEL",16)))
@@ -7664,7 +7682,7 @@ check("reading profile enlarges body and row text while measured spacing and hea
     for _,code in ipairs({"enUS","ruRU","zhCN","zhTW","koKR"})do
         addon.db.locale=code;showDetail(2)
         local body=0
-        for _,fs in ipairs(ui.details)do if fs.shown and fs.detailStyle=="body"then body=body+1;assert(fs.fontSize==15)end end
+        for _,fs in ipairs(ui.details)do if fs.shown and fs.detailStyle=="body"then body=body+1;assert(fs.fontSize==16)end end
         assert(body>0 and ui.title.fontSize==22 and ui.heading.fontSize==26 and ui.searchBox.fontSize==14)
         assert(ui.footer==nil and ui.summary==nil and ui.coverage==nil)
     end
@@ -7703,7 +7721,7 @@ check("reading profile preserves ten locale wrapping and short viewport scroll b
         assert(ui.detail.height>=1200 and ui.detailScroll.ScrollBar.shown and ui.detailScroll.ScrollBar.maximum>1000)
         local found=false
         for _,fs in ipairs(ui.details)do
-            if fs.shown and fs.text==prose then found=true;assert(fs.fontSize==14 and fs.measuredHeight==1200)end
+            if fs.shown and fs.text==prose then found=true;assert(fs.fontSize==16 and fs.measuredHeight==1200)end
         end
         assert(found)
         ui.detailScroll:SetHeight(ui.detail.height);assert(not ui.detailScroll.ScrollBar.shown)
@@ -9554,7 +9572,7 @@ check("Single stream preserves full UTF8 prose across all locales and aliases ne
         assert(detailHas(f.prose)and not detailHas(string.rep(glyph,240).."…"))
         local title,titleCount=nil,0
         for _,line in ipairs(ui.details)do if line.shown and line.detailStyle=="title"then title=line;titleCount=titleCount+1 end end
-        assert(titleCount==1 and title.text==addon.QuestName(53001)and title.fontSize==22)
+        assert(titleCount==1 and title.text==addon.QuestName(53001)and title.fontSize==27)
         assert(not(ui.narrativeToggle and ui.narrativeToggle.shown))
         for _,key in ipairs({"story","quest","sources"})do assert(ui:SetDetailTab(key)and ui.detailTab=="quest"and f.reads==before+1 and detailHas(f.prose))end
         for _,button in pairs(ui.detailTabButtons or{})do assert(not button.shown and not button.enabled and button.scripts.OnClick==nil)end

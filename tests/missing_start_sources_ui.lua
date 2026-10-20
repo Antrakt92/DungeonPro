@@ -71,7 +71,9 @@ for _,locale in ipairs({"enUS","ruRU","deDE","frFR","esES","ptBR","koKR","zhCN",
    local shown=false
    for _,field in ipairs(ui.details)do if field:IsShown()and field.text:find(a.L("DETAIL_TURNIN"),1,true)and field.text:find(q.finish.name,1,true)then shown=true end end
    local contact=ui.detailContactRows and ui.detailContactRows[2]
-   if contact and contact:IsShown()and contact.title.text:find(a.L("DETAIL_TURNIN"),1,true)and contact.title.text:find(q.finish.name,1,true)then shown=true end
+   if contact and contact:IsShown()and contact.detailPurpose and contact.detailPurpose.text==a.L("DETAIL_TURNIN")and
+      contact.title.text:find(q.finish.name,1,true)and contact.detailContactBinding and
+      contact.detailContactBinding.endpoint==q.finish and contact.detailContactBinding.current()then shown=true end
    assert(shown,"recorded turn-in is displayed separately from the unknown starting method")
   end
  end
@@ -511,7 +513,7 @@ do
  -- Boundary 2^53-1 stays a valid visit: enabled, one Start, stale binding retires.
  q.start={npcID=1,mapID=9007199254740991,x=10,y=20}; routed=0; render(166)
  assert(contact():IsShown()and contact().enabled,"boundary map enables the visible contact")
- assert(contact().detailContactBinding.action.kind=="visit"and contact().title.text:find(a.L("DETAIL_GIVER")..": ",1,true)==1,"boundary contact keeps its giver visit role")
+ assert(contact().detailContactBinding.action.kind=="visit"and contact().detailPurpose.text==a.L("DETAIL_GIVER"),"boundary contact keeps its separate giver purpose and visit role")
  assert(ui:NavigationDestination(false)~=nil,"boundary map restores the visit destination")
  local r=row(166); local control=assert(r.navigationControl)
  assert(control.enabled and r.navigationBinding.action~=nil,"boundary map enables the row with an action")

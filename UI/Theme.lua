@@ -495,6 +495,141 @@ local function textColor(fontString, value)
     if cleanObject(fontString) then invoke(fontString, "SetTextColor", unpack(value)) end
 end
 
+-- The selected quest journal has its own palette; catalogue and chain styles stay shared.
+local journal = {
+    background = { 26/255, 25/255, 30/255, 1 }, ink = { 232/255, 226/255, 215/255, 1 },
+    muted = { 170/255, 166/255, 164/255, 1 }, gold = { 227/255, 195/255, 136/255, 1 },
+    line = { 60/255, 56/255, 57/255, 1 }, objective = { 35/255, 36/255, 44/255, 1 },
+}
+local journalText = {
+    title = { 27, journal.ink }, body = { 16, journal.ink }, caption = { 11, journal.muted },
+    section = { 12, journal.gold }, contactName = { 15, journal.gold },
+    contactPurpose = { 11, journal.muted }, zone = { 11, journal.muted }, map = { 11, journal.gold },
+}
+-- Requests exist only while a setter is on the stack. A late native setter must
+-- repair the newer style without retaining retired controls or their owners.
+local journalRequests = setmetatable({}, { __mode = "k" })
+local function journalPaint(target, owner, painter)
+    local state = journalRequests[target]
+    if not state then state = { depth = 0 }; journalRequests[target] = state end
+    state.depth = state.depth + 1
+    local request = { paint = painter, owner = owner }
+    state.latest = request
+    local function run(intent)
+        local function current()
+            if addon.Theme ~= Theme or state.latest ~= intent then return false end
+            local fresh = not intent.owner or addon.Read(intent.owner, "boolean") == true
+            return fresh and addon.Theme == Theme and state.latest == intent
+        end
+        local function write(object, method, ...)
+            if not current() then return false end
+            local ok = invoke(object, method, ...)
+            return ok and current()
+        end
+        return current() and intent.paint(current, write) == true and current()
+    end
+    local ok, result = pcall(run, request)
+    if state.latest ~= request and not state.repairing then
+        state.repairing = true
+        pcall(run, state.latest)
+        state.repairing = nil
+    end
+    state.depth = state.depth - 1
+    if state.depth == 0 then journalRequests[target] = nil end
+    return ok and result == true
+end
+
+function Theme.StyleDetailText(region, role, ownerCurrent)
+    region, role = cleanObject(region), addon.Clean(role, "string")
+    local format = role and journalText[role]
+    if not region or not format then return false end
+    return journalPaint(region, ownerCurrent, function(current, write)
+        local font = Theme.ApplyFont
+        local ok = pcall(font, region, format[1])
+        if not ok or Theme.ApplyFont ~= font or not current() then return false end
+        return write(region, "SetTextColor", unpack(format[2]))
+    end)
+end
+
+function Theme.StyleDetailContact(row, ownerCurrent)
+    row = cleanObject(row)
+    if not row then return false end
+    return journalPaint(row, ownerCurrent, function(current, write)
+        local title, note = cleanObject(row.title), cleanObject(row.note)
+        if not title or not note then return false end
+        if not row.detailPurpose then
+            local created = objectResult(row, "CreateFontString", nil, "OVERLAY")
+            if not current() then if created then invoke(created, "Hide") end; return false end
+            row.detailPurpose = created
+        end
+        if not row.detailAvatar then
+            local created = texture(row, "ARTWORK")
+            if not current() then if created then invoke(created, "Hide") end; return false end
+            row.detailAvatar = created
+            if not row.detailAvatar or not write(row.detailAvatar, "SetTexture", "Interface\\GossipFrame\\AvailableQuestIcon") then return false end
+        end
+        if not row.detailMapGlyph then
+            local created = objectResult(row, "CreateFontString", nil, "OVERLAY")
+            if not current() then if created then invoke(created, "Hide") end; return false end
+            row.detailMapGlyph = created
+        end
+        if not row.detailSeparator then
+            local created = texture(row, "BORDER")
+            if not current() then if created then invoke(created, "Hide") end; return false end
+            row.detailSeparator = created
+        end
+        local purpose, avatar, glyph, separator = row.detailPurpose, row.detailAvatar, row.detailMapGlyph, row.detailSeparator
+        if not purpose or not avatar or not glyph or not separator then return false end
+        row.detailName, row.detailZone, row.purpose, row.avatar = title, note, purpose, avatar
+        for _, entry in ipairs({ {title, "contactName"}, {note, "zone"}, {purpose, "contactPurpose"}, {glyph, "map"} }) do
+            if not Theme.StyleDetailText(entry[1], entry[2], current) or not current() then return false end
+        end
+        local state = surfaces[row]
+        if state then
+            for _, edge in ipairs({ state.top, state.bottom, state.left, state.right, state.accent }) do
+                if not write(edge, "Hide") then return false end
+            end
+        end
+        if row.bg and not write(row.bg, "SetColorTexture", 0, 0, 0, 0) then return false end
+        local highlight = objectResult(row, "GetHighlightTexture")
+        if not current() then return false end
+        if highlight and not write(highlight, "SetColorTexture", 0, 0, 0, 0) then return false end
+        if not write(avatar, "SetSize", 36, 36) or not write(avatar, "ClearAllPoints") or
+            not write(avatar, "SetPoint", "TOPLEFT", row, "TOPLEFT", 4, -10) or not write(avatar, "Show") or
+            not write(glyph, "SetText", "↗") or not write(glyph, "ClearAllPoints") or
+            not write(glyph, "SetPoint", "RIGHT", row, "RIGHT", -4, 0) or not write(glyph, "Show") or
+            not write(separator, "SetColorTexture", unpack(journal.line)) or not write(separator, "SetHeight", 1) or
+            not write(separator, "ClearAllPoints") or not write(separator, "SetPoint", "TOPLEFT", row, "TOPLEFT", 0, 0) or
+            not write(separator, "SetPoint", "TOPRIGHT", row, "TOPRIGHT", 0, 0) or not write(separator, "Show") then return false end
+        return true
+    end)
+end
+
+function Theme.StyleDetailSection(frame, kind, ownerCurrent)
+    frame, kind = cleanObject(frame), addon.Clean(kind, "string")
+    if not frame or (kind ~= "objectives" and kind ~= "header" and kind ~= "narrative" and kind ~= "reward") then return false end
+    return journalPaint(frame, ownerCurrent, function(current, write)
+        local state = frame.detailJournalSurface
+        if not state then
+            state = { background = texture(frame, "BACKGROUND"), left = texture(frame, "BORDER"), top = texture(frame, "BORDER") }
+            if not current() then return false end
+            if not state.background or not state.left or not state.top then return false end
+            frame.detailJournalSurface = state
+        end
+        local objective = kind == "objectives"
+        if not write(state.background, "SetAllPoints", frame) or not write(state.background, "SetColorTexture", unpack(journal.objective)) or
+            not write(state.background, "SetShown", objective) or not write(state.left, "SetWidth", 2) or
+            not write(state.left, "SetColorTexture", unpack(journal.gold)) or not write(state.left, "ClearAllPoints") or
+            not write(state.left, "SetPoint", "TOPLEFT", frame, "TOPLEFT", 0, 0) or
+            not write(state.left, "SetPoint", "BOTTOMLEFT", frame, "BOTTOMLEFT", 0, 0) or not write(state.left, "SetShown", objective) or
+            not write(state.top, "SetHeight", 1) or not write(state.top, "SetColorTexture", unpack(journal.line)) or
+            not write(state.top, "ClearAllPoints") or not write(state.top, "SetPoint", "TOPLEFT", frame, "TOPLEFT", 0, 0) or
+            not write(state.top, "SetPoint", "TOPRIGHT", frame, "TOPRIGHT", 0, 0) or not write(state.top, "SetShown", not objective) then return false end
+        return true
+    end)
+end
+
+
 local function cardArt(state, row, active, selected)
     local art = cleanObject(row.art)
     if active and art and not state.cardFrame then
@@ -986,6 +1121,12 @@ function Theme.Apply(ui)
             decoration.panels[key] = panel(frame, target)
         end
         decoration.catalogHidden = false
+    end
+    local detailPanel = decoration.panels and decoration.panels.detail
+    if detailPanel then
+        color(detailPanel[2], journal.background)
+        color(detailPanel[3], journal.line)
+        ui.detailJournalBackground, ui.detailJournalBorder = detailPanel[2], detailPanel[3]
     end
     if not Theme.SetCatalogVisible(ui) then return false end
     local catalogScroll = cleanObject(ui.catalogScroll) or (cleanObject(ui.catalog) and objectResult(ui.catalog, "GetParent"))

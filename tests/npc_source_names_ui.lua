@@ -1,6 +1,9 @@
 -- Reviewed NPC labels follow the selected language without changing quest sources.
 local f=assert(loadfile("tests/client_ui.lua"))("fixture")
 local a,ui=f.addon,f.addon.UI
+-- Native FontStrings are shown on creation; journal purpose is its own region.
+local createFontString=f.methods.CreateFontString
+function f.methods:CreateFontString(...)local value=createFontString(self,...);value.shown=true;return value end
 issecretvalue=function()return false end;GetLocale=function()return"enUS"end;C_Timer={After=function()end}
 f.eventFrame.scripts.OnEvent(f.eventFrame,"ADDON_LOADED","DungeonPro");ui:Toggle();ui.includeUnavailable=true
 local owners={}
@@ -43,6 +46,8 @@ local function ownContact(field)
  local q=assert(a.quests[ui.quest]);local point=assert(q[field]);local contact=assert(ui.detailContactRows[field=="start"and 1 or 2])
  local binding=assert(contact.detailContactBinding)
  assert(contact:IsShown()and binding.questID==q.id and binding.field==field and binding.endpoint==point and binding.current(),"actual contact owns exact selected source")
+ local purpose=assert(contact.detailPurpose,"contact purpose is a distinct region")
+ assert(purpose:IsShown()and purpose.text==a.L(field=="start"and "DETAIL_GIVER"or"DETAIL_TURNIN"),"current source purpose remains independently visible")
  return contact
 end
 local function sourceHint()
@@ -88,7 +93,7 @@ for _,locale in ipairs({"ruRU","zhCN","frFR"})do
    local point=assert(a.quests[id][role]);assert(point.npcID==npc and not point.objectID and not point.itemID)
    local source,map,x,y,zone=point.name,point.mapID,point.x,point.y,point.zoneName
    render(id,role=="finish")
-   assert(ownContact(role).title.text==a.L(role=="start"and "DETAIL_GIVER"or "DETAIL_TURNIN")..": "..name,"actual own NPC contact needs its reviewed selected-language name: "..locale.."/"..npc)
+   assert(ownContact(role).title.text==name,"actual own NPC contact needs its reviewed selected-language name: "..locale.."/"..npc)
    local contact=ownContact(role)
    local control=role=="finish"and ui.turnin or contact
    assert(control and control:IsShown()and control.enabled and control.scripts.OnClick)

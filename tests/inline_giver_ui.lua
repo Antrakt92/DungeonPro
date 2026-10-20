@@ -31,8 +31,8 @@ local pickup,finish=assert(ui.detailContactRows[1]),assert(ui.detailContactRows[
 assert(pickup:IsShown()and finish:IsShown()and pickup.enabled and finish.enabled,"two full-width contacts are actionable")
 assert(not giver:IsShown()and not giver.enabled and giver.scripts.OnClick==nil,"obsolete right-pane glyph is retired")
 local location,turnin=text("Start One"),text("Finish Two")
-assert(pickup:GetWidth()==ui.detail:GetWidth()-8 and location:GetWidth()==ui.detail:GetWidth()-24,"own contact text uses full-row width")
-assert(pickup:GetHeight()>=52 and finish.point[3]<=pickup.point[3]-pickup:GetHeight()-4,"finisher follows the measured pickup row without overlap")
+assert(pickup:GetWidth()==ui.detail:GetWidth()-8 and location:GetWidth()==ui.detail:GetWidth()-92,"own contact text uses full-row width")
+assert(pickup:GetHeight()>=76 and finish.point[3]<=pickup.point[3]-pickup:GetHeight()-8,"finisher follows the measured pickup row without overlap")
 local retired=assert(pickup.scripts.OnClick)
 local function gold(control,alpha)
     assert(control.navigationGold and #control.footerIconParts==3)
@@ -49,11 +49,11 @@ local long=string.rep("Long giver ",20)
 q.start.name=long
 local measure=fixture.methods.GetStringHeight
 fixture.methods.GetStringHeight=function(self)
-    if self.text and self.text:find(long,1,true)then assert(self.width==ui.detail:GetWidth()-24);return 72 end
+    if self.text and self.text:find(long,1,true)then assert(self.width==ui.detail:GetWidth()-92);return 72 end
     return 18
 end
 render();location,turnin=text(long),text("Finish Two")
-assert(pickup:GetHeight()>=108 and finish.point[3]<=pickup.point[3]-pickup:GetHeight()-4,"long source and zone text fit measured full rows without overlapping finisher")
+assert(pickup:GetHeight()>=137 and finish.point[3]<=pickup.point[3]-pickup:GetHeight()-8,"long source and zone text fit measured full rows without overlapping finisher")
 fixture.methods.GetStringHeight=measure
 q.start.name="Start One";q.start.mapID=nil;q.start.x=nil;q.start.y=nil
 render();assert(pickup:IsShown()and not pickup.enabled and pickup.scripts.OnClick==nil and not giver.enabled);gold(row.navigationControl,.6)
@@ -87,6 +87,6 @@ for _,field in ipairs(ui.details)do assert(not field:IsShown()or field.text~=add
 assert(not giver:IsShown()and text(addon.L("ITEM_STARTER", "Starter")).navigationInset==0,"item starts retain one introduction without an NPC navigation inset")
 q.start={npcID=1,name="Start One",mapID=1453};render()
 assert(pickup:IsShown()and pickup.enabled and pickup.detailContactBinding.mapOnly and not giver:IsShown())
-location=text("Start One");assert(location.width==ui.detail:GetWidth()-24 and pickup:GetWidth()==ui.detail:GetWidth()-8)
+location=text("Start One");assert(location.width==ui.detail:GetWidth()-92 and pickup:GetWidth()==ui.detail:GetWidth()-8)
 ui.quest=nil;ui:RefreshDetail();assert(not giver:IsShown()and not pickup:IsShown()and not finish:IsShown())
 print("Inline gold giver checks passed (geometry and state modeled; native rendering unverified)")

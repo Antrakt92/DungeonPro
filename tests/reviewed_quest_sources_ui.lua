@@ -62,7 +62,9 @@ local function ownContact(field, definition)
     assert(row:IsShown()and binding.questID==definition.id and binding.field==field and binding.endpoint==point,
         "visible contact retains exact selected quest, source field and endpoint")
     local heading=addon.L(field=="start"and "DETAIL_GIVER"or "DETAIL_TURNIN")
-    assert(row.title.text:find(heading..": "..point.name,1,true)==1,"reviewed own contact identity is visible")
+    assert(row.detailPurpose and row.detailPurpose.text==heading and row.title.text==point.name,
+        "reviewed own contact purpose and identity are visible")
+    assert(binding.current(), "reviewed own contact binding remains current")
     if point.zoneName then assert(row.note.text==point.zoneName,"reviewed own contact zone is visible")end
     return row
 end

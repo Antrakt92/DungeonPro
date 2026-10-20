@@ -75,16 +75,16 @@ local function validUTF8(text)
  return true
 end
 render()
-assert(exact(addon.QuestName(166)).fontSize==22,"quest title uses distinct display size")
-assert(contains(addon.L("DETAIL_LEVEL",addon.quests[166].level)).fontSize==13)
-assert(contains(addon.L("DETAIL_MIN_LEVEL",addon.quests[166].minLevel)).fontSize==13)
+assert(exact(addon.QuestName(166)).fontSize==27,"quest title uses the journal display size")
+assert(contains(addon.L("DETAIL_LEVEL",addon.quests[166].level)).fontSize==11)
+assert(contains(addon.L("DETAIL_MIN_LEVEL",addon.quests[166].minLevel)).fontSize==11)
 assert(contact("start")and contact("finish"),"metadata includes both current typed contact roles")
 assert(contact("start").title.text:find(addon.quests[166].start.name,1,true)and
     contact("finish").title.text:find(addon.quests[166].finish.name,1,true),"each contact displays its own source name")
 assert(not exact(addon.L("DETAIL_GIVER")),"the contact heading is not duplicated in legacy prose")
 assert(count(description)==1,"complete authentic prose follows practical information once")
 assert(ui:SetDetailTab("story")and ui.detailTab=="quest","compatibility calls do not create another reading mode")
-assert(storyBody().text==description and storyBody().fontSize==14)
+assert(storyBody().text==description and storyBody().fontSize==16)
 assert(not ui.narrativeToggle or not ui.narrativeToggle:IsShown(),"short story is complete without disclosure")
 assert(not contains(addon.L("REWARD_UNAVAILABLE")) and not contains(addon.L("NO_TEXT")))
 
@@ -92,7 +92,7 @@ rewardDTO={source="cache",items={{id=7001,name="Guaranteed blade",texture=134400
  choices={{id=8001,name="Choose staff",texture=134401,count=1},{id=8002,name="Choose wand",texture=134402,count=1}},xp=777,money=456}
 render()
 assert(exact(addon.L("DETAIL_REWARDS")) and count(addon.L("DETAIL_REWARDS"))==1)
-assert(exact(addon.L("DETAIL_REWARDS")).fontSize==13)
+assert(exact(addon.L("DETAIL_REWARDS")).fontSize==11)
 assert(contains("Guaranteed blade") and contains("Choose staff") and contains("Choose wand"))
 assert(exact(addon.L("REWARD_CHOICES")),"choose-one group remains explicit")
 assert(contains("777") and contains("COINS456"))

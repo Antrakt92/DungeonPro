@@ -1,6 +1,9 @@
 -- Selected world-area captions own their visible controls independently of source names.
 local f=assert(loadfile("tests/client_ui.lua"))("fixture")
 local a,ui=f.addon,f.addon.UI
+-- Match native default visibility for newly created contact text regions.
+local createFontString=f.methods.CreateFontString
+function f.methods:CreateFontString(...)local value=createFontString(self,...);value.shown=true;return value end
 issecretvalue=function()return false end;GetLocale=function()return"enUS"end;C_Timer={After=function()end}
 f.eventFrame.scripts.OnEvent(f.eventFrame,"ADDON_LOADED","DungeonPro");ui:Toggle()
 a.Context=function()return{level=60,faction="Alliance",class="MAGE",completed=function()return false end,active=function()return false end}end
@@ -146,8 +149,12 @@ assert(middle and middle.navigationBinding.action)
 local selected,engine,plan=ui.quest,ui.engine,ui.currentPlan;before=#routes
 middle.navigationControl.scripts.OnEnter()
 assert(tip.shown and tip.body:find(translated,1,true)and not tip.body:find(area,1,true),"middle route hint uses selected reviewed world area")
-ui.giver.scripts.OnEnter()
-assert(tip.shown and tip.body:find(translated,1,true)and not tip.body:find(area,1,true),"primary route hint agrees with the world-area caption")
+local contact=assert(ui.detailContactRows[1]);local binding=assert(contact.detailContactBinding)
+assert(contact:IsShown()and binding.current()and binding.questID==2204 and binding.field=="start"and binding.endpoint==point and
+ binding.action.kind=="visit"and binding.action.place==point,"actual current contact retains its exact typed object route")
+assert(contact.detailPurpose:IsShown()and contact.detailPurpose.text==a.L("DETAIL_GIVER")and
+ contact.title.text==(a.SourceName(point)or source)and contact.note.text==translated,"contact purpose, actor and translated area are visible independently")
+assert(not ui.giver:IsShown()and not ui.giver.enabled and ui.giver.scripts.OnClick==nil,"retired giver has no duplicate contact capability")
 assert(#routes==before and ui.quest==selected and ui.engine==engine and ui.currentPlan==plan,"hints never start navigation or rebuild the inspected plan")
 local savedNavigation = a.Navigation; a.Navigation = nativeNavigation
 assert(nativeNavigation.Start({id=2204,kind="visit",place=point}),"guide starts only through an explicit manual request")

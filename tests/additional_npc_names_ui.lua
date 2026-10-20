@@ -1,6 +1,9 @@
 -- Reviewed creature labels change presentation, not source identity or quest certainty.
 local f=assert(loadfile("tests/client_ui.lua"))("fixture")
 local a,ui=f.addon,f.addon.UI
+-- Native FontStrings are shown on creation; journal purpose is its own region.
+local createFontString=f.methods.CreateFontString
+function f.methods:CreateFontString(...)local value=createFontString(self,...);value.shown=true;return value end
 issecretvalue=function()return false end;GetLocale=function()return"enUS"end;C_Timer={After=function()end}
 f.eventFrame.scripts.OnEvent(f.eventFrame,"ADDON_LOADED","DungeonPro");ui:Toggle();ui.includeUnavailable=true
 local groups={
@@ -54,6 +57,8 @@ local function ownContact(field)
  local q=assert(a.quests[ui.quest]);local point=assert(q[field]);local contact=assert(ui.detailContactRows[field=="start"and 1 or 2])
  local binding=assert(contact.detailContactBinding)
  assert(contact:IsShown()and binding.questID==q.id and binding.field==field and binding.endpoint==point and binding.current(),"actual contact owns exact selected source")
+ local purpose=assert(contact.detailPurpose,"contact purpose is a distinct region")
+ assert(purpose:IsShown()and purpose.text==a.L(field=="start"and "DETAIL_GIVER"or"DETAIL_TURNIN"),"current source purpose remains independently visible")
  return contact
 end
 local function sourceHint()
@@ -85,7 +90,7 @@ for _,group in ipairs(groups)do
   points[id]={point=p,name=p.name,zone=p.zoneName,map=map,x=x,y=y,npc=npc,finish=q.finish,requires=q.requires,known=q.requirementsKnown}
   render(id)
   local status=ui.engine:State(id).status;local before=#routes
-  assert(ownContact("start").title.text==a.L("DETAIL_GIVER")..": "..label,"reviewed Chinese NPC label missing on own actual pickup contact "..id.."/"..npc)
+  assert(ownContact("start").title.text==label,"reviewed Chinese NPC label missing on own actual pickup contact "..id.."/"..npc)
   if id==4771 then assert(visible("Native item marker 12368"),"provided item keeps independent native item naming")end
   assert(ui:SetDetailTab("sources")and visible(label),"Sources must retain the same reviewed NPC identity")
   assert(ui.engine:State(id).status==status and #routes==before,"translated source display cannot grant availability or start a route")

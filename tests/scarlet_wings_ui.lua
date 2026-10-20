@@ -113,7 +113,19 @@ assert(legacy and legacy.legacy and legacy.current(), "legacy sm selection stays
 group[1].sharedQuests[1] = 1049
 assert(not a.Read(scopeGetter, "table", ui, group[1]), "membership mutation rejected")
 group[1].sharedQuests[1] = 991801
-local function draw() a.char.selectedDungeon = group[1].key; ui.dungeon = group[1]; ui.quest = nil; ui.questTreeRoot = nil; ui.questTreeDungeon = nil; ui:RefreshQuests() end
+local function draw()
+ a.char.selectedDungeon = group[1].key; ui.dungeon = group[1]; ui.quest = nil
+ ui.questTreeRoot = nil; ui.questTreeDungeon = nil; ui:RefreshQuests()
+ local link,sharedCount=nil,0
+ for _,row in ipairs(ui.rows)do if row:IsShown()then
+  if row.sharedDiscovery then sharedCount=sharedCount+1 end
+  if row.sharedOverview then assert(not link,"one complex link per wing");link=row end
+ end end
+ assert(sharedCount==0 and link and link.enabled and link.scripts.OnClick,"wing keeps unassigned shared discovery behind an explicit link")
+ assert(ui.currentPlan.notice=="SM_PARTIAL_WING"and not ui.currentPlan.ready and ui.currentPlan.unknown,"partial wing stays unknown before opening discovery")
+ link.scripts.OnClick()
+ assert(ui.dungeon==nil and a.char.selectedDungeon=="sm"and ui.currentPlan==nil,"unassigned discovery has a separate complex context")
+end
 local function sharedRows()
     local out = {}
     for _, r in ipairs(ui.rows) do if r:IsShown() and r.sharedDiscovery then out[#out + 1] = r end end
@@ -121,7 +133,7 @@ local function sharedRows()
 end
 draw()
 assert(#sharedRows() == 3, "shared roots discoverable")
-assert(ui.currentPlan.notice == "SM_PARTIAL_WING" and not ui.currentPlan.ready and ui.currentPlan.unknown, "partial empty stays unknown")
+assert(ui.currentPlan==nil and ui.dungeon==nil and a.char.selectedDungeon=="sm", "shared discovery cannot claim a prepared wing plan")
 local row = sharedRows()[1]
 local click, inspect, opened = row.scripts.OnClick, ui.InspectQuest, nil
 ui.InspectQuest = function(self, id) opened = id end

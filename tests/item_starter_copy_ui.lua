@@ -1,6 +1,9 @@
 -- Item starters retain one introduction and both recorded roles through the real TOC.
 local fixture = assert(loadfile("tests/client_ui.lua"))("fixture")
 local addon, ui = fixture.addon, fixture.addon.UI
+-- Native FontStrings are shown on creation; journal purpose is its own region.
+local createFontString=fixture.methods.CreateFontString
+function fixture.methods:CreateFontString(...)local value=createFontString(self,...);value.shown=true;return value end
 C_Timer = { After = function() end }
 issecretvalue = function() return false end
 fixture.eventFrame.scripts.OnEvent(fixture.eventFrame, "ADDON_LOADED", "DungeonPro")
@@ -79,7 +82,10 @@ for _,locale in ipairs({"enUS","ruRU","deDE","frFR","esES","ptBR","koKR","zhCN",
   assert(occurrences(addon.L("ITEM_CARRIED",0))==1,"starter carried count remains visible once across both recorded roles")
   if sample[1]==7508 or sample[1]==98423 then assert(visible(addon.L("START_ITEM_LOCATION_UNKNOWN")),"unknown starter source remains explicit")end
  end
- render(214);local pickup=assert(ui.detailContactRows[1]);assert(pickup:IsShown()and pickup.title.text:find(addon.L("DETAIL_GIVER")..": ",1,true)==1,"NPC giver keeps its own named contact heading")
+ render(214);local pickup=assert(ui.detailContactRows[1]);local binding=assert(pickup.detailContactBinding)
+ local purpose=assert(pickup.detailPurpose);local point=assert(addon.quests[214].start)
+ assert(pickup:IsShown()and binding.current()and binding.questID==214 and binding.field=="start"and binding.endpoint==point and
+  purpose:IsShown()and purpose.text==addon.L("DETAIL_GIVER")and pickup.title.text==(addon.SourceName(point)or point.name),"NPC giver keeps a distinct purpose and its own exact typed actor name")
  render(7492);assert(visible(addon.L("DETAIL_GIVER")),"alternative givers keep their heading")
 end
 addon.db.locale="enUS"
