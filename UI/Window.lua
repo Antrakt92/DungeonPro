@@ -3426,7 +3426,7 @@ function UI:RefreshDetail(sourceFocus)
         local startValidExclusiveItem = startCleanItemID and startCleanItemID > 0 and startCleanItemID <= 4294967295 and startCleanItemID % 1 == 0 and
             rawget(start, "npcID") == nil and rawget(start, "objectID") == nil
         local invalidItemStart = start ~= nil and startRawItemID ~= nil and not startValidExclusiveItem
-        if detailTab ~= "story" and map and map > 0 and map <= 9007199254740991 and map % 1 == 0 and not invalidItemStart and addon.Read(self.HasSummonSource,"boolean",self,start) == false then
+        if detailTab ~= "story" and map and map > 0 and map <= 9007199254740991 and map % 1 == 0 and not invalidItemStart and addon.Read(self.HasSummonSource,"boolean",self,start) == false and (rawget(start, "summonItem") == nil or addon.Read(self.SummonSource, "table", self, start) ~= nil) then
             local x, gy = addon.Clean(start.x, "number"), addon.Clean(start.y, "number")
             pendingGiver = { action = { id = id, kind = "visit", place = start }, source = q, map = map, x = x, y = gy,
                 coordinates = x ~= nil and gy ~= nil and x >= 0 and x <= 100 and gy >= 0 and gy <= 100 }

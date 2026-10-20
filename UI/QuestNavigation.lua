@@ -243,6 +243,7 @@ function UI:HasSummonSource(endpoint)
     if not endpoint then return false end
     local objectID = addon.Clean(rawget(endpoint, "objectID"), "number")
     if not objectID or objectID <= 0 or objectID > 4294967295 or objectID % 1 ~= 0 then return false end
+    if rawget(endpoint, "npcID") ~= nil or rawget(endpoint, "itemID") ~= nil or rawget(endpoint, "mapID") ~= nil or rawget(endpoint, "x") ~= nil or rawget(endpoint, "y") ~= nil or rawget(endpoint, "reportedLocations") ~= nil then return false end
     local relation = rawget(endpoint, "summonItem")
     if type(issecretvalue) == "function" and addon.Read(issecretvalue, "boolean", relation) ~= false then return true end
     return relation ~= nil
@@ -361,6 +362,7 @@ function UI:BindQuestRowNavigation(row, id, ownerCurrent)
     local itemOnly = values.itemID and not values.npcID and not values.objectID
     if summon then binding.inspect, binding.reason = true, "SOURCE_DETAILS_HINT"
     elseif declaredSummon then binding.reason = "GIVER_LOCATION_UNKNOWN"
+    elseif rawSummon ~= nil and summon == nil then binding.reason = "QUEST_START_UNKNOWN"
     elseif definition and rawequal(rawStart, nil) and alternativeCount == 0 then binding.reason = "QUEST_START_UNKNOWN"
     elseif rawValues.itemID ~= nil then
         if itemOnly and readable and values.itemID > 0 and values.itemID <= 4294967295 and values.itemID % 1 == 0 then

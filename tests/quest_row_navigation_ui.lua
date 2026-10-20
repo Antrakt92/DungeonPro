@@ -347,18 +347,18 @@ do
  local function summonEndpoint(objectID)
   return {objectID=objectID,name="Scrying Bowl",summonItem={itemID=7667,name="Summon tool"}}
  end
- -- (1) huge objectID + valid mapped start must not suppress the route as an unknown summon.
- addon.quests[990101].start={objectID=HUGE,name="Huge object",mapID=1453,x=10,y=20,summonItem={itemID=7667,name="Summon tool"}}
- ui.search="";ui.questTreeRoot=nil;ui.questTreeDungeon=nil;ui.quest=990104;ui.frame:Show();ui:Refresh()
- do
-  local target=row(990101);local button=target.navigationControl;local binding=target.navigationBinding
-  assert(binding.reason~="GIVER_LOCATION_UNKNOWN","huge objectID must not suppress a mapped start as unknown summon")
-  assert(binding.action~=nil and binding.action.kind=="visit" and binding.inspect==nil,"huge objectID keeps the mapped visit action without inspection")
-  assert(button:IsShown() and button.enabled,"huge objectID keeps the mapped row enabled")
-  local routedBefore=#routed
-  button.scripts.OnClick()
-  assert(#routed==routedBefore+1 and routed[#routed].id==990101,"huge objectID routes Start once")
- end
+  -- (1) huge objectID + valid mapped start stays an honest unknown summon without a guessed route.
+  addon.quests[990101].start={objectID=HUGE,name="Huge object",mapID=1453,x=10,y=20,summonItem={itemID=7667,name="Summon tool"}}
+  ui.search="";ui.questTreeRoot=nil;ui.questTreeDungeon=nil;ui.quest=990104;ui.frame:Show();ui:Refresh()
+  do
+   local target=row(990101);local button=target.navigationControl;local binding=target.navigationBinding
+   assert(binding.reason=="QUEST_START_UNKNOWN","huge objectID keeps an honest unknown start instead of an invented giver")
+   assert(binding.action==nil and binding.inspect==nil,"huge objectID offers no summon inspection and no guessed route")
+   assert(button:IsShown() and not button.enabled,"huge objectID keeps the mapped row disabled")
+   local routedBefore=#routed
+   button.scripts.OnClick()
+   assert(#routed==routedBefore and ui.quest==990104,"huge objectID dispatches no guessed fixed point")
+  end
  -- (2) boundary: 2^32-1 stays a summon like 112877; huge/0/-1/fractional are not summons.
  assert(ui:HasSummonSource(summonEndpoint(MAXU32))==true,"2^32-1 stays a declared summon")
  assert(ui:SummonSource(summonEndpoint(MAXU32))~=nil,"2^32-1 keeps the informational summon relation")
@@ -385,5 +385,55 @@ do
  end
  addon.quests[990101].start=savedStart
  ui.search="";ui.questTreeRoot=nil;ui.questTreeDungeon=nil;ui.quest=990104;ui.frame:Show();ui:Refresh()
+end
+-- DP-5 ROW-SUMMON-DECLARATION-EXCLUSIVITY: mixed endpoints declare no summon and keep the honest branch.
+do
+ local savedStart=addon.quests[990101].start
+ local function refreshRows()
+  ui.search="";ui.questTreeRoot=nil;ui.questTreeDungeon=nil;ui.quest=990104;ui.frame:Show();ui:Refresh()
+ end
+ -- (1) objectID+npcID+summonItem declares no summon.
+ local defectEp={objectID=1,npcID=2,name="Mixed object",summonItem={itemID=3,name="Summon tool"}}
+ assert(ui:HasSummonSource(defectEp)==false,"mixed object+npc declares no summon")
+ assert(ui:SummonSource(defectEp)==nil,"mixed object+npc keeps no summon relation")
+ local mappedMixed={objectID=1,npcID=2,name="Mixed object giver",mapID=1453,x=10,y=20,summonItem={itemID=3,name="Summon tool"}}
+ assert(ui:HasSummonSource(mappedMixed)==false,"mapped mixed object+npc declares no summon")
+ assert(ui:SummonSource(mappedMixed)==nil,"mapped mixed object+npc keeps no summon relation")
+ addon.quests[990101].start=mappedMixed;refreshRows()
+ do
+  local target=row(990101);local button=target.navigationControl;local binding=target.navigationBinding
+  assert(binding.inspect==nil,"mapped mixed object+npc claims no summon inspection")
+  assert(binding.action==nil and binding.reason=="QUEST_START_UNKNOWN","mapped mixed object+npc stays an honest unknown start without a guessed route")
+  assert(button:IsShown() and not button.enabled,"mapped mixed object+npc keeps the mapped row disabled")
+  local routedBefore=#routed
+  button.scripts.OnClick()
+  assert(#routed==routedBefore and ui.quest==990104,"mapped mixed object+npc dispatches no guessed fixed point")
+ end
+ -- (2) objectID+mapID+summonItem (and reportedLocations) declare no summon.
+ local mixedMap={objectID=1,name="Mixed map object",mapID=1453,summonItem={itemID=3,name="Summon tool"}}
+ assert(ui:HasSummonSource(mixedMap)==false,"mixed object+map declares no summon")
+ assert(ui:SummonSource(mixedMap)==nil,"mixed object+map keeps no summon relation")
+ local mixedReported={objectID=1,name="Mixed reported object",summonItem={itemID=3,name="Summon tool"},reportedLocations={{mapID=1453,x=10,y=20}}}
+ assert(ui:HasSummonSource(mixedReported)==false,"mixed object+reportedLocations declares no summon")
+ assert(ui:SummonSource(mixedReported)==nil,"mixed object+reportedLocations keeps no summon relation")
+ addon.quests[990101].start=mixedMap;refreshRows()
+ do
+  local target=row(990101);local button=target.navigationControl;local binding=target.navigationBinding
+  assert(binding.inspect==nil,"mixed object+map claims no summon inspection")
+  assert(binding.action==nil and binding.reason=="QUEST_START_UNKNOWN","mixed object+map stays an honest unknown start without a guessed route")
+  assert(button:IsShown() and not button.enabled,"mixed object+map keeps the mapped row disabled")
+ end
+ -- (3) valid objectID-only + summonItem behavior unchanged.
+ local validSummon={objectID=112877,name="Scrying Bowl",summonItem={itemID=7667,name="Summon tool"}}
+ assert(ui:HasSummonSource(validSummon)==true,"valid object-only stays a declared summon")
+ assert(ui:SummonSource(validSummon)~=nil,"valid object-only keeps the informational summon relation")
+ addon.quests[990101].start=validSummon;refreshRows()
+ do
+  local target=row(990101);local button=target.navigationControl;local binding=target.navigationBinding
+  assert(binding.reason=="SOURCE_DETAILS_HINT","valid summon keeps details hint reason")
+  assert(binding.inspect==true and binding.action==nil,"valid summon has inspection without route")
+  assert(button:IsShown() and button.enabled,"valid summon stays enabled")
+ end
+ addon.quests[990101].start=savedStart;refreshRows()
 end
 print("Middle quest navigation checks passed (modeled, no native input or layout proof)")
