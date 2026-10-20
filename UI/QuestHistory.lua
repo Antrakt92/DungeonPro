@@ -153,7 +153,7 @@ function UI:BackQuest()
     local engine = self.engine
     local rendered = refreshDetail(self)
     if not owned() or self.engine ~= engine or not rendered or self.rewardGeneration ~= rendered then return true end
-    local offset = saved and saved.quest == previous and (saved.character == nil or saved.character == character) and addon.Clean(saved.offset, "number")
+    local offset = saved and saved.quest == previous and saved.character == character and addon.Clean(saved.offset, "number")
     if previous and offset and offset >= 0 and owned() and addon.Read(frame.IsShown, "boolean", frame) == true then
         local generation, checker, scroll = self.rewardGeneration, issecretvalue, self.detailScroll
         local content = addon.Read(self.detail.GetHeight, "number", self.detail)

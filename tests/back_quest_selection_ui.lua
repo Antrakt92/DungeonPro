@@ -146,4 +146,32 @@ test("structural owner changes during native list repaint retire the old detail 
   ui[field]=before
  end
 end)
+test("Back with legacy nil character restores fresh tab and top reading",function()
+ reset(166,true);assert(ui:SetDetailTab("sources"));ui.detailScroll:SetVerticalScroll(31)
+ assert(ui:InspectQuest(141,true));assert(#ui.detailHistory==1)
+ ui:HistoryOffsets()[1].character=nil
+ local original=a.char;a.char={}
+ assert(ui:BackQuest())
+ assert(ui.quest==166 and ui.renderedQuest==166,"Back must still return to the saved quest")
+ assert(ui.detailTab=="quest","nil-character history must not restore a foreign tab")
+ assert(ui.detailScroll:GetVerticalScroll()==0,"nil-character history must not restore a foreign offset")
+ a.char=original;reset(166,true)
+end)
+test("Back with same character restores tab and reading offset",function()
+ reset(166,true);assert(ui:SetDetailTab("sources"));ui.detailScroll:SetVerticalScroll(31)
+ assert(ui:InspectQuest(141,true));assert(#ui.detailHistory==1)
+ assert(ui:BackQuest())
+ assert(ui.quest==166 and ui.renderedQuest==166 and ui.detailTab=="sources")
+ assert(ui.detailScroll:GetVerticalScroll()==31)
+end)
+test("Back with different character restores neither tab nor offset",function()
+ reset(166,true);assert(ui:SetDetailTab("sources"));ui.detailScroll:SetVerticalScroll(31)
+ assert(ui:InspectQuest(141,true));assert(#ui.detailHistory==1)
+ local original=a.char;a.char={}
+ assert(ui:BackQuest())
+ assert(ui.quest==166 and ui.renderedQuest==166,"Back must still return to the saved quest")
+ assert(ui.detailTab=="quest","foreign-character history must not restore its tab")
+ assert(ui.detailScroll:GetVerticalScroll()==0,"foreign-character history must not restore its offset")
+ a.char=original;reset(166,true)
+end)
 print("Back quest selection modeled groups passed: "..total)
