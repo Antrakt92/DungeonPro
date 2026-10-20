@@ -59,6 +59,298 @@ function UI:DispatchDetail(action, mapOnly, giver, ownerCurrent, markerPurpose)
     return pcall(method, action, markerPurpose, current)
 end
 
+function UI:DetailContactBinding(definition, endpointField, ownerCurrent)
+    local clean, read, checker, helper = addon.Clean, addon.Read, issecretvalue, self.DetailContactBinding
+    local catalogue, character, ui, navigation = addon.quests, addon.char, addon.UI, addon.Navigation
+    local contextKeys = { "frame", "quest", "dungeon", "engine", "rewardGeneration", "detailNavigationRevision",
+        "detailTabRevision", "layoutRevision", "sourceControlsLease" }
+    local context, fields, arrays, entries, points = {}, {}, {}, {}, {}
+    local pointFields = { npcID="number", objectID="number", itemID="number", dropNPCID="number",
+        name="string", zoneName="string", locationName="string", mapID="number", x="number", y="number",
+        reportedLocations="table", summonItem="table" }
+    local function capture(object, key)
+        local value = rawget(object, key)
+        fields[#fields+1] = {object,key,value}
+        return value
+    end
+    local function captureArray(array)
+        local members, count = {}, 0
+        for key, value in next,array do
+            count=count+1
+            if count>100 then error("bounded contact locations") end
+            members[count]={key,value}
+        end
+        arrays[#arrays+1]={array,members}
+        return members
+    end
+    local function capturePoint(point)
+        local values={}
+        points[#points+1]=values
+        for key in pairs(pointFields) do values[key]=capture(point,key) end
+        if type(values.reportedLocations)=="table" then
+            for _,member in ipairs(captureArray(values.reportedLocations)) do
+                local report={};points[#points+1]=report
+                for key in pairs(pointFields) do report[key]=capture(member[2],key) end
+                if type(report.reportedLocations)~="nil" then error("nested contact reports") end
+            end
+        end
+        return values
+    end
+    local branchSnapshots={}
+    local rawID, starts, finishes, startAlternatives, finishAlternatives, startValues, finishValues, engineGetter, mapMethod, startMethod, shownGetter, shownRawSlot
+    local ok=pcall(function()
+        for _,key in ipairs(contextKeys) do context[key]=capture(self,key) end
+        if type(context.engine)=="table" then
+            engineGetter=capture(context.engine,"Current")
+            capture(context.engine,"quests");capture(context.engine,"context")
+        end
+        mapMethod,startMethod=capture(navigation,"Map"),capture(navigation,"Start")
+        if type(context.frame)=="table" then shownRawSlot=capture(context.frame,"IsShown") end
+        rawID=capture(definition,"id")
+        capture(definition,"name")
+        -- Isolated pre-callback branch snapshots never validate the other contact.
+        -- Only the selected branch is retained after the selector is sanitized.
+        starts,finishes=rawget(definition,"start"),rawget(definition,"finish")
+        startAlternatives,finishAlternatives=rawget(definition,"startAlternatives"),rawget(definition,"finishAlternatives")
+        local count=0
+        for key,value in next,catalogue do
+            count=count+1;if count>10000 then error("bounded contact catalogue") end
+            entries[count]={key,value}
+        end
+    end)
+    if not ok or type(clean)~="function" or type(read)~="function" then return nil end
+    local commonFields=fields
+    for _,branch in ipairs({"start","finish"}) do
+        fields,arrays,points={},{},{}
+        local good=pcall(function()
+            local primary=capture(definition,branch)
+            local alternatives=capture(definition,branch.."Alternatives")
+            local values
+            if type(primary)=="table" then values=capturePoint(primary) end
+            if type(alternatives)=="table" then
+                for _,member in ipairs(captureArray(alternatives)) do capturePoint(member[2]) end
+            end
+            branchSnapshots[branch]={fields=fields,arrays=arrays,points=points,values=values}
+        end)
+        if not good then branchSnapshots[branch]=nil end
+    end
+    fields,arrays,points=commonFields,{},{}
+    local selectedID, binding, action, point, mapOnly, purpose, reason, current, invoke
+    local initial,readable=true,false
+    local function baseCurrent()
+        local ok,same=pcall(function()
+            return addon.UI==ui and ui==self and addon.quests==catalogue and addon.char==character and
+                addon.Clean==clean and addon.Read==read and issecretvalue==checker and
+                self.DetailContactBinding==helper and addon.Navigation==navigation
+        end)
+        return ok and same==true
+    end
+    local function rawCurrent()
+        local good,same=pcall(function()
+            if not readable or not baseCurrent() then return false end
+            for _,f in ipairs(fields) do if not rawequal(rawget(f[1],f[2]),f[3]) then return false end end
+            for _,snapshot in ipairs(arrays) do
+                local count=0
+                for key,value in next,snapshot[1] do
+                    count=count+1;local member=snapshot[2][count]
+                    if not member or not rawequal(key,member[1]) or not rawequal(value,member[2]) then return false end
+                end
+                if count~=#snapshot[2] then return false end
+            end
+            if initial then
+                local count=0
+                for key,value in next,catalogue do
+                    count=count+1;local entry=entries[count]
+                    if not entry or not rawequal(key,entry[1]) or not rawequal(value,entry[2]) then return false end
+                end
+                if count~=#entries then return false end
+            elseif not rawequal(rawget(catalogue,selectedID),definition) then return false end
+            if binding then
+                if not rawequal(rawget(binding,"questID"),selectedID) or not rawequal(rawget(binding,"field"),endpointField) or
+                    not rawequal(rawget(binding,"endpoint"),point) or not rawequal(rawget(binding,"action"),action) or
+                    not rawequal(rawget(binding,"mapOnly"),mapOnly) or not rawequal(rawget(binding,"purpose"),purpose) or
+                    not rawequal(rawget(binding,"reason"),reason) or not rawequal(rawget(binding,"current"),current) or
+                    not rawequal(rawget(binding,"rawCurrent"),rawCurrent) or not rawequal(rawget(binding,"dispatch"),invoke) then return false end
+                if action and (not rawequal(rawget(action,"id"),selectedID) or not rawequal(rawget(action,"kind"),"visit") or not rawequal(rawget(action,"place"),point)) then return false end
+            end
+            return true
+        end)
+        return good and same==true
+    end
+    local function value(raw,kind)
+        if not baseCurrent() then return nil end
+        local good,result=pcall(clean,raw,kind)
+        if not good or not baseCurrent() then return nil end
+        return result
+    end
+    local field=value(endpointField,"string")
+    if field~="start" and field~="finish" then return nil end
+    endpointField=field
+    local branch=branchSnapshots[field]
+    if not branch then return nil end
+    for _,f in ipairs(branch.fields) do fields[#fields+1]=f end
+    arrays,points=branch.arrays,branch.points
+    if field=="start" then startValues=branch.values else finishValues=branch.values end
+    branchSnapshots=nil
+    selectedID=value(rawID,"number")
+    if not selectedID or selectedID<1 or selectedID>9007199254740991 or selectedID%1~=0 then return nil end
+    local selected=value(context.quest,"number")
+    if selected~=selectedID or not value(definition,"table") or not value(ownerCurrent,"function") or
+        not value(navigation,"table") then return nil end
+    if type(mapMethod)~="nil" and not value(mapMethod,"function") then return nil end
+    if type(startMethod)~="nil" and not value(startMethod,"function") then return nil end
+    if type(engineGetter)~="nil" and not value(engineGetter,"function") then return nil end
+    local member=false
+    for _,entry in ipairs(entries) do
+        local entryDefinition=value(entry[2],"table")
+        if not entryDefinition then return nil end
+        if rawequal(entryDefinition,definition) then
+            local key=value(entry[1],"number")
+            if key==selectedID then member=true;break end
+        end
+    end
+    if not member or not baseCurrent() then return nil end
+    local function dense(snapshot)
+        local count=#snapshot[2];local seen={}
+        for _,member in ipairs(snapshot[2]) do
+            local key=value(member[1],"number")
+            if not key or key<1 or key>count or key%1~=0 or seen[key] or not value(member[2],"table") then return false end
+            seen[key]=true
+        end
+        return true
+    end
+    for _,snapshot in ipairs(arrays) do if not dense(snapshot) then return nil end end
+    for _,values in ipairs(points) do
+        for key,kind in pairs(pointFields) do
+            if type(values[key])~="nil" and not value(values[key],kind) then return nil end
+        end
+        local npc,object,item,drop=value(values.npcID,"number"),value(values.objectID,"number"),value(values.itemID,"number"),value(values.dropNPCID,"number")
+        for _,number in ipairs({npc or 1,object or 1,item or 1,drop or 1}) do
+            if number<1 or number>4294967295 or number%1~=0 then return nil end
+        end
+        if (npc and object) or (item and (npc or object)) then return nil end
+        local map,x,y=value(values.mapID,"number"),value(values.x,"number"),value(values.y,"number")
+        if type(values.mapID)~="nil" and (not map or map<1 or map>9007199254740991 or map%1~=0) then return nil end
+        if (type(values.x)=="nil")~=(type(values.y)=="nil") or (x and (not map or x<0 or x>100 or y<0 or y>100)) then return nil end
+    end
+    local alternatives
+    if field=="start" then alternatives=startAlternatives else alternatives=finishAlternatives end
+    if type(alternatives)~="nil" and not value(alternatives,"table") then return nil end
+    local values
+    if field=="start" then point,values=starts,startValues else point,values=finishes,finishValues end
+    if type(point)~="nil" and not value(point,"table") then return nil end
+    if point then
+        for key,kind in pairs(pointFields) do
+            if type(values[key])~="nil" and not value(values[key],kind) then return nil end
+        end
+        local function typed(number) return number and number>0 and number<=4294967295 and number%1==0 end
+        local npc,object,item,drop=value(values.npcID,"number"),value(values.objectID,"number"),value(values.itemID,"number"),value(values.dropNPCID,"number")
+        if (npc and not typed(npc)) or (object and not typed(object)) or (item and not typed(item)) or (drop and not typed(drop)) then return nil end
+        if (npc and object) or (item and (npc or object)) then return nil end
+        local map,x,y=value(values.mapID,"number"),value(values.x,"number"),value(values.y,"number")
+        if type(values.mapID)~="nil" and (not map or map<1 or map>9007199254740991 or map%1~=0) then return nil end
+        if (type(values.x)=="nil")~=(type(values.y)=="nil") then return nil end
+        if x and (x<0 or x>100 or y<0 or y>100) then return nil end
+        mapOnly=not(x and y)
+        if item then reason="START_ITEM_NAVIGATION"
+        elseif drop or type(values.summonItem)~="nil" then reason="SOURCE_DETAILS_HINT"
+        elseif not (typed(npc) or typed(object)) then reason="QUEST_START_UNKNOWN"
+        elseif not map then reason="SOURCE_POSITION_UNKNOWN"
+        elseif (mapOnly and not mapMethod) or (not mapOnly and not startMethod) then reason="NAVIGATION_UNAVAILABLE"
+        else
+            action={id=selectedID,kind="visit",place=point}
+            if field=="start" then purpose="quest-start" end
+        end
+    else
+        mapOnly=true
+        reason=alternatives and next(alternatives)~=nil and "SOURCE_DETAILS_HINT" or "QUEST_START_UNKNOWN"
+    end
+    -- A full proof validates LIVE readability before raw equality. The raw tail
+    -- alone is only a conservative proof after an ordinary snapshot was checked.
+    local function liveReadable()
+        if not baseCurrent() then return false end
+        local function ordinary(value)
+            if type(checker)~="function" then return true end
+            local ok,secret=pcall(checker,value)
+            return ok and baseCurrent() and type(secret)=="boolean" and secret==false
+        end
+        for _,f in ipairs(fields) do if not ordinary(rawget(f[1],f[2])) then return false end end
+        for _,snapshot in ipairs(arrays) do
+            for key,value in next,snapshot[1] do
+                if not ordinary(key) or not ordinary(value) then return false end
+            end
+        end
+        if initial then
+            for key,value in next,catalogue do
+                if not ordinary(key) or not ordinary(value) then return false end
+            end
+        end
+        if binding then
+            for _,key in ipairs({"questID","field","endpoint","action","mapOnly","purpose","reason","current","rawCurrent","dispatch"}) do
+                if not ordinary(rawget(binding,key)) then return false end
+            end
+            if action then
+                for _,key in ipairs({"id","kind","place"}) do if not ordinary(rawget(action,key)) then return false end end
+            end
+        end
+        return baseCurrent()
+    end
+    local function checkedRaw()
+        if not liveReadable() then readable=false;return false end
+        readable=true
+        return rawCurrent()
+    end
+    if not checkedRaw() then return nil end
+    -- Inherited native getter resolution can execute Lua metatable code.
+    -- It deliberately happens after the complete raw source snapshot.
+    local good,getter=pcall(function()return context.frame.IsShown end)
+    if not good or not baseCurrent() then return nil end
+    shownGetter=value(getter,"function")
+    if not shownGetter or not checkedRaw() then return nil end
+    initial=false;entries=nil
+    local proving=false
+    current=function()
+        if proving or not checkedRaw() then return false end
+        proving=true
+        local good,owned=pcall(ownerCurrent)
+        if not good or not checkedRaw() then proving=false;return false end
+        local valid=value(owned,"boolean")
+        if valid~=true or not checkedRaw() then proving=false;return false end
+        if engineGetter then
+            local good,fresh=pcall(engineGetter,context.engine)
+            if not good or not checkedRaw() then proving=false;return false end
+            local valid=value(fresh,"boolean")
+            if valid~=true or not checkedRaw() then proving=false;return false end
+        end
+        local good,getter=pcall(function()return context.frame.IsShown end)
+        if not good or not baseCurrent() then proving=false;return false end
+        getter=value(getter,"function")
+        if not getter or not checkedRaw() or not rawequal(getter,shownGetter) then proving=false;return false end
+        proving=false
+        return checkedRaw()
+    end
+    binding={questID=selectedID,field=field,endpoint=point,action=action,mapOnly=mapOnly,purpose=purpose,reason=reason}
+    binding.current,binding.rawCurrent=current,rawCurrent
+    invoke=function()
+        if not action or not current() then return false end
+        local method=mapOnly and mapMethod or startMethod
+        if not method then return false end
+        local good,shown=pcall(shownGetter,context.frame)
+        if not good or not current() then return false end
+        shown=value(shown,"boolean")
+        if shown~=true or not current() then return false end
+        local good,result
+        if mapOnly then good,result=pcall(method,point,purpose,selectedID,current)
+        else good,result=pcall(method,action,purpose,current) end
+        if not good or not current() then return false end
+        result=value(result,"boolean")
+        return result==true and current()
+    end
+    binding.dispatch=invoke
+    if not current() then return nil end
+    return binding
+end
+
 function UI:GetEntranceBinding(dungeon, ownerCurrent)
     local clean, read, checker = addon.Clean, addon.Read, issecretvalue
     local provider = clean(addon.Entrances, "table")

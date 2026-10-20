@@ -139,7 +139,7 @@ if arg and arg[4] == "collapsed" then
 end
 if not overviewKey and arg and arg[5] and arg[5] ~= "" then
     assert(ui:SetDetailTab(arg[5]) ~= false)
-    assert(ui.detailTab == arg[5] and ui.quest == questID)
+    assert(ui.detailTab == "quest" and ui.quest == questID, "legacy detail aliases retain the single selected quest stream")
 end
 assert((overviewKey and ui.quest==nil or not overviewKey and ui.quest==questID)and ui.detailScroll:GetWidth()>300 and ui.detailScroll:GetHeight()>0)
 local visibleRewards = 0

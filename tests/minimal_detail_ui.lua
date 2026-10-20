@@ -32,8 +32,19 @@ local function occurrences(text)
     for _, field in ipairs(lines()) do if field.text and field.text:find(text, 1, true) then count = count + 1 end end
     return count
 end
+local function contact(field)
+    local slot=field=="start"and 1 or 2
+    local row=ui.detailContactRows and ui.detailContactRows[slot]
+    local binding=row and row.detailContactBinding
+    if row and row:IsShown()and binding and binding.questID==ui.quest and binding.field==field and
+        binding.endpoint==addon.quests[ui.quest][field]and binding.current()then return row end
+end
 render()
-assert(occurrences("Mayara Brightwing") == 1, "identical starter/turn-in location is printed once")
+assert(contact("start")and contact("finish")and
+    contact("start").title.text:find("Mayara Brightwing",1,true)and contact("finish").title.text:find("Mayara Brightwing",1,true),
+    "the shared NPC retains distinct pickup and turn-in roles bound to its own endpoints")
+assert(contact("start").note.text==contact("finish").note.text and occurrences("Mayara Brightwing")==0,
+    "a shared location appears on each contact role without duplicate legacy source prose")
 assert(find("Doomrigger's Clasp ×?") and not find(addon.L("OBJECTIVE_ITEM_UNKNOWN", "Doomrigger's Clasp")))
 assert(find(addon.L("DETAIL_OBJECTIVES")) and not find(addon.L("OBJECTIVE_ITEMS_NOTICE")))
 assert(not ui.referenceToggle or not ui.referenceToggle:IsShown(), "plain source facts do not produce a generic details drawer")
@@ -91,30 +102,35 @@ local moved = {}; for key, value in pairs(finish) do moved[key] = value end
 moved.mapID, moved.zoneName, moved.x, moved.y = 1453, "Stormwind City", 10, 20
 quest.finish = moved
 render()
-assert(find(addon.L("DETAIL_TURNIN")) and occurrences("Mayara Brightwing") == 2,
-    "the same NPC at a different location retains its distinct turn-in")
+assert(contact("finish")and contact("finish").note.text:find("Stormwind City",1,true)and
+    contact("finish").detailContactBinding.endpoint==moved and contact("start").detailContactBinding.endpoint==quest.start and
+    not contact("start").note.text:find("Stormwind City",1,true)and occurrences("Mayara Brightwing")==0,
+    "the same NPC at a different location retains its own turn-in instead of borrowing the pickup location")
 quest.finish = finish
 local start, reported = quest.start, quest.start.reportedLocations
 start.reportedLocations = { {mapID=1428,x=84.8,y=69}, {mapID=1428,x=85,y=70} }
 render()
-assert(ui.detailTabButtons.sources:IsShown(), "reported locations have an explicit Sources view")
-local stale = ui.detailTabButtons.sources.scripts.OnClick
+assert(contact("start")and contact("start").scripts.OnClick,"reported locations retain an actionable primary contact")
+local stale = contact("start").scripts.OnClick
 local kills,objects,events=quest.objectiveKills,quest.objectiveObjects,quest.objectiveEvents
 quest.objectiveKills={{npcID=1234,name="Listed target"},{npcID=1235,name="Known target",quantity=2}}
 quest.objectiveObjects={{objectID=4321,name="Listed object"}}
 quest.objectiveEvents={{npcID=4532,name="Listed event"}}
-render();stale=ui.detailTabButtons.sources.scripts.OnClick
+render();stale=assert(contact("start").scripts.OnClick)
 assert(find("Listed target ×?") and find("Listed object ×?") and find("Listed event ×?") and find("Known target ×2"),
     "typed goals share a compact unknown marker without inventing or dropping known quantities")
 assert(not find(addon.L("OBJECTIVE_KILLS_NOTICE")) and not find(addon.L("OBJECTIVE_OBJECTS_NOTICE")),
     "source expansion does not inject generic objective prose into the practical pane")
-quest.objectiveKills,quest.objectiveObjects,quest.objectiveEvents=kills,objects,events
 assert(occurrences(addon.L("REPEATABLE"))==1, "Quest keeps repeatability metadata exactly once")
-assert(not find("A short optional story."), "optional prose does not crowd practical Quest information")
-stale();assert(ui.detailTab=="sources" and not (ui.storyToggle and ui.storyToggle:IsShown()))
-assert(not find("Listed target ×?"), "recorded practical goals remain on Quest instead of repeating inside Sources")
-assert(occurrences("Mayara Brightwing") == 1 and ui.reportedToggles[1]:IsShown(), "expanded sources keep the primary giver once and expose reported points separately")
-assert(ui:SetDetailTab("story"));assert(find("A short optional story."), "optional prose remains available in Story")
+assert(occurrences("A short optional story.")==1,"authentic prose follows practical information once in the stream")
+stale();assert(ui.detailTab=="quest"and not(ui.storyToggle and ui.storyToggle:IsShown()))
+assert(occurrences("Listed target ×?")==1 and occurrences("Known target ×2")==1,
+    "opening source points preserves each practical goal once in the same stream")
+assert(contact("start")and contact("finish")and occurrences("Mayara Brightwing")==0 and ui.reportedToggles[1]:IsShown(),
+    "the contact reveals its own reported points without repeating old giver prose")
+assert(ui:SetDetailTab("story")and ui.detailTab=="quest"and occurrences("A short optional story.")==1,
+    "legacy view calls preserve the single stream without duplicating prose")
+quest.objectiveKills,quest.objectiveObjects,quest.objectiveEvents=kills,objects,events
 render(4765)
 stale()
 assert(ui.quest == 4765 and ui.detailTab=="quest", "saved Sources controls cannot change another quest's view")
@@ -135,7 +151,7 @@ local function starterRows()
     end
     return result
 end
-assert(#starterRows()==0 and ui.detailTab=="quest", "Quest leaves manual source choices to Sources")
+assert(#starterRows()==5 and ui.detailTab=="quest", "all actual manual starter choices appear once in the stream")
 assert(ui:SetDetailTab("sources"))
 assert(#starterRows()==5, "the actual five starter alternatives are each shown once after expansion")
 local names={}
@@ -147,7 +163,7 @@ end
 local realAlternatives=addon.quests[8151].startAlternatives
 addon.quests[8151].startAlternatives={realAlternatives[1],realAlternatives[2]}
 render(4764);render(8151)
-assert(#starterRows()==0 and ui.detailTab=="quest")
+assert(#starterRows()==2 and ui.detailTab=="quest")
 assert(ui:SetDetailTab("sources"))
 assert(#starterRows()==2 and (not ui.referenceToggle or not ui.referenceToggle:IsShown()), "Sources shows both alternatives without a redundant drawer")
 addon.quests[8151].startAlternatives=realAlternatives

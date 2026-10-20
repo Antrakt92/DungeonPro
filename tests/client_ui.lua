@@ -119,10 +119,18 @@ local function withKnownDefias(fn)
     for _, id in ipairs(ids) do assert(actual[id].requirementsKnown == false) end
     assert(ok, err)
 end
+local function primaryContact(ui)
+    local row=assert(ui.detailContactRows and ui.detailContactRows[1],"actual selected pickup contact exists")
+    local binding=assert(row.detailContactBinding)
+    assert(row:IsShown()and row.enabled and row.scripts.OnClick and binding.current()and binding.questID==ui.quest and
+        binding.field=="start"and binding.endpoint==addon.quests[ui.quest].start,"selected pickup owns its exact current source")
+    assert(not ui.giver:IsShown()and not ui.giver.enabled and ui.giver.scripts.OnClick==nil,"obsolete small giver glyph has no duplicate capability")
+    return row
+end
 local function explicitGiverVisit(ui, id)
     local destination, giver = ui:NavigationDestination(true)
     assert(giver == true and destination == ui.giverAction and destination.id == id and destination.kind == "visit")
-    assert(destination.place == addon.quests[id].start and ui.giver.enabled and ui.giver.footerLabelKey == "VISIT_GIVER")
+    assert(destination.place == addon.quests[id].start and primaryContact(ui).enabled and ui.giver.footerLabelKey == "VISIT_GIVER")
 end
 local eventFrame = objects[#objects]
 check("Addon initializes on the matching Forever client", function()
@@ -136,10 +144,11 @@ check("Window opens and filters without requiring cached quest titles", function
     for _, d in ipairs(addon.dungeons) do if d.key == "dm" then addon.UI.dungeon = d end end
     addon.UI:Refresh(); assert(#addon.UI.rows == 7)
 end)
-check("Real TOC details show an inline gold giver action and separate Wowhead icon", function()
+check("Real TOC details show an own full contact and separate Wowhead icon", function()
     local ui = addon.UI
     ui.quest = 166; ui:Refresh()
-    assert(not ui.giver.caption and ui.giver.width == 24 and ui.giver.height == 24)
+    local contact=primaryContact(ui)
+    assert(contact.width>80 and contact.height>=28 and contact.title.text:find(addon.SourceName(addon.quests[166].start),1,true),"full contact visibly identifies its own giver")
     assert(ui.source.text == "" and ui.source.width == 32 and ui.source.height == 32)
     assert(ui.giver.navigationGold and #ui.giver.footerIconParts == 3 and ui.giver.footerIcon.texture == "Interface\\Buttons\\WHITE8X8")
     assert(ui.source.footerIcon.texture == "Interface\\AddOns\\DungeonPro\\Media\\Icons\\Wowhead")
@@ -162,13 +171,13 @@ check("Default compact quest card retains the real next step and explicit giver 
     local ui = addon.UI
     ui:InspectQuest(373); ui:InspectQuest(166)
     assert(ui.detailTab == "quest")
-    assert(ui.detailTabButtons.sources:IsShown() and ui.giver.enabled and ui.giverAction.place == addon.quests[166].start,
-        "reported giver positions stay reachable from Sources while Quest retains its primary giver")
+    assert(primaryContact(ui).enabled and ui.giverAction.place==addon.quests[166].start,"own primary contact stays available in the single stream")
+    for _,tab in pairs(ui.detailTabButtons or{})do assert(not tab:IsShown()and not tab.enabled and tab.scripts.OnClick==nil,"obsolete tabs cannot restore hidden modes")end
     assert(ui.engine:State(166).status == "UNKNOWN" and not ui.action)
     withKnownDefias(function()
         ui:Refresh()
         assert(ui.detailTab == "quest")
-        assert(ui.action.id == 65 and ui.giver.enabled)
+        assert(ui.action.id == 65 and primaryContact(ui).enabled)
         assert(ui.giverAction.place == addon.quests[166].start and ui.quest == 166)
     end)
     ui:Refresh()
@@ -177,7 +186,7 @@ check("Known graph fixture guides to the initial Defias step", function()
     withKnownDefias(function()
         addon.UI.quest = 166; addon.UI:Refresh()
         expandKnownChain()
-        assert(addon.UI.action.id == 65 and addon.UI.giver.enabled)
+        assert(addon.UI.action.id == 65 and primaryContact(addon.UI).enabled)
         assert(#visibleChain() == 7)
     end)
     assert(addon.UI.engine:State(166).status == "UNKNOWN" and not addon.UI.action)
@@ -203,7 +212,7 @@ check("Quest icon maps and guides to the selected giver while the known graph re
     withKnownDefias(function()
         addon.UI.quest = 166; addon.UI:Refresh()
         local quest, dungeon = addon.UI.quest, addon.UI.dungeon
-        addon.UI.giver.scripts.OnClick()
+        primaryContact(addon.UI).scripts.OnClick()
         assert(#waypoints == 1 and waypoints[1].mapID == 1436)
         assert(math.abs(waypoints[1].x - 0.562) < 0.0001 and mapCalls == 1)
         assert(addon.UI.frame:IsShown() and addon.UI.quest == quest and addon.UI.dungeon == dungeon,
@@ -778,6 +787,12 @@ check("Gossip refresh localizes only the actual matching NPC and closing restore
         for _, fs in ipairs(ui.details) do
             if fs.shown and type(fs.text) == "string" and fs.text:find(value, 1, true) then return true end
         end
+        for index=1,2 do
+            local row=ui.detailContactRows and ui.detailContactRows[index]
+            local binding=row and row.detailContactBinding
+            if row and row:IsShown()and binding and binding.questID==ui.quest and binding.endpoint==addon.quests[ui.quest][binding.field]and binding.current()and
+                row.title.text:find(value,1,true)then return true end
+        end
         return false
     end
     local function event(value) eventFrame.scripts.OnEvent(eventFrame, value) end
@@ -875,8 +890,8 @@ check("Hidden Enemies starter visits Neeru while preserving the separate Thrall 
     assert(addon.quests[5761].start.npcID == 3216 and #q.start.reportedLocations == 6)
     ui:InspectQuest(5730)
     assert(ui.engine:State(5730).status == "UNAVAILABLE" and not ui.action and #waypoints == before)
-    assert(ui.giverAction.place == q.start and ui.giver.enabled)
-    ui.giver.scripts.OnClick()
+    assert(ui.giverAction.place == q.start and primaryContact(ui).enabled)
+    primaryContact(ui).scripts.OnClick()
     local actual = waypoints[#waypoints]
     assert(#waypoints == before + 1 and actual.mapID == 1454)
     assert(actual.x == 0.494 and actual.y == 0.504)
@@ -897,10 +912,10 @@ check("Actual partial Defias chain keeps held prerequisite work while the quest 
     assert(ui.action.id == 65 and ui.action.kind == "complete" and ui.action.place == nil)
     explicitGiverVisit(ui, 166)
     canTurnIn = true; eventFrame.scripts.OnEvent(eventFrame, "QUEST_LOG_UPDATE")
-    assert(ui.action.id == 65 and ui.action.kind == "turnin" and ui.giver.enabled)
+    assert(ui.action.id == 65 and ui.action.kind == "turnin" and primaryContact(ui).enabled)
     assert(ui.engine:State(166).status == "UNKNOWN" and addon.quests[166].requirementsKnown == false)
     local before, place = #waypoints, addon.quests[166].start
-    ui.giver.scripts.OnClick()
+    primaryContact(ui).scripts.OnClick()
     local actual = waypoints[#waypoints]
     assert(#waypoints == before + 1 and actual.mapID == place.mapID)
     assert(actual.x == place.x / 100 and actual.y == place.y / 100)
@@ -1480,13 +1495,19 @@ check("Actual level-one Defias giver click couples source UI navigation and owne
     ui.frame:Show();ui.quest=166;ui:Refresh()
     local context=addon.Context()
     assert(context.level==1 and context.faction=="Alliance"and context.class=="MAGE"and context.race==3)
-    assert(ui.engine:State(166).status=="LOCKED"and ui.giver.enabled and ui.giverHasCoordinates)
+    assert(ui.engine:State(166).status=="LOCKED"and primaryContact(ui).enabled and ui.giverHasCoordinates)
     explicitGiverVisit(ui, 166)
     assert(ui.giverAction.id==166 and ui.giverAction.kind=="visit"and ui.giverAction.place==q.start)
     assert(q.start.npcID==234 and q.start.mapID==1436 and q.start.x==56.2 and q.start.y==47.4)
     local start=addon.Navigation.Start;local started,result=0,nil
-    addon.Navigation.Start=function(action)started=started+1;assert(action==ui.giverAction);result=start(action);return result end
-    ui.giver.scripts.OnClick();addon.Navigation.Start=start
+    local retained=primaryContact(ui).scripts.OnClick
+    addon.Navigation.Start=function(action)
+        started=started+1;local current=primaryContact(ui).detailContactBinding
+        assert(action==current.action and action.id==ui.giverAction.id and action.kind==ui.giverAction.kind and action.place==ui.giverAction.place)
+        result=start(action);return result
+    end
+    retained();assert(started==0,"navigation helper replacement retires the previous full-row capability")
+    ui:RefreshDetail();primaryContact(ui).scripts.OnClick();addon.Navigation.Start=start
     local guide
     for _,object in ipairs(objects)do if object.arrow and object.scripts.OnUpdate and object.shown then guide=object end end
     assert(started==1 and result==true and opened==1 and sets==1 and guide and guide.arrow.shown)

@@ -55,16 +55,30 @@ local function render(id, turnin, inspectionDungeon)
     if ui.detailTab ~= "quest" then assert(ui:SetDetailTab("quest")) end
     assert(ui.quest==id and ui.renderedQuest==id, "render keeps inspected quest identity")
 end
+local function ownContact(field, definition)
+    local point=assert(definition[field])
+    local row=assert(ui.detailContactRows and ui.detailContactRows[field=="start"and 1 or 2])
+    local binding=assert(row.detailContactBinding)
+    assert(row:IsShown()and binding.questID==definition.id and binding.field==field and binding.endpoint==point,
+        "visible contact retains exact selected quest, source field and endpoint")
+    local heading=addon.L(field=="start"and "DETAIL_GIVER"or "DETAIL_TURNIN")
+    assert(row.title.text:find(heading..": "..point.name,1,true)==1,"reviewed own contact identity is visible")
+    if point.zoneName then assert(row.note.text==point.zoneName,"reviewed own contact zone is visible")end
+    return row
+end
 local function giver(id, npc)
     render(id)
     local definition = addon.quests[id]
     assert(ui.giverAction and ui.giverAction.id==id and ui.giverAction.place==definition.start,
         "giver navigation belongs to inspected quest rather than selected root")
     assert(ui.giverAction.place.npcID==npc, "reviewed start NPC must be rendered")
-    assert(contains(definition.start.name), "reviewed giver identity is visible")
-    local before=#visits; ui.giver.scripts.OnClick()
+    local contact=ownContact("start",definition)
+    assert(contact.enabled and contact.scripts.OnClick,"reviewed direct contact is actionable")
+    assert(not ui.giver:IsShown()and not ui.giver.enabled and ui.giver.scripts.OnClick==nil,"obsolete contact glyph has no duplicate action")
+    local before,click=#visits,contact.scripts.OnClick;click()
     assert(#visits==before+1 and visits[#visits].id==id and visits[#visits].place==definition.start,
         "native giver click visits its own recorded endpoint")
+    click();assert(#visits==before+1 and ui.quest==id,"retired pre-refresh contact click is inert")
 end
 local function finish(id, npc, inspectionDungeon)
     render(id,true,inspectionDungeon)
@@ -76,7 +90,8 @@ local function finish(id, npc, inspectionDungeon)
     assert(visits[#visits].id==id and visits[#visits].place==definition.finish,
         "turn-in dispatch preserves its exact recorded endpoint")
     if definition.start.npcID~=npc then
-        assert(contains(addon.L("DETAIL_TURNIN")..": "..definition.finish.name), "distinct turn-in identity is visible")
+        ownContact("finish",definition)
+        assert(addon.quests[id].finish.npcID==npc,"distinct turn-in identity is visible")
     end
 end
 giver(214,820); finish(214,820)
@@ -86,12 +101,14 @@ assert(addon.quests[214].start.x==56.6 and addon.quests[214].start.y==47.4 and
 for _,sample in ipairs({{96394,264943,5},{96403,265003,6}}) do
     local id,npc,count=unpack(sample)
     giver(id,npc); finish(id,npc)
+    -- Begin a separate disclosure scenario; preceding primary contact clicks open their own reports.
+    ui.detailContactExpanded=nil;ui.reportedExpanded.start=false;ui:RefreshDetail()
     assert(ui:SetDetailTab("sources"), "reported source choices are reachable in Sources")
     local toggle
     for _,button in ipairs(ui.reportedToggles) do if button:IsShown() and button.locationKey=="start" then toggle=button end end
     assert(toggle and toggle.title.text:find("("..count..")",1,true), "every reported NPC point is offered")
     toggle.scripts.OnClick()
-    local countShown=0
+    local countShown,visitsBefore=0,#visits
     for _,button in ipairs(ui.reportedRows) do if button:IsShown() and button.locationKey=="start" then
         countShown=countShown+1
         local point=addon.quests[id].start.reportedLocations[countShown]
@@ -99,7 +116,7 @@ for _,sample in ipairs({{96394,264943,5},{96403,265003,6}}) do
         button.scripts.OnClick()
         assert(visits[#visits].id==id and visits[#visits].place==button.destination, "reported visit retains own quest and exact source point")
     end end
-    assert(countShown==count)
+    assert(countShown==count and #visits==visitsBefore+count,"every exact reported point routes once")
 end
 for _,sample in ipairs({{92748,253092,11026},{92749,11026,11026},{92750,11026,1325},
     {92751,1325,11026},{92752,11026,253092},{92819,253279,253279}}) do
@@ -556,4 +573,15 @@ for _,id in ipairs({92458,96984})do
 end
 for _,id in ipairs({92401,92434,97288})do assert(not addon.quests[id].objectiveEvents,"unlinked prose actions stay held without guessed typed identities")end
 assert(not addon.quests[5127].objectiveKills,"the Demon Forge item requirements do not invent a Goraluk slain goal")
+-- The contact validator must reject a borrowed name or endpoint even when the other contact is valid.
+render(92748)
+local definition=addon.quests[92748]
+local pickup=ownContact("start",definition);ownContact("finish",definition)
+local title=pickup.title.text;pickup.title.text=ui.detailContactRows[2].title.text
+assert(not pcall(ownContact,"start",definition),"borrowed finish name cannot satisfy pickup identity")
+pickup.title.text=title
+local endpoint=pickup.detailContactBinding.endpoint;pickup.detailContactBinding.endpoint=definition.finish
+assert(not pcall(ownContact,"start",definition),"borrowed finish endpoint cannot satisfy pickup binding")
+pickup.detailContactBinding.endpoint=endpoint
+ownContact("start",definition)
 print("Reviewed quest sources UI: PASS (actual TOC; modeled routing and roles, no native acceptance)")

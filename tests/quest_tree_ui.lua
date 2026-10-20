@@ -64,7 +64,9 @@ for _,value in ipairs(ui.details)do if value:IsShown() then
     if value.text and value.text:find("Tree giver 71003",1,true)then giverLines=giverLines+1 end
     if value.text and value.text:find("Cached reward",1,true)then rewardLine=true end
 end end
-assert(not description and giverLines==1 and rewardLine,"Quest keeps the selected giver and rewards while description belongs to Story")
+local contact=ui.detailContactRows and ui.detailContactRows[1]
+if contact and contact:IsShown()and contact.title.text:find("Tree giver 71003",1,true)then giverLines=giverLines+1 end
+assert(description and giverLines==1 and rewardLine,"single stream keeps selected giver, rewards and authentic description together")
 assert(ui:SetDetailTab("story"))
 local storyDescriptions=0
 for _,value in ipairs(ui.details)do if value:IsShown()and value.text=="Selected quest description 71003"then storyDescriptions=storyDescriptions+1 end end

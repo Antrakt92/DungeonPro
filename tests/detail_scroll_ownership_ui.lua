@@ -13,7 +13,7 @@ for _,mode in ipairs({"back","escape","copy","acquisition","reset"})do
  ui.dungeon=a.dungeons[1];ui.quest=nil;ui.detailHistory={};ui:ResetHistoryReading();ui:Refresh()
  if mode=="acquisition"then
   ui:InspectQuest(3801);scroll:SetVerticalScroll(300)
-  assert(ui.detailTabButtons.sources:IsShown(), "actual Dark Iron Legacy exposes its Sources view")
+  assert(ui.detailTab=="quest" and not(ui.detailTabButtons and ui.detailTabButtons.sources and ui.detailTabButtons.sources:IsShown()), "actual Dark Iron Legacy uses the same visible stream")
  else
   ui:InspectQuest(65);scroll:SetVerticalScroll(300)
   if mode=="back"then ui:InspectQuest(66)
@@ -33,7 +33,7 @@ for _,mode in ipairs({"back","escape","copy","acquisition","reset"})do
  if mode=="back"then ui:BackQuest()
  elseif mode=="escape"then ui:EscapeCopyLink()
  elseif mode=="copy"then ui:CopyLink(65)
- elseif mode=="acquisition"then ui:SetDetailTab("sources")
+ elseif mode=="acquisition"then ui:InspectQuest(3801,true,true)
  else ui:InspectQuest(68)end
  assert(fired,"native scroll setter reentry must execute: "..mode)
  assert(ui.quest==67 and scroll.verticalScroll==(mode=="reset"and 125 or 0),

@@ -77,10 +77,13 @@ local function fixture(native, unavailable)
     local function noEffects() assert(#routes == 0 and mapCalls == 0, "portrait cleanup cannot guide or open a map") end
     local function visit(id)
         local before = #routes
-        assert(ui.giver.enabled and ui.giver.scripts.OnClick)
-        ui.giver.scripts.OnClick()
+        local contact=assert(ui.detailContactRows[1]);local binding=assert(contact.detailContactBinding)
+        assert(contact:IsShown()and contact.enabled and contact.scripts.OnClick and binding.current()and binding.endpoint==a.quests[id].start)
+        assert(not ui.giver:IsShown()and not ui.giver.enabled and ui.giver.scripts.OnClick==nil)
+        local click=contact.scripts.OnClick;click()
         assert(#routes == before + 1 and routes[#routes].id == id and routes[#routes].place == a.quests[id].start,
             "fresh explicit pickup keeps its actual selected source")
+        click();assert(#routes==before+1,"retired portrait-era contact click stays inert")
     end
     return a, ui, draw, expected, hasCaption, noEffects, visit, function() return portraitReads end
 end

@@ -37,8 +37,10 @@ cardFor(ui.dungeon).entranceControl.scripts.OnClick()
 assert(WorldMapFrame.mapID == 1455 and markerAt(27.5, 48))
 addon.Navigation.Stop()
 ui:InspectQuest(96394)
-assert(ui.map == nil and ui.guide == nil and ui.giver.enabled, "giver navigation is available through the quest icon without duplicate toolbar controls")
-ui.giver.scripts.OnClick()
+local pickup=assert(ui.detailContactRows[1]);local binding=assert(pickup.detailContactBinding)
+assert(ui.map==nil and ui.guide==nil and pickup:IsShown()and pickup.enabled and binding.questID==96394 and binding.field=="start"and binding.endpoint==addon.quests[96394].start and binding.current(),"visible contact owns its exact selected quest source without duplicate toolbar controls")
+assert(not ui.giver:IsShown()and ui.giver.scripts.OnClick==nil,"obsolete giver glyph is retired")
+pickup.scripts.OnClick()
 assert(WorldMapFrame.mapID == 1455 and markerAt(32.8, 48.6))
 local expected = {}
 for _, key in ipairs({ "rfc", "wc", "dm", "sfk", "bfd", "stocks", "gnom", "rfk", "sm_graveyard", "sm_library", "sm_armory", "sm_cathedral", "rfd", "ulda", "zf",

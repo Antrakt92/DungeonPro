@@ -23,6 +23,7 @@ GameTooltip=tip
 local chosen="Западный Край"
 local function visible(text)
  for _,field in ipairs(ui.details)do if field:IsShown()and field.text and field.text:find(text,1,true)then return true end end
+ for _,row in ipairs(ui.detailContactRows or{})do if row:IsShown()and(row.title.text:find(text,1,true)or row.note.text:find(text,1,true))then return true end end
 end
 a.db.locale="ruRU";ui.quest,ui.dungeon=214,dungeon;ui:Refresh()
 assert(ui.renderedQuest==214 and visible(chosen),"Quest must show the explicitly reviewed observed Westfall spelling")
@@ -34,8 +35,11 @@ assert(row and row.navigationBinding.action);row.navigationControl.scripts.OnEnt
 assert(tip.shown and tip.body:find(chosen,1,true),"middle-list hint agrees with Quest")
 assert(ui:SetDetailTab("sources")and visible(chosen),"Sources uses the same reviewed spelling")
 assert(#routes==0 and ui.quest==214)
-assert(ui:SetDetailTab("quest"));ui.giver.scripts.OnClick()
+assert(ui:SetDetailTab("quest"));local pickup=assert(ui.detailContactRows[1]);assert(pickup:IsShown()and pickup.enabled and pickup.scripts.OnClick)
+assert(not ui.giver:IsShown()and not ui.giver.enabled and ui.giver.scripts.OnClick==nil,"retired old glyph cannot route")
+local retiredPickup=pickup.scripts.OnClick;retiredPickup()
 assert(#routes==1 and routes[1].id==214 and routes[1].place==point)
+retiredPickup();assert(#routes==1,"retired contact callback cannot repeat navigation after its click republished the detail card")
 local guide;for _,o in ipairs(f.objects)do if o.title and o.note and o.label and o.scripts.OnUpdate then guide=o end end
 assert(guide and guide:IsShown()and guide.note.text:find(chosen,1,true),"guide keeps the same area display without selecting a provider zone as a map")
 nav.Stop()

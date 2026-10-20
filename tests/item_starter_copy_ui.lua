@@ -79,7 +79,7 @@ for _,locale in ipairs({"enUS","ruRU","deDE","frFR","esES","ptBR","koKR","zhCN",
   assert(occurrences(addon.L("ITEM_CARRIED",0))==1,"starter carried count remains visible once across both recorded roles")
   if sample[1]==7508 or sample[1]==98423 then assert(visible(addon.L("START_ITEM_LOCATION_UNKNOWN")),"unknown starter source remains explicit")end
  end
- render(214);assert(visible(addon.L("DETAIL_GIVER")),"NPC giver keeps its heading")
+ render(214);local pickup=assert(ui.detailContactRows[1]);assert(pickup:IsShown()and pickup.title.text:find(addon.L("DETAIL_GIVER")..": ",1,true)==1,"NPC giver keeps its own named contact heading")
  render(7492);assert(visible(addon.L("DETAIL_GIVER")),"alternative givers keep their heading")
 end
 addon.db.locale="enUS"

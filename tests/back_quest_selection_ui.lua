@@ -36,7 +36,7 @@ test("Back restores actual Deadmines selection, Sources reading and filter state
  local mine,range,search,preparation=ui.includeUnavailable,ui.range,ui.search,ui.preparation
  assert(ui:InspectQuest(141,true));selected(141);assert(#history==1)
  assert(ui:BackQuest())
- assert(ui.quest==166 and ui.renderedQuest==166 and ui.detailTab=="sources"and ui.detailScroll:GetVerticalScroll()==31)
+ assert(ui.quest==166 and ui.renderedQuest==166 and ui.detailTab=="quest"and ui.detailScroll:GetVerticalScroll()==31)
  assert(ui.detailHistory==history and #history==0 and a.char==character and ui.questTreeRoot==tree)
  assert(ui.includeUnavailable==mine and ui.range==range and ui.search==search and ui.preparation==preparation)
  selected(166)
@@ -46,7 +46,7 @@ test("Back to an inspected support definition clears the old visible selection w
  reset(141,false);assert(ui:SetDetailTab("sources"));ui.detailScroll:SetVerticalScroll(27)
  for _,row in ipairs(ui.rows)do assert(not(row:IsShown()and row.questID==141),"support is not an invented flat dungeon target")end
  assert(ui:InspectQuest(166,true));selected(166)
- assert(ui:BackQuest());assert(ui.quest==141 and ui.renderedQuest==141 and ui.detailTab=="sources")
+ assert(ui:BackQuest());assert(ui.quest==141 and ui.renderedQuest==141 and ui.detailTab=="quest")
  assert(ui.detailScroll:GetVerticalScroll()==27 and #selection()==0)
  for _,row in ipairs(ui.rows)do assert(not(row:IsShown()and row.questID==141))end
 end)
@@ -70,7 +70,7 @@ test("new inspection during Back list refresh supersedes the retired restore",fu
  end
  ui:BackQuest();ui.RefreshQuests=original
  assert(fired,"Back must repaint list under retained navigation ownership")
- assert(ui.quest==92753 and ui.renderedQuest==92753 and ui.detailTab=="story"and ui.detailScroll:GetVerticalScroll()==7,
+ assert(ui.quest==92753 and ui.renderedQuest==92753 and ui.detailTab=="quest"and ui.detailScroll:GetVerticalScroll()==7,
   "retired Back cannot overwrite a newer inspected quest, pane or reading offset")
 end)
 test("native middle-row text reentry preserves the newer selected quest and reading view",function()
@@ -88,7 +88,7 @@ test("native middle-row text reentry preserves the newer selected quest and read
  end
  ui:BackQuest();title.SetText=original
  assert(fired,"the real middle-row native setter must run during Back repaint")
- assert(ui.quest==92753 and ui.renderedQuest==92753 and ui.detailTab=="story"and ui.detailScroll:GetVerticalScroll()==7)
+ assert(ui.quest==92753 and ui.renderedQuest==92753 and ui.detailTab=="quest"and ui.detailScroll:GetVerticalScroll()==7)
  selected(92753)
 end)
 
@@ -161,7 +161,7 @@ test("Back with same character restores tab and reading offset",function()
  reset(166,true);assert(ui:SetDetailTab("sources"));ui.detailScroll:SetVerticalScroll(31)
  assert(ui:InspectQuest(141,true));assert(#ui.detailHistory==1)
  assert(ui:BackQuest())
- assert(ui.quest==166 and ui.renderedQuest==166 and ui.detailTab=="sources")
+ assert(ui.quest==166 and ui.renderedQuest==166 and ui.detailTab=="quest")
  assert(ui.detailScroll:GetVerticalScroll()==31)
 end)
 test("Back with different character restores neither tab nor offset",function()

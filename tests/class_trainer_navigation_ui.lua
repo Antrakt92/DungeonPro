@@ -55,7 +55,7 @@ for _,id in ipairs({2861,1953,8417,8254,8419,9063,8151,8233})do
     assert(#visits==beforeRetired,"recycled old trainer and reported-point callbacks cannot navigate")
     local roots=#ui.currentPlan.rows
     assert(ui.renderedQuest==id and not ui.giverAction,"no single trainer is selected implicitly")
-    assert(ui.detailTab == "quest" and #shown(ui.giverButtons) == 0, "Quest keeps manual-choice summaries compact")
+    assert(ui.detailTab == "quest" and #shown(ui.giverButtons)==2 and #shown(ui.startButtons)==#alternatives-2,"one stream exposes every manual trainer choice without automatic selection")
     assert(ui:SetDetailTab("sources"))
     local compact=shown(ui.giverButtons)
     assert(#compact==2 and #shown(ui.startButtons)==#alternatives-2,"Sources retains the first two trainers and every remaining choice")
@@ -64,7 +64,7 @@ for _,id in ipairs({2861,1953,8417,8254,8419,9063,8151,8233})do
         click(row,id,alternatives[index])
         if index==1 then retiredTrainer=row.scripts.OnClick end
     end
-    assert(ui.detailTab=="sources", "remaining trainers belong to Sources")
+    assert(ui.detailTab=="quest", "remaining trainers stay in the same selected stream")
     local expanded=shown(ui.startButtons)
     assert(#expanded==#alternatives-2,"disclosure retains every remaining trainer")
     for index,row in ipairs(expanded)do

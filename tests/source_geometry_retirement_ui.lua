@@ -65,7 +65,7 @@ for _,kind in ipairs({"reported","toggle","alternative"})do
      return result
     end
     u:RefreshDetail();target[method]=native
-    assert(fired and expected and u.detailTab=="sources"and row:IsShown()and #routes==0)
+    assert(fired and expected and u.detailTab=="quest"and row:IsShown()and #routes==0)
     same(target,expected)
     assert(row.enabled and row.scripts.OnClick,"latest exact source remains usable")
     if kind~="toggle"then
@@ -120,7 +120,7 @@ for _,transition in ipairs({"reopen","locale","twice-before","twice-after"})do
   return result
  end
  u:RefreshDetail();row.ClearAllPoints,row.SetPoint=clear,point
- assert(stage~="initial"and row:IsShown()and u.detailTab=="sources"and #routes==0,transition.." stage="..stage.." shown="..tostring(row:IsShown()).." tab="..tostring(u.detailTab).." quest="..tostring(u.quest));same(row,expected)
+ assert(stage~="initial"and row:IsShown()and u.detailTab=="quest"and #routes==0,transition.." stage="..stage.." shown="..tostring(row:IsShown()).." tab="..tostring(u.detailTab).." quest="..tostring(u.quest));same(row,expected)
  assert(u.quest==(transition:find("twice",1,true)and 971 or 1490))
  groups=groups+1
 end
@@ -217,7 +217,7 @@ for _,mutation in ipairs({"native","record"})do for _,at in ipairs({2,3})do
 end end
 -- A writer failure, later helper change or newer render cannot bless an abandoned publication.
 for _,mode in ipairs({"false","throw","helper","newer"})do
- local a,u,routes=fixture(false);local writer=u.QuestListWrite;local armed,fired,abandoned=false,false,nil
+ local a,u,routes=fixture(false);local writer=u.QuestListWrite;local armed,fired,abandoned,newerGeometry=false,false,nil,nil
  u.QuestListWrite=function(self,object,method,current,...)
   local result=writer(self,object,method,current,...)
   if armed and not fired and object==self.reportedRows[1]and method=="SetPoint"then
@@ -225,7 +225,7 @@ for _,mode in ipairs({"false","throw","helper","newer"})do
    if mode=="false"then return false
    elseif mode=="throw"then error("controlled failed anchor writer")
    elseif mode=="helper"then self.QuestListWrite=writer
-   else report(self,971)end
+   else report(self,971);newerGeometry=geometry(self.reportedRows[1])end
   end
   return result
  end
@@ -238,17 +238,20 @@ for _,mode in ipairs({"false","throw","helper","newer"})do
  u:RefreshDetail();row.ClearAllPoints=clear
  assert(fired and abandoned and not abandoned.current()and row.sourceGeometryRepair==nil,
   "rejected writer or superseding state must discard temporary validation captures")
- if mode=="newer"then assert(u.quest==971 and row:IsShown()and row.point[3]==-249 and row.questListWrites.SetPoint.current())end
+ if mode=="newer"then
+  assert(u.quest==971 and row:IsShown()and row.questListWrites.SetPoint.current())
+  same(row,assert(newerGeometry,"latest source geometry precedes the retired native tail"))
+ end
  u.QuestListWrite=writer;u:RefreshDetail();assert(row:IsShown()and row.point and #routes==0)
  groups=groups+1
 end
 -- Successful guards remain usable by a future generic native repair but drop raw snapshots.
 do
- local a,u,routes,row=setup("reported");local clear,native=row.ClearAllPoints,row.SetPoint;local replaced=false
+ local a,u,routes,row=setup("reported");local clear,native=row.ClearAllPoints,row.SetPoint;local replaced,latestGeometry=false,nil
  local weak=setmetatable({},{__mode="v"})
  row.ClearAllPoints=function(self,...)
   if replaced then return clear(self,...)end
-  replaced=true;report(u,1490)
+  replaced=true;report(u,1490);latestGeometry=geometry(self)
   local previous=self.questListWrites.SetPoint;weak.point,weak.args=previous,previous.args
   return clear(self,...)
  end
@@ -268,7 +271,8 @@ do
  local function stale()calls=calls+1;return calls==1 end
  assert(not u:QuestListWrite(row,"SetPoint",stale,"TOPLEFT",0,-999))
  row.SetPoint=native
- assert(row.point[3]==-274 and proof(),"persisted guard must still repair a later native tail after its temporary busy token is cleared")
+ assert(proof(),"persisted guard must still repair a later native tail after its temporary busy token is cleared")
+ same(row,assert(latestGeometry,"new source geometry precedes the first retired clear"))
  u:InspectQuest(5724,true);u.frame:Hide();u.frame.scripts.OnHide();u.frame:Show();u:Refresh()
  collectgarbage("collect");collectgarbage("collect")
  assert(weak.engine==nil and not proof(),"externally retained repaired record must release its obsolete source engine")
@@ -278,14 +282,15 @@ do
 end
 -- Two nested retired native clears may delegate twice, but retain no strict snapshots.
 do
- local a,u,routes,row=setup("reported");local clear=row.ClearAllPoints;local stage=0;local originalOwner
+ local a,u,routes,row=setup("reported");local clear=row.ClearAllPoints;local stage=0;local originalOwner,latestGeometry
  row.ClearAllPoints=function(self,...)
   if stage==0 then stage=1;report(u,1490)
-  elseif stage==1 then stage=2;report(u,971);originalOwner=row.questListWrites.SetPoint.current end
+  elseif stage==1 then stage=2;report(u,971);latestGeometry=geometry(row);originalOwner=row.questListWrites.SetPoint.current end
   return clear(self,...)
  end
  u:RefreshDetail();row.ClearAllPoints=clear
- assert(stage==2 and u.quest==971 and row:IsShown()and row.point[3]==-249 and #routes==0)
+ assert(stage==2 and u.quest==971 and row:IsShown()and #routes==0)
+ same(row,assert(latestGeometry,"innermost source geometry survives both retired clears"))
  local proof=row.questListWrites.SetPoint.current;assert(proof())
  local firstName,firstCell=debug.getupvalue(proof,1)
  local secondName,secondCell=debug.getupvalue(firstCell.current,1)

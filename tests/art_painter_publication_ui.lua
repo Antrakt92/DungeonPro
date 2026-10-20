@@ -95,7 +95,7 @@ for _,phase in ipairs({"before","after"})do
   ui:RefreshDetail();art.Show=native
   assert(fired and opens()==0)
   if kind=="overview"then assert(imageFor("rfc"));currentMap("rfc",newest);manual("rfc")
-  else assert(ui.quest==166 and ui.detailTab=="story"and not art:IsShown()and ui.overviewMapBinding==nil)end
+  else assert(ui.quest==166 and ui.detailTab=="quest"and not art:IsShown()and ui.overviewMapBinding==nil)end
   noEffects()
  end)
  end
@@ -197,7 +197,7 @@ for _,phase in ipairs({"before","after"})do
    return result
   end
   ui:RefreshDetail();art.Show=native
-  assert(fired and ui.quest==166 and ui.detailTab=="story"and not art:IsShown()and ui.overviewMapBinding==nil)
+  assert(fired and ui.quest==166 and ui.detailTab=="quest"and not art:IsShown()and ui.overviewMapBinding==nil)
   a.PaintDungeonArt=painter
   noEffects()
  end)

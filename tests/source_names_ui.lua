@@ -19,7 +19,7 @@ local function provider(point,owner)
  local name=locale=="ruRU"and group and group[id]
  local function current()return a.SourceName==provider and a.db.locale==locale and point.name==raw and
   (point.objectID or point.npcID)==id and(not name or group[id]==name)end
- return name,current
+ return name,current,current
 end
 a.SourceName=provider;a.db.locale="ruRU"
 a.ItemName=function(id)return"Item "..id end;a.ItemIcon=function()return 134400 end;a.CarriedItemCount=function()return 0 end
@@ -35,11 +35,23 @@ render(2933,"sources")
 local alternatives=a.quests[2933].startAlternatives
 assert(ui.giverButtons[1].title.text==labels.objects[alternatives[1].objectID],"source choices use selected-language object labels")
 assert(ui.startButtons[1].title.text==labels.objects[alternatives[3].objectID])
-render(2204);assert(visible(labels.objects[112877]),"summoned-object identity and instruction share the reviewed label")
+render(2204)
+local summonContact=assert(ui.detailContactRows[1]);local summonBinding=assert(summonContact.detailContactBinding)
+assert(summonContact:IsShown()and summonBinding.current()and summonBinding.questID==2204 and summonBinding.field=="start"and
+ summonBinding.endpoint==a.quests[2204].start and summonBinding.endpoint.objectID==112877 and
+ summonContact.title.text:find(labels.objects[112877],1,true),"summoned contact owns its reviewed typed object label")
+local summonInstruction=false
+for _,v in ipairs(ui.details)do if v:IsShown()and v.text and v.text:find(labels.objects[112877],1,true)and v.text:find("Item 7667",1,true)then summonInstruction=true end end
+assert(summonInstruction,"summoned-object identity and instruction share the reviewed label")
 assert(visible("Item 7667"),"summoning tool keeps item naming rather than object naming")
-render(95189);assert(visible(labels.objects[614679]),"starter container uses its own typed object label")
+render(95189);local container=assert(ui.containerButtons[1])
+assert(container:IsShown()and container.title.text==labels.objects[614679]and
+ a.quests[95189].start.containerSource.objectID==614679,"starter container uses its own typed object label")
 assert(visible("Item 268579"),"same-named starter remains an item")
-render(166);assert(visible(labels.npcs[234]),"reviewed selected language wins over unrelated client language")
+render(166);local ownContact=assert(ui.detailContactRows[1]);local ownBinding=assert(ownContact.detailContactBinding)
+assert(ownContact:IsShown()and ownBinding.current()and ownBinding.questID==166 and ownBinding.field=="start"and
+ ownBinding.endpoint==a.quests[166].start and ownBinding.endpoint.npcID==234 and
+ ownContact.title.text:find(labels.npcs[234],1,true),"reviewed selected language wins over unrelated client language")
 a.db.locale="zhCN";render(2933,"sources")
 assert(ui.giverButtons[1].title.text==alternatives[1].name,"missing reviewed language retains canonical source fallback")
 a.db.locale="ruRU"
@@ -65,8 +77,12 @@ local row;for _,r in ipairs(ui.rows)do if r:IsShown()and r.questID==166 then row
 assert(row and row.navigationBinding.action)
 row.navigationControl.scripts.OnEnter()
 assert(tip.shown and tip.body:find(labels.objects[alternatives[1].objectID],1,true),"row hint matches its reviewed typed object")
-ui.giver.scripts.OnEnter()
-assert(tip.shown and tip.body:find(labels.objects[alternatives[1].objectID],1,true),"detail hint uses the same source label")
+local contact=assert(ui.detailContactRows[1]);local binding=assert(contact.detailContactBinding)
+assert(contact:IsShown()and contact.enabled and contact.scripts.OnClick and binding.current()and
+ binding.questID==166 and binding.field=="start"and binding.endpoint==q.start and binding.action.id==166 and
+ binding.action.kind=="visit"and binding.action.place==q.start and
+ contact.title.text:find(labels.objects[alternatives[1].objectID],1,true),"detail contact uses the same reviewed label and exact typed route")
+assert(not ui.giver:IsShown()and not ui.giver.enabled and ui.giver.scripts.OnClick==nil,"retired giver has no duplicate capability")
 assert(nav.Start({id=166,kind="visit",place=q.start}))
 local guide;for _,object in ipairs(f.objects)do if object.title and object.note and object.label and object.scripts.OnUpdate then guide=object end end
 assert(guide and guide:IsShown()and guide.note.text:find(labels.objects[alternatives[1].objectID],1,true),"live guide shares the selected source name")

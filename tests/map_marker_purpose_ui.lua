@@ -189,14 +189,17 @@ check("row and detail producers tag only genuinely typed quest sources", functio
     assert(calls[#calls].purpose == "quest-start" and type(calls[#calls].owner) == "function", "level-gated browse keeps its start purpose")
     row(ids[2]).navigationControl.scripts.OnClick()
     assert(calls[#calls].purpose == "quest-start" and calls[#calls].id == ids[2], "object map-only keeps its purpose")
-    ui.giver.scripts.OnClick()
-    assert(calls[#calls].purpose == "quest-start", "main typed giver keeps its purpose")
-    draw(ids[3])
-    ui.giver.scripts.OnClick()
-    assert(calls[#calls].purpose == nil, "item-only main source stays neutral")
-    draw(ids[4])
-    ui.giver.scripts.OnClick()
-    assert(calls[#calls].purpose == nil, "drop main source stays neutral")
+    local pickup=assert(ui.detailContactRows[1]);assert(pickup:IsShown()and pickup.enabled and pickup.detailContactBinding.current())
+    pickup.scripts.OnClick()
+    assert(calls[#calls].purpose=="quest-start"and calls[#calls].action.place==first.start,"main typed giver keeps its own purpose")
+    for _,id in ipairs({ids[3],ids[4]})do
+        local before=#calls;draw(id)
+        assert(not ui.giver:IsShown(),"readonly item/drop offers no visible legacy pickup action")
+        local contact=ui.detailContactRows and ui.detailContactRows[1]
+        assert(not contact or not contact:IsShown()or(not contact.enabled and contact.scripts.OnClick==nil),"item/drop cannot become a quest-start contact")
+        local retained=ui.giver.scripts.OnClick;if retained then retained()end
+        assert(#calls==before,"readonly item/drop and any retained hidden handler create no marker or invented pickup route")
+    end
     active, ready = ids[1], ids[1]
     draw(ids[1])
     assert(ui.turnin:IsShown() and ui.turnin.enabled)

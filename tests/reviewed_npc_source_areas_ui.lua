@@ -24,6 +24,12 @@ local function render(id,isReady,inspection)
 end
 local function field(text)
  for _,v in ipairs(ui.details)do if v:IsShown()and v.text:find(text,1,true)then return v end end
+ local name,zone=text:match("^(.-) — (.+)$")
+ for index=1,2 do local contact=ui.detailContactRows and ui.detailContactRows[index];if contact and contact:IsShown()then
+  if name then
+   if contact.title.text:find(name,1,true)and contact.note.text:find(zone,1,true)==1 then return contact end
+  elseif contact.title.text:find(text,1,true)then return contact end
+ end end
 end
 local function row(id)
  for _,r in ipairs(ui.rows)do if r:IsShown()and r.questID==id then return r end end
@@ -34,7 +40,7 @@ for _,id in ipairs({3801,3802})do
  local control=row(id).navigationControl
  assert(control.enabled and control.sourceInspect,"manual alternatives remain source inspection rather than an arbitrary NPC route")
  control.scripts.OnClick()
- assert(ui.quest==id and ui.renderedQuest==id and ui.detailTab=="sources","source inspection opens its own choice details")
+ assert(ui.quest==id and ui.renderedQuest==id and ui.detailTab=="quest","source inspection opens its own choice details")
  local known,unknown=assert(ui.giverButtons[1]),assert(ui.giverButtons[2])
  assert(known:IsShown()and unknown:IsShown()and known.title.text==unknown.title.text,"same-name typed NPC alternatives stay separate choices")
  assert(known.note.text=="Burning Steppes — |cffff594d"..a.L("SOURCE_POSITION_UNKNOWN").."|r"and unknown.note.text=="|cffff594d"..a.L("UNKNOWN_PLACE").."|r","only NPC8888 receives the verified area; each missing position is visible and NPC184290 stays unknown")
@@ -68,10 +74,19 @@ assert(field(a.L("GIVER_LOCATION_UNKNOWN"))and ui.giverUnavailableKey=="GIVER_LO
  not field(q.start.name.." — Maraudon"),"unknown Cavindra start does not borrow Celebras's known area")
 local finishLine=assert(field(a.L("DETAIL_TURNIN")..": "..q.finish.name.." — Maraudon"))
 local finishWarning
-for index,v in ipairs(ui.details)do
- if v==finishLine then
-  for nextIndex=index+1,#ui.details do if ui.details[nextIndex]:IsShown()then finishWarning=ui.details[nextIndex];break end end
-  break
+if finishLine.detailContactBinding then
+ local bottom= -assert(finishLine.point[3])+finishLine:GetHeight()
+ local closest
+ for _,line in ipairs(ui.details)do if line:IsShown()and line.point then
+  local top= -line.point[3]
+  if top>=bottom and(not closest or top<closest)then closest,finishWarning=top,line end
+ end end
+else
+ for index,v in ipairs(ui.details)do
+  if v==finishLine then
+   for nextIndex=index+1,#ui.details do if ui.details[nextIndex]:IsShown()then finishWarning=ui.details[nextIndex];break end end
+   break
+  end
  end
 end
 assert(finishWarning and finishWarning.text==a.L("SOURCE_POSITION_UNKNOWN")and finishWarning.detailStyle=="warning",

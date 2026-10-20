@@ -114,7 +114,7 @@ for _,phase in ipairs({"before","after"}) do
             return result
         end
         ui:RefreshDetail(); image.Hide = hide
-        assert(fired and ui.quest == 166 and ui.detailTab == "sources" and not image:IsShown())
+        assert(fired and ui.quest == 166 and ui.detailTab == "quest" and not image:IsShown())
         assert(not control:IsShown() and not control.enabled and ui.overviewMapBinding == nil)
         oldClick(); assert(opens() == 0); noEffects()
         -- A hidden region may retain an old asset; this case claims visibility/action retirement only.

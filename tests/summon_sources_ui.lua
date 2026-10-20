@@ -193,3 +193,42 @@ assert(not visible(a.L("SOURCE_SUMMON_ITEM","Item 7667",q2204.start.name)),"reti
 q2204.start.summonItem,q2201.finish.summonItem=originalStart,originalFinish
 assert(routes==0 and maps==0 and uses==0)
 print("Summoned object source instructions: PASS (actual TOC and controlled relation fixtures; modeled UI only)")
+
+-- A retained source callback can make a formerly absent declaration opaque.
+do
+ local originalEndpoint,originalChecker,originalEqual=q2204.start,issecretvalue,rawequal
+ local endpoint={npcID=6826,name="Talvash source proof",mapID=1455,x=36,y=3.4,
+  reportedLocations={{mapID=1455,x=36,y=3.4},{mapID=1455,x=37,y=4}}}
+ local restricted={};local armed,parentSeen=false,false;local mutations,comparisons=0,0
+ local previousRoutes,previousMaps=routes,maps
+ q2204.start=endpoint
+ rawequal=function(left,right)
+  if originalEqual(left,restricted)or originalEqual(right,restricted)then
+   comparisons=comparisons+1;error("restricted creation declaration compared")
+  end
+  return originalEqual(left,right)
+ end
+ issecretvalue=function(value)
+  if armed then
+   if originalEqual(value,endpoint)then parentSeen=true
+   elseif parentSeen and type(value)=="nil"then
+    armed=false;endpoint.summonItem=restricted;mutations=mutations+1
+   end
+  end
+  return originalEqual(value,restricted)
+ end
+ render(2204)
+ local toggle
+ for _,candidate in pairs(ui.reportedToggles)do
+  if candidate:IsShown()and candidate.locationKey=="start"then toggle=candidate end
+ end
+ assert(toggle and toggle.scripts.OnClick,"ordinary noncreated source retains reported destinations")
+ local click=toggle.scripts.OnClick;armed=true
+ local ok,failure=pcall(click)
+ issecretvalue,rawequal=originalChecker,originalEqual
+ q2204.start=originalEndpoint
+ assert(ok,failure)
+ assert(mutations==1 and comparisons==0,"restriction callback cannot introduce an unchecked creation declaration")
+ assert(routes==previousRoutes and maps==previousMaps,"retired source cannot dispatch a guessed destination")
+end
+print("Reported source declaration retirement: PASS")

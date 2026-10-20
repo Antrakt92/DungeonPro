@@ -1,9 +1,7 @@
--- Native writes cannot publish or activate an ancestor cue from an expired card.
+-- Native writes cannot publish ancestor context from an expired selected card.
 local f=assert(loadfile("tests/client_ui.lua"))("fixture")
 local a,ui=f.addon,f.addon.UI
-issecretvalue=function()return false end
-C_Timer={After=function()end}
-GetLocale=function()return"enUS"end
+issecretvalue=function()return false end;C_Timer={After=function()end};GetLocale=function()return"enUS"end
 f.eventFrame.scripts.OnEvent(f.eventFrame,"ADDON_LOADED","DungeonPro")
 ui:Toggle();a.db.locale="enUS";ui.includeUnavailable=true
 local owners={};for _,d in ipairs(a.dungeons)do for _,id in ipairs(d.quests)do owners[id]=d end end
@@ -20,55 +18,64 @@ local function render(id,status)
  ui.dungeon,ui.quest=assert(owners[id]),id;ui.questTreeRoot,ui.questTreeDungeon=nil,nil;ui:Refresh()
 end
 local function cue()
- local control=ui.ancestorActionButton
- assert(control and control:IsShown()and control.enabled and control.scripts.OnClick,
- "actual166 target needs the known held141 inspection cue")
- return control
+ for _,field in ipairs(ui.details)do if field:IsShown()and field.text and field.text:find(a.L("ANCESTOR_ACTION"),1,true)then
+  assert(field.detailStyle=="caption"and field.detailTextBinding.current())
+  assert(not field.scripts or not field.scripts.OnClick,"ancestor context never duplicates the central selector")
+  assert(not ui.ancestorActionButton or not ui.ancestorActionButton:IsShown())
+  return field
+ end end
+ error("actual166 target needs neutral known141 context")
+end
+local function centralAncestor()
+ for _,row in ipairs(ui.rows)do if row:IsShown()and row.questID==166 and not row.questTreeNode then row.scripts.OnClick();break end end
+ for _,row in ipairs(ui.rows)do if row:IsShown()and row.questID==141 and row.questTreeNode then return row end end
+ error("actual required ancestor141 must remain centrally reachable")
+end
+local function snapshot(field)
+ local point={};for i,v in ipairs(field.point or{})do point[i]=v end
+ return{text=field.text,shown=field:IsShown(),width=field.width,height=field.height,point=point,binding=field.detailTextBinding}
+end
+local function same(field,expected)
+ assert(field.text==expected.text and field:IsShown()==expected.shown and field.width==expected.width and field.height==expected.height,
+  "retired native ancestor tail preserves newest text, visibility and measured width")
+ for i,v in ipairs(expected.point)do assert(field.point[i]==v,"retired ancestor tail preserves newest anchor")end
+ assert(field.detailTextBinding==expected.binding,"the actual pooled FontString binding belongs to the new publication")
 end
 render(166,"READY")
-local button=cue()
-assert(ui.action.id==141 and ui.action.kind=="turnin" and ui.engine:State(166).status=="UNKNOWN")
+assert(ui.action.id==141 and ui.action.kind=="turnin"and ui.engine:State(166).status=="UNKNOWN")
+local field=cue();local retired=field.detailTextBinding.current;local native=field.SetText
+local fired,expected=false,nil
+field.SetText=function(self,text)
+ if not fired then fired=true;ui:InspectQuest(92753,true);expected=snapshot(self)end
+ return native(self,text)
+end
+render(166,"READY");field.SetText=native
+assert(fired and expected and ui.quest==92753 and ui.renderedQuest==92753,"native caption setter must finish the newer selected card")
+same(field,expected);assert(not retired()and routes==0)
 
--- A caption setter may synchronously replace the complete detail card.
-local setText=f.methods.SetText
-local fired=false
-button.label.SetText=function(self,text)
- if not fired then fired=true;ui:InspectQuest(92753,true)end
- return setText(self,text)
+-- A native Show may replace READY with ACTIVE while reusing the same pooled field.
+render(166,"READY");field=cue();retired=field.detailTextBinding.current;native=field.Show;fired=false
+field.Show=function(self)
+ if not fired then fired=true;render(166,"ACTIVE");expected=snapshot(self)end
+ return native(self)
 end
-local retired=button.scripts.OnClick
-render(166,"READY")
-button.label.SetText=setText
-assert(fired and ui.quest==92753 and ui.renderedQuest==92753,"caption reentry must keep the newly inspected card")
-retired();assert(ui.quest==92753 and routes==0,"retired caption cannot inspect or navigate the former ancestor")
-assert(not button:IsShown()or not button.enabled,"late caption write must not revive the old cue")
+render(166,"READY");field.Show=native
+assert(fired and ui.quest==166 and ui.engine:State(141).status=="ACTIVE"and ui.action.kind=="complete")
+same(field,expected);assert(not retired()and routes==0)
+assert(cue().text:find(a.L("ACTIVE"),1,true),"the newest neutral caption retains actual in-log status")
+centralAncestor().scripts.OnClick()
+assert(ui.quest==141 and ui.renderedQuest==141 and routes==0,"only the central hierarchy explicitly selects the ancestor")
 
--- An ordinary status refresh during Show must retain the newer ACTIVE action.
-render(166,"READY");button=cue();retired=button.scripts.OnClick
-local show=f.methods.Show;fired=false
-button.Show=function(self)
- if not fired then fired=true;render(166,"ACTIVE")end
- return show(self)
+-- Redrawing during native Show replaces the real pooled publication token.
+render(166,"READY");field=cue();local binding=field.detailTextBinding;retired=binding.current;native=field.Show;fired=false
+field.Show=function(self)
+ if not fired then fired=true;ui:RefreshDetail();expected=snapshot(self)end
+ return native(self)
 end
-render(166,"READY")
-button.Show=show
-assert(fired and ui.quest==166 and ui.engine:State(141).status=="ACTIVE" and ui.action.kind=="complete")
-retired();assert(ui.quest==166 and routes==0,"old READY click cannot act on the replacement ACTIVE card")
-button=cue();assert(button.label.text:find(a.L("ACTIVE"),1,true),"the newest caption keeps the current status")
-button.scripts.OnClick();assert(ui.quest==141 and ui.renderedQuest==141 and routes==0,"fresh ACTIVE cue still inspects normally")
-
--- The physical control identity is part of the retained click's ownership.
-render(166,"READY");button=cue();retired=button.scripts.OnClick
-fired=false
-button.Show=function(self)
- if not fired then fired=true;ui.ancestorActionButton=CreateFrame("Button",nil,ui.detail)end
- return show(self)
-end
-render(166,"READY")
-button.Show=show
-assert(fired and ui.ancestorActionButton~=button)
-retired();assert(ui.quest==166 and routes==0,"replaced physical control cannot select the old ancestor")
-ui.ancestorActionButton=button
-render(166,"READY");cue().scripts.OnClick()
-assert(ui.quest==141 and ui.renderedQuest==141 and routes==0,"normal rendering recovers after control replacement")
-print("Ancestor action retirement: PASS (fired native caption/Show reentry, physical ownership and fresh inspection recovery)")
+render(166,"READY");field.Show=native
+assert(fired and expected.binding~=binding and ui.quest==166 and ui.renderedQuest==166)
+same(field,expected);assert(not retired()and cue().detailTextBinding.current()and routes==0,
+ "retained publication proof cannot authorize the physical field after its binding is replaced")
+centralAncestor().scripts.OnClick()
+assert(ui.quest==141 and ui.renderedQuest==141 and routes==0,"central selection recovers after pooled binding replacement")
+print("Ancestor context retirement: PASS (native caption/Show, actual pooled ownership, status replacement and central selection)")

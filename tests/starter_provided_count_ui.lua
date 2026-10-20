@@ -55,9 +55,11 @@ for _, id in ipairs({ 6981, 98423 }) do for _, ready in ipairs({ false, true }) 
             assert(occurrences(u, value) == 1, "one physical item must not repeat its carried count in starter and supplied sections")
             assert(not exact(u, value), "the count stays on the successfully rendered supplied row, without a redundant standalone caption")
         else assert(occurrences(u, "Carried:") == 0, "unknown bag count is not zero") end
-        assert(u:SetDetailTab("sources"))
-        assert(not exact(u, a.L("PROVIDED_ITEMS")) and not role(u, "provided", itemID))
-        if count ~= nil then assert(exact(u, a.L("ITEM_CARRIED", count)), "Sources retains the standalone starter count when supplied rows are absent")
+        assert(u:SetDetailTab("sources")and u.detailTab=="quest","legacy alias retains the single quest stream")
+        assert(exact(u, a.L("PROVIDED_ITEMS")) and role(u, "provided", itemID),"supplied row stays visible in the same stream")
+        if count ~= nil then
+            local value=a.L("ITEM_CARRIED",count)
+            assert(occurrences(u,value)==1 and not exact(u,value),"same stream keeps one carried count on the supplied row without a standalone duplicate")
         else assert(occurrences(u, "Carried:") == 0) end
         assert(q.start == start and q.providedItems == provided and routes() == 0)
         total = total + 1
@@ -150,12 +152,12 @@ for _, count in ipairs({ 0, 4 }) do
     q.startAlternatives = nil
     u:Refresh()
     local nilSources = occurrences(u, value)
-    assert(nilSources == 1 and exact(u, value), "nil sources keep one standalone giver count when supplied rows are absent")
+    assert(nilSources == 1 and not exact(u, value)and role(u,"provided",10441), "nil alternatives keep one supplied-row count in the single stream without a standalone duplicate")
     q.startAlternatives = {}
     u:Refresh()
     local emptySources = occurrences(u, value)
     assert(emptySources == 1 and emptySources == nilSources, "empty alternatives keep the same single sources count as nil")
-    assert(exact(u, value), "empty sources keep the standalone giver count like nil")
+    assert(not exact(u, value)and role(u,"provided",10441), "empty alternatives keep the supplied-row count like nil without a standalone duplicate")
     -- Controls: nonempty alternatives stay untyped without a crash; nil is unchanged.
     q.startAlternatives = { { npcID = 1, name = "Alt source" } }
     u:Refresh()
@@ -177,7 +179,8 @@ do
         q.providedItems = nil
         q.start = { itemID = 4294967296, name = "Huge starter", containerSource = { objectID = 11, name = "Huge Cache", zoneName = "Known zone" }, dropSources = { { npcID = 1, name = "Source", locationName = "Known zone" } } }
         q.startAlternatives = nil
-        assert(u:SetDetailTab("sources"))
+        u:Refresh() -- Explicit data refresh; the legacy section alias is quiet.
+        assert(u:SetDetailTab("sources")and u.detailTab=="quest")
         assert(occurrences(u, value) == 0, "huge starter with routes shows no carried count")
         assert(not shownExact(u, value), "huge sources keep no standalone carried caption")
         assert(not exact(u, a.L("ITEM_ACQUISITION")), "huge starter builds no acquisition heading")
@@ -198,7 +201,8 @@ do
         q.providedItems = nil
         q.start = { itemID = case.id, name = "Boundary starter" }
         q.startAlternatives = nil
-        assert(u:SetDetailTab("sources"))
+        u:Refresh() -- Re-render the controlled changed definition before inspection.
+        assert(u:SetDetailTab("sources")and u.detailTab=="quest")
         local found = occurrences(u, value)
         assert(found == case.expect, "boundary " .. case.id .. " keeps " .. case.expect .. " carried")
         q.start = savedStart

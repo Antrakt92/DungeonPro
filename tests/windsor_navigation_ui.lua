@@ -22,13 +22,18 @@ assert(ui:DispatchDetail(ui.action,false))
 assert(#visits==1 and visits[1].id==6402 and visits[1].place==finish)
 assert(ui.giverAction.id==6402 and ui.giverAction.place==quest.start and quest.start.npcID==9560 and quest.start.mapID==1428,
     "quest giver remains the separate Marshal Maxwell endpoint")
-ui.giver.scripts.OnClick()
+local pickup=assert(ui.detailContactRows[1]);assert(pickup:IsShown()and pickup.enabled and pickup.detailContactBinding.endpoint==quest.start and pickup.scripts.OnClick)
+assert(not ui.giver:IsShown()and not ui.giver.enabled and ui.giver.scripts.OnClick==nil,"retired old giver glyph cannot dispatch")
+pickup.scripts.OnClick()
 assert(#visits==2 and visits[2].place==quest.start)
 assert(ui:SetDetailTab("sources"))
+local turninContact=assert(ui.detailContactRows[2]);local binding=assert(turninContact.detailContactBinding)
+assert(turninContact:IsShown()and turninContact.enabled and binding.endpoint==finish and binding.purpose==nil and binding.action.kind=="visit","informational finisher stays distinct from READY turn-in action")
+turninContact.scripts.OnClick();assert(#visits==3 and visits[3].kind=="visit"and visits[3].place==finish,"explicit finisher contact opens its own full reported point set")
 local toggle
 for _,row in ipairs(ui.reportedToggles)do if row:IsShown()and row.locationKey=="finish"then toggle=row end end
 assert(toggle and toggle.title.text:find("Reginald Windsor",1,true))
-toggle.scripts.OnClick()
+if not(ui.reportedExpanded and ui.reportedExpanded.finish)then toggle.scripts.OnClick()end
 local count,stormwind,elwynn=0,0,0
 local retired
 for _,row in ipairs(ui.reportedRows)do if row:IsShown()and row.locationKey=="finish"then
@@ -44,7 +49,7 @@ for _,row in ipairs(ui.reportedRows)do if row:IsShown()and row.locationKey=="fin
     assert(ui.quest==selected and ui.questTreeRoot==root and ui.detailHistory==history)
     retired=row.scripts.OnClick
 end end
-assert(count==31 and stormwind==24 and elwynn==7 and #visits==33 and maps==0)
+assert(count==31 and stormwind==24 and elwynn==7 and #visits==34 and maps==0,"one READY plus two distinct contact visits and all31reported visits, no map calls")
 local last=finish.reportedLocations[31];assert(last.mapID==1429 and last.x==34.6 and last.y==53.2)
 assert(quest.requirementsKnown==false,"source positions do not authorize pickup availability")
 ui.quest=4322;ui:Refresh();local countBefore=#visits;retired();assert(#visits==countBefore,"retired cross-map source handler cannot visit another quest")

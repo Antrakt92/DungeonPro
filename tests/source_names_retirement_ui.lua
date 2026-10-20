@@ -73,28 +73,32 @@ end
 -- The helper itself may synchronously replace the inspected card before returning.
 reset();render();local fired=false
 a.SourceName=function(place,current)
- local name,proof=originalResolver(place,current)
+ local name,proof,rawProof=originalResolver(place,current)
  if not fired and place==point then
   fired=true;ui:InspectQuest(739,true,true)
-  return"Retired translated bottle",proof
+  return"Retired translated bottle",proof,rawProof
  end
- return name,proof
+ return name,proof,rawProof
 end
 ui:RefreshDetail()
 assert(fired and ui.quest==739 and ui.renderedQuest==739,"source-name helper actually replaced the selected card")
 for _,row in ipairs(ui.giverButtons)do assert(not row.shown,"old alternative cannot survive replacement by a single typed giver")end
 for _,field in ipairs(ui.details)do assert(not(field.shown and field.text:find("Retired translated bottle",1,true)))end
-assert(ui.giverAction and ui.giverAction.id==739 and ui.giverAction.place.objectID==2875,"replacement card owns its distinct object source")
+local replacement=assert(ui.detailContactRows[1]);local binding=assert(replacement.detailContactBinding)
+assert(replacement:IsShown()and replacement.enabled and replacement.scripts.OnClick and binding.current()and
+ binding.questID==739 and binding.field=="start"and binding.endpoint==a.quests[739].start and
+ binding.endpoint.objectID==2875 and binding.action.id==739 and binding.action.kind=="visit"and binding.action.place==binding.endpoint,
+ "replacement contact owns its distinct current typed object source and manual action")
 
 -- A retained name proof is callback-capable; a click must recheck its UI owner afterward.
 reset();local armedProof,proofFired=false,false
 a.SourceName=function(place,current)
- local name,proof=originalResolver(place,current)
+ local name,proof,rawProof=originalResolver(place,current)
  if place==point and proof then return name,function()
   if armedProof then armedProof,proofFired=false,true;ui:InspectQuest(739,true,true)end
   return proof()
- end end
- return name,proof
+ end,rawProof end
+ return name,proof,rawProof
 end
 render();local oldRow=first();local oldClick=oldRow.scripts.OnClick;local routeCount=#routes
 armedProof=true;oldClick(oldRow,"LeftButton",false)
@@ -118,7 +122,10 @@ for _,mode in ipairs({"same-card-locale","new-card"})do
   exactRoute(first())
  else
   assert(ui.quest==739 and not row.shown and not row.scripts.OnClick,"late old source row survived replacement quest")
-  assert(ui.giverAction and ui.giverAction.place.objectID==2875)
+  local row=assert(ui.detailContactRows[1]);local binding=assert(row.detailContactBinding)
+  assert(row:IsShown()and row.enabled and row.scripts.OnClick and binding.current()and binding.questID==739 and binding.field=="start"and
+   binding.endpoint==a.quests[739].start and binding.endpoint.objectID==2875 and binding.action.id==739 and
+   binding.action.kind=="visit"and binding.action.place==binding.endpoint)
  end
 end
 -- Optional resolver omission keeps the recorded name and the same typed route.

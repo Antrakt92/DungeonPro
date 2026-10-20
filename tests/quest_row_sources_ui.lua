@@ -79,7 +79,7 @@ local original=choicesSource[1];choicesSource[1]=choicesSource[2]
 alternativeClick();assert(ui.quest==7508,"changed alternative membership expires old source inspection")
 choicesSource[1]=original
 alternativeClick()
-assert(ui.quest==7492 and ui.detailTab=="sources","alternative-source inspection opens the remaining choices")
+assert(ui.quest==7492 and ui.detailTab=="quest","alternative-source inspection exposes all choices in one stream")
 local choices=0
 for _,pool in ipairs({ui.giverButtons,ui.startButtons})do for _,button in ipairs(pool)do if button:IsShown()then choices=choices+1 end end end
 assert(choices==#a.quests[7492].startAlternatives,"all recorded trainer choices are immediately accessible")

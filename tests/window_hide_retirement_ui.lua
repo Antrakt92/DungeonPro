@@ -30,12 +30,13 @@ for _, phase in ipairs({ "map", "popup", "hint", "language", "shown" }) do
         if not armed then return end
         armed, fired = false, true
         ui.frame:Show(); ui:InspectQuest(166, true); ui:SetDetailTab("sources")
-        assert(ui.quest == 166 and ui.renderedQuest == 166 and ui.detailTab == "sources" and ui.frame.shown)
+        assert(ui.quest == 166 and ui.renderedQuest == 166 and ui.detailTab == "quest" and ui.frame.shown)
         assert(ui:CopyLink(166) ~= false and ui.copyQuest == 166 and ui.copy.shown)
-        latest = { generation = ui.rewardGeneration, revision = ui.detailTabRevision, binding = ui.giverBinding,
-            offsets = ui:HistoryOffsets(), copy = ui.copy:GetText() }
-        assert(latest.binding and latest.binding.current() and ui.giver.shown)
-        ui.giver.scripts.OnClick(); assert(pins() == 1, "fresh reopened actual giver must dispatch")
+        local contact=assert(ui.detailContactRows[1]);assert(contact:IsShown()and contact.enabled and contact.detailContactBinding.current())
+        contact.scripts.OnClick();assert(pins()==1,"fresh reopened actual giver must dispatch")
+        latest={generation=ui.rewardGeneration,revision=ui.detailTabRevision,binding=ui.detailContactRows[1].detailContactBinding,
+            offsets=ui:HistoryOffsets(),copy=ui.copy:GetText()}
+        assert(latest.binding.current()and ui.detailContactRows[1]:IsShown()and not ui.giver:IsShown())
     end
     if phase == "map" then
         local hide = ui.dungeonMap.Hide
@@ -57,10 +58,11 @@ for _, phase in ipairs({ "map", "popup", "hint", "language", "shown" }) do
     -- The native-shaped fixture does not deliver OnHide automatically.
     ui.frame.shown = false; ui.frame.scripts.OnHide(ui.frame)
     assert(fired and latest and ui.frame.shown and ui.quest == 166 and ui.renderedQuest == 166, phase)
-    ui.giver.scripts.OnClick()
-    assert(pins() == 2, phase .. ": old close disabled the visible newly rendered giver")
-    assert(ui.rewardGeneration == latest.generation and ui.detailTabRevision == latest.revision and
-        latest.binding.current() and ui:HistoryOffsets() == latest.offsets, phase .. ": old close reset new reading state")
+    assert(ui.rewardGeneration==latest.generation and ui.detailTabRevision==latest.revision and
+        latest.binding.current()and ui:HistoryOffsets()==latest.offsets,phase..": old close reset new reading state")
+    local contact=assert(ui.detailContactRows[1]);assert(contact:IsShown()and contact.enabled and contact.detailContactBinding==latest.binding)
+    contact.scripts.OnClick();assert(pins()==2,phase..": old close disabled the visible newly rendered giver")
+    assert(ui.detailTabRevision==latest.revision and ui:HistoryOffsets()==latest.offsets and ui.detailContactRows[1].detailContactBinding.current(),"fresh click preserves reopened reading state")
     assert(ui.copyQuest == 166 and ui.copy.shown and ui.copy:GetText() == latest.copy,
         phase .. ": old close erased the newly opened real quest link")
     StaticPopup_Hide = nil

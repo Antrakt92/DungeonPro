@@ -15,7 +15,7 @@ class OverviewPreview(unittest.TestCase):
     result=lua(CAPTURE,*args)
     self.assertEqual(result.returncode,0,result.stderr);snapshot=json.loads(result.stdout)
     self.assertEqual(snapshot['questID'],4764);self.assertEqual(snapshot['mode'],'quest')
-    self.assertTrue(snapshot['fixtureRewards']);self.assertEqual(snapshot['detailTab'],tab)
+    self.assertTrue(snapshot['fixtureRewards']);self.assertEqual(snapshot['detailTab'],'quest')
     self.assertEqual(snapshot['locale'],locale);self.assertFalse(snapshot['catalogCollapsed'])
     objects={row['id']:row for row in snapshot['objects']}
     def visible(row):
@@ -27,15 +27,10 @@ class OverviewPreview(unittest.TestCase):
     text=[row.get('text','')for row in objects.values()if visible(row)]
     rewards=('Guaranteed reward','First reward choice','Second reward choice')if locale=='enUS'else('Гарантированная награда','Первый вариант награды','Второй вариант награды')
     prose='Enter the dungeon, recover the missing relic'if locale=='enUS'else'Отправляйтесь в подземелье, найдите пропавшую реликвию'
-    if tab=='quest':
-     for label in rewards:self.assertEqual(text.count(label),1)
-     self.assertFalse(any(prose in value for value in text))
-    elif tab=='story':
-     self.assertTrue(any(prose in value for value in text))
-     for label in rewards:self.assertNotIn(label,text)
-    else:
-     self.assertFalse(any(prose in value for value in text))
-     for label in rewards:self.assertNotIn(label,text)
+    for label in rewards:self.assertEqual(text.count(label),1)
+    self.assertEqual(sum(prose in value for value in text),1,"authentic prose appears exactly once in every legacy alias")
+    for key,ident in snapshot['roles'].items():
+     if key.startswith('detailTab_'):self.assertFalse(visible(objects[ident]))
  def test_overview_real_model_metadata_and_visible_support(self):
   for locale in ('enUS','ruRU'):
    for collapsed in ('','collapsed'):

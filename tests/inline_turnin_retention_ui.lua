@@ -60,7 +60,7 @@ for _,target in ipairs({6981,6402})do for _,method in ipairs({"ClearAllPoints","
  u:RefreshDetail();control[method]=setter
  assert(fired and completed and u.quest==target and #visits==0)
  if target==6981 then
-  assert(u.detailTab=="sources"and not control:IsShown()and not control.enabled and not u.turninBinding,
+  assert(u.detailTab=="quest"and not control:IsShown()and not control.enabled and not u.turninBinding,
    "retired inline native tail cannot revive turn-in over item source details")
  else
   assert(control:IsShown()and control.enabled and u.turninBinding==newerBinding and control.scripts.OnClick==newerClick)

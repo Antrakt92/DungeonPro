@@ -25,6 +25,15 @@ local function render(id,inspection)
  if ui.detailTab~="quest"then assert(ui:SetDetailTab("quest"))end
  assert(ui.quest==id and ui.renderedQuest==id,"actual object quest remains inspected")
 end
+local function primary(field)
+ local row=assert(ui.detailContactRows[field=="finish"and 2 or 1]);assert(row:IsShown()and row.detailContactBinding.endpoint==a.quests[ui.quest][field],"visible contact retains its own selected endpoint")
+ return row
+end
+local function visibleArea(area)
+ for _,field in ipairs(ui.details)do if field:IsShown()and field.text:find(area,1,true)then return true end end
+ for _,row in ipairs(ui.detailContactRows or{})do if row:IsShown()and row.note.text:find(area,1,true)then return true end end
+ return false
+end
 local function expand()
  assert(ui:SetDetailTab("sources"))
 end
@@ -41,7 +50,8 @@ end
 local function reported(key,id,object,expected,map)
  local toggle
  for _,r in ipairs(shown(ui.reportedToggles))do if r.locationKey==key then toggle=r end end
- assert(toggle,"multiple source points are reachable through their own disclosure");toggle.scripts.OnClick()
+ assert(toggle,"multiple source points are reachable through their own disclosure")
+ if not(ui.reportedExpanded and ui.reportedExpanded[key])then toggle.scripts.OnClick()end
  local rows={};for _,r in ipairs(shown(ui.reportedRows))do if r.locationKey==key then rows[#rows+1]=r end end
  assert(#rows==#expected,"complete source point list stays visible")
  local retired
@@ -50,10 +60,10 @@ local function reported(key,id,object,expected,map)
 end
 local retired
 render(720,assert(dungeons.ulda))
-retired=click(ui.giver,720,2868,1418,53,34.1)
+retired=click(primary("start"),720,2868,1418,53,34.1)
 render(739,assert(dungeons.ulda));local n=#visits;retired()
-assert(#visits==n+1 and visits[#visits].id==739 and visits[#visits].place.objectID==2875,"shared primary control resolves the newest inspected object rather than its former source")
-click(ui.giver,739,2875,1418,50.9,62.2)
+assert(#visits==n,"retired primary source callback cannot redirect to the newer inspected object")
+click(primary("start"),739,2875,1418,50.9,62.2)
 expand();retired=reported("start",739,2875,{{50.9,62.2},{51,62.5}},1418)
 render(738,assert(dungeons.ulda));expand()
 reported("finish",738,2875,{{50.9,62.2},{51,62.5}},1418)
@@ -64,7 +74,7 @@ local expected={
  {142706,23.4,58.8},{142707,23.2,58.5},{142708,31.6,57.8},{142710,31.6,57.7},
  {142711,31.6,57.8},{142712,31.6,57.8},{142713,23.1,57.7},{142714,23,57.8}}
 render(2933,assert(dungeons.ulda));n=#visits;retired();assert(#visits==n,"retired reported source cannot route a different quest")
-assert(not ui.giverAction and #shown(ui.giverButtons)==0 and ui.detailTab=="quest","twelve alternatives never auto-select one source on Quest")
+assert(not ui.giverAction and (#shown(ui.giverButtons)+#shown(ui.startButtons))==12 and ui.detailTab=="quest","single stream shows all twelve manual alternatives without selecting or navigating one")
 expand()
 local compact=shown(ui.giverButtons)
 for i,b in ipairs(compact)do local e=expected[i];click(b,2933,e[1],1425,e[2],e[3])end
@@ -83,8 +93,8 @@ for _,id in ipairs(spark)do
   if p and(p.objectID==142487 or p.objectID==175084 or p.objectID==175085)then
    endpoints=endpoints+1
    assert(p.zoneName=="Gnomeregan"and not p.mapID and not p.x and not p.y,"typed Sparklematic endpoint retains area without a fabricated map")
-   local visible=false
-   for _,field in ipairs(ui.details)do if field:IsShown()and field.text:find("Gnomeregan",1,true)then visible=true end end
+   local contact=primary(key);assert(not contact.enabled and contact.scripts.OnClick==nil and contact.detailContactBinding.reason=="SOURCE_POSITION_UNKNOWN","each area-only typed endpoint is visibly read-only")
+   local visible=visibleArea("Gnomeregan")
    assert(visible,"known Gnomeregan area is visible to the player")
    if key=="start"then
     assert(not ui.giver.enabled and ui.giverUnavailableKey=="SOURCE_POSITION_UNKNOWN","area-only object source explains missing precise position")
@@ -104,8 +114,8 @@ for _,id in ipairs({2278,2279,2280})do
    assert(p.zoneName=="Uldaman"and not p.mapID and not p.x and not p.y,"Discs retain only their reported dungeon area")
   end
  end
- local visible=false
- for _,field in ipairs(ui.details)do if field:IsShown()and field.text:find("Uldaman",1,true)then visible=true end end
+ local visible=visibleArea("Uldaman")
+ local pickup=primary("start");assert(not pickup.enabled and pickup.scripts.OnClick==nil and pickup.detailContactBinding.reason=="SOURCE_POSITION_UNKNOWN")
  assert(visible and not ui.giver.enabled and ui.giverUnavailableKey=="SOURCE_POSITION_UNKNOWN","Discs area is readable while exact routing stays unavailable")
  if ui.giver.scripts.OnClick then ui.giver.scripts.OnClick()end
  assert(#visits==n and maps==0,"Discs do not substitute a dungeon entrance or finisher route")

@@ -23,11 +23,25 @@ local function render(quest,state,context)
 end
 local function finish()
  local prefix=a.L("DETAIL_TURNIN")..": "
+ local row=u.detailContactRows and u.detailContactRows[2]
+ if row and row:IsShown()and row.title.text:find(prefix,1,true)==1 then
+  local binding=assert(row.detailContactBinding)
+  assert(binding.field=="finish"and binding.questID==u.quest and binding.endpoint==a.quests[u.quest].finish and binding.current(),
+   "the visible turn-in caption owns the exact selected current finisher")
+  local bottom=-row.point[3]+row.height
+  local following,top
+  for _,fs in ipairs(u.details)do
+   local y=fs.point and fs.point[1]=="TOPLEFT"and -fs.point[3]
+   if fs:IsShown()and y and y>=bottom and fs.text~=a.L("VISIT_TURNIN")and(not top or y<top)then following,top=fs,y end
+  end
+  return row.title,following
+ end
  for i,fs in ipairs(u.details)do if fs:IsShown()and fs.text and fs.text:find(prefix,1,true)==1 then
   return fs,u.details[i+1]
  end end
 end
 local originalFinish=a.quests[3447].finish
+local originalArea=originalFinish.zoneName
 local function warned()
  local caption,warning=finish()
  assert(caption and warning and warning:IsShown()and warning.text==a.L("SOURCE_POSITION_UNKNOWN")and warning.detailStyle=="warning",
@@ -46,7 +60,12 @@ for _,locale in ipairs({"enUS","ruRU","deDE","frFR","esES","ptBR","itIT","koKR",
  end
 end
 a.db.locale="enUS"
-local function copy()local p={};for k,v in pairs(originalFinish)do p[k]=v end;return p end
+local function copy()
+ local p={};for k,v in pairs(originalFinish)do p[k]=v end
+ -- Controlled identity-only cases intentionally omit the newly recorded area.
+ p.zoneName=nil
+ return p
+end
 -- Synthetic malformed identities are not new typed source evidence.
 for _,shape in ipairs({"unnamed","blank","untyped","mixed","zero","fraction","item"})do
  local point=copy()
@@ -106,5 +125,5 @@ end
 u:RefreshDetail();a.L=localize
 assert(fired and u.quest==3447 and u.turnin.enabled and #routes==0 and #maps==0)
 a.quests[3447].finish=originalFinish
-assert(a.quests[3447].finish==originalFinish and originalFinish.mapID==nil and originalFinish.zoneName==nil)
+assert(a.quests[3447].finish==originalFinish and originalFinish.mapID==nil and originalFinish.zoneName==originalArea)
 print("Identity-only finish warning: PASS (actual object source, 10 locales, statuses, invalid/controlled sources and native retirement)")

@@ -20,12 +20,37 @@ a.Navigation={Start=function(action)routes[#routes+1]=action;return true end,Map
 local function render(quest,state,context)
  token={};id,status=quest,state or "READY";u.dungeon,u.quest=assert(context or owners[quest]),quest;u:Refresh()
  assert(u.quest==quest and u.renderedQuest==quest)
+ local contact=u.detailContactRows and u.detailContactRows[2]
+ if contact and contact:IsShown()then
+  local binding=assert(contact.detailContactBinding)
+  assert(binding.questID==quest and binding.endpoint==a.quests[quest].finish and binding.current(),"fresh rendered finisher has its own current source proof")
+ end
 end
 local function finish()
  local prefix=a.L("DETAIL_TURNIN")..": "
  for i,fs in ipairs(u.details)do if fs:IsShown()and fs.text and fs.text:find(prefix,1,true)==1 then
   return fs,u.details[i+1]
  end end
+ local row=u.detailContactRows and u.detailContactRows[2]
+ if row and row:IsShown()then
+  local binding=assert(row.detailContactBinding)
+  assert(binding.questID==u.quest and binding.field=="finish"and binding.endpoint==a.quests[u.quest].finish,"visible finisher belongs to exact selected quest")
+  local bottom=-row.point[3]+row:GetHeight()
+  local following,followingY,second,secondY
+  for _,fs in ipairs(u.details)do if fs:IsShown()and fs.point then
+   local y=-fs.point[3]
+   if y>=bottom then
+    if not followingY or y<followingY then second,secondY=following,followingY;following,followingY=fs,y
+    elseif not secondY or y<secondY then second,secondY=fs,y end
+   end
+  end end
+  assert(following,"actual finisher has following visible content")
+  if following.text==a.L("VISIT_TURNIN")and second and second.text==a.L("SOURCE_POSITION_UNKNOWN")then
+   assert(u.turnin:IsShown()and u.turnin.enabled and u.action.place==binding.endpoint,"only the separate owned READY action may precede its warning")
+   following=second
+  end
+  return row.title,following
+ end
 end
 local function warned()
  local caption,warning=finish()
@@ -44,7 +69,9 @@ for _,locale in ipairs({"enUS","ruRU","deDE","frFR","esES","ptBR","itIT","koKR",
   assert(#routes==0 and #maps==0)
  end
 end
-a.db.locale="enUS";render(4241);warned();u.giver.scripts.OnClick()
+a.db.locale="enUS";render(4241);warned();local pickup=assert(u.detailContactRows[1])
+assert(pickup:IsShown()and pickup.enabled and pickup.detailContactBinding.endpoint==a.quests[4241].start)
+pickup.scripts.OnClick()
 assert(#routes==1 and routes[1].kind=="visit"and routes[1].place==a.quests[4241].start)
 render(5724);local caption,nextLine=finish();assert(caption and (not nextLine:IsShown()or nextLine.text~=a.L("SOURCE_POSITION_UNKNOWN")))
 assert(u.turnin:IsShown()and u.turnin.enabled);u.turnin.scripts.OnClick()
@@ -178,6 +205,7 @@ do
   end
  end
  local function turninCaption()
+  local current=finish();if current then return current end
   local prefix = a.L("DETAIL_TURNIN") .. ": "
   for _, fs in ipairs(u.details) do
    if fs:IsShown() and fs.text and fs.text:find(prefix, 1, true) == 1 then return fs end

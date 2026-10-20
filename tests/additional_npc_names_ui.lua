@@ -48,7 +48,33 @@ local function render(id)
 end
 local function visible(text)
  for _,field in ipairs(ui.details)do if field:IsShown()and field.text and field.text:find(text,1,true)then return true end end
+ for index=1,2 do local contact=ui.detailContactRows and ui.detailContactRows[index];if contact and contact:IsShown()and(contact.title.text:find(text,1,true)or contact.note.text:find(text,1,true))then return true end end
 end
+local function ownContact(field)
+ local q=assert(a.quests[ui.quest]);local point=assert(q[field]);local contact=assert(ui.detailContactRows[field=="start"and 1 or 2])
+ local binding=assert(contact.detailContactBinding)
+ assert(contact:IsShown()and binding.questID==q.id and binding.field==field and binding.endpoint==point and binding.current(),"actual contact owns exact selected source")
+ return contact
+end
+local function sourceHint()
+ local selected,dungeon=ui.quest,ui.dungeon
+ local function control()
+  for _,row in ipairs(ui.rows)do if row:IsShown()and row.questID==selected then return assert(row.navigationControl)end end
+ end
+ local found=control();if found then return found end
+ -- Explicitly open the real containing middle-tree group for a support quest before hovering its source control.
+ for _,root in ipairs(dungeon.quests)do
+  local tree=assert(a.QuestTree.Build(a.quests,ui.engine,root))
+  for _,node in ipairs(tree)do if node.id==selected then
+   ui.questTreeRoot,ui.questTreeDungeon=root,dungeon
+   ui:RefreshQuests();ui:RefreshDetail()
+   assert(ui.quest==selected and ui.dungeon==dungeon,"source hint expansion keeps actual selected quest and dungeon")
+   return assert(control(),"expanded exact tree contains selected source hint")
+  end end
+ end
+ error("selected source has no actual containing middle-tree group")
+end
+
 local points,total={},0
 a.db.locale="zhCN"
 for _,group in ipairs(groups)do
@@ -59,7 +85,7 @@ for _,group in ipairs(groups)do
   points[id]={point=p,name=p.name,zone=p.zoneName,map=map,x=x,y=y,npc=npc,finish=q.finish,requires=q.requires,known=q.requirementsKnown}
   render(id)
   local status=ui.engine:State(id).status;local before=#routes
-  assert(visible(label),"reviewed Chinese NPC label missing on actual Quest card "..id.."/"..npc)
+  assert(ownContact("start").title.text==a.L("DETAIL_GIVER")..": "..label,"reviewed Chinese NPC label missing on own actual pickup contact "..id.."/"..npc)
   if id==4771 then assert(visible("Native item marker 12368"),"provided item keeps independent native item naming")end
   assert(ui:SetDetailTab("sources")and visible(label),"Sources must retain the same reviewed NPC identity")
   assert(ui.engine:State(id).status==status and #routes==before,"translated source display cannot grant availability or start a route")
@@ -78,9 +104,9 @@ end
 -- One actual route per creature; other matching starter records keep their own bindings above.
 for _,group in ipairs(groups)do
  local npc,label,ids=unpack(group);local id=ids[1];render(id)
- local before=#routes;assert(ui.giver and ui.giver.enabled and ui.giver.scripts.OnEnter and ui.giver.scripts.OnClick)
- ui.giver.scripts.OnEnter();assert(tip.shown and tip.body:find(label,1,true))
- assert(#routes==before);ui.giver.scripts.OnClick()
+ local before=#routes;local contact=ownContact("start");assert(contact.enabled and contact.scripts.OnClick)
+ local hint=sourceHint();hint.scripts.OnEnter();assert(tip.shown and tip.owner==hint and tip.body:find(label,1,true))
+ assert(#routes==before);contact.scripts.OnClick()
  local action=routes[#routes];assert(#routes==before+1 and action.id==id and action.place==points[id].point and action.place.npcID==npc)
  local g=assert(guide());assert(g:IsShown()and g.note.text:find(label,1,true))
  nav.Stop()
@@ -145,14 +171,15 @@ for _,group in ipairs(groups)do
 end
 assert(#routes==explicitRoutes,"sparse labels and fallback renders do not automatically visit a giver")
 -- A normal language commit retires the old displayed source proof and tooltip, not the unchanged route.
-a.db.locale="zhCN";render(3527);ui.giver.scripts.OnEnter()
+a.db.locale="zhCN";render(3527);sourceHint().scripts.OnEnter()
 assert(tip.shown and tip.body:find("叶基亚",1,true))
-local binding=ui.giverBinding;local _,proof=a.SourceName(a.quests[3527].start);local before=#routes
+local binding=ownContact("start").detailContactBinding;local oldClick=ownContact("start").scripts.OnClick;local _,proof=a.SourceName(a.quests[3527].start);local before=#routes
 ui.language.scripts.OnEnter();local session=assert(a.Language.session)
 assert(a.Language:Commit(session,"enUS")and a.db.locale=="enUS")
 assert(not binding.current()and not proof()and not tip.shown and #routes==before)
-assert(visible(points[3527].name));ui.giver.scripts.OnEnter();assert(tip.body:find(points[3527].name,1,true))
-ui.giver.scripts.OnClick();assert(#routes==before+1 and routes[#routes].place==points[3527].point)
+assert(visible(points[3527].name));sourceHint().scripts.OnEnter();assert(tip.body:find(points[3527].name,1,true))
+oldClick();assert(#routes==before,"old localized contact callback stays retired")
+ownContact("start").scripts.OnClick();assert(#routes==before+1 and routes[#routes].place==points[3527].point)
 nav.Stop()
 for id,saved in pairs(points)do
  local q=a.quests[id];local p=q.start

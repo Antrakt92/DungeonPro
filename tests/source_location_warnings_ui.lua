@@ -18,10 +18,16 @@ local function count(key)
 end
 local function named(name)
  for _,field in ipairs(ui.details)do if field:IsShown()and field.text and field.text:find(name,1,true)then return true end end
+ for _,button in ipairs(ui.containerButtons or {})do if button:IsShown()then
+  for _,field in ipairs({button.title,button.note})do if field.text and field.text:find(name,1,true)then return true end end
+ end end
+ for _,row in ipairs(ui.detailContactRows or {})do if row:IsShown()then
+  for _,field in ipairs({row.title,row.note})do if field.text and field.text:find(name,1,true)then return true end end
+ end end
  return false
 end
 local function sources(id,context)
- render(id,context);assert(ui:SetDetailTab("sources")and ui.detailTab=="sources")
+ render(id,context);assert(ui:SetDetailTab("sources")and ui.detailTab=="quest")
 end
 for _,locale in ipairs({"enUS","ruRU","deDE","frFR","esES","ptBR","koKR","zhCN","zhTW","itIT"})do
  a.db.locale=locale
@@ -35,6 +41,11 @@ for _,locale in ipairs({"enUS","ruRU","deDE","frFR","esES","ptBR","koKR","zhCN",
    if field.text:find(expectedArea,1,true)then area=true end
    if field.text==a.L("SOURCE_POSITION_UNKNOWN")then assert(field.detailStyle=="warning","unknown exact position uses the explicit warning style")end
   end end
+  local contact=ui.detailContactRows and ui.detailContactRows[1]
+  if contact and contact:IsShown()then
+   assert(contact.detailContactBinding.endpoint==a.quests[id].start and contact.detailContactBinding.current(),"known source area belongs to the exact selected pickup")
+   if contact.note.text:find(expectedArea,1,true)then area=true end
+  end
   assert(area,"recorded known area remains visible")
   local matched=false
   for _,row in ipairs(ui.rows)do if row:IsShown()and row.questID==id then
@@ -46,9 +57,17 @@ for _,locale in ipairs({"enUS","ruRU","deDE","frFR","esES","ptBR","koKR","zhCN",
  assert(count("GIVER_LOCATION_UNKNOWN")==1 and count("SOURCE_POSITION_UNKNOWN")==0,"wholly unknown NPC location retains its full warning")
  for _,id in ipairs({95189,95204})do
   render(id)
-  assert(named(a.quests[id].start.containerSource.name)and count("SOURCE_POSITION_UNKNOWN")==1 and count("START_ITEM_LOCATION_UNKNOWN")==0,
-   "Quest retains the known container and one exact-position warning")
-  for _,button in ipairs(ui.containerButtons)do assert(not button:IsShown(),"Quest summary does not duplicate the detailed container control")end
+  assert(named(a.quests[id].start.containerSource.name)and count("SOURCE_POSITION_UNKNOWN")==0 and count("START_ITEM_LOCATION_UNKNOWN")==0,
+   "the complete container row owns its warning without duplicate unknown-source prose")
+  local containers=0
+  for _,button in ipairs(ui.containerButtons)do if button:IsShown()then
+   containers=containers+1
+   assert(button.title.text==a.quests[id].start.containerSource.name and not button.enabled and not button.scripts.OnClick,
+    "the current own container appears once and never invents a route")
+   assert(button.note.text=="|cffff594d"..a.L("SOURCE_POSITION_UNKNOWN").."|r",
+    "one explicit warning remains visibly styled beside its own container")
+  end end
+  assert(containers==1,"the stream has exactly one full container row")
   assert(ui:SetDetailTab("sources"))
   local shown=0
   for _,button in ipairs(ui.containerButtons)do if button:IsShown()then
@@ -77,8 +96,8 @@ a.db.locale="enUS"
 local namedContainer=a.quests[95189].start.containerSource
 local originalZone=namedContainer.zoneName
 namedContainer.zoneName="Known container area";render(95189)
-assert(named(namedContainer.name)and named("Known container area")and count("SOURCE_POSITION_UNKNOWN")==1,
- "Quest preserves named container area and its one position warning")
+assert(named(namedContainer.name)and named("Known container area")and count("SOURCE_POSITION_UNKNOWN")==0,
+ "the stream preserves named container area and no duplicated standalone position warning")
 assert(ui:SetDetailTab("sources"))
 local namedButton=assert(ui.containerButtons[1])
 assert(namedButton:IsShown()and not namedButton.enabled and not namedButton.scripts.OnClick,"named container without a map does not invent navigation")

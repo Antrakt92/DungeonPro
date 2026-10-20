@@ -16,6 +16,20 @@ local function render(id,inspection)
 end
 local function field(text)
  for _,value in ipairs(ui.details)do if value:IsShown()and value.text:find(text,1,true)then return value end end
+ for _,contact in ipairs(ui.detailContactRows or {})do if contact:IsShown()then
+  for _,value in ipairs({contact.title,contact.note})do if value:IsShown()and value.text:find(text,1,true)then return value end end
+ end end
+end
+local function contact(role,endpoint)
+ local value=assert(ui.detailContactRows and ui.detailContactRows[role=="start"and 1 or 2],"own typed source contact exists")
+ local binding=assert(value.detailContactBinding)
+ assert(value:IsShown()and binding.questID==ui.quest and binding.endpoint==endpoint and binding.current(),"source caption belongs to current exact selected endpoint")
+ return value
+end
+local function area(role,endpoint,expected)
+ local value=contact(role,endpoint)
+ assert(value.title.text:find(endpoint.name,1,true),"source contact retains its actual source name")
+ return value.note.text==expected and value.note or nil
 end
 local function label(locale,canonical)
  if locale=="enUS"then return canonical end
@@ -35,11 +49,11 @@ for _,locale in ipairs({"enUS","ruRU","deDE","frFR","esES","ptBR","koKR","zhCN",
  for _,sample in ipairs({{7046,"start","Maraudon"},{7044,"finish","Maraudon"},{2951,"start","Gnomeregan"},{2945,"finish","Gnomeregan"},{2278,"start","Uldaman"},{2398,"finish","Uldaman"}})do
   local id,role,canonical=unpack(sample);local q=assert(a.quests[id]);assert(q[role].zoneName==canonical)
   render(id,owners[id]or dungeons[canonical])
-  assert(field(q[role].name.." — "..label(locale,canonical)),"actual recorded area uses its reviewed selected-language label: "..locale.."/"..id)
+  assert(area(role,q[role],label(locale,canonical)),"actual recorded area uses its reviewed selected-language label: "..locale.."/"..id)
  end
  -- Broad Spire has no exact unique canonical dictionary identity; no wing is inferred.
  render(5160)
- assert(field(a.quests[5160].start.name.." — Blackrock Spire"),"generic source area stays original instead of guessing a wing")
+ assert(area("start",a.quests[5160].start,"Blackrock Spire"),"generic source area stays original instead of guessing a wing")
 end
 -- Controlled renderer variants retain the actual Maraudon NPC, without publishing a new source fact.
 a.db.locale="zhCN"
@@ -64,7 +78,7 @@ local sourceRow
 for _,row in ipairs(ui.rows)do if row:IsShown()and row.questID==7046 then sourceRow=row end end
 assert(sourceRow);sourceRow.navigationControl.scripts.OnEnter()
 assert(tip.body:find(label("zhCN","Maraudon"),1,true)and not tip.body:find("Opposite native label",1,true),"row hint uses the same reviewed canonical area")
-assert(ui:SetDetailTab("quest"));ui.giver.scripts.OnEnter();assert(tip.body:find(label("zhCN","Maraudon"),1,true),"detail route hint shares the selected source-area name")
+assert(ui:SetDetailTab("quest"));assert(area("start",point,label("zhCN","Maraudon")),"visible own source contact shares the selected source-area name")
 q.start=start;C_Map=mapRoot
 -- Reviewed world-area aliases are independent of dungeon dictionary membership.
 render(1491);sourceRow=nil
@@ -77,16 +91,16 @@ local provider=a.SourceAreaName
 for _,mode in ipairs({"card","source","locale","method"})do
  a.db.locale="zhCN";local armed,fired=true,false
  a.SourceAreaName=function(name,current)
-  local value=provider(name,current)
+  local value,proof,rawProof=provider(name,current)
   if armed and name=="Maraudon"then
    armed,fired=false,true
    if mode=="card"then render(98423)
    elseif mode=="source"then start.zoneName="Gnomeregan";render(7046)
    elseif mode=="locale"then a.db.locale="ruRU";render(7046)
    else a.SourceAreaName=provider;render(98423)end
-   return"Retired area label"
+   return"Retired area label",proof,rawProof
   end
-  return value
+  return value,proof,rawProof
  end
  ui.dungeon,ui.quest=assert(owners[7046]),7046;ui:Refresh();a.SourceAreaName=provider
  assert(fired and not field("Retired area label"),"source-area callback actually expired its old result: "..mode)
@@ -95,14 +109,14 @@ for _,mode in ipairs({"card","source","locale","method"})do
 end
 -- A retired native text tail cannot restore the old language after a new locale render.
 a.db.locale="zhCN";render(7046)
-local chinese=label("zhCN","Maraudon");local line=assert(field(start.name.." — "..chinese))
+local chinese=label("zhCN","Maraudon");local line=assert(area("start",start,chinese))
 local setter=line.SetText;local armed,fired=true,false
 line.SetText=function(self,text,...)
  if armed and text:find(chinese,1,true)then armed,fired=false,true;a.db.locale="ruRU";render(7046)end
  return setter(self,text,...)
 end
 ui:RefreshDetail();line.SetText=setter
-assert(fired and a.db.locale=="ruRU"and field(start.name.." — "..label("ruRU","Maraudon")),"new locale caption survives the retired native label write")
-assert(not field(start.name.." — "..chinese),"retired native text does not revive the old source-area language")
+assert(fired and a.db.locale=="ruRU"and area("start",start,label("ruRU","Maraudon")),"new locale caption survives the retired native label write")
+assert(not field(chinese),"retired native text does not revive the old source-area language")
 assert(visits==0 and maps==0,"area translation never routes automatically")
 print("Source area names UI: PASS (actual sources, controlled renderer fixtures; modeled UI only)")

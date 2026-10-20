@@ -37,7 +37,33 @@ local function render(id,ending)
 end
 local function visible(text)
  for _,field in ipairs(ui.details)do if field:IsShown()and field.text and field.text:find(text,1,true)then return true end end
+ for index=1,2 do local contact=ui.detailContactRows and ui.detailContactRows[index];if contact and contact:IsShown()and(contact.title.text:find(text,1,true)or contact.note.text:find(text,1,true))then return true end end
 end
+local function ownContact(field)
+ local q=assert(a.quests[ui.quest]);local point=assert(q[field]);local contact=assert(ui.detailContactRows[field=="start"and 1 or 2])
+ local binding=assert(contact.detailContactBinding)
+ assert(contact:IsShown()and binding.questID==q.id and binding.field==field and binding.endpoint==point and binding.current(),"actual contact owns exact selected source")
+ return contact
+end
+local function sourceHint()
+ local selected,dungeon=ui.quest,ui.dungeon
+ local function control()
+  for _,row in ipairs(ui.rows)do if row:IsShown()and row.questID==selected then return assert(row.navigationControl)end end
+ end
+ local found=control();if found then return found end
+ -- Explicitly open the real containing middle-tree group for a support quest before hovering its source control.
+ for _,root in ipairs(dungeon.quests)do
+  local tree=assert(a.QuestTree.Build(a.quests,ui.engine,root))
+  for _,node in ipairs(tree)do if node.id==selected then
+   ui.questTreeRoot,ui.questTreeDungeon=root,dungeon
+   ui:RefreshQuests();ui:RefreshDetail()
+   assert(ui.quest==selected and ui.dungeon==dungeon,"source hint expansion keeps actual selected quest and dungeon")
+   return assert(control(),"expanded exact tree contains selected source hint")
+  end end
+ end
+ error("selected source has no actual containing middle-tree group")
+end
+
 local samples={
  {166,"start",234},{214,"start",820},{1491,"start",3446},{2204,"finish",6826},
  {2933,"finish",2216},{98423,"finish",2784},{4322,"finish",9560},{2202,"start",6868},
@@ -62,10 +88,12 @@ for _,locale in ipairs({"ruRU","zhCN","frFR"})do
    local point=assert(a.quests[id][role]);assert(point.npcID==npc and not point.objectID and not point.itemID)
    local source,map,x,y,zone=point.name,point.mapID,point.x,point.y,point.zoneName
    render(id,role=="finish")
-   assert(visible(name),"actual NPC source caption needs its reviewed selected-language name: "..locale.."/"..npc)
-   local control=role=="finish"and ui.turnin or ui.giver
+   assert(ownContact(role).title.text==a.L(role=="start"and "DETAIL_GIVER"or "DETAIL_TURNIN")..": "..name,"actual own NPC contact needs its reviewed selected-language name: "..locale.."/"..npc)
+   local contact=ownContact(role)
+   local control=role=="finish"and ui.turnin or contact
    assert(control and control:IsShown()and control.enabled and control.scripts.OnClick)
-   control.scripts.OnEnter();assert(tip.shown and tip.body:find(name,1,true),"source hint matches its exact NPC")
+   local hint=role=="finish"and control or sourceHint()
+   hint.scripts.OnEnter();assert(tip.shown and tip.owner==hint and tip.body:find(name,1,true),"source hint matches its exact NPC")
    local before=#actions;control.scripts.OnClick()
    local action=assert(actions[#actions]);assert(#actions==before+1 and action.id==id and action.place==point)
    local guide;for _,o in ipairs(f.objects)do if o.title and o.note and o.label and o.scripts.OnUpdate then guide=o end end
@@ -87,16 +115,17 @@ a.db.locale="ruRU";render(214)
 local selected;for _,r in ipairs(ui.rows)do if r:IsShown()and r.questID==214 then selected=r;break end end
 assert(selected);selected.navigationControl.scripts.OnEnter()
 assert(tip.shown and tip.body:find(expected.ruRU[820],1,true),"middle-list hint follows selected language instead of matching native NPC language")
-local oldBinding=ui.giverBinding;local _,oldProof=a.SourceName(a.quests[214].start);local before=#actions
+local oldBinding=ownContact("start").detailContactBinding;local oldClick=ownContact("start").scripts.OnClick;local _,oldProof=a.SourceName(a.quests[214].start);local before=#actions
 ui.language.scripts.OnEnter()
 local session=assert(a.Language.session)
 assert(a.Language:Commit(session,"zhCN")and a.db.locale=="zhCN")
 assert(#actions==before,"committing a language refresh never starts navigation automatically")
 assert(not oldBinding.current()and not oldProof(),"the actual refresh retires the former card binding and name proof")
 assert(not tip.shown and visible(expected.zhCN[820])and not visible(expected.ruRU[820]),"the former hint and caption retire on language refresh")
-ui.giver.scripts.OnEnter()
+sourceHint().scripts.OnEnter()
 assert(tip.shown and tip.body:find(expected.zhCN[820],1,true),"locale refresh replaces the previous NPC hint")
-ui.giver.scripts.OnClick();assert(#actions==before+1 and actions[#actions].place==a.quests[214].start)
+oldClick();assert(#actions==before,"old language contact click stays retired")
+ownContact("start").scripts.OnClick();assert(#actions==before+1 and actions[#actions].place==a.quests[214].start)
 local guide;for _,o in ipairs(f.objects)do if o.title and o.note and o.label and o.scripts.OnUpdate then guide=o end end
 assert(guide and guide:IsShown()and guide.note.text:find(expected.zhCN[820],1,true),"explicit fresh click routes the same NPC with the selected-language guide")
 nav.Stop();nav.Start=start

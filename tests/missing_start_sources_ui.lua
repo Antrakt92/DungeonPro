@@ -31,6 +31,19 @@ local function row(id)
  for _,r in ipairs(ui.rows)do if r:IsShown()and r.questID==id then return r end end
  error("actual quest row not found "..id)
 end
+local function contact()
+ local row=ui.detailContactRows and ui.detailContactRows[1]
+ if row and row:IsShown()then
+  local binding=assert(row.detailContactBinding,"visible contact owns typed binding")
+  assert(binding.questID==ui.quest and binding.endpoint==a.quests[ui.quest].start and binding.current(),"visible contact belongs to exact selected start")
+  return row
+ end
+ return ui.giver
+end
+local function clickContact()
+ local control=contact();local click=control.scripts.OnClick
+ if click then click()else assert(not control.enabled,"enabled primary contact must have a click capability")end
+end
 for _,locale in ipairs({"enUS","ruRU","deDE","frFR","esES","ptBR","koKR","zhCN","zhTW","itIT"})do
  a.db.locale=locale
  for _,id in ipairs({96987,95809,95795,92415,95250,95775,95776,95787,95788})do
@@ -57,6 +70,8 @@ for _,locale in ipairs({"enUS","ruRU","deDE","frFR","esES","ptBR","koKR","zhCN",
    assert(({[95809]=1480,[95795]=956,[92415]=14450})[id]==q.finish.npcID,"known finish identity remains its own recorded endpoint")
    local shown=false
    for _,field in ipairs(ui.details)do if field:IsShown()and field.text:find(a.L("DETAIL_TURNIN"),1,true)and field.text:find(q.finish.name,1,true)then shown=true end end
+   local contact=ui.detailContactRows and ui.detailContactRows[2]
+   if contact and contact:IsShown()and contact.title.text:find(a.L("DETAIL_TURNIN"),1,true)and contact.title.text:find(q.finish.name,1,true)then shown=true end
    assert(shown,"recorded turn-in is displayed separately from the unknown starting method")
   end
  end
@@ -135,7 +150,7 @@ for _,locale in ipairs({"enUS","ruRU","deDE","frFR","esES","ptBR","koKR","zhCN",
    assert(not hcontrol.enabled and hr.navigationBinding.action==nil,"huge item row with a map stays disabled")
    local keptQuest=ui.quest
    if hcontrol.scripts.OnClick then hcontrol.scripts.OnClick()end
-   ui.giver.scripts.OnClick()
+   clickContact()
    assert(starts==beforeStarts and maps==beforeMaps,"huge item starter with a map routes nothing")
    assert(ui.quest==keptQuest,"huge item starter with a map keeps selection")
    assert(ui:SetDetailTab("sources"))
@@ -183,7 +198,7 @@ for _,locale in ipairs({"enUS","ruRU","deDE","frFR","esES","ptBR","koKR","zhCN",
   qBound.start={itemID=4294967296,name="Huge starter",containerSource={objectID=11,name="Huge Cache",zoneName="Known zone"},dropNPCID=7,dropSources={{npcID=1,name="Source",locationName="Known zone"}}}
   qBound.startAlternatives=nil
   render(98423)
-  assert(ui.detailTab=="sources","huge-bound check stays on the sources tab")
+  assert(ui.detailTab=="quest","huge-bound check stays on the sources tab")
   assert(fields(a.L("QUEST_START_UNKNOWN"))==1,"huge starter with routes keeps one unknown-start warning")
   assert(fields(a.L("START_ITEM_LOCATION_UNKNOWN"))==0,"huge starter with routes claims no item acquisition")
   assert(fields(a.L("ITEM_ACQUISITION"))==0,"huge starter builds no acquisition heading")
@@ -269,7 +284,7 @@ for _,locale in ipairs({"enUS","ruRU","deDE","frFR","esES","ptBR","koKR","zhCN",
   qGiver.start={npcID=1234,name="Acquisition giver",mapID=1436,x=10,y=20,reportedLocations={{mapID=1436,x=11,y=21},{mapID=1436,x=12,y=22}}}
   qGiver.startAlternatives={}
   render(96987)
-  assert(ui.detailTab=="sources","acquisition guard stays on the sources tab")
+  assert(ui.detailTab=="quest","acquisition guard stays on the sources tab")
   assert(fields(a.L("START_ALTERNATIVES"))==0,"NPC start with empty alternatives claims no choice heading")
   assert(startToggle("start")~=nil,"NPC start with empty alternatives keeps its reported toggle")
   local choiceShown=false
@@ -362,12 +377,13 @@ do
  control.scripts.OnClick()
  assert(starts==routedBefore and maps==mappedBefore and ui.quest==keptQuest,"disabled pure-visit row click dispatches no route")
  assert(ui.giverUnavailableKey=="NAVIGATION_UNAVAILABLE" and not ui.giver.enabled,"pure-visit detail stays disabled without Navigation")
+ local visible=contact();assert(visible==ui.giver and visible:IsShown()and not visible.enabled and ui.giverAction==nil,"absent navigation namespace retains disabled source information without a visit action")
  assert(ui.giver.footerLabelKey=="SOURCE_DETAILS","unavailable detail keeps neutral source title instead of a visit promise")
  assert(ui:NavigationDestination(false)==nil,"unavailable detail invents no visit destination")
  resetTip(); ui.giver.scripts.OnEnter()
  assert(tip.shown and tip.owner==ui.giver and tip.title==a.L("SOURCE_DETAILS") and tip.body==a.L("NAVIGATION_UNAVAILABLE"),"unavailable detail hint stays neutral without a visit promise")
  local detailBeforeStarts, detailBeforeMaps=detailStarts, detailMaps
- ui.giver.scripts.OnClick()
+ clickContact()
  assert(detailStarts==detailBeforeStarts and detailMaps==detailBeforeMaps and starts==routedBefore and maps==mappedBefore,"disabled pure-visit detail click is a no-op")
  assert(ui.quest==keptQuest,"disabled detail click keeps selection")
 end
@@ -382,12 +398,13 @@ do
  assert(control.enabled==false,"map-only row stays disabled without Navigation.Map")
  assert(r.navigationBinding.reason=="NAVIGATION_UNAVAILABLE" and r.navigationBinding.action==nil,"map-only row keeps unavailable reason without map route")
  assert(ui.giverUnavailableKey=="NAVIGATION_UNAVAILABLE" and not ui.giver.enabled,"map-only detail stays disabled without Navigation.Map")
+ local visible=contact();assert(visible:IsShown()and not visible.enabled and visible.scripts.OnClick==nil and visible.detailContactBinding.action==nil and visible.detailContactBinding.reason=="NAVIGATION_UNAVAILABLE","visible contact has no action or click without its required method")
  assert(ui.giver.footerLabelKey=="SOURCE_DETAILS" and ui.giver.footerLabelKey~="GIVER_MAP","map-only detail never enables GIVER_MAP without a map method")
  assert(ui:NavigationDestination(false)==nil,"map-only detail invents no destination without Navigation.Map")
  resetTip(); ui.giver.scripts.OnEnter()
  assert(tip.title==a.L("SOURCE_DETAILS") and tip.body==a.L("NAVIGATION_UNAVAILABLE"),"map-only detail hint stays neutral without a map promise")
  local beforeStarts, beforeMaps=detailStarts, detailMaps
- control.scripts.OnClick(); ui.giver.scripts.OnClick()
+ control.scripts.OnClick(); clickContact()
  assert(detailStarts==beforeStarts and detailMaps==beforeMaps and ui.quest==keptQuest,"map-only clicks dispatch no route and keep selection")
  q.start=savedStart
 end
@@ -406,26 +423,32 @@ end
 do
  a.Navigation=fullNavigation()
  ui.dungeon=assert(owners[166]); ui.quest=166; ui.frame:Show(); ui:Refresh()
- assert(ui.giver.enabled and ui.giver.footerLabelKey=="VISIT_GIVER","returned Navigation re-enables the pure-visit detail")
+ assert(contact():IsShown()and contact().enabled and contact().detailContactBinding.action.kind=="visit","returned Navigation re-enables the visible pure-visit contact")
+ assert(not ui.giver:IsShown()and ui.giver.scripts.OnClick==nil,"old glyph remains retired")
  assert(ui:NavigationDestination(false)~=nil,"returned Navigation restores the visit destination")
  local freshBinding=assert(ui.giverBinding); local freshAction=assert(ui.giverAction); local freshCoords=ui.giverHasCoordinates
  assert(freshBinding.current()==true,"fresh detail binding stays current")
  local staleAction, staleCurrent=freshAction, freshBinding.current
+ local staleContact=assert(contact().detailContactBinding);local staleContactClick=assert(contact().scripts.OnClick)
  local staleBinding=freshBinding
  a.Navigation=nil; ui:Refresh()
  assert(not ui.giver.enabled and ui.giverUnavailableKey=="NAVIGATION_UNAVAILABLE","removed Navigation disables the detail again")
  assert(staleCurrent()==false,"removed Navigation retires the previous detail binding")
+ assert(staleContact.current()==false,"removed Navigation retires the previous visible contact binding")
+
  a.Navigation=fullNavigation(); ui:Refresh()
- assert(ui.giver.enabled and ui.giver.footerLabelKey=="VISIT_GIVER","second Navigation return re-enables the detail")
+ assert(contact():IsShown()and contact().enabled and contact().detailContactBinding.action.kind=="visit","second Navigation return re-enables the visible contact")
  local renewedBinding=assert(ui.giverBinding)
  assert(renewedBinding~=staleBinding and renewedBinding.current()==true,"fresh return owns a new current binding")
  assert(staleCurrent()==false,"old detail binding stays retired after the return")
  local beforeStarts, beforeMaps=detailStarts, detailMaps
  assert(ui:DispatchDetail(staleAction, not freshCoords, true, staleCurrent)==false,"stale DispatchDetail with a retired owner is rejected")
  assert(detailStarts==beforeStarts and detailMaps==beforeMaps,"stale detail dispatch routes nothing")
- resetTip(); ui.giver.scripts.OnEnter()
- assert(tip.shown and tip.title==a.L("VISIT_GIVER") and tip.body~=a.L("NAVIGATION_UNAVAILABLE"),"fresh hover shows the restored visit destination instead of the retired hint")
- ui.giver.scripts.OnClick()
+ staleContactClick();assert(detailStarts==beforeStarts and detailMaps==beforeMaps,"retained old visible contact click stays inert after navigation returns")
+
+ resetTip();local sourceControl=row(166).navigationControl;sourceControl.scripts.OnEnter()
+ assert(tip.shown and tip.owner==sourceControl and tip.title==a.L("VISIT_GIVER")and tip.body~=a.L("NAVIGATION_UNAVAILABLE"),"fresh visible source hint shows the restored destination instead of the retired hint")
+ clickContact()
  assert((detailStarts+detailMaps)==(beforeStarts+beforeMaps+1),"fresh detail click routes once through the returned method")
  assert(ui.quest==166,"fresh detail navigation keeps selection")
 end
@@ -453,7 +476,7 @@ do
   assert(not ui.giver.enabled,label.." detail stays disabled on invalid map")
   assert(ui:NavigationDestination(false)==nil,label.." invalid map invents no visit destination")
   local before=routed
-  control.scripts.OnClick(); ui.giver.scripts.OnClick()
+  control.scripts.OnClick(); clickContact()
   assert(routed==before,label.." invalid map clicks dispatch no route")
   assert(ui.quest==keptQuest,label.." invalid map clicks keep selection")
  end
@@ -461,15 +484,15 @@ do
  checkInvalid("fractional 1436.5",{npcID=1,mapID=1436.5,x=10,y=20})
  -- Boundary 2^53-1 stays a valid visit: enabled, one Start, stale binding retires.
  q.start={npcID=1,mapID=9007199254740991,x=10,y=20}; routed=0; render(166)
- assert(ui.giver.enabled,"boundary map enables the detail")
- assert(ui.giver.footerLabelKey=="VISIT_GIVER","boundary map keeps visit title")
+ assert(contact():IsShown()and contact().enabled,"boundary map enables the visible contact")
+ assert(contact().detailContactBinding.action.kind=="visit"and contact().title.text:find(a.L("DETAIL_GIVER")..": ",1,true)==1,"boundary contact keeps its giver visit role")
  assert(ui:NavigationDestination(false)~=nil,"boundary map restores the visit destination")
  local r=row(166); local control=assert(r.navigationControl)
  assert(control.enabled and r.navigationBinding.action~=nil,"boundary map enables the row with an action")
  local freshBinding=assert(ui.giverBinding); local freshCurrent=assert(freshBinding.current)
  assert(freshCurrent()==true,"boundary detail binding stays current")
  local before=routed
- ui.giver.scripts.OnClick()
+ clickContact()
  assert(routed==before+1,"boundary detail click routes once through Start")
  assert(ui.quest==166,"boundary detail navigation keeps selection")
  -- Stale boundary binding cannot dispatch after the map turns invalid.
@@ -483,9 +506,9 @@ do
  assert(routed==beforeStale,"stale boundary dispatch routes nothing")
  -- Valid maps still enable after the bound checks.
  q.start=savedStart; routed=0; render(166)
- assert(ui.giver.enabled and ui.giver.footerLabelKey=="VISIT_GIVER","restored 1436 re-enables the visit detail")
+ assert(contact():IsShown()and contact().enabled and contact().detailContactBinding.action.kind=="visit","restored 1436 re-enables the visible visit contact")
  q.start={npcID=1,mapID=1453,x=10,y=20}; render(166)
- assert(ui.giver.enabled and ui.giver.footerLabelKey=="VISIT_GIVER","valid 1453 stays enabled")
+ assert(contact():IsShown()and contact().enabled and contact().detailContactBinding.action.kind=="visit","valid 1453 stays enabled")
  q.start=savedStart; a.Navigation=savedNav; render(166)
 end
 -- DP-5 DETAIL-ALTERNATIVE-MAP-BOUND: overflow/fractional alternative invents no visit; boundary stays usable.
@@ -498,7 +521,7 @@ do
  ui.frame:Show(); assert(ui:SetDetailTab("sources"))
  local function renderAlternatives(alts)
   q.start=nil; q.startAlternatives=alts; routed=0; hugeMaps=0; render(166)
-  assert(ui.detailTab=="sources","alternative check stays on the sources tab")
+  assert(ui.detailTab=="quest","alternative check stays on the sources tab")
   assert(ui.quest==166 and ui.renderedQuest==166,"alternative check keeps selection")
  end
  local function checkInvalidAlternative(label, mapID)
@@ -565,9 +588,10 @@ do
  local function toggle(key) for _,b in ipairs(ui.reportedToggles or {}) do if b.shown and b.locationKey==key then return b end end end
  local function rows() local found={}; for _,b in ipairs(ui.reportedRows or {}) do if b.shown then found[#found+1]=b end end; return found end
  local function renderReported(reports)
+  ui.detailContactExpanded=nil;ui.reportedExpanded.start=nil -- independent input begins collapsed
   q.start=nil; q.startAlternatives=nil
   q.start={npcID=1, name="Reported source", reportedLocations=reports}; routed=0; hugeMaps=0; render(166)
-  assert(ui.detailTab=="sources","reported bound check stays on the sources tab")
+  assert(ui.detailTab=="quest","reported bound check stays on the sources tab")
   assert(ui.quest==166 and ui.renderedQuest==166,"reported bound check keeps selection")
  end
  local function checkInvalidReported(label, mapID)
@@ -648,7 +672,7 @@ do
   qEmpty.startAlternatives=nil
   render(98423)
   assert(ui:SetDetailTab("sources"))
-  assert(ui.detailTab=="sources","typed-starter empty check stays on the sources tab")
+  assert(ui.detailTab=="quest","typed-starter empty check stays on the sources tab")
   local nilTexts=snapshot()
   assert(fields(a.L("ITEM_ACQUISITION"))==1,"nil starter keeps its acquisition heading")
   assert(fields(a.L("ITEM_DROP_SOURCE","Source","Known zone"))==1,"nil starter keeps its drop route fact")

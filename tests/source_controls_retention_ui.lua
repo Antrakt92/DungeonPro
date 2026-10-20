@@ -59,7 +59,7 @@ for _,operation in ipairs(operations)do for _,phase in ipairs({"before","after"}
  end
  if stage=="cleanup"then u:InspectQuest(5724,true)else u:RefreshDetail()end
  row[method]=setter
- assert(fired and completed and u.quest==3802 and u.detailTab=="sources")
+ assert(fired and completed and u.quest==3802 and u.detailTab=="quest")
  assert(row:IsShown()and row.enabled and row.scripts.OnClick==newClick,
   "late "..phase.." "..stage.." "..method.." must preserve the newer source row")
  assert(#routes==0);newClick();assert(#routes==1 and routes[1].place==a.quests[3802].startAlternatives[1],"fresh source click preserves its exact endpoint")

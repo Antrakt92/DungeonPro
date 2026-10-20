@@ -21,18 +21,30 @@ local function render(id,status)
  assert(ui.quest==id and ui.renderedQuest==id)
 end
 local function cue()
- local control=ui.ancestorActionButton
- assert(control and control:IsShown()and control.enabled and control.scripts.OnClick,
- "selected target must visibly expose its known actionable ancestor")
- return control
+ local prefix=a.L("ANCESTOR_ACTION")
+ for _,field in ipairs(ui.details)do if field:IsShown()and field.detailStyle=="caption"and field.text and field.text:find(prefix,1,true)then
+  assert(field.detailTextBinding and field.detailTextBinding.current(),"ancestor context belongs to the selected current card")
+  assert(not field.scripts or not field.scripts.OnClick,"ancestor context is not a duplicate quest selector")
+  assert(not ui.ancestorActionButton or not ui.ancestorActionButton:IsShown(),"the retired ancestor selector stays hidden")
+  return field
+ end end
+ error("selected target must expose its proven actionable ancestor as neutral context")
 end
-local function caption(control)
- return(control:GetText()or"")..(control.label and control.label.text or"")..
- (control.title and control.title.text or"")..(control.note and control.note.text or"")
-end
+local function caption(control)return control.text or""end
 local function absent()
- assert(not ui.ancestorActionButton or not ui.ancestorActionButton:IsShown()or not ui.ancestorActionButton.enabled,
- "no ancestor action may be guessed from story order or the selected quest itself")
+ for _,field in ipairs(ui.details)do assert(not field:IsShown()or not field.text or not field.text:find(a.L("ANCESTOR_ACTION"),1,true),
+  "no ancestor action may be guessed from story order or selected quest itself")end
+ assert(not ui.ancestorActionButton or not ui.ancestorActionButton:IsShown())
+end
+local function centralAncestor()
+ local root
+ for _,row in ipairs(ui.rows)do if row:IsShown()and row.questID==166 and not row.questTreeNode then root=row end end
+ if root then assert(root.scripts.OnClick);root.scripts.OnClick()end
+ for _,row in ipairs(ui.rows)do if row:IsShown()and row.questID==141 and row.questTreeNode then
+  assert(row.scripts.OnClick,"the actual required predecessor remains reachable from the central hierarchy")
+  return row
+ end end
+ error("actual required predecessor141 missing from central hierarchy")
 end
 render(166,"READY")
 assert(ui.engine:State(166).status=="UNKNOWN"and ui.engine:State(166).reason=="requirements")
@@ -42,7 +54,7 @@ assert(text:find(a.L("ANCESTOR_ACTION"),1,true)and text:find("#141",1,true)and t
  "same-named known predecessor needs its exact ID and current native status")
 assert(ui.giverAction.id==166 and #routes==0,"ancestor inspection keeps the target pickup route distinct")
 local history=ui.detailHistory;local count=#history
-control.scripts.OnClick()
+centralAncestor().scripts.OnClick()
 assert(ui.quest==141 and ui.renderedQuest==141 and ui.detailHistory==history and #history==count+1 and history[#history]==166,
  "the cue uses normal detail inspection and retains return history")
 assert(ui.engine:State(141).status=="READY"and #routes==0,"inspection does not navigate or accept/turn in")
@@ -51,7 +63,7 @@ ui.turnin.scripts.OnClick()
 assert(#routes==1 and routes[1].id==141 and routes[1].kind=="turnin"and routes[1].place==a.quests[141].finish)
 absent()
 for _,mode in ipairs({"action","context","character","source","inspector","ui"})do
- render(166,"READY");local click=cue().scripts.OnClick
+ render(166,"READY");local proof=cue().detailTextBinding.current
  local action,char,finish,inspect=ui.action,a.char,a.quests[141].finish,ui.InspectQuest
  local kind=action.kind;local foreign=0
  if mode=="action"then action.kind="complete"
@@ -60,7 +72,7 @@ for _,mode in ipairs({"action","context","character","source","inspector","ui"})
  elseif mode=="source"then a.quests[141].finish={npcID=234,name="Changed source"}
  elseif mode=="ui"then a.UI={}
  else ui.InspectQuest=function()foreign=foreign+1 end end
- click()
+ assert(proof()==false,"expired ancestor context proof retires before any selector or route")
  assert(ui.quest==166 and foreign==0 and #routes==1,"retired "..mode.." cue cannot inspect or route")
  action.kind=kind;a.char=char;a.quests[141].finish=finish;ui.InspectQuest=inspect;a.UI=ui
 end
@@ -68,8 +80,13 @@ for _,locale in ipairs({"enUS","ruRU","deDE","frFR","esES","ptBR","itIT","koKR",
  a.db.locale=locale;render(166,"READY");local text=caption(cue())
  assert(text:find(a.L("ANCESTOR_ACTION"),1,true)and text:find(a.L("READY"),1,true)and text:find("#141",1,true))
  local control=cue()
- assert(control.label.width>=300 and control:GetHeight()>=control.label:GetStringHeight()+6,
- "the compact cue reserves wrapped caption height in every supported language")
+ assert(control.detailWidth>=300,"neutral context keeps the full available text width")
+ local nextTop
+ for _,field in ipairs(ui.details)do if field:IsShown()and field~=control and field.point and -field.point[3]>-control.point[3]then
+  nextTop=math.min(nextTop or math.huge,-field.point[3])
+ end end
+ assert(nextTop and nextTop+control.point[3]>=control:GetStringHeight(),
+  "the stream reserves the full wrapped ancestor caption height in every supported language")
 end
 a.db.locale="enUS"
 render(166,"ACTIVE")
@@ -78,6 +95,6 @@ assert(caption(cue()):find(a.L("ACTIVE"),1,true),"unfinished ancestor is labeled
 for _,id in ipairs({92753,4322})do
  render(id,nil);assert(ui.action==nil and ui.engine:State(id).status=="UNKNOWN");absent()
 end
-render(166,"READY");local stale=cue().scripts.OnClick
-render(92753,nil);stale();assert(ui.quest==92753 and #routes==1)
+render(166,"READY");local stale=cue().detailTextBinding.current
+render(92753,nil);assert(stale()==false and ui.quest==92753 and #routes==1)
 print("Ancestor action cue: PASS (actual141/166, honest unknown targets, source/context retirement and normal inspection)")

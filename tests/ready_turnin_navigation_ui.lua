@@ -54,7 +54,9 @@ retired();assert(#visits==1,"selection replacement retires the former turn-in ac
 q=a.quests[6402]
 button().scripts.OnClick()
 assert(#visits==2 and visits[2].id==6402 and visits[2].place==q.finish and q.finish.npcID==12580 and q.finish.mapID==1453)
-ui.giver.scripts.OnClick()
+local pickup=assert(ui.detailContactRows[1]);assert(pickup:IsShown()and pickup.enabled and pickup.scripts.OnClick)
+assert(not ui.giver:IsShown()and not ui.giver.enabled and ui.giver.scripts.OnClick==nil,"obsolete pickup glyph is retired")
+pickup.scripts.OnClick()
 assert(#visits==3 and visits[3].place==q.start and q.start.npcID==9560 and q.start.mapID==1428,
     "the existing pickup-giver action keeps its independent Maxwell endpoint")
 

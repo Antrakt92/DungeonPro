@@ -25,6 +25,15 @@ local function first()
 end
 local function visible(text)
  for _,field in ipairs(ui.details)do if field.shown and field.text and field.text:find(text,1,true)then return field end end
+ for index,row in ipairs(ui.detailContactRows or{})do
+  local binding=row.detailContactBinding
+  if row:IsShown()and binding and binding.questID==ui.quest and binding.field==(index==1 and "start"or"finish")and
+   binding.endpoint==a.quests[ui.quest][binding.field]and binding.current()then
+   for _,field in ipairs({row.title,row.note})do
+    if field:IsShown()and field.text and field.text:find(text,1,true)then return field end
+   end
+  end
+ end
 end
 local function exact(row)
  local n=#routes;row.scripts.OnClick(row,"LeftButton",false)

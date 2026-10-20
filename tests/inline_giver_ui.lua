@@ -20,15 +20,20 @@ addon.Navigation={Start=function(action)assert(action.id==q.id and action.place=
 local function render()ui:Refresh()end
 local function text(part)
     for _,field in ipairs(ui.details)do if field:IsShown()and field.text:find(part,1,true)then return field end end
+    for _,row in ipairs(ui.detailContactRows or {})do if row:IsShown()then
+        for _,field in ipairs({row.title,row.note})do if field.text:find(part,1,true)then return field end end
+    end end
     error("missing field "..part)
 end
 render()
 local giver=ui.giver
-assert(giver.width==24 and giver.height==24 and not giver.caption,"compact giver navigation has no full-width button or duplicate label")
+local pickup,finish=assert(ui.detailContactRows[1]),assert(ui.detailContactRows[2])
+assert(pickup:IsShown()and finish:IsShown()and pickup.enabled and finish.enabled,"two full-width contacts are actionable")
+assert(not giver:IsShown()and not giver.enabled and giver.scripts.OnClick==nil,"obsolete right-pane glyph is retired")
 local location,turnin=text("Start One"),text("Finish Two")
-assert(location.point[2]==36 and location.width==ui.detail:GetWidth()-40,"location reserves icon width before wrapping")
-assert(giver.point[4]==4 and giver.point[5]==location.point[3],"giver icon shares first location line")
-assert(-turnin.point[3]-(-location.point[3])==36,"turn-in follows the location without a separate action band")
+assert(pickup:GetWidth()==ui.detail:GetWidth()-8 and location:GetWidth()==ui.detail:GetWidth()-24,"own contact text uses full-row width")
+assert(pickup:GetHeight()>=52 and finish.point[3]<=pickup.point[3]-pickup:GetHeight()-4,"finisher follows the measured pickup row without overlap")
+local retired=assert(pickup.scripts.OnClick)
 local function gold(control,alpha)
     assert(control.navigationGold and #control.footerIconParts==3)
     for _,part in ipairs(control.footerIconParts)do
@@ -36,22 +41,22 @@ local function gold(control,alpha)
         assert(part.alpha==alpha and not part.desaturated,"all solid arrow strokes remain readable gold")
     end
 end
-gold(giver,.95)
+gold(giver,.6)
 local row=ui.rows[1];assert(row.navigationReserve==32 and row.navigationControl.width==24)
 gold(row.navigationControl,.95)
-giver.scripts.OnClick();assert(visits==1)
+retired();assert(visits==1)
 local long=string.rep("Long giver ",20)
 q.start.name=long
 local measure=fixture.methods.GetStringHeight
 fixture.methods.GetStringHeight=function(self)
-    if self.text and self.text:find(long,1,true)then assert(self.width==ui.detail:GetWidth()-40);return 72 end
+    if self.text and self.text:find(long,1,true)then assert(self.width==ui.detail:GetWidth()-24);return 72 end
     return 18
 end
 render();location,turnin=text(long),text("Finish Two")
-assert(giver.point[5]==location.point[3]and -turnin.point[3]>=-location.point[3]+72+12,"long names wrap without centring the icon inside the whole paragraph")
+assert(pickup:GetHeight()>=108 and finish.point[3]<=pickup.point[3]-pickup:GetHeight()-4,"long source and zone text fit measured full rows without overlapping finisher")
 fixture.methods.GetStringHeight=measure
 q.start.name="Start One";q.start.mapID=nil;q.start.x=nil;q.start.y=nil
-render();assert(not giver.enabled);gold(giver,.6)
+render();assert(pickup:IsShown()and not pickup.enabled and pickup.scripts.OnClick==nil and not giver.enabled);gold(row.navigationControl,.6)
 assert(text(addon.L("SOURCE_POSITION_UNKNOWN")).detailStyle=="warning")
 local tip={}
 function tip:SetOwner(owner)self.owner=owner end
@@ -60,8 +65,8 @@ function tip:SetText(value)self.title=value end
 function tip:AddLine(value)self.body=value end
 function tip:Show()self.shown=true end
 function tip:Hide()self.shown=false end
-GameTooltip=tip;giver.scripts.OnEnter();assert(tip.shown and tip.body==addon.L("SOURCE_POSITION_UNKNOWN"))
-giver.scripts.OnClick();assert(visits==1)
+GameTooltip=tip;row.navigationControl.scripts.OnEnter();assert(tip.shown and tip.owner==row.navigationControl and tip.body==addon.L("SOURCE_POSITION_UNKNOWN"))
+retired();assert(visits==1,"retained primary click is inert after source replacement")
 for _,control in ipairs({giver,row.navigationControl})do
     for _,method in ipairs({"SetAlpha","SetDesaturated"})do
         for _,outerEnabled in ipairs({false,true})do
@@ -81,7 +86,7 @@ q.start={itemID=801,name="Starter"};render()
 for _,field in ipairs(ui.details)do assert(not field:IsShown()or field.text~=addon.L("DETAIL_START_ITEM"),"redundant starter caption is absent")end
 assert(not giver:IsShown()and text(addon.L("ITEM_STARTER", "Starter")).navigationInset==0,"item starts retain one introduction without an NPC navigation inset")
 q.start={npcID=1,name="Start One",mapID=1453};render()
-assert(giver:IsShown()and giver.enabled and giver.footerLabelKey=="GIVER_MAP")
-location=text("Start One");assert(location.navigationInset==32 and location.width==ui.detail:GetWidth()-40)
-ui.quest=nil;ui:RefreshDetail();assert(not giver:IsShown())
+assert(pickup:IsShown()and pickup.enabled and pickup.detailContactBinding.mapOnly and not giver:IsShown())
+location=text("Start One");assert(location.width==ui.detail:GetWidth()-24 and pickup:GetWidth()==ui.detail:GetWidth()-8)
+ui.quest=nil;ui:RefreshDetail();assert(not giver:IsShown()and not pickup:IsShown()and not finish:IsShown())
 print("Inline gold giver checks passed (geometry and state modeled; native rendering unverified)")

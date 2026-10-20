@@ -47,7 +47,33 @@ local function render(id)
 end
 local function visible(text)
  for _,fs in ipairs(u.details)do if fs:IsShown()and fs.text and fs.text:find(text,1,true)then return true end end
+ for index=1,2 do local contact=u.detailContactRows and u.detailContactRows[index];if contact and contact:IsShown()and(contact.title.text:find(text,1,true)or contact.note.text:find(text,1,true))then return true end end
 end
+local function ownContact(field)
+ local q=assert(a.quests[u.quest]);local point=assert(q[field]);local contact=assert(u.detailContactRows[field=="start"and 1 or 2])
+ local binding=assert(contact.detailContactBinding)
+ assert(contact:IsShown()and binding.questID==q.id and binding.field==field and binding.endpoint==point and binding.current(),"actual contact owns exact selected source")
+ return contact
+end
+local function sourceHint()
+ local selected,dungeon=u.quest,u.dungeon
+ local function control()
+  for _,row in ipairs(u.rows)do if row:IsShown()and row.questID==selected then return assert(row.navigationControl)end end
+ end
+ local found=control();if found then return found end
+ -- Explicitly open the real containing middle-tree group for a support quest before hovering its source control.
+ for _,root in ipairs(dungeon.quests)do
+  local tree=assert(a.QuestTree.Build(a.quests,u.engine,root))
+  for _,node in ipairs(tree)do if node.id==selected then
+   u.questTreeRoot,u.questTreeDungeon=root,dungeon
+   u:RefreshQuests();u:RefreshDetail()
+   assert(u.quest==selected and u.dungeon==dungeon,"source hint expansion keeps actual selected quest and dungeon")
+   return assert(control(),"expanded exact tree contains selected source hint")
+  end end
+ end
+ error("selected source has no actual containing middle-tree group")
+end
+
 local aliases=0
 for _,locale in ipairs(locales)do
  a.db.locale=locale
@@ -57,7 +83,7 @@ for _,locale in ipairs(locales)do
   if label then assert(translated==label,"missing reviewed creature label "..locale.."/"..s[1]);assert(current()and raw());aliases=aliases+1
   elseif locale=="enUS"then assert(translated==s[3],"English source identity remains canonical")
   else assert(translated==nil,"unchanged/placeholder response must remain a sparse fallback")end
-  render(s[2]);assert(visible(label or s[3]),"Quest summary loses current selected source name")
+  render(s[2]);assert(ownContact("start").title.text==a.L("DETAIL_GIVER")..": "..(label or s[3]),"Quest summary loses own selected pickup source name")
   assert(u:SetDetailTab("sources")and visible(label or s[3]),"Sources loses current selected source name")
  end
  for _,saved in ipairs(points)do
@@ -89,9 +115,9 @@ local function guide()
 end
 for _,s in ipairs(samples)do if s[1]~=14368 then
  render(s[2]);local p=a.quests[s[2]].start;local before=#routes
- assert(p.mapID and p.x and p.y and u.giver.enabled)
- u.giver.scripts.OnEnter();assert(tip.shown and tip.body:find(reviewed.zhCN[s[1]],1,true))
- assert(#routes==before);u.giver.scripts.OnClick()
+ local contact=ownContact("start");assert(p.mapID and p.x and p.y and contact.enabled and contact.scripts.OnClick)
+ local hint=sourceHint();hint.scripts.OnEnter();assert(tip.shown and tip.owner==hint and tip.body:find(reviewed.zhCN[s[1]],1,true))
+ assert(#routes==before);contact.scripts.OnClick()
  assert(#routes==before+1 and routes[#routes].place==p and routes[#routes].id==s[2])
  local g=assert(guide());assert(g:IsShown()and g.note.text:find(reviewed.zhCN[s[1]],1,true));nav.Stop()
 end end

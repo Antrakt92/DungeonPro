@@ -50,58 +50,97 @@ end
  return {a=a,u=u,draw=draw,drain=drain,gc=gc,methods=f.methods,routes=function()return routes end,
   settled=function()return #queue,tasks end}
 end
-local function material(x,id,item)
- x.draw(id);assert(x.u:SetDetailTab("sources"));x.drain()
- local row=assert(x.u.materialButtons[1]);local other=id==1654 and 1442 or 95042
- assert(row:IsShown()and row.enabled and row.questID==other and row.itemID==item)
- return row
+local function retiredSelectors(x)
+ for _,button in ipairs(x.u.materialButtons or{})do
+  assert(not button:IsShown()and not button.enabled and button.scripts.OnClick==nil,
+   "neutral material context must not leave a duplicate quest selector")
+ end
 end
-case("settled obsolete material engine released after ordinary inspection and reopen",function()
- local x=fixture();local row=material(x,1654,7083);local record=assert(row.title.questListWrites.SetText)
- assert(record.current());local weak=setmetatable({x.u.engine},{__mode="v"})
+local function visibleMaterial(x,id,item)
+ local other=id==1654 and 1442 or 95042
+ local declared=false
+ for _,entry in ipairs(x.a.quests[id].completionQuests or{})do
+  if entry.id==other and entry.itemID==item then declared=true end
+ end
+ assert(declared,"neutral material text retains its exact typed completion quest and item relationship")
+ local title,note
+ for i,field in ipairs(x.u.details)do if field:IsShown()and field.text==x.a.QuestName(other)and field.detailStyle=="caption"then
+  title=field;note=x.u.details[i+1];break
+ end end
+ assert(title and note and note:IsShown()and note.text:find(tostring(item),1,true),"actual material quest and item identity remain paired")
+ assert(title.detailTextBinding.quest==id and note.detailTextBinding.quest==id and
+  title.detailTextBinding.current()and note.detailTextBinding.current(),"material text belongs to the selected canonical definition")
+ assert((not title.scripts or not title.scripts.OnClick)and(not note.scripts or not note.scripts.OnClick),
+  "material FontStrings are information rather than secondary selectors")
+ retiredSelectors(x)
+ return{title=title,note=note,other=other,item=item}
+end
+local function material(x,id,item)
+ x.draw(id);assert(x.u:SetDetailTab("sources")and x.u.detailTab=="quest");x.drain()
+ return visibleMaterial(x,id,item)
+end
+local function snapshot(pair)
+ local result={}
+ for _,part in ipairs({"title","note"})do
+  local field=pair[part];local point={}
+  for i,v in ipairs(field.point or{})do point[i]=v end
+  result[part]={text=field.text,visible=field:IsShown(),width=field.width,height=field.height,point=point,binding=field.detailTextBinding}
+ end
+ return result
+end
+local function same(pair,expected)
+ for _,part in ipairs({"title","note"})do
+  local field,prior=pair[part],expected[part]
+  assert(field.text==prior.text and field:IsShown()==prior.visible and field.width==prior.width and field.height==prior.height and
+   field.detailTextBinding==prior.binding,"old native material tail overwrote newer text, visibility or publication")
+  if prior.visible then for i,v in ipairs(prior.point)do assert(field.point and field.point[i]==v,"old native material tail overwrote newer visible anchor")end end
+ end
+end
+case("settled obsolete neutral material engine released after inspection and reopen",function()
+ local x=fixture();local row=material(x,1654,7083);local record=assert(row.title.detailTextBinding)
+ local proof=record.current;assert(proof());local weak=setmetatable({x.u.engine},{__mode="v"})
  assert(x.u:InspectQuest(214,true));x.drain();assert(x.u:SetDetailTab("sources"));x.drain()
  x.u.frame:Hide();x.u.frame.scripts.OnHide();x.drain();x.u.frame:Show();x.u:Refresh();x.drain()
- assert(x.u.quest==214 and not row:IsShown()and not row.enabled and row.scripts.OnClick==nil)
- assert(not record.current()and row.title.questListWrites.SetText==record)
- record=nil;x.gc();local queued,tasks=x.settled();assert(queued==0 and tasks>0)
- assert(weak[1]==nil,"settled obsolete1654 engine retained by hidden material native record")
+ assert(x.u.quest==214 and not row.title:IsShown()and not row.note:IsShown());retiredSelectors(x)
+ assert(not proof(),"retained neutral text proof must retire")
+ record=nil;proof=nil;x.gc();local queued,tasks=x.settled();assert(queued==0 and tasks>0)
+ assert(weak[1]==nil,"settled obsolete1654 engine retained by a neutral material native publication")
  assert(x.u.engine and x.u.engine:Current())
 end)
-case("current material identity is informational and explicit inspection remains exact",function()
+case("material provenance stays informational and explicit inspection API remains exact",function()
  local x=fixture();local q=x.a.quests[1654];local sources=q.completionQuests
  local row=material(x,1654,7083);assert(q.requires==nil and q.classes[1]=="PALADIN")
  assert(x.routes()==0 and row.note.text:find("7083",1,true))
- row.scripts.OnClick(row);x.drain()
+ assert(x.u:InspectQuest(1442,true));x.drain()
  assert(x.u.quest==1442 and x.u.renderedQuest==1442 and x.u.detailTab=="quest"and x.routes()==0)
  assert(q.completionQuests==sources and q.requires==nil and q.classes[1]=="PALADIN")
- row=material(x,95036,272448);row.scripts.OnClick(row);x.drain()
+ material(x,95036,272448);assert(x.u:InspectQuest(95042,true));x.drain()
  assert(x.u.quest==95042 and x.u.renderedQuest==95042 and x.routes()==0)
 end)
-case("retained material click and text proof retire without old owner reads",function()
- local x=fixture();local row=material(x,1654,7083)
- local click,proof=row.scripts.OnClick,row.title.questListWrites.SetText.current
+case("retained neutral material proof retires without old owner reads",function()
+ local x=fixture();local row=material(x,1654,7083);local proof=row.title.detailTextBinding.current
  assert(x.u:InspectQuest(214,true));x.drain()
  local reads=0;local read,clean=x.a.Read,x.a.Clean
  x.a.Read=function(...)reads=reads+1;return read(...)end
  x.a.Clean=function(...)reads=reads+1;return clean(...)end
- assert(not proof());click(row)
+ assert(not proof())
  x.a.Read,x.a.Clean=read,clean
  assert(x.u.quest==214 and x.routes()==0)
- assert(reads==0,"retired material callbacks still consult released source owner")
+ assert(reads==0,"retired neutral material proof consults a released source owner")
+ retiredSelectors(x)
 end)
-local operations={{"title","SetText"},{"note","SetText"},{"row","Show"},{"row","Hide"},
- {"row","SetEnabled"},{"row","SetScript"}}
+local operations={{"title","SetText"},{"note","SetText"},{"title","Show"},{"title","Hide"},
+ {"title","SetWidth"},{"title","ClearAllPoints"},{"title","SetPoint"}}
 for _,op in ipairs(operations)do for _,after in ipairs({false,true})do
  for _,destination in ipairs({95036,214})do
  local part,method=op[1],op[2]
- case(part.."."..method..(after and " AFTER"or" BEFORE").." newer "..destination,function()
-  local x=fixture();local row=material(x,1654,7083);local object=part=="row"and row or row[part]
+ case(part.."."..method..(after and" AFTER"or" BEFORE").." newer "..destination,function()
+  local x=fixture();local row=material(x,1654,7083);local object=row[part]
   local native=object[method];local fired=false;local newest
   local function replace()
    if fired then return end;fired=true
    assert(x.u:InspectQuest(destination,true));assert(x.u:SetDetailTab("sources"));x.drain()
-   newest={title=row.title.text,note=row.note.text,visible=row:IsShown(),enabled=row.enabled,
-    id=row.questID,item=row.itemID,click=row.scripts.OnClick,height=row.height}
+   newest=snapshot(row)
   end
   object[method]=function(self,...)
    if not after then replace()end
@@ -111,18 +150,33 @@ for _,op in ipairs(operations)do for _,after in ipairs({false,true})do
   end
   if method=="Hide"then assert(x.u:InspectQuest(214,true))else x.u:RefreshDetail()end
   x.drain()
-  assert(fired and newest,"native material callback must actually fire")
-  assert(x.u.quest==destination and x.u.renderedQuest==destination and x.u.detailTab=="sources")
-  assert(row.title.text==newest.title and row.note.text==newest.note and row:IsShown()==newest.visible
-   and row.enabled==newest.enabled and row.questID==newest.id and row.itemID==newest.item
-   and row.scripts.OnClick==newest.click and row.height==newest.height,"old native tail overwrote newer material state")
-  if destination==95036 then
-   assert(row.questID==95042 and row.itemID==272448 and row:IsShown()and row.enabled)
-   row.scripts.OnClick(row);x.drain();assert(x.u.quest==95042 and x.routes()==0)
-  else assert(not row:IsShown()and not row.enabled and row.scripts.OnClick==nil and x.routes()==0)end
+  assert(fired and newest,"native neutral material callback must actually fire")
+  assert(x.u.quest==destination and x.u.renderedQuest==destination and x.u.detailTab=="quest")
+  same(row,newest);retiredSelectors(x)
+  if destination==95036 then visibleMaterial(x,95036,272448)
+  else assert(not row.title:IsShown()and not row.note:IsShown(),"unneeded material fields remain hidden")end
+  assert(x.routes()==0,"neutral material native publication never navigates or selects a supplier")
   object[method]=native
  end)
  end
 end end
-print("Material lifecycle regression: "..passed.." PASS / "..failed.." FAIL")
-assert(failed==0,"material lifecycle regression failures: "..failed)
+-- A newer visible publication changes real measured geometry before an old native tail.
+for _,method in ipairs({"SetPoint","ClearAllPoints"})do
+ case(method.." BEFORE newer visible same-quest material geometry",function()
+  local x=fixture();local row=material(x,1654,7083);local field=row.title
+  local native=field[method];local fired,newest=false,nil
+  local header=x.u.details[1];local measure=header.GetStringHeight
+  field[method]=function(self,...)
+   if not fired then
+    fired=true;header.GetStringHeight=function()return 90 end
+    x.u:RefreshDetail();x.drain();visibleMaterial(x,1654,7083);newest=snapshot(row)
+   end
+   return native(self,...)
+  end
+  x.u:RefreshDetail();x.drain();field[method]=native;header.GetStringHeight=measure
+  assert(fired and newest and newest.title.visible and newest.note.visible)
+  same(row,newest);assert(x.u.quest==1654 and x.routes()==0)
+ end)
+end
+print("Neutral material lifecycle regression: "..passed.." PASS / "..failed.." FAIL")
+assert(failed==0,"neutral material lifecycle regression failures: "..failed)

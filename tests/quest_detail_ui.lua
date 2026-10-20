@@ -24,6 +24,8 @@ for _, field in ipairs({"start", "finish"}) do
 end
 addon.quests[166] = definition
 local description, rewardDTO = "A short complete story.", nil
+local visits=0
+addon.Navigation={Start=function()visits=visits+1;return true end,Map=function()visits=visits+1;return true end}
 addon.Description = function() return description end
 addon.DialogueText = function() return nil end
 addon.DialogueRewards = function() return nil end
@@ -55,6 +57,12 @@ local function storyBody()
  for _,fs in ipairs(lines())do if fs.detailStyle=="story"then return fs end end
  error("missing story body")
 end
+local function contact(field)
+ local row=ui.detailContactRows and ui.detailContactRows[field=="start"and 1 or 2]
+ local binding=row and row.detailContactBinding
+ if row and row:IsShown()and binding and binding.questID==ui.quest and binding.field==field and
+    binding.endpoint==addon.quests[ui.quest][field]and binding.current()then return row end
+end
 local function validUTF8(text)
  local offset=1
  while offset<=#text do
@@ -70,10 +78,12 @@ render()
 assert(exact(addon.QuestName(166)).fontSize==22,"quest title uses distinct display size")
 assert(contains(addon.L("DETAIL_LEVEL",addon.quests[166].level)).fontSize==13)
 assert(contains(addon.L("DETAIL_MIN_LEVEL",addon.quests[166].minLevel)).fontSize==13)
-assert(exact(addon.L("DETAIL_GIVER")) and count(addon.L("DETAIL_GIVER"))==1)
-assert(exact(addon.L("DETAIL_GIVER")).fontSize==13)
-assert(not contains(description),"Quest keeps practical information separate from Story")
-assert(ui:SetDetailTab("story"))
+assert(contact("start")and contact("finish"),"metadata includes both current typed contact roles")
+assert(contact("start").title.text:find(addon.quests[166].start.name,1,true)and
+    contact("finish").title.text:find(addon.quests[166].finish.name,1,true),"each contact displays its own source name")
+assert(not exact(addon.L("DETAIL_GIVER")),"the contact heading is not duplicated in legacy prose")
+assert(count(description)==1,"complete authentic prose follows practical information once")
+assert(ui:SetDetailTab("story")and ui.detailTab=="quest","compatibility calls do not create another reading mode")
 assert(storyBody().text==description and storyBody().fontSize==14)
 assert(not ui.narrativeToggle or not ui.narrativeToggle:IsShown(),"short story is complete without disclosure")
 assert(not contains(addon.L("REWARD_UNAVAILABLE")) and not contains(addon.L("NO_TEXT")))
@@ -95,23 +105,26 @@ for _,locale in ipairs({"ruRU","zhCN","koKR"})do
  local unit=locale=="ruRU" and "История " or locale=="zhCN" and "冒险故事" or "모험이야기"
  description=string.rep(unit,100)
  render(166,locale)
- assert(ui.detailTabButtons.story:IsShown())
- stale=ui.detailTabButtons.story.scripts.OnClick
- stale();assert(ui.quest==166 and storyBody().text==description)
+ assert(not ui.detailTabButtons or not ui.detailTabButtons.story or not ui.detailTabButtons.story:IsShown())
+ stale=assert(contact("start").scripts.OnClick)
+ assert(contact("start").enabled,"the retained capability belongs to a live current contact")
+ assert(ui.quest==166 and storyBody().text==description)
  local body=storyBody()
  assert(validUTF8(body.text) and body.text==description,"Story retains every UTF-8 codepoint without truncating the text")
  assert(not body.text:find("\239\191\189",1,true),"Story never introduces replacement characters")
- assert(ui:SetDetailTab("quest"));assert(not contains(description))
+ assert(ui:SetDetailTab("quest")and ui.detailTab=="quest");assert(count(description)==1)
 end
-render(214,"enUS");stale();assert(ui.quest==214 and ui.detailTab=="quest","stale Story control cannot switch another quest")
+local previousVisits=visits
+render(214,"enUS");stale();assert(ui.quest==214 and ui.detailTab=="quest"and visits==previousVisits,
+ "a retained contact cannot navigate or restore prose belonging to another selected quest")
 render(166)
-assert(ui:SetDetailTab("story"));assert(ui.detailTab=="story")
+assert(ui:SetDetailTab("story"));assert(ui.detailTab=="quest"and count(description)==1)
 local priorDungeon=dungeon
 for _,candidate in ipairs(addon.dungeons)do if candidate~=priorDungeon then ui.dungeon=candidate;break end end
 ui:Refresh()
 assert(ui.detailTab=="quest","the same quest in a different dungeon starts on Quest")
 render(166)
-assert(ui:SetDetailTab("story"));assert(ui.detailTab=="story")
+assert(ui:SetDetailTab("story"));assert(ui.detailTab=="quest"and count(description)==1)
 ui.frame:Hide();ui.frame.scripts.OnHide(ui.frame);ui.frame:Show();ui:Refresh()
 assert(ui.detailTab=="quest","closing the window resets the reading view")
 
@@ -128,6 +141,6 @@ assert(not ui.referenceToggle or not ui.referenceToggle:IsShown(), "decorative p
 assert(not ui.storyToggle or not ui.storyToggle:IsShown(), "story chains are not duplicated in the detail pane")
 assert(ui.quest==166)
 assert(ui:SetDetailTab("story"))
-assert(exact(addon.L("DETAIL_STORY_UNAVAILABLE")),"empty Story explains the actual missing prose")
+assert(not exact(addon.L("DETAIL_STORY_UNAVAILABLE"))and not exact(addon.L("DETAIL_STORY")),"absent prose does not create an empty section after a compatibility call")
 assert(ui:SetDetailTab("quest"));assert(not exact(addon.L("DETAIL_STORY_UNAVAILABLE")))
 print("Actual quest detail: PASS (hierarchy, metadata, grouped rewards, full Story, stale state and truthful empty data)")

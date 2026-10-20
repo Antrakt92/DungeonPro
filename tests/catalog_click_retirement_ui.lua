@@ -30,7 +30,7 @@ local function scenario(kind,mode,hook)
  armed=true;control.scripts.OnClick();armed=false;card.IsShown=shown
  assert(fired,'the '..hook..' callback must actually supersede the '..kind..' click')
  if mode=='selection'then
-  assert(u.quest==92753 and u.detailTab=='story'and u.detailScroll:GetVerticalScroll()==7,'new inspection and reading position must survive retired '..kind..' click')
+  assert(u.quest==92753 and u.detailTab=='quest'and u.detailScroll:GetVerticalScroll()==7,'new inspection and reading position must survive retired '..kind..' click')
  else
   assert(u.quest==beforeQuest and u.dungeon==beforeDungeon and a.char.selectedDungeon==beforePersist and u.detailHistory==history,
    'a '..kind..' click retired by '..mode..' cannot mutate quest/dungeon/persisted selection')

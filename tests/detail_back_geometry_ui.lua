@@ -39,79 +39,43 @@ local function draw(id)
 end
 
 
-local routes=0
-C_Map.SetUserWaypoint=function()routes=routes+1 end
-local function equal(x,y)
- if type(x)~='table' or type(y)~='table' then return false end
- for k,v in pairs(x)do if y[k]~=v then return false end end
- for k,v in pairs(y)do if x[k]~=v then return false end end
- return true
-end
-for _,tab in ipairs({'sources','story'})do for _,phase in ipairs({'before','after'})do
- draw(166);assert(u:SetDetailTab('sources'));drain()
- local b=u.detailBackButton;local native=b.ClearAllPoints;local fired,newPoint=false,nil
- b.ClearAllPoints=function(self,...)
-  local hit=not fired
-  local function newer()
-   fired=true;assert(u:InspectQuest(214,true));assert(u:SetDetailTab(tab));drain()
-   assert(u.quest==214 and u.detailBackBinding.current() and b:IsShown() and b.enabled)
-   assert(type(b.point)=='table','newer Back positively anchored')
-   newPoint={unpack(b.point)}
-  end
-  if hit and phase=='before'then newer()end
-  self.point=nil -- modeled native ClearAllPoints has a physical effect, including delayed tails
-  if hit and phase=='after'then newer()end
- end
- u:RefreshDetail();drain();b.ClearAllPoints=native
- assert(fired and newPoint,'native reentry fired')
- assert(u.quest==214 and u.detailTab==tab and u.detailBackBinding.current())
- assert(equal(b.point,newPoint),'older ClearAllPoints erased newer Back anchor '..tab..'/'..phase)
- assert(b:IsShown()and b.enabled)
- b.scripts.OnClick(b);drain();assert(u.quest==166 and u.detailTab=='sources','fresh Back remains exact inspection')
- print('PASS BackClear',tab,phase)
-end end
-assert(routes==0)
-print('PASS geometry32 no automatic waypoint')
 
--- Replacing the physical pooled control retires the older writer before it can repair another widget.
-draw(166);assert(u:SetDetailTab('sources'));drain()
-local old=u.detailBackButton;local native=old.ClearAllPoints;local fired=false;local replacement,newPoint
-old.ClearAllPoints=function(self,...)
- if not fired then
-  fired=true
-  replacement=CreateFrame('Button',nil,u.detail,'UIPanelButtonTemplate')
-  replacement.label=replacement:CreateFontString(nil,'OVERLAY');replacement.footerLabelKey='BACK'
-  u.detailBackButton=replacement
-  assert(u:InspectQuest(214,true));assert(u:SetDetailTab('sources'));drain()
-  assert(replacement:IsShown()and replacement.enabled and replacement.point)
-  newPoint={unpack(replacement.point)}
- end
- self.point=nil
+local routes=0;C_Map.SetUserWaypoint=function()routes=routes+1 end
+draw(166);local b=assert(u.detailBackButton,"legacy pooled control may remain only as retired storage")
+assert(not b:IsShown()and not b.enabled and b.scripts.OnClick==nil)
+local geometryWrites=0;local clear,set=b.ClearAllPoints,b.SetPoint
+b.ClearAllPoints=function(self,...)geometryWrites=geometryWrites+1;return clear(self,...)end
+b.SetPoint=function(self,...)geometryWrites=geometryWrites+1;return set(self,...)end
+for _,key in ipairs({"quest","sources","story"})do
+ assert(u:SetDetailTab(key));draw(166);assert(u:InspectQuest(214,true));drain();assert(u:BackQuest());drain()
+ assert(u.quest==166 and u.detailTab=="quest"and not b:IsShown()and not b.enabled and b.scripts.OnClick==nil)
 end
-u:RefreshDetail();drain();old.ClearAllPoints=native
-assert(fired and u.detailBackButton==replacement and equal(replacement.point,newPoint))
-assert(u.detailBackBinding.current());replacement.scripts.OnClick();drain();assert(u.quest==166)
-print('PASS physical replacement retains positively anchored current Back')
--- A repaired SetPoint record is retained by its physical registry but not by the obsolete engine.
-draw(166);assert(u:SetDetailTab('sources'));drain()
-local b=u.detailBackButton;local clear=b.ClearAllPoints;local fired=false;local repaired
-local weak=setmetatable({},{__mode='v'})
-b.ClearAllPoints=function(self,...)
- if not fired then
-  fired=true;assert(u:InspectQuest(214,true));assert(u:SetDetailTab('story'));drain()
-  weak.engine=u.engine;weak.context=u.engine.context
+assert(geometryWrites==0,"retired Back has no geometry callbacks for an old writer to resume")
+b.ClearAllPoints,b.SetPoint=clear,set
+-- Native scroll-tail reentry is still an active physical boundary of BackQuest.
+u.detailScroll.GetHeight=function()return 100 end
+u.detail.GetHeight=function()return 1000 end
+for _,phase in ipairs({"before","after"})do
+ draw(166);u.detailScroll:SetVerticalScroll(73);assert(u:InspectQuest(214,true));drain()
+ local native=u.detailScroll.SetVerticalScroll;local armed,fired=false,false
+ u.detailScroll.SetVerticalScroll=function(self,value)
+  local hit=armed and not fired and value==73
+  local function replace()
+   fired=true;assert(u:InspectQuest(166,true));drain()
+   local scroll,generation,engine=u.detailScroll,u.rewardGeneration,u.engine
+   u:WriteDetailScroll(scroll,19,function()return u.quest==166 and u.detailScroll==scroll and u.rewardGeneration==generation and u.engine==engine end)
+  end
+  if hit and phase=="before"then replace()end
+  local result=native(self,value)
+  if hit and phase=="after"then replace()end
+  return result
  end
- self.point=nil
+ armed=true;assert(u:BackQuest());drain();u.detailScroll.SetVerticalScroll=native
+ assert(fired and u.quest==166 and u.detailScroll:GetVerticalScroll()==19,"old Back scroll tail cannot overwrite newer physical reading position "..phase)
 end
-u:RefreshDetail();drain();b.ClearAllPoints=clear
-repaired=assert(b.questListWrites.SetPoint);assert(repaired.current())
-assert(u:InspectQuest(166,true));drain();gc()
-local read,clean,calls=a.Read,a.Clean,0
-a.Read=function(...)calls=calls+1;return read(...)end
-a.Clean=function(...)calls=calls+1;return clean(...)end
-assert(not repaired.current()and calls==0)
-a.Read,a.Clean=read,clean
-gc();assert(weak.engine==nil and weak.context==nil,'retained repaired record must release old engine/context')
-assert(b==u.detailBackButton and b:IsShown()and b.point and u.detailBackBinding.current())
-assert(routes==0 and #queue==0)
-print('PASS repaired record retired0providers/engine-contextGC; queue0 tasks'..tasks)
+-- The retired button must retain no obsolete render engine through a repair lease.
+draw(166);local weak=setmetatable({engine=u.engine,context=u.engine.context},{__mode="v"})
+assert(u:InspectQuest(214,true));drain();gc()
+assert(weak.engine==nil and weak.context==nil,"retired Back storage must not retain old engine/context")
+assert(not b:IsShown()and not b.enabled and b.scripts.OnClick==nil and routes==0 and #queue==0)
+print("PASS no retired Back geometry writes; retained API physical scroll tails before/after, old engine/contextGC, no waypoints")

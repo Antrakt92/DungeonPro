@@ -3117,6 +3117,199 @@ local function releaseSourceControls(ui)
     lease.cells, lease.memo = {}, {}
 end
 
+function UI:DetailRoleScope(selectedID, dungeon, engine)
+    local clean, read, checker, provider = addon.Clean, addon.Read, issecretvalue, self.DetailRoleScope
+    local catalogue, character, treeAPI = addon.quests, addon.char, addon.QuestTree
+    local selected, currentDungeon, currentEngine = self.quest, self.dungeon, self.engine
+    local rootID, treeDungeon = self.questTreeRoot, self.questTreeDungeon
+    local generation, layout, refresh = self.rewardGeneration, self.layoutRevision, self.RefreshDetail
+    local builder = type(treeAPI) == "table" and rawget(treeAPI, "Build")
+    local roots, entries, rootsReadable = nil, {}, false
+    local ok = pcall(function()
+        roots = rawget(dungeon, "quests")
+        for key, value in next, roots do
+            if #entries >= 1000 then error("bounded dungeon roots") end
+            entries[#entries + 1] = { key, value }
+        end
+    end)
+    if not ok then return nil end
+    local tree, treeCurrent, treeRaw, node, nodeValues, model
+    local role, current
+    local returned, returnedCurrent, returnedRaw, returnedNodes, returnedReadable
+    local function rawCurrent()
+        local valid, same = pcall(function()
+            if addon.UI ~= self or addon.Clean ~= clean or addon.Read ~= read or issecretvalue ~= checker or
+                self.DetailRoleScope ~= provider or addon.quests ~= catalogue or addon.char ~= character or
+                self.quest ~= selected or self.dungeon ~= currentDungeon or self.engine ~= currentEngine or
+                self.questTreeRoot ~= rootID or self.questTreeDungeon ~= treeDungeon or
+                self.rewardGeneration ~= generation or self.layoutRevision ~= layout or self.RefreshDetail ~= refresh or
+                rawget(dungeon, "quests") ~= roots then return false end
+            local count = 0
+            if rootsReadable then
+            for key, value in next, roots do
+                count = count + 1
+                local entry = entries[count]
+                if not entry or not rawequal(key, entry[1]) or not rawequal(value, entry[2]) then return false end
+            end
+            if count ~= #entries then return false end
+            end
+            if returnedReadable then
+                if not rawequal(rawget(returned,"current"),returnedCurrent) or not rawequal(rawget(returned,"rawCurrent"),returnedRaw) then return false end
+                local n=0
+                for key,candidate in next,returned do
+                    if type(key)=="number" then
+                        n=n+1;local snapshot=returnedNodes[n]
+                        if not snapshot or not rawequal(key,snapshot.key) or not rawequal(candidate,snapshot.node) then return false end
+                        for _,field in ipairs(snapshot.values) do if not rawequal(rawget(candidate,field[1]),field[2]) then return false end end
+                    end
+                end
+                if n~=#returnedNodes then return false end
+            end
+            if (model and (model.key ~= role or model.current ~= current or model.rawCurrent ~= rawCurrent)) then return false end
+            if tree then
+                if addon.QuestTree ~= treeAPI or rawget(treeAPI, "Build") ~= builder or
+                    rawget(tree, "current") ~= treeCurrent or rawget(tree, "rawCurrent") ~= treeRaw then return false end
+                for _, field in ipairs(nodeValues) do if not rawequal(rawget(node, field[1]), field[2]) then return false end end
+                local currentOK, currentValue = pcall(treeRaw)
+                if not currentOK or currentValue ~= true then return false end
+            end
+            return true
+        end)
+        return valid and same == true
+    end
+    local function readableNow()
+        local function capabilities()
+            return addon.Clean==clean and addon.Read==read and issecretvalue==checker and self.DetailRoleScope==provider
+        end
+        if not capabilities() then return false end
+        local function accepts(input,kind)
+            if kind=="nil" then return type(input)=="nil" end
+            local ok,result=pcall(clean,input,kind)
+            return ok and capabilities() and result~=nil
+        end
+        local ok,valid=pcall(function()
+            for _,snapshot in ipairs({
+                {addon,"quests",type(catalogue)},{addon,"char",type(character)},
+                {self,"quest",type(selected)},{self,"dungeon",type(currentDungeon)},{self,"engine",type(currentEngine)},
+                {self,"questTreeRoot",type(rootID)},{self,"questTreeDungeon",type(treeDungeon)},
+                {self,"rewardGeneration",type(generation)},{self,"layoutRevision",type(layout)},{self,"RefreshDetail",type(refresh)}
+            }) do if not accepts(rawget(snapshot[1],snapshot[2]),snapshot[3]) then return false end end
+            local liveRoots=rawget(dungeon,"quests")
+            if not accepts(liveRoots,"table") then return false end
+            local count=0
+            for key,member in next,liveRoots do
+                count=count+1
+                if count>1000 or not accepts(key,"number") or not accepts(member,"number") then return false end
+            end
+            if returnedReadable then
+                if not accepts(rawget(returned,"current"),"function") or not accepts(rawget(returned,"rawCurrent"),"function") then return false end
+                local n=0
+                for key,candidate in next,returned do
+                    if type(key)=="number" then
+                        n=n+1
+                        if n>80 or not accepts(key,"number") or not accepts(candidate,"table") or not accepts(rawget(candidate,"id"),"number") then return false end
+                        for _,field in ipairs({"relation","requirementScope","root"}) do
+                            local raw=rawget(candidate,field)
+                            if type(raw)~="nil" and not accepts(raw,field=="root" and "boolean" or "string") then return false end
+                        end
+                    end
+                end
+            end
+            if model and (not accepts(rawget(model,"key"),"string") or not accepts(rawget(model,"current"),"function") or not accepts(rawget(model,"rawCurrent"),"function")) then return false end
+            return capabilities()
+        end)
+        return ok and valid==true
+    end
+    local function value(input, kind)
+        if not rawCurrent() then return nil end
+        local valid, result = pcall(clean, input, kind)
+        if not valid or not rawCurrent() then return nil end
+        return result
+    end
+    local id = value(selectedID, "number")
+    if not id or id <= 0 or id > 9007199254740991 or id % 1 ~= 0 or
+        not value(dungeon, "table") or not value(engine, "table") or not value(roots, "table") or
+        not rawequal(selectedID, selected) or not rawequal(dungeon, currentDungeon) or not rawequal(engine, currentEngine) then return nil end
+    local members, positions = {}, {}
+    for _, entry in ipairs(entries) do
+        local position, member = value(entry[1], "number"), value(entry[2], "number")
+        if not position or position < 1 or position > #entries or position % 1 ~= 0 or positions[position] or
+            not member or member <= 0 or member > 9007199254740991 or member % 1 ~= 0 or members[member] then return nil end
+        positions[position], members[member] = true, true
+    end
+    rootsReadable = true
+    if not rawCurrent() then return nil end
+    if members[id] then role = "DUNGEON_QUEST_SHORT"
+    else
+        local root = value(rootID, "number")
+        if not root or root <= 0 or root > 9007199254740991 or root % 1 ~= 0 or not members[root] or
+            not rawequal(treeDungeon, dungeon) or not value(treeAPI, "table") or not value(builder, "function") then return nil end
+        local built, result = pcall(builder, catalogue, engine, root)
+        if not built or not rawCurrent() then return nil end
+        -- Freeze opaque returned metadata before the first validator or current callback.
+        local captured = pcall(function()
+            returned=result
+            returnedCurrent,returnedRaw=rawget(result,"current"),rawget(result,"rawCurrent")
+            returnedNodes={}
+            for key,candidate in next,result do
+                if type(key)=="number" then
+                    if #returnedNodes>=80 then error("bounded role nodes") end
+                    local snapshot={key=key,node=candidate,values={}}
+                    for _,field in ipairs({"id","relation","requirementScope","root"}) do
+                        snapshot.values[#snapshot.values+1]={field,rawget(candidate,field)}
+                    end
+                    returnedNodes[#returnedNodes+1]=snapshot
+                end
+            end
+        end)
+        if not captured then return nil end
+        local resultTable = value(result, "table")
+        if not resultTable or not value(returnedCurrent,"function") or not value(returnedRaw,"function") then return nil end
+        for _,snapshot in ipairs(returnedNodes) do
+            if not value(snapshot.key,"number") or not value(snapshot.node,"table") or not value(snapshot.values[1][2],"number") then return nil end
+            for index=2,4 do
+                local field=snapshot.values[index]
+                if type(field[2])~="nil" and value(field[2],index==4 and "boolean" or "string")==nil then return nil end
+            end
+        end
+        returnedReadable=true
+        if not rawCurrent() then return nil end
+        local resultCurrent,resultRaw=returnedCurrent,returnedRaw
+        local checked,fresh=pcall(resultCurrent)
+        if not checked or not rawCurrent() or fresh~=true then return nil end
+        for _,snapshot in ipairs(returnedNodes) do
+            local candidateID=value(snapshot.values[1][2],"number")
+            if candidateID==id then
+                if node then return nil end
+                node,nodeValues=snapshot.node,snapshot.values
+            end
+        end
+        if not node then return nil end
+        local rawScope, rawRoot = nodeValues[3][2], nodeValues[4][2]
+        local relation = value(nodeValues[2][2], "string")
+        local scope = value(rawScope, "string")
+        local isRoot = value(rawRoot, "boolean")
+        if (relation ~= "required" and relation ~= "story") or
+            (type(rawScope) ~= "nil" and scope ~= "story") or
+            (type(rawRoot) ~= "nil" and type(isRoot) ~= "boolean") then return nil end
+        if relation == "required" and scope ~= "story" and not isRoot then role = "REQUIRED_STEP_SHORT"
+        elseif relation == "story" or scope == "story" then role = "STORY_SHORT" end
+        if not role then return nil end
+        tree, treeCurrent, treeRaw = resultTable, resultCurrent, resultRaw
+    end
+    current = function()
+        if not readableNow() or not rawCurrent() then return false end
+        if tree then
+            local checked,fresh=pcall(treeCurrent)
+            if not checked or not readableNow() or not rawCurrent() or fresh~=true then return false end
+        end
+        return rawCurrent()
+    end
+    model = { key = role, current = current, rawCurrent = rawCurrent }
+    if not current() then return nil end
+    return model
+end
+
 function UI:RefreshDetail(sourceFocus)
     local previousScroll = self.detailScrollOwner
     self.detailScrollOwner = nil
@@ -3147,29 +3340,16 @@ function UI:RefreshDetail(sourceFocus)
         self.detailTabQuest, self.detailTabDungeon, self.detailTabCharacter = renderQuest, renderDungeon, renderCharacter
         self.detailTab, self.detailTabOffsets, self.detailTabRevision = "quest", {}, {}
     end
-    if sourceFocus == true and self.detailTab ~= "sources" then
-        local previous, offsets, scroll, frame = self.detailTab, self.detailTabOffsets, self.detailScroll, self.frame
-        local getter, engineGetter, reader = scroll.GetVerticalScroll, renderEngine and renderEngine.Current, addon.Read
-        local generation, refresh = self.rewardGeneration, self.RefreshDetail
-        local intent = {}; self.detailTabRevision = intent
-        local offset = sameDetailOwner and reader(getter,"number",scroll)
-        local fresh = not engineGetter or reader(engineGetter,"boolean",renderEngine) == true
-        if not fresh or self.rewardGeneration ~= generation or self.RefreshDetail ~= refresh or self.detailTabRevision ~= intent or self.detailTab ~= previous or self.detailTabOffsets ~= offsets or
-            self.quest ~= renderQuest or self.dungeon ~= renderDungeon or addon.char ~= renderCharacter or self.engine ~= renderEngine or
-            self.frame ~= frame or self.detailScroll ~= scroll or scroll.GetVerticalScroll ~= getter or addon.Read ~= reader or
-            (renderEngine and renderEngine.Current ~= engineGetter) then return end
-        if sameDetailOwner and offset and offset >= 0 then offsets[previous] = offset end
-        self.detailTab = "sources"
-    end
+    self.detailTab = "quest"
     local detailTab, tabRevision = self.detailTab or "quest", self.detailTabRevision
-    self.detailReferencesExpanded = detailTab == "sources"
+    self.detailReferencesExpanded = true
     local rewardGeneration = self:ResetRewardPresentation()
     if not rewardGeneration or self.quest ~= renderQuest then return end
     self:HideNavigationHint()
     if self.rewardGeneration ~= rewardGeneration or self.quest ~= renderQuest or self.dungeon ~= renderDungeon or
         self.engine ~= renderEngine or addon.char ~= renderCharacter then return end
     if self.detailReferenceQuest ~= renderQuest or self.detailReferenceDungeon ~= renderDungeon then
-        self.detailReferencesExpanded, self.detailNarrativeExpanded = detailTab == "sources", false
+        self.detailReferencesExpanded,self.detailNarrativeExpanded=true,false
         self.detailReferenceQuest, self.detailReferenceDungeon = renderQuest, renderDungeon
     end
     if self.detailObjectivesQuest ~= renderQuest or self.detailObjectivesDungeon ~= renderDungeon or
@@ -3194,6 +3374,7 @@ function UI:RefreshDetail(sourceFocus)
         if not self:WriteDetailScroll(self.detailScroll, 0, current) then return end
         self.renderedQuest, self.renderedOverview = renderQuest, overviewIdentity
         self.reportedExpanded = {}
+        self.detailContactExpanded = nil
     end
     self:RefreshQuestStyles()
     if self.rewardGeneration ~= rewardGeneration or self.quest ~= renderQuest then return end
@@ -3337,6 +3518,16 @@ function UI:RefreshDetail(sourceFocus)
         if object.sourceGeometryRepair == repair then object.sourceGeometryRepair = nil end
         return false
     end
+    self.detailContactRows = self.detailContactRows or {}
+    for index = 1, 2 do
+        local row = self.detailContactRows[index]
+        if row then
+            local function current() return portraitCardCurrent() and self.detailContactRows[index] == row end
+            if not sourceWrite(current,row,"Hide",nil) or not sourceWrite(current,row,"SetEnabled",nil,false) or
+                not sourceWrite(current,row,"SetScript",nil,"OnClick",nil) then return end
+            row.detailContactOwner, row.detailContactBinding = nil, nil
+        end
+    end
     for _, buttons in ipairs({ self.reportedToggles, self.reportedRows }) do
         for index, row in ipairs(buttons) do
             local function current() return portraitCardCurrent() and buttons[index] == row end
@@ -3428,7 +3619,8 @@ function UI:RefreshDetail(sourceFocus)
     if not primaryCurrent() then return end
     self.giverUnavailableKey = nil
     if not primaryEnabled(false) or not primaryLabel("VISIT_GIVER") or
-        not sourceWrite(function() return primaryCurrent() end, primaryGiver, "Hide", nil) then return end
+        not sourceWrite(function() return primaryCurrent() end, primaryGiver, "Hide", nil) or
+        not sourceWrite(function() return primaryCurrent() end, primaryGiver, "SetScript", nil, "OnClick", nil) then return end
     local rewardIndex, objectiveIndex = 0, 0
     local function line(value, style, reward, objective, ownerCurrent, navigation)
         if detailTextLease.released or self.detailTextLease ~= detailTextLease or (ownerCurrent and not ownerCurrent()) then return false end
@@ -3447,7 +3639,13 @@ function UI:RefreshDetail(sourceFocus)
                 detailTextLease.bindings[#detailTextLease.bindings + 1] = { scope = scope, binding = binding }
                 object.detailTextBinding = binding
             end
-            object[method](object, ...)
+            if method~="SetText"then
+                local function current()
+                    return not detailTextLease.released and self.detailTextLease==detailTextLease and
+                        (not ownerCurrent or ownerCurrent()==true)and not detailTextLease.released and self.detailTextLease==detailTextLease
+                end
+                if not sourceGeometryWrite(current,object,method,...)then return false end
+            else object[method](object, ...)end
             if detailTextLease.released or self.detailTextLease ~= detailTextLease or (ownerCurrent and not ownerCurrent()) then
                 local newer = binding and object.detailTextBinding
                 if newer and newer ~= binding and not object.detailTextRepair and addon.Read(newer.current, "boolean") == true and
@@ -3605,8 +3803,115 @@ function UI:RefreshDetail(sourceFocus)
         local q = definition or {}
         do
             local titleGetter, titleChecker = addon.QuestName, issecretvalue
+            local roleGetter, roleClean, roleRead = self.DetailRoleScope, addon.Clean, addon.Read
+            local roleLocalize, roleDatabase, roleLanguage, roleGameGetter = addon.L, addon.db, addon.Language, GetLocale
+            local roleChoice = type(roleDatabase) == "table" and rawget(roleDatabase, "locale")
+            local roleSession = type(roleLanguage) == "table" and rawget(roleLanguage, "session")
+            local rolePreview = type(roleSession) == "table" and rawget(roleSession, "preview")
+            local roleSelection = type(roleLanguage) == "table" and rawget(roleLanguage, "GetSelection")
+            local role, roleKey, roleRaw
+            local roleLabels = {}
+            local roleStrings = addon.locales
             local function titleCurrent()
-                return portraitCardCurrent() and addon.quests[id] == definition and addon.QuestName == titleGetter and issecretvalue == titleChecker
+                if not portraitCardCurrent() or addon.quests[id] ~= definition or addon.QuestName ~= titleGetter or issecretvalue ~= titleChecker or
+                    self.DetailRoleScope ~= roleGetter or addon.Clean ~= roleClean or addon.Read ~= roleRead or addon.L ~= roleLocalize or
+                    addon.db ~= roleDatabase or addon.Language ~= roleLanguage or GetLocale ~= roleGameGetter then return false end
+                local valid, same = pcall(function()
+                    if (type(roleDatabase) == "table" and rawget(roleDatabase, "locale") ~= roleChoice) or
+                        (type(roleLanguage) == "table" and (rawget(roleLanguage, "session") ~= roleSession or rawget(roleLanguage, "GetSelection") ~= roleSelection)) or
+                        (type(roleSession) == "table" and rawget(roleSession, "preview") ~= rolePreview) then return false end
+                    if role then
+                        if role.key ~= roleKey or role.rawCurrent ~= roleRaw or addon.locales ~= roleStrings then return false end
+                        for _, labelSource in ipairs(roleLabels) do
+                            if not rawequal(rawget(roleStrings, labelSource[1]), labelSource[2]) or
+                                (labelSource[4] and not rawequal(rawget(labelSource[2], roleKey), labelSource[3])) then return false end
+                        end
+                        local checked, fresh = pcall(roleRaw)
+                        if not checked or fresh ~= true then return false end
+                    end
+                    return true
+                end)
+                return valid and same == true
+            end
+            if type(roleGetter) == "function" then
+                local checked, result = pcall(roleGetter, self, id, renderDungeon, engine)
+                if not titleCurrent() then return end
+                if checked and type(result) == "table" then
+                    role, roleKey, roleRaw = result, result.key, result.rawCurrent
+                    if type(roleStrings) ~= "table" or type(roleRaw) ~= "function" then return end
+                    local function roleValue(value, kind)
+                        if not titleCurrent() then return nil, false end
+                        local checked, result = pcall(roleClean, value, kind)
+                        if not checked or not titleCurrent() then return nil, false end
+                        return result, true
+                    end
+                    local function roleExternal(fn, ...)
+                        local callable, fresh = roleValue(fn, "function")
+                        if not fresh then return nil, false end
+                        if not callable then return nil, true end
+                        local called, result = pcall(callable, ...)
+                        if not titleCurrent() then return nil, false end
+                        if not called then return nil, true end
+                        return roleValue(result, "string")
+                    end
+                    local locale, fresh = roleValue(roleChoice, "string")
+                    if not fresh then return end
+                    if not locale then
+                        local disabled
+                        disabled, fresh = roleValue(roleChoice, "boolean")
+                        if not fresh or (type(roleChoice) ~= "nil" and disabled ~= false) then return end
+                        locale = "auto"
+                    end
+                    local preview
+                    preview, fresh = roleExternal(roleSelection, roleLanguage)
+                    if not fresh then return end
+                    locale = preview or locale
+                    if locale == "auto" then
+                        locale, fresh = roleExternal(roleGameGetter)
+                        if not fresh or not locale then return end
+                    end
+                    if locale == "enGB" then locale = "enUS" elseif locale == "esMX" then locale = "esES" end
+                    local rawDictionary = rawget(roleStrings, locale)
+                    local dictionary
+                    dictionary, fresh = roleValue(rawDictionary, "table")
+                    if not fresh then return end
+                    local expected
+                    roleLabels[#roleLabels + 1] = { locale, rawDictionary, dictionary and rawget(dictionary, roleKey), dictionary ~= nil }
+                    if dictionary then expected = rawget(dictionary, roleKey)
+                    else
+                        local disabled
+                        disabled, fresh = roleValue(rawDictionary, "boolean")
+                        if not fresh or (type(rawDictionary) ~= "nil" and disabled ~= false) then return end
+                    end
+                    local missing = type(expected) == "nil"
+                    if not missing then
+                        local disabled
+                        disabled, fresh = roleValue(expected, "boolean")
+                        if not fresh then return end
+                        missing = disabled == false
+                    end
+                    if missing then
+                        local english = rawget(roleStrings, "enUS")
+                        dictionary, fresh = roleValue(english, "table")
+                        if not fresh or not dictionary then return end
+                        expected = rawget(dictionary, roleKey)
+                        roleLabels[#roleLabels + 1] = { "enUS", english, expected, true }
+                    end
+                    if type(expected) == "nil" then expected = roleKey end
+                    local expectedCaption
+                    expectedCaption, fresh = roleValue(expected, "string")
+                    if not fresh or not expectedCaption then return end
+                    if not titleCurrent() then return end
+                    local localized, caption = pcall(roleLocalize, roleKey)
+                    if not localized or not titleCurrent() then return end
+                    caption = roleClean(caption, "string")
+                    if not titleCurrent() or caption ~= expectedCaption then return end
+                    if caption and caption:find("%S") and #caption <= 1024 then
+                        if line(caption, "caption", nil, nil, titleCurrent) == false then return end
+                    end
+                    local proved, fresh = pcall(role.current)
+                    if not proved or not titleCurrent() or fresh ~= true then return end
+                end
             end
             local title = addon.Read(titleGetter, "string", id)
             if not titleCurrent() then return end
@@ -3727,80 +4032,6 @@ function UI:RefreshDetail(sourceFocus)
         end
         if #metadataParts > 0 and line(table.concat(metadataParts, " · "), "caption", nil, nil, metadataCurrent) == false then return end
         if factions and line(factions, "caption", nil, nil, metadataCurrent) == false then return end
-        do
-            local keys = { {"quest","TAB_QUEST"}, {"sources","TAB_SOURCES"}, {"story","TAB_STORY"} }
-            local buttons = self.detailTabButtons or {}; self.detailTabButtons = buttons
-            local setter, localize, database, frame = self.SetDetailTab, addon.L, addon.db, self.frame
-            local locale = database and rawget(database,"locale")
-            local function current()
-                return portraitCardCurrent() and addon.UI == self and self.frame == frame and self.detailTabButtons == buttons and
-                    self.SetDetailTab == setter and addon.L == localize and addon.db == database and
-                    (not database or rawget(database,"locale") == locale)
-            end
-            local backControl, back = self.detailBackButton, self.BackQuest
-            if not current() or not backControl or self.detailBackButton ~= backControl or not backControl.label or type(back) ~= "function" then return end
-            local history, historyCount = self.detailHistory, #self.detailHistory
-            local historyLast = rawget(history, historyCount)
-            local navigation, tabRevision = self.detailNavigationRevision, self.detailTabRevision
-            local reader, shownGetter = addon.Read, frame.IsShown
-            local backBinding = {}
-            local function backCurrent()
-                return current() and self.detailBackButton == backControl and self.detailBackBinding == backBinding and
-                    self.BackQuest == back and type(back) == "function" and self.detailHistory == history and #history == historyCount and
-                    rawequal(rawget(history, historyCount), historyLast) and self.detailNavigationRevision == navigation and
-                    self.detailTabRevision == tabRevision and addon.Read == reader and frame.IsShown == shownGetter
-            end
-            self.detailBackBinding = backBinding
-            backBinding.current = sourceCallback(backCurrent)
-            local function backWrite(object, method, ...)
-                if method == "ClearAllPoints" then return sourceGeometryWrite(backCurrent, object, method, ...) end
-                return sourceWrite(backCurrent, object, method, nil, ...)
-            end
-            setFont(backControl.label,20)
-            if not backCurrent() or not backWrite(backControl.label,"SetText","‹") or
-                not backWrite(backControl.label,"SetTextColor",.96,.83,.59) then return end
-            local width, height = (contentWidth-40)/3, math.max(26,measuredHeight(backControl.label,20)+4)
-            if not backCurrent() or not backWrite(backControl,"SetSize",28,height) or
-                not backWrite(backControl,"ClearAllPoints") or not backWrite(backControl,"SetPoint","TOPLEFT",4,-y) or
-                not backWrite(backControl,"SetEnabled",true) or not backWrite(backControl,"SetScript","OnClick",function()
-                    if not backCurrent() then return end
-                    local shown=reader(shownGetter,"boolean",frame)
-                    if shown==true and backCurrent() then back(self) end
-                end) then return end
-            styleRow(backControl,"control",false)
-            if not backCurrent() or not backWrite(backControl,"Show") then return end
-            for index, entry in ipairs(keys) do
-                local key, localeKey = entry[1], entry[2]
-                local control = buttons[key]
-                if not control then
-                    local candidate = CreateFrame("Button",nil,self.detail); candidate:Hide()
-                    candidate.label = label(candidate,"",4,-4,width-8,13)
-                    candidate:SetHighlightTexture("Interface\\QuestFrame\\UI-QuestTitleHighlight")
-                    if not current() then return end
-                    control = candidate; buttons[key] = control
-                end
-                local function owned() return current() and buttons[key] == control end
-                local function write(object,method,...) return self:QuestListWrite(object,method,owned,...) end
-                setFont(control.label,13)
-                local caption = addon.Read(localize,"string",localeKey)
-                if not owned() or not caption or not write(control.label,"SetWidth",width-8) or not write(control.label,"SetText",caption) or
-                    not write(control.label,"SetTextColor",unpack(detailTab == key and {.96,.83,.59} or {.64,.73,.74})) then return end
-                height = math.max(height,measuredHeight(control.label,16)+8)
-            end
-            for index, entry in ipairs(keys) do
-                local key, control = entry[1], buttons[entry[1]]
-                local function owned() return current() and buttons[key] == control end
-                local function write(object,method,...) return self:QuestListWrite(object,method,owned,...) end
-                if not write(control,"SetSize",width,height) or not write(control,"ClearAllPoints") or
-                    not write(control,"SetPoint","TOPLEFT",36+(index-1)*(width+4),-y) or not write(control,"SetEnabled",true) then return end
-                styleRow(control,"control",detailTab == key)
-                if not owned() or not write(control,"SetScript","OnClick",function()
-                    if addon.Read(frame.IsShown,"boolean",frame) == true and owned() then setter(self,key) end
-                end) or not write(control,"Show") then return end
-            end
-            if not backWrite(backControl,"SetHeight",height) then return end
-            y = y + height + 8
-        end
         local offerGetter = addon.CurrentOffer
         local offer = detailTab == "quest" and addon.Read(offerGetter, "table", id)
         local offeredNow = offer and addon.Clean(offer.offeredNow, "boolean") == true
@@ -3861,10 +4092,35 @@ function UI:RefreshDetail(sourceFocus)
         end
         local function reported(parent, key, ownerCurrent)
             local nameProofs = {}
-            local function current() return locationCurrent() and (not ownerCurrent or ownerCurrent()) and namesCurrent(nameProofs) end
-            if not current() then return false end
-            -- Created objects have no fixed spawn route, even if stale endpoint facts survive a refresh.
-            if addon.Read(self.HasSummonSource,"boolean",self,parent) ~= false then return end
+            local clean,reader,checker,presence=addon.Clean,addon.Read,issecretvalue,self.HasSummonSource
+            local function helpers()
+                return addon.Clean==clean and addon.Read==reader and issecretvalue==checker and self.HasSummonSource==presence
+            end
+            local function readable(value)
+                if not helpers()then return false end
+                if type(checker)=="function"then
+                    local ok,restricted=pcall(checker,value)
+                    if not ok or restricted~=false or not helpers()then return false end
+                end
+                return true
+            end
+            if not readable(parent)or type(parent)~="table"then return end
+            if type(rawget(parent,"summonItem"))~="nil"then return end
+            local function current()
+                if not helpers()or not locationCurrent()or(ownerCurrent and not ownerCurrent())or not namesCurrent(nameProofs)then return false end
+                if not readable(parent)then return false end
+                return helpers()and locationCurrent()and not sourceControlsLease.released and self.sourceControlsLease==sourceControlsLease and
+                    type(rawget(parent,"summonItem"))=="nil"
+            end
+            if not current()then return false end
+            -- A creation declaration never becomes a fixed spawn, including malformed or mixed evidence.
+            if not readable(presence)or type(presence)~="function"or type(clean)~="function"then return end
+            local ok,created=pcall(presence,self,parent)
+            if not current()then return false end
+            if not ok then return end
+            local valid,value=pcall(clean,created,"boolean")
+            if not current()then return false end
+            if not valid or value~=false then return end
             local places = reportedPlaces(parent)
             if not current() then return false end
             if not places then return end
@@ -4078,12 +4334,200 @@ function UI:RefreshDetail(sourceFocus)
                 addon.Clean(rawget(start, "itemID"), "number") > 0 and addon.Clean(rawget(start, "itemID"), "number") <= 4294967295 and
                 addon.Clean(rawget(start, "itemID"), "number") % 1 == 0 and rawget(start, "npcID") == nil and rawget(start, "objectID") == nil)
         end
+        local contactRendered,renderContactFinish = {},nil
+        if detailTab ~= "story" then do
+            local provider, clean, reader, checker = self.DetailContactBinding, addon.Clean, addon.Read, issecretvalue
+            local localize, nameGetter, areaGetter, legacyNameGetter, strings = addon.L, addon.SourceName, addon.SourceAreaName, addon.GiverName, addon.locales
+            local database, language, gameGetter = addon.db, addon.Language, GetLocale
+            local contactPool, make, layoutRow, writer = self.detailContactRows, self.MakeRow, self.LayoutRow, self.QuestListWrite
+            local expanded, factory, nativeHide = self.detailContactExpanded, CreateFrame, self.detail.Hide
+            local reportedState = self.reportedExpanded
+            local mapRoot = C_Map
+            local mapNamespace = type(mapRoot)=="table" and mapRoot
+            local mapGetter = mapNamespace and rawget(mapNamespace,"GetMapInfo")
+            local choice = type(database)=="table" and rawget(database,"locale")
+            local session = type(language)=="table" and rawget(language,"session")
+            local preview = type(session)=="table" and rawget(session,"preview")
+            local selection = type(language)=="table" and rawget(language,"GetSelection")
+            local function metadataCurrent()
+                local ok,same=pcall(function()
+                    return portraitCardCurrent() and self.detailContactRows==contactPool and self.MakeRow==make and self.LayoutRow==layoutRow and self.QuestListWrite==writer and
+                        self.detailContactExpanded==expanded and self.reportedExpanded==reportedState and CreateFrame==factory and C_Map==mapRoot and
+                        (not mapNamespace or rawequal(rawget(mapNamespace,"GetMapInfo"),mapGetter)) and self.DetailContactBinding==provider and addon.Clean==clean and addon.Read==reader and issecretvalue==checker and
+                        addon.L==localize and addon.SourceName==nameGetter and addon.SourceAreaName==areaGetter and addon.GiverName==legacyNameGetter and addon.locales==strings and
+                        addon.db==database and addon.Language==language and GetLocale==gameGetter and
+                        (type(database)~="table" or rawequal(rawget(database,"locale"),choice)) and
+                        (type(language)~="table" or (rawequal(rawget(language,"session"),session) and rawequal(rawget(language,"GetSelection"),selection))) and
+                        (type(session)~="table" or rawequal(rawget(session,"preview"),preview))
+                end)
+                return ok and same==true
+            end
+            local function renderContact(field,index)
+                if type(provider)~="function" then return true end
+                if not metadataCurrent() then return false end
+                local called,model=pcall(provider,self,definition,field,portraitCardCurrent)
+                if not metadataCurrent() then return false end
+                if not called or type(model)~="table" then return true end
+                local modelCurrent,modelRaw,dispatch=model.current,model.rawCurrent,model.dispatch
+                if type(modelCurrent)~="function" or type(modelRaw)~="function" or type(dispatch)~="function" then return false end
+                local validated,fresh=pcall(modelCurrent)
+                if not validated or fresh~=true or not metadataCurrent() then return false end
+                local point,action,mapOnly,purpose,reason=model.endpoint,model.action,model.mapOnly,model.purpose,model.reason
+                -- Item starts keep their existing readonly item name, inventory role and tooltip.
+                if not point or type(rawget(point,"itemID"))~="nil" or
+                    (type(rawget(point,"npcID"))=="nil" and type(rawget(point,"objectID"))=="nil") then return true end
+                local proofs,rawProofs,labels={},{},{}
+                local row,titleField,noteField,owner,mapInfo,mapName
+                local function baseCurrent()
+                    if not metadataCurrent() then return false end
+                    local checked,same=pcall(function()
+                        if model.current~=modelCurrent or model.rawCurrent~=modelRaw or model.dispatch~=dispatch or not rawequal(model.endpoint,point) or
+                            not rawequal(model.action,action) or not rawequal(model.mapOnly,mapOnly) or not rawequal(model.purpose,purpose) or not rawequal(model.reason,reason) then return false end
+                        if row and (contactPool[index]~=row or row.detailContactOwner~=owner or row.title~=titleField or row.note~=noteField or row.detailContactBinding~=model) then return false end
+                        if mapInfo and not rawequal(rawget(mapInfo,"name"),mapName) then return false end
+                        for _,s in ipairs(labels) do
+                            if not rawequal(rawget(strings,s[1]),s[2]) or (s[5] and not rawequal(rawget(s[2],s[3]),s[4])) then return false end
+                        end
+                        return modelRaw()==true
+                    end)
+                    return checked and same==true
+                end
+                local function current()
+                    if not baseCurrent() then return false end
+                    for _,proof in ipairs(rawProofs) do local ok,fresh=pcall(proof);if not ok or fresh~=true or not baseCurrent() then return false end end
+                    return baseCurrent()
+                end
+                local function liveCurrent()
+                    if not current() then return false end
+                    local ok,fresh=pcall(modelCurrent)
+                    if not ok or fresh~=true or not current() then return false end
+                    for _,proof in ipairs(proofs) do local checked,live=pcall(proof);if not checked or live~=true or not current() then return false end end
+                    return current()
+                end
+                local function safe(value,kind)
+                    if not baseCurrent() then return nil,false end
+                    local ok,result=pcall(clean,value,kind)
+                    if not ok or not baseCurrent() then return nil,false end
+                    return result,true
+                end
+                local function external(fn,kind,...)
+                    local callable,fresh=safe(fn,"function")
+                    if not fresh then return nil,false end
+                    if not callable then return nil,true end
+                    local ok,value,proof,rawProof=pcall(callable,...)
+                    if not baseCurrent() then return nil,false end
+                    if not ok then return nil,true end
+                    local result;result,fresh=safe(value,kind);if not fresh then return nil,false end
+                    local capability;capability,fresh=safe(proof,"function");if not fresh then return nil,false end
+                    if capability then
+                        local rawCapability;rawCapability,fresh=safe(rawProof,"function")
+                        if not fresh or not rawCapability then return nil,false end
+                        proofs[#proofs+1]=capability;rawProofs[#rawProofs+1]=rawCapability
+                    end
+                    return result,liveCurrent()
+                end
+                local locale,fresh=safe(choice,"string")
+                if not fresh then return false end
+                if not locale then local disabled;disabled,fresh=safe(choice,"boolean");if not fresh or (type(choice)~="nil" and disabled~=false) then return false end;locale="auto" end
+                local chosen;chosen,fresh=external(selection,"string",language);if not fresh then return false end;locale=chosen or locale
+                if locale=="auto" then locale,fresh=external(gameGetter,"string");if not fresh or not locale then return false end end
+                if locale=="enGB" then locale="enUS" elseif locale=="esMX" then locale="esES" end
+                local function copy(key,...)
+                    if not current() or type(strings)~="table" then return nil end
+                    local rawDictionary=rawget(strings,locale)
+                    local dictionary,live=safe(rawDictionary,"table");if not live then return nil end
+                    local expected=dictionary and rawget(dictionary,key)
+                    labels[#labels+1]={locale,rawDictionary,key,expected,dictionary~=nil}
+                    if not dictionary then local disabled;disabled,live=safe(rawDictionary,"boolean");if not live or (type(rawDictionary)~="nil" and disabled~=false) then return nil end end
+                    local missing=type(expected)=="nil"
+                    if not missing then local disabled;disabled,live=safe(expected,"boolean");if not live then return nil end;missing=disabled==false end
+                    if missing then
+                        local english=rawget(strings,"enUS");dictionary,live=safe(english,"table");if not live or not dictionary then return nil end
+                        expected=rawget(dictionary,key);labels[#labels+1]={"enUS",english,key,expected,true}
+                    end
+                    local text;text,live=external(localize,"string",key,...)
+                    if not live or not text or #text>4096 then return nil end
+                    return text
+                end
+                local name,zone
+                if point then
+                    name,fresh=external(nameGetter,"string",point,modelRaw);if not fresh then return false end
+                    if not name or not name:find("%S") or #name>1024 then
+                        local npc; npc,fresh=safe(rawget(point,"npcID"),"number");if not fresh then return false end
+                        if npc and type(rawget(point,"objectID"))=="nil" and type(rawget(point,"itemID"))=="nil" then
+                            name,fresh=external(legacyNameGetter,"string",point);if not fresh then return false end
+                        end
+                    end
+                    if not name or not name:find("%S") or #name>1024 then name,fresh=safe(rawget(point,"name"),"string") end
+                    if not fresh then return false end
+                    local canonical;canonical,fresh=safe(rawget(point,"zoneName"),"string");if not fresh then return false end
+                    if canonical and canonical:find("%S") and #canonical<=1024 then
+                        zone,fresh=external(areaGetter,"string",canonical,modelRaw);if not fresh then return false end
+                        if not zone or not zone:find("%S") or #zone>1024 then zone=canonical end
+                    end
+                end
+                if not zone then
+                    local ownMap;ownMap,fresh=safe(rawget(point,"mapID"),"number");if not fresh then return false end
+                    if ownMap then
+                        local info;info,fresh=external(mapGetter,"table",ownMap);if not fresh then return false end
+                        if info then
+                            mapInfo,mapName=info,rawget(info,"name")
+                            zone,fresh=safe(mapName,"string");if not fresh then return false end
+                            if zone and (not zone:find("%S") or #zone>1024) then zone=nil end
+                        end
+                    end
+                end
+                if not name or not name:find("%S") or #name>1024 then name=copy("UNKNOWN_PLACE") end
+                if not zone then zone=copy("UNKNOWN_PLACE") end
+                local itemID=point and safe(rawget(point,"itemID"),"number")
+                local heading=itemID and copy("ITEM_STARTER",name) or copy(field=="start" and "DETAIL_GIVER" or "DETAIL_TURNIN")
+                if not name or not zone or not heading or not liveCurrent() then return false end
+                local title=itemID and heading or heading..": "..name
+                local existing=contactPool[index]
+                if not existing then
+                    local staged={}
+                    existing=make(self,self.detail,staged,1,52,sourceCallback(current),true)
+                    if not current() or contactPool[index] then
+                        if staged[1]==existing and type(nativeHide)=="function" then pcall(nativeHide,existing) end
+                        return false
+                    end
+                    contactPool[index]=existing
+                end
+                row,titleField,noteField,owner=existing,existing.title,existing.note,{}
+                row.detailContactOwner,row.detailContactBinding=owner,model
+                local function write(object,method,...)return sourceWrite(current,object,method,nil,...)end
+                if not current() or not write(row.title,"SetWidth",contentWidth-16) or not write(row.note,"SetWidth",contentWidth-16) or
+                    not write(row,"SetWidth",contentWidth) or not write(row.title,"SetText",title) or not write(row.note,"SetText",zone) or
+                    not write(row,"SetEnabled",action~=nil) or not write(row,"SetScript","OnClick",action and function()
+                        if not liveCurrent() then return end
+                        local ok,visited=pcall(dispatch)
+                        if not ok or visited~=true or not liveCurrent() then return end
+                        if point and rawget(point,"reportedLocations")~=nil then reportedState[field]=true end
+                        self.detailContactExpanded=field
+                        self:RefreshDetail()
+                    end or nil) then return false end
+                local nextY=layoutRow(self,row,52,y,current,function(object,method,...)return sourceGeometryWrite(current,object,method,...)end)
+                if not nextY or not liveCurrent() or not write(row,"Show") then return false end
+                y=nextY;contactRendered[field]=true
+                if self.detailContactExpanded==field then
+                    if point and rawget(point,"reportedLocations")~=nil then if reported(point,field,current)==false then return false end end
+                    local alternatives=rawget(definition,field.."Alternatives")
+                    if type(alternatives)=="table" and #alternatives>0 then
+                        local buttons=field=="start" and self.startButtons or self.finishButtons
+                        if alternativePlaces(alternatives,buttons,field=="start" and "START_ALTERNATIVES" or "POSSIBLE_TURNINS","contact:"..field..":",current)==false then return false end
+                    end
+                end
+                return liveCurrent()
+            end
+            if not renderContact("start",1) then return end
+            renderContactFinish=function()return renderContact("finish",2)end
+        end end
         local pendingStarterCarried
         if detailTab ~= "story" then
         if not primaryCurrent() then return end
         self.giverUnavailableKey = unknownStart and "QUEST_START_UNKNOWN" or itemStarter and "START_ITEM_LOCATION_UNKNOWN" or (q.startAlternatives ~= nil and not isEmptyAlternatives(q.startAlternatives)) and "GIVER_CHOICES_REQUIRED" or "GIVER_LOCATION_UNKNOWN"
         if unknownStart and not primaryLabel("SOURCE_DETAILS", unknownStartCurrent) then return end
-        if not itemStarter and line(addon.L(unknownStart and "SOURCE_DETAILS" or "DETAIL_GIVER"), "caption", nil, nil, unknownStart and unknownStartCurrent or portraitCardCurrent, not start and q.startAlternatives ~= nil and not isEmptyAlternatives(q.startAlternatives)) == false then return end
+        if not contactRendered.start and not itemStarter and line(addon.L(unknownStart and "SOURCE_DETAILS" or "DETAIL_GIVER"), "caption", nil, nil, unknownStart and unknownStartCurrent or portraitCardCurrent, not start and q.startAlternatives ~= nil and not isEmptyAlternatives(q.startAlternatives)) == false then return end
         if start and not invalidItemStart then
             local nameProofs = {}
             local giverFields = { "npcID", "objectID", "itemID", "name", "zoneName", "locationName", "mapID", "x", "y" }
@@ -4121,7 +4565,7 @@ function UI:RefreshDetail(sourceFocus)
                 end
             end
             local giverInlinePlaced = description and description ~= addon.L("UNKNOWN_PLACE")
-            if giverInlinePlaced and line(description, nil, nil, starterBinding, giverCurrent, not itemStarter and not declaredSummon) == false then return end
+            if not contactRendered.start and giverInlinePlaced and line(description, nil, nil, starterBinding, giverCurrent, not itemStarter and not declaredSummon) == false then return end
             if starterCarried then
                 local duplicateCandidate = false
                 if detailTab == "quest" then
@@ -4151,7 +4595,7 @@ function UI:RefreshDetail(sourceFocus)
                 local warning = pendingGiver and "GIVER_COORDINATES_UNKNOWN" or
                     area and area:find("%S") and "SOURCE_POSITION_UNKNOWN" or "GIVER_LOCATION_UNKNOWN"
                 self.giverUnavailableKey = warning
-                if line(addon.L(warning), "warning", nil, nil, giverCurrent, not giverInlinePlaced) == false then return end
+                if line(addon.L(warning), "warning", nil, nil, giverCurrent, not contactRendered.start and not giverInlinePlaced) == false then return end
             end
         elseif q.startAlternatives ~= nil and not isEmptyAlternatives(q.startAlternatives) then
             local alternatives = q.startAlternatives
@@ -4167,12 +4611,11 @@ function UI:RefreshDetail(sourceFocus)
                 for index, point in ipairs(snapshot) do if alternatives[index] ~= point then return false end end
                 return portraitCardCurrent()
             end
-            if detailTab == "sources" then
-                if alternativePlaces(preview, self.giverButtons, "START_ALTERNATIVES", "giverAlternative:", giverCurrent) == false then return end
-                if #remaining > 0 and alternativePlaces(remaining, self.startButtons, nil, "startAlternative:", giverCurrent) == false then return end
-            elseif line(addon.L("GIVER_CHOICES_REQUIRED"),"caption",nil,nil,giverCurrent) == false then return end
-        elseif line(addon.L(unknownStart and "QUEST_START_UNKNOWN" or "GIVER_LOCATION_UNKNOWN"), "warning", nil, nil, unknownStart and unknownStartCurrent or portraitCardCurrent, true) == false then return end
+            if alternativePlaces(preview,self.giverButtons,"START_ALTERNATIVES","giverAlternative:",giverCurrent)==false then return end
+            if #remaining>0 and alternativePlaces(remaining,self.startButtons,nil,"startAlternative:",giverCurrent)==false then return end
+        elseif line(addon.L(unknownStart and "QUEST_START_UNKNOWN" or "GIVER_LOCATION_UNKNOWN"), "warning", nil, nil, unknownStart and unknownStartCurrent or portraitCardCurrent, not contactRendered.start) == false then return end
         do
+            if renderContactFinish and not renderContactFinish()then return end
             local finish = addon.Clean(q.finish, "table")
             local nameProofs = {}
             local fields, values, startingValues = { "npcID", "objectID", "itemID", "name", "zoneName", "mapID", "x", "y" }, {}, {}
@@ -4227,7 +4670,9 @@ function UI:RefreshDetail(sourceFocus)
                                     coordinates = x ~= nil and gy ~= nil and x >= 0 and x <= 100 and gy >= 0 and gy <= 100 }
                             end
                         end
-                        if line(addon.L("DETAIL_TURNIN") .. ": " .. ending, "caption", nil, nil, endingCurrent,
+                        if contactRendered.finish then
+                            if pendingTurnin and line(addon.L("VISIT_TURNIN"),"caption",nil,nil,endingCurrent,self.turnin)==false then return end
+                        elseif line(addon.L("DETAIL_TURNIN") .. ": " .. ending, "caption", nil, nil, endingCurrent,
                             pendingTurnin and self.turnin) == false then return end
                         local area = addon.Clean(values.zoneName, "string")
                         local map, x, gy = addon.Clean(values.mapID, "number"), addon.Clean(values.x, "number"), addon.Clean(values.y, "number")
@@ -4257,6 +4702,7 @@ function UI:RefreshDetail(sourceFocus)
             end
         end
         end
+        if contactRendered.start and pendingGiver then pendingGiver.contact = true end
         local actions, uncertain = engine:Next(id)
         local action = actions[1]
         local character = addon.char
@@ -4360,16 +4806,6 @@ function UI:RefreshDetail(sourceFocus)
                         return ok and same == true
                     end
                     if not cueCurrent() then return end
-                    if not control then
-                        local candidate = CreateFrame("Button", nil, self.detail); candidate:Hide()
-                        candidate.label = label(candidate, "", 4, -3, contentWidth - 8, 13)
-                        candidate:SetHighlightTexture("Interface\\QuestFrame\\UI-QuestTitleHighlight")
-                        if not cueCurrent() then return end
-                        control = candidate; self.ancestorActionButton = control
-                    end
-                    local function write(object, method, ...) return self:QuestListWrite(object, method, cueCurrent, ...) end
-                    setFont(control.label, 13)
-                    if not cueCurrent() then return end
                     local name = reader(names, "string", actionID)
                     if not cueCurrent() then return end
                     local targetName = reader(names, "string", id)
@@ -4380,23 +4816,14 @@ function UI:RefreshDetail(sourceFocus)
                     if not cueCurrent() then return end
                     if name and prefix and status then
                         local text = prefix .. ": " .. name .. " — " .. status
-                        if not write(control.label,"SetWidth",contentWidth - 8) or not write(control.label,"SetText",text) or
-                            not write(control.label,"SetTextColor",.53,.77,1) then return end
-                        local height = math.max(22, measuredHeight(control.label,16) + 6)
-                        if not cueCurrent() or not write(control,"SetSize",contentWidth,height) or not write(control,"ClearAllPoints") or
-                            not write(control,"SetPoint","TOPLEFT",4,-y) or not write(control,"SetEnabled",true) or
-                            not write(control,"SetScript","OnClick",function()
-                                if reader(frame.IsShown,"boolean",frame) ~= true or reader(control.IsShown,"boolean",control) ~= true or
-                                    not cueCurrent() or self.action ~= action then return end
-                                inspect(self,actionID,true)
-                            end) or not write(control,"Show") then return end
-                        y = y + height + 6
+                        if line(text,"caption",nil,nil,cueCurrent)==false then return end
                     end
                 end
             end
         end
         end
         local function acquisitionPortraits(sourceOnly)
+        local nativePortraitShown=false
         local portraitSetter, portraitChecker = addon.Clean(SetPortraitTextureFromCreatureDisplayID, "function"), issecretvalue
         local function renderPortrait(field, displayID, caption, current)
             if not displayID or displayID <= 0 or displayID > 4294967295 or displayID % 1 ~= 0 or self.portraitRenderBusy then return true end
@@ -4449,14 +4876,15 @@ function UI:RefreshDetail(sourceFocus)
                 texture:SetPoint("TOPLEFT", 4, -y)
                 if not imageCurrent() then return retireOwnedImage() end
                 if not sourceWrite(imageCurrent, texture, "Show", nil) or not imageCurrent() then return retireOwnedImage() end
-                y = y + 64 + 8
+                y=y+64+8
+                if field=="portrait"then nativePortraitShown=true end
             else
                 self.portraitRenderBusy = true; pcall(texture.SetTexture, texture, nil); self.portraitRenderBusy = nil
                 if not imageCurrent() then return retireOwnedImage() end
             end
             return true
         end
-        if not sourceOnly then
+        if not sourceOnly or sourceOnly=="stream"then
         local completionProvider, dialoguePortrait, questPortrait = addon.DialogueTurnInPortrait, addon.DialoguePortrait, addon.QuestPortrait
         local completionCapability = addon.Clean(completionProvider, "function")
         local completionDB, completionLocaleGetter = addon.db, GetLocale
@@ -4521,7 +4949,7 @@ function UI:RefreshDetail(sourceFocus)
         if validCompletion and not completionCurrent() then return end
         if not renderPortrait("portrait", displayID, nativeCaption, nativeCurrent) then return end
         end
-        if sourceOnly then
+        if sourceOnly and not nativePortraitShown then
         local producer = addon.GiverPortrait
         local fieldTypes = { npcID = "number", objectID = "number", itemID = "number", dropNPCID = "number",
             creatureDisplayID = "number", portraitSource = "string", name = "string", mapID = "number", x = "number", y = "number", zoneName = "string" }
@@ -5348,6 +5776,7 @@ function UI:RefreshDetail(sourceFocus)
             end
         end
         end
+        local renderDialogueText,streamDescription
         if detailTab == "quest" then
         local rewards, rewardOrigin = rewardData(id)
         local items = rewards and addon.Clean(rewards.items, "table")
@@ -5434,15 +5863,31 @@ function UI:RefreshDetail(sourceFocus)
             end
             if #gains > 0 and line(table.concat(gains, " · "), "caption", nil, nil, gainsCurrent) == false then return end
         end
-        do
-            local getter, checker, localize = addon.Clean(addon.DialogueText, "function"), issecretvalue, addon.L
+        renderDialogueText=function()
+            local clean,reader=addon.Clean,addon.Read
+            local getter,checker,localize=clean(addon.DialogueText,"function"),issecretvalue,addon.L
+            local function capturedRead(fn,kind,...)
+                local function owned()
+                    return addon.Clean==clean and addon.Read==reader and issecretvalue==checker and
+                        addon.DialogueText==getter and addon.L==localize
+                end
+                if not owned()then return nil end
+                local ok,callable=pcall(clean,fn,"function")
+                if not ok or not owned()or not callable then return nil end
+                local good,result=pcall(callable,...)
+                if not owned()or not good then return nil end
+                local valid,value=pcall(clean,result,kind)
+                if not valid or not owned()then return nil end
+                return value
+            end
             if getter then
                 local database, selectedLocale, localeGetter = addon.db, addon.db.locale, GetLocale
-                local gameLocale = addon.Read(localeGetter, "string")
+                local gameLocale = capturedRead(localeGetter, "string")
                 local engineGetter = renderEngine and renderEngine.Current
                 local function baseCurrent()
-                    local language = addon.Read(localeGetter, "string")
-                    local fresh = engineGetter == nil or addon.Read(engineGetter, "boolean", renderEngine) == true
+                    if addon.Clean~=clean or addon.Read~=reader or issecretvalue~=checker then return false end
+                    local language = capturedRead(localeGetter, "string")
+                    local fresh = engineGetter == nil or capturedRead(engineGetter, "boolean", renderEngine) == true
                     local ok, same = pcall(function()
                         return fresh and portraitCardCurrent() and addon.quests[id] == definition and rawget(q, "id") == id and
                             addon.DialogueText == getter and issecretvalue == checker and addon.L == localize and
@@ -5451,14 +5896,14 @@ function UI:RefreshDetail(sourceFocus)
                     end)
                     return ok and same == true
                 end
-                local result = addon.Read(getter, "table", id, baseCurrent)
-                if not portraitCardCurrent() then return end
-                if result and baseCurrent() then
-                    local source, stage, text, proof = addon.Clean(rawget(result, "source"), "string"),
-                        addon.Clean(rawget(result, "stage"), "string"), addon.Clean(rawget(result, "text"), "string"),
-                        addon.Clean(rawget(result, "current"), "function")
+                local result = capturedRead(getter, "table", id, baseCurrent)
+                if addon.Clean~=clean or addon.Read~=reader or issecretvalue~=checker or not portraitCardCurrent() then return false end
+                if result and baseCurrent() and addon.Clean==clean and addon.Read==reader then
+                    local source, stage, text, proof = clean(rawget(result, "source"), "string"),
+                        clean(rawget(result, "stage"), "string"), clean(rawget(result, "text"), "string"),
+                        clean(rawget(result, "current"), "function")
                     local function dialogueCurrent()
-                        if not baseCurrent() or addon.Read(proof, "boolean") ~= true or not baseCurrent() then return false end
+                        if not baseCurrent() or capturedRead(proof, "boolean") ~= true or not baseCurrent() then return false end
                         local ok, same = pcall(function()
                             return portraitCardCurrent() and addon.quests[id] == definition and rawget(q, "id") == id and
                                 rawget(result, "source") == source and rawget(result, "stage") == stage and
@@ -5469,11 +5914,11 @@ function UI:RefreshDetail(sourceFocus)
                         end)
                         return ok and same == true
                     end
-                    if not portraitCardCurrent() then return end
+                    if addon.Clean~=clean or addon.Read~=reader or issecretvalue~=checker or not portraitCardCurrent() then return false end
                     if source == "dialogue" and (stage == "progress" or stage == "completion") and proof and
-                        text and #text <= 30000 and text:find("%S") and dialogueCurrent() then
-                        local heading = addon.Read(localize, "string", stage == "progress" and "DIALOGUE_PROGRESS_TEXT" or "DIALOGUE_TURNIN_TEXT")
-                        if not portraitCardCurrent() then return end
+                        text and #text<=30000 and text:find("%S") and text~=streamDescription and dialogueCurrent()then
+                        local heading = capturedRead(localize, "string", stage == "progress" and "DIALOGUE_PROGRESS_TEXT" or "DIALOGUE_TURNIN_TEXT")
+                        if addon.Clean~=clean or addon.Read~=reader or issecretvalue~=checker or not portraitCardCurrent() then return false end
                         if heading and dialogueCurrent() then
                             if line(heading, "section", nil, nil, dialogueCurrent) == false or
                                 line(text, nil, nil, nil, dialogueCurrent) == false then return end
@@ -5481,6 +5926,7 @@ function UI:RefreshDetail(sourceFocus)
                     end
                 end
             end
+            return addon.Clean==clean and addon.Read==reader and issecretvalue==checker and portraitCardCurrent()
         end
         end
         local function acquisitionItems(summary)
@@ -5516,7 +5962,7 @@ function UI:RefreshDetail(sourceFocus)
             return ok and same == true
         end
         if not summary then
-        if q.startAlternatives ~= nil and not isEmptyAlternatives(q.startAlternatives) and start then
+        if not (contactRendered.start and self.detailContactExpanded == "start") and q.startAlternatives ~= nil and not isEmptyAlternatives(q.startAlternatives) and start then
             local alternatives, remaining, snapshot = q.startAlternatives, {}, {}
             local count = #alternatives
             local previewCount = not start and math.min(count, 2) or 0
@@ -5534,9 +5980,11 @@ function UI:RefreshDetail(sourceFocus)
             if #remaining > 0 and alternativePlaces(remaining, self.startButtons, heading, "startAlternative:", alternativesCurrent) == false then return end
         elseif q.startAlternatives == nil or isEmptyAlternatives(q.startAlternatives) then
             if typedStarter and not starterCurrent() then return end
-            local starting = place(q.start)
-            if not starting or (typedStarter and not starterCurrent()) then return end
-            if reported(q.start, "start") == false then return end
+            if not contactRendered.start then
+                local starting = place(q.start)
+                if not starting or (typedStarter and not starterCurrent()) then return end
+            end
+            if not self.detailContactExpanded and reported(q.start, "start") == false then return end
         end
         local start = q.start
         if start and start.itemID then
@@ -5717,7 +6165,7 @@ function UI:RefreshDetail(sourceFocus)
             if not summary and #mappedDrops > 0 and alternativePlaces(mappedDrops, self.dropButtons, "ITEM_DROP_LOCATIONS", "dropSource:", acquisitionCurrent) == false then return end
         end
         if summary then return true end
-        if q.finishAlternatives ~= nil and not isEmptyAlternatives(q.finishAlternatives) then
+        if not (contactRendered.finish and self.detailContactExpanded == "finish") and q.finishAlternatives ~= nil and not isEmptyAlternatives(q.finishAlternatives) then
             local finishes = q.finishAlternatives
             local count = #finishes
             local function finishesCurrent()
@@ -5737,7 +6185,7 @@ function UI:RefreshDetail(sourceFocus)
                     if not repeated then break end
                 end
             end
-            if not repeated and reported(q.finish, "finish") == false then return end
+            if not self.detailContactExpanded and not repeated and reported(q.finish, "finish") == false then return end
         end
         local materialSource, materialGetter = q.completionQuests, engine.CompletionSteps
         local materialRows, materialCount = addon.Clean(materialSource,"table"), 0
@@ -5800,44 +6248,92 @@ function UI:RefreshDetail(sourceFocus)
                 local note = "|cff" .. COLOR[status] .. statusLabel(state) .. "|r\n" .. itemName ..
                     (addon.Clean(rawUnknown,"boolean") == true and status ~= "UNKNOWN" and (" — " .. addon.L("UNKNOWN")) or "") ..
                     (count and ("\n" .. count) or "")
-                local row = self:MakeRow(self.detail, buttons, index, 59, sourceCallback(entryCurrent), true)
-                if not entryCurrent() then return end
-                row.questID, row.itemID = other, itemID
-                local function rowCurrent()
-                    return entryCurrent() and self.materialButtons == buttons and buttons[index] == row and row.questID == other and row.itemID == itemID
-                end
-                local function write(object,method,...)return sourceWrite(rowCurrent,object,method,nil,...)end
-                if not write(row.title,"SetText",title) or not write(row.note,"SetText",note) or not write(row,"SetEnabled",true) or
-                    not write(row,"SetScript","OnClick",function()
-                        if rowCurrent() and addon.Read(materialFrame.IsShown,"boolean",materialFrame) == true and rowCurrent() then inspector(self,other) end
-                    end) then return end
-                local nextY = self:LayoutRow(row,59,y,rowCurrent,write)
-                if not nextY or not write(row,"Show") then return end
-                y = nextY
+                if line(title,"caption",nil,nil,entryCurrent)==false or line(note,nil,nil,nil,entryCurrent)==false then return end
             end
         end
         return true
         end
-        if detailTab == "quest" then
-            if not acquisitionPortraits(false) then return end
-            if itemStarter and not acquisitionItems(true) then return end
-        elseif detailTab == "sources" then
-            if not acquisitionPortraits(true) or not acquisitionObjectives() or not acquisitionItems() then return end
-        else
-            local getter, localize, checker, database = addon.Description, addon.L, issecretvalue, addon.db
-            local locale = database and rawget(database,"locale")
+        if not acquisitionPortraits("stream") or not acquisitionObjectives() or not acquisitionItems()then return end
+        do
+            local getter,clean,reader,checker,localize=addon.Description,addon.Clean,addon.Read,issecretvalue,addon.L
+            local database,language,strings,gameGetter=addon.db,addon.Language,addon.locales,GetLocale
+            local choice=type(database)=="table"and rawget(database,"locale")
+            local session=type(language)=="table"and rawget(language,"session")
+            local preview=type(session)=="table"and rawget(session,"preview")
+            local selection=type(language)=="table"and rawget(language,"GetSelection")
+            local labels={}
+            local catalogue=addon.quests
             local function current()
-                return portraitCardCurrent() and addon.quests[id] == definition and addon.Description == getter and addon.L == localize and
-                    issecretvalue == checker and addon.db == database and (not database or rawget(database,"locale") == locale)
+                local function readable(value)
+                    if addon.Clean~=clean or addon.Read~=reader or issecretvalue~=checker then return false end
+                    if type(checker)=="function"then
+                        local ok,restricted=pcall(checker,value)
+                        if not ok or restricted~=false or addon.Clean~=clean or addon.Read~=reader or issecretvalue~=checker then return false end
+                    end
+                    return true
+                end
+                if addon.Clean~=clean or addon.Read~=reader or issecretvalue~=checker or not portraitCardCurrent()then return false end
+                if not readable(choice)or not readable(session)or not readable(preview)or not readable(selection)or
+                    not readable(database)or not readable(language)or not readable(strings)or not readable(addon.quests)or
+                    not readable(catalogue)or not readable(rawget(catalogue,id))then return false end
+                if type(database)=="table"and not readable(rawget(database,"locale"))then return false end
+                if type(language)=="table"and(not readable(rawget(language,"session"))or not readable(rawget(language,"GetSelection")))then return false end
+                if type(session)=="table"and not readable(rawget(session,"preview"))then return false end
+                for _,v in ipairs(labels)do
+                    if not readable(v[2])or not readable(v[4])or not readable(rawget(strings,v[1]))or
+                        (v[5]and not readable(rawget(v[2],v[3])))then return false end
+                end
+                local ok,same=pcall(function()
+                    if addon.quests~=catalogue or rawget(catalogue,id)~=definition or addon.Clean~=clean or addon.Description~=getter or addon.Clean~=clean or addon.Read~=reader or issecretvalue~=checker or
+                        addon.L~=localize or addon.db~=database or addon.Language~=language or addon.locales~=strings or GetLocale~=gameGetter or
+                        (type(database)=="table"and not rawequal(rawget(database,"locale"),choice))or
+                        (type(language)=="table"and(not rawequal(rawget(language,"session"),session)or not rawequal(rawget(language,"GetSelection"),selection)))or
+                        (type(session)=="table"and not rawequal(rawget(session,"preview"),preview))then return false end
+                    for _,v in ipairs(labels)do
+                        if not rawequal(rawget(strings,v[1]),v[2])or(v[5]and not rawequal(rawget(v[2],v[3]),v[4]))then return false end
+                    end
+                    return true
+                end)
+                return ok and same==true
             end
-            local text = addon.Read(getter,"string",id)
-            local placeholder = addon.Read(localize,"string","NO_TEXT")
-            if not current() then return end
-            if not text or #text > 30000 or not text:find("%S") or text == placeholder then
-                text = addon.Read(localize,"string","DETAIL_STORY_UNAVAILABLE")
+            local function safe(value,kind)
+                if not current()then return nil,false end
+                local ok,result=pcall(clean,value,kind)
+                if not ok or not current()then return nil,false end
+                return result,true
             end
-            if not current() or not text or line(text,"story",nil,nil,current) == false then return end
+            local function external(fn,kind,...)
+                local callable,live=safe(fn,"function");if not live then return nil,false end
+                if not callable then return nil,true end
+                local ok,result=pcall(callable,...)
+                if not current()then return nil,false end
+                if not ok then return nil,true end
+                return safe(result,kind)
+            end
+            local locale,live=external(selection,"string",language);if not live then return end
+            if not locale then locale,live=safe(choice,"string");if not live then return end end
+            if not locale or locale=="auto"then locale,live=external(gameGetter,"string");if not live then return end end
+            locale=locale or"enUS"
+            local rawDictionary=type(strings)=="table"and rawget(strings,locale)
+            local dictionary;dictionary,live=safe(rawDictionary,"table");if not live then return end
+            local expected=dictionary and rawget(dictionary,"NO_TEXT")
+            labels[#labels+1]={locale,rawDictionary,"NO_TEXT",expected,dictionary~=nil}
+            local missing=type(expected)=="nil"
+            if not missing then local disabled;disabled,live=safe(expected,"boolean");if not live then return end;missing=disabled==false end
+            if missing then
+                local english=type(strings)=="table"and rawget(strings,"enUS")
+                dictionary,live=safe(english,"table");if not live then return end
+                expected=dictionary and rawget(dictionary,"NO_TEXT")
+                labels[#labels+1]={"enUS",english,"NO_TEXT",expected,dictionary~=nil}
+            end
+            local text;text,live=external(getter,"string",id);if not live then return end
+            local placeholder;placeholder,live=external(localize,"string","NO_TEXT");if not live then return end
+            if text and #text<=30000 and text:find("%S")and text~=placeholder then
+                streamDescription=text
+                if line(text,"story",nil,nil,current)==false then return end
+            end
         end
+        if renderDialogueText and not renderDialogueText()then return end
         self:SetFooterEnabled(self.source, true)
     else
         self:SetFooterEnabled(self.source, false)
@@ -6002,7 +6498,9 @@ function UI:RefreshDetail(sourceFocus)
     end
     if self.quest ~= renderQuest or self.dungeon ~= renderDungeon or self.rewardGeneration ~= rewardGeneration or
         self.engine ~= renderEngine or addon.char ~= renderCharacter then return end
-    hideRest(pool, n)
+    for index=n+1,#pool do
+        if not sourceWrite(portraitCardCurrent,pool[index],"Hide")then return end
+    end
     self.detail:SetHeight(math.max(1, y + 12))
     self:ApplyTheme()
     local fresh = not pendingAction or not renderEngine.Current or addon.Read(renderEngine.Current, "boolean", renderEngine) == true
@@ -6037,8 +6535,25 @@ function UI:RefreshDetail(sourceFocus)
                     and addon.Clean(giverPlace.x, "number") == pendingGiver.x and addon.Clean(giverPlace.y, "number") == pendingGiver.y and primaryCurrent()
             end)
             self.giverBinding = binding
-            if not primaryLabel(pendingGiver.coordinates and "VISIT_GIVER" or "GIVER_MAP", binding.current) or
-                not primaryEnabled(true, binding.current) then return end
+            if not pendingGiver.contact then
+                local dispatch,clean,reader,checker=self.DispatchDetail,addon.Clean,addon.Read,issecretvalue
+                local controlShown,frameShown=primaryGiver.IsShown,self.frame.IsShown
+                local function clickCurrent()
+                    return self.DispatchDetail==dispatch and addon.Clean==clean and addon.Read==reader and issecretvalue==checker and
+                        primaryGiver.IsShown==controlShown and self.frame.IsShown==frameShown and binding.current()
+                end
+                if not sourceWrite(binding.current,primaryGiver,"SetScript",nil,"OnClick",function()
+                    if not clickCurrent() then return end
+                    for _,target in ipairs({{frameShown,self.frame},{controlShown,primaryGiver}}) do
+                        local ok,shown=pcall(target[1],target[2])
+                        if not ok or not clickCurrent() then return end
+                        local checked,visible=pcall(clean,shown,"boolean")
+                        if not checked or visible~=true or not clickCurrent() then return end
+                    end
+                    dispatch(self,binding.action,not pendingGiver.coordinates,true,binding.current)
+                end) or not primaryLabel(pendingGiver.coordinates and "VISIT_GIVER" or "GIVER_MAP",binding.current) or
+                    not primaryEnabled(true,binding.current) then return end
+            end
         end
     end
     if pendingTurnin and pendingTurnin.current() and pendingAction and pendingAction.kind == "turnin" and
@@ -6272,11 +6787,7 @@ function UI:Create()
     if addon.Theme and addon.Theme.StyleFilter then addon.Theme.StyleFilter(self.overviewMapControl, false) end
     self.source = button(self.detail, "", 32, function() if self.quest then self:CopyLink(self.quest) end end)
     self.source:SetPoint("TOPRIGHT", self.detail, "TOPRIGHT", -4, 0)
-    self.giver = button(self.detail, "", 32, function()
-        if self.giverAction then
-            self:DispatchDetail(self.giverAction, not self.giverHasCoordinates, true)
-        end
-    end)
+    self.giver = button(self.detail, "", 32, function() end)
     self.turnin = button(self.detail, "", 24, function() end)
     self:SetFooterLabel(self.turnin, "VISIT_TURNIN")
     self.turnin:Hide(); self.turnin:SetEnabled(false)

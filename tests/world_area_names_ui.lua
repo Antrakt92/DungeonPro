@@ -12,7 +12,7 @@ local function provider(name,owner)
  local locale=a.db.locale;local label=locale=="ruRU"and labels[name]
  local function current()return a.SourceAreaName==provider and a.db.locale==locale and
   (not label or labels[name]==label)end
- return label,current
+ return label,current,current -- callback-free identity/locale/label proof also supplies the raw capability
 end
 a.SourceAreaName=provider;a.db.locale="ruRU"
 C_Map.GetMapInfo=function()return{name="Opposite native area"}end
@@ -23,6 +23,15 @@ local function render(id,tab)
 end
 local function visible(text)
  for _,field in ipairs(ui.details)do if field:IsShown()and field.text and field.text:find(text,1,true)then return true end end
+ for index,row in ipairs(ui.detailContactRows or{})do
+  local binding=row.detailContactBinding
+  if row:IsShown()and binding and binding.questID==ui.quest and binding.field==(index==1 and "start"or"finish")and
+   binding.endpoint==a.quests[ui.quest][binding.field]and binding.current()then
+   for _,field in ipairs({row.title,row.note})do
+    if field:IsShown()and field.text and field.text:find(text,1,true)then return field end
+   end
+  end
+ end
 end
 render(2933,"sources")
 local alternatives=a.quests[2933].startAlternatives

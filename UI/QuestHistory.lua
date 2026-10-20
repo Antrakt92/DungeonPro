@@ -16,42 +16,24 @@ function UI:HistoryOffsets()
 end
 
 function UI:SetDetailTab(key)
-    key = addon.Clean(key,"string")
-    if key ~= "quest" and key ~= "sources" and key ~= "story" then return false end
-    local quest, dungeon, character, engine, frame = self.quest, self.dungeon, addon.char, self.engine, self.frame
-    local previous, revision, refresh, renderGeneration = self.detailTab, self.detailTabRevision, self.RefreshDetail, self.rewardGeneration
-    local offsets, scroll, reader = self.detailTabOffsets, self.detailScroll, addon.Read
-    local definition = quest and addon.quests[quest]
-    local getter, currentGetter = scroll and scroll.GetVerticalScroll, engine and engine.Current
+    local clean, checker, helper = addon.Clean, issecretvalue, self.SetDetailTab
+    local quest, dungeon, character, frame = self.quest, self.dungeon, addon.char, self.frame
+    local revision, generation = self.detailTabRevision, self.rewardGeneration
+    local tab, offsets, navigation, engine = self.detailTab, self.detailTabOffsets, self.detailNavigationRevision, self.engine
     local function current()
-        return addon.UI == self and self.quest == quest and self.dungeon == dungeon and addon.char == character and self.engine == engine and
-            self.frame == frame and self.rewardGeneration == renderGeneration and self.detailTab == previous and self.detailTabRevision == revision and self.RefreshDetail == refresh and
-            self.detailTabOffsets == offsets and self.detailScroll == scroll and scroll.GetVerticalScroll == getter and addon.Read == reader and
-            addon.quests[quest] == definition and engine.Current == currentGetter
+        return addon.UI == self and self.SetDetailTab == helper and helper == UI.SetDetailTab and
+            addon.Clean == clean and issecretvalue == checker and self.quest == quest and self.dungeon == dungeon and
+            addon.char == character and self.frame == frame and self.detailTabRevision == revision and self.rewardGeneration == generation and
+            self.detailTab == tab and self.detailTabOffsets == offsets and self.detailNavigationRevision == navigation and self.engine == engine
     end
-    if not quest or not frame or not engine or not scroll or not current() then return false end
-    if previous == key then return true end
-    local intent = {}; revision = intent; self.detailTabRevision = intent
-    if reader(frame.IsShown,"boolean",frame) ~= true or not current() then return false end
-    if currentGetter and reader(currentGetter,"boolean",engine) ~= true then return false end
-    local offset = reader(getter,"number",scroll)
     if not current() then return false end
-    if offset and offset >= 0 and type(offsets) == "table" then offsets[previous] = offset end
-    self.detailTab = key
-    local generation = refresh(self)
-    local function fresh()
-        return addon.UI == self and self.quest == quest and self.dungeon == dungeon and addon.char == character and self.engine == engine and
-            self.frame == frame and self.detailTab == key and self.detailTabRevision == intent and self.RefreshDetail == refresh and
-            self.detailTabOffsets == offsets and self.detailScroll == scroll and self.rewardGeneration == generation
+    key = clean(key, "string")
+    if not current() or (key ~= "quest" and key ~= "sources" and key ~= "story") then return false end
+    -- Legacy callers share one reading stream; no mode, refresh or scroll change.
+    if self.detailTab ~= "quest" then
+        self.detailTab, self.detailTabOffsets, self.detailTabRevision = "quest", {}, {}
     end
-    if not generation or not fresh() then return false end
-    local desired = offsets and addon.Clean(offsets[key],"number") or 0
-    local content, viewport = reader(self.detail.GetHeight,"number",self.detail), reader(scroll.GetHeight,"number",scroll)
-    if not fresh() then return false end
-    if content and content >= 0 and viewport and viewport > 0 then
-        return self:WriteDetailScroll(scroll,math.min(math.max(0,desired or 0),math.max(0,content-viewport)),fresh)
-    end
-    return fresh()
+    return true
 end
 
 function UI:InspectQuest(id, refreshList, sourceFocus)
@@ -73,8 +55,7 @@ function UI:InspectQuest(id, refreshList, sourceFocus)
                 self.detailTab ~= tab or self.detailTabRevision ~= tabRevision or self.detailTabOffsets ~= tabOffsets or
                 scroll.GetVerticalScroll ~= getter or issecretvalue ~= checker then return false end
             history[#history + 1] = previous
-            offsets[#history] = { quest = previous, offset = offset and offset >= 0 and offset or nil, tab = tab,
-                tabOffsets = tabOffsets, character = character }
+            offsets[#history] = { quest = previous, offset = offset and offset >= 0 and offset or nil, character = character }
             if #history > 20 then
                 table.remove(history, 1)
                 for index = 1, #history do offsets[index] = offsets[index + 1] end
@@ -111,10 +92,8 @@ function UI:BackQuest()
     local revision = {}
     self.detailNavigationRevision = revision
     self.quest = previous
-    local savedTab = saved and saved.quest == previous and saved.character == character and
-        (saved.tab == "quest" or saved.tab == "sources" or saved.tab == "story") and saved.tab or "quest"
     self.detailTabQuest, self.detailTabDungeon, self.detailTabCharacter = previous, dungeon, character
-    self.detailTab, self.detailTabOffsets, self.detailTabRevision = savedTab, saved and savedTab == saved.tab and saved.tabOffsets or {}, {}
+    self.detailTab, self.detailTabOffsets, self.detailTabRevision = "quest", {}, {}
     local tab, tabRevision = self.detailTab, self.detailTabRevision
     local frame, scroll, tabOffsets = self.frame, self.detailScroll, self.detailTabOffsets
     local preparation, includeUnavailable, range, search = self.preparation, self.includeUnavailable, self.range, self.search
