@@ -3590,7 +3590,7 @@ function UI:RefreshDetail(sourceFocus)
                 local title = giverName(destination, current, nameProofs)
                 if not current() then return false end
                 local mapID = addon.Clean(destination.mapID, "number")
-                local validMap = mapID ~= nil and mapID > 0 and mapID % 1 == 0
+                local validMap = mapID ~= nil and mapID > 0 and mapID <= 9007199254740991 and mapID % 1 == 0
                 local canonical = addon.Clean(destination.zoneName, "string")
                 local area = areaName(canonical, current, nameProofs)
                 if not current() then return false end

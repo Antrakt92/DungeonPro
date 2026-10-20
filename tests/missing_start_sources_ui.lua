@@ -320,6 +320,73 @@ do
  assert(ui.giver.enabled and ui.giver.footerLabelKey=="VISIT_GIVER","valid 1453 stays enabled")
  q.start=savedStart; a.Navigation=savedNav; render(166)
 end
+-- DP-5 DETAIL-ALTERNATIVE-MAP-BOUND: overflow/fractional alternative invents no visit; boundary stays usable.
+do
+ local q=assert(a.quests[166]); local savedStart=q.start; local savedAlternatives=q.startAlternatives; local savedNav=a.Navigation
+ local routed=0; local hugeMaps=0
+ a.Navigation={Start=function() routed=routed+1; return true end, Map=function() routed=routed+1; return true end}
+ local mapRoot=C_Map; local mapInfo=assert(mapRoot.GetMapInfo)
+ C_Map.GetMapInfo=function(mapID, ...) if type(mapID)=="number" and mapID>9007199254740991 then hugeMaps=hugeMaps+1 end; return mapInfo(mapID, ...) end
+ ui.frame:Show(); assert(ui:SetDetailTab("sources"))
+ local function renderAlternatives(alts)
+  q.start=nil; q.startAlternatives=alts; routed=0; hugeMaps=0; render(166)
+  assert(ui.detailTab=="sources","alternative check stays on the sources tab")
+  assert(ui.quest==166 and ui.renderedQuest==166,"alternative check keeps selection")
+ end
+ local function checkInvalidAlternative(label, mapID)
+  renderAlternatives({{npcID=1, name="Alt source", zoneName="Westfall", mapID=mapID, x=10, y=20}})
+  local keptQuest=ui.quest
+  local btn=assert(ui.giverButtons[1],label.." alternative row exists")
+  assert(btn:IsShown(),label.." alternative row is shown")
+  assert(btn.enabled==false,label.." alternative row stays disabled on invalid map")
+  assert(btn.scripts.OnClick==nil,label.." alternative row invents no click on invalid map")
+  assert(btn.note.text:find(a.L("SOURCE_POSITION_UNKNOWN"),1,true)~=nil,label.." alternative row keeps unknown-position warning on invalid map")
+  assert(hugeMaps==0,label.." invalid alternative map never queries native info")
+  local before=routed
+  if btn.scripts.OnClick then btn.scripts.OnClick() end
+  assert(routed==before,label.." invalid alternative click dispatches no route")
+  assert(ui.quest==keptQuest and ui.renderedQuest==keptQuest,label.." invalid alternative click keeps selection")
+ end
+ checkInvalidAlternative("overflow 2^53",9007199254740992)
+ checkInvalidAlternative("fractional 1436.5",1436.5)
+ -- Boundary 2^53-1 stays usable: enabled, one Start route, stale click retires.
+ renderAlternatives({{npcID=1, name="Alt source", zoneName="Westfall", mapID=9007199254740991, x=10, y=20}})
+ do
+  local btn=assert(ui.giverButtons[1],"boundary alternative row exists")
+  assert(btn:IsShown() and btn.enabled==true,"boundary alternative row stays enabled")
+  assert(btn.scripts.OnClick~=nil,"boundary alternative row keeps its click")
+  assert(btn.note.text:find("(10.0, 20.0)",1,true)~=nil and btn.note.text:find("|cffff594d",1,true)==nil,"boundary alternative row keeps ordinary coordinates without a warning")
+  assert(hugeMaps==0,"boundary alternative needs no huge native query")
+  local savedDispatch=ui.DispatchDetail
+  local capAction, capMapOnly, capOwner=nil, nil, nil
+  ui.DispatchDetail=function(self, action, mapOnly, giver, ownerCurrent)
+   capAction, capMapOnly, capOwner=action, mapOnly, ownerCurrent
+   return savedDispatch(self, action, mapOnly, giver, ownerCurrent)
+  end
+  local before=routed
+  btn.scripts.OnClick()
+  assert(routed==before+1,"boundary alternative click routes once through Start")
+  assert(capMapOnly==false,"boundary alternative with coordinates routes through Start")
+  assert(ui.quest==166 and ui.renderedQuest==166,"boundary alternative navigation keeps selection")
+  assert(capAction~=nil and capOwner~=nil and capOwner()==true,"boundary alternative binding stays current")
+  local staleAction, staleMapOnly, staleOwner, staleClick=capAction, capMapOnly, capOwner, btn.scripts.OnClick
+  ui.DispatchDetail=savedDispatch
+  renderAlternatives({{npcID=1, name="Alt source", zoneName="Westfall", mapID=9007199254740992, x=10, y=20}})
+  local retired=assert(ui.giverButtons[1],"overflow alternative row exists after boundary")
+  assert(retired.enabled==false and retired.scripts.OnClick==nil,"overflow alternative disables the row again")
+  assert(staleOwner()==false,"overflow alternative retires the previous boundary binding")
+  local beforeStale=routed
+  staleClick()
+  assert(routed==beforeStale,"stale boundary click routes nothing")
+  assert(ui.quest==166 and ui.renderedQuest==166,"stale boundary click keeps selection")
+  assert(ui:DispatchDetail(staleAction, staleMapOnly, nil, staleOwner)==false,"stale boundary dispatch with a retired owner is rejected")
+  assert(routed==beforeStale,"stale boundary dispatch routes nothing")
+ end
+ C_Map.GetMapInfo=mapInfo
+ q.start=savedStart; q.startAlternatives=savedAlternatives; a.Navigation=savedNav
+ assert(ui:SetDetailTab("quest")); render(166)
+end
 print("Unknown quest start method: PASS (actual TOC;10 locales, modeled UI only)")
 print("DP-5 DETAIL-GIVER-NAV-UNAVAILABLE: PASS (pure-visit, map-only, stale return; modeled UI only)")
 print("DP-5 DETAIL-GIVER-MAP-BOUND: PASS (overflow, fractional, boundary; modeled UI only)")
+print("DP-5 DETAIL-ALTERNATIVE-MAP-BOUND: PASS (overflow, fractional, boundary; modeled UI only)")
