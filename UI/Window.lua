@@ -3423,7 +3423,7 @@ function UI:RefreshDetail(sourceFocus)
         local map = start and addon.Clean(start.mapID, "number")
         local startRawItemID = start and rawget(start, "itemID")
         local startCleanItemID = addon.Clean(startRawItemID, "number")
-        local startValidExclusiveItem = startCleanItemID and startCleanItemID > 0 and startCleanItemID <= 9007199254740991 and startCleanItemID % 1 == 0 and
+        local startValidExclusiveItem = startCleanItemID and startCleanItemID > 0 and startCleanItemID <= 4294967295 and startCleanItemID % 1 == 0 and
             rawget(start, "npcID") == nil and rawget(start, "objectID") == nil
         local invalidItemStart = start ~= nil and startRawItemID ~= nil and not startValidExclusiveItem
         if detailTab ~= "story" and map and map > 0 and map <= 9007199254740991 and map % 1 == 0 and not invalidItemStart and addon.Read(self.HasSummonSource,"boolean",self,start) == false then
@@ -3673,7 +3673,7 @@ function UI:RefreshDetail(sourceFocus)
             return list ~= nil and #list == 0
         end
         local startItemID = start and addon.Clean(rawget(start, "itemID"), "number")
-        local itemStarter = startItemID and startItemID > 0 and startItemID <= 9007199254740991 and startItemID % 1 == 0 and
+        local itemStarter = startItemID and startItemID > 0 and startItemID <= 4294967295 and startItemID % 1 == 0 and
             rawget(start, "npcID") == nil and rawget(start, "objectID") == nil and (q.startAlternatives == nil or isEmptyAlternatives(q.startAlternatives))
         local missingStart = rawequal(rawget(q, "start"), nil) and (rawequal(rawget(q, "startAlternatives"), nil) or isEmptyAlternatives(q.startAlternatives))
         local function missingStartCurrent()
@@ -3685,7 +3685,7 @@ function UI:RefreshDetail(sourceFocus)
             if missingStartCurrent() then return true end
             return metadataCurrent() and portraitCardCurrent() and addon.quests[id] == definition and q.start == start and
                 start ~= nil and rawget(start, "itemID") ~= nil and not (addon.Clean(rawget(start, "itemID"), "number") and
-                addon.Clean(rawget(start, "itemID"), "number") > 0 and addon.Clean(rawget(start, "itemID"), "number") <= 9007199254740991 and
+                addon.Clean(rawget(start, "itemID"), "number") > 0 and addon.Clean(rawget(start, "itemID"), "number") <= 4294967295 and
                 addon.Clean(rawget(start, "itemID"), "number") % 1 == 0 and rawget(start, "npcID") == nil and rawget(start, "objectID") == nil)
         end
         local pendingStarterCarried

@@ -4650,7 +4650,7 @@ check("Starter icons never promote alternate finish NPC object or oversized sour
     q.start=nil;q.startAlternatives={{npcID=4001,name="Alternative"}};ui:RefreshDetail();assert(not button.shown)
     q.startAlternatives=nil;q.start={itemID=9007199254740991,name="Large source ID"}
     local calls=0;addon.ItemIcon=function()calls=calls+1;return 1801 end;ui:RefreshDetail()
-    assert(calls==0 and not button.shown and detailHas(""..addon.L("ITEM_STARTER","Objective "..tostring(9007199254740991))))
+    assert(calls==0 and not button.shown and not detailHas(""..addon.L("ITEM_STARTER","Objective "..tostring(9007199254740991))) and detailHas(addon.L("QUEST_START_UNKNOWN")))
     q.start=original;f:finish()
 end)
 check("Starter source changes during name count or icon hydration invalidate the old binding on plain fallback",function()

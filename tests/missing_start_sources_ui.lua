@@ -94,11 +94,74 @@ for _,locale in ipairs({"enUS","ruRU","deDE","frFR","esES","ptBR","koKR","zhCN",
   assert(not ui.giver.enabled and not ui:NavigationDestination(false),"sources tab dispatches no visit route for mixed item starter")
   assert(ui:SetDetailTab("quest"))
  end
- qInvalid.start=savedInvalidStart
- render(98423)
- assert(fields(a.L("START_ITEM_LOCATION_UNKNOWN"))==1 and fields(a.L("QUEST_START_UNKNOWN"))==0,"valid item starter retains its own unknown-acquisition warning")
- assert(ui.giverUnavailableKey=="START_ITEM_LOCATION_UNKNOWN","valid item starter keeps its own unavailable key")
- render(1486)
+  qInvalid.start=savedInvalidStart
+  render(98423)
+  assert(fields(a.L("START_ITEM_LOCATION_UNKNOWN"))==1 and fields(a.L("QUEST_START_UNKNOWN"))==0,"valid item starter retains its own unknown-acquisition warning")
+  assert(ui.giverUnavailableKey=="START_ITEM_LOCATION_UNKNOWN","valid item starter keeps its own unavailable key")
+ -- DP-5 DETAIL-HUGE-ITEM-BOUND: starter itemID bound is uint32 like row/overview; huge reads as unknown, never a giver visit.
+ do
+  local qHuge=assert(a.quests[98423])
+  local savedHugeStart=qHuge.start
+  local savedHugeAlternatives=qHuge.startAlternatives
+  assert(ui:SetDetailTab("quest"))
+  for _,locale in ipairs({"enUS","ruRU","deDE","frFR","esES","ptBR","koKR","zhCN","zhTW","itIT"})do
+   a.db.locale=locale
+   assert(ui:SetDetailTab("quest"))
+   qHuge.start={itemID=4294967296}
+   render(98423)
+   assert(fields(a.L("QUEST_START_UNKNOWN"))==1,"huge item starter keeps one unknown-start warning")
+   assert(fields(a.L("GIVER_LOCATION_UNKNOWN"))==0 and fields(a.L("GIVER_COORDINATES_UNKNOWN"))==0 and fields(a.L("SOURCE_POSITION_UNKNOWN"))==0 and fields(a.L("START_ITEM_LOCATION_UNKNOWN"))==0,"huge item starter invents no giver or item-acquisition warning")
+   assert(fields(a.L("SOURCE_DETAILS"))==1,"huge item starter keeps neutral source heading")
+   assert(ui.giverUnavailableKey=="QUEST_START_UNKNOWN" and not ui.giver.enabled and not ui:NavigationDestination(false),"huge item starter dispatches no visit route")
+   local hr=row(98423);local hcontrol=assert(hr.navigationControl)
+   assert(not hcontrol.enabled and hr.navigationBinding.reason=="QUEST_START_UNKNOWN" and hr.navigationBinding.action==nil,"huge item row stays disabled with unknown-start reason")
+   assert(ui:SetDetailTab("sources"))
+   assert(fields(a.L("QUEST_START_UNKNOWN"))==1,"sources tab shows unknown start for huge item starter")
+   assert(fields(a.L("GIVER_LOCATION_UNKNOWN"))==0 and fields(a.L("START_ITEM_LOCATION_UNKNOWN"))==0,"sources tab invents no giver visit for huge item starter")
+   assert(not ui.giver.enabled and not ui:NavigationDestination(false),"sources tab dispatches no visit route for huge item starter")
+   assert(ui:SetDetailTab("quest"))
+  end
+  -- Huge starter with a valid map still reads as unknown: no pendingGiver visit.
+  a.db.locale="enUS"
+  assert(ui:SetDetailTab("quest"))
+  qHuge.start={itemID=4294967296,mapID=1426,x=50,y=50}
+  do
+   local beforeStarts,beforeMaps=starts,maps
+   render(98423)
+   assert(fields(a.L("QUEST_START_UNKNOWN"))==1,"huge item starter with a map keeps one unknown-start warning")
+   assert(fields(a.L("START_ITEM_LOCATION_UNKNOWN"))==0,"huge item starter with a map claims no item acquisition")
+   assert(ui.giverUnavailableKey=="QUEST_START_UNKNOWN" and not ui.giver.enabled and not ui:NavigationDestination(false),"huge item starter with a map dispatches no visit route")
+   local hr=row(98423);local hcontrol=assert(hr.navigationControl)
+   assert(not hcontrol.enabled and hr.navigationBinding.action==nil,"huge item row with a map stays disabled")
+   local keptQuest=ui.quest
+   if hcontrol.scripts.OnClick then hcontrol.scripts.OnClick()end
+   ui.giver.scripts.OnClick()
+   assert(starts==beforeStarts and maps==beforeMaps,"huge item starter with a map routes nothing")
+   assert(ui.quest==keptQuest,"huge item starter with a map keeps selection")
+   assert(ui:SetDetailTab("sources"))
+   assert(fields(a.L("QUEST_START_UNKNOWN"))==1,"sources tab shows unknown start for huge item starter with a map")
+   assert(not ui.giver.enabled and not ui:NavigationDestination(false),"sources tab dispatches no visit route for huge item starter with a map")
+   assert(ui:SetDetailTab("quest"))
+  end
+  -- Boundaries: uint32 max stays a starter, 2^53-1 reads as unknown.
+  qHuge.start={itemID=4294967295}
+  render(98423)
+  assert(fields(a.L("START_ITEM_LOCATION_UNKNOWN"))==1 and fields(a.L("QUEST_START_UNKNOWN"))==0,"uint32-max item stays a starter")
+  assert(ui.giverUnavailableKey=="START_ITEM_LOCATION_UNKNOWN","uint32-max item keeps its own unavailable key")
+  qHuge.start={itemID=9007199254740991}
+  render(98423)
+  assert(fields(a.L("QUEST_START_UNKNOWN"))==1 and fields(a.L("START_ITEM_LOCATION_UNKNOWN"))==0,"2^53-1 item reads as unknown")
+  assert(ui.giverUnavailableKey=="QUEST_START_UNKNOWN" and not ui.giver.enabled and not ui:NavigationDestination(false),"2^53-1 item dispatches no visit route")
+  -- Valid small starters are unaffected.
+  qHuge.start={itemID=801}
+  render(98423)
+  assert(fields(a.L("START_ITEM_LOCATION_UNKNOWN"))==1 and fields(a.L("QUEST_START_UNKNOWN"))==0,"small valid starter stays a starter")
+  qHuge.start=savedHugeStart
+  qHuge.startAlternatives=savedHugeAlternatives
+  render(98423)
+  assert(fields(a.L("START_ITEM_LOCATION_UNKNOWN"))==1 and fields(a.L("QUEST_START_UNKNOWN"))==0,"valid item starter retains its own unknown-acquisition warning")
+ end
+  render(1486)
  assert(fields(a.L("GIVER_LOCATION_UNKNOWN"))==1 and fields(a.L("QUEST_START_UNKNOWN"))==0,"mapless giver retains its precise existing warning")
  a.db.locale="enUS"
  assert(ui:SetDetailTab("quest"))
