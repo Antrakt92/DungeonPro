@@ -1651,6 +1651,59 @@ check("Reported position rendering is bounded and invalid or restricted reports 
     end
     issecretvalue = nil; endReports()
 end)
+check("DP-5 REPORTED-MAP-BOUND overflow mapIDs invent no toggle row visit or native query", function()
+    local start = reportedFixture()
+    local mapRoot = C_Map
+    local mapGetter = mapRoot and mapRoot.GetMapInfo
+    local hugeMaps = 0
+    if mapRoot then
+        C_Map = { GetMapInfo = function(mapID, ...) if type(mapID) == "number" and mapID > 9007199254740991 then hugeMaps = hugeMaps + 1 end; if mapGetter then return mapGetter(mapID, ...) end end }
+    end
+    local savedDispatch = ui.DispatchDetail
+    local dispatched = 0
+    ui.DispatchDetail = function(self, ...) dispatched = dispatched + 1; return savedDispatch(self, ...) end
+    local nav = addon.Navigation
+    addon.Navigation = { Start = function() dispatched = dispatched + 1 end, Map = function() dispatched = dispatched + 1 end }
+    for _, sample in ipairs({ { label = "overflow 2^53", mapID = 9007199254740992 }, { label = "infinite", mapID = math.huge }, { label = "negative", mapID = -1 }, { label = "fractional", mapID = 1.5 } }) do
+        start.reportedLocations = { { mapID = sample.mapID, x = 10, y = 20 }, { mapID = 1, x = 11, y = 21 } }
+        dispatched, hugeMaps = 0, 0; showSources(9920)
+        assert(not reportToggle("start") and #reportRows() == 0, sample.label .. " invents no toggle or rows")
+        assert(dispatched == 0 and hugeMaps == 0, sample.label .. " routes no visit and queries no native info")
+        ui:RefreshDetail()
+        assert(dispatched == 0 and hugeMaps == 0, sample.label .. " refresh still routes nothing")
+    end
+    -- Mixed all-or-nil: first huge plus second valid still hides the whole set like the other invalid reports.
+    start.reportedLocations = { { mapID = 9007199254740992, x = 10, y = 20 }, { mapID = 1, x = 11, y = 21 } }
+    dispatched, hugeMaps = 0, 0; showSources(9920)
+    assert(not reportToggle("start") and #reportRows() == 0, "mixed huge plus valid keeps all-or-nil")
+    assert(dispatched == 0 and hugeMaps == 0, "mixed huge plus valid routes nothing")
+    addon.Navigation = nav; ui.DispatchDetail = savedDispatch; C_Map = mapRoot; endReports()
+end)
+check("DP-5 REPORTED-MAP-BOUND boundary 2^53-1 with x/y=100 stays valid and clickable", function()
+    local start = reportedFixture()
+    local mapRoot = C_Map
+    local mapGetter = mapRoot and mapRoot.GetMapInfo
+    local hugeMaps = 0
+    if mapRoot then
+        C_Map = { GetMapInfo = function(mapID, ...) if type(mapID) == "number" and mapID > 9007199254740991 then hugeMaps = hugeMaps + 1 end; if mapGetter then return mapGetter(mapID, ...) end end }
+    end
+    local savedDispatch = ui.DispatchDetail
+    local routed = 0
+    local nav = addon.Navigation
+    addon.Navigation = { Start = function() routed = routed + 1 end, Map = function() routed = routed + 1 end }
+    start.reportedLocations = { { mapID = 9007199254740991, x = 100, y = 100 }, { mapID = 9007199254740991, x = 11, y = 21 } }
+    showSources(9920)
+    local kept = assert(reportToggle("start"), "boundary 2^53-1 keeps toggle")
+    assert(#reportRows() == 0, "boundary starts collapsed")
+    assert(hugeMaps == 0, "boundary needs no huge native query")
+    kept.scripts.OnClick(); local expanded = reportRows(); assert(#expanded == 2, "boundary expands two rows")
+    local cap = nil
+    ui.DispatchDetail = function(self, action, ...) cap = action; return savedDispatch(self, action, ...) end
+    local before = routed; expanded[1].scripts.OnClick()
+    assert(routed == before + 1 and cap and cap.place.mapID == 9007199254740991, "boundary click routes once")
+    assert(cap.place.x == 100 and cap.place.y == 100, "boundary keeps x/y=100")
+    addon.Navigation = nav; ui.DispatchDetail = savedDispatch; C_Map = mapRoot; endReports()
+end)
 check("A report on another map does not borrow the primary zone label when native map names are unavailable", function()
     local start = reportedFixture(); local maps = C_Map
     C_Map = nil; start.reportedLocations[2].mapID = 3
@@ -3799,6 +3852,38 @@ check("Reported position hydration cannot resurrect old expanded points over a n
     for _,row in ipairs(ui.reportedRows)do assert(not row.shown and not row.enabled and not row.scripts.OnClick)end
     ui.giver.scripts.OnClick();assert(routed and routed.id==23002 and routed.place.mapID==2)
     restore()
+end)
+check("DP-5 REPORTED-MAP-BOUND alternatives and start/finish agree on huge reports", function()
+    local start, finish = reportedFixture()
+    local mapRoot = C_Map
+    local mapGetter = mapRoot and mapRoot.GetMapInfo
+    local hugeMaps = 0
+    if mapRoot then
+        C_Map = { GetMapInfo = function(mapID, ...) if type(mapID) == "number" and mapID > 9007199254740991 then hugeMaps = hugeMaps + 1 end; if mapGetter then return mapGetter(mapID, ...) end end }
+    end
+    local savedDispatch = ui.DispatchDetail
+    local dispatched = 0
+    ui.DispatchDetail = function(self, ...) dispatched = dispatched + 1; return savedDispatch(self, ...) end
+    local nav = addon.Navigation
+    addon.Navigation = { Start = function() dispatched = dispatched + 1 end, Map = function() dispatched = dispatched + 1 end }
+    -- AlternativePlaces and reported agree: valid own map stays, huge report stays hidden.
+    local alt = { npcID = 101, name = "Second location set", mapID = 3, x = 50, y = 60,
+        reportedLocations = { { mapID = 9007199254740992, x = 50, y = 60 }, { mapID = 3, x = 51, y = 61 } } }
+    addon.quests[9920].startAlternatives = { start, alt }
+    addon.quests[9920].finishAlternatives = { finish }
+    dispatched, hugeMaps = 0, 0; showSources(9920)
+    assert(reportToggle("startAlternative:2") == nil, "huge-report alternative invents no toggle")
+    assert(hugeMaps == 0 and dispatched == 0, "huge-report alternative queries nothing and routes nothing")
+    -- Starting/ending dedup never compares trash IDs: identical huge reports yield no toggles at all.
+    addon.quests[9920].startAlternatives = nil
+    addon.quests[9920].finishAlternatives = nil
+    local trash = { { mapID = 9007199254740992, x = 10, y = 20 }, { mapID = 9007199254740992, x = 11, y = 21 } }
+    addon.quests[9920].start.reportedLocations = trash
+    addon.quests[9920].finish.reportedLocations = trash
+    dispatched, hugeMaps = 0, 0; showSources(9920)
+    assert(not reportToggle("start") and not reportToggle("finish"), "identical huge start/finish keep no toggles")
+    assert(#reportRows() == 0 and hugeMaps == 0 and dispatched == 0, "identical huge start/finish route nothing")
+    addon.Navigation = nav; ui.DispatchDetail = savedDispatch; C_Map = mapRoot; endReports()
 end)
 check("Same-card location redraw and character loss preserve only the newly owned giver binding",function()
     for _,mode in ipairs({"redraw","character"})do

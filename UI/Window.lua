@@ -333,7 +333,7 @@ local function reportedPlaces(parent)
         if not report then return nil end
         local mapID = addon.Clean(report.mapID, "number")
         local x, y = addon.Clean(report.x, "number"), addon.Clean(report.y, "number")
-        if not mapID or mapID <= 0 or mapID % 1 ~= 0 or not x or not y or
+        if not mapID or mapID <= 0 or mapID > 9007199254740991 or mapID % 1 ~= 0 or not x or not y or
             x < 0 or x > 100 or y < 0 or y > 100 then return nil end
         result[i] = { npcID = npcID, objectID = objectID, name = addon.Clean(parent.name, "string"),
             mapID = mapID, x = x, y = y, zoneName = addon.Clean(report.zoneName, "string") or

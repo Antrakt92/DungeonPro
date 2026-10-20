@@ -386,7 +386,74 @@ do
  q.start=savedStart; q.startAlternatives=savedAlternatives; a.Navigation=savedNav
  assert(ui:SetDetailTab("quest")); render(166)
 end
+-- DP-5 REPORTED-MAP-BOUND: overflow reported mapID invents no toggle/visit; boundary stays usable.
+do
+ local q=assert(a.quests[166]); local savedStart=q.start; local savedAlternatives=q.startAlternatives; local savedNav=a.Navigation
+ local routed=0; local hugeMaps=0
+ a.Navigation={Start=function() routed=routed+1; return true end, Map=function() routed=routed+1; return true end}
+ local mapRoot=C_Map; local mapInfo=assert(mapRoot.GetMapInfo)
+ C_Map.GetMapInfo=function(mapID, ...) if type(mapID)=="number" and mapID>9007199254740991 then hugeMaps=hugeMaps+1 end; return mapInfo(mapID, ...) end
+ ui.frame:Show(); assert(ui:SetDetailTab("sources"))
+ local function toggle(key) for _,b in ipairs(ui.reportedToggles or {}) do if b.shown and b.locationKey==key then return b end end end
+ local function rows() local found={}; for _,b in ipairs(ui.reportedRows or {}) do if b.shown then found[#found+1]=b end end; return found end
+ local function renderReported(reports)
+  q.start=nil; q.startAlternatives=nil
+  q.start={npcID=1, name="Reported source", reportedLocations=reports}; routed=0; hugeMaps=0; render(166)
+  assert(ui.detailTab=="sources","reported bound check stays on the sources tab")
+  assert(ui.quest==166 and ui.renderedQuest==166,"reported bound check keeps selection")
+ end
+ local function checkInvalidReported(label, mapID)
+  renderReported({{mapID=mapID,x=10,y=20},{mapID=1,x=11,y=21}})
+  assert(toggle("start")==nil,label.." overflow reported invents no toggle")
+  assert(#rows()==0,label.." overflow reported creates no rows")
+  assert(hugeMaps==0,label.." overflow reported never queries native info")
+  local savedDispatch=ui.DispatchDetail; local dispatched=0
+  ui.DispatchDetail=function(self, ...) dispatched=dispatched+1; return savedDispatch(self, ...) end
+  local before=routed; ui:RefreshDetail()
+  assert(dispatched==0 and routed==before,label.." overflow reported dispatches no route")
+  ui.DispatchDetail=savedDispatch
+  assert(ui.quest==166 and ui.renderedQuest==166,label.." overflow reported keeps selection")
+ end
+ checkInvalidReported("overflow 2^53 ",9007199254740992)
+ checkInvalidReported("infinite ",math.huge)
+ checkInvalidReported("negative ",-1)
+ checkInvalidReported("fractional ",1.5)
+ -- Mixed all-or-nil: first huge plus second valid still yields no toggle (second stays hidden).
+ renderReported({{mapID=9007199254740992,x=10,y=20},{mapID=1,x=11,y=21}})
+ assert(toggle("start")==nil,"mixed huge plus valid keeps all-or-nil with no toggle")
+ assert(#rows()==0,"mixed huge plus valid creates no rows")
+ assert(hugeMaps==0,"mixed huge plus valid never queries native info")
+ -- Boundary 2^53-1 with x/y=100 stays valid and clickable through Start.
+ renderReported({{mapID=9007199254740991,x=100,y=100},{mapID=9007199254740991,x=11,y=21}})
+ do
+  local kept=assert(toggle("start"),"boundary reported keeps toggle")
+  assert(#rows()==0,"boundary reported starts collapsed")
+  assert(hugeMaps==0,"boundary reported needs no huge native query")
+  kept.scripts.OnClick(); local expanded=rows(); assert(#expanded==2,"boundary reported expands two rows")
+  local savedDispatch=ui.DispatchDetail; local cap=nil
+  ui.DispatchDetail=function(self, action, ...) cap=action; return savedDispatch(self, action, ...) end
+  local before=routed; expanded[1].scripts.OnClick()
+  assert(routed==before+1 and cap and cap.place.mapID==9007199254740991,"boundary reported click routes once")
+  ui.DispatchDetail=savedDispatch
+  assert(ui.quest==166 and ui.renderedQuest==166,"boundary reported navigation keeps selection")
+ end
+ -- AlternativePlaces and reported agree: alternative row stays valid while its huge report stays hidden.
+ q.start=nil
+ q.startAlternatives={{npcID=1, name="Alt source", zoneName="Westfall", mapID=1, x=10, y=20,
+  reportedLocations={{mapID=9007199254740992,x=10,y=20},{mapID=1,x=11,y=21}}}}
+ routed=0; hugeMaps=0; render(166)
+ do
+  local btn=assert(ui.giverButtons[1],"huge-report alternative row exists")
+  assert(btn:IsShown() and btn.enabled==true,"huge-report alternative row stays enabled for its own valid map")
+  assert(toggle("startAlternative:1")==nil,"huge-report alternative invents no reported toggle")
+  assert(hugeMaps==0,"huge-report alternative never queries native info for the report")
+ end
+ C_Map.GetMapInfo=mapInfo
+ q.start=savedStart; q.startAlternatives=savedAlternatives; a.Navigation=savedNav
+ assert(ui:SetDetailTab("quest")); render(166)
+end
 print("Unknown quest start method: PASS (actual TOC;10 locales, modeled UI only)")
 print("DP-5 DETAIL-GIVER-NAV-UNAVAILABLE: PASS (pure-visit, map-only, stale return; modeled UI only)")
 print("DP-5 DETAIL-GIVER-MAP-BOUND: PASS (overflow, fractional, boundary; modeled UI only)")
 print("DP-5 DETAIL-ALTERNATIVE-MAP-BOUND: PASS (overflow, fractional, boundary; modeled UI only)")
+print("DP-5 REPORTED-MAP-BOUND: PASS (overflow, fractional, boundary, all-or-nil; modeled UI only)")
