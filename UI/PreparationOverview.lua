@@ -223,7 +223,20 @@ function UI:RenderPreparationOverview(ownerCurrent, width, offset, presentation)
                 if not starter then return false end
                 if starter.alternatives ~= nil then
                     local alternativeList = clean(starter.alternatives,"table")
-                    if not alternativeList or #alternativeList ~= 0 then return false end
+                    if not alternativeList then return false end
+                    if #alternativeList == 0 then
+                        for _ in pairs(alternativeList) do return false end
+                    else
+                        if type(checker) == "function" and read(checker,"boolean",starter.alternatives) ~= false then return false end
+                        local count = 0
+                        for key, entry in pairs(alternativeList) do
+                            if type(key) ~= "number" or key % 1 ~= 0 or key < 1 then return false end
+                            if not clean(entry,"table") then return false end
+                            if type(checker) == "function" and read(checker,"boolean",entry) ~= false then return false end
+                            count = count + 1
+                        end
+                        if count ~= #alternativeList then return false end
+                    end
                 end
                 if type(starter.start) ~= "table" then return false end
                 if not clean(starter.start,"table") then return false end

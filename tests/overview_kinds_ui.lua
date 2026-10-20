@@ -600,23 +600,29 @@ a.quests[9801].start.mapID = nil
 render(summonDungeon)
 assert(noteOf(9801):find(summonUncertain, 1, true), "composition recovers after mapID removal")
 
--- (16) DP-5 OVERVIEW-SUMMON-ALTERNATIVES-GUARD: non-empty/malformed/secret alternatives stay outside, empty stays uncertain.
+-- (16) DP-5 OVERVIEW-SUMMON-ALTERNATIVES-COHERENCE: valid summon + well-formed alternatives stays uncertain (summon wins, routeless); empty parity, malformed/secret/mixed/garbage stay outside.
 a.quests[9851] = { id = 9851, name = "Summon alt", minLevel = 1, requirementsKnown = true, start = { objectID = 112877, summonItem = { itemID = 7667 } }, startAlternatives = { { npcID = 5678 } } }
 a.quests[9852] = { id = 9852, name = "Summon empty alt", minLevel = 1, requirementsKnown = true, start = { objectID = 112877, summonItem = { itemID = 7667 } }, startAlternatives = {} }
 a.quests[9853] = { id = 9853, name = "Summon malformed alt", minLevel = 1, requirementsKnown = true, start = { objectID = 112877, summonItem = { itemID = 7667 } }, startAlternatives = 5 }
-local summonAltDungeon = { key = "controlled-summon-alt", name = "Summon alt fixture", minLevel = 1, maxLevel = 60, coverage = "partial", quests = { 9851, 9852, 9853 } }
+a.quests[9855] = { id = 9855, name = "Summon mixed alt", minLevel = 1, requirementsKnown = true, start = { objectID = 112877, summonItem = { itemID = 7667 } }, startAlternatives = { { npcID = 5678 }, "bad" } }
+a.quests[9856] = { id = 9856, name = "Summon garbage alt", minLevel = 1, requirementsKnown = true, start = { objectID = 112877, summonItem = { itemID = 7667 } }, startAlternatives = { "cord" } }
+local summonAltDungeon = { key = "controlled-summon-alt", name = "Summon alt fixture", minLevel = 1, maxLevel = 60, coverage = "partial", quests = { 9851, 9852, 9853, 9855, 9856 } }
 a.dungeons[#a.dungeons + 1] = summonAltDungeon
 render(summonAltDungeon)
 local _, summonAlt = summary()
-assert(#summonAlt.steps == 3, "summon alt fixture keeps listed pickups")
-assert(noteOf(9851):find(outsideMark, 1, true) and not noteOf(9851):find(summonUncertain, 1, true), "summon + {{npcID}} stays PREP_outside without uncertain")
-assert(not noteOf(9851):find(itemMark, 1, true), "summon + alternatives never shows the item mark")
+assert(#summonAlt.steps == 5, "summon alt fixture keeps listed pickups")
+assert(noteOf(9851):find(summonUncertain, 1, true) and not noteOf(9851):find(outsideMark, 1, true), "summon + {{npcID}} stays PREP_uncertain without outside")
+assert(not noteOf(9851):find(itemMark, 1, true), "summon + well-formed alternatives never shows the item mark")
 rowById(9851).scripts.OnClick()
 assert(u.quest == 9851 and u.dungeon == summonAltDungeon and routes == 0, "summon alt click inspects its own card without routing")
 assert(u:BackQuest() and u.quest == nil)
 assert(noteOf(9852):find(summonUncertain, 1, true) and not noteOf(9852):find(outsideMark, 1, true), "summon + {} stays PREP_uncertain without outside (parity 9731)")
 assert(not noteOf(9852):find(itemMark, 1, true), "summon + {} never shows the item mark")
 assert(noteOf(9853):find(outsideMark, 1, true) and not noteOf(9853):find(summonUncertain, 1, true), "malformed summon alternatives stay PREP_outside without a crash (parity 9741)")
+assert(noteOf(9855):find(outsideMark, 1, true) and not noteOf(9855):find(summonUncertain, 1, true), "mixed summon alternatives stay PREP_outside")
+assert(not noteOf(9855):find(itemMark, 1, true), "mixed summon alternatives never show the item mark")
+assert(noteOf(9856):find(outsideMark, 1, true) and not noteOf(9856):find(summonUncertain, 1, true), "garbage summon alternatives stay PREP_outside")
+assert(not noteOf(9856):find(itemMark, 1, true), "garbage summon alternatives never show the item mark")
 do
     local secretAlt = {}
     local savedChecker = issecretvalue
@@ -630,5 +636,19 @@ do
     assert(noteOf(9854):find(outsideMark, 1, true) and not noteOf(9854):find(summonUncertain, 1, true), "secret summon alternatives stay PREP_outside without a crash (parity 9742)")
     issecretvalue = savedChecker
 end
+-- (16b) startAlternatives mutation retires overview ownership.
+render(summonAltDungeon)
+local altBinding = summary()
+assert(altBinding.current() and altBinding.rawProof(), "summon-alt overview starts current")
+local staleAltClick = rowById(9851).scripts.OnClick
+local originalAlt = a.quests[9851].startAlternatives
+a.quests[9851].startAlternatives = {}
+assert(altBinding.rawProof() == false, "replaced startAlternatives retires rawProof")
+assert(altBinding.current() == false, "replaced startAlternatives retires current")
+staleAltClick()
+assert(u.quest == nil and routes == 0, "retired summon-alt row cannot inspect after alternatives mutation")
+a.quests[9851].startAlternatives = originalAlt
+render(summonAltDungeon)
+assert(noteOf(9851):find(summonUncertain, 1, true) and not noteOf(9851):find(outsideMark, 1, true), "composition recovers after alternatives restore")
 
 print("Overview kinds UI: PASS (pickup/inside distinct + order + clicks; level/unknown under NEXT without availability or green; More/Fewer and dungeon-switch ownership; supporting-kind composition without doubles)")
