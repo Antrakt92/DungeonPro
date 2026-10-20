@@ -166,4 +166,89 @@ do
  render(5724)
  assert(#routes == baseRoutes + 2 and #maps == baseMaps + 1, "choice inspection never navigates automatically")
 end
+-- DP-5 DETAIL-EMPTY-FINISH-ABSENT-PORTRAIT: {} is absent for the single-finisher reference portrait.
+do
+ local quest = a.quests[5724]
+ local savedSetter = SetPortraitTextureFromCreatureDisplayID
+ SetPortraitTextureFromCreatureDisplayID = function(texture, id) texture:SetTexture("display:" .. id) end
+ local function refCaption()
+  local want = a.L("TURNIN_REFERENCE_PORTRAIT", quest.finish.name)
+  for _, fs in ipairs(u.details) do
+   if fs:IsShown() and fs.text == want then return fs end
+  end
+ end
+ local function turninCaption()
+  local prefix = a.L("DETAIL_TURNIN") .. ": "
+  for _, fs in ipairs(u.details) do
+   if fs:IsShown() and fs.text and fs.text:find(prefix, 1, true) == 1 then return fs end
+  end
+ end
+ local function choiceHeadings()
+  local count = 0
+  for _, fs in ipairs(u.details) do
+   if fs:IsShown() and fs.text == a.L("POSSIBLE_TURNINS") then count = count + 1 end
+  end
+  return count
+ end
+ -- Nil baseline: single READY turn-in draws the finisher portrait on Sources.
+ quest.finishAlternatives = nil
+ render(5724)
+ local baseTurnin = turninCaption()
+ assert(baseTurnin, "nil baseline keeps the real turn-in caption")
+ assert(u.turnin:IsShown() and u.turnin.enabled, "nil baseline keeps the turn-in action")
+ assert(u.action and u.action.kind == "turnin" and u.action.place == quest.finish, "nil baseline keeps one turnin action")
+ assert(u:SetDetailTab("sources"))
+ assert(choiceHeadings() == 0, "nil baseline has no turn-in choice section")
+ local baseRef = refCaption()
+ assert(baseRef, "nil baseline draws the single-finisher reference caption")
+ assert(u.giverPortrait:IsShown(), "nil baseline draws the single-finisher portrait")
+ assert(u.giverPortrait.texture == "display:11754", "nil baseline portraits the finisher")
+ -- Empty table parity: same caption, button, route and portrait as nil.
+ quest.finishAlternatives = {}
+ u:RefreshDetail()
+ assert(choiceHeadings() == 0, "empty alternatives must not draw a turn-in section")
+ for _, button in ipairs(u.finishButtons) do
+  assert(not button:IsShown(), "empty alternatives offer no choice buttons")
+ end
+ local emptyRef = refCaption()
+ assert(emptyRef and emptyRef.text == baseRef.text, "empty alternatives keep the nil reference caption")
+ assert(u.giverPortrait:IsShown(), "empty alternatives keep the single-finisher portrait")
+ assert(u.giverPortrait.texture == "display:11754", "empty alternatives portrait the finisher")
+  assert(u:SetDetailTab("quest"))
+ local emptyTurnin = turninCaption()
+ assert(emptyTurnin and emptyTurnin.text == baseTurnin.text, "empty alternatives keep the nil turn-in caption")
+  assert(u.action and u.action.kind == "turnin" and u.action.place == quest.finish, "empty alternatives keep one turnin action")
+  assert(u.action.id == 5724 and baseTurnin.text:find(quest.finish.name, 1, true), "empty turn-in route keeps the nil destination")
+  assert(u.turnin:IsShown() and u.turnin.enabled, "empty alternatives keep the turn-in action enabled")
+  local routedBefore = #routes
+  u.turnin.scripts.OnClick()
+  assert(#routes == routedBefore + 1 and routes[#routes].kind == "turnin" and routes[#routes].place == quest.finish, "empty alternatives dispatch the nil-baseline turn-in route")
+ assert(u:SetDetailTab("sources"))
+ -- Growth to two choices: one section plus two buttons, single portrait retired.
+ local empty = quest.finishAlternatives
+ empty[1] = { npcID = 990001, name = "Synthetic first turn-in", mapID = 1 }
+ empty[2] = { npcID = 990002, name = "Synthetic second turn-in", mapID = 1, x = 10, y = 20 }
+ u:RefreshDetail()
+  assert(choiceHeadings() == 1, "grown finish alternatives show exactly one turn-in section")
+ assert(u.finishButtons[1]:IsShown() and u.finishButtons[2]:IsShown(), "grown finish alternatives show both choices")
+ assert(not refCaption(), "grown alternatives retire the single-finisher reference caption")
+ assert(u.giverPortrait:IsShown(), "grown alternatives fall back to the start portrait")
+ assert(u.giverPortrait.texture == "display:11755", "grown alternatives portrait the giver")
+ -- Truncation back to empty: section retired, single portrait restored.
+ empty[1], empty[2] = nil, nil
+ u:RefreshDetail()
+ assert(choiceHeadings() == 0, "truncated finish alternatives retire the stale turn-in section")
+ for _, button in ipairs(u.finishButtons) do
+  assert(not button:IsShown(), "truncated alternatives offer no choice buttons")
+ end
+ local restoredRef = refCaption()
+ assert(restoredRef and restoredRef.text == baseRef.text, "truncated alternatives restore the single-finisher caption")
+ assert(u.giverPortrait:IsShown(), "truncated alternatives restore the single-finisher portrait")
+ assert(u.giverPortrait.texture == "display:11754", "restored portrait is the finisher")
+ quest.finishAlternatives = nil
+ SetPortraitTextureFromCreatureDisplayID = savedSetter
+ if u.detailTab ~= "quest" then assert(u:SetDetailTab("quest")) end
+ render(5724)
+ assert(finish(), "restored nil keeps the real turn-in caption")
+end
 print("Finish location warning UI: PASS (actual READY/ACTIVE, ten locales, exact/map-only sources, summon/alternatives, empty-alternative section and native retirement)")

@@ -3825,7 +3825,7 @@ function UI:RefreshDetail(sourceFocus)
                                     (object and object > 0 and object <= 4294967295 and object % 1 == 0 and values.npcID == nil and values.itemID == nil)
                             end)
                             if not endingCurrent() then return end
-                            if readable and alternatives == nil and ok and typed and map and map > 0 and map <= 9007199254740991 and map % 1 == 0 and
+                            if readable and (alternatives == nil or isEmptyAlternatives(alternatives)) and ok and typed and map and map > 0 and map <= 9007199254740991 and map % 1 == 0 and
                                 addon.Read(summonPresence, "boolean", self, finish) == false and (rawget(finish, "summonItem") == nil or addon.Read(summonGetter, "table", self, finish) ~= nil) then
                                 local function current()
                                     local fresh = not engineGetter or addon.Read(engineGetter, "boolean", engine) == true
@@ -4142,7 +4142,7 @@ function UI:RefreshDetail(sourceFocus)
             if not portraitCardCurrent() then return end
             if #referenceActions == 1 then
                 local candidate = referenceActions[1]
-                if candidate.id == id and candidate.kind == "turnin" and candidate.place == q.finish and not q.finishAlternatives then
+                if candidate.id == id and candidate.kind == "turnin" and candidate.place == q.finish and (q.finishAlternatives == nil or isEmptyAlternatives(q.finishAlternatives)) then
                     referenceAction = candidate
                 end
             end
@@ -4174,7 +4174,7 @@ function UI:RefreshDetail(sourceFocus)
                     for field in pairs(fieldTypes) do if rawget(point, field) ~= sourceValues[field] then return false end end
                     return portraitCardCurrent() and addon.quests[id] == q and q[endpoint] == point and
                         addon.GiverPortrait == producer and SetPortraitTextureFromCreatureDisplayID == portraitSetter and issecretvalue == portraitChecker and
-                        (not turnin or (state.status == "READY" and rawget(q, "id") == id and q.finishAlternatives == nil and
+                        (not turnin or (state.status == "READY" and rawget(q, "id") == id and (q.finishAlternatives == nil or isEmptyAlternatives(q.finishAlternatives)) and
                             engine.Current == referenceEngineGetter and #referenceActions == 1 and referenceActions[1] == referenceAction and
                             referenceAction.id == id and referenceAction.kind == "turnin" and referenceAction.place == point)) and namesCurrent(nameProofs)
                 end)
