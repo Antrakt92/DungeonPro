@@ -3139,10 +3139,10 @@ check("Large localized quest and overview titles measure wrapping without resett
     ui.quest, ui.dungeon = quest, dungeon; ui:Refresh()
 end)
 check("Actual catalogue browsing folds localized Unicode case while preserving accents and literal CJK", function()
-    local dungeons, dungeonName, search, range = addon.dungeons, addon.DungeonName, ui.search, ui.range
+    local dungeons,dungeonName,search,range,quests=addon.dungeons,addon.DungeonName,ui.search,ui.range,addon.quests
     local selected, quest, savedSelection, locale = ui.dungeon, ui.quest, addon.char.selectedDungeon, addon.db.locale
     local actual = {}; assert(loadfile("Database/Catalog.lua"))("DungeonPro", actual)
-    addon.dungeons = actual.dungeons
+    addon.dungeons,addon.quests=actual.dungeons,actual.quests
     local native = { dm = "МЁРТВЫЕ КОПИ", sfk = "École des ombres", lbrs = "Straße", rfc = "怒焰裂谷[100%]" }
     addon.DungeonName = function(dungeon) return native[dungeon.key] or dungeon.name end
     ui.range = false
@@ -3164,7 +3164,7 @@ check("Actual catalogue browsing folds localized Unicode case while preserving a
     end
     local bad = string.char(255) .. "A"; native.sfk = bad
     searchFor(bad, bad); searchFor(string.char(255) .. "a", nil)
-    addon.dungeons, addon.DungeonName, ui.search, ui.range, addon.db.locale = dungeons, dungeonName, search, range, locale
+    addon.dungeons,addon.DungeonName,ui.search,ui.range,addon.db.locale,addon.quests=dungeons,dungeonName,search,range,locale,quests
     ui.searchBox:SetText(search); ui:Refresh()
 end)
 check("Back from the first quest returns to its dungeon overview and clears quest-only presentation", function()

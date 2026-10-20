@@ -38,6 +38,7 @@ end
 for _,dungeon in ipairs(addon.dungeons) do
     local seen={}
     for _,id in ipairs(dungeon.quests) do associate(id,dungeon,seen) end
+    for _,id in ipairs(dungeon.sharedQuests or {}) do associate(id,dungeon,seen) end
 end
 local function contains(text)
     for _,field in ipairs(ui.details) do

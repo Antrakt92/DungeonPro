@@ -25,7 +25,6 @@
       "stocks": 717,
       "gnom": 721,
       "rfk": 491,
-      "sm": 796,
       "rfd": 722,
       "ulda": 1337,
       "zf": 1176,
@@ -82,7 +81,30 @@
       }
     },
     "collectionComplete": true,
-    "dungeonCoverage": {
+    "dungeonTransforms": {
+      "lbrs": {
+        "baseSource": "Blackrock Spire",
+        "wing": "lower"
+      },
+      "ubrs": {
+        "baseSource": "Blackrock Spire",
+        "wing": "upper"
+      }
+    },
+    "dungeonActivitySources": {
+      "provider": "Wago.tools",
+      "table": "GroupFinderActivity",
+      "build": "1.60.1.70450",
+      "useHotfixes": false,
+      "checked": "2026-10-20",
+      "activities": {
+        "sm_graveyard": 805,
+        "sm_library": 829,
+        "sm_armory": 827,
+        "sm_cathedral": 828
+      }
+    },
+    "legacyZoneDungeonCoverage": {
       "deDE": {
         "translated": 18,
         "unchangedEnglish": 6,
@@ -122,16 +144,6 @@
       "zhTW": {
         "translated": 24,
         "unresolved": 5
-      }
-    },
-    "dungeonTransforms": {
-      "lbrs": {
-        "baseSource": "Blackrock Spire",
-        "wing": "lower"
-      },
-      "ubrs": {
-        "baseSource": "Blackrock Spire",
-        "wing": "upper"
       }
     }
   },
@@ -2840,11 +2852,6 @@
           "name": "Der Kral von Razorfen",
           "url": "https://nether.wowhead.com/forever/tooltip/zone/491?locale=3"
         },
-        "sm": {
-          "source": "Scarlet Monastery",
-          "name": "Das Scharlachrote Kloster",
-          "url": "https://nether.wowhead.com/forever/tooltip/zone/796?locale=3"
-        },
         "rfd": {
           "source": "Razorfen Downs",
           "name": "Die Hügel von Razorfen",
@@ -2894,6 +2901,26 @@
           "source": "City of Dalaran",
           "name": "Dalaran",
           "url": "https://nether.wowhead.com/forever/tooltip/zone/16560?locale=3"
+        },
+        "sm_graveyard": {
+          "source": "Scarlet Monastery - Graveyard",
+          "name": "Scharlachrotes Kloster - Friedhof",
+          "url": "https://wago.tools/db2/GroupFinderActivity?build=1.60.1.70450&filter%5BMapID%5D=exact%3A189&locale=deDE&page=1"
+        },
+        "sm_library": {
+          "source": "Scarlet Monastery - Library",
+          "name": "Scharlachrotes Kloster - Bibliothek",
+          "url": "https://wago.tools/db2/GroupFinderActivity?build=1.60.1.70450&filter%5BMapID%5D=exact%3A189&locale=deDE&page=1"
+        },
+        "sm_armory": {
+          "source": "Scarlet Monastery - Armory",
+          "name": "Scharlachrotes Kloster - Waffenkammer",
+          "url": "https://wago.tools/db2/GroupFinderActivity?build=1.60.1.70450&filter%5BMapID%5D=exact%3A189&locale=deDE&page=1"
+        },
+        "sm_cathedral": {
+          "source": "Scarlet Monastery - Cathedral",
+          "name": "Scharlachrotes Kloster - Kathedrale",
+          "url": "https://wago.tools/db2/GroupFinderActivity?build=1.60.1.70450&filter%5BMapID%5D=exact%3A189&locale=deDE&page=1"
         }
       }
     },
@@ -5601,11 +5628,6 @@
           "name": "Kraal de Tranchebauge",
           "url": "https://nether.wowhead.com/forever/tooltip/zone/491?locale=2"
         },
-        "sm": {
-          "source": "Scarlet Monastery",
-          "name": "Monastère écarlate",
-          "url": "https://nether.wowhead.com/forever/tooltip/zone/796?locale=2"
-        },
         "rfd": {
           "source": "Razorfen Downs",
           "name": "Souilles de Tranchebauge",
@@ -5655,6 +5677,26 @@
           "source": "City of Dalaran",
           "name": "Cité de Dalaran",
           "url": "https://nether.wowhead.com/forever/tooltip/zone/16560?locale=2"
+        },
+        "sm_graveyard": {
+          "source": "Scarlet Monastery - Graveyard",
+          "name": "Monastère Écarlate (cimetière)",
+          "url": "https://wago.tools/db2/GroupFinderActivity?build=1.60.1.70450&filter%5BMapID%5D=exact%3A189&locale=frFR&page=1"
+        },
+        "sm_library": {
+          "source": "Scarlet Monastery - Library",
+          "name": "Monastère Écarlate (bibliothèque)",
+          "url": "https://wago.tools/db2/GroupFinderActivity?build=1.60.1.70450&filter%5BMapID%5D=exact%3A189&locale=frFR&page=1"
+        },
+        "sm_armory": {
+          "source": "Scarlet Monastery - Armory",
+          "name": "Monastère écarlate (armurerie)",
+          "url": "https://wago.tools/db2/GroupFinderActivity?build=1.60.1.70450&filter%5BMapID%5D=exact%3A189&locale=frFR&page=1"
+        },
+        "sm_cathedral": {
+          "source": "Scarlet Monastery - Cathedral",
+          "name": "Monastère Écarlate (cathédrale)",
+          "url": "https://wago.tools/db2/GroupFinderActivity?build=1.60.1.70450&filter%5BMapID%5D=exact%3A189&locale=frFR&page=1"
         }
       }
     },
@@ -8372,11 +8414,6 @@
           "name": "Horado Rajacieno",
           "url": "https://nether.wowhead.com/forever/tooltip/zone/491?locale=6"
         },
-        "sm": {
-          "source": "Scarlet Monastery",
-          "name": "Monasterio Escarlata",
-          "url": "https://nether.wowhead.com/forever/tooltip/zone/796?locale=6"
-        },
         "rfd": {
           "source": "Razorfen Downs",
           "name": "Zahúrda Rajacieno",
@@ -8426,6 +8463,26 @@
           "source": "City of Dalaran",
           "name": "Ciudad de Dalaran",
           "url": "https://nether.wowhead.com/forever/tooltip/zone/16560?locale=6"
+        },
+        "sm_graveyard": {
+          "source": "Scarlet Monastery - Graveyard",
+          "name": "Monasterio Escarlata - Cementerio",
+          "url": "https://wago.tools/db2/GroupFinderActivity?build=1.60.1.70450&filter%5BMapID%5D=exact%3A189&locale=esES&page=1"
+        },
+        "sm_library": {
+          "source": "Scarlet Monastery - Library",
+          "name": "Monasterio Escarlata - Biblioteca",
+          "url": "https://wago.tools/db2/GroupFinderActivity?build=1.60.1.70450&filter%5BMapID%5D=exact%3A189&locale=esES&page=1"
+        },
+        "sm_armory": {
+          "source": "Scarlet Monastery - Armory",
+          "name": "Monasterio Escarlata - Armería",
+          "url": "https://wago.tools/db2/GroupFinderActivity?build=1.60.1.70450&filter%5BMapID%5D=exact%3A189&locale=esES&page=1"
+        },
+        "sm_cathedral": {
+          "source": "Scarlet Monastery - Cathedral",
+          "name": "Monasterio Escarlata - Catedral",
+          "url": "https://wago.tools/db2/GroupFinderActivity?build=1.60.1.70450&filter%5BMapID%5D=exact%3A189&locale=esES&page=1"
         }
       }
     },
@@ -11117,11 +11174,6 @@
           "name": "Urzal dos Tuscos",
           "url": "https://nether.wowhead.com/forever/tooltip/zone/491?locale=8"
         },
-        "sm": {
-          "source": "Scarlet Monastery",
-          "name": "Monastério Escarlate",
-          "url": "https://nether.wowhead.com/forever/tooltip/zone/796?locale=8"
-        },
         "rfd": {
           "source": "Razorfen Downs",
           "name": "Urzal dos Mortos",
@@ -11176,6 +11228,26 @@
           "source": "City of Dalaran",
           "name": "Dalaran",
           "url": "https://nether.wowhead.com/forever/tooltip/zone/16560?locale=8"
+        },
+        "sm_graveyard": {
+          "source": "Scarlet Monastery - Graveyard",
+          "name": "Monastério Escarlate - Cemitério",
+          "url": "https://wago.tools/db2/GroupFinderActivity?build=1.60.1.70450&filter%5BMapID%5D=exact%3A189&locale=ptBR&page=1"
+        },
+        "sm_library": {
+          "source": "Scarlet Monastery - Library",
+          "name": "Monastério Escarlate - Biblioteca",
+          "url": "https://wago.tools/db2/GroupFinderActivity?build=1.60.1.70450&filter%5BMapID%5D=exact%3A189&locale=ptBR&page=1"
+        },
+        "sm_armory": {
+          "source": "Scarlet Monastery - Armory",
+          "name": "Monastério Escarlate - Armaria",
+          "url": "https://wago.tools/db2/GroupFinderActivity?build=1.60.1.70450&filter%5BMapID%5D=exact%3A189&locale=ptBR&page=1"
+        },
+        "sm_cathedral": {
+          "source": "Scarlet Monastery - Cathedral",
+          "name": "Monastério Escarlate - Catedral",
+          "url": "https://wago.tools/db2/GroupFinderActivity?build=1.60.1.70450&filter%5BMapID%5D=exact%3A189&locale=ptBR&page=1"
         }
       }
     },
@@ -13983,11 +14055,6 @@
           "name": "Лабиринты Иглошкурых",
           "url": "https://nether.wowhead.com/forever/tooltip/zone/491?locale=7"
         },
-        "sm": {
-          "source": "Scarlet Monastery",
-          "name": "Монастырь Алого ордена",
-          "url": "https://nether.wowhead.com/forever/tooltip/zone/796?locale=7"
-        },
         "rfd": {
           "source": "Razorfen Downs",
           "name": "Курганы Иглошкурых",
@@ -14062,6 +14129,26 @@
           "source": "City of Dalaran",
           "name": "Даларан",
           "url": "https://nether.wowhead.com/forever/tooltip/zone/16560?locale=7"
+        },
+        "sm_graveyard": {
+          "source": "Scarlet Monastery - Graveyard",
+          "name": "Монастырь Алого ордена: кладбище",
+          "url": "https://wago.tools/db2/GroupFinderActivity?build=1.60.1.70450&filter%5BMapID%5D=exact%3A189&locale=ruRU&page=1"
+        },
+        "sm_library": {
+          "source": "Scarlet Monastery - Library",
+          "name": "Монастырь Алого ордена: библиотека",
+          "url": "https://wago.tools/db2/GroupFinderActivity?build=1.60.1.70450&filter%5BMapID%5D=exact%3A189&locale=ruRU&page=1"
+        },
+        "sm_armory": {
+          "source": "Scarlet Monastery - Armory",
+          "name": "Монастырь Алого ордена: оружейная",
+          "url": "https://wago.tools/db2/GroupFinderActivity?build=1.60.1.70450&filter%5BMapID%5D=exact%3A189&locale=ruRU&page=1"
+        },
+        "sm_cathedral": {
+          "source": "Scarlet Monastery - Cathedral",
+          "name": "Монастырь Алого ордена: собор",
+          "url": "https://wago.tools/db2/GroupFinderActivity?build=1.60.1.70450&filter%5BMapID%5D=exact%3A189&locale=ruRU&page=1"
         }
       }
     },
@@ -16814,11 +16901,6 @@
           "name": "가시덩굴 우리",
           "url": "https://nether.wowhead.com/forever/tooltip/zone/491?locale=1"
         },
-        "sm": {
-          "source": "Scarlet Monastery",
-          "name": "붉은십자군 수도원",
-          "url": "https://nether.wowhead.com/forever/tooltip/zone/796?locale=1"
-        },
         "rfd": {
           "source": "Razorfen Downs",
           "name": "가시덩굴 구릉",
@@ -16893,6 +16975,26 @@
           "source": "City of Dalaran",
           "name": "달라란",
           "url": "https://nether.wowhead.com/forever/tooltip/zone/16560?locale=1"
+        },
+        "sm_graveyard": {
+          "source": "Scarlet Monastery - Graveyard",
+          "name": "붉은십자군 수도원 - 묘지",
+          "url": "https://wago.tools/db2/GroupFinderActivity?build=1.60.1.70450&filter%5BMapID%5D=exact%3A189&locale=koKR&page=1"
+        },
+        "sm_library": {
+          "source": "Scarlet Monastery - Library",
+          "name": "붉은십자군 수도원 - 도서관",
+          "url": "https://wago.tools/db2/GroupFinderActivity?build=1.60.1.70450&filter%5BMapID%5D=exact%3A189&locale=koKR&page=1"
+        },
+        "sm_armory": {
+          "source": "Scarlet Monastery - Armory",
+          "name": "붉은십자군 수도원 - 무기고",
+          "url": "https://wago.tools/db2/GroupFinderActivity?build=1.60.1.70450&filter%5BMapID%5D=exact%3A189&locale=koKR&page=1"
+        },
+        "sm_cathedral": {
+          "source": "Scarlet Monastery - Cathedral",
+          "name": "붉은십자군 수도원 - 대성당",
+          "url": "https://wago.tools/db2/GroupFinderActivity?build=1.60.1.70450&filter%5BMapID%5D=exact%3A189&locale=koKR&page=1"
         }
       }
     },
@@ -19595,11 +19697,6 @@
           "name": "剃刀沼泽",
           "url": "https://nether.wowhead.com/forever/tooltip/zone/491?locale=4"
         },
-        "sm": {
-          "source": "Scarlet Monastery",
-          "name": "血色修道院",
-          "url": "https://nether.wowhead.com/forever/tooltip/zone/796?locale=4"
-        },
         "rfd": {
           "source": "Razorfen Downs",
           "name": "剃刀高地",
@@ -19674,6 +19771,26 @@
           "source": "City of Dalaran",
           "name": "达拉然城",
           "url": "https://nether.wowhead.com/forever/tooltip/zone/16560?locale=4"
+        },
+        "sm_graveyard": {
+          "source": "Scarlet Monastery - Graveyard",
+          "name": "血色修道院 - 墓地",
+          "url": "https://wago.tools/db2/GroupFinderActivity?build=1.60.1.70450&filter%5BMapID%5D=exact%3A189&locale=zhCN&page=1"
+        },
+        "sm_library": {
+          "source": "Scarlet Monastery - Library",
+          "name": "血色修道院 - 图书馆",
+          "url": "https://wago.tools/db2/GroupFinderActivity?build=1.60.1.70450&filter%5BMapID%5D=exact%3A189&locale=zhCN&page=1"
+        },
+        "sm_armory": {
+          "source": "Scarlet Monastery - Armory",
+          "name": "血色修道院 - 军械库",
+          "url": "https://wago.tools/db2/GroupFinderActivity?build=1.60.1.70450&filter%5BMapID%5D=exact%3A189&locale=zhCN&page=1"
+        },
+        "sm_cathedral": {
+          "source": "Scarlet Monastery - Cathedral",
+          "name": "血色修道院 - 大教堂",
+          "url": "https://wago.tools/db2/GroupFinderActivity?build=1.60.1.70450&filter%5BMapID%5D=exact%3A189&locale=zhCN&page=1"
         }
       }
     },
@@ -22316,11 +22433,6 @@
           "name": "剃刀沼澤",
           "url": "https://nether.wowhead.com/forever/tooltip/zone/491?locale=10"
         },
-        "sm": {
-          "source": "Scarlet Monastery",
-          "name": "血色修道院",
-          "url": "https://nether.wowhead.com/forever/tooltip/zone/796?locale=10"
-        },
         "rfd": {
           "source": "Razorfen Downs",
           "name": "剃刀高地",
@@ -22395,6 +22507,26 @@
           "source": "City of Dalaran",
           "name": "達拉然城",
           "url": "https://nether.wowhead.com/forever/tooltip/zone/16560?locale=10"
+        },
+        "sm_graveyard": {
+          "source": "Scarlet Monastery - Graveyard",
+          "name": "血色修道院 - 墓地",
+          "url": "https://wago.tools/db2/GroupFinderActivity?build=1.60.1.70450&filter%5BMapID%5D=exact%3A189&locale=zhTW&page=1"
+        },
+        "sm_library": {
+          "source": "Scarlet Monastery - Library",
+          "name": "血色修道院 - 圖書館",
+          "url": "https://wago.tools/db2/GroupFinderActivity?build=1.60.1.70450&filter%5BMapID%5D=exact%3A189&locale=zhTW&page=1"
+        },
+        "sm_armory": {
+          "source": "Scarlet Monastery - Armory",
+          "name": "血色修道院 - 軍械庫",
+          "url": "https://wago.tools/db2/GroupFinderActivity?build=1.60.1.70450&filter%5BMapID%5D=exact%3A189&locale=zhTW&page=1"
+        },
+        "sm_cathedral": {
+          "source": "Scarlet Monastery - Cathedral",
+          "name": "血色修道院 - 大教堂",
+          "url": "https://wago.tools/db2/GroupFinderActivity?build=1.60.1.70450&filter%5BMapID%5D=exact%3A189&locale=zhTW&page=1"
         }
       }
     }

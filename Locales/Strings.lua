@@ -229,3 +229,25 @@ local moreLabels = {
     ruRU = {"Показать ещё (%d)","Показать меньше"},
 }
 for locale,values in pairs(moreLabels) do addon.locales[locale].OVERVIEW_SHOW_MORE=values[1];addon.locales[locale].OVERVIEW_SHOW_FEWER=values[2] end
+
+-- Reviewed full Scarlet wing labels; Italian records retain the English fallback.
+strings.enUS.DUNGEON_SCARLET_graveyard = "Scarlet Monastery - Graveyard"
+strings.enUS.DUNGEON_SCARLET_library = "Scarlet Monastery - Library"
+strings.enUS.DUNGEON_SCARLET_armory = "Scarlet Monastery - Armory"
+strings.enUS.DUNGEON_SCARLET_cathedral = "Scarlet Monastery - Cathedral"
+-- Interface copy: explicit Russian; other locales retain English fallback.
+strings.enUS.SM_SHARED_LEVEL_RANGE = "Monastery: %d–%d"
+strings.enUS.SM_WING_QUESTS_UNKNOWN = "Wing quests: unverified"
+strings.enUS.SM_CHOOSE_WING = "Choose a monastery wing"
+strings.enUS.SM_SHARED_QUESTS = "Other monastery quests — wing unverified"
+strings.enUS.SM_PARTIAL_WING = "Quest coverage for this wing is incomplete."
+strings.ruRU.DUNGEON_SCARLET_graveyard = "Монастырь Алого ордена: кладбище"
+strings.ruRU.DUNGEON_SCARLET_library = "Монастырь Алого ордена: библиотека"
+strings.ruRU.DUNGEON_SCARLET_armory = "Монастырь Алого ордена: оружейная"
+strings.ruRU.DUNGEON_SCARLET_cathedral = "Монастырь Алого ордена: собор"
+-- Interface copy: explicit Russian; other locales retain English fallback.
+strings.ruRU.SM_SHARED_LEVEL_RANGE = "Монастырь: %d–%d"
+strings.ruRU.SM_WING_QUESTS_UNKNOWN = "Задания крыла: не проверены"
+strings.ruRU.SM_CHOOSE_WING = "Выбери крыло монастыря"
+strings.ruRU.SM_SHARED_QUESTS = "Другие задания монастыря — крыло не проверено"
+strings.ruRU.SM_PARTIAL_WING = "Список заданий этого крыла ещё не проверен полностью."

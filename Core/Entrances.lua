@@ -3,6 +3,8 @@ local E = {}
 addon.Entrances = E
 local cache
 
+local validWing = { lower = true, upper = true, graveyard = true, library = true, armory = true, cathedral = true }
+
 local function identity(value)
     value = addon.Clean(value, "number")
     if value and value > 0 and value <= 9007199254740991 and value % 1 == 0 then return value end
@@ -292,7 +294,7 @@ local function recordedEntrance(dungeon)
         (rawget(dungeon, "instanceID") ~= nil and not gameMap) or sourceMap ~= gameMap or
         (rawget(entry, "gameMapID") ~= nil and not sourceMap) or not source or #source > 2048 or
         not name or #name == 0 or #name > 500 or not key or #key > 100 or
-        (rawget(dungeon, "wing") ~= nil and wing ~= "lower" and wing ~= "upper") or
+        (rawget(dungeon, "wing") ~= nil and not validWing[wing]) or
         (wing and scope ~= "shared") or (rawget(entry, "scope") ~= nil and scope ~= "shared") or
         (rawget(entry, "kind") ~= nil and kind ~= "approach") then return end
     local reviewed = (gameMap and source == "https://phylactery.io/instance/" .. gameMap) or

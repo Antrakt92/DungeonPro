@@ -2339,10 +2339,6 @@
           "source": "Razorfen Kraul",
           "name": "Gallerie di Lamaspina"
         },
-        "sm": {
-          "source": "Scarlet Monastery",
-          "name": "Monastero Scarlatto"
-        },
         "rfd": {
           "source": "Razorfen Downs",
           "name": "Sotterranei di Lamaspina"
@@ -2427,6 +2423,26 @@
         "shapers": {
           "source": "Shaper's Terrace",
           "name": "Terrazza del Plasmatore"
+        },
+        "sm_graveyard": {
+          "source": "Scarlet Monastery - Graveyard",
+          "name": "Scarlet Monastery - Graveyard",
+          "unchangedProperName": true
+        },
+        "sm_library": {
+          "source": "Scarlet Monastery - Library",
+          "name": "Scarlet Monastery - Library",
+          "unchangedProperName": true
+        },
+        "sm_armory": {
+          "source": "Scarlet Monastery - Armory",
+          "name": "Scarlet Monastery - Armory",
+          "unchangedProperName": true
+        },
+        "sm_cathedral": {
+          "source": "Scarlet Monastery - Cathedral",
+          "name": "Scarlet Monastery - Cathedral",
+          "unchangedProperName": true
         }
       }
     }

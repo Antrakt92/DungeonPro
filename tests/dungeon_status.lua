@@ -155,7 +155,7 @@ check("Every actual dungeon aggregates planner states without changing them or i
         for id,state in pairs(before)do assert(engine:State(id)==state)end
         count=count+1
     end
-    assert(count==29)
+    assert(count==32)
 end)
 check("Pure aggregate construction scales linearly while published guards retain complete source proofs",function()
     local function measured(size)
@@ -200,7 +200,7 @@ check("Actual catalogue aggregate proofs avoid duplicate sanitization of unchang
         local result,current=addon.DungeonStatus.Get(d,engine)
         assert(result and current()and result.listed==#d.quests);count=count+1
     end
-    assert(count==29 and checks<68000,"duplicate aggregate binding checks: "..checks)
+    assert(count==32 and checks<68000,"duplicate aggregate binding checks: "..checks)
 end)
 check("Root counts share Planner membership without changing readiness or duplicate handling",function()
     local f=fixture({{"UNAVAILABLE"},{"LOCKED","level"},{"UNKNOWN"},{"ACTIVE"},{"READY"},{"COMPLETED"}},
@@ -272,7 +272,7 @@ check("Warm catalogue source proofs avoid sanitizing the checker's ordinary bool
     end
     checks=0
     for _,current in ipairs(proofs)do assert(current())end
-    assert(#proofs==29 and checks>5000 and checks<7000,"actual checker calls in one warm catalogue proof: "..checks)
+    assert(#proofs==32 and checks>5000 and checks<7000,"actual checker calls in one warm catalogue proof: "..checks)
 end)
 check("Direct retained source checks reject malformed checker results and exceptions",function()
     for _,mode in ipairs({"true","nil","string","table","throw"})do

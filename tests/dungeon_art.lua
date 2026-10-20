@@ -404,7 +404,7 @@ check("Every reviewed catalogue image matches its sourced game-map identity", fu
         else assert(addon.DungeonArt(dungeon) == generic) end
     end
     local mapCount = 0; for _ in pairs(maps) do mapCount = mapCount + 1 end
-    assert(count == 24 and mapCount == 23)
+    assert(count == 27 and mapCount == 23)
     assert(seen.dm == 131833 and seen.thanes == 7963781 and seen.lordaeron == 7963782)
     assert(seen.lbrs == seen.ubrs and not seen.drowned and not seen.kroldok)
     local previewCount = 0; for _ in pairs(previews) do previewCount = previewCount + 1 end

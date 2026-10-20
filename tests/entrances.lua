@@ -374,7 +374,7 @@ check("Warm actual catalogue misses reuse candidate extraction without native re
     for pass=1,40 do
         local known=0
         for _,d in ipairs(addon.dungeons)do if e.Get(d)then known=known+1 end end
-        assert(known==24)
+        assert(known==27)
     end
     assert(checks<3000000,"warm candidate extraction repeated "..checks.." sanitizer checks")
     local newJoins,newMaps=0,0

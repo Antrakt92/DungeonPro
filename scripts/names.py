@@ -13,6 +13,8 @@ ENDPOINT = "https://nether.wowhead.com/forever/tooltip/{kind}/{id}?locale={local
 AREA_LOCALE_PATHS = {"deDE": "de", "frFR": "fr", "esES": "es", "itIT": "it", "ptBR": "pt",
                      "ruRU": "ru", "koKR": "ko", "zhCN": "cn", "zhTW": "tw"}
 AREA_INDEXES = {locale: f"https://www.wowhead.com/forever/{path}/zones" for locale, path in AREA_LOCALE_PATHS.items()}
+ACTIVITY_ENDPOINT = "https://wago.tools/db2/GroupFinderActivity?build=1.60.1.70450&filter%5BMapID%5D=exact%3A189&locale={locale}&page=1"
+SCARLET_ACTIVITIES = {"graveyard": 805, "library": 829, "armory": 827, "cathedral": 828}
 UNKNOWN = {"unknown", "sconosciuto", "inconnu", "unbekannt", "desconocido", "desconhecido",
            "未知", "未知任务", "未知任務", "알 수 없음"}
 
@@ -71,6 +73,27 @@ def validate(data, catalog):
     for key, zone in dungeon_sources.items():
         if key not in dungeons or type(zone) is not int or not 0 < zone <= 2**53 - 1:
             raise ValueError("Invalid localized dungeon source identity")
+    activities = provenance.get("dungeonActivitySources")
+    activity_ids = {}
+    if any("sm_" + wing in dungeons for wing in SCARLET_ACTIVITIES) and activities is None:
+        raise ValueError("Scarlet wing names require typed activity provenance")
+    if activities is not None:
+        if (type(activities) is not dict or set(activities) != {"provider", "table", "build", "useHotfixes", "checked", "activities"} or
+                activities["provider"] != "Wago.tools" or activities["table"] != "GroupFinderActivity" or
+                activities["build"] != "1.60.1.70450" or activities["useHotfixes"] is not False or
+                activities["checked"] != "2026-10-20" or type(activities["activities"]) is not dict or
+                set(activities["activities"]) != {"sm_" + wing for wing in SCARLET_ACTIVITIES}):
+            raise ValueError("Invalid localized activity-name provenance")
+        activity_ids = activities["activities"]
+        for key, identity in activity_ids.items():
+            definition = dungeons.get(key)
+            if (definition is None or type(identity) is not int or
+                    type(definition.get("wing")) is not str or definition.get("wing") not in SCARLET_ACTIVITIES or
+                    key != "sm_" + definition["wing"] or identity != SCARLET_ACTIVITIES[definition["wing"]] or
+                    definition.get("activityID") != identity or type(definition.get("activityID")) is not int or
+                    definition.get("instanceID") != 189 or type(definition.get("instanceID")) is not int or
+                    definition.get("complexKey") != "sm" or key in dungeon_sources):
+                raise ValueError("Localized activity name does not match typed dungeon identity")
     locales = data["locales"]
     if type(locales) is not dict or set(locales) != set(LOCALES):
         raise ValueError("Invalid localized-name locale coverage")
@@ -90,8 +113,10 @@ def validate(data, catalog):
                         not title(entry["name"]) or entry["name"] in (entry["source"], "[" + entry["source"] + "]") or
                         entry["name"].strip("[]").casefold() in UNKNOWN):
                     raise ValueError("Invalid localized name or English source mismatch")
-                source_id = key if kind == "quests" else dungeon_sources.get(key)
-                expected = ENDPOINT.format(kind="quest" if kind == "quests" else "zone", id=source_id, locale=LOCALES[locale])
+                activity = kind == "dungeons" and key in activity_ids
+                source_id = key if kind == "quests" else activity_ids.get(key, dungeon_sources.get(key))
+                expected = (ACTIVITY_ENDPOINT.format(locale=locale) if activity else
+                            ENDPOINT.format(kind="quest" if kind == "quests" else "zone", id=source_id, locale=LOCALES[locale]))
                 if source_id is None or entry["url"] != expected:
                     raise ValueError("Invalid localized-name source URL")
     return data

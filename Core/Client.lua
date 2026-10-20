@@ -1049,6 +1049,90 @@ function addon.ItemName(id, ownerCurrent)
 end
 
 function addon.DungeonName(d)
+    local scarletClean, scarletRead, scarletChecker, scarletProvider = addon.Clean, addon.Read, issecretvalue, addon.DungeonName
+    local database, language, gameGetter, dictionaries = addon.db, addon.Language, GetLocale, addon.locales
+    local fields, values, snapshots = { "key", "name", "wing", "activityID", "complexKey", "instanceID" }, {}, {}
+    local function capture(t, key)
+        local value = type(t) == "table" and rawget(t, key) or nil
+        snapshots[#snapshots + 1] = { t, key, value }
+        return value
+    end
+    for _, field in ipairs(fields) do values[field] = capture(d, field) end
+    local choice, previewGetter = capture(database, "locale"), capture(language, "GetSelection")
+    for _, locale in ipairs({ "enUS", "ruRU", "deDE", "frFR", "esES", "itIT", "ptBR", "koKR", "zhCN", "zhTW" }) do
+        local dictionary = capture(dictionaries, locale)
+        for _, wing in ipairs({ "graveyard", "library", "armory", "cathedral" }) do capture(dictionary, "DUNGEON_SCARLET_" .. wing) end
+    end
+    local function helpersCurrent()
+        return addon.Clean == scarletClean and addon.Read == scarletRead and issecretvalue == scarletChecker and addon.DungeonName == scarletProvider
+    end
+    local function sourceCurrent()
+        local ok, valid = pcall(function()
+            if not helpersCurrent() or addon.db ~= database or addon.Language ~= language or GetLocale ~= gameGetter or addon.locales ~= dictionaries then return false end
+            for _, item in ipairs(snapshots) do
+                local current = type(item[1]) == "table" and rawget(item[1], item[2]) or nil
+                if not rawequal(current, item[3]) then return false end
+            end
+            return true
+        end)
+        return ok and valid == true
+    end
+    -- Check the raw dispatch key without invoking a mutable read adapter.
+    if type(scarletChecker) == "function" then
+        local ok, secret = pcall(scarletChecker, values.key)
+        if not helpersCurrent() or not ok or secret ~= false then return "" end
+    end
+    local scarletKey = values.key
+    if scarletKey == "sm_graveyard" or scarletKey == "sm_library" or scarletKey == "sm_armory" or scarletKey == "sm_cathedral" then
+        local function sanitized(value, kind)
+            if not sourceCurrent() then return nil end
+            local ok, result = pcall(scarletClean, value, kind)
+            if not sourceCurrent() or not ok then return nil end
+            return result
+        end
+        local function external(fn, kind, ...)
+            if not sourceCurrent() then return nil end
+            fn = sanitized(fn, "function")
+            if not fn or not sourceCurrent() then return nil end
+            local ok, result = pcall(fn, ...)
+            if not sourceCurrent() or not ok then return nil end
+            return sanitized(result, kind)
+        end
+        if not sourceCurrent() then return "" end
+        for _, field in ipairs(fields) do
+            if type(scarletChecker) == "function" then
+                local ok, secret = pcall(scarletChecker, values[field])
+                if not sourceCurrent() or not ok or secret ~= false then return "" end
+            end
+        end
+        local wing = sanitized(values.wing, "string")
+        local activity = sanitized(values.activityID, "number")
+        local complex = sanitized(values.complexKey, "string")
+        local instance = sanitized(values.instanceID, "number")
+        local source = sanitized(values.name, "string")
+        if not sourceCurrent() then return "" end
+        if not source or #source > 1024 or not source:find("%S") then source = "" end
+        local expected = { graveyard = 805, library = 829, armory = 827, cathedral = 828 }
+        if not wing or scarletKey ~= "sm_" .. wing or expected[wing] ~= activity or complex ~= "sm" or instance ~= 189 then return source end
+        local selected = sanitized(choice, "string")
+        local preview = external(previewGetter, "string", language)
+        local game = external(gameGetter, "string")
+        if not sourceCurrent() then return "" end
+        selected = preview or selected or "auto"
+        local locale = selected == "auto" and game or selected
+        if locale == "enGB" then locale = "enUS" elseif locale == "esMX" then locale = "esES" end
+        if locale ~= "enUS" and locale ~= "ruRU" and locale ~= "deDE" and locale ~= "frFR" and locale ~= "esES" and
+            locale ~= "itIT" and locale ~= "ptBR" and locale ~= "koKR" and locale ~= "zhCN" and locale ~= "zhTW" then locale = "enUS" end
+        local root = sanitized(dictionaries, "table")
+        local dictionary = root and sanitized(rawget(root, locale), "table")
+        local label = dictionary and sanitized(rawget(dictionary, "DUNGEON_SCARLET_" .. wing), "string")
+        if not sourceCurrent() then return "" end
+        local nextPreview = external(previewGetter, "string", language)
+        local nextGame = external(gameGetter, "string")
+        if not sourceCurrent() or nextPreview ~= preview or nextGame ~= game then return "" end
+        if label and #label <= 1024 and label:find("%S") then return label end
+        return source
+    end
     d = addon.Clean(d, "table") or {}
     local bundled, bundleCurrent
     local function fallback()

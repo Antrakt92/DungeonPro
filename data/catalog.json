@@ -37069,19 +37069,33 @@
       }
     },
     {
-      "key": "sm",
+      "key": "sm_graveyard",
       "entrance": {
         "gameMapID": 189,
         "mapID": 1420,
         "x": 82.6,
         "y": 33.8,
-        "source": "https://phylactery.io/instance/189"
+        "source": "https://phylactery.io/instance/189",
+        "scope": "shared",
+        "kind": "approach"
       },
-      "name": "Scarlet Monastery",
+      "name": "Scarlet Monastery - Graveyard",
       "minLevel": 28,
       "maxLevel": 45,
       "coverage": "partial",
-      "quests": [
+      "quests": [],
+      "source": "https://www.wowhead.com/forever/guide/dungeons-overview-locations-details",
+      "instanceID": 189,
+      "art": {
+        "fileID": 131852,
+        "gameMapID": 189,
+        "loadingScreenID": 190,
+        "source": "https://wago.tools/db2/LoadingScreens?build=1.60.1.70425&filter%5BID%5D=exact%3A190"
+      },
+      "wing": "graveyard",
+      "activityID": 805,
+      "complexKey": "sm",
+      "sharedQuests": [
         96800,
         1049,
         1113,
@@ -37092,6 +37106,28 @@
         1050,
         1951
       ],
+      "levelScope": "complex"
+    },
+    {
+      "key": "sm_library",
+      "entrance": {
+        "gameMapID": 189,
+        "mapID": 1420,
+        "x": 82.6,
+        "y": 33.8,
+        "source": "https://phylactery.io/instance/189",
+        "scope": "shared",
+        "kind": "approach"
+      },
+      "name": "Scarlet Monastery - Library",
+      "minLevel": 28,
+      "maxLevel": 45,
+      "coverage": "partial",
+      "quests": [
+        1050,
+        1160,
+        1951
+      ],
       "source": "https://www.wowhead.com/forever/guide/dungeons-overview-locations-details",
       "instanceID": 189,
       "art": {
@@ -37099,7 +37135,102 @@
         "gameMapID": 189,
         "loadingScreenID": 190,
         "source": "https://wago.tools/db2/LoadingScreens?build=1.60.1.70425&filter%5BID%5D=exact%3A190"
-      }
+      },
+      "wing": "library",
+      "activityID": 829,
+      "complexKey": "sm",
+      "sharedQuests": [
+        96800,
+        1049,
+        1113,
+        1051,
+        1048,
+        1053,
+        1160,
+        1050,
+        1951
+      ],
+      "levelScope": "complex"
+    },
+    {
+      "key": "sm_armory",
+      "entrance": {
+        "gameMapID": 189,
+        "mapID": 1420,
+        "x": 82.6,
+        "y": 33.8,
+        "source": "https://phylactery.io/instance/189",
+        "scope": "shared",
+        "kind": "approach"
+      },
+      "name": "Scarlet Monastery - Armory",
+      "minLevel": 28,
+      "maxLevel": 45,
+      "coverage": "partial",
+      "quests": [],
+      "source": "https://www.wowhead.com/forever/guide/dungeons-overview-locations-details",
+      "instanceID": 189,
+      "art": {
+        "fileID": 131852,
+        "gameMapID": 189,
+        "loadingScreenID": 190,
+        "source": "https://wago.tools/db2/LoadingScreens?build=1.60.1.70425&filter%5BID%5D=exact%3A190"
+      },
+      "wing": "armory",
+      "activityID": 827,
+      "complexKey": "sm",
+      "sharedQuests": [
+        96800,
+        1049,
+        1113,
+        1051,
+        1048,
+        1053,
+        1160,
+        1050,
+        1951
+      ],
+      "levelScope": "complex"
+    },
+    {
+      "key": "sm_cathedral",
+      "entrance": {
+        "gameMapID": 189,
+        "mapID": 1420,
+        "x": 82.6,
+        "y": 33.8,
+        "source": "https://phylactery.io/instance/189",
+        "scope": "shared",
+        "kind": "approach"
+      },
+      "name": "Scarlet Monastery - Cathedral",
+      "minLevel": 28,
+      "maxLevel": 45,
+      "coverage": "partial",
+      "quests": [],
+      "source": "https://www.wowhead.com/forever/guide/dungeons-overview-locations-details",
+      "instanceID": 189,
+      "art": {
+        "fileID": 131852,
+        "gameMapID": 189,
+        "loadingScreenID": 190,
+        "source": "https://wago.tools/db2/LoadingScreens?build=1.60.1.70425&filter%5BID%5D=exact%3A190"
+      },
+      "wing": "cathedral",
+      "activityID": 828,
+      "complexKey": "sm",
+      "sharedQuests": [
+        96800,
+        1049,
+        1113,
+        1051,
+        1048,
+        1053,
+        1160,
+        1050,
+        1951
+      ],
+      "levelScope": "complex"
     },
     {
       "key": "rfd",

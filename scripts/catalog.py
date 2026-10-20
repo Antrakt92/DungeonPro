@@ -22,7 +22,10 @@ QUEST_FIELDS = frozenset({
 })
 DUNGEON_FIELDS = frozenset({
     "key", "name", "minLevel", "maxLevel", "coverage", "quests", "source", "instanceID", "wing", "entrance", "art",
+    "activityID", "complexKey", "sharedQuests", "levelScope",
 })
+SCARLET_WINGS = frozenset({"graveyard", "library", "armory", "cathedral"})
+COMPLEX_FIELDS = frozenset({"activityID", "complexKey", "sharedQuests", "levelScope"})
 PLACE_FIELDS = frozenset({
     "name", "npcID", "objectID", "itemID", "mapID", "x", "y", "zoneName", "locationName",
     "dungeonKey", "reportedLocations", "creatureDisplayID", "portraitSource", "dropNPCID", "dropName",
@@ -398,7 +401,7 @@ def validate(data):
 
     for qid in quests:
         visit(qid)
-    keys, instance_wings = set(), {}
+    keys, instance_wings, scarlet = set(), {}, []
     for d in data["dungeons"]:
         if set(d) - DUNGEON_FIELDS:
             raise ValueError("Unknown dungeon fields")
@@ -409,8 +412,25 @@ def validate(data):
         keys.add(d["key"])
         if ("instanceID" in d and not integer(d["instanceID"])) or not integer(d["minLevel"]) or not integer(d["maxLevel"]) or d["maxLevel"] < d["minLevel"]:
             raise ValueError("Invalid dungeon identity/levels")
-        if "wing" in d and (type(d["wing"]) is not str or d["wing"] not in ("lower", "upper") or "instanceID" not in d):
+        if "wing" in d and (type(d["wing"]) is not str or
+                d["wing"] not in ({"lower", "upper"} | SCARLET_WINGS) or "instanceID" not in d):
             raise ValueError("Invalid dungeon wing")
+        if d.get("instanceID") == 189:
+            if (d.get("wing") not in SCARLET_WINGS or d.get("key") != "sm_" + d["wing"] or
+                    d.get("complexKey") != "sm" or d.get("levelScope") != "complex" or
+                    not integer(d.get("activityID")) or d["activityID"] > 4294967295):
+                raise ValueError("Invalid Scarlet wing identity/complex metadata")
+            shared = d.get("sharedQuests")
+            if (type(shared) is not list or not 1 <= len(shared) <= 100 or
+                    any(not integer(qid) or qid not in quests for qid in shared) or
+                    len(shared) != len(set(shared))):
+                raise ValueError("Invalid Scarlet shared discovery list")
+            if (type(d.get("quests")) is not list or
+                    any(not integer(qid) or qid not in shared for qid in d["quests"])):
+                raise ValueError("Scarlet wing roots must belong to shared discovery")
+            scarlet.append(d)
+        elif set(d) & COMPLEX_FIELDS or d.get("wing") in SCARLET_WINGS:
+            raise ValueError("Scarlet metadata on unrelated dungeon")
         if "entrance" in d:
             entrance = d["entrance"]
             required = {"mapID", "x", "y", "source"}
@@ -424,6 +444,8 @@ def validate(data):
                     ("gameMapID" in entrance and (not integer(entrance["gameMapID"]) or
                      entrance["gameMapID"] > 2 ** 53 - 1 or entrance["gameMapID"] != d.get("instanceID")))):
                 raise ValueError("Invalid dungeon entrance identity/source")
+            if d.get("instanceID") == 189 and entrance.get("kind") != "approach":
+                raise ValueError("Scarlet entrance must be a shared complex approach")
             source = entrance["source"]
             if type(source) is not str or len(source) > 2048:
                 raise ValueError("Invalid dungeon entrance identity/source")
@@ -477,6 +499,13 @@ def validate(data):
             raise ValueError("Duplicate dungeon quest")
         if d["coverage"] == "reviewed" and not d["quests"]:
             raise ValueError("Empty dungeon cannot claim reviewed coverage")
+    if scarlet:
+        if (len(scarlet) != 4 or {d["wing"] for d in scarlet} != SCARLET_WINGS or "sm" in keys or
+                len({d["activityID"] for d in scarlet}) != 4):
+            raise ValueError("Scarlet complex requires exactly four distinct canonical wings")
+        shared, band = scarlet[0]["sharedQuests"], (scarlet[0]["minLevel"], scarlet[0]["maxLevel"])
+        if any(d["sharedQuests"] != shared or (d["minLevel"], d["maxLevel"]) != band for d in scarlet):
+            raise ValueError("Inconsistent Scarlet shared discovery/complex level band")
     for q in quests.values():
         places = [q.get(field) for field in ("start", "finish")]
         places.extend(q.get("startAlternatives", []))

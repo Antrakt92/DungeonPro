@@ -132,7 +132,7 @@ check("Addon initializes on the matching Forever client", function()
 end)
 check("Window opens and filters without requiring cached quest titles", function()
     SlashCmdList.DUNGEONPRO("")
-    assert(addon.UI.frame:IsShown()); assert(#addon.UI.cards == 29)
+    assert(addon.UI.frame:IsShown()); assert(#addon.UI.cards == #addon.dungeons)
     for _, d in ipairs(addon.dungeons) do if d.key == "dm" then addon.UI.dungeon = d end end
     addon.UI:Refresh(); assert(#addon.UI.rows == 7)
 end)

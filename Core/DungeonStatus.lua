@@ -20,10 +20,19 @@ function Status.Get(dungeon, engine)
     local fieldObjects, fieldKeys, fieldValues, fieldCount, rootCount = {}, {}, {}, 0, 0
     local arrays = {}
     local building = true
+    local function sourceOrdinary(value)
+        local ordinary = checker(value)
+        if addon.Clean ~= clean or addon.Read ~= read or issecretvalue ~= checker then error("source helpers changed") end
+        return ordinary
+    end
     local function keep(object, key)
         if fieldCount >= 4000 then return nil, false end
         local value = rawget(object, key)
-        if type(checker) == "function" and read(checker, "boolean", value) ~= false then return nil, false end
+        if type(checker) == "function" then
+            local ok, ordinary = pcall(read, sourceOrdinary, "boolean", value)
+            if addon.Clean ~= clean or addon.Read ~= read or issecretvalue ~= checker then return nil, false end
+            if not ok or ordinary ~= false then return nil, false end
+        end
         fieldCount = fieldCount + 1
         fieldObjects[fieldCount], fieldKeys[fieldCount], fieldValues[fieldCount] = object, key, value
         return value, true
@@ -79,7 +88,10 @@ function Status.Get(dungeon, engine)
         end
         return true
     end
-    for _, key in ipairs({ "quests", "coverage" }) do local _, ok = keep(dungeon, key); if not ok then return nil, "source" end end
+    for _, key in ipairs({ "quests", "coverage", "complexKey" }) do local _, ok = keep(dungeon, key); if not ok then return nil, "source" end end
+    if not ownsBindings() then return nil, "expired" end
+    local complexKey = rawget(dungeon, "complexKey")
+    if complexKey ~= nil and (type(complexKey) ~= "string" or #complexKey > 80 or not complexKey:find("%S")) then return nil, "source" end
     for _, key in ipairs({ "level", "faction", "class", "current", "completed", "active", "ready" }) do
         local _, ok = keep(context, key); if not ok then return nil, "context" end
     end
@@ -201,6 +213,9 @@ function Status.Get(dungeon, engine)
     building = false
     if not current() then return nil, "expired" end
     result.status = "UNAVAILABLE"
+    if rootCount == 0 and complexKey == "sm" and rawget(dungeon, "coverage") == "partial" then
+        result.status, result.reason = "UNKNOWN", "coverage"
+    end
     if result.eligible > 0 then
         if result.completed == result.eligible then result.status = "COMPLETED"
         else

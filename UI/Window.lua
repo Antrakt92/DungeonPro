@@ -857,9 +857,206 @@ function UI:QueueSearch()
     self:FlushPendingSearch(pending)
 end
 
+function UI:ScarletDiscoveryScope(dungeon)
+    local clean, read, checker, provider = addon.Clean, addon.Read, issecretvalue, self.ScarletDiscoveryScope
+    local catalogue, definitions, character = addon.dungeons, addon.quests, addon.char
+    local ui = addon.UI
+    local selected
+    local tables, fields, checks = {}, {}, {}
+    local function field(t, k)
+        local value = rawget(t, k)
+        fields[#fields + 1] = { t, k, value }
+        return value
+    end
+    local function sequence(t, limit)
+        local entries, count = {}, 0
+        for k, v in next, t do
+            count = count + 1
+            if count > limit then error("bounded discovery source") end
+            entries[count] = { k, v }
+        end
+        tables[#tables + 1] = { t, entries }
+        return entries
+    end
+    -- Snapshot raw source identities before calling sanitizers.
+    local rowInputs, definitionInputs, catalogueEntries = {}, {}, nil
+    local ok = pcall(function()
+        selected = field(character, "selectedDungeon")
+        catalogueEntries = sequence(catalogue, 1000)
+        for _, entry in ipairs(catalogueEntries) do
+            local row, values = entry[2], {}
+            for _, key in ipairs({ "key", "name", "wing", "activityID", "instanceID", "complexKey",
+                "levelScope", "coverage", "minLevel", "maxLevel", "sharedQuests", "quests" }) do
+                values[key] = field(row, key)
+            end
+            values.sharedEntries = type(values.sharedQuests) == "table" and sequence(values.sharedQuests, 100) or nil
+            values.questEntries = type(values.quests) == "table" and sequence(values.quests, 100) or nil
+            rowInputs[#rowInputs + 1] = { row = row, values = values, position = entry[1] }
+        end
+        -- Capture definition identities/names before callbacks, without choosing a guessed ID.
+        for _, entry in ipairs(sequence(definitions, 10000)) do
+            definitionInputs[#definitionInputs + 1] = { key = entry[1], definition = entry[2],
+                id = field(entry[2], "id"), name = field(entry[2], "name") }
+        end
+    end)
+    if not ok then return nil end
+    local function bindingsCurrent()
+        return addon.UI == ui and ui == self and addon.Clean == clean and addon.Read == read and issecretvalue == checker and self.ScarletDiscoveryScope == provider and addon.dungeons == catalogue and addon.quests == definitions and addon.char == character
+    end
+    local function rawCurrent()
+        local success, same = pcall(function()
+            if addon.UI ~= ui or ui ~= self or addon.Clean ~= clean or addon.Read ~= read or
+                issecretvalue ~= checker or self.ScarletDiscoveryScope ~= provider or
+                addon.dungeons ~= catalogue or addon.quests ~= definitions or addon.char ~= character then return false end
+            for _, item in ipairs(fields) do
+                if not rawequal(rawget(item[1], item[2]), item[3]) then return false end
+            end
+            for _, snapshot in ipairs(tables) do
+                local index = 0
+                for key, value in next, snapshot[1] do
+                    index = index + 1
+                    local entry = snapshot[2][index]
+                    if not entry or not rawequal(key, entry[1]) or not rawequal(value, entry[2]) then return false end
+                end
+                if index ~= #snapshot[2] then return false end
+            end
+            return true
+        end)
+        return success and same == true
+    end
+    if not rawCurrent() then return nil end
+    local function value(raw, kind, optional, retain)
+        if not bindingsCurrent() then return nil end
+        local ok, result = pcall(clean, raw, kind)
+        if not ok or not bindingsCurrent() then return nil end
+        if result == nil and not (optional and type(raw) == "nil") then return nil end
+        if retain ~= false then checks[#checks + 1] = { raw, kind, result } end
+        return result
+    end
+    local quickOK,quickRaw
+    if type(dungeon)=="nil" then quickOK,quickRaw=true,selected
+    else quickOK,quickRaw=pcall(rawget,dungeon,"key") end
+    if not quickOK then return nil end
+    local quickKey=value(quickRaw,"string",true)
+    if type(dungeon)=="nil" then if quickKey~="sm" then return nil end
+    elseif quickKey~="sm_graveyard" and quickKey~="sm_library" and quickKey~="sm_armory" and quickKey~="sm_cathedral" then return nil end
+    if not value(catalogue, "table") or not value(definitions, "table") or
+        not value(character, "table") then return nil end
+    local chosen = value(selected, "string", true)
+    if type(selected) ~= "nil" and not chosen then return nil end
+    local expected = { graveyard = 805, library = 829, armory = 827, cathedral = 828 }
+    local group, groupSet, shared, band, matched = {}, {}, nil, nil, false
+    local retainedObjects, retainedArrays = {}, { [catalogue]=true }
+    local definitionsByID = {}
+    for _, input in ipairs(definitionInputs) do
+        local id = value(input.key, "number", false, false)
+        if not id or id < 1 or id % 1 ~= 0 then return nil end
+        definitionsByID[id] = input
+    end
+    local positions = {}
+    local function ids(entries)
+        if not entries then return nil end
+        local result, seen, count = {}, {}, #entries
+        for _, entry in ipairs(entries) do
+            local position, id = value(entry[1], "number"), value(entry[2], "number")
+            if not position or position % 1 ~= 0 or position < 1 or position > count or
+                not id or id % 1 ~= 0 or id < 1 or id > 4294967295 or seen[id] or result[position] then return nil end
+            local definition = definitionsByID[id]
+            if not definition or not value(definition.definition, "table") then return nil end
+            local ownID, name = value(definition.id, "number"), value(definition.name, "string")
+            if ownID ~= id or not name or #name > 1024 or not name:find("%S") then return nil end
+            retainedObjects[definition.definition] = true
+            seen[id], result[position] = true, id
+        end
+        return result
+    end
+    for _, input in ipairs(rowInputs) do
+        local position = value(input.position, "number")
+        if not position or position % 1 ~= 0 or position < 1 or position > #rowInputs or positions[position] then return nil end
+        positions[position] = true
+        local row, v = input.row, input.values
+        if not value(row, "table") then return nil end
+        local key = value(v.key, "string")
+        if not key then return nil end
+        if key == "sm" then return nil end
+        if key == "sm_graveyard" or key == "sm_library" or key == "sm_armory" or key == "sm_cathedral" then
+            local wing, activity = value(v.wing, "string"), value(v.activityID, "number")
+            local instance, complex = value(v.instanceID, "number"), value(v.complexKey, "string")
+            local scope, coverage = value(v.levelScope, "string"), value(v.coverage, "string")
+            local minimum, maximum = value(v.minLevel, "number"), value(v.maxLevel, "number")
+            local name = value(v.name, "string")
+            if not wing or key ~= "sm_" .. wing or expected[wing] ~= activity or instance ~= 189 or complex ~= "sm" or
+                scope ~= "complex" or coverage ~= "partial" or not minimum or not maximum or minimum % 1 ~= 0 or
+                maximum % 1 ~= 0 or minimum < 1 or maximum < minimum or not name or not name:find("%S") or #name > 1024 or groupSet[wing] then return nil end
+            if not value(v.sharedQuests, "table") or not value(v.quests, "table") then return nil end
+            local list, roots = ids(v.sharedEntries), ids(v.questEntries)
+            if not list or #list < 1 or not roots then return nil end
+            local set = {}
+            for _, id in ipairs(list) do set[id] = true end
+            for _, id in ipairs(roots) do if not set[id] then return nil end end
+            if shared then
+                if #shared ~= #list or minimum ~= band[1] or maximum ~= band[2] then return nil end
+                for index, id in ipairs(shared) do if list[index] ~= id then return nil end end
+            else shared, band = list, { minimum, maximum } end
+            retainedObjects[row], retainedArrays[v.sharedQuests], retainedArrays[v.quests] = true, true, true
+            groupSet[wing], group[#group + 1] = true, row
+            if rawequal(dungeon, row) then matched = true end
+        elseif value(v.instanceID, "number", true) == 189 or value(v.complexKey, "string", true) == "sm" then return nil end
+    end
+    local legacy = dungeon == nil and chosen == "sm"
+    if legacy then retainedObjects[character] = true end
+    if #group ~= 4 or not (matched or legacy) or not rawCurrent() then return nil end
+    -- Retain only actual group arrays and referenced definition fields after the
+    -- initial coherent snapshot has been proven; unrelated quest names are not dependencies.
+    local retainedFields, retainedTables = {}, {}
+    for _, f in ipairs(fields) do
+        if retainedObjects[f[1]] or (f[2]=="key" or f[2]=="instanceID" or f[2]=="complexKey") and
+            f[1]~=definitions then retainedFields[#retainedFields+1]=f end
+    end
+    for _, snapshot in ipairs(tables) do
+        if retainedArrays[snapshot[1]] then retainedTables[#retainedTables+1]=snapshot end
+    end
+    for _, id in ipairs(shared) do
+        retainedFields[#retainedFields+1]={definitions,id,definitionsByID[id].definition}
+    end
+    fields,tables=retainedFields,retainedTables
+    local returned = {}
+    for index, id in ipairs(shared) do returned[index] = id end
+    local function modelRawCurrent()
+        if not rawCurrent() then return false end
+        local ok, valid = pcall(function()
+            local count = 0
+            for key, id in next, returned do
+                count = count + 1
+                if not rawequal(rawget(shared, key), id) then return false end
+            end
+            return count == #shared
+        end)
+        return ok and valid == true
+    end
+    local function current()
+        if not modelRawCurrent() then return false end
+        for _, check in ipairs(checks) do
+            local ok, got = pcall(clean, check[1], check[2])
+            if not ok or not bindingsCurrent() or not rawequal(got, check[3]) then return false end
+        end
+        return modelRawCurrent()
+    end
+    if not current() then return nil end
+    return { ids = returned, legacy = legacy, current = current, rawCurrent = modelRawCurrent }
+end
+
 function UI:CatalogResultNote(result, matchedName)
-    local note = result.count ~= nil and addon.L("CATALOG_COMPACT_META", result.minimum, result.maximum, result.count) or
-        addon.L("CATALOG_LEVELS", result.minimum, result.maximum)
+    local note
+    if result.sharedLevels then
+        note = addon.L("SM_SHARED_LEVEL_RANGE", result.minimum, result.maximum)
+        note = note .. "\n" .. (result.partialEmpty and addon.L("SM_WING_QUESTS_UNKNOWN") or
+            (result.count ~= nil and addon.L("CATALOG_QUESTS", result.count) or addon.L("SM_PARTIAL_WING")))
+    else
+        note = result.count ~= nil and addon.L("CATALOG_COMPACT_META", result.minimum, result.maximum, result.count) or
+            addon.L("CATALOG_LEVELS", result.minimum, result.maximum)
+    end
+    if result.sharedDiscovery then note = note .. "\n" .. addon.L("SM_SHARED_QUESTS") end
     matchedName = matchedName or result.matchedName
     if matchedName then note = note .. "\n" .. addon.L(result.related and "SEARCH_RELATED_STEP" or "SEARCH_QUEST_MATCH", matchedName) end
     if result.sourceMatch then
@@ -1024,6 +1221,7 @@ function UI:RefreshDungeons()
     local search, range, locale, catalogScroll = self.search, self.range, addon.db.locale, self.catalogScroll
     local includeUnavailable = self.includeUnavailable
     local getter, dungeonGetter, fold, checker = addon.CachedQuestName, addon.DungeonName, addon.SearchFold, issecretvalue
+    local discoveryGetter, cleaner, reader = self.ScarletDiscoveryScope, addon.Clean, addon.Read
     local context = addon.Context()
     local contextCurrent = context.current
     local query = (addon.Clean(search, "string") or ""):gsub("^%s+", ""):gsub("%s+$", "")
@@ -1034,8 +1232,14 @@ function UI:RefreshDungeons()
     local sourceGetter, idParser, relationGetter = addon.QuestSourceSearchTerms, addon.SearchQuestID, addon.QuestSearchRelations
     for index, dungeon in ipairs(catalogue) do
         local targets = dungeon.quests
+        local discovery
         local input = { dungeon = dungeon, name = dungeon.name, key = dungeon.key, wing = dungeon.wing,
-            minimum = dungeon.minLevel, maximum = dungeon.maxLevel, targets = targets, members = {} }
+            minimum = dungeon.minLevel, maximum = dungeon.maxLevel, targets = targets, members = {},
+            activityID = rawget(dungeon, "activityID"), instanceID = rawget(dungeon, "instanceID"),
+            complexKey = rawget(dungeon, "complexKey"), levelScope = rawget(dungeon, "levelScope"),
+            coverage = rawget(dungeon, "coverage"), discovery = discovery,
+            discoveryIDs = discovery and discovery.ids, discoveryCurrent = discovery and discovery.current,
+            discoveryRaw = discovery and discovery.rawCurrent }
         inputs[index], input.index, inputByDungeon[dungeon] = input, index, input
         for other, id in ipairs(targets) do
             local quest = definitions[id]
@@ -1059,7 +1263,8 @@ function UI:RefreshDungeons()
     end
     local function baseCurrent(sourceOnly)
         local ok, valid = pcall(function()
-            if context.current ~= contextCurrent or addon.QuestSourceSearchTerms ~= sourceGetter or
+            if addon.Clean ~= cleaner or addon.Read ~= reader or self.ScarletDiscoveryScope ~= discoveryGetter or
+                context.current ~= contextCurrent or addon.QuestSourceSearchTerms ~= sourceGetter or
                 addon.SearchQuestID ~= idParser or addon.QuestSearchRelations ~= relationGetter then return false end
             if self.catalogGeneration ~= generation or self.search ~= search or self.range ~= range or self.includeUnavailable ~= includeUnavailable or self.catalogScroll ~= catalogScroll or
                 addon.dungeons ~= catalogue or addon.quests ~= definitions or addon.char ~= character or
@@ -1073,6 +1278,12 @@ function UI:RefreshDungeons()
                 if catalogue[index] ~= dungeon or dungeon.name ~= input.name or dungeon.key ~= input.key or dungeon.wing ~= input.wing or
                     dungeon.minLevel ~= input.minimum or dungeon.maxLevel ~= input.maximum or dungeon.quests ~= input.targets or
                     #input.targets ~= #input.members then return false end
+                for _, key in ipairs({ "activityID", "instanceID", "complexKey", "levelScope", "coverage" }) do
+                    if not rawequal(rawget(dungeon, key), input[key]) then return false end
+                end
+                if input.discovery and (input.discovery.ids ~= input.discoveryIDs or
+                    input.discovery.current ~= input.discoveryCurrent or input.discovery.rawCurrent ~= input.discoveryRaw or
+                    type(input.discoveryRaw) ~= "function" or input.discoveryRaw() ~= true) then return false end
                 for other, member in ipairs(input.members) do
                     if input.targets[other] ~= member.id or definitions[member.id] ~= member.quest or
                         (member.quest and (member.quest.name ~= member.name or member.quest.id ~= member.questID)) then return false end
@@ -1084,6 +1295,20 @@ function UI:RefreshDungeons()
             return true
         end)
         return ok and valid == true
+    end
+    -- Own every catalogue input before a helper can sanitize or reenter.
+    for _, input in ipairs(inputs) do
+        if not baseCurrent("full") then return end
+        local complex = cleaner(input.complexKey, "string")
+        if not baseCurrent("full") then return end
+        if complex == "sm" and type(discoveryGetter) == "function" then
+            local ok, model = pcall(discoveryGetter, self, input.dungeon)
+            if not baseCurrent("full") then return end
+            if not ok or type(model) ~= "table" then return end
+            input.discovery, input.discoveryIDs = model, model.ids
+            input.discoveryCurrent, input.discoveryRaw = model.current, model.rawCurrent
+            if not baseCurrent("full") then return end
+        end
     end
     local function captureClick(control)
         local frame, quest, dungeon = self.frame, self.quest, self.dungeon
@@ -1188,6 +1413,13 @@ function UI:RefreshDungeons()
     end
     local function proveSources()
         if not current("full") then return false end
+        for _, input in ipairs(inputs) do
+            if input.discovery then
+                if type(input.discoveryCurrent) ~= "function" then return expireSources() end
+                local ok, valid = pcall(input.discoveryCurrent)
+                if not ok or not baseCurrent("full") or valid ~= true then return expireSources() end
+            end
+        end
         for _, cached in pairs(sourceMemo) do
             if cached.current and addon.Read(cached.current, "boolean") ~= true then return expireSources() end
         end
@@ -1209,6 +1441,11 @@ function UI:RefreshDungeons()
             return baseCurrent(true) and catalogue[index] == dungeon and dungeon.name == input.name and
                 dungeon.key == input.key and dungeon.minLevel == input.minimum and dungeon.maxLevel == input.maximum and
                 dungeon.quests == input.targets and #input.targets == #input.members and
+                rawequal(rawget(dungeon, "activityID"), input.activityID) and
+                rawequal(rawget(dungeon, "instanceID"), input.instanceID) and
+                rawequal(rawget(dungeon, "complexKey"), input.complexKey) and
+                rawequal(rawget(dungeon, "levelScope"), input.levelScope) and
+                rawequal(rawget(dungeon, "coverage"), input.coverage) and
                 (not member or (input.targets[other] == member.id and definitions[member.id] == member.quest and
                 (not member.quest or (member.quest.name == member.name and member.quest.id == member.questID))))
         end)
@@ -1325,7 +1562,7 @@ function UI:RefreshDungeons()
         local record={kind=kind,argument=argument,subject=subject,provider=provider,fields={}}
         if not scopeRaw()then return end
         if type(provider)~="function"or type(subject)~="table"then nameScope.invalid=true;return addon.Read(provider,"string",argument)end
-        for _,key in ipairs(kind=="quests"and{"id","name"}or{"key","name","wing","instanceID","art"})do
+        for _,key in ipairs(kind=="quests"and{"id","name"}or{"key","name","wing","instanceID","art","activityID","complexKey"})do
             record.fields[#record.fields+1]={key=key,value=rawget(subject,key)}
         end
         if kind=="quests"then
@@ -1343,8 +1580,9 @@ function UI:RefreshDungeons()
         record.entry=type(record.entries)=="table"and record.key and rawget(record.entries,record.key)
         record.source=type(record.entry)=="table"and rawget(record.entry,"source")
         record.name=type(record.entry)=="table"and rawget(record.entry,"name")
-        if wing=="lower"or wing=="upper"then
-            record.wingKey="DUNGEON_WING_"..wing
+        if wing=="lower"or wing=="upper"then record.wingKey="DUNGEON_WING_"..wing
+        elseif wing=="graveyard"or wing=="library"or wing=="armory"or wing=="cathedral"then record.wingKey="DUNGEON_SCARLET_"..wing end
+        if record.wingKey then
             record.localize=addon.L
             record.strings=addon.locales
             record.interface=type(record.strings)=="table"and rawget(record.strings,nameScope.locale)
@@ -1449,7 +1687,7 @@ function UI:RefreshDungeons()
         local dungeon = input.dungeon
         if not range or (context.level and context.level >= input.minimum - 3 and context.level <= input.maximum + 3) then
             if not scanMember(input, inputIndex) then return end
-            local matchedName, matchedID, sourceMatch, idMatch, idFallbackName, relatedRootID
+            local matchedName, matchedID, sourceMatch, idMatch, idFallbackName, relatedRootID, sharedDiscovery
             if queryID then
                 for memberIndex, member in ipairs(input.members) do
                     if not scanMember(input, inputIndex, member, memberIndex) then return end
@@ -1471,7 +1709,7 @@ function UI:RefreshDungeons()
                 end
             end
             local name, matches = "", false
-            if not queryID or matchedID then
+            if not queryID or matchedID or input.discovery then
                 name = catalogName("dungeons",dungeon,dungeon) or addon.Clean(input.name, "string") or ""
                 if not current(true) then return end
                 if not queryID then matches = query == "" or searchText(name):find(needle, 1, true) or searchText(input.name):find(needle, 1, true) end
@@ -1560,6 +1798,51 @@ function UI:RefreshDungeons()
                     if matchedName then break end
                 end
             end
+            if not matches and not matchedName and input.discovery then
+                for _, sharedID in ipairs(input.discoveryIDs) do
+                    if not baseCurrent("full") then return end
+                    local definition = definitions[sharedID]
+                    local title
+                    local found = queryID and queryID == sharedID or nil
+                    if found or not queryID then
+                        local cached = memo[sharedID]
+                        if not cached then
+                            cached = { name = addon.Read(getter, "string", sharedID) }
+                            memo[sharedID] = cached
+                            if not baseCurrent("full") then return end
+                        end
+                        title = cached.name
+                        if not queryID then
+                            found = title and searchText(title):find(needle, 1, true)
+                        end
+                    end
+                    if not found and not queryID and definition then
+                        local canonical = cleaner(rawget(definition, "name"), "string")
+                        if not baseCurrent("full") then return end
+                        found = canonical and searchText(canonical):find(needle, 1, true)
+                    end
+                    if not found and not queryID and type(sourceGetter) == "function" then
+                        local cached = sourcesFor(sharedID, definition)
+                        if not baseCurrent("full") then return end
+                        for _, entry in ipairs(cached.entries or {}) do
+                            if searchText(entry.text):find(needle, 1, true) then
+                                found, sourceMatch = true, entry
+                                if not cached.matched then cached.matched = true; sourceMatches[#sourceMatches + 1] = cached end
+                                break
+                            end
+                        end
+                    end
+                    if found then
+                        matchedID, sharedDiscovery = sharedID, true
+                        matchedName = title or ("#" .. sharedID)
+                        if queryID then
+                            idMatch, idFallbackName = true, matchedName .. " (#" .. query .. ")"
+                            matchedName = idFallbackName
+                        end
+                        break
+                    end
+                end
+            end
             if matchedName and not idMatch and not relatedRootID then
                 local definition=addon.Clean(rawget(definitions,matchedID),"table")
                 if not current(true)then return end
@@ -1577,6 +1860,9 @@ function UI:RefreshDungeons()
             if matches or matchedName then
                 local result = { dungeon = dungeon, title = name, questID = matchedID, sourceMatch = sourceMatch,
                     idMatch = idMatch, idFallbackName = idFallbackName, related = relatedRootID~=nil, relatedRootID = relatedRootID, includeUnavailable = includeUnavailable, minimum = input.minimum, maximum = input.maximum, count = includeUnavailable == true and #input.members or nil, matchedName = matchedName }
+                result.sharedDiscovery = sharedDiscovery == true
+                result.sharedLevels = cleaner(input.complexKey, "string") == "sm" and cleaner(input.levelScope, "string") == "complex"
+                result.partialEmpty = result.sharedLevels and cleaner(input.coverage, "string") ~= "reviewed" and #input.members == 0
                 result.note = self:CatalogResultNote(result)
                 if not current(true) then return end
                 results[#results + 1] = result
@@ -1936,18 +2222,51 @@ function UI:RefreshQuests()
     local infoProofs, infoRawProofs, infoRawMissing, infoFailed = {}, {}, false, false
     self.questListGeneration = generation
     local released, read, clean, checker = false, addon.Read, addon.Clean, issecretvalue
+    local releaseShared
     self.questListRelease = function()
         released = true
+        if releaseShared then releaseShared(); releaseShared = nil end
         planLease.current, planLease.raw = nil, nil
         engineLease.engine, engine, context, treeCurrent, treeRaw = nil, nil, nil, nil, nil
         infoProofs, infoRawProofs = {}, {}
+    end
+    local scopeGetter = self.ScarletDiscoveryScope
+    local scopeSelector, scopeKey = d or character, d and "complexKey" or "selectedDungeon"
+    local scopeSelectionRaw = scopeSelector and rawget(scopeSelector, scopeKey)
+    local scopeSelection = addon.Clean(scopeSelectionRaw, "string")
+    local scopeInputSafe = type(scopeSelectionRaw) == "nil" or scopeSelection ~= nil
+    local scope = scopeSelection == "sm" and type(scopeGetter) == "function" and addon.Read(scopeGetter, "table", self, d) or nil
+    local scopeCurrent = scope and addon.Clean(scope.current, "function")
+    local scopeRaw = scope and addon.Clean(scope.rawCurrent, "function")
+    local scopeIDs = scope and addon.Clean(scope.ids, "table")
+    local scopeLegacy = scope and addon.Clean(scope.legacy, "boolean") == true or false
+    local sharedIDs = {}
+    if scopeIDs then for index, id in ipairs(scopeIDs) do sharedIDs[index] = id end end
+    releaseShared = function()
+        scope, scopeCurrent, scopeRaw, scopeIDs, scopeGetter = nil, nil, nil, nil, nil
+        sharedIDs = {}
+    end
+    local function sharedProof(raw)
+        local ok, same = pcall(function()
+            if not scopeInputSafe or self.ScarletDiscoveryScope ~= scopeGetter or not rawequal(rawget(scopeSelector, scopeKey), scopeSelectionRaw) then return false end
+            if not scope then return true end
+            if not scopeCurrent or not scopeRaw or not scopeIDs or scope.current ~= scopeCurrent or scope.rawCurrent ~= scopeRaw or
+                scope.ids ~= scopeIDs or scope.legacy ~= scopeLegacy or #scopeIDs ~= #sharedIDs then return false end
+            for index, id in ipairs(sharedIDs) do if scopeIDs[index] ~= id then return false end end
+            if not raw and addon.Read(scopeCurrent, "boolean") ~= true then return false end
+            if scopeRaw() ~= true or self.ScarletDiscoveryScope ~= scopeGetter or scope.current ~= scopeCurrent or scope.rawCurrent ~= scopeRaw or
+                scope.ids ~= scopeIDs or scope.legacy ~= scopeLegacy or #scopeIDs ~= #sharedIDs then return false end
+            for index, id in ipairs(sharedIDs) do if scopeIDs[index] ~= id then return false end end
+            return true
+        end)
+        return ok and same == true
     end
     local proveTree
     local function current()
         if released or self.questListRequest ~= request or addon.Read ~= read or addon.Clean ~= clean or issecretvalue ~= checker then return false end
         local owned = self.layoutRevision == layoutRevision and self.questListGeneration == generation and self.engine == engine and self.dungeon == d and addon.char == character and
             self.preparation == preparation and self.includeUnavailable == includeUnavailable
-        if not owned or treeFailed or infoFailed then return false end
+        if not owned or treeFailed or infoFailed or not sharedProof(true) then return false end
         if d and (d.quests ~= targets or #targets ~= #targetIDs) then return false end
         for index, id in ipairs(targetIDs) do if targets[index] ~= id then return false end end
         if not rendering and not proveTree() then return false end
@@ -1984,11 +2303,11 @@ function UI:RefreshQuests()
         return false
     end
     local function proveInfos()
-        if not current() or not proveTree() then return retireInfos() end
+        if not current() or not sharedProof(false) or not proveTree() then return retireInfos() end
         for _, proof in ipairs(infoProofs) do
             if addon.Read(proof, "boolean") ~= true or not current() then return retireInfos() end
         end
-        return (current() and proveTree()) or retireInfos()
+        return (current() and sharedProof(false) and proveTree() and current()) or retireInfos()
     end
     -- Finish borrowed list ownership after callbacks without reentering its readers.
     local function rawListCurrent()
@@ -1998,6 +2317,7 @@ function UI:RefreshQuests()
             self.includeUnavailable ~= includeUnavailable or addon.Read ~= read or addon.Clean ~= clean or issecretvalue ~= checker then return false end
         if d and (rawget(d, "quests") ~= targets or #targets ~= #targetIDs) then return false end
         for index, id in ipairs(targetIDs) do if not rawequal(rawget(targets,index),id) then return false end end
+        if not sharedProof(true) then return false end
         if treeCurrent and (not treeRaw or treeRaw() ~= true) then return false end
         for _, proof in ipairs(infoRawProofs) do if proof() ~= true then return false end end
         return true
@@ -2061,7 +2381,7 @@ function UI:RefreshQuests()
         if self.currentPlan.preparationEmpty then
             entries = { { heading = "PREPARATION_EMPTY", argument = addon.L("QUESTS") } }
         elseif #plan.rows == 0 then
-            self.currentPlan.notice = #d.quests > 0 and "NO_CHARACTER_QUESTS" or "EMPTY"
+            self.currentPlan.notice = scope and #d.quests == 0 and d.coverage == "partial" and "SM_PARTIAL_WING" or (#d.quests > 0 and "NO_CHARACTER_QUESTS" or "EMPTY")
             entries = { { heading = self.currentPlan.notice, argument = self.currentPlan.notice == "NO_CHARACTER_QUESTS" and addon.L("FILTER_QUEST_ALL") or nil } }
         end
         local tree, treeBuilder = nil, addon.Clean(addon.QuestTree, "table")
@@ -2168,6 +2488,7 @@ function UI:RefreshQuests()
             n = n + 1
             local row = self:MakeRow(self.questList, self.rows, n, entry.heading and 32 or 30, current, true)
             if not current() then return end
+            row.sharedDiscovery = false
             row.heading, row.questID, row.compact = entry.heading, id, not entry.heading and not preparation
             row.anchorQuestID = entry.anchorID
             row.questTreeAnchor = entry.anchorID ~= nil
@@ -2426,7 +2747,8 @@ function UI:RefreshQuests()
         end
     else
         local row = self:MakeRow(self.questList, self.rows, 1, 32, current, true)
-        n = 1; row.heading, row.questID, row.compact = "PICK", nil, false
+        row.sharedDiscovery = false
+        n = 1; row.heading, row.questID, row.compact = scopeLegacy and "SM_CHOOSE_WING" or "PICK", nil, false
         row.questTreeNode, row.questTreeIndent, row.questTreeInset = false, 0, 0
         row.questTreeAnchor, row.anchorQuestID, row.questTreeSelected, row.questTreePath, row.questTreeTarget = false, nil, false, false, false
         row.dungeonTarget, row.dungeonBadgeVisible, row.dungeonBadgeReserve, row.statusInset, row.questCompleted = false, false, 0, 0, false
@@ -2443,9 +2765,57 @@ function UI:RefreshQuests()
             if row[field] and not write(row[field], "Hide") then return end
         end
         if not write(row, "SetWidth", self.questList:GetWidth() - 4) or not write(row.title, "SetWidth", self.questList:GetWidth() - 22) then return end
-        if not writeText(row.title, addon.L("PICK")) or not writeText(row.note, "") then return end
+        if not writeText(row.title, addon.L(scopeLegacy and "SM_CHOOSE_WING" or "PICK")) or not writeText(row.note, "") then return end
         offset = self:LayoutRow(row, 32, 0, current)
         if not offset then return end
+    end
+    local discovery = {}
+    for _, id in ipairs(sharedIDs) do if not targetSet[id] then discovery[#discovery + 1] = id end end
+    if #discovery > 0 then
+        table.insert(discovery, 1, false)
+        for _, id in ipairs(discovery) do
+            n = n + 1
+            local row = self:MakeRow(self.questList, self.rows, n, 32, current, true)
+            if not current() then return end
+            row.heading, row.questID, row.compact = not id and "SM_SHARED_QUESTS" or nil, id or nil, false
+            row.sharedDiscovery = id and true or false
+            row.questTreeNode, row.questTreeAnchor, row.anchorQuestID = false, false, nil
+            row.questTreeRoot, row.questTreeDepth, row.questTreeRelation = nil, 0, nil
+            row.questTreeSelected, row.questTreePath, row.questTreeTarget, row.questCompleted = false, false, false, false
+            row.dungeonTarget, row.dungeonBadgeVisible, row.dungeonBadgeReserve, row.statusInset = false, false, 0, 0
+            row.rowInfo, row.rowInfoCurrent, row.chainExpandable, row.chainExpanded = nil, nil, false, false
+            row.chainInset, row.factionReserve, row.classReserve, row.branchReserve, row.audienceExtra = 0, 0, 0, 0, 0
+            row.audienceBelow, row.audienceColumns, row.questTreeInset, row.questTreeIndent = false, nil, 0, 0
+            row.questListCurrent = current
+            if not self:BindQuestRowNavigation(row, nil, current) then return end
+            local rewards = addon.Clean(addon.QuestListRewards, "table")
+            if rewards then addon.Read(rewards.Clear, "nil", row) end
+            if not current() then return end
+            for _, icon in ipairs(row.classIcons or {}) do if not write(icon, "Hide") then return end end
+            for _, segment in ipairs(row.chainChevron or {}) do if not write(segment, "Hide") then return end end
+            for _, field in ipairs({ "factionIcon", "dungeonBadge", "dungeonTargetLabel", "statusIcon", "completedStrike", "treeRail", "treeElbow", "branchControl" }) do
+                if row[field] and not write(row[field], "Hide") then return end
+            end
+            local width = addon.Read(self.questList.GetWidth, "number", self.questList)
+            if not current() or not width or not write(row, "SetWidth", width - 4) or not write(row.title, "SetWidth", width - 22) then return end
+            local title = id and addon.QuestName(id) or addon.L("SM_SHARED_QUESTS")
+            if not current() then return end
+            if not writeText(row.title, title) or not writeText(row.note, id and addon.L("SM_PARTIAL_WING") or "") or not write(row, "SetEnabled", id ~= false) then return end
+            if not write(row, "SetScript", "OnEnter", nil) or not write(row, "SetScript", "OnLeave", nil) or not write(row, "SetScript", "OnHide", nil) then return end
+            if id then
+                if not write(row, "SetScript", "OnClick", function()
+                    if addon.Read(self.frame.IsShown, "boolean", self.frame) ~= true or not current() or not sharedProof(false) or not proveInfos() then return end
+                    self.questTreeRoot, self.questTreeDungeon = nil, nil
+                    self:InspectQuest(id, true)
+                end) then return end
+            elseif not write(row, "SetScript", "OnClick", nil) then return end
+            if type(row.title.SetTextColor) == "function" and not write(row.title, "SetTextColor", .82, .84, .87) then return end
+            if not write(row.bg, "SetColorTexture", .16, .18, .22, 1) then return end
+            offset = self:LayoutRow(row, id and 52 or 32, offset, current)
+            if not offset or not current() then return end
+            styleRow(row, not id and "section" or "quest", false)
+            if not current() then return end
+        end
     end
     local headingHeight = math.max(26, measuredHeight(self.heading, 26))
     if not current() then return end
@@ -2487,7 +2857,7 @@ function UI:RefreshQuests()
                     self.engine == engine and self.dungeon == d and addon.char == character and not treeFailed and not infoFailed and
                     self.preparation == preparation and self.includeUnavailable == includeUnavailable and
                     (not d or (d.quests == targets and #targets == #targetIDs))
-                if not valid then return false end
+                if not valid or not sharedProof(false) then return false end
                 for index, id in ipairs(targetIDs) do if targets[index] ~= id then return false end end
                 return true
             end
@@ -2760,6 +3130,9 @@ function UI:RefreshDetail(sourceFocus)
     local layoutRevision = self.layoutRevision
     local renderQuest, renderDungeon = self.quest, self.dungeon
     local renderIncludeUnavailable = self.includeUnavailable
+    local renderWingMetadata = renderDungeon and { complexKey = rawget(renderDungeon, "complexKey"),
+        levelScope = rawget(renderDungeon, "levelScope"), coverage = rawget(renderDungeon, "coverage"),
+        quests = rawget(renderDungeon, "quests") }
     local renderEngine, renderCharacter, pendingAction, pendingGiver, pendingTurnin = self.engine, addon.char, nil, nil, nil
     local primaryGiver = self.giver
     local sameDetailOwner = self.detailTabQuest == renderQuest and self.detailTabDungeon == renderDungeon and self.detailTabCharacter == renderCharacter
@@ -2830,7 +3203,11 @@ function UI:RefreshDetail(sourceFocus)
             self.includeUnavailable == renderIncludeUnavailable and addon.char == renderCharacter and self.rewardGeneration == rewardGeneration and
             (self.detailReferencesExpanded == true) == referencesExpanded and
             (self.detailNarrativeExpanded == true) == narrativeExpanded and
-            (self.detailObjectivesExpanded == true) == objectivesExpanded
+            (self.detailObjectivesExpanded == true) == objectivesExpanded and
+            (not renderWingMetadata or (rawequal(rawget(renderDungeon, "complexKey"), renderWingMetadata.complexKey) and
+                rawequal(rawget(renderDungeon, "levelScope"), renderWingMetadata.levelScope) and
+                rawequal(rawget(renderDungeon, "coverage"), renderWingMetadata.coverage) and
+                rawequal(rawget(renderDungeon, "quests"), renderWingMetadata.quests)))
     end
     if detailTextLease.released or self.detailTextLease ~= detailTextLease or not portraitCardCurrent() then return end
     local function sourceCallback(callback)
@@ -5537,7 +5914,10 @@ function UI:RefreshDetail(sourceFocus)
             end
             local minimum, maximum = addon.Clean(renderDungeon.minLevel, "number"), addon.Clean(renderDungeon.maxLevel, "number")
             if minimum and maximum and minimum > 0 and maximum >= minimum and minimum % 1 == 0 and maximum % 1 == 0 then
-                line(addon.L("CATALOG_LEVELS", minimum, maximum))
+                local shared = renderWingMetadata and addon.Clean(renderWingMetadata.complexKey, "string") == "sm" and
+                    addon.Clean(renderWingMetadata.levelScope, "string") == "complex"
+                if not portraitCardCurrent() then return end
+                line(addon.L(shared and "SM_SHARED_LEVEL_RANGE" or "CATALOG_LEVELS", minimum, maximum))
             end
             local plan, preparation = self.currentPlan, self.preparation
             local countOwned = plan and plan.engine == renderEngine and plan.dungeon == renderDungeon and
@@ -5570,10 +5950,14 @@ function UI:RefreshDetail(sourceFocus)
                 local function countCurrent()
                     return portraitCardCurrent() and self.currentPlan == plan and addon.Read(countProof, "boolean") == true
                 end
-                if not countCurrent() or line(addon.L("CATALOG_QUESTS", count), nil, nil, nil, countCurrent) == false then return end
+                local partialWing = renderWingMetadata and addon.Clean(renderWingMetadata.complexKey, "string") == "sm" and
+                    addon.Clean(renderWingMetadata.coverage, "string") ~= "reviewed" and
+                    type(renderWingMetadata.quests) == "table" and #renderWingMetadata.quests == 0
+                if not countCurrent() or line(addon.L(partialWing and "SM_WING_QUESTS_UNKNOWN" or "CATALOG_QUESTS", count), nil, nil, nil, countCurrent) == false then return end
                 if count == 0 then
                     local roots = addon.Clean(renderDungeon.quests, "table")
-                    local emptyKey = renderIncludeUnavailable ~= true and roots and #roots > 0 and "NO_CHARACTER_QUESTS" or "EMPTY"
+                    local emptyKey = partialWing and "SM_PARTIAL_WING" or
+                        (renderIncludeUnavailable ~= true and roots and #roots > 0 and "NO_CHARACTER_QUESTS" or "EMPTY")
                     if line(addon.L(emptyKey, emptyKey == "NO_CHARACTER_QUESTS" and addon.L("FILTER_QUEST_ALL") or nil), nil, nil, nil, countCurrent) == false then return end
                 end
             end

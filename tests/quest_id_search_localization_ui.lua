@@ -78,4 +78,23 @@ for _,card in ipairs(ui.cards)do if card:IsShown()then
 end end
 ui:RefreshDungeons();cards(1654,cached(1654))
 assert(requests==0)
+-- Shared-quest and shared-member numeric IDs resolve across all wings with a single title read.
+do
+    local counted = addon.CachedQuestName
+    for _, sample in ipairs({ { " 96800 ", 96800, 4 }, { " 1050 ", 1050, 4 } }) do
+        local query, id, want = sample[1], sample[2], sample[3]
+        local n = 0
+        addon.CachedQuestName = function(questID) n = n + 1; return counted(questID) end
+        addon.db.locale = "enUS"; ui.search = query; ui:RefreshDungeons()
+        local shown = 0
+        for _, card in ipairs(ui.cards) do
+            if card:IsShown() then
+                shown = shown + 1
+                assert(card.matchQuestID == id, "shared numeric match keeps exact quest identity")
+            end
+        end
+        assert(shown == want and n == 1, "shared/member numeric search shows all wing cards after one title read")
+    end
+    addon.CachedQuestName = counted
+end
 print("Quest ID search localization: PASS (ten locales, shared parents, refresh, preview, fallback)")

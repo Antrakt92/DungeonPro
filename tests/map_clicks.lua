@@ -41,7 +41,7 @@ assert(ui.map == nil and ui.guide == nil and ui.giver.enabled, "giver navigation
 ui.giver.scripts.OnClick()
 assert(WorldMapFrame.mapID == 1455 and markerAt(32.8, 48.6))
 local expected = {}
-for _, key in ipairs({ "rfc", "wc", "dm", "sfk", "bfd", "stocks", "gnom", "rfk", "sm", "rfd", "ulda", "zf",
+for _, key in ipairs({ "rfc", "wc", "dm", "sfk", "bfd", "stocks", "gnom", "rfk", "sm_graveyard", "sm_library", "sm_armory", "sm_cathedral", "rfd", "ulda", "zf",
     "mara", "st", "brd", "lbrs", "ubrs", "dire", "scholo", "strat", "thanes", "lordaeron", "excavation", "dalaran" }) do
     expected[key] = true
 end
@@ -67,7 +67,7 @@ for _, dungeon in ipairs(addon.dungeons) do
     end
     assert(ui.dungeon == selectedDungeon and ui.quest == selectedQuest, "card entrance icon does not replace the selected quest")
 end
-assert(routes == 24 and unknown == 5)
+assert(routes == 27 and unknown == 5)
 addon.Language:Cancel(ui)
-print("Actual catalogue entrance clicks: PASS (24 recorded routes, 5 unknown)")
+print("Actual catalogue entrance clicks: PASS (27 recorded routes, 5 unknown)")
 print("Actual entrance and quest-giver click composition: PASS")
