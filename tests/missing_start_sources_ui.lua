@@ -267,5 +267,59 @@ render(98423)
 a.db.locale="enUS"
 assert(ui:SetDetailTab("quest"))
 assert(starts==0 and maps==0)
+-- DP-5 DETAIL-GIVER-MAP-BOUND: non-integer/overflow mapID invents no visit; row and detail agree.
+do
+ local q=assert(a.quests[166]); local savedStart=q.start; local savedNav=a.Navigation
+ local routed=0
+ a.Navigation={Start=function() routed=routed+1; return true end, Map=function() routed=routed+1; return true end}
+ ui.frame:Show()
+ local function checkInvalid(label, start)
+  q.start=start; routed=0; render(166)
+  local keptQuest=ui.quest
+  assert(keptQuest==166,label.." keeps selection on invalid map")
+  local r=row(166); local control=assert(r.navigationControl)
+  assert(control.enabled==false,label.." row stays disabled on invalid map")
+  assert(r.navigationBinding.action==nil,label.." row invents no action on invalid map")
+  assert(r.navigationBinding.reason=="GIVER_LOCATION_UNKNOWN" or r.navigationBinding.reason=="SOURCE_POSITION_UNKNOWN",label.." row keeps unknown-location reason on invalid map")
+  assert(ui.giverUnavailableKey=="GIVER_LOCATION_UNKNOWN" or ui.giverUnavailableKey=="SOURCE_POSITION_UNKNOWN",label.." detail keeps unknown-location key on invalid map")
+  assert(not ui.giver.enabled,label.." detail stays disabled on invalid map")
+  assert(ui:NavigationDestination(false)==nil,label.." invalid map invents no visit destination")
+  local before=routed
+  control.scripts.OnClick(); ui.giver.scripts.OnClick()
+  assert(routed==before,label.." invalid map clicks dispatch no route")
+  assert(ui.quest==keptQuest,label.." invalid map clicks keep selection")
+ end
+ checkInvalid("overflow 2^53",{npcID=1,mapID=9007199254740992,x=10,y=20})
+ checkInvalid("fractional 1436.5",{npcID=1,mapID=1436.5,x=10,y=20})
+ -- Boundary 2^53-1 stays a valid visit: enabled, one Start, stale binding retires.
+ q.start={npcID=1,mapID=9007199254740991,x=10,y=20}; routed=0; render(166)
+ assert(ui.giver.enabled,"boundary map enables the detail")
+ assert(ui.giver.footerLabelKey=="VISIT_GIVER","boundary map keeps visit title")
+ assert(ui:NavigationDestination(false)~=nil,"boundary map restores the visit destination")
+ local r=row(166); local control=assert(r.navigationControl)
+ assert(control.enabled and r.navigationBinding.action~=nil,"boundary map enables the row with an action")
+ local freshBinding=assert(ui.giverBinding); local freshCurrent=assert(freshBinding.current)
+ assert(freshCurrent()==true,"boundary detail binding stays current")
+ local before=routed
+ ui.giver.scripts.OnClick()
+ assert(routed==before+1,"boundary detail click routes once through Start")
+ assert(ui.quest==166,"boundary detail navigation keeps selection")
+ -- Stale boundary binding cannot dispatch after the map turns invalid.
+ local staleAction, staleCurrent=freshBinding.action, freshBinding.current
+ q.start={npcID=1,mapID=9007199254740992,x=10,y=20}; render(166)
+ assert(not ui.giver.enabled,"overflow map disables the detail again")
+ assert(ui:NavigationDestination(false)==nil,"overflow map retires the visit destination")
+ assert(staleCurrent()==false,"overflow map retires the previous detail binding")
+ local beforeStale=routed
+ assert(ui:DispatchDetail(staleAction,false,true,staleCurrent)==false,"stale boundary dispatch with a retired owner is rejected")
+ assert(routed==beforeStale,"stale boundary dispatch routes nothing")
+ -- Valid maps still enable after the bound checks.
+ q.start=savedStart; routed=0; render(166)
+ assert(ui.giver.enabled and ui.giver.footerLabelKey=="VISIT_GIVER","restored 1436 re-enables the visit detail")
+ q.start={npcID=1,mapID=1453,x=10,y=20}; render(166)
+ assert(ui.giver.enabled and ui.giver.footerLabelKey=="VISIT_GIVER","valid 1453 stays enabled")
+ q.start=savedStart; a.Navigation=savedNav; render(166)
+end
 print("Unknown quest start method: PASS (actual TOC;10 locales, modeled UI only)")
 print("DP-5 DETAIL-GIVER-NAV-UNAVAILABLE: PASS (pure-visit, map-only, stale return; modeled UI only)")
+print("DP-5 DETAIL-GIVER-MAP-BOUND: PASS (overflow, fractional, boundary; modeled UI only)")

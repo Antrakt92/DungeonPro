@@ -3426,7 +3426,7 @@ function UI:RefreshDetail(sourceFocus)
         local startValidExclusiveItem = startCleanItemID and startCleanItemID > 0 and startCleanItemID <= 9007199254740991 and startCleanItemID % 1 == 0 and
             rawget(start, "npcID") == nil and rawget(start, "objectID") == nil
         local invalidItemStart = start ~= nil and startRawItemID ~= nil and not startValidExclusiveItem
-        if detailTab ~= "story" and map and map > 0 and not invalidItemStart and addon.Read(self.HasSummonSource,"boolean",self,start) == false then
+        if detailTab ~= "story" and map and map > 0 and map <= 9007199254740991 and map % 1 == 0 and not invalidItemStart and addon.Read(self.HasSummonSource,"boolean",self,start) == false then
             local x, gy = addon.Clean(start.x, "number"), addon.Clean(start.y, "number")
             pendingGiver = { action = { id = id, kind = "visit", place = start }, source = q, map = map, x = x, y = gy,
                 coordinates = x ~= nil and gy ~= nil and x >= 0 and x <= 100 and gy >= 0 and gy <= 100 }
@@ -5611,7 +5611,7 @@ function UI:RefreshDetail(sourceFocus)
         self.engine ~= renderEngine or addon.char ~= renderCharacter then return end
     self.action = pendingAction
     local giverPlace = pendingGiver and pendingGiver.action.place
-    if giverPlace and pendingGiver.same() and addon.quests[renderQuest] == pendingGiver.source and pendingGiver.source.start == giverPlace and
+    if giverPlace and pendingGiver.map and pendingGiver.map > 0 and pendingGiver.map <= 9007199254740991 and pendingGiver.map % 1 == 0 and pendingGiver.same() and addon.quests[renderQuest] == pendingGiver.source and pendingGiver.source.start == giverPlace and
         addon.Clean(giverPlace.mapID, "number") == pendingGiver.map and addon.Clean(giverPlace.x, "number") == pendingGiver.x and
         addon.Clean(giverPlace.y, "number") == pendingGiver.y then
         if not primaryCurrent() then return end
