@@ -140,7 +140,9 @@ assert(tip.shown and tip.body:find(translated,1,true)and not tip.body:find(area,
 ui.giver.scripts.OnEnter()
 assert(tip.shown and tip.body:find(translated,1,true)and not tip.body:find(area,1,true),"primary route hint agrees with the world-area caption")
 assert(#routes==before and ui.quest==selected and ui.engine==engine and ui.currentPlan==plan,"hints never start navigation or rebuild the inspected plan")
+local savedNavigation = a.Navigation; a.Navigation = nativeNavigation
 assert(nativeNavigation.Start({id=2204,kind="visit",place=point}),"guide starts only through an explicit manual request")
+a.Navigation = savedNavigation
 local guide;for _,object in ipairs(f.objects)do if object.title and object.note and object.label and object.scripts.OnUpdate then guide=object end end
 assert(guide and guide.shown and guide.note.text:find(translated,1,true)and not guide.note.text:find(area,1,true),"guide prefers selected area over the native English map name")
 assert(guide.note.text:find(a.SourceName(point),1,true),"guide retains the independent typed object label")

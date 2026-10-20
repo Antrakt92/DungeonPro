@@ -7,6 +7,7 @@ local navigationGeneration = {}
 local presentation, contextElapsed = nil, 0
 local presentationWrite, guideUpdate
 local mapMarker, mapMarkerState, mapMarkerTicker
+local entranceMarker = {}
 local markerGeneration, markerElapsed, markerWrites = {}, 0, setmetatable({}, { __mode = "k" })
 
 local function actionTitle(action)
@@ -53,10 +54,11 @@ local function markerWrite(owner, method, current, ...)
     if not setter or not current() then return false end
     local writes = markerWrites[owner] or {}; markerWrites[owner] = writes
     local key = (method == "Show" or method == "Hide") and "visibility"
-        or ((method == "SetPoint" or method == "ClearAllPoints") and "anchor" or method)
+        or ((method == "SetPoint" or method == "ClearAllPoints") and "anchor"
+        or ((method == "SetAtlas" or method == "SetTexture") and "appearance" or method))
     local binding = { current = current, setter = setter, args = { ... }, count = select("#", ...) }
     writes[key] = binding
-    local ok = pcall(setter, owner, ...)
+    local ok, result = pcall(setter, owner, ...)
     local fresh = current()
     if not fresh then
         local newer = writes[key]
@@ -66,7 +68,7 @@ local function markerWrite(owner, method, current, ...)
             newer.repairing = nil
         end
     end
-    return ok and fresh
+    return ok and fresh, result
 end
 
 local function clearMapMarker()
@@ -155,19 +157,26 @@ local function refreshMapMarker()
         if not icon then return end
         mapMarker.icon = icon
         markerWrite(icon, "SetAllPoints", owned, mapMarker)
-        -- The waypoint atlas is shipped by the client's own map provider. The
-        -- standard map icon remains visible when that optional atlas is unavailable.
-        markerWrite(icon, "SetTexture", owned, "Interface\\Icons\\INV_Misc_Map_01")
-        local atlas = markerMethod(icon, "SetAtlas")
-        if atlas and owned() then
-            local accepted, result = pcall(atlas, icon, "Waypoint-MapPin-Untracked")
-            local actual = addon.Read(markerMethod(icon, "GetAtlas"), "string", icon)
-            if not accepted or addon.Clean(result, "boolean") == false or actual ~= "Waypoint-MapPin-Untracked" then
-                markerWrite(icon, "SetTexture", owned, "Interface\\Icons\\INV_Misc_Map_01")
-            end
-        end
     end
     if not mapMarker.icon or not owned() then return end
+    if not state.appearance then
+        local icon = mapMarker.icon
+        local wanted = state.entrance and "Dungeon" or "Waypoint-MapPin-Untracked"
+        if not markerWrite(icon, "SetTexture", owned, "Interface\\Icons\\INV_Misc_Map_01") then return end
+        local atlas = markerMethod(icon, "SetAtlas")
+        if not owned() then return end
+        if atlas then
+            local accepted, result = markerWrite(icon, "SetAtlas", owned, wanted)
+            if not owned() then return end
+            local actual = addon.Read(markerMethod(icon, "GetAtlas"), "string", icon)
+            if not owned() then return end
+            if not accepted or addon.Clean(result, "boolean") == false or actual ~= wanted then
+                if not owned() or not markerWrite(icon, "SetTexture", owned, "Interface\\Icons\\INV_Misc_Map_01") then return end
+            end
+        end
+        if not owned() then return end
+        state.appearance = true
+    end
     local geometry = state.geometry
     if geometry and geometry.map == map and geometry.canvas == canvas and geometry.width == width
         and geometry.height == height and geometry.zoom == zoom then return end
@@ -188,7 +197,7 @@ local function refreshMapMarker()
     state.geometry = { map = map, canvas = canvas, width = width, height = height, zoom = zoom }
 end
 
-function N.Map(point)
+function N.Map(point, markerRole)
     local generation = markerGeneration
     local clean, read, checker, provider = addon.Clean, addon.Read, issecretvalue, N.Map
     local mapOwner = rawget(_G, "C_Map")
@@ -205,6 +214,8 @@ function N.Map(point)
         return ok and same == true
     end
     if type(clean) ~= "function" or type(read) ~= "function" then return false end
+    markerRole = clean(markerRole, "table")
+    if not current() then return false end
     point = clean(point, "table")
     if not point or not current() then return false end
     local mapID = mapIdentity(point.mapID)
@@ -234,7 +245,7 @@ function N.Map(point)
     local shownGetter = map and markerMethod(map, "IsShown")
     if not mapCurrent() then return opened end
     if x and y and x >= 0 and x <= 100 and y >= 0 and y <= 100 and map and canvasGetter and mapGetter and shownGetter then
-        mapMarkerState = { generation = generation, point = point, mapID = mapID, x = x, y = y }
+        mapMarkerState = { generation = generation, point = point, mapID = mapID, x = x, y = y, entrance = rawequal(markerRole, entranceMarker) }
         if not mapMarkerTicker then
             local ok, created = pcall(CreateFrame, "Frame", nil, UIParent)
             if not mapCurrent() then return opened end
@@ -744,7 +755,16 @@ local function update(_, delta)
     present(action, generation, addon.L("GUIDE_DISTANCE", math.floor(distance)))
 end
 
-function N.Start(action)
+function N.Start(action, markerRole)
+    local roleClean, roleChecker, roleStart = addon.Clean, issecretvalue, N.Start
+    local roleNavigation, roleMarker = navigationGeneration, markerGeneration
+    local function roleCurrent()
+        return addon.Navigation == N and addon.Clean == roleClean and issecretvalue == roleChecker and N.Start == roleStart
+            and navigationGeneration == roleNavigation and markerGeneration == roleMarker
+    end
+    if not roleCurrent() then return false end
+    markerRole = roleClean(markerRole, "table")
+    if not roleCurrent() then return false end
     if not action or not N.Valid(action.place) then return false end
     local generation = N.Stop()
     if not N.Valid(action.place) or target or navigationGeneration ~= generation then return false end
@@ -919,7 +939,7 @@ function N.Start(action)
     if not current() then return false end
     elapsed = 0.1; update(frame, 0)
     if not current() then return false end
-    N.Map(p)
+    N.Map(p, rawequal(markerRole, entranceMarker) and entranceMarker or nil)
     return current()
 end
 
@@ -930,5 +950,5 @@ function N.StartEntrance(dungeon, place)
         place = addon.Entrances.Get(dungeon)
     end
     if not N.Valid(place) then return false end
-    return N.Start({ kind = "entrance", dungeon = dungeon, place = place })
+    return N.Start({ kind = "entrance", dungeon = dungeon, place = place }, entranceMarker)
 end

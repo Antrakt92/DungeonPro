@@ -209,6 +209,7 @@ def main():
     run(lua, "tests/map_request_supersession_ui.lua")
     run(lua, "tests/tomtom_ownership.lua")
     run(lua, "tests/map_marker.lua")
+    run(lua, "tests/map_marker_entrance_ui.lua")
     run(lua, "tests/map_clicks.lua")
     run(lua, "tests/entrances.lua")
     run(lua, "tests/entrance_action_retirement_ui.lua")
