@@ -9,7 +9,7 @@ function UI:ReleasePreparationOverview()
     self.overviewBinding = nil
     if previous then
         previous.released = true
-        for _, key in ipairs({ "model", "modelCurrent", "modelRaw", "base", "listCurrent", "listRaw", "engine", "plan", "titles", "presentation", "geometryWrite", "formatStatus" }) do previous[key] = nil end
+        for _, key in ipairs({ "model", "modelCurrent", "modelRaw", "base", "listCurrent", "listRaw", "engine", "plan", "titles", "starters", "presentation", "geometryWrite", "formatStatus" }) do previous[key] = nil end
     end
 end
 
@@ -84,7 +84,7 @@ function UI:RenderPreparationOverview(ownerCurrent, width, offset, presentation)
         if not portraitCardCurrent() or addon.Clean ~= limitCleaner or self.currentPlan ~= plan or self.dungeon ~= renderDungeon or self.engine ~= renderEngine then return end
         if not stepLimit or stepLimit % 1 ~= 0 or stepLimit < 6 or stepLimit > 1024 then return offset end
         local refresh = self.RefreshDetail
-        local binding = { formatStatus = rawget(presentation,"formatStatus"), geometryWrite = rawget(presentation,"geometryWrite"), presentation = presentation, plan = plan, engine = renderEngine, base = portraitCardCurrent, listCurrent = listCurrent, listRaw = listRaw, titles = {} }
+        local binding = { formatStatus = rawget(presentation,"formatStatus"), geometryWrite = rawget(presentation,"geometryWrite"), presentation = presentation, plan = plan, engine = renderEngine, base = portraitCardCurrent, listCurrent = listCurrent, listRaw = listRaw, titles = {}, starters = {} }
         local localize, read, clean, checker = addon.L, addon.Read, addon.Clean, issecretvalue
         local inspect, keyGetter, dictionaryGetter = self.InspectQuest, self.CatalogLanguageKey, addon.GetNameTranslations
         local database, language, frame = addon.db, addon.Language, self.frame
@@ -127,6 +127,18 @@ function UI:RenderPreparationOverview(ownerCurrent, width, offset, presentation)
                     (type(title.entry)=="table" and (not rawequal(rawget(title.entry,"source"),title.original) or
                         not rawequal(rawget(title.entry,"name"),title.translated))) then return false end
             end
+            for _, starter in ipairs(binding.starters) do
+                if not rawequal(rawget(definitions,starter.id),starter.definition) then return false end
+                if type(starter.definition) == "table" then
+                    if not rawequal(rawget(starter.definition,"start"),starter.start) then return false end
+                    if not rawequal(rawget(starter.definition,"startAlternatives"),starter.alternatives) then return false end
+                elseif starter.start ~= nil or starter.alternatives ~= nil then return false end
+                if type(starter.start) == "table" then
+                    if not rawequal(rawget(starter.start,"itemID"),starter.itemID) then return false end
+                    if not rawequal(rawget(starter.start,"npcID"),starter.npcID) then return false end
+                    if not rawequal(rawget(starter.start,"objectID"),starter.objectID) then return false end
+                elseif starter.itemID ~= nil or starter.npcID ~= nil or starter.objectID ~= nil then return false end
+            end
             return binding.listRaw() and (not binding.modelRaw or binding.modelRaw()) and base()
         end
         binding.current = function()
@@ -153,6 +165,15 @@ function UI:RenderPreparationOverview(ownerCurrent, width, offset, presentation)
                 local title = { id=step.id,definition=definition,source=rawget(definition,"name"),definitionID=rawget(definition,"id"),root=root,dictionary=dictionary,entries=entries,entry=entry,
                     original=type(entry)=="table" and rawget(entry,"source"), translated=type(entry)=="table" and rawget(entry,"name") }
                 binding.titles[#binding.titles+1]=title
+                local rawStart = rawget(definition,"start")
+                local rawAlternatives = rawget(definition,"startAlternatives")
+                local rawItemID, rawNpcID, rawObjectID
+                if type(rawStart) == "table" then
+                    rawItemID = rawget(rawStart,"itemID")
+                    rawNpcID = rawget(rawStart,"npcID")
+                    rawObjectID = rawget(rawStart,"objectID")
+                end
+                binding.starters[#binding.starters+1] = { id=step.id,definition=definition,start=rawStart,alternatives=rawAlternatives,itemID=rawItemID,npcID=rawNpcID,objectID=rawObjectID }
                 title.text=read(titleGetter,"string",step.id)
                 if not binding.current() then return end
                 title.text=title.text and #title.text<=1024 and title.text:find("%S") and title.text or clean(title.source,"string") or ("#"..step.id)
@@ -160,6 +181,24 @@ function UI:RenderPreparationOverview(ownerCurrent, width, offset, presentation)
             local titleCounts={}
             for _, title in ipairs(binding.titles) do titleCounts[title.text]=(titleCounts[title.text] or 0)+1 end
             for _, title in ipairs(binding.titles) do if titleCounts[title.text]>1 then title.text=title.text.." #"..title.id end end
+            local starterById = {}
+            for _, starter in ipairs(binding.starters) do starterById[starter.id] = starter end
+            local function isItemOnlyPickup(stepID)
+                local starter = starterById[stepID]
+                if not starter then return false end
+                if starter.alternatives ~= nil then return false end
+                if starter.npcID ~= nil or starter.objectID ~= nil then return false end
+                if type(starter.start) ~= "table" then return false end
+                if not clean(starter.start,"table") then return false end
+                if type(checker) == "function" then
+                    if read(checker,"boolean",starter.start) ~= false then return false end
+                    if read(checker,"boolean",starter.itemID) ~= false then return false end
+                    if read(checker,"boolean",starter.alternatives) ~= false then return false end
+                end
+                local itemID = clean(starter.itemID,"number")
+                if not itemID or itemID % 1 ~= 0 or itemID < 1 or itemID > 4294967295 then return false end
+                return true
+            end
             local textIndex=0
             local function summaryLine(value,style)
                 if not binding.current() then return false end
@@ -220,7 +259,8 @@ function UI:RenderPreparationOverview(ownerCurrent, width, offset, presentation)
                 local kindKey = nil
                 if stepStatus ~= "READY" and stepStatus ~= "ACTIVE" then
                     if stepStatus == "UNKNOWN" then kindKey = "PREP_uncertain"
-                    elseif step.kind == "pickup" then kindKey = "PREP_outside"
+                    elseif step.kind == "pickup" then
+                        if isItemOnlyPickup(step.id) then kindKey = "PREP_item" else kindKey = "PREP_outside" end
                     elseif step.kind == "inside" then kindKey = "PREP_inside"
                     elseif step.kind == "level" then kindKey = "PREP_level"
                     end

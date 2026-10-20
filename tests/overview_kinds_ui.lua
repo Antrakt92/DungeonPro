@@ -278,4 +278,106 @@ assert(supSwitched.steps[1].id == 9001, "dungeon switch publishes the new dungeo
 staleSupportClick()
 assert(u.quest == nil and routes == 0, "retired supporting row cannot inspect after the switch")
 
+-- (6) item-only pickup uses the item mark, not outside; giver/nil/invalid/mixed stay outside, inside stays inside.
+a.quests[9501] = { id = 9501, name = "Item starter", minLevel = 1, requirementsKnown = true, start = { itemID = 50001 } }
+a.quests[9502] = { id = 9502, name = "Giver starter", minLevel = 1, requirementsKnown = true, start = { npcID = 1234, name = "Giver" } }
+a.quests[9503] = { id = 9503, name = "Nil starter", minLevel = 1, requirementsKnown = true }
+a.quests[9504] = { id = 9504, name = "Mixed starter", minLevel = 1, requirementsKnown = true, start = { itemID = 50002, npcID = 1234 } }
+a.quests[9505] = { id = 9505, name = "Alt starter", minLevel = 1, requirementsKnown = true, start = { itemID = 50003 }, startAlternatives = { { npcID = 5678 } } }
+a.quests[9506] = { id = 9506, name = "Bad item", minLevel = 1, requirementsKnown = true, start = { itemID = 0 } }
+a.quests[9507] = { id = 9507, name = "Inside item", minLevel = 1, requirementsKnown = true, startsInside = true, start = { itemID = 50004 } }
+local itemSingleDungeon = { key = "controlled-item-single", name = "Item single fixture", minLevel = 1, maxLevel = 60, coverage = "partial", quests = { 9501 } }
+local itemMixedDungeon = { key = "controlled-item-mixed", name = "Item mixed fixture", minLevel = 1, maxLevel = 60, coverage = "partial", quests = { 9502, 9503, 9504, 9505, 9506, 9507 } }
+a.dungeons = { kindsDungeon, manyDungeon, supportDungeon, sharedDungeon, supManyDungeon, itemSingleDungeon, itemMixedDungeon }
+render(itemSingleDungeon)
+local _, itemSingle = summary()
+assert(#itemSingle.steps == 1 and itemSingle.steps[1].id == 9501 and itemSingle.steps[1].kind == "pickup" and itemSingle.steps[1].status == "AVAILABLE" and itemSingle.steps[1].listedTarget ~= false, "item-only target stays a listed pickup")
+local itemMark = a.L("PREP_item")
+assert(itemMark ~= "PREP_item", "item mark needs its own translated string")
+assert(itemMark ~= outsideMark and itemMark ~= insideMark, "item mark stays distinct from outside/inside")
+local itemNote = noteOf(9501)
+assert(itemNote:find(itemMark, 1, true) and not itemNote:find(outsideMark, 1, true), "item-only row carries the item mark instead of outside")
+assert(itemNote:find(a.L("AVAILABLE"), 1, true) and itemNote:find(a.L("BRANCH_INSPECT"), 1, true), "item row keeps status/inspect context")
+do
+    local parts = { itemMark, a.L("AVAILABLE"), a.L("BRANCH_INSPECT") }
+    local cursor = 1
+    for _, part in ipairs(parts) do
+        local at = itemNote:find(part, cursor, true)
+        assert(at, "item row keeps ITEM·STATUS·INSPECT order")
+        cursor = at + #part
+    end
+    assert(countOccurrences(itemNote, itemMark) == 1, "item mark never doubles on a target row")
+end
+rowById(9501).scripts.OnClick()
+assert(u.quest == 9501 and u.dungeon == itemSingleDungeon and routes == 0, "item click inspects its own card without routing")
+assert(u:BackQuest() and u.quest == nil)
+for _, locale in ipairs({"enUS","ruRU","deDE","frFR","esES","itIT","ptBR","koKR","zhCN","zhTW"}) do
+    a.db.locale = locale
+    render(itemSingleDungeon)
+    local mark = a.L("PREP_item")
+    assert(mark ~= "PREP_item" and mark:find("%S"), "item mark translated in " .. locale)
+    local note = noteOf(9501)
+    assert(note:find(mark, 1, true) and not note:find(a.L("PREP_outside"), 1, true), "item mark holds in " .. locale)
+end
+a.db.locale = "enUS"
+render(itemMixedDungeon)
+assert(noteOf(9502):find(outsideMark, 1, true) and not noteOf(9502):find(itemMark, 1, true), "giver starter stays outside")
+assert(noteOf(9503):find(outsideMark, 1, true) and not noteOf(9503):find(itemMark, 1, true), "nil starter stays outside")
+assert(noteOf(9504):find(outsideMark, 1, true) and not noteOf(9504):find(itemMark, 1, true), "mixed starter stays outside")
+assert(noteOf(9505):find(outsideMark, 1, true) and not noteOf(9505):find(itemMark, 1, true), "alternative starter stays outside")
+assert(noteOf(9506):find(outsideMark, 1, true) and not noteOf(9506):find(itemMark, 1, true), "invalid item starter stays outside")
+assert(noteOf(9507):find(insideMark, 1, true) and not noteOf(9507):find(itemMark, 1, true), "inside item starter stays inside")
+
+-- (7) supporting item starter keeps SUPPORTING·ITEM·STATUS·INSPECT without doubles.
+a.quests[9611] = { id = 9611, name = "Listed item parent", minLevel = 1, requirementsKnown = true, requires = { { ids = { 9612 } } } }
+a.quests[9612] = { id = 9612, name = "Support item", minLevel = 1, requirementsKnown = true, start = { itemID = 50011 } }
+local supportItemDungeon = { key = "controlled-support-item", name = "Support item fixture", minLevel = 1, maxLevel = 60, coverage = "partial", quests = { 9611 } }
+a.dungeons = { kindsDungeon, manyDungeon, supportDungeon, sharedDungeon, supManyDungeon, itemSingleDungeon, itemMixedDungeon, supportItemDungeon }
+render(supportItemDungeon)
+local _, supItem = summary()
+assert(#supItem.steps == 1 and supItem.steps[1].id == 9612 and supItem.steps[1].kind == "pickup" and supItem.steps[1].status == "AVAILABLE" and supItem.steps[1].listedTarget == false, "support item appears once as a pickup")
+assert(noteOf(9612) == expectedSupport("PREP_item", "AVAILABLE", "ffe9b0"), "support-item keeps the exact supporting composition")
+assertSupportOrder(9612, "PREP_item", "AVAILABLE", "ffe9b0")
+do
+    local note = noteOf(9612)
+    assert(countOccurrences(note, itemMark) == 1, "supporting item composition never doubles the item mark")
+    assert(not note:find(outsideMark, 1, true), "support-item row never shows the outside mark")
+end
+rowById(9612).scripts.OnClick()
+assert(u.quest == 9612 and u.dungeon == supportItemDungeon and routes == 0, "support-item click inspects its own card without routing")
+assert(u:BackQuest() and u.quest == nil)
+
+-- (8) More/Fewer and dungeon switches preserve the item mark and retire stale clicks.
+local manyItemIds = {}
+for index = 1, 8 do
+    local id = 9720 + index
+    manyItemIds[index] = id
+    a.quests[id] = { id = id, name = "Many item step " .. index, minLevel = 1, requirementsKnown = true, start = { itemID = 60000 + index } }
+end
+local manyItemDungeon = { key = "controlled-item-many", name = "Item many fixture", minLevel = 1, maxLevel = 60, coverage = "partial", quests = manyItemIds }
+a.dungeons = { kindsDungeon, manyDungeon, supportDungeon, sharedDungeon, supManyDungeon, itemSingleDungeon, itemMixedDungeon, supportItemDungeon, manyItemDungeon }
+render(manyItemDungeon)
+local _, manyItem = summary()
+assert(#manyItem.steps == 6 and manyItem.remainingSteps == 2, "six-step cap paginates item work")
+local itemMore = u.overviewMoreButton
+assert(itemMore and itemMore:IsShown(), "More control appears past the item cap")
+assert(noteOf(manyItemIds[1]):find(itemMark, 1, true) and not noteOf(manyItemIds[1]):find(outsideMark, 1, true), "paged item row keeps its mark")
+itemMore.scripts.OnClick(itemMore)
+local _, itemExpanded = summary()
+assert(#itemExpanded.steps == 8 and itemExpanded.remainingSteps == 0, "More reveals the item tail")
+assert(noteOf(manyItemIds[8]):find(itemMark, 1, true) and not noteOf(manyItemIds[8]):find(outsideMark, 1, true), "item mark survives expansion")
+local itemFewer = u.overviewFewerButton
+assert(itemFewer and itemFewer:IsShown(), "Fewer control appears after item expansion")
+itemFewer.scripts.OnClick(itemFewer)
+local _, itemCompacted = summary()
+assert(#itemCompacted.steps == 6 and itemCompacted.remainingSteps == 2, "Fewer restores the item cap")
+assert(noteOf(manyItemIds[1]):find(itemMark, 1, true) and not noteOf(manyItemIds[1]):find(outsideMark, 1, true), "item mark survives Fewer")
+local staleItemClick = rowById(manyItemIds[1]).scripts.OnClick
+render(kindsDungeon)
+local _, itemSwitched = summary()
+assert(itemSwitched.steps[1].id == 9001, "dungeon switch publishes the new dungeon steps")
+assert(noteOf(9001):find(outsideMark, 1, true), "new dungeon keeps its own outside mark")
+staleItemClick()
+assert(u.quest == nil and routes == 0, "retired item-dungeon row cannot inspect after the switch")
+
 print("Overview kinds UI: PASS (pickup/inside distinct + order + clicks; level/unknown under NEXT without availability or green; More/Fewer and dungeon-switch ownership; supporting-kind composition without doubles)")

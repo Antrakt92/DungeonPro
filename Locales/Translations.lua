@@ -318,6 +318,18 @@ for locale, values in pairs(starterDetails) do
     addon.locales[locale].DETAIL_START_ITEM, addon.locales[locale].START_ITEM_LOCATION_UNKNOWN = values[1], values[2]
 end
 
+local itemStarterMarks = {
+    deDE = "Gegenstand aufnehmen",
+    frFR = "Récupérer l’objet",
+    esES = "Recoger el objeto",
+    itIT = "Raccogli l’oggetto",
+    ptBR = "Coletar o item",
+    koKR = "아이템 획득",
+    zhCN = "拾取物品开始",
+    zhTW = "拾取物品開始",
+}
+for locale, value in pairs(itemStarterMarks) do addon.locales[locale].PREP_item = value end
+
 local routeActions = {
     enUS = { "Use this route", "Use automatic choice" },
     ruRU = { "Выбрать этот путь", "Выбирать автоматически" },
