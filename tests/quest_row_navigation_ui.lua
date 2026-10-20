@@ -296,4 +296,47 @@ do
  refreshRows()
  assert(row(990101).navigationControl.enabled and row(990102).navigationControl.enabled,"restored Navigation re-enables visit rows")
 end
+-- DP-5 ENTRANCE-MAP-BOUND: GetEntranceBinding rejects mapID > 2^53-1 like row/detail/provider.
+do
+ local savedGet=addon.Entrances.Get
+ local savedStart=addon.Navigation.StartEntrance
+ local hugeCalls=0
+ addon.Navigation.StartEntrance=function(d,point)hugeCalls=hugeCalls+1;return true end
+ local function alwaysTrue()return true end
+ local HUGE=9007199254740992
+ local MAXSAFE=9007199254740991
+ local function serve(mapID)
+  addon.Entrances.Get=function(d)
+   assert(d==dungeon)
+   return {mapID=mapID,x=27.5,y=48},function()return true end
+  end
+ end
+ -- (1) huge-ID provider point stays unbound, disabled, and never navigates.
+ serve(HUGE)
+ assert(ui:GetEntranceBinding(dungeon,alwaysTrue)==nil,"huge mapID must not bind")
+ ui:RefreshQuests()
+ assert(not ui.questEntrance.enabled,"huge mapID disables the entrance")
+ assert(addon.L("DUNGEON_ENTRANCE_UNKNOWN")~=nil,"unknown entrance label stays available")
+ local beforeHuge=hugeCalls
+ ui.questEntrance.scripts.OnClick()
+ assert(hugeCalls==beforeHuge,"huge mapID never reaches native navigation")
+ -- (2) boundary: 2^53-1 valid, 2^53/0/-1/fractional invalid.
+ for _,bad in ipairs({HUGE,0,-1,1453.5})do
+  serve(bad)
+  assert(ui:GetEntranceBinding(dungeon,alwaysTrue)==nil,"bad mapID "..tostring(bad).." must not bind")
+ end
+ serve(MAXSAFE)
+ local edge=assert(ui:GetEntranceBinding(dungeon,alwaysTrue),"2^53-1 stays valid when provided")
+ assert(edge.point.mapID==MAXSAFE and edge.current()==true,"2^53-1 keeps a live predicate")
+ -- (3) ordinary 1453 path intact: live binding, enabled control, native dispatch once.
+ addon.Navigation.StartEntrance=savedStart
+ addon.Entrances.Get=savedGet
+ ui:RefreshQuests()
+ local live=assert(ui:GetEntranceBinding(dungeon,alwaysTrue),"ordinary 1453 stays bound")
+ assert(live.point.mapID==1453 and live.current()==true,"ordinary 1453 keeps a live predicate")
+ assert(ui.questEntrance.enabled,"ordinary 1453 stays enabled")
+ local before=entrances
+ ui.questEntrance.scripts.OnClick()
+ assert(entrances==before+1,"ordinary 1453 still dispatches once")
+end
 print("Middle quest navigation checks passed (modeled, no native input or layout proof)")

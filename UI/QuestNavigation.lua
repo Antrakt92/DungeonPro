@@ -73,7 +73,7 @@ function UI:GetEntranceBinding(dungeon, ownerCurrent)
     point, predicate = ok and clean(point, "table"), ok and clean(predicate, "function")
     if not owned() or not point or not predicate then return end
     local map, x, y = clean(point.mapID, "number"), clean(point.x, "number"), clean(point.y, "number")
-    if not owned() or not map or map <= 0 or map % 1 ~= 0 or not x or not y or x < 0 or x > 100 or y < 0 or y > 100 then return end
+    if not owned() or not map or map <= 0 or map > 9007199254740991 or map % 1 ~= 0 or not x or not y or x < 0 or x > 100 or y < 0 or y > 100 then return end
     local fields = { "frame", "dungeon", "quest", "engine", "catalogGeneration", "questListGeneration", "rewardGeneration",
         "layoutRevision", "detailTabRevision", "range", "includeUnavailable", "preparation", "search" }
     local function current()
