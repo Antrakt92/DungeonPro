@@ -105,6 +105,59 @@ for _,locale in ipairs({"enUS","ruRU","deDE","frFR","esES","ptBR","itIT","koKR",
 end
 GameTooltip=oldTip;a.db.locale="enUS"
 
+-- DP-5 DETAIL-FINISH-SUMMON-COHERENCE: mixed summon+map finish stays routeless like the start branch.
+do
+ local questDef=a.quests[5724]
+ local savedFinish=questDef.finish
+ -- контроль: исходный finish 5724 держит маршрут.
+ render(5724,"READY")
+ local baseVisits,baseMaps=#visits,#maps
+ button().scripts.OnClick()
+ assert(#visits==baseVisits+1 and visits[#visits].id==5724 and visits[#visits].kind=="turnin" and visits[#visits].place==savedFinish,
+  "honest 5724 finisher keeps its turn-in route")
+ assert(#maps==baseMaps,"honest 5724 finisher visits its exact point without a map fallback")
+ baseVisits,baseMaps=#visits,#maps
+ local honestClick=button().scripts.OnClick
+ -- пин SummonSource: замена читателя гасит старый клик.
+ local sourceGetter=ui.SummonSource
+ ui.SummonSource=function()error("replaced summon reader must not run")end
+ honestClick()
+ assert(#visits==baseVisits and #maps==baseMaps,"replaced SummonSource retires the old turn-in click")
+ ui.SummonSource=sourceGetter
+ render(5724,"READY")
+ baseVisits,baseMaps=#visits,#maps
+ honestClick=button().scripts.OnClick
+ -- (1) mixed map finish: typed object + valid map + summonItem -> Has==false, SummonSource==nil.
+ questDef.finish={objectID=1,name="Mixed object",mapID=1453,x=10,y=20,summonItem={itemID=7667,name="Summon tool"}}
+ assert(ui:HasSummonSource(questDef.finish)==false,"mixed object+map finish declares no summon")
+ assert(ui:SummonSource(questDef.finish)==nil,"mixed object+map finish keeps no summon relation")
+ render(5724,"READY")
+ noTurnin()
+ assert(#visits==baseVisits and #maps==baseMaps,"mixed map finish invents no route")
+ local stale=ui.turnin.scripts.OnClick
+ if stale then stale() end
+ assert(#visits==baseVisits and #maps==baseMaps,"mixed map finish click dispatches nothing")
+ honestClick()
+ assert(#visits==baseVisits and #maps==baseMaps,"retired honest click cannot dispatch after a mixed finish")
+ -- (2) mixed endpoints без карты: object+npc+summonItem тоже без маршрута.
+ questDef.finish={objectID=1,npcID=2,name="Mixed object",summonItem={itemID=3,name="Summon tool"}}
+ assert(ui:HasSummonSource(questDef.finish)==false,"mixed object+npc finish declares no summon")
+ assert(ui:SummonSource(questDef.finish)==nil,"mixed object+npc finish keeps no summon relation")
+ render(5724,"READY")
+ noTurnin()
+ assert(#visits==baseVisits and #maps==baseMaps,"mixed mapless finish invents no route")
+ -- (3) контроль: валидный саммон 2201 как раньше без маршрута.
+ render(2201,"READY")
+ assert(a.quests[2201].finish.objectID==112877 and a.quests[2201].finish.summonItem.itemID==7667)
+ noTurnin()
+ assert(#visits==baseVisits and #maps==baseMaps,"item-created object keeps no historical spawn route")
+ questDef.finish=savedFinish
+ render(5724,"READY")
+ button().scripts.OnClick()
+ assert(#visits==baseVisits+1 and visits[#visits].place==savedFinish and #maps==baseMaps,
+  "restored 5724 finisher keeps its turn-in route")
+end
+
 -- A late native Show cannot revive the control after the quest becomes unfinished.
 render(5724,"READY");turnin=button()
 local show,armed,fired=f.methods.Show,true,false

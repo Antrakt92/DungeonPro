@@ -3826,10 +3826,10 @@ function UI:RefreshDetail(sourceFocus)
                             end)
                             if not endingCurrent() then return end
                             if readable and alternatives == nil and ok and typed and map and map > 0 and map <= 9007199254740991 and map % 1 == 0 and
-                                addon.Read(summonPresence, "boolean", self, finish) == false then
+                                addon.Read(summonPresence, "boolean", self, finish) == false and (rawget(finish, "summonItem") == nil or addon.Read(summonGetter, "table", self, finish) ~= nil) then
                                 local function current()
                                     local fresh = not engineGetter or addon.Read(engineGetter, "boolean", engine) == true
-                                    return fresh and endingCurrent() and state.status == "READY" and self.HasSummonSource == summonPresence and
+                                    return fresh and endingCurrent() and state.status == "READY" and self.HasSummonSource == summonPresence and self.SummonSource == summonGetter and
                                         engine.Current == engineGetter and engine.Next == nextGetter and engine.State == stateGetter
                                 end
                                 if not current() then return end
