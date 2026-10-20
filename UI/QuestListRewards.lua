@@ -7,7 +7,7 @@ local showTooltip
 
 local function integer(value)
     value = addon.Clean(value, "number")
-    return value and value > 0 and value % 1 == 0 and value or nil
+    return value and value > 0 and value <= 4294967295 and value % 1 == 0 and value or nil
 end
 
 local function release(expected)

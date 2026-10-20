@@ -393,4 +393,38 @@ check("Navigation inset retains indexed native-shaped row adapters and safe abse
     row.navigationReserve=nil;assert(r.Paint(row,1)==26 and buttons[1].point[4]==-6)
     r.Clear(row);assert(not buttons[1].shown)
 end)
+check("Huge reward identities stay unknown while the uint32 boundary still paints", function()
+    for _, huge in ipairs({ 4294967296, 9007199254740991 }) do
+        local r = reset(); payload.items[1].id = huge
+        assert(r.Paint(row, 1) == 0 and #buttons == 0)
+        r = reset(); assert(r.Paint(row, 1) == 26 and #buttons == 1)
+        payload.items[1].id = huge; assert(r.Paint(row, 2) == 0)
+        assert(not buttons[1].shown and not buttons[1].icon.shown)
+        assert(buttons[1].icon.texture == nil and buttons[1].scripts.OnEnter == nil)
+    end
+    local r = reset(); payload.items[1].id = 4294967295
+    assert(r.Paint(row, 1) == 26 and #buttons == 1 and buttons[1].icon.texture == 123)
+    buttons[1].scripts.OnEnter(); assert(tooltip.text:find("Sword", 1, true))
+end)
+check("Huge counts and numeric textures are dropped while safe string paths still paint", function()
+    local r = reset(); payload.items[1].count = 4294967296
+    assert(r.Paint(row, 1) == 0 and #buttons == 0)
+    r = reset(); payload.items[1].texture = 4294967296
+    assert(r.Paint(row, 1) == 0 and #buttons == 0)
+    r = reset(); payload.items[1].texture = "Interface\\Icons\\Safe"
+    assert(r.Paint(row, 1) == 26 and buttons[1].icon.texture == "Interface\\Icons\\Safe")
+    buttons[1].scripts.OnEnter(); assert(tooltip.text:find("|TInterface\\Icons\\Safe", 1, true))
+end)
+check("Huge reward identities never leak into native hyperlinks while valid items do", function()
+    local r = reset()
+    tooltip.SetHyperlink = function(self, link) self.link = link; self.text = "Stats"; self.lines = {} end
+    tooltip.AddLine = function(self, line) self.lines[#self.lines + 1] = line end
+    payload.items[1].id = 4294967296
+    assert(r.Paint(row, 1) == 0 and #buttons == 0 and tooltip.link == nil)
+    r = reset()
+    tooltip.SetHyperlink = function(self, link) self.link = link; self.text = "Stats"; self.lines = {} end
+    tooltip.AddLine = function(self, line) self.lines[#self.lines + 1] = line end
+    assert(r.Paint(row, 1) == 26)
+    buttons[1].scripts.OnEnter(); assert(tooltip.link == "item:10")
+end)
 print("Quest list reward checks passed: " .. total .. " (modeled, no native layout proof)")
