@@ -41,7 +41,7 @@ local function finish()
  end end
 end
 local originalFinish=a.quests[3447].finish
-local originalArea=originalFinish.zoneName
+local originalArea=assert(originalFinish.zoneName,"the recorded object area is retained")
 local function warned()
  local caption,warning=finish()
  assert(caption and warning and warning:IsShown()and warning.text==a.L("SOURCE_POSITION_UNKNOWN")and warning.detailStyle=="warning",

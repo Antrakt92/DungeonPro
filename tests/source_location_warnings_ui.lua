@@ -53,8 +53,42 @@ for _,locale in ipairs({"enUS","ruRU","deDE","frFR","esES","ptBR","koKR","zhCN",
   end end
   assert(matched,"actual known-area quest remains listed in All mode")
  end
- render(1486)
- assert(count("GIVER_LOCATION_UNKNOWN")==1 and count("SOURCE_POSITION_UNKNOWN")==0,"wholly unknown NPC location retains its full warning")
+ -- The reviewed WC source proves only the continent; it must never become a point route.
+ local wc=assert(a.quests[1486]);local originalStart,originalFinish=wc.start,wc.finish
+ local originalMap,originalRoute=a.Navigation.Map,a.Navigation.Start
+ local mapCalls,routeCalls=0,0
+ a.Navigation.Map=function(point,purpose,id,current)
+  mapCalls=mapCalls+1
+  assert(point==originalStart and point.mapID==1414 and point.x==nil and point.y==nil and point.reportedLocations==nil,
+   "actual WC endpoint remains a continent-only map without projected points")
+  assert(id==1486 and purpose=="quest-start"and current(),"manual map request owns its exact selected quest")
+  return true
+ end
+ a.Navigation.Start=function()routeCalls=routeCalls+1;error("map-only continent cannot start a point route")end
+ local ok,failure=pcall(function()
+  render(1486)
+  assert(originalStart.npcID==5767 and originalStart.mapID==1414 and originalStart.x==nil and originalStart.y==nil and originalStart.reportedLocations==nil)
+  assert(count("GIVER_LOCATION_UNKNOWN")==0 and count("SOURCE_POSITION_UNKNOWN")==0 and ui.giverUnavailableKey=="GIVER_COORDINATES_UNKNOWN",
+   "known continent permits map inspection while exact coordinates remain unknown")
+  local contact=assert(ui.detailContactRows[1]);local binding=assert(contact.detailContactBinding)
+  assert(contact:IsShown()and contact.enabled and binding.endpoint==originalStart and binding.questID==1486 and binding.field=="start"and
+   binding.mapOnly and binding.reason==nil and binding.current()and contact.note.text:find(originalStart.zoneName,1,true))
+  assert(mapCalls==0 and routeCalls==0,"rendering a map-only source never navigates automatically")
+  contact.scripts.OnClick();assert(mapCalls==1 and routeCalls==0,"explicit contact click opens only the known continent map")
+  -- Isolate the wholly unknown-location behavior from the now-known factual WC map.
+  wc.start={npcID=originalStart.npcID,name=originalStart.name,creatureDisplayID=originalStart.creatureDisplayID,portraitSource=originalStart.portraitSource}
+  wc.finish=wc.start
+  render(1486)
+  assert(count("GIVER_LOCATION_UNKNOWN")==1 and count("SOURCE_POSITION_UNKNOWN")==0,"wholly unknown NPC location retains its full warning")
+  local unknown=assert(ui.detailContactRows[1]);local unavailable=assert(unknown.detailContactBinding)
+  assert(unknown:IsShown()and not unknown.enabled and unknown.scripts.OnClick==nil and unavailable.endpoint==wc.start and
+   unavailable.questID==1486 and unavailable.reason=="SOURCE_POSITION_UNKNOWN"and unavailable.action==nil and unavailable.current(),
+   "detached source without any area remains visible but has no navigation capability")
+  assert(mapCalls==1 and routeCalls==0,"unknown source cannot add a map or point route")
+ end)
+ wc.start,wc.finish=originalStart,originalFinish;a.Navigation.Map,a.Navigation.Start=originalMap,originalRoute
+ assert(ok,failure)
+ assert(wc.start==originalStart and wc.finish==originalFinish,"each locale restores both exact factual endpoint objects")
  for _,id in ipairs({95189,95204})do
   render(id)
   assert(named(a.quests[id].start.containerSource.name)and count("SOURCE_POSITION_UNKNOWN")==0 and count("START_ITEM_LOCATION_UNKNOWN")==0,

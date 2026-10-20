@@ -75,9 +75,32 @@ for _,locale in ipairs({"enUS","ruRU","deDE","frFR","esES","ptBR","koKR","zhCN",
    assert(shown,"recorded turn-in is displayed separately from the unknown starting method")
   end
  end
- -- Nalpak still has no verified local source area or actionable position.
- render(1486)
- assert(fields(a.L("GIVER_LOCATION_UNKNOWN"))==1 and fields(a.L("QUEST_START_UNKNOWN"))==0,"typed unknown NPC retains its precise existing warning")
+ -- Nalpak has a reviewed continent map only, never an inferred local point.
+ do
+  local q=a.quests[1486];local ownStart,ownFinish=q.start,q.finish
+  assert(ownStart.npcID==5767 and ownStart.mapID==1414 and ownStart.x==nil and ownStart.y==nil and ownStart.reportedLocations==nil)
+  local previousNavigation=a.Navigation;local explicitMaps=0
+  a.Navigation={Start=function()error("map-only Nalpak cannot dispatch an exact route")end,
+   Map=function(point,purpose,quest,owner)
+    assert(owner()and point==ownStart and purpose=="quest-start"and quest==1486,"map-only click retains the exact owned pickup")
+    explicitMaps=explicitMaps+1;return true
+   end}
+  render(1486)
+  local own=assert(contact());local binding=assert(own.detailContactBinding)
+  assert(binding.endpoint==ownStart and binding.current()and binding.mapOnly and own.enabled,"actual known continent keeps an owned map-only contact")
+  assert(fields(a.L("GIVER_COORDINATES_UNKNOWN"))==1 and fields(a.L("GIVER_LOCATION_UNKNOWN"))==0 and fields(a.L("QUEST_START_UNKNOWN"))==0,"known continent explains missing exact coordinates")
+  assert(explicitMaps==0,"render does not route automatically");clickContact();assert(explicitMaps==1)
+  a.Navigation=previousNavigation
+  -- Detached fully unknown endpoints preserve the previous missing-location case.
+  -- Both endpoints must be detached: the actual finisher also has a known map.
+  local unknown={npcID=ownStart.npcID,name=ownStart.name}
+  q.start,q.finish=unknown,unknown;render(1486)
+  local unknownContact=assert(contact());local unknownBinding=assert(unknownContact.detailContactBinding)
+  assert(unknownBinding.endpoint==unknown and unknownBinding.current()and not unknownContact.enabled and not unknownBinding.action,"fully unknown typed source remains current but has no route")
+  assert(fields(a.L("GIVER_LOCATION_UNKNOWN"))==1 and fields(a.L("QUEST_START_UNKNOWN"))==0,"typed unknown NPC retains its precise existing warning")
+  assert(not ui:NavigationDestination(false)and starts==0 and maps==0,"synthetic wholly unknown source dispatches nothing")
+  q.start,q.finish=ownStart,ownFinish
+ end
   render(98423)
   assert(fields(a.L("START_ITEM_LOCATION_UNKNOWN"))==1 and fields(a.L("QUEST_START_UNKNOWN"))==0,"item starter retains its own unknown-acquisition warning")
  end
@@ -238,7 +261,10 @@ for _,locale in ipairs({"enUS","ruRU","deDE","frFR","esES","ptBR","koKR","zhCN",
   assert(ui:SetDetailTab("quest"))
  end
   render(1486)
- assert(fields(a.L("GIVER_LOCATION_UNKNOWN"))==1 and fields(a.L("QUEST_START_UNKNOWN"))==0,"mapless giver retains its precise existing warning")
+ assert(fields(a.L("GIVER_COORDINATES_UNKNOWN"))==1 and fields(a.L("GIVER_LOCATION_UNKNOWN"))==0 and fields(a.L("QUEST_START_UNKNOWN"))==0,"reviewed map-only giver retains its missing-exact-coordinate warning")
+ do local own=assert(contact());local binding=assert(own.detailContactBinding)
+  assert(binding.endpoint==a.quests[1486].start and binding.current()and binding.mapOnly and own.enabled,"reviewed map-only pickup remains owned and actionable as a map")
+ end
  a.db.locale="enUS"
  assert(ui:SetDetailTab("quest"))
  -- Empty alternative lists count as absent: same unknown-start card, no invented choices.
