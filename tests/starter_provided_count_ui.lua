@@ -165,4 +165,46 @@ for _, count in ipairs({ 0, 4 }) do
     assert(occurrences(u, value) == 1, "nil still resolves the typed count after the nonempty control")
     total = total + 2
 end
+-- DP-5 DETAIL-TYPED-STARTER-HUGE-BOUND: huge starter yields no carried; uint32-max stays typed.
+do
+    local function shownExact(u, value)
+        for _, f in ipairs(u.details) do if f:IsShown() and f:GetText() == value then return f end end
+    end
+    do
+        local a, u, q = fixture(6981, 4, false)
+        local savedStart, savedProvided = q.start, q.providedItems
+        local value = a.L("ITEM_CARRIED", 4)
+        q.providedItems = nil
+        q.start = { itemID = 4294967296, name = "Huge starter", containerSource = { objectID = 11, name = "Huge Cache", zoneName = "Known zone" }, dropSources = { { npcID = 1, name = "Source", locationName = "Known zone" } } }
+        q.startAlternatives = nil
+        assert(u:SetDetailTab("sources"))
+        assert(occurrences(u, value) == 0, "huge starter with routes shows no carried count")
+        assert(not shownExact(u, value), "huge sources keep no standalone carried caption")
+        assert(not exact(u, a.L("ITEM_ACQUISITION")), "huge starter builds no acquisition heading")
+        assert(occurrences(u, a.L("ITEM_DROP_SOURCE", "Source", "Known zone")) == 0, "huge starter builds no drop route fact")
+        q.start = { itemID = 9007199254740991, name = "Huge starter", containerSource = { objectID = 11, name = "Huge Cache", zoneName = "Known zone" }, dropSources = { { npcID = 1, name = "Source", locationName = "Known zone" } } }
+        u:Refresh()
+        assert(occurrences(u, value) == 0, "2^53-1 starter with routes shows no carried count")
+        q.start = savedStart
+        q.providedItems = savedProvided
+        q.startAlternatives = nil
+        u:Refresh()
+        total = total + 1
+    end
+    for _, case in ipairs({ { id = 4294967295, expect = 1 }, { id = 9007199254740991, expect = 0 } }) do
+        local a, u, q = fixture(6981, 4, false)
+        local savedStart, savedProvided = q.start, q.providedItems
+        local value = a.L("ITEM_CARRIED", 4)
+        q.providedItems = nil
+        q.start = { itemID = case.id, name = "Boundary starter" }
+        q.startAlternatives = nil
+        assert(u:SetDetailTab("sources"))
+        local found = occurrences(u, value)
+        assert(found == case.expect, "boundary " .. case.id .. " keeps " .. case.expect .. " carried")
+        q.start = savedStart
+        q.providedItems = savedProvided
+        u:Refresh()
+        total = total + 1
+    end
+end
 print("PASS starter/supplied carried-count composition: " .. total .. " actual role/count/tab/invalid/reentry cases")

@@ -5104,7 +5104,7 @@ function UI:RefreshDetail(sourceFocus)
         local starterNameGetter, starterCountGetter = addon.ItemName, addon.CarriedItemCount
         local starterCount
         local typedStarter = false
-        if starterID and starterID > 0 and starterID <= 9007199254740991 and starterID % 1 == 0 then
+        if starterID and starterID > 0 and starterID <= 4294967295 and starterID % 1 == 0 then
             local ok, typed = pcall(function()
                 return rawget(starterSource, "npcID") == nil and rawget(starterSource, "objectID") == nil and
                     (q.startAlternatives == nil or isEmptyAlternatives(q.startAlternatives)) and true or false
@@ -5153,8 +5153,10 @@ function UI:RefreshDetail(sourceFocus)
         end
         local start = q.start
         if start and start.itemID then
+            local rawCarriedID = addon.Clean(rawget(start, "itemID"), "number")
+            local validCarriedID = rawCarriedID and rawCarriedID > 0 and rawCarriedID <= 4294967295 and rawCarriedID % 1 == 0
             local count = typedStarter and starterCount or nil
-            if not typedStarter then count = carried(start.itemID) end
+            if not typedStarter and validCarriedID then count = carried(start.itemID) end
             if typedStarter and not starterCurrent() then return end
             if count and not typedStarter then line(count) end
             local shown = false

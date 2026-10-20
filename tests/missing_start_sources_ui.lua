@@ -161,6 +161,67 @@ for _,locale in ipairs({"enUS","ruRU","deDE","frFR","esES","ptBR","koKR","zhCN",
   render(98423)
   assert(fields(a.L("START_ITEM_LOCATION_UNKNOWN"))==1 and fields(a.L("QUEST_START_UNKNOWN"))==0,"valid item starter retains its own unknown-acquisition warning")
  end
+ -- DP-5 DETAIL-TYPED-STARTER-HUGE-BOUND: huge starter with routes stays unknown with no acquisition or carried.
+ do
+  local qBound=assert(a.quests[98423])
+  local savedStart,savedAlternatives=qBound.start,qBound.startAlternatives
+  local savedCarried=a.CarriedItemCount
+  a.CarriedItemCount=function() return 3 end
+  local function carriedOccurrences()
+   local value=a.L("ITEM_CARRIED",3)
+   local n=0
+   for _,field in ipairs(ui.details)do if field:IsShown() and field.text==value then n=n+1 end end
+   return n
+  end
+  local function shownButtons(pool)
+   local n=0
+   for _,button in ipairs(pool or {})do if button:IsShown()then n=n+1 end end
+   return n
+  end
+  a.db.locale="enUS"
+  assert(ui:SetDetailTab("sources"))
+  qBound.start={itemID=4294967296,name="Huge starter",containerSource={objectID=11,name="Huge Cache",zoneName="Known zone"},dropNPCID=7,dropSources={{npcID=1,name="Source",locationName="Known zone"}}}
+  qBound.startAlternatives=nil
+  render(98423)
+  assert(ui.detailTab=="sources","huge-bound check stays on the sources tab")
+  assert(fields(a.L("QUEST_START_UNKNOWN"))==1,"huge starter with routes keeps one unknown-start warning")
+  assert(fields(a.L("START_ITEM_LOCATION_UNKNOWN"))==0,"huge starter with routes claims no item acquisition")
+  assert(fields(a.L("ITEM_ACQUISITION"))==0,"huge starter builds no acquisition heading")
+  assert(fields(a.L("CONTAINER_SOURCE"))==0,"huge starter builds no container route")
+  assert(fields(a.L("ITEM_DROP_SOURCE","Source","Known zone"))==0,"huge starter builds no drop route fact")
+  assert(fields(a.L("ITEM_DROP_LOCATIONS"))==0,"huge starter builds no mapped drop section")
+  assert(carriedOccurrences()==0,"huge starter shows no carried count")
+  assert(shownButtons(ui.containerButtons)==0 and shownButtons(ui.dropButtons)==0,"huge starter creates no route buttons")
+  assert(ui.giverUnavailableKey=="QUEST_START_UNKNOWN" and not ui.giver.enabled and not ui:NavigationDestination(false),"huge starter with routes dispatches no visit")
+  local hr=row(98423);local hc=assert(hr.navigationControl)
+  assert(not hc.enabled and hr.navigationBinding.reason=="QUEST_START_UNKNOWN" and hr.navigationBinding.action==nil,"huge row stays disabled with unknown reason")
+  assert(ui:SetDetailTab("quest"))
+  render(98423)
+  assert(fields(a.L("QUEST_START_UNKNOWN"))==1,"quest tab shows unknown for huge starter with routes")
+  assert(fields(a.L("ITEM_ACQUISITION"))==0 and carriedOccurrences()==0,"quest tab builds no acquisition or carried for huge starter")
+  assert(ui.giverUnavailableKey=="QUEST_START_UNKNOWN","quest tab keeps unknown key for huge starter")
+  assert(ui:SetDetailTab("sources"))
+  qBound.start={itemID=4294967295,name="Typed starter",containerSource={objectID=11,name="Huge Cache",zoneName="Known zone"},dropSources={{npcID=1,name="Source",locationName="Known zone"}}}
+  qBound.startAlternatives=nil
+  render(98423)
+  assert(fields(a.L("ITEM_ACQUISITION"))==1,"uint32-max keeps its acquisition heading")
+  assert(fields(a.L("QUEST_START_UNKNOWN"))==0,"uint32-max claims no unknown method")
+  assert(fields(a.L("ITEM_DROP_SOURCE","Source","Known zone"))==1,"uint32-max keeps its drop route fact")
+  qBound.start={itemID=9007199254740991,name="Huge starter",containerSource={objectID=11,name="Huge Cache",zoneName="Known zone"},dropSources={{npcID=1,name="Source",locationName="Known zone"}}}
+  render(98423)
+  assert(fields(a.L("QUEST_START_UNKNOWN"))==1 and fields(a.L("ITEM_ACQUISITION"))==0,"2^53-1 reads as unknown with no acquisition")
+  assert(fields(a.L("ITEM_DROP_SOURCE","Source","Known zone"))==0 and carriedOccurrences()==0,"2^53-1 builds no routes or carried")
+  assert(ui.giverUnavailableKey=="QUEST_START_UNKNOWN" and not ui.giver.enabled,"2^53-1 dispatches no visit")
+  qBound.start={itemID=801,name="Typed starter",dropSources={{npcID=1,name="Source",locationName="Known zone"}}}
+  render(98423)
+  assert(fields(a.L("ITEM_ACQUISITION"))==1 and fields(a.L("QUEST_START_UNKNOWN"))==0,"small valid starter stays typed")
+  assert(fields(a.L("ITEM_DROP_SOURCE","Source","Known zone"))==1,"small valid starter keeps its drop route fact")
+  qBound.start=savedStart
+  qBound.startAlternatives=savedAlternatives
+  a.CarriedItemCount=savedCarried
+  render(98423)
+  assert(ui:SetDetailTab("quest"))
+ end
   render(1486)
  assert(fields(a.L("GIVER_LOCATION_UNKNOWN"))==1 and fields(a.L("QUEST_START_UNKNOWN"))==0,"mapless giver retains its precise existing warning")
  a.db.locale="enUS"
