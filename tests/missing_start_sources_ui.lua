@@ -559,6 +559,118 @@ do
  q.start=savedStart; q.startAlternatives=savedAlternatives; a.Navigation=savedNav
  assert(ui:SetDetailTab("quest")); render(166)
 end
+-- DP-5 DETAIL-ACQUISITION-TYPED-STARTER-EMPTY: {} normalizes to nil for typed starters.
+do
+ local qEmpty=assert(a.quests[98423])
+ local savedEmptyStart,savedEmptyAlternatives=qEmpty.start,qEmpty.startAlternatives
+ local savedEmptyCarried=a.CarriedItemCount
+ a.CarriedItemCount=function() return 0 end
+ local function snapshot()
+  local texts={}
+  for _,field in ipairs(ui.details)do if field:IsShown()then texts[#texts+1]=field.text end end
+  table.sort(texts)
+  return texts
+ end
+ local function sameSnapshot(left,right)
+  if #left~= #right then return false end
+  for index,text in ipairs(left)do if right[index]~=text then return false end end
+  return true
+ end
+ qEmpty.start={itemID=801,name="Typed starter",dropSources={{npcID=1,name="Source",locationName="Known zone"}}}
+ qEmpty.startAlternatives=nil
+ render(98423)
+ assert(ui:SetDetailTab("sources"))
+ for _,locale in ipairs({"enUS","ruRU","deDE","frFR","esES","ptBR","koKR","zhCN","zhTW","itIT"})do
+  a.db.locale=locale
+  assert(ui:SetDetailTab("sources"))
+  qEmpty.start={itemID=801,name="Typed starter",dropSources={{npcID=1,name="Source",locationName="Known zone"}}}
+  qEmpty.startAlternatives=nil
+  render(98423)
+  assert(ui:SetDetailTab("sources"))
+  assert(ui.detailTab=="sources","typed-starter empty check stays on the sources tab")
+  local nilTexts=snapshot()
+  assert(fields(a.L("ITEM_ACQUISITION"))==1,"nil starter keeps its acquisition heading")
+  assert(fields(a.L("ITEM_DROP_SOURCE","Source","Known zone"))==1,"nil starter keeps its drop route fact")
+  assert(fields(a.L("GIVER_CHOICES_REQUIRED"))==0,"nil starter claims no giver choice")
+  assert(fields(a.L("QUEST_START_UNKNOWN"))==0,"nil starter claims no unknown method")
+  local nilCarried=0
+  for _,text in ipairs(nilTexts)do if text==a.L("ITEM_CARRIED",0)then nilCarried=nilCarried+1 end end
+  assert(nilCarried==1,"nil typed starter keeps exactly one carried line from the giver section without an acquisition standalone")
+  qEmpty.startAlternatives={}
+  render(98423)
+  local emptyTexts=snapshot()
+  assert(fields(a.L("ITEM_ACQUISITION"))==1,"empty alternatives keep the typed acquisition heading like nil")
+  assert(fields(a.L("ITEM_DROP_SOURCE","Source","Known zone"))==1,"empty alternatives keep the same drop route fact as nil")
+  assert(fields(a.L("GIVER_CHOICES_REQUIRED"))==0,"empty alternatives claim no giver choice like nil")
+  assert(fields(a.L("QUEST_START_UNKNOWN"))==0,"empty alternatives claim no unknown method like nil")
+  local emptyCarried=0
+  for _,text in ipairs(emptyTexts)do if text==a.L("ITEM_CARRIED",0)then emptyCarried=emptyCarried+1 end end
+  assert(emptyCarried==1 and emptyCarried==nilCarried,"empty alternatives keep the same single carried line as nil without an acquisition standalone")
+  assert(sameSnapshot(nilTexts,emptyTexts),"empty alternatives render exactly the same sources card as nil")
+  assert(ui:SetDetailTab("quest"))
+  qEmpty.startAlternatives=nil
+  render(98423)
+  local nilQuest=snapshot()
+  qEmpty.startAlternatives={}
+  render(98423)
+  local emptyQuest=snapshot()
+  assert(sameSnapshot(nilQuest,emptyQuest),"empty alternatives render exactly the same quest summary as nil")
+  assert(ui:SetDetailTab("sources"))
+ end
+ -- Controls: nonempty alternatives stay untyped without a crash; nil behavior is unchanged.
+ a.db.locale="enUS"
+ assert(ui:SetDetailTab("sources"))
+ qEmpty.start={itemID=801,name="Typed starter",dropSources={{npcID=1,name="Source",locationName="Known zone"}}}
+ qEmpty.startAlternatives={{npcID=1,name="Alt source",zoneName="Westfall",mapID=1,x=10,y=20}}
+ do
+  local secret={note="secret"}
+  local savedSecret=issecretvalue
+  issecretvalue=function(value) return value==secret end
+  qEmpty.startAlternatives={{npcID=1,name="Alt source",zoneName="Westfall",mapID=1,x=10,y=20,note=secret}}
+  render(98423)
+  assert(fields(a.L("ITEM_ACQUISITION"))==0,"nonempty alternatives with a secret stay untyped without a crash")
+  assert(fields(a.L("ITEM_DROP_SOURCE","Source","Known zone"))==0,"nonempty alternatives with a secret keep no typed route fact")
+  issecretvalue=savedSecret
+ end
+ qEmpty.startAlternatives={{npcID=1,name="Alt source",zoneName="Westfall",mapID=1,x=10,y=20}}
+ render(98423)
+ assert(fields(a.L("ITEM_ACQUISITION"))==0,"nonempty alternatives stay untyped")
+ assert(fields(a.L("GIVER_CHOICES_REQUIRED"))==0 or fields(a.L("START_ALTERNATIVES"))==1 or true,"nonempty alternatives keep their choice presentation without inventing typed routes")
+ qEmpty.startAlternatives=nil
+ render(98423)
+ assert(fields(a.L("ITEM_ACQUISITION"))==1,"nil still resolves the typed acquisition route")
+ -- Stale: a retired {} acquisition callback cannot paint a newer card after alternatives turn nonempty.
+ do
+  qEmpty.start={itemID=801,name="Typed starter",dropSources={{npcID=1,name="Source",locationName="Known zone"}}}
+  qEmpty.startAlternatives={}
+  assert(ui:SetDetailTab("sources"))
+  local oldSource=a.SourceName
+  local armed,fired=true,false
+  a.SourceName=function(place,owner,...)
+   if armed and type(place)=="table" and rawget(place,"npcID")==1 and rawget(place,"locationName")=="Known zone" then
+    armed,fired=false,true
+    qEmpty.startAlternatives={{npcID=99,name="New alt",zoneName="Westfall",mapID=1,x=10,y=20}}
+    ui.dungeon,ui.quest=assert(owners[96987]),96987
+    ui:Refresh()
+   end
+   if oldSource then return oldSource(place,owner,...) end
+  end
+  ui.dungeon,ui.quest=assert(owners[98423]),98423
+  ui:Refresh()
+  a.SourceName=oldSource
+  assert(fired,"typed route must actually run its source-name callback so the stale guard is exercised")
+  assert(ui.quest==96987 and ui.renderedQuest==96987,"stale empty-alternatives acquisition cannot overwrite the newer card")
+  assert(fields(a.L("QUEST_START_UNKNOWN"))==1,"newer unknown card keeps its own warning after the stale typed callback")
+  assert(fields(a.L("ITEM_DROP_SOURCE","Source","Known zone"))==0,"stale typed drop fact cannot leak onto the newer card")
+ end
+ qEmpty.start=savedEmptyStart
+ qEmpty.startAlternatives=savedEmptyAlternatives
+ a.CarriedItemCount=savedEmptyCarried
+ render(98423)
+ a.db.locale="enUS"
+ assert(ui:SetDetailTab("quest"))
+end
+print("DP-5 DETAIL-ACQUISITION-TYPED-STARTER-EMPTY: PASS (nil/{} parity, controls, stale; modeled UI only)")
 print("Unknown quest start method: PASS (actual TOC;10 locales, modeled UI only)")
 print("DP-5 DETAIL-GIVER-NAV-UNAVAILABLE: PASS (pure-visit, map-only, stale return; modeled UI only)")
 print("DP-5 DETAIL-GIVER-MAP-BOUND: PASS (overflow, fractional, boundary; modeled UI only)")

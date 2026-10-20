@@ -135,4 +135,34 @@ for _, phase in ipairs({ "before", "after" }) do
         "late " .. phase .. " supplied-row text cannot restore an older starter caption")
     total = total + 1
 end
+-- DP-5 DETAIL-ACQUISITION-TYPED-STARTER-EMPTY: {} normalizes to nil, no extra standalone.
+for _, count in ipairs({ 0, 4 }) do
+    local a, u, q = fixture(6981, count, false)
+    assert(q.startAlternatives == nil)
+    local value = a.L("ITEM_CARRIED", count)
+    assert(occurrences(u, value) == 1, "nil typed starter keeps one supplied count without a standalone")
+    assert(not exact(u, value), "nil quest summary keeps the count on the supplied row")
+    q.startAlternatives = {}
+    u:Refresh()
+    assert(occurrences(u, value) == 1, "empty alternatives keep the same single supplied count as nil without an extra standalone")
+    assert(not exact(u, value), "empty quest summary keeps the count on the supplied row like nil")
+    assert(u:SetDetailTab("sources"))
+    q.startAlternatives = nil
+    u:Refresh()
+    local nilSources = occurrences(u, value)
+    assert(nilSources == 1 and exact(u, value), "nil sources keep one standalone giver count when supplied rows are absent")
+    q.startAlternatives = {}
+    u:Refresh()
+    local emptySources = occurrences(u, value)
+    assert(emptySources == 1 and emptySources == nilSources, "empty alternatives keep the same single sources count as nil")
+    assert(exact(u, value), "empty sources keep the standalone giver count like nil")
+    -- Controls: nonempty alternatives stay untyped without a crash; nil is unchanged.
+    q.startAlternatives = { { npcID = 1, name = "Alt source" } }
+    u:Refresh()
+    assert(u.quest == 6981, "nonempty alternatives keep selection without a crash")
+    q.startAlternatives = nil
+    u:Refresh()
+    assert(occurrences(u, value) == 1, "nil still resolves the typed count after the nonempty control")
+    total = total + 2
+end
 print("PASS starter/supplied carried-count composition: " .. total .. " actual role/count/tab/invalid/reentry cases")

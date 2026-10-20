@@ -5104,7 +5104,7 @@ function UI:RefreshDetail(sourceFocus)
         if starterID and starterID > 0 and starterID <= 9007199254740991 and starterID % 1 == 0 then
             local ok, typed = pcall(function()
                 return rawget(starterSource, "npcID") == nil and rawget(starterSource, "objectID") == nil and
-                    q.startAlternatives == nil and true or false
+                    (q.startAlternatives == nil or isEmptyAlternatives(q.startAlternatives)) and true or false
             end)
             typedStarter = ok and typed == true
         end
@@ -5118,7 +5118,7 @@ function UI:RefreshDetail(sourceFocus)
                     addon.char == renderCharacter and self.rewardGeneration == rewardGeneration and
                     self.reportedGeneration == reportedGeneration and addon.quests[id] == definition and q.start == starterSource and
                     rawget(starterSource, "itemID") == starterID and rawget(starterSource, "name") == starterName and
-                    rawget(starterSource, "npcID") == nil and rawget(starterSource, "objectID") == nil and q.startAlternatives == nil and
+                    rawget(starterSource, "npcID") == nil and rawget(starterSource, "objectID") == nil and (q.startAlternatives == nil or isEmptyAlternatives(q.startAlternatives)) and
                     (not binding or (binding.id == starterID and binding.role == "starter" and binding.sourceField == "start")) and
                     issecretvalue == starterChecker and addon.ItemIcon == starterIconGetter and
                     addon.ItemName == starterNameGetter and addon.CarriedItemCount == starterCountGetter and true or false
