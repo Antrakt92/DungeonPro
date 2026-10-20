@@ -63,9 +63,52 @@ for _,locale in ipairs({"enUS","ruRU","deDE","frFR","esES","ptBR","koKR","zhCN",
  -- Nalpak still has no verified local source area or actionable position.
  render(1486)
  assert(fields(a.L("GIVER_LOCATION_UNKNOWN"))==1 and fields(a.L("QUEST_START_UNKNOWN"))==0,"typed unknown NPC retains its precise existing warning")
- render(98423)
- assert(fields(a.L("START_ITEM_LOCATION_UNKNOWN"))==1 and fields(a.L("QUEST_START_UNKNOWN"))==0,"item starter retains its own unknown-acquisition warning")
-end
+  render(98423)
+  assert(fields(a.L("START_ITEM_LOCATION_UNKNOWN"))==1 and fields(a.L("QUEST_START_UNKNOWN"))==0,"item starter retains its own unknown-acquisition warning")
+ end
+ -- Empty alternative lists count as absent: same unknown-start card, no invented choices.
+ for _,locale in ipairs({"enUS","ruRU","deDE","frFR","esES","ptBR","koKR","zhCN","zhTW","itIT"})do
+  a.db.locale=locale
+  local qUnknown=assert(a.quests[96987])
+  assert(qUnknown.start==nil and qUnknown.startAlternatives==nil)
+  qUnknown.startAlternatives={}
+  render(96987)
+  assert(fields(a.L("QUEST_START_UNKNOWN"))==1,"empty alternatives keep one unknown-start warning")
+  assert(fields(a.L("GIVER_CHOICES_REQUIRED"))==0 and fields(a.L("GIVER_LOCATION_UNKNOWN"))==0 and fields(a.L("START_ITEM_LOCATION_UNKNOWN"))==0,"empty alternatives invent no giver choice or location warning")
+  assert(fields(a.L("SOURCE_DETAILS"))==1,"empty alternatives keep neutral source heading")
+  assert(ui.giverUnavailableKey=="QUEST_START_UNKNOWN" and not ui.giver.enabled and not ui:NavigationDestination(false),"empty alternatives dispatch no visit route")
+  qUnknown.startAlternatives=nil
+  local qItem=assert(a.quests[98423])
+  assert(qItem.startAlternatives==nil)
+  qItem.startAlternatives={}
+  render(98423)
+  assert(fields(a.L("START_ITEM_LOCATION_UNKNOWN"))==1,"empty alternatives keep item-starter unknown-acquisition warning")
+  assert(fields(a.L("QUEST_START_UNKNOWN"))==0 and fields(a.L("GIVER_CHOICES_REQUIRED"))==0,"item starter with empty alternatives claims no unknown method or giver choice")
+  assert(ui.giverUnavailableKey=="START_ITEM_LOCATION_UNKNOWN","item starter with empty alternatives keeps its own unavailable key")
+  qItem.startAlternatives=nil
+  qUnknown.startAlternatives={}
+  render(96987)
+  assert(ui:SetDetailTab("sources"))
+  assert(fields(a.L("QUEST_START_UNKNOWN"))==1 and fields(a.L("START_ALTERNATIVES"))==0 and fields(a.L("GIVER_CHOICES_REQUIRED"))==0,"sources tab shows unknown start without an empty choice block")
+  local buttonsShown=false
+  for _,pool in ipairs({ui.giverButtons,ui.startButtons})do for _,button in ipairs(pool)do if button:IsShown()then buttonsShown=true end end end
+  assert(not buttonsShown,"absent alternatives create no source buttons")
+  assert(ui:SetDetailTab("quest"))
+  qUnknown.startAlternatives=nil
+ end
+ -- Stale empty-alternative warning cannot overwrite a newer card.
+ local qStale=assert(a.quests[96987])
+ qStale.startAlternatives={}
+ render(96987)
+ local _,staleWarning=fields(a.L("QUEST_START_UNKNOWN"));local staleSetter=staleWarning.SetText
+ local armedStale,firedStale=true,false
+ staleWarning.SetText=function(self,text,...)
+  if armedStale and text==a.L("QUEST_START_UNKNOWN")then armedStale,firedStale=false,true;render(98423)end
+  return staleSetter(self,text,...)
+ end
+ ui.quest=96987;ui:Refresh();staleWarning.SetText=staleSetter
+ qStale.startAlternatives=nil
+ assert(firedStale and ui.quest==98423 and ui.renderedQuest==98423 and fields(a.L("QUEST_START_UNKNOWN"))==0,"retired empty-alternative warning cannot overwrite a newer card")
 a.db.locale="enUS"
 -- The native warning setter completes another card before the retired text write resumes.
 render(96987)
