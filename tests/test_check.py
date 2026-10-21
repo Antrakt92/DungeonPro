@@ -28,7 +28,7 @@ def exercise(root):
             calls.append(tuple(args[2:]))
             subprocess.run(args, cwd=root, capture_output=True, text=True, check=True)
         elif args[1:] in (("scripts/catalog.py", "--check"), ("scripts/casefold.py", "--check"),
-                          ("scripts/names.py", "--check")):
+                          ("scripts/names.py", "--check"), ("scripts/check_toc.py",)):
             return
         else:
             raise SyntaxFinished()

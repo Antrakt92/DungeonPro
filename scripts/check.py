@@ -19,6 +19,7 @@ def main():
     run(sys.executable, "scripts/catalog.py", "--check")
     run(sys.executable, "scripts/casefold.py", "--check")
     run(sys.executable, "scripts/names.py", "--check")
+    run(sys.executable, "scripts/check_toc.py")
     syntax_paths = [str(path) for path in sorted(ROOT.rglob("*.lua")) if "dist" not in path.parts]
     for offset in range(0, len(syntax_paths), 32):
         run(luac, "-p", *syntax_paths[offset:offset + 32])

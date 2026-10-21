@@ -43,6 +43,7 @@ def package(root=ROOT, output=None):
                 if not path.resolve().is_relative_to(root.resolve()):
                     raise ValueError("Package path escapes project")
                 info = zipfile.ZipInfo(f"{ADDON_NAME}/" + name, (2026, 1, 1, 0, 0, 0))
+                info.create_system = 0  # Pin host-independent archives on every builder.
                 info.compress_type = zipfile.ZIP_DEFLATED
                 archive.writestr(info, toc_bytes if name == toc_name else path.read_bytes())
         with zipfile.ZipFile(staged) as archive:
