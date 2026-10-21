@@ -22,10 +22,11 @@ QUEST_FIELDS = frozenset({
 })
 DUNGEON_FIELDS = frozenset({
     "key", "name", "minLevel", "maxLevel", "coverage", "quests", "source", "instanceID", "wing", "entrance", "art",
-    "activityID", "complexKey", "sharedQuests", "levelScope",
+    "activityID", "complexKey", "sharedQuests", "levelScope", "classicQuests", "classicSource",
 })
 SCARLET_WINGS = frozenset({"graveyard", "library", "armory", "cathedral"})
-COMPLEX_FIELDS = frozenset({"activityID", "complexKey", "sharedQuests", "levelScope"})
+COMPLEX_FIELDS = frozenset({"activityID", "complexKey", "sharedQuests", "levelScope", "classicQuests", "classicSource"})
+SCARLET_CLASSIC_SOURCE = "https://www.wowhead.com/classic/guide/classic-wow-scarlet-monastery-dungeon-quests"
 PLACE_FIELDS = frozenset({
     "name", "npcID", "objectID", "itemID", "mapID", "x", "y", "zoneName", "locationName",
     "dungeonKey", "reportedLocations", "creatureDisplayID", "portraitSource", "dropNPCID", "dropName",
@@ -428,6 +429,14 @@ def validate(data):
             if (type(d.get("quests")) is not list or
                     any(not integer(qid) or qid not in shared for qid in d["quests"])):
                 raise ValueError("Scarlet wing roots must belong to shared discovery")
+            if "classicQuests" in d or "classicSource" in d:
+                classic = d.get("classicQuests")
+                if (type(classic) is not list or not 1 <= len(classic) <= 100 or
+                        any(not integer(qid) or qid not in d["quests"] or qid not in shared for qid in classic) or
+                        len(classic) != len(set(classic)) or
+                        type(d.get("classicSource")) is not str or d["classicSource"] != SCARLET_CLASSIC_SOURCE or
+                        d.get("coverage") != "partial"):
+                    raise ValueError("Invalid Scarlet Classic wing membership provenance")
             scarlet.append(d)
         elif set(d) & COMPLEX_FIELDS or d.get("wing") in SCARLET_WINGS:
             raise ValueError("Scarlet metadata on unrelated dungeon")

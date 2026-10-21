@@ -19,6 +19,61 @@ class CatalogTests(unittest.TestCase):
     def setUp(self):
         self.data = json.loads((ROOT / "data/catalog.json").read_text(encoding="utf-8"))
 
+    def scarlet_classic_catalog(self):
+        data = self.minimal_catalog()
+        data["dungeons"] = [dict(key="sm_" + wing, name=wing, minLevel=28, maxLevel=45,
+                                 coverage="partial", quests=[1, 2], instanceID=189,
+                                 wing=wing, activityID=activity, complexKey="sm",
+                                 sharedQuests=[1, 2], levelScope="complex")
+                            for wing, activity in (("graveyard", 805), ("library", 829),
+                                                   ("armory", 827), ("cathedral", 828))]
+        return data
+
+    def test_scarlet_classic_membership_preserves_optional_mixed_provenance(self):
+        data = self.scarlet_classic_catalog()
+        catalog.validate(data)
+        row = data["dungeons"][1]
+        row["classicQuests"] = [2]
+        row["classicSource"] = "https://www.wowhead.com/classic/guide/classic-wow-scarlet-monastery-dungeon-quests"
+        before = copy.deepcopy(data)
+        generated = catalog.generate(data)
+        self.assertIn('["classicQuests"] = { 2 }', generated)
+        self.assertIn('["classicSource"] = "' + row["classicSource"] + '"', generated)
+        self.assertEqual(data, before)
+        self.assertEqual(generated, catalog.generate(data))
+        row["classicQuests"] = [1, 2]
+        catalog.validate(data)  # A wing may consist entirely of Classic-derived roots.
+
+    def test_scarlet_classic_membership_rejects_invalid_edges_and_sources(self):
+        source = "https://www.wowhead.com/classic/guide/classic-wow-scarlet-monastery-dungeon-quests"
+        invalid = [
+            {"classicQuests": [2]}, {"classicSource": source},
+            *({"classicQuests": value, "classicSource": source}
+              for value in (None, False, 1, "2", {}, [], [2, 2], [3], [True], [2.0], ["2"])),
+            *({"classicQuests": [2], "classicSource": value}
+              for value in (None, False, 1, {}, [], "", source + "/", source + "?x=1",
+                            source.replace("/classic/", "/forever/"),
+                            source.replace("www.wowhead.com", "www.wowhead.com.evil.example"),
+                            source.replace("https://", "http://"), " " + source)),
+            {"classicQuests": [2], "classicSource": source, "coverage": "reviewed"},
+            {"classicQuests": [2], "classicSource": source, "coverage": "pending"},
+            {"classicQuests": [2], "classicSource": source, "quests": [1]},
+        ]
+        for mutation in invalid:
+            data = self.scarlet_classic_catalog()
+            data["dungeons"][1].update(mutation)
+            with self.subTest(mutation=mutation), self.assertRaisesRegex(ValueError, "Classic"):
+                catalog.generate(data)
+
+    def test_scarlet_classic_metadata_cannot_escape_to_other_dungeons(self):
+        for metadata in ({"classicQuests": [2]},
+                         {"classicSource": "https://www.wowhead.com/classic/guide/classic-wow-scarlet-monastery-dungeon-quests"},
+                         {"classicQuests": [2], "classicSource": "https://www.wowhead.com/classic/guide/classic-wow-scarlet-monastery-dungeon-quests"}):
+            data = self.minimal_catalog()
+            data["dungeons"][0].update(metadata)
+            with self.subTest(metadata=metadata), self.assertRaisesRegex(ValueError, "Scarlet"):
+                catalog.validate(data)
+
     def test_invalid_unicode_never_replaces_verified_generated_catalogue(self):
         with tempfile.TemporaryDirectory() as folder:
             root = Path(folder)

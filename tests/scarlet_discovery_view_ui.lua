@@ -6,6 +6,17 @@ f.eventFrame.scripts.OnEvent(f.eventFrame,"ADDON_LOADED","DungeonPro");u:Toggle(
 a.Context=function()return{level=60,faction="Alliance",class="MAGE",completed=function()return false end,active=function()return false end}end
 local wings={};for _,d in ipairs(a.dungeons)do if d.complexKey=="sm"then wings[#wings+1]=d end end
 assert(#wings==4 and #a.dungeons==32,"four real wing cards, no fifth complex dungeon")
+local expectedRoots={graveyard={1051},library={1050,1160,1951,1049,1048,1053},armory={1048,1053},cathedral={1048,1053}}
+local baselineSource="https://www.wowhead.com/classic/guide/classic-wow-scarlet-monastery-dungeon-quests"
+for _,d in ipairs(wings)do
+ local expected=assert(expectedRoots[d.wing]);assert(#d.quests==#expected)
+ for i,id in ipairs(expected)do assert(d.quests[i]==id,"actual wing roots match the authorized baseline")end
+ assert(d.classicSource==baselineSource and d.coverage=="partial","Classic reference cannot become complete Forever certification")
+ for _,id in ipairs(d.classicQuests)do
+  assert(a.quests[id].requirementsKnown==false,"baseline membership cannot certify quest requirements")
+  assert(id~=1113 and id~=96800,"shared flexible/unknown quests stay outside own-root planning")
+ end
+end
 local function rows(field)
  local out={};for _,row in ipairs(u.rows)do if row:IsShown()and row[field]then out[#out+1]=row end end;return out
 end

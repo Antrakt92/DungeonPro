@@ -1,5 +1,5 @@
 -- Scarlet four-wing UI regression: exact canonical profile, names, discovery scope,
--- shared-quest source-search retirement. Frozen handoff 1730 v5 chain only.
+-- shared-quest source-search retirement and explicit Classic-reference provenance.
 -- No fifth legacy sm row, no invented wing membership, unknown stays unknown.
 
 -- Section 1: independent root32 four-wing profile guards on generated data.
@@ -18,7 +18,9 @@ for _, d in ipairs(native.dungeons) do
 end
 assert(#wings == 4, "exactly four wings")
 local expectedActivity = { sm_graveyard = 805, sm_library = 829, sm_armory = 827, sm_cathedral = 828 }
-local expectedRoots = { sm_graveyard = {}, sm_library = { 1050, 1160, 1951 }, sm_armory = {}, sm_cathedral = {} }
+local expectedRoots = { sm_graveyard = {1051}, sm_library = {1050,1160,1951,1049,1048,1053}, sm_armory = {1048,1053}, sm_cathedral = {1048,1053} }
+local expectedClassic = { sm_graveyard = {1051}, sm_library = {1049,1048,1053}, sm_armory = {1048,1053}, sm_cathedral = {1048,1053} }
+local classicSource = "https://www.wowhead.com/classic/guide/classic-wow-scarlet-monastery-dungeon-quests"
 for _, d in ipairs(wings) do
     assert(expectedActivity[d.key] == d.activityID, "exact activity " .. d.key)
     assert(d.wing == d.key:match("^sm_(.+)$") and d.key == "sm_" .. d.wing, "wing identity " .. d.key)
@@ -34,7 +36,11 @@ for _, d in ipairs(wings) do
     local roots = expectedRoots[d.key]
     assert(#d.quests == #roots, "roots count " .. d.key)
     for i, id in ipairs(roots) do assert(d.quests[i] == id, "root " .. d.key) end
+    assert(d.classicSource==classicSource,"Classic provenance must retain its exact source URL")
+    assert(type(d.classicQuests)=="table"and #d.classicQuests==#expectedClassic[d.key],"only new baseline roots are marked Classic")
+    for i,id in ipairs(expectedClassic[d.key])do assert(d.classicQuests[i]==id,"exact Classic baseline root "..d.key)end
     for _, id in ipairs(d.quests) do
+        assert(id~=1113 and id~=96800,"flexible collection and unknown Forever book remain shared, not own-wing prerequisites")
         local found = false
         for _, shared in ipairs(d.sharedQuests) do if shared == id then found = true end end
         assert(found, "wing roots belong to shared discovery " .. d.key)
@@ -46,7 +52,7 @@ assert(questCount == 571, "no quest definition changes")
 for _, d in ipairs(wings) do
     for _, id in ipairs(d.sharedQuests) do assert(native.quests[id], "shared quest defined " .. id) end
 end
-print("PASS root32 exact four-wing profile, no fifth sm, library-only roots")
+print("PASS root32 exact four-wing profile, no fifth sm, exact wing roots with separate Classic provenance")
 
 -- Section 2: exact four-wing DungeonName guards (client-names v5 inline harness core).
 local addon = {}

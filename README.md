@@ -99,6 +99,11 @@ entries for Scarlet Monastery's four wings. Quest coverage is incomplete: some p
 requirements and other details are still missing. The addon marks those gaps,
 and a listed quest does not guarantee that your character can accept it.
 
+Scarlet wing assignments marked **Classic** use the original Classic quest
+layout as a starting point for Forever. Some quests span several wings; faction
+and class filters still apply. Unassigned quests remain in the monastery quest
+index. The four wing cards share the monastery illustration.
+
 I'm still adding and checking quest data, fixing bugs and refining the interface.
 If a quest is missing, a location looks wrong or a control is confusing, please
 let me know through [GitHub Issues](https://github.com/Antrakt92/DungeonPro/issues).

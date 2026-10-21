@@ -732,3 +732,10 @@ addon.locales.zhTW.SM_WING_QUESTS_UNKNOWN = "Wing quests: unverified"
 addon.locales.zhTW.SM_CHOOSE_WING = "Choose a monastery wing"
 addon.locales.zhTW.SM_SHARED_QUESTS = "Other monastery quests — wing unverified"
 addon.locales.zhTW.SM_PARTIAL_WING = "Quest coverage for this wing is incomplete."
+
+for _, locale in ipairs({ "deDE", "frFR", "esES", "itIT", "ptBR", "koKR", "zhCN", "zhTW" }) do
+    addon.locales[locale].SM_CLASSIC_BADGE = "Classic"
+    addon.locales[locale].SM_CLASSIC_QUEST = "Wing assignment: Classic"
+    addon.locales[locale].SM_CLASSIC_MULTI_WING = "Classic · objectives in several wings"
+    addon.locales[locale].SM_SHARED_QUESTS = "Monastery quest index"
+end

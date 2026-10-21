@@ -12,6 +12,8 @@
   locations and clear explanations when exact positions are missing.
 - Distinguish quest pickups, turn-ins and dungeon entrances with map icons.
 - Browse Scarlet Monastery as four wings: Graveyard, Library, Armory and Cathedral.
+- Populate Scarlet wing lists using a labelled Classic baseline, including quests
+  with objectives across several wings.
 - Add reviewed giver portraits and recorded source locations for more quests.
 
 This remains an early beta. Quest coverage, requirements and some locations are

@@ -38226,7 +38226,9 @@
       "minLevel": 28,
       "maxLevel": 45,
       "coverage": "partial",
-      "quests": [],
+      "quests": [
+        1051
+      ],
       "source": "https://www.wowhead.com/forever/guide/dungeons-overview-locations-details",
       "instanceID": 189,
       "art": {
@@ -38249,7 +38251,11 @@
         1050,
         1951
       ],
-      "levelScope": "complex"
+      "levelScope": "complex",
+      "classicQuests": [
+        1051
+      ],
+      "classicSource": "https://www.wowhead.com/classic/guide/classic-wow-scarlet-monastery-dungeon-quests"
     },
     {
       "key": "sm_library",
@@ -38269,7 +38275,10 @@
       "quests": [
         1050,
         1160,
-        1951
+        1951,
+        1049,
+        1048,
+        1053
       ],
       "source": "https://www.wowhead.com/forever/guide/dungeons-overview-locations-details",
       "instanceID": 189,
@@ -38293,7 +38302,13 @@
         1050,
         1951
       ],
-      "levelScope": "complex"
+      "levelScope": "complex",
+      "classicQuests": [
+        1049,
+        1048,
+        1053
+      ],
+      "classicSource": "https://www.wowhead.com/classic/guide/classic-wow-scarlet-monastery-dungeon-quests"
     },
     {
       "key": "sm_armory",
@@ -38310,7 +38325,10 @@
       "minLevel": 28,
       "maxLevel": 45,
       "coverage": "partial",
-      "quests": [],
+      "quests": [
+        1048,
+        1053
+      ],
       "source": "https://www.wowhead.com/forever/guide/dungeons-overview-locations-details",
       "instanceID": 189,
       "art": {
@@ -38333,7 +38351,12 @@
         1050,
         1951
       ],
-      "levelScope": "complex"
+      "levelScope": "complex",
+      "classicQuests": [
+        1048,
+        1053
+      ],
+      "classicSource": "https://www.wowhead.com/classic/guide/classic-wow-scarlet-monastery-dungeon-quests"
     },
     {
       "key": "sm_cathedral",
@@ -38350,7 +38373,10 @@
       "minLevel": 28,
       "maxLevel": 45,
       "coverage": "partial",
-      "quests": [],
+      "quests": [
+        1048,
+        1053
+      ],
       "source": "https://www.wowhead.com/forever/guide/dungeons-overview-locations-details",
       "instanceID": 189,
       "art": {
@@ -38373,7 +38399,12 @@
         1050,
         1951
       ],
-      "levelScope": "complex"
+      "levelScope": "complex",
+      "classicQuests": [
+        1048,
+        1053
+      ],
+      "classicSource": "https://www.wowhead.com/classic/guide/classic-wow-scarlet-monastery-dungeon-quests"
     },
     {
       "key": "rfd",

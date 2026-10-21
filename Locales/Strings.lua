@@ -251,3 +251,12 @@ strings.ruRU.SM_WING_QUESTS_UNKNOWN = "Задания крыла: не пров�
 strings.ruRU.SM_CHOOSE_WING = "Выбери крыло монастыря"
 strings.ruRU.SM_SHARED_QUESTS = "Другие задания монастыря — крыло не проверено"
 strings.ruRU.SM_PARTIAL_WING = "Список заданий этого крыла ещё не проверен полностью."
+
+strings.enUS.SM_CLASSIC_BADGE = "Classic"
+strings.enUS.SM_CLASSIC_QUEST = "Wing assignment: Classic"
+strings.enUS.SM_CLASSIC_MULTI_WING = "Classic · objectives in several wings"
+strings.enUS.SM_SHARED_QUESTS = "Monastery quest index"
+strings.ruRU.SM_CLASSIC_BADGE = "Classic"
+strings.ruRU.SM_CLASSIC_QUEST = "Распределение по крыльям: Classic"
+strings.ruRU.SM_CLASSIC_MULTI_WING = "Classic · цели в нескольких крыльях"
+strings.ruRU.SM_SHARED_QUESTS = "Список заданий монастыря"

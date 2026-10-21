@@ -902,11 +902,12 @@ function UI:ScarletDiscoveryScope(dungeon)
         for _, entry in ipairs(catalogueEntries) do
             local row, values = entry[2], {}
             for _, key in ipairs({ "key", "name", "wing", "activityID", "instanceID", "complexKey",
-                "levelScope", "coverage", "minLevel", "maxLevel", "sharedQuests", "quests" }) do
+                "levelScope", "coverage", "minLevel", "maxLevel", "sharedQuests", "quests", "classicQuests", "classicSource" }) do
                 values[key] = field(row, key)
             end
             values.sharedEntries = type(values.sharedQuests) == "table" and sequence(values.sharedQuests, 100) or nil
             values.questEntries = type(values.quests) == "table" and sequence(values.quests, 100) or nil
+            values.classicEntries = type(values.classicQuests) == "table" and sequence(values.classicQuests, 100) or nil
             rowInputs[#rowInputs + 1] = { row = row, values = values, position = entry[1] }
         end
         -- Capture definition identities/names before callbacks, without choosing a guessed ID.
@@ -962,6 +963,7 @@ function UI:ScarletDiscoveryScope(dungeon)
     if type(selected) ~= "nil" and not chosen then return nil end
     local expected = { graveyard = 805, library = 829, armory = 827, cathedral = 828 }
     local group, groupSet, shared, band, matched = {}, {}, nil, nil, false
+    local selectedClassic, membershipCounts = {}, {}
     local retainedObjects, retainedArrays = {}, { [catalogue]=true }
     local definitionsByID = {}
     for _, input in ipairs(definitionInputs) do
@@ -1010,13 +1012,25 @@ function UI:ScarletDiscoveryScope(dungeon)
             local set = {}
             for _, id in ipairs(list) do set[id] = true end
             for _, id in ipairs(roots) do if not set[id] then return nil end end
+            local classic = {}
+            if type(v.classicQuests) ~= "nil" or type(v.classicSource) ~= "nil" then
+                if not value(v.classicQuests, "table") or
+                    value(v.classicSource, "string") ~= "https://www.wowhead.com/classic/guide/classic-wow-scarlet-monastery-dungeon-quests" then return nil end
+                classic = ids(v.classicEntries)
+                if not classic or #classic == 0 then return nil end
+                local rootSet = {}
+                for _, id in ipairs(roots) do rootSet[id] = true end
+                for _, id in ipairs(classic) do if not rootSet[id] then return nil end end
+                retainedArrays[v.classicQuests] = true
+            end
+            for _, id in ipairs(roots) do membershipCounts[id] = (membershipCounts[id] or 0) + 1 end
             if shared then
                 if #shared ~= #list or minimum ~= band[1] or maximum ~= band[2] then return nil end
                 for index, id in ipairs(shared) do if list[index] ~= id then return nil end end
             else shared, band = list, { minimum, maximum } end
             retainedObjects[row], retainedArrays[v.sharedQuests], retainedArrays[v.quests] = true, true, true
             groupSet[wing], group[#group + 1] = true, row
-            if rawequal(dungeon, row) then matched = true end
+            if rawequal(dungeon, row) then matched, selectedClassic = true, classic end
         elseif value(v.instanceID, "number", true) == 189 or value(v.complexKey, "string", true) == "sm" then return nil end
     end
     local legacy = dungeon == nil and chosen == "sm"
@@ -1038,15 +1052,36 @@ function UI:ScarletDiscoveryScope(dungeon)
     fields,tables=retainedFields,retainedTables
     local returned = {}
     for index, id in ipairs(shared) do returned[index] = id end
+    local returnedClassic, returnedCounts = {}, {}
+    for index, id in ipairs(selectedClassic) do returnedClassic[index] = id end
+    for id, count in pairs(membershipCounts) do returnedCounts[id] = count end
+    local published
     local function modelRawCurrent()
         if not rawCurrent() then return false end
         local ok, valid = pcall(function()
+            if published and (not rawequal(rawget(published, "ids"), returned) or
+                not rawequal(rawget(published, "classicIDs"), returnedClassic) or
+                not rawequal(rawget(published, "wingCounts"), returnedCounts)) then return false end
             local count = 0
             for key, id in next, returned do
                 count = count + 1
                 if not rawequal(rawget(shared, key), id) then return false end
             end
-            return count == #shared
+            if count ~= #shared then return false end
+            count = 0
+            for key, id in next, returnedClassic do
+                count = count + 1
+                if not rawequal(rawget(selectedClassic, key), id) then return false end
+            end
+            if count ~= #selectedClassic then return false end
+            count = 0
+            for key, value in next, returnedCounts do
+                count = count + 1
+                if not rawequal(rawget(membershipCounts, key), value) then return false end
+            end
+            local expectedCount = 0
+            for _ in pairs(membershipCounts) do expectedCount = expectedCount + 1 end
+            return count == expectedCount
         end)
         return ok and valid == true
     end
@@ -1059,7 +1094,28 @@ function UI:ScarletDiscoveryScope(dungeon)
         return modelRawCurrent()
     end
     if not current() then return nil end
-    return { ids = returned, legacy = legacy, current = current, rawCurrent = modelRawCurrent }
+    published = { ids = returned, classicIDs = returnedClassic, wingCounts = returnedCounts,
+        legacy = legacy, current = current, rawCurrent = modelRawCurrent }
+    return published
+end
+
+function UI:ScarletClassicCaption(scope, id)
+    if not scope then return nil end
+    local provider, localize, read = self.ScarletClassicCaption, addon.L, addon.Read
+    local fresh, raw = scope.current, scope.rawCurrent
+    if type(fresh) ~= "function" or type(raw) ~= "function" then return nil end
+    local function current()
+        return addon.UI == self and self.ScarletClassicCaption == provider and addon.L == localize and addon.Read == read and
+            scope.current == fresh and scope.rawCurrent == raw and raw() == true
+    end
+    if not current() or read(fresh, "boolean") ~= true or not current() then return nil end
+    local classic = false
+    for _, questID in ipairs(scope.classicIDs) do if questID == id then classic = true end end
+    if not classic then return nil, current end
+    local key = (scope.wingCounts[id] or 0) > 1 and "SM_CLASSIC_MULTI_WING" or "SM_CLASSIC_QUEST"
+    local text = read(localize, "string", key)
+    if not current() then return nil end
+    return text, current
 end
 
 function UI:CatalogResultNote(result, matchedName)
@@ -2268,6 +2324,7 @@ function UI:RefreshQuests()
         infoProofs, infoRawProofs = {}, {}
     end
     local scopeGetter = self.ScarletDiscoveryScope
+    local classicCaptionGetter, classicLocalize = self.ScarletClassicCaption, addon.L
     local scopeSelector, scopeKey = d or character, d and "complexKey" or "selectedDungeon"
     local scopeSelectionRaw = scopeSelector and rawget(scopeSelector, scopeKey)
     local scopeSelection = addon.Clean(scopeSelectionRaw, "string")
@@ -2286,7 +2343,8 @@ function UI:RefreshQuests()
     local function sharedProof(raw)
         local ok, same = pcall(function()
             if not scopeInputSafe or self.ScarletDiscoveryScope ~= scopeGetter or not rawequal(rawget(scopeSelector, scopeKey), scopeSelectionRaw) then return false end
-            if not scope then return true end
+            if scope and (self.ScarletClassicCaption ~= classicCaptionGetter or addon.L ~= classicLocalize) then return false end
+            if not scope then return not (d and (type(rawget(d, "classicQuests")) ~= "nil" or type(rawget(d, "classicSource")) ~= "nil")) end
             if not scopeCurrent or not scopeRaw or not scopeIDs or scope.current ~= scopeCurrent or scope.rawCurrent ~= scopeRaw or
                 scope.ids ~= scopeIDs or scope.legacy ~= scopeLegacy or #scopeIDs ~= #sharedIDs then return false end
             for index, id in ipairs(sharedIDs) do if scopeIDs[index] ~= id then return false end end
@@ -2666,6 +2724,11 @@ function UI:RefreshQuests()
             row.statusBaseWidth = math.max(24, audienceSpace - row.factionReserve - row.classReserve)
             if not current() then return end
             if not self:PaintQuestRowStatus(row, entry, engine, current, engineLease) then return end
+            if scope then
+                local classicCaption = classicCaptionGetter(self, scope, id)
+                if not current() then return end
+                if classicCaption then note = note .. "\n" .. classicCaption end
+            end
             if not writeText(row.title, title) or not writeText(row.note, note) or
                 not write(row, "SetEnabled", not entry.heading) then return end
             if entry.heading then
@@ -3384,7 +3447,8 @@ function UI:RefreshDetail(sourceFocus)
     local renderIncludeUnavailable = self.includeUnavailable
     local renderWingMetadata = renderDungeon and { complexKey = rawget(renderDungeon, "complexKey"),
         levelScope = rawget(renderDungeon, "levelScope"), coverage = rawget(renderDungeon, "coverage"),
-        quests = rawget(renderDungeon, "quests") }
+        quests = rawget(renderDungeon, "quests"), classicQuests = rawget(renderDungeon, "classicQuests"),
+        classicSource = rawget(renderDungeon, "classicSource") }
     local renderEngine, renderCharacter, pendingAction, pendingGiver, pendingTurnin = self.engine, addon.char, nil, nil, nil
     local primaryGiver = self.giver
     local sameDetailOwner = self.detailTabQuest == renderQuest and self.detailTabDungeon == renderDungeon and self.detailTabCharacter == renderCharacter
@@ -3438,6 +3502,7 @@ function UI:RefreshDetail(sourceFocus)
     self.reportedExpanded = self.reportedExpanded or {}
     self.reportedToggles, self.reportedRows = self.reportedToggles or {}, self.reportedRows or {}
     local reportedGeneration, toggleIndex, reportIndex = {}, 0, 0
+    local detailClassicScope, detailClassicProof
     self.reportedGeneration = reportedGeneration
     local function portraitCardCurrent()
         return self.detailTabRevision == tabRevision and self.detailTab == detailTab and self.layoutRevision == layoutRevision and self.quest == renderQuest and self.dungeon == renderDungeon and self.engine == renderEngine and
@@ -3445,12 +3510,35 @@ function UI:RefreshDetail(sourceFocus)
             (self.detailReferencesExpanded == true) == referencesExpanded and
             (self.detailNarrativeExpanded == true) == narrativeExpanded and
             (self.detailObjectivesExpanded == true) == objectivesExpanded and
+            (not detailClassicProof or detailClassicProof()) and
             (not renderWingMetadata or (rawequal(rawget(renderDungeon, "complexKey"), renderWingMetadata.complexKey) and
                 rawequal(rawget(renderDungeon, "levelScope"), renderWingMetadata.levelScope) and
                 rawequal(rawget(renderDungeon, "coverage"), renderWingMetadata.coverage) and
+                rawequal(rawget(renderDungeon, "classicQuests"), renderWingMetadata.classicQuests) and
+                rawequal(rawget(renderDungeon, "classicSource"), renderWingMetadata.classicSource) and
                 rawequal(rawget(renderDungeon, "quests"), renderWingMetadata.quests)))
     end
     if detailTextLease.released or self.detailTextLease ~= detailTextLease or not portraitCardCurrent() then return end
+    do
+    local detailComplex = renderWingMetadata and addon.Clean(renderWingMetadata.complexKey, "string")
+    if not portraitCardCurrent() then return end
+    if detailComplex == "sm" then
+        local getter, captionGetter, localize = self.ScarletDiscoveryScope, self.ScarletClassicCaption, addon.L
+        detailClassicScope = addon.Read(getter, "table", self, renderDungeon)
+        if not portraitCardCurrent() then return end
+        if not detailClassicScope and (type(rawget(renderDungeon, "classicQuests")) ~= "nil" or
+            type(rawget(renderDungeon, "classicSource")) ~= "nil") then return end
+        if detailClassicScope then
+            local raw = addon.Clean(detailClassicScope.rawCurrent, "function")
+            if not portraitCardCurrent() or not raw then return end
+            detailClassicProof = function()
+                return self.ScarletDiscoveryScope == getter and self.ScarletClassicCaption == captionGetter and addon.L == localize and
+                    detailClassicScope.rawCurrent == raw and raw() == true
+            end
+            if not portraitCardCurrent() then return end
+        end
+    end
+    end
     local function sourceCallback(callback)
         local existing = sourceControlsLease.memo[callback]
         if existing then return existing end
@@ -4112,6 +4200,11 @@ function UI:RefreshDetail(sourceFocus)
         end
         if #metadataParts > 0 and line(table.concat(metadataParts, " · "), "caption", nil, nil, metadataCurrent) == false then return end
         if factions and line(factions, "caption", nil, nil, metadataCurrent) == false then return end
+        if detailClassicScope then
+            local caption, proof = self:ScarletClassicCaption(detailClassicScope, id)
+            if not metadataCurrent() then return end
+            if caption and line(caption, "caption", nil, nil, function() return metadataCurrent() and proof() end) == false then return end
+        end
         if not journalSection("header",y+6,1) then return end
         y=y+24
         local offerGetter = addon.CurrentOffer
