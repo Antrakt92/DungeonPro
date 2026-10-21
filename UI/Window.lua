@@ -6576,141 +6576,19 @@ function UI:RefreshDetail(sourceFocus)
         self:SetFooterEnabled(self.source, false)
         if renderDungeon then
             local name = addon.Read(addon.DungeonName, "string", renderDungeon)
-            if self.quest ~= renderQuest or self.dungeon ~= renderDungeon or self.rewardGeneration ~= rewardGeneration then return end
-            line(name or addon.Clean(renderDungeon.name, "string") or addon.L("UNKNOWN_PLACE"), "title")
-            if not self.entranceBinding then line(addon.L("DUNGEON_ENTRANCE_UNKNOWN"))
-            elseif addon.Clean(self.entranceBinding.point.origin, "string") == "recorded" then
-                line(addon.L("DUNGEON_ENTRANCE_RECORDED"))
-            end
-            local entrancePoint = self.entranceBinding and self.entranceBinding.point
-            if entrancePoint and addon.Clean(entrancePoint.kind, "string") == "approach" then
-                line(addon.L("DUNGEON_ENTRANCE_APPROACH"))
-            end
-            if entrancePoint and addon.Clean(entrancePoint.scope, "string") == "shared" then
-                line(addon.L("DUNGEON_ENTRANCE_SHARED"))
-            end
-            local offset = self:RenderPreparationOverview(portraitCardCurrent, contentWidth, y,
-                { label = label, setFont = setFont, measuredHeight = measuredHeight, styles = DETAIL_STYLES, geometryWrite = sourceGeometryWrite, formatStatus = function(status, value) return "|cff" .. COLOR[status] .. value .. "|r" end })
-            if not offset then return end
-            y = offset
-            local control, opener = self.overviewMapControl, self.OpenDungeonMap
-            local gameMap = addon.Clean(renderDungeon.instanceID, "number")
-            if rawget(addon, "experimentalDungeonMaps") == true and control and type(opener) == "function" and gameMap and gameMap > 0 and gameMap <= 4294967295 and gameMap % 1 == 0 then
-                local binding = { owner = portraitCardCurrent }
-                self.overviewMapBinding = binding
-                local function current()
-                    return rawget(addon, "experimentalDungeonMaps") == true and not binding.released and binding.owner and binding.owner() and addon.UI == self and self.overviewMapBinding == binding and
-                        self.overviewMapControl == control and self.OpenDungeonMap == opener and
-                        rawequal(rawget(renderDungeon, "instanceID"), gameMap) and rawget(addon, "experimentalDungeonMaps") == true
-                end
-                local mapLabel = addon.L("DUNGEON_MAP_OPEN")
-                if not current() then return end
-                setFont(control.filterCaption, 15)
-                if not current() or not self:QuestListWrite(control.filterCaption, "SetText", current, mapLabel) or
-                    not self:QuestListWrite(control, "ClearAllPoints", current) or
-                    not self:QuestListWrite(control, "SetPoint", current, "TOPLEFT", 4, -y) or
-                    not self:QuestListWrite(control, "SetWidth", current, contentWidth) or
-                    not self:QuestListWrite(control.filterCaption, "SetWidth", current, contentWidth - 16) or
-                    not self:QuestListWrite(control, "SetEnabled", current, true) or
-                    not self:QuestListWrite(control, "SetScript", current, "OnClick", function()
-                        if current() and addon.Read(control.IsShown, "boolean", control) == true and current() then
-                            opener(self, renderDungeon)
-                        end
-                    end) or not self:QuestListWrite(control, "Show", current) then return end
-                y = y + 38
-            end
-            if not self.overviewArt then
-                self.overviewArt = self.detail:CreateTexture(nil, "ARTWORK")
-            end
-            local overviewArt = self.overviewArt
-            local function artCurrent() return portraitCardCurrent() and self.overviewArt == overviewArt end
-            if not sourceGeometryWrite(artCurrent, overviewArt, "SetSize", contentWidth, contentWidth) or
-                not sourceGeometryWrite(artCurrent, overviewArt, "ClearAllPoints") or
-                not sourceGeometryWrite(artCurrent, overviewArt, "SetPoint", "TOPLEFT", 4, -y) then return end
-            local painter = addon.Clean(addon.PaintDungeonArt, "function")
-            local ok, painted, kind, aspect
-            local function showOwned(texture)
-                local function current()
-                    return portraitCardCurrent() and self.overviewArt == overviewArt and addon.PaintDungeonArt == painter
-                end
-                if texture ~= overviewArt or not current() then return false end
-                return sourceWrite(current, overviewArt, "Show", nil)
-            end
-            if painter then ok, painted, kind, aspect = pcall(painter, overviewArt, renderDungeon, "overview", showOwned) end
-            painted, kind = ok and addon.Clean(painted, "boolean"), ok and addon.Clean(kind, "string")
-            aspect = ok and addon.Clean(aspect, "number")
-            if not portraitCardCurrent() or addon.PaintDungeonArt ~= painter then return end
-            if painted == true then
-                local compact = kind == "generic"
-                local height = kind == "art" and aspect and aspect > 0 and addon.Clean(contentWidth / aspect, "number") or nil
-                if not portraitCardCurrent() then return end
-                height = height and height > 0 and height or contentWidth
-                if not sourceGeometryWrite(artCurrent, overviewArt, "SetSize", compact and 48 or contentWidth, compact and 48 or height) or
-                    not sourceGeometryWrite(artCurrent, overviewArt, "ClearAllPoints") or
-                    not sourceGeometryWrite(artCurrent, overviewArt, "SetPoint", "TOPLEFT", compact and (contentWidth - 48) / 2 + 4 or 4, -y) then return end
-                local function current() return portraitCardCurrent() and self.overviewArt == overviewArt end
-                if not sourceWrite(current, overviewArt, "Show", nil) then return end
-                y = y + (compact and 56 or height + 8)
-            end
+            if not portraitCardCurrent() then return end
+            if line(name or addon.Clean(renderDungeon.name, "string") or addon.L("UNKNOWN_PLACE"), "title", nil, nil, portraitCardCurrent) == false then return end
             local minimum, maximum = addon.Clean(renderDungeon.minLevel, "number"), addon.Clean(renderDungeon.maxLevel, "number")
+            if not portraitCardCurrent() then return end
             if minimum and maximum and minimum > 0 and maximum >= minimum and minimum % 1 == 0 and maximum % 1 == 0 then
                 local shared = renderWingMetadata and addon.Clean(renderWingMetadata.complexKey, "string") == "sm" and
                     addon.Clean(renderWingMetadata.levelScope, "string") == "complex"
                 if not portraitCardCurrent() then return end
-                line(addon.L(shared and "SM_SHARED_LEVEL_RANGE" or "CATALOG_LEVELS", minimum, maximum))
+                local range = addon.L(shared and "SM_SHARED_LEVEL_RANGE" or "CATALOG_LEVELS", minimum, maximum)
+                if not portraitCardCurrent() or line(range, "caption", nil, nil, portraitCardCurrent) == false then return end
             end
-            local plan, preparation = self.currentPlan, self.preparation
-            local countOwned = plan and plan.engine == renderEngine and plan.dungeon == renderDungeon and
-                plan.includeUnavailable == renderIncludeUnavailable
-            local count, countProof
-            if countOwned then
-                local view = self.catalogLanguageView
-                if view and view.current() then
-                    for _, result in ipairs(view.results) do
-                        if result.dungeon == renderDungeon and result.statusCurrent and result.statusCurrent() then
-                            count, countProof = result.count, result.statusCurrent
-                            break
-                        end
-                    end
-                end
-                if not countProof then
-                    local provider = addon.Clean(addon.DungeonStatus, "table")
-                    local getter = provider and addon.Clean(provider.Get, "function")
-                    local dto, proof
-                    if getter then
-                        local ok; ok, dto, proof = pcall(getter, renderDungeon, renderEngine)
-                        if ok and addon.Clean(dto, "table") and addon.Clean(proof, "function") then
-                            count = renderIncludeUnavailable == true and dto.listedRoots or dto.characterRoots
-                            countProof = proof
-                        end
-                    end
-                end
-            end
-            if count ~= nil and countProof then
-                local function countCurrent()
-                    return portraitCardCurrent() and self.currentPlan == plan and addon.Read(countProof, "boolean") == true
-                end
-                local partialWing = renderWingMetadata and addon.Clean(renderWingMetadata.complexKey, "string") == "sm" and
-                    addon.Clean(renderWingMetadata.coverage, "string") ~= "reviewed" and
-                    type(renderWingMetadata.quests) == "table" and #renderWingMetadata.quests == 0
-                if not countCurrent() or line(addon.L(partialWing and "SM_WING_QUESTS_UNKNOWN" or "CATALOG_QUESTS", count), nil, nil, nil, countCurrent) == false then return end
-                if count == 0 then
-                    local roots = addon.Clean(renderDungeon.quests, "table")
-                    local emptyKey = partialWing and "SM_PARTIAL_WING" or
-                        (renderIncludeUnavailable ~= true and roots and #roots > 0 and "NO_CHARACTER_QUESTS" or "EMPTY")
-                    if line(addon.L(emptyKey, emptyKey == "NO_CHARACTER_QUESTS" and addon.L("FILTER_QUEST_ALL") or nil), nil, nil, nil, countCurrent) == false then return end
-                end
-            end
-            local function promptCurrent()
-                return portraitCardCurrent() and self.currentPlan == plan and self.preparation == preparation
-            end
-            local ownedPlan = plan and plan.engine == renderEngine and plan.dungeon == renderDungeon
-            local emptyPreparation = preparation and ownedPlan and plan.preparationEmpty == true and #plan.rows > 0
-            if count and count > 0 then
-                local prompt = emptyPreparation and addon.L("PREPARATION_EMPTY", addon.L("QUESTS")) or
-                    addon.L(ownedPlan and #plan.rows == 0 and "NO_CHARACTER_QUESTS" or "OVERVIEW_PICK", ownedPlan and #plan.rows == 0 and addon.L("FILTER_QUEST_ALL") or nil)
-                if not promptCurrent() or line(prompt, nil, nil, nil, promptCurrent) == false then return end
-            end
+            local prompt = addon.L("OVERVIEW_PICK")
+            if not portraitCardCurrent() or line(prompt, nil, nil, nil, portraitCardCurrent) == false then return end
         else line(addon.L("PICK")) end
     end
     if renderQuest and self.copyQuest == renderQuest and self.copy then

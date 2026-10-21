@@ -157,16 +157,19 @@ if not overviewKey and ui.detailTab == "quest" then
 else
     assert(visibleRewards == 0, "secondary views do not retain Quest reward tiles")
 end
-local overview
+local compactOverview
 if overviewKey then
-    local binding=assert(ui.overviewBinding);assert(binding.current()and binding.rawProof()and effects==0)
+    assert(ui.overviewBinding==nil and ui.overviewMapBinding==nil and effects==0,"compact panel cannot publish removed summary/map bindings")
+    assert(not ui.overviewArt or not ui.overviewArt:IsShown(),"compact panel cannot retain right-side artwork")
+    for _,row in ipairs(ui.actionInspectButtons or {})do assert(not row:IsShown(),"compact panel cannot repeat the middle quest list")end
     assert(not providerCalls.Description and not providerCalls.QuestObjectives and not providerCalls.QuestRewards and not providerCalls.DialogueRewards and rewardResults==0,"overview cannot display sample quest detail or native reward data")
-    overview=binding.model
-    assert(overview.shownRoots==#ui.currentPlan.rows and overview.unknown and not overview.knownPrepared)
-    if overviewKey=="dm"and #readyIDs==1 and readyIDs[1]==155 then
-        assert(overview.counts.READY==0 and #overview.steps==1 and overview.steps[1].id==155 and overview.steps[1].listedTarget==false)
-    end
-    if checking then print("Offline overview geometry: PASS (actual catalogue/planner, simulated held log; native rendering unverified)");return end
+    local texts={}
+    for _,fs in ipairs(ui.details)do if fs:IsShown()then texts[#texts+1]=fs.text end end
+    assert(#texts==3,"compact selected-dungeon panel has only title, range and selection prompt")
+    assert(texts[1]==addon.DungeonName(ui.dungeon)and texts[3]==addon.L("OVERVIEW_PICK"),"capture must use actual localized compact content")
+    assert(ui.currentPlan and ui.currentPlan.dungeon==ui.dungeon and ui.currentPlan.engine==ui.engine,"central plan remains actual and selected")
+    compactOverview={texts=texts,centralPlanRowCount=#ui.currentPlan.rows}
+    if checking then print("Offline compact overview geometry: PASS (actual title/range/prompt and central plan; native rendering unverified)");return end
 end
 if checking then print("Offline detail geometry: PASS (actual anchors, three reward tiles; native rendering unverified)"); return end
 local ids = {}; for index, object in ipairs(fixture.objects) do ids[object] = index end
@@ -203,4 +206,4 @@ local function json(value)
     else for key,item in pairs(value)do fields[#fields+1]=quote(tostring(key))..":"..json(item)end;table.sort(fields)end
     return (array and "[" or "{")..table.concat(fields,",")..(array and "]" or "}")
 end
-print(json({questID=not overviewKey and questID or nil,locale=locale,fixtureRewards=not overviewKey,mode=overviewKey and "overview"or"quest",dungeonKey=overviewKey,readyQuestIDs=readyIDs,overview=overview,providerCalls=providerCalls,fixtureCharacter=overviewKey and "Alliance Human Mage 60"or nil,offline=true,catalogCollapsed=ui.catalogCollapsed==true,detailTab=ui.detailTab or "quest",objects=objects,roles=roles,metrics=requests}))
+print(json({questID=not overviewKey and questID or nil,locale=locale,fixtureRewards=not overviewKey,mode=overviewKey and "overview"or"quest",dungeonKey=overviewKey,readyQuestIDs=readyIDs,compactOverview=compactOverview,providerCalls=providerCalls,fixtureCharacter=overviewKey and "Alliance Human Mage 60"or nil,offline=true,catalogCollapsed=ui.catalogCollapsed==true,detailTab=ui.detailTab or "quest",objects=objects,roles=roles,metrics=requests}))

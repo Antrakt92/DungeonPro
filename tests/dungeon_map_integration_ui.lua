@@ -36,18 +36,18 @@ for _,d in ipairs(a.dungeons)do if d.instanceID==game then dungeon=d;break end e
 assert(dungeon and calls==0,"load and ordinary browsing must not query native dungeon maps")
 local function overview()
  ui:CloseDungeonMap(true);ui.dungeon,ui.quest=dungeon,nil;ui:Refresh();ui.detailScroll:SetSize(400,622)
- assert(ui.overviewMapControl.shown and ui.overviewMapControl.enabled and ui.overviewMapControl.scripts.OnClick)
+ assert(not ui.overviewMapControl.shown and not ui.overviewMapControl.enabled and ui.overviewMapControl.scripts.OnClick==nil)
 end
 local function open()
- overview();ui.overviewMapControl.scripts.OnClick();assert(ui.dungeonMap and ui.dungeonMap.shown)
+ overview();assert(ui:OpenDungeonMap(dungeon));assert(ui.dungeonMap and ui.dungeonMap.shown)
  assert(ui.dungeonMapState.model and ui.dungeonMapState.model.gameMapID==game)
  return ui.dungeonMap
 end
 local function test(name,fn)fn();assert(effects==0);total=total+1;print("PASS "..name)end
-test("Overview control invokes the real native adapter only on explicit click",function()
+test("Manual component API invokes the native adapter while compact browsing stays inert",function()
  overview();local before=calls;ui:RefreshDetail();assert(calls==before)
  local quest,history,engine,filter=ui.quest,ui.detailHistory,ui.engine,ui.includeUnavailable
- ui.overviewMapControl.scripts.OnClick();local b=ui.dungeonMap
+ assert(ui:OpenDungeonMap(dungeon));local b=ui.dungeonMap
  assert(b.shown and not ui.detailScroll.shown and calls>before and #b.tiles==6)
  assert(ui.quest==quest and ui.detailHistory==history and ui.engine==engine and ui.includeUnavailable==filter)
  before=calls;b.back.scripts.OnClick();assert(not b.shown and ui.detailScroll.shown and calls==before)
@@ -59,11 +59,11 @@ test("Native floor controls retain the exact selected dungeon and return without
  b.previous.scripts.OnClick();assert(ui.dungeonMapState.model.mapID==base)
  b.back.scripts.OnClick();assert(ui.detailScroll.shown)
 end)
-test("Selecting an actual quest retires the overlay and the retained overview action",function()
- local b=open();local click=ui.overviewMapControl.scripts.OnClick;local before=calls
+test("Selecting an actual quest retires the manual overlay without a default overview action",function()
+ local b=open();local before=calls
  assert(ui:InspectQuest(dungeon.quests[1],true))
  assert(not b.shown and ui.detailScroll.shown and not ui.overviewMapControl.shown)
- click();assert(calls==before,"a retained overview click cannot open over new quest details")
+ assert(ui.overviewMapControl.scripts.OnClick==nil and calls==before,"compact view has no retained overview map action")
 end)
 test("Changing dungeon retires a native view without fetching replacement artwork",function()
  local b=open();local nextDungeon
@@ -75,7 +75,7 @@ test("Normal language commit closes the old native view",function()
  local b=open();local before=calls
  ui.language.scripts.OnEnter();assert(a.Language:Commit(assert(a.Language.session),"ruRU"))
  assert(not b.shown and ui.detailScroll.shown and calls==before)
- assert(ui.overviewMapControl.filterCaption.text==a.L("DUNGEON_MAP_OPEN"))
+ assert(ui.overviewMapControl.scripts.OnClick==nil and not ui.overviewMapControl.shown)
  ui.language.scripts.OnEnter();assert(a.Language:Commit(assert(a.Language.session),"enUS"))
 end)
 test("Window hide clears map callbacks and pooled artwork",function()
@@ -87,7 +87,7 @@ test("Window hide clears map callbacks and pooled artwork",function()
 end)
 test("Unavailable native capability keeps explicit retry and back usable",function()
  overview();local join=C_EncounterJournal.GetInstanceForGameMap;C_EncounterJournal.GetInstanceForGameMap=nil
- ui.overviewMapControl.scripts.OnClick();local b=ui.dungeonMap
+ ui:OpenDungeonMap(dungeon);local b=ui.dungeonMap
  assert(b.shown and b.retry.shown and not b.scripts.OnUpdate and b.message.text==a.L("DUNGEON_MAP_UNAVAILABLE"))
  C_EncounterJournal.GetInstanceForGameMap=join;b.retry.scripts.OnClick()
  assert(ui.dungeonMapState.model and b.shown);b.back.scripts.OnClick();assert(ui.detailScroll.shown)

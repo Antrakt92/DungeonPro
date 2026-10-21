@@ -40,7 +40,9 @@ local function draw(activeIDs,readyIDs)
  for _,id in ipairs(readyIDs)do held[id]=true;ready[id]=true end
  events.scripts.OnEvent(events,"QUEST_LOG_UPDATE")
  ui.dungeon,ui.quest,ui.includeUnavailable=dungeon,nil,false;ui:Refresh()
- local b=assert(ui.overviewBinding);assert(b.current()and b.rawProof());assert(b.model.unknown and not b.model.knownPrepared)
+ local model,current,raw=addon.DungeonOverview.Get(ui.currentPlan,dungeon,ui.engine)
+ local b={model=assert(model),current=current,rawProof=raw};assert(current()and raw());assert(model.unknown and not model.knownPrepared)
+ assert(ui.overviewBinding==nil,"native quest events leave the default right panel compact")
  return b,b.model
 end
 local function order(model,expected)
@@ -51,8 +53,8 @@ local b,m=draw({166,214,167,2040,168,92753},{373})
 assert(m.counts.READY==1 and m.counts.ACTIVE==6 and m.shownRoots==7 and #m.steps==6 and m.remainingSteps==1)
 order(m,{373,166,214,167,2040,168})
 local readyRow
-for _,r in ipairs(ui.actionInspectButtons)do if r:IsShown()and r.questID==373 then readyRow=r end end
-assert(readyRow and readyRow.note.text:find(addon.L("READY"),1,true)and readyRow.overviewStep.listedTarget==true)
+for _,r in ipairs(ui.rows)do if r:IsShown()and r.questID==373 then readyRow=r end end
+assert(readyRow and ui.engine:State(373).status=="READY"and m.steps[1].listedTarget==true)
 assert(routes==0 and selections==0 and accepts==0)
 readyRow.scripts.OnClick();assert(ui.quest==373 and ui.dungeon==dungeon and routes==0 and selections==0 and accepts==0)
 assert(ui:BackQuest()and ui.quest==nil)
@@ -62,13 +64,11 @@ b,m=draw({},ids);order(m,{166,214,167,2040,168,92753});assert(m.remainingSteps==
 b,m=draw(ids,{});order(m,{166,214,167,2040,168,92753});assert(m.remainingSteps==1 and m.counts.ACTIVE==7)
 b,m=draw({155},{373});order(m,{373,155})
 assert(m.remainingSteps==0 and m.counts.READY==1 and m.counts.ACTIVE==0 and m.counts.UNKNOWN==6 and m.steps[2].listedTarget==false)
-local stale
-for _,r in ipairs(ui.actionInspectButtons)do if r:IsShown()and r.questID==373 then stale=r.scripts.OnClick end end
 m.steps[1],m.steps[2]=m.steps[2],m.steps[1]
-assert(not b.current()and not b.rawProof());stale();assert(ui.quest==nil and routes==0)
+assert(not b.current()and not b.rawProof());assert(ui.quest==nil and routes==0)
 assert(addon.Context==nativeContext and addon.Planner==nativePlanner and addon.Navigation==nativeNavigation)
 assert(dungeon.quests==catalogue and #catalogue==9 and target.requires==group1 and other.requires==group2 and classQuest.classes==classes and classQuest.start==start and support.finish==finish)
-print("Preparation priority: PASS (actual late READY373 visible, stable mixed/all-ready/all-active order, shared155 counts, cap6, no automatic actions)")
+print("Preparation priority: PASS (actual native-event READY373 and middle selection, stable mixed/all-ready/all-active order, shared155 counts, cap6, no automatic actions)")
 
 -- Controlled eligibility fixture, not new catalogue facts: actionable pickup/level
 -- work joins the overview subset after held READY/ACTIVE without changing counts.

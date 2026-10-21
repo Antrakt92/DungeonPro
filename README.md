@@ -15,7 +15,7 @@ follow their prerequisites and find the next pickup or turn-in.
 
 Screenshots below show an earlier beta.
 
-![Dungeon browser with character quest filtering and a Wailing Caverns overview](https://raw.githubusercontent.com/Antrakt92/DungeonPro/main/screenshots/dungeon-browser.png)
+![Earlier dungeon browser with character quest filtering](https://raw.githubusercontent.com/Antrakt92/DungeonPro/main/screenshots/dungeon-browser.png)
 
 ## Plan your next dungeon
 
@@ -48,17 +48,13 @@ recorded. Missing information stays marked.
 Use the small arrow beside the dungeon list to collapse it and give long quest
 chains more room; use the arrow again to restore the list.
 
-Dungeon overviews show progress for the listed quests and
-known steps already in your quest log. Open a step to inspect its details; shared
-steps appear once. Ready turn-ins appear first. The compact view shows up to six
-steps; use **Show more** to reveal up to six more or **Show fewer** to return to
-the compact list. Supporting quests have their own label; progress counts cover
-only the main listed quests. Unverified conditions remain marked, and a short or empty
-step list does not mean that every quest is ready to pick up.
+Selecting a dungeon shows its name and levels on the right. Choose a quest or
+chain step in the middle list to open its details; the right pane does not repeat
+the quest list. Progress and preparation information remain with the middle list.
+Unverified conditions stay marked.
 
-Interior dungeon maps are not currently available. Dungeon overviews show an
-illustration, not a floor map. Quest-location and dungeon-entrance directions
-remain separate navigation actions.
+Interior dungeon maps are not currently available. Quest-location and
+dungeon-entrance directions remain separate navigation actions.
 
 <details>
 <summary>Quest chains, objectives and rewards in game</summary>

@@ -346,6 +346,16 @@ local function detailHas(value)
     end end
     return false
 end
+function ui:AssertCompactOverview()
+    assert(self.quest==nil and self.dungeon and not self.overviewBinding,"compact overview has no selected quest or second preparation publication")
+    assert(detailHas(addon.DungeonName(self.dungeon))and detailHas(addon.L("OVERVIEW_PICK")),"compact overview keeps the current dungeon and selection prompt")
+    local shown=0;for _,field in ipairs(self.details)do if field.shown then shown=shown+1 end end
+    local minimum,maximum=self.dungeon.minLevel,self.dungeon.maxLevel
+    local valid=type(minimum)=="number"and type(maximum)=="number"and minimum>0 and maximum>=minimum and minimum%1==0 and maximum%1==0
+    assert(shown==(valid and 3 or 2),"right overview contains only name, validated levels and choose-quest prompt")
+    assert(not(self.overviewArt and self.overviewArt.shown)and not(self.overviewMapControl and self.overviewMapControl.shown),"retired overview artwork and map action stay hidden")
+    for _,row in ipairs(self.actionInspectButtons or{})do assert(not row.shown,"right pane cannot repeat the middle quest list")end
+end
 local function unknownObjective(name) return name .. " ×?" end
 local function startButton(index)
     local q=addon.quests[ui.quest]
@@ -3067,61 +3077,58 @@ do
         local first, _, restore = overviewFixture()
         assert(ui.quest == nil and #ui.detailHistory == 0 and #visibleRows() == 1)
         assert(detailHas(first.name) and detailHas(addon.L("CATALOG_LEVELS", 12, 24)))
-        assert(detailHas(addon.L("CATALOG_QUESTS", 1)) and not detailHas(addon.L("PARTIAL")) and detailHas(addon.L("OVERVIEW_PICK")))
+        assert(#ui.currentPlan.rows==1 and not detailHas(addon.L("PARTIAL")));ui:AssertCompactOverview()
         assert(not detailHas(addon.L("PREPARED")) and not detailHas(addon.L("PICK")))
-        assert(ui.overviewArt and ui.overviewArt.kind ~= "Button" and ui.overviewArt.width <= ui.detail:GetWidth()-8 and ui.overviewArt.shown)
-        assert(ui.overviewArt.texture == first.key and not ui.source.enabled and not hasDestination(true) and not hasDestination(false) and not ui.giver.enabled)
+        assert(not(ui.overviewArt and ui.overviewArt.shown)and not ui.source.enabled and not hasDestination(true)and not hasDestination(false)and not ui.giver.enabled)
         local filters = addon.char.filters
         ui.includeUnavailable = true; ui:Refresh()
-        assert(#visibleRows() == 2 and detailHas(addon.L("CATALOG_QUESTS", 2)) and addon.char.filters == filters)
+        assert(#visibleRows()==2 and #ui.currentPlan.rows==2 and addon.char.filters==filters);ui:AssertCompactOverview()
         restore()
     end)
-    check("Overview artwork and reading position follow dungeon and quest navigation and clear on no selection", function()
-        local first, second, restore = overviewFixture()
-        local art = ui.overviewArt
-        ui.detailScroll:SetVerticalScroll(80); local writes = ui.detailScroll.scrollWrites
-        ui:RefreshDetail(); assert(ui.detailScroll.verticalScroll == 80 and ui.detailScroll.scrollWrites == writes)
-        local row = visibleRows()[1]; row.scripts.OnClick(row, "LeftButton", false)
-        assert(ui.quest == 16001 and not art.shown and ui.source.enabled)
-        ui:InspectQuest(16002); assert(ui:BackQuest() and ui.quest == 16001 and not art.shown)
-        ui.cards[2].scripts.OnClick(ui.cards[2], "LeftButton", false)
-        assert(ui.dungeon == second and ui.quest == nil and art.shown and art.texture == second.key and ui.detailScroll.verticalScroll == 0)
-        assert(detailHas(addon.L("EMPTY")) and detailHas(addon.L("CATALOG_QUESTS", 0)) and not detailHas(addon.L("PREPARED")))
-        ui.detailScroll:SetVerticalScroll(60); ui.dungeon = first; ui:Refresh()
-        assert(ui.detailScroll.verticalScroll == 0 and art.texture == first.key and art.shown)
-        ui.dungeon = nil; ui:Refresh()
-        assert(detailHas(addon.L("PICK")) and not art.shown and not ui.source.enabled)
+    check("Compact overview and reading position follow dungeon and quest navigation and clear on no selection", function()
+        local first,second,restore=overviewFixture()
+        ui:AssertCompactOverview()
+        ui.detailScroll:SetVerticalScroll(80);local writes=ui.detailScroll.scrollWrites
+        ui:RefreshDetail();assert(ui.detailScroll.verticalScroll==80 and ui.detailScroll.scrollWrites==writes)
+        local row=visibleRows()[1];row.scripts.OnClick(row,"LeftButton",false)
+        assert(ui.quest==16001 and ui.source.enabled)
+        ui:InspectQuest(16002);assert(ui:BackQuest()and ui.quest==16001)
+        ui.cards[2].scripts.OnClick(ui.cards[2],"LeftButton",false)
+        assert(ui.dungeon==second and ui.quest==nil and ui.detailScroll.verticalScroll==0)
+        assert(#ui.currentPlan.rows==0 and planCoverage()==addon.L("EMPTY"));ui:AssertCompactOverview()
+        ui.detailScroll:SetVerticalScroll(60);ui.dungeon=first;ui:Refresh()
+        assert(ui.detailScroll.verticalScroll==0);ui:AssertCompactOverview()
+        ui.dungeon=nil;ui:Refresh();assert(detailHas(addon.L("PICK"))and not ui.source.enabled)
         restore()
     end)
-    check("Overview omits coverage labels and rejects stale painter results after quest or dungeon reentry", function()
-        local first, second, restore = overviewFixture()
-        first.coverage = "reviewed"
-        for code, strings in pairs(addon.locales) do
-            assert(type(strings.OVERVIEW_PICK) == "string" and type(strings.OVERVIEW_REVIEWED) == "string")
-            addon.db.locale = code; ui:RefreshDetail()
-            assert(not detailHas(addon.L("OVERVIEW_REVIEWED")) and detailHas(addon.L("OVERVIEW_PICK")))
+
+    check("Compact overview omits coverage labels and rejects stale dungeon-name results after quest or dungeon reentry", function()
+        local first,second,restore=overviewFixture();first.coverage="reviewed"
+        for code,strings in pairs(addon.locales)do
+            assert(type(strings.OVERVIEW_PICK)=="string"and type(strings.OVERVIEW_REVIEWED)=="string")
+            addon.db.locale=code;ui:RefreshDetail();ui:AssertCompactOverview()
+            assert(not detailHas(addon.L("OVERVIEW_REVIEWED")))
         end
-        addon.PaintDungeonArt = function() return false end; ui:RefreshDetail(); assert(not ui.overviewArt.shown)
-        for _, targetQuest in ipairs({ false, true }) do
-            ui.dungeon, ui.quest = first, nil
-            local armed, nestedHeight = true, nil
-            addon.PaintDungeonArt = function(texture, dungeon)
-                if armed then
-                    armed = false
-                    if targetQuest then ui:InspectQuest(16001) else ui.dungeon = second; ui:RefreshDetail() end
-                    nestedHeight = ui.detail.height
-                    return false
+        local name=addon.DungeonName
+        for _,targetQuest in ipairs({false,true})do
+            ui.dungeon,ui.quest=first,nil;local armed,nestedHeight=true,nil
+            addon.DungeonName=function(d)
+                if d==first and armed then
+                    armed=false
+                    if targetQuest then ui:InspectQuest(16001)else ui.dungeon=second;ui:RefreshDetail()end
+                    nestedHeight=ui.detail.height
                 end
-                texture:SetTexture(dungeon.key); texture:Show(); return true
+                return name(d)
             end
-            ui:RefreshDetail()
-            assert(not armed and ui.detail.height == nestedHeight)
-            if targetQuest then assert(ui.quest == 16001 and not ui.overviewArt.shown and detailHas(addon.QuestName(16001)))
-            else assert(ui.dungeon == second and ui.quest == nil and detailHas(second.name) and ui.overviewArt.texture == second.key and ui.overviewArt.shown) end
-            assert(not detailHas(first.name), "stale outer overview cannot overwrite the new card")
+            ui:RefreshDetail();addon.DungeonName=name
+            assert(not armed and ui.detail.height==nestedHeight)
+            if targetQuest then assert(ui.quest==16001 and detailHas(addon.QuestName(16001)))
+            else assert(ui.dungeon==second and ui.quest==nil);ui:AssertCompactOverview()end
+            assert(not detailHas(first.name),"stale outer overview cannot overwrite the new card")
         end
         restore()
     end)
+
 end
 check("Detail typography uses explicit title section and body styles and resets pooled fonts before text", function()
     local quest, dungeon, history = ui.quest, ui.dungeon, ui.detailHistory
@@ -3209,14 +3216,14 @@ end)
 check("Back from the first quest returns to its dungeon overview and clears quest-only presentation", function()
     local quest, dungeon, history = ui.quest, ui.dungeon, ui.detailHistory
     ui.dungeon, ui.quest, ui.detailHistory = addon.dungeons[1], nil, {}; ui:Refresh()
-    assert(not canGoBack() and ui.overviewArt.shown)
+    assert(not canGoBack());ui:AssertCompactOverview()
     local listScroll = ui.questScroll.verticalScroll
     ui:InspectQuest(1); ui.source.scripts.OnClick(ui.source, "LeftButton", false)
-    assert(canGoBack() and #ui.detailHistory == 0 and not ui.overviewArt.shown and ui.copy.shown)
+    assert(canGoBack()and #ui.detailHistory==0 and not(ui.overviewArt and ui.overviewArt.shown)and ui.copy.shown)
     ui.detailScroll:SetVerticalScroll(150)
     ui:BackQuest()
     assert(ui.quest == nil and ui.dungeon == addon.dungeons[1] and #ui.detailHistory == 0 and not canGoBack())
-    assert(ui.overviewArt.shown and detailHas(addon.L("OVERVIEW_PICK")) and not ui.source.enabled and not hasDestination(true) and not hasDestination(false))
+    ui:AssertCompactOverview();assert(not ui.source.enabled and not hasDestination(true)and not hasDestination(false))
     assert(not ui.copy.shown and not ui.copy.focused and ui.copy.text == "" and ui.detailScroll.verticalScroll == 0)
     assert(ui.questScroll.verticalScroll == listScroll and not ui:BackQuest())
     ui.quest, ui.dungeon, ui.detailHistory = quest, dungeon, history; ui:Refresh()
@@ -6605,7 +6612,7 @@ check("Direct quest browsing localizes and preserves genuinely empty or excluded
     end
     ui.dungeon={key="empty-guidance",name="No target data",minLevel=1,maxLevel=60,coverage="partial",quests={}}
     ui:Refresh();assert(not ui.currentPlan.preparationEmpty and planCoverage()==addon.L("EMPTY") and ui.rows[1].shown and ui.rows[1].heading=="EMPTY")
-    assert(detailHas(addon.L("EMPTY")) and not detailHas(addon.L("PREPARATION_EMPTY",addon.L("QUESTS"))))
+    ui:AssertCompactOverview();assert(not detailHas(addon.L("EMPTY"))and not detailHas(addon.L("PREPARATION_EMPTY",addon.L("QUESTS"))))
     addon.quests={[30001]={id=30001,name="Foreign faction",requirementsKnown=true,minLevel=1,factions={"Horde"}}}
     ui.dungeon={key="foreign-guidance",name="Foreign targets",minLevel=1,maxLevel=60,coverage="reviewed",quests={30001}}
     ui:Refresh();assert(#ui.currentPlan.rows==0 and not ui.currentPlan.preparationEmpty and planCoverage()==addon.L("NO_CHARACTER_QUESTS", addon.L("FILTER_QUEST_ALL")))
@@ -6631,7 +6638,7 @@ check("Empty preparation overview prompt localization cannot overwrite a nested 
     local finish=emptyPreparationFixture();local original=addon.L;local armed=true
     addon.L=function(key,...)
         local value=original(key,...)
-        if key=="PREPARATION_EMPTY" and armed then armed=false;ui.preparation=false;ui:Refresh()end
+        if key=="OVERVIEW_PICK"and armed then armed=false;ui.preparation=false;ui:Refresh()end
         return value
     end
     ui:RefreshDetail();addon.L=original
@@ -6655,11 +6662,11 @@ check("Actual source-empty Shapers and character-excluded RFC overview prompts e
     for code in pairs(addon.locales)do
         addon.db.locale=code;ui.dungeon=dungeons.shapers;ui:Refresh()
         assert(#ui.dungeon.quests==0 and #ui.currentPlan.rows==0 and #visibleRows()==0)
-        assert(detailOccurrences(addon.L("EMPTY"))==1 and not detailHas(addon.L("OVERVIEW_PICK")))
+        ui:AssertCompactOverview();assert(not detailHas(addon.L("EMPTY")))
         assert(planCoverage()==addon.L("EMPTY") and not detailHas(addon.L("NO_CHARACTER_QUESTS", addon.L("FILTER_QUEST_ALL"))))
         ui.dungeon=dungeons.rfc;ui:Refresh()
         assert(#ui.dungeon.quests==6 and #ui.currentPlan.rows==0 and #visibleRows()==0)
-        assert(detailHas(addon.L("NO_CHARACTER_QUESTS", addon.L("FILTER_QUEST_ALL"))) and not detailHas(addon.L("OVERVIEW_PICK")) and not detailHas(addon.L("EMPTY")))
+        ui:AssertCompactOverview();assert(not detailHas(addon.L("NO_CHARACTER_QUESTS",addon.L("FILTER_QUEST_ALL")))and not detailHas(addon.L("EMPTY")))
         assert(planCoverage()==addon.L("NO_CHARACTER_QUESTS", addon.L("FILTER_QUEST_ALL")) and not ui.action and ui.quest==nil and #ui.detailHistory==0)
     end
     finish()
@@ -6684,11 +6691,11 @@ check("Excluded-character overview localization and prompt setters cannot overwr
         local function replace()if armed then armed=false;ui.dungeon=dungeons.dm or dungeons.deadmines;ui:Refresh()end end
         local originalSet
         if stage=="localization"then
-            addon.L=function(key,...)local text=originalL(key,...);if key=="NO_CHARACTER_QUESTS"then replace()end;return text end
+            addon.L=function(key,...)local text=originalL(key,...);if key=="OVERVIEW_PICK"then replace()end;return text end
         else
-            for _,fs in ipairs(ui.details)do if fs.shown and fs.text==addon.L("NO_CHARACTER_QUESTS", addon.L("FILTER_QUEST_ALL"))then field=fs end end
+            for _,fs in ipairs(ui.details)do if fs.shown and fs.text==addon.L("OVERVIEW_PICK")then field=fs end end
             assert(field);originalSet=field.SetText
-            field.SetText=function(self,value)originalSet(self,value);if value==addon.L("NO_CHARACTER_QUESTS", addon.L("FILTER_QUEST_ALL"))then replace()end end
+            field.SetText=function(self,value)originalSet(self,value);if value==addon.L("OVERVIEW_PICK")then replace()end end
         end
         ui:RefreshDetail();addon.L=originalL;if field then field.SetText=originalSet end
         assert(ui.dungeon~=dungeons.rfc and #visibleRows()>0 and detailHas(addon.L("OVERVIEW_PICK")))
@@ -7983,25 +7990,16 @@ check("Main close styling is optional and preserves native close tooltip geometr
     end
 end)
 
-check("Compact overview keeps generic icons small and gives actual or legacy art the full detail width",function()
+check("Compact overview never invokes artwork producers for generic or recorded dungeon art",function()
     local paint,quest,dungeon,engine=addon.PaintDungeonArt,ui.quest,ui.dungeon,ui.engine
     local data={};assert(loadfile("Database/Catalog.lua"))("DungeonPro",data)
-    local keys={drowned=true,kroldok=true,alcaz=true,blackmaw=true,shapers=true}
-    local genericCount=0
+    local keys={drowned=true,kroldok=true,alcaz=true,blackmaw=true,shapers=true};local count,calls=0,0
+    addon.PaintDungeonArt=function()calls=calls+1;error("compact overview cannot invoke an artwork producer")end
     for _,d in ipairs(data.dungeons)do if keys[d.key]then
-        genericCount=genericCount+1;ui.quest=nil;ui.dungeon=d
-        addon.PaintDungeonArt=function(t)t:SetTexture("generic");t:Show();return true,"generic"end
-        ui:RefreshDetail();assert(ui.overviewArt.width==48 and ui.overviewArt.height==48 and ui.overviewArt.point[2]==(ui.detail:GetWidth()-56)/2+4)
-        local compactHeight=ui.detail.height
-        addon.PaintDungeonArt=function(t)t:SetTexture(123);t:Show();return true,"art"end
-        ui:RefreshDetail();assert(ui.overviewArt.width==ui.detail:GetWidth()-8 and ui.overviewArt.height==ui.detail:GetWidth()-8 and ui.overviewArt.point[2]==4 and ui.detail.height==compactHeight+ui.detail:GetWidth()-56)
-        addon.PaintDungeonArt=function(t)t:SetTexture("legacy");t:Show();return true end
-        ui:RefreshDetail();assert(ui.overviewArt.width==ui.detail:GetWidth()-8 and ui.detail.height==compactHeight+ui.detail:GetWidth()-56)
-        addon.PaintDungeonArt=function(t)t:Hide();return false end
-        ui:RefreshDetail();assert(not ui.overviewArt.shown and ui.detail.height==compactHeight-56)
+        count=count+1;ui.quest=nil;ui.dungeon=d;ui:RefreshDetail();ui:AssertCompactOverview()
     end end
-    assert(genericCount==5)
-    addon.PaintDungeonArt=paint;ui.quest,ui.dungeon,ui.engine=quest,dungeon,engine
+    assert(count==5 and calls==0)
+    addon.PaintDungeonArt=paint;ui.quest,ui.dungeon,ui.engine=quest,dungeon,engine;ui:Refresh()
 end)
 
 local function coalescedSearchFixture()
@@ -8480,51 +8478,30 @@ check("Quest-log dispatch cannot close a newer card owner frame button or replac
     end
 end)
 
-check("Full-width overview uses a verified painter aspect and reserves matching space through recycled generic and legacy images",function()
-    local paint,quest,dungeon,engine,checker=addon.PaintDungeonArt,ui.quest,ui.dungeon,ui.engine,issecretvalue
-    local target={key="full-overview",name="Overview fixture",minLevel=1,maxLevel=60,quests={}}
-    local kind,aspect="generic",nil;local calls=0;local restricted={}
-    issecretvalue=function(value)if value==restricted then return true end;return checker and checker(value)or false end
-    addon.PaintDungeonArt=function(texture,d,mode)
-        calls=calls+1;assert(d==target and mode=="overview")
-        assert(texture.width==ui.detail:GetWidth()-8 and texture.height==ui.detail:GetWidth()-8 and texture.point[2]==4,"recycled compact geometry cannot reach the painter")
-        texture:SetTexture("overview");texture:Show();return true,kind,aspect
-    end
-    ui.quest=nil;ui.dungeon=target;ui:RefreshDetail()
-    local compact=ui.detail.height
-    assert(ui.overviewArt.width==48 and ui.overviewArt.height==48)
-    kind,aspect="art",2992/1684;ui:RefreshDetail()
-    local expected=(ui.detail:GetWidth()-8)*1684/2992
-    assert(ui.overviewArt.width==ui.detail:GetWidth()-8 and math.abs(ui.overviewArt.height-expected)<.000001 and ui.overviewArt.point[2]==4)
-    assert(math.abs(ui.detail.height-(compact+expected-48))<.000001)
-    for _,invalid in ipairs({0,-1,math.huge,0/0,restricted,false,"1.77",1e-320})do
-        aspect=invalid;ui:RefreshDetail();assert(ui.overviewArt.width==ui.detail:GetWidth()-8 and ui.overviewArt.height==ui.detail:GetWidth()-8 and ui.detail.height==compact+ui.detail:GetWidth()-56)
-    end
-    kind,aspect="generic",2;ui:RefreshDetail()
-    assert(ui.overviewArt.width==48 and ui.overviewArt.height==48 and ui.overviewArt.point[2]==(ui.detail:GetWidth()-56)/2+4 and ui.detail.height==compact)
-    kind,aspect="art",2;ui:RefreshDetail()
-    assert(ui.overviewArt.width==ui.detail:GetWidth()-8 and ui.overviewArt.height==(ui.detail:GetWidth()-8)/2 and ui.detail.height==compact+(ui.detail:GetWidth()-8)/2-48)
-    kind=nil;ui:RefreshDetail();assert(ui.overviewArt.height==ui.detail:GetWidth()-8,"legacy helpers cannot claim a verified aspect without art classification")
-    assert(calls==13)
-    issecretvalue=checker;addon.PaintDungeonArt=paint;ui.quest,ui.dungeon,ui.engine=quest,dungeon,engine;ui:Refresh()
-end)
-check("Superseded overview painting cannot resize a newer compact overview or overwrite its layout space",function()
+check("Compact overview ignores painter classifications and reserves no artwork layout space",function()
     local paint,quest,dungeon,engine=addon.PaintDungeonArt,ui.quest,ui.dungeon,ui.engine
+    local target={key="full-overview",name="Overview fixture",minLevel=1,maxLevel=60,quests={}}
+    local calls=0;addon.PaintDungeonArt=function()calls=calls+1;error("retired right-side painter called")end
+    ui.quest=nil;ui.dungeon=target;ui:RefreshDetail();ui:AssertCompactOverview();local height=ui.detail.height
+    for _,value in ipairs({"generic","art","legacy",false})do
+        target.art=value;ui:RefreshDetail();ui:AssertCompactOverview();assert(ui.detail.height==height)
+    end
+    assert(calls==0)
+    addon.PaintDungeonArt=paint;ui.quest,ui.dungeon,ui.engine=quest,dungeon,engine;ui:Refresh()
+end)
+
+check("Superseded overview name callbacks cannot resize a newer compact overview or overwrite its layout",function()
+    local name,quest,dungeon,engine=addon.DungeonName,ui.quest,ui.dungeon,ui.engine
     local old={key="old-wide",name="Old overview",minLevel=1,maxLevel=60,quests={}}
     local newer={key="new-compact",name="New overview",minLevel=1,maxLevel=60,quests={}}
     local armed=true;local freshHeight
-    addon.PaintDungeonArt=function(texture,d,mode)
-        assert(mode=="overview")
-        if d==old and armed then
-            armed=false;ui.dungeon=newer;ui:RefreshDetail();freshHeight=ui.detail.height
-            return true,"art",2
-        end
-        assert(d==newer);texture:SetTexture("new generic");texture:Show();return true,"generic"
+    addon.DungeonName=function(d)
+        if d==old and armed then armed=false;ui.dungeon=newer;ui:RefreshDetail();freshHeight=ui.detail.height end
+        return name(d)
     end
-    ui.quest=nil;ui.dungeon=old;ui:RefreshDetail()
-    assert(not armed and ui.dungeon==newer and ui.overviewArt.texture=="new generic"and ui.overviewArt.width==48 and ui.overviewArt.height==48)
-    assert(ui.overviewArt.point[2]==(ui.detail:GetWidth()-56)/2+4 and ui.detail.height==freshHeight)
-    addon.PaintDungeonArt=paint;ui.quest,ui.dungeon,ui.engine=quest,dungeon,engine;ui:Refresh()
+    ui.quest=nil;ui.dungeon=old;ui:RefreshDetail();addon.DungeonName=name
+    assert(not armed and ui.dungeon==newer and ui.detail.height==freshHeight and not detailHas(old.name));ui:AssertCompactOverview()
+    ui.quest,ui.dungeon,ui.engine=quest,dungeon,engine;ui:Refresh()
 end)
 
 check("Normal browsing ignores a saved preparation mode and exposes no Back or mode widget",function()
@@ -8581,7 +8558,7 @@ check("Dungeon entrance uses only a current explicit producer point and its sepa
     end
     addon.Entrances={Get=function()return point end};ui:RefreshDetail();assert(not ui.entranceBinding)
     addon.Entrances={Get=function()return nil end};ui:RefreshDetail();assert(not ui.entranceBinding)
-    assert(detailHas(addon.L("DUNGEON_ENTRANCE_UNKNOWN")))
+    assert(not detailHas(addon.L("DUNGEON_ENTRANCE_UNKNOWN"))and detailHas(addon.L("OVERVIEW_PICK")),"missing entrance remains non-actionable without duplicating catalogue provenance in the compact right pane")
     addon.Entrances,addon.Navigation=provider,nav;ui.quest,ui.dungeon=quest,dungeon;ui:Refresh()
 end)
 check("Real language hover previews the existing window and restores its labels without changing saved selection",function()
@@ -8965,7 +8942,7 @@ check("Shared dungeon approaches use a short header and retain both notices with
     addon.Navigation={StartEntrance=function()return true end}
     ui.dungeon={key="shared-approach",name="Shared approach",minLevel=1,maxLevel=60,quests={}};ui.quest=nil;ui:RefreshDetail()
     assert(ui.entrance==nil and ui.entranceBinding)
-    assert(detailHas(addon.L("DUNGEON_ENTRANCE_APPROACH")) and detailHas(addon.L("DUNGEON_ENTRANCE_SHARED")))
+    ui:AssertCompactOverview();assert(not detailHas(addon.L("DUNGEON_ENTRANCE_APPROACH"))and not detailHas(addon.L("DUNGEON_ENTRANCE_SHARED")),"approach provenance remains on the actual catalogue entrance tooltip")
     local tip={}
     function tip:SetOwner(owner)self.owner=owner end
     function tip:IsOwned(owner)return self.owner==owner end
@@ -10141,7 +10118,22 @@ check("DP-3 G3 fully unknown starter keeps one honest acquisition row without do
     addon.ItemName, addon.CarriedItemCount = oldItemName, oldCarried
     showDetail(2)
 end)
-check("Overview keeps held log steps and next actions under separate headers", function()
+function ui:RenderOverviewComponent()
+    -- Exercise the retained component explicitly; ordinary dungeon selection stays compact.
+    self:AssertCompactOverview()
+    local dungeon,engine,plan,generation=self.dungeon,self.engine,self.currentPlan,self.rewardGeneration
+    local function current()return self.quest==nil and self.dungeon==dungeon and self.engine==engine and self.currentPlan==plan and self.rewardGeneration==generation end
+    self:ReleasePreparationOverview();assert(self:ResetPreparationOverviewControls(current))
+    local style={size=13,minimum=18,color={1,1,1}}
+    local presentation={styles={body=style,caption=style,warning=style}}
+    presentation.label=function(parent,value,x,y,width,size)
+        local field=parent:CreateFontString(nil,"OVERLAY");field:SetText(value);field:SetWidth(width);field:SetPoint("TOPLEFT",x,y);return field
+    end
+    presentation.setFont=function(field,size)field:SetFont("Fonts\\FRIZQT__.TTF",size)end
+    presentation.measuredHeight=function(field,minimum)return field:GetStringHeight()or minimum end
+    assert(self:RenderPreparationOverview(current,self.detail:GetWidth()-8,0,presentation))
+end
+check("Explicit overview component keeps held log steps and next actions under separate headers", function()
     if not addon.DungeonOverview then assert(loadfile("Core/DungeonOverview.lua"))("DungeonPro", addon) end
     local provider = assert(addon.DungeonOverview)
     local originalGet = provider.Get
@@ -10167,17 +10159,17 @@ check("Overview keeps held log steps and next actions under separate headers", f
     end
     local held = { id = 6, kind = "complete", status = "ACTIVE", listedTarget = true }
     local nextAction = { id = 2, kind = "pickup", status = "AVAILABLE", listedTarget = true }
-    stub({ held, nextAction }); ui:RefreshDetail()
+    stub({ held, nextAction }); ui:RefreshDetail();ui:RenderOverviewComponent()
     local seen = shownHeaders()
     local heldAt, nextAt = position(seen, addon.L("OVERVIEW_KNOWN_STEPS")), position(seen, addon.L("OVERVIEW_NEXT_STEPS"))
     assert(addon.L("OVERVIEW_NEXT_STEPS") ~= "OVERVIEW_NEXT_STEPS", "next actions need their own translated header")
     assert(heldAt and nextAt and heldAt < nextAt, "held log steps keep their header before next actions")
-    stub({ nextAction }); ui:RefreshDetail()
+    stub({ nextAction }); ui:RefreshDetail();ui:RenderOverviewComponent()
     seen = shownHeaders()
     assert(position(seen, addon.L("OVERVIEW_NEXT_STEPS")) and not position(seen, addon.L("OVERVIEW_KNOWN_STEPS")) and
         not position(seen, addon.L("OVERVIEW_NO_KNOWN_STEPS")),
         "pickup-only overviews keep NEXT without the empty hint")
-    stub({}); ui:RefreshDetail()
+    stub({}); ui:RefreshDetail();ui:RenderOverviewComponent()
     seen = shownHeaders()
     local emptyHint = addon.L("OVERVIEW_NO_KNOWN_STEPS")
     local emptyCount = 0
@@ -10205,7 +10197,7 @@ check("Overview keeps held log steps and next actions under separate headers", f
     ui.dungeon, ui.quest = savedDungeon, savedQuest
     ui:Refresh()
 end)
-check("Overview hidden-tail copy stays neutral across held and pickup steps", function()
+check("Explicit overview component hidden-tail copy stays neutral across held and pickup steps", function()
     if not addon.DungeonOverview then assert(loadfile("Core/DungeonOverview.lua"))("DungeonPro", addon) end
     local provider = assert(addon.DungeonOverview)
     local originalGet = provider.Get
@@ -10221,7 +10213,7 @@ check("Overview hidden-tail copy stays neutral across held and pickup steps", fu
     end
     for _, locale in ipairs({ "enUS", "ruRU" }) do
         addon.db.locale = locale
-        ui:RefreshDetail()
+        ui:RefreshDetail();ui:RenderOverviewComponent()
         local expected = addon.L("OVERVIEW_MORE_STEPS", 3)
         assert(expected:find("3", 1, true), locale .. " hidden-tail line must keep the %d count")
         local folded = expected:lower()

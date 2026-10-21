@@ -20,9 +20,18 @@ local function cardFor(dungeon)
     error("dungeon card missing")
 end
 assert(ui.entrance == nil and ui.entranceBinding.point.origin == "recorded", "entrance action has moved out of the toolbar")
+local tip={lines={}}
+function tip:SetOwner(owner)self.owner=owner end
+function tip:IsOwned(owner)return self.owner==owner end
+function tip:SetText(text)self.title=text end
+function tip:AddLine(text)self.lines[#self.lines+1]=text end
+function tip:Show()self.shown=true end
+function tip:Hide()self.shown=false end
+GameTooltip=tip
+ui:CatalogEntranceHint(cardFor(ui.dungeon))
 local notice
-for _, line in ipairs(ui.details) do if line.shown and line.text == addon.L("DUNGEON_ENTRANCE_RECORDED") then notice = true end end
-assert(notice, "recorded entrance provenance is visible in the actual overview")
+for _,text in ipairs(tip.lines)do if text:find(addon.L("DUNGEON_ENTRANCE_RECORDED"),1,true)then notice=true end end
+assert(tip.shown and notice,"recorded entrance provenance is visible in its actual catalogue tooltip")
 local function markerAt(x, y)
     for _, object in ipairs(fixture.objects) do
         if object.icon and object.parent == canvas and object.shown then

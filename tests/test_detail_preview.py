@@ -31,16 +31,27 @@ class OverviewPreview(unittest.TestCase):
     self.assertEqual(sum(prose in value for value in text),1,"authentic prose appears exactly once in every legacy alias")
     for key,ident in snapshot['roles'].items():
      if key.startswith('detailTab_'):self.assertFalse(visible(objects[ident]))
- def test_overview_real_model_metadata_and_visible_support(self):
+ def test_overview_actual_compact_panel_and_retained_central_plan(self):
   for locale in ('enUS','ruRU'):
    for collapsed in ('','collapsed'):
     r=lua(CAPTURE,'overview:dm',locale,'',collapsed,'','155')
     self.assertEqual(r.returncode,0,r.stderr);s=json.loads(r.stdout)
     self.assertEqual(s['mode'],'overview');self.assertNotIn('questID',s);self.assertFalse(s['fixtureRewards'])
-    self.assertEqual(s['overview']['shownRoots'],9);self.assertEqual(s['overview']['counts']['READY'],0)
-    self.assertTrue(s['overview']['unknown']);self.assertFalse(s['overview']['knownPrepared'])
-    self.assertEqual(s['overview']['steps'],[{'id':155,'kind':'turnin','status':'READY','listedTarget':False}])
-    self.assertTrue(any(('Supporting quest'if locale=='enUS'else'Вспомогательное задание')in row.get('text','')and not row['hidden']for row in s['objects']))
+    self.assertNotIn('overview',s,"removed rendered summary must not be fabricated as preview metadata")
+    panel=s['compactOverview'];self.assertEqual(panel['centralPlanRowCount'],9)
+    self.assertEqual(len(panel['texts']),3)
+    self.assertEqual(panel['texts'][2],'Select a listed quest to see its details and preparation steps.'if locale=='enUS'else'Выберите задание из списка, чтобы посмотреть его условия и подготовку.')
+    objects={row['id']:row for row in s['objects']}
+    def visible(row):
+     seen=set()
+     while row:
+      if row['id']in seen or row['hidden']:return False
+      seen.add(row['id']);row=objects.get(row.get('parent'))
+     return True
+    detail=s['roles']['detail']
+    actual=[row.get('text','')for row in objects.values()if row.get('parent')==detail and row.get('text')and visible(row)]
+    self.assertEqual(actual,panel['texts'],"compact payload must describe actual rendered FontStrings, not a separate model")
+    self.assertEqual(s['catalogCollapsed'],bool(collapsed));self.assertEqual(s['locale'],locale)
  def test_legacy_and_overview_check_commands(self):
   for args in [('check',),('overview:dm','enUS','','','','155','check'),('overview:dm','ruRU','','collapsed','','155','check')]:
    r=lua(CAPTURE,*args);self.assertEqual(r.returncode,0,r.stderr);self.assertIn('PASS',r.stdout)

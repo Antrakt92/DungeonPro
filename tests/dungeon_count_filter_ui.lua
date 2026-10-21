@@ -26,7 +26,7 @@ local function assertCount(expected)
  assert(card.note.text==a.L("CATALOG_COMPACT_META",1,60,expected))
  local found=false
  for _,line in ipairs(ui.details)do if line.shown and line.text==a.L("CATALOG_QUESTS",expected)then found=true end end
- assert(found,"overview same mode count")
+ assert(not found,"compact overview does not duplicate catalogue counts")
  return card
 end
 ui:Refresh();local card=assertCount(5)
@@ -74,18 +74,18 @@ ui.includeUnavailable=false
 -- A populated dungeon with no matching roots is not missing catalogue data.
 a.quests[8].classes={"WARRIOR"};d.quests={8};epoch=epoch+1;ui:Refresh();assertCount(0)
 local function has(text)for _,line in ipairs(ui.details)do if line.shown and line.text==text then return true end end end
-assert(has(a.L("NO_CHARACTER_QUESTS", a.L("FILTER_QUEST_ALL"))) and not has(a.L("EMPTY")))
+assert(ui.currentPlan.notice=="NO_CHARACTER_QUESTS" and has(a.L("OVERVIEW_PICK")) and not has(a.L("EMPTY")), "middle list owns the filtered-empty notice; compact overview remains a prompt")
 ui.characterButton.scripts.OnClick(ui.characterButton);assertCount(1)
--- Localization may mutate a previously excluded root while preparing the count.
+-- Compact detail rendering never asks for the removed aggregate count caption.
 ui.includeUnavailable=false;d.quests={1,2};epoch=epoch+1;ui:Refresh()
 local L=a.L;local armed=true
 a.L=function(key,...)local value=L(key,...);if armed and key=="CATALOG_QUESTS"then armed=false;a.quests[2].factions={"Alliance"}end;if key=="CATALOG_QUESTS"then return "STALECOUNT "..value end;return value end
 ui:RefreshDetail();a.L=L
-assert(not has("STALECOUNT "..a.L("CATALOG_QUESTS",0)),"expired source count must not publish")
+assert(armed and not has("STALECOUNT "..a.L("CATALOG_QUESTS",0)),"compact overview cannot invoke a removed count provider or publish its text")
 
--- Selected overview retains a source-owned count even when catalogue search hides its card.
-ui.search="not a matching dungeon";ui:Refresh();assert(#ui.currentPlan.rows==1)
-assert(has(a.L("CATALOG_QUESTS",1)))
+-- Hiding a catalogue card cannot introduce a duplicate count into the compact overview.
+ui.search="not a matching dungeon";ui:Refresh();assert(#ui.currentPlan.rows==0)
+assert(not has(a.L("CATALOG_QUESTS",0)) and has(a.L("OVERVIEW_PICK")))
 ui.search="";ui:Refresh()
 -- A native metadata setter may invalidate an excluded root before publication.
 a.quests[2].factions={"Horde"};epoch=epoch+1;ui:Refresh()

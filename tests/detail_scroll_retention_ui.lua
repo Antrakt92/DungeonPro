@@ -45,56 +45,6 @@ for _,id in ipairs(ids)do held[id]=true end;held[155]=true;ready[373]=true
 event.scripts.OnEvent(event,'QUEST_LOG_UPDATE');drain()
 local routes=0;local start=a.Navigation.Start;a.Navigation.Start=function(...)routes=routes+1;return start(...)end
 
-local weak=setmetatable({},{__mode='v'})
-local function overview()
- u.dungeon,u.quest,u.includeUnavailable,u.range=dm,nil,false,false;u:Refresh();drain()
- assert(u.overviewBinding.current());return u.overviewBinding
-end
-local b=overview();local more=u.overviewMoreButton;local native=more.ClearAllPoints;local fired=false
-more.ClearAllPoints=function(self,...)
- if not fired then
-  fired=true;assert(a.Language:Open(u));assert(a.Language:Commit(assert(a.Language.session),'ruRU'));drain()
-  assert(u.overviewBinding.current()and more.point and more:IsShown())
- end
- self.point=nil
-end
-u:RefreshDetail();drain();more.ClearAllPoints=native
-assert(fired and more.point and u.overviewBinding.current())
-local current=u.overviewBinding
-weak.engine=u.engine;weak.context=u.engine.context;weak.binding=current;weak.bridge=current.geometryWrite;weak.presentation=current.presentation
-local pointRecord=assert(more.questListWrites.SetPoint);assert(pointRecord.current())
-local oldClick=more.scripts.OnClick
-oldClick();drain();local fewer=u.overviewFewerButton;assert(#u.overviewBinding.model.steps==7)
-fewer.scripts.OnClick();drain();assert(#u.overviewBinding.model.steps==6)
-assert(current.released and current.geometryWrite==nil and current.presentation==nil)
-assert(u:InspectQuest(214,true));drain()
-local clean,read,calls=a.Clean,a.Read,0
-a.Clean=function(...)calls=calls+1;return clean(...)end;a.Read=function(...)calls=calls+1;return read(...)end
-assert(not pointRecord.current()and not current.current());oldClick();assert(u.quest==214 and calls==0)
-a.Clean,a.Read=clean,read
-current,b=nil,nil;gc()
-assert(weak.engine==nil and weak.context==nil and weak.bridge==nil and weak.presentation==nil,'retained repaired SetPoint and oldclick cannot retain Window bridge/engine/context')
-print('PASS repaired SetPoint/More retained: bridge+presentation+engine/contextGC; retired0providers')
--- A callback replacing the presentation helper retires old publication without calling the foreign helper.
-overview();local size=more.SetSize;local fired,foreign=false,0
-more.SetSize=function(self,...)
- if not fired then fired=true;u.overviewBinding.presentation.geometryWrite=function()foreign=foreign+1;error('foreign helper')end end
- return size(self,...)
-end
-u:RefreshDetail();drain();more.SetSize=size
-assert(fired and foreign==0 and not u.overviewBinding.current())
-local limit=u.overviewStepLimits[dm].limit;local click=more.scripts.OnClick;if click then click()end
-assert(u.overviewStepLimits[dm].limit==limit)
-u:RefreshDetail();drain();assert(u.overviewBinding.current()and more:IsShown())
-more.scripts.OnClick();drain();assert(#u.overviewBinding.model.steps==7)
-print('PASS native callback helper replacement rejects foreign publication; fresh expansion recovers')
-local old=u.overviewBinding;weak.hide=u.engine;weak.hideContext=u.engine.context
-u.frame:Hide();u.frame.scripts.OnHide(u.frame);drain();assert(old.released and old.geometryWrite==nil and old.presentation==nil)
-u.frame:Show();u:Refresh();drain();old=nil;click,size,oldClick,pointRecord,native=nil,nil,nil,nil,nil;gc()
-assert(weak.hide==nil and weak.hideContext==nil and #queue==0 and routes==0)
-assert(more==u.overviewMoreButton and fewer==u.overviewFewerButton and u.overviewBinding.current())
-print('PASS ordinary Hide/reopen releases bridge owner with physical reuse; queue0 tasks'..tasks)
-
 -- The retained physical wrapper is cell-only; current records stay live until the owning render retires.
 draw(166);assert(u:SetDetailTab('sources'));drain()
 u.detailScroll.GetHeight=function()return 100 end

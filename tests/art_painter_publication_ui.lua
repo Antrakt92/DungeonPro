@@ -1,107 +1,9 @@
--- Existing catalogue artwork; controlled native widget tails, no native-client pixels or map coverage claim.
+-- Artwork component publication; the compact dungeon overview does not invoke this painter.
 local total = 0
 local function check(name, test)
     if arg and arg[1] and arg[1] ~= name then return end
     test(); total = total + 1; print("PASS " .. name)
 end
-local function fixture()
-    local f = assert(loadfile("tests/client_ui.lua"))("fixture")
-    local a, ui = f.addon, f.addon.UI
--- Controlled component opt-in; not native map availability.
-    a.experimentalDungeonMaps = true
-    local pins, routes, selections, accepts, opens, opened = 0, 0, 0, 0, 0
-    issecretvalue = function() return false end
-    GetLocale = function() return "enUS" end
-    UnitLevel = function() return 60 end
-    UnitClass = function() return "Mage", "MAGE", 8 end
-    UnitFactionGroup = function() return "Alliance" end
-    C_Timer = { After = function() end }
-    C_QuestLog.IsOnQuest = function() return false end
-    C_QuestLog.ReadyForTurnIn = function() return false end
-    C_QuestLog.GetTitleForQuestID = function(id) return a.quests[id] and a.quests[id].name end
-    C_QuestLog.SetSelectedQuest = function() selections = selections + 1 end
-    AcceptQuest = function() accepts = accepts + 1 end
-    -- Missing native map-art APIs are modeled honestly; catalogue artwork is not a UiMap join.
-    C_EncounterJournal, EJ_GetInstanceInfo = nil, nil
-    C_Map.SetUserWaypoint = function() pins = pins + 1 end
-    local navigation = a.Navigation.Start
-    a.Navigation.Start = function(...) routes = routes + 1; return navigation(...) end
-    local opener = ui.OpenDungeonMap
-    ui.OpenDungeonMap = function(self, dungeon, ...)
-        opens, opened = opens + 1, dungeon
-        return opener(self, dungeon, ...)
-    end
-    local painter, artProvider = a.PaintDungeonArt, a.DungeonArt
-    f.eventFrame.scripts.OnEvent(f.eventFrame, "ADDON_LOADED", "DungeonPro")
-    ui:Toggle(); a.db.locale = "enUS"; ui.range, ui.includeUnavailable = false, true; ui:Refresh()
-    local dungeons = {}
-    for _, d in ipairs(a.dungeons) do dungeons[d.key] = d end
-    local function select(key)
-        for _, card in ipairs(ui.cards) do
-            if card:IsShown() and card.entranceDungeon == dungeons[key] then
-                assert(card.scripts.OnClick); card.scripts.OnClick(card)
-                assert(ui.dungeon == dungeons[key] and ui.quest == nil)
-                return
-            end
-        end
-        error("actual ordinary dungeon card missing: " .. key)
-    end
-    local function noEffects()
-        assert(routes == 0 and pins == 0 and selections == 0 and accepts == 0,
-            "overview artwork cannot route, select or accept quests")
-        assert(a.PaintDungeonArt == painter and a.DungeonArt == artProvider, "real artwork providers stay unchanged")
-    end
-    local function imageFor(key)
-        return ui.overviewArt and ui.overviewArt:IsShown() and ui.overviewArt.texture == dungeons[key].art.fileID
-    end
-    local function currentMap(key, expectedBinding)
-        local binding, control = ui.overviewMapBinding, ui.overviewMapControl
-        assert(binding and (not expectedBinding or binding == expectedBinding) and binding.owner and binding.owner(),
-            "newest map binding must retain its exact live overview owner")
-        assert(ui.dungeon == dungeons[key] and ui.quest == nil and control:IsShown() and control.enabled and control.scripts.OnClick)
-        return control.scripts.OnClick
-    end
-    local function manual(key)
-        local click = currentMap(key); local before = opens
-        click()
-        assert(opens == before + 1 and opened == dungeons[key], "explicit map click opens exactly the selected real dungeon")
-        assert(ui.dungeonMapState and ui.dungeonMapState.dungeon == dungeons[key] and ui.dungeonMapState.model == nil)
-        assert(ui.dungeonMap and ui.dungeonMap:IsShown() and ui.dungeonMap.message.text == a.L("DUNGEON_MAP_UNAVAILABLE"),
-            "missing native map-art data stays unavailable, without a guessed map or artwork-based join")
-        noEffects()
-    end
-    select("dm")
-    assert(imageFor("dm") and opens == 0)
-    currentMap("dm")
-    return a, ui, select, dungeons, noEffects, imageFor, currentMap, manual, function() return opens end
-end
-for _,phase in ipairs({"before","after"})do
- for _,kind in ipairs({"overview","quest"})do
- check("finalShow-"..phase.."-"..kind,function()
-  local a,ui,select,dungeons,noEffects,imageFor,currentMap,manual,opens=fixture()
-  local art=ui.overviewArt;local native,fired=art.Show,false;local newest;local calls=0
-  art.Show=function(self,...)
-   calls=calls+1;local hit=not fired and calls==1
-   local function replace()
-    fired=true
-    if kind=="overview"then select("rfc");newest=ui.overviewMapBinding
-    else assert(ui:InspectQuest(166,true));assert(ui:SetDetailTab("story"))end
-   end
-   if hit and phase=="before"then replace()end
-   local result=native(self,...)
-   if hit and phase=="after"then replace()end
-   return result
-  end
-  ui:RefreshDetail();art.Show=native
-  assert(fired and opens()==0)
-  if kind=="overview"then assert(imageFor("rfc"));currentMap("rfc",newest);manual("rfc")
-  else assert(ui.quest==166 and ui.detailTab=="quest"and not art:IsShown()and ui.overviewMapBinding==nil)end
-  noEffects()
- end)
- end
-end
-print("Independent final owned art Show tails: PASS "..total)
-
 local a={}
 assert(loadfile("Core/Namespace.lua"))("DungeonPro",a)
 assert(loadfile("Core/Client.lua"))("DungeonPro",a)
@@ -180,28 +82,6 @@ pure("restricted callback acknowledgement cannot authorize success",function()
  local t=canvas();local ok,k=a.PaintDungeonArt(t,dungeon,"overview",function()return result end)
  assert(ok==false and k==nil and t.shows==0)
 end)
-for _,phase in ipairs({"before","after"})do
- check("painter-identity-replacement-"..phase,function()
-  local a,ui,select,dungeons,noEffects=fixture()
-  local art,native,fired=ui.overviewArt,ui.overviewArt.Show,false
-  local painter=a.PaintDungeonArt
-  art.Show=function(self,...)
-   local hit=not fired
-   local function replace()
-    fired=true;a.PaintDungeonArt=function(...)return painter(...)end
-    assert(ui:InspectQuest(166,true));assert(ui:SetDetailTab("story"))
-   end
-   if hit and phase=="before"then replace()end
-   local result=native(self,...)
-   if hit and phase=="after"then replace()end
-   return result
-  end
-  ui:RefreshDetail();art.Show=native
-  assert(fired and ui.quest==166 and ui.detailTab=="quest"and not art:IsShown()and ui.overviewMapBinding==nil)
-  a.PaintDungeonArt=painter
-  noEffects()
- end)
-end
 print("Owned art painter FINAL checks passed: "..total)
 
 for _,optional in ipairs({false,true})do

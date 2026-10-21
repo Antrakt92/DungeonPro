@@ -1,4 +1,5 @@
--- DP-5 overview kind marks: outside/inside/level/unknown stay distinguishable.
+-- Explicit compatibility component: retained overview producer and typed kind marks.
+-- The default right pane remains compact; only this test calls the retained renderer.
 local override = ...
 local loader = loadfile
 if override then loadfile = function(path) return loader(path == "UI/Window.lua" and override or path) end end
@@ -28,11 +29,42 @@ a.quests = {
 local kindsDungeon = { key = "controlled-kinds", name = "Kinds fixture", minLevel = 1, maxLevel = 60, coverage = "partial", quests = { 9001, 9002, 9003, 9004 } }
 a.dungeons = { kindsDungeon }
 
+local function assertCompactDefault()
+    assert(u.quest==nil and u.overviewBinding==nil,"ordinary refresh keeps the default compact overview")
+    local count=0
+    for _,field in ipairs(u.details or{})do if field:IsShown()then count=count+1 end end
+    assert(count==3,"default right pane has only title, range and choose-quest prompt")
+    for _,row in ipairs(u.actionInspectButtons or{})do assert(not row:IsShown(),"default does not publish compatibility component rows")end
+    assert(not u.overviewMoreButton or not u.overviewMoreButton:IsShown())
+    assert(not u.overviewFewerButton or not u.overviewFewerButton:IsShown())
+end
+local function renderComponent()
+    assertCompactDefault()
+    local dungeon,engine,plan,generation=u.dungeon,u.engine,u.currentPlan,u.rewardGeneration
+    local function current()
+        return a.UI==u and u.dungeon==dungeon and u.quest==nil and u.engine==engine and
+            u.currentPlan==plan and u.rewardGeneration==generation
+    end
+    local function setFont(field,size)field:SetFont(STANDARD_TEXT_FONT,size,"")end
+    local function label(parent,value,x,y,width,size)
+        local field=parent:CreateFontString(nil,"OVERLAY")
+        field:SetPoint("TOPLEFT",x,y);field:SetWidth(width);setFont(field,size);field:SetText(value);field:Show();return field
+    end
+    local function measured(field,minimum)return math.max(minimum,field:GetStringHeight())end
+    local colors={AVAILABLE="ffe9b0",LOCKED="f0b080",UNKNOWN="b4aacd",ACTIVE="88bfff",READY="ffe066",COMPLETED="66dd99",UNAVAILABLE="999999"}
+    local finish=u:RenderPreparationOverview(current,u.detail:GetWidth()-8,u.detail:GetHeight(),{
+        label=label,setFont=setFont,measuredHeight=measured,
+        styles={body={size=15,minimum=20,gap=8,color={1,1,1}},caption={size=13,minimum=18,gap=8,color={1,1,1}},warning={size=15,minimum=20,gap=8,color={1,1,1}}},
+        formatStatus=function(status,value)return"|cff"..assert(colors[status])..value.."|r"end})
+    assert(type(finish)=="number"and current(),"explicit real compatibility renderer finishes under its exact caller owner")
+end
+
 local function render(dungeon, all)
     u.dungeon, u.quest, u.includeUnavailable, u.range = dungeon, nil, all == true, false
     u.questTreeRoot, u.questTreeDungeon = nil, nil
     u:Refresh()
     assert(u.quest == nil and u.engine and u.currentPlan)
+    renderComponent()
 end
 
 local function summary()
@@ -76,9 +108,11 @@ end
 rowById(9001).scripts.OnClick()
 assert(u.quest == 9001 and u.dungeon == kindsDungeon and routes == 0, "outside click inspects its own card without routing")
 assert(u:BackQuest() and u.quest == nil)
+renderComponent()
 rowById(9002).scripts.OnClick()
 assert(u.quest == 9002 and u.dungeon == kindsDungeon and routes == 0, "inside click inspects its own card without routing")
 assert(u:BackQuest() and u.quest == nil)
+renderComponent()
 
 -- (2) level/unknown stay under NEXT without promising availability; unknown never uses the ready green.
 render(kindsDungeon)
@@ -133,6 +167,7 @@ assert(more and more:IsShown(), "More control appears past the cap")
 local firstKindNote = noteOf(manyIds[1])
 assert(firstKindNote:find(a.L("PREP_outside"), 1, true), "paged outside row keeps its mark")
 more.scripts.OnClick(more)
+renderComponent()
 local _, expanded = summary()
 assert(#expanded.steps == 9 and expanded.remainingSteps == 0, "More reveals the tail without changing phases")
 assert(noteOf(manyIds[3]):find(a.L("PREP_inside"), 1, true), "inside mark survives expansion")
@@ -140,6 +175,7 @@ assert(noteOf(9200):find(a.L("PREP_level"), 1, true), "level mark survives expan
 local fewer = u.overviewFewerButton
 assert(fewer and fewer:IsShown(), "Fewer control appears after expansion")
 fewer.scripts.OnClick(fewer)
+renderComponent()
 local _, compacted = summary()
 assert(#compacted.steps == 6 and compacted.remainingSteps == 3, "Fewer restores the cap")
 assert(noteOf(manyIds[1]):find(a.L("PREP_outside"), 1, true), "kind grouping survives Fewer")
@@ -220,12 +256,15 @@ end
 rowById(9302).scripts.OnClick()
 assert(u.quest == 9302 and u.dungeon == supportDungeon and routes == 0, "support-outside click inspects its own card without routing")
 assert(u:BackQuest() and u.quest == nil)
+renderComponent()
 rowById(9304).scripts.OnClick()
 assert(u.quest == 9304 and u.dungeon == supportDungeon and routes == 0, "support-inside click inspects its own card without routing")
 assert(u:BackQuest() and u.quest == nil)
+renderComponent()
 rowById(9306).scripts.OnClick()
 assert(u.quest == 9306 and u.dungeon == supportDungeon and routes == 0, "support-level click inspects its own card without routing")
 assert(u:BackQuest() and u.quest == nil)
+renderComponent()
 -- One shared support prerequisite serves two listed parents exactly once.
 a.quests[9311] = { id = 9311, name = "Listed four", minLevel = 1, requirementsKnown = true, requires = { { ids = { 9302 } } } }
 local sharedDungeon = { key = "controlled-shared", name = "Shared fixture", minLevel = 1, maxLevel = 60, coverage = "partial", quests = { 9301, 9311 } }
@@ -262,12 +301,14 @@ local supMore = u.overviewMoreButton
 assert(supMore and supMore:IsShown(), "More control appears past the supporting cap")
 assert(noteOf(supSupports[1]) == expectedSupport("PREP_outside", "AVAILABLE", "ffe9b0"), "paged support row keeps its composition")
 supMore.scripts.OnClick(supMore)
+renderComponent()
 local _, supExpanded = summary()
 assert(#supExpanded.steps == 8 and supExpanded.remainingSteps == 0, "More reveals the supporting tail")
 assert(noteOf(supSupports[8]) == expectedSupport("PREP_outside", "AVAILABLE", "ffe9b0"), "supporting composition survives expansion")
 local supFewer = u.overviewFewerButton
 assert(supFewer and supFewer:IsShown(), "Fewer control appears after supporting expansion")
 supFewer.scripts.OnClick(supFewer)
+renderComponent()
 local _, supCompacted = summary()
 assert(#supCompacted.steps == 6 and supCompacted.remainingSteps == 2, "Fewer restores the supporting cap")
 assert(noteOf(supSupports[1]) == expectedSupport("PREP_outside", "AVAILABLE", "ffe9b0"), "supporting composition survives Fewer")
@@ -311,6 +352,7 @@ end
 rowById(9501).scripts.OnClick()
 assert(u.quest == 9501 and u.dungeon == itemSingleDungeon and routes == 0, "item click inspects its own card without routing")
 assert(u:BackQuest() and u.quest == nil)
+renderComponent()
 for _, locale in ipairs({"enUS","ruRU","deDE","frFR","esES","itIT","ptBR","koKR","zhCN","zhTW"}) do
     a.db.locale = locale
     render(itemSingleDungeon)
@@ -346,6 +388,7 @@ end
 rowById(9612).scripts.OnClick()
 assert(u.quest == 9612 and u.dungeon == supportItemDungeon and routes == 0, "support-item click inspects its own card without routing")
 assert(u:BackQuest() and u.quest == nil)
+renderComponent()
 
 -- (8) More/Fewer and dungeon switches preserve the item mark and retire stale clicks.
 local manyItemIds = {}
@@ -363,12 +406,14 @@ local itemMore = u.overviewMoreButton
 assert(itemMore and itemMore:IsShown(), "More control appears past the item cap")
 assert(noteOf(manyItemIds[1]):find(itemMark, 1, true) and not noteOf(manyItemIds[1]):find(outsideMark, 1, true), "paged item row keeps its mark")
 itemMore.scripts.OnClick(itemMore)
+renderComponent()
 local _, itemExpanded = summary()
 assert(#itemExpanded.steps == 8 and itemExpanded.remainingSteps == 0, "More reveals the item tail")
 assert(noteOf(manyItemIds[8]):find(itemMark, 1, true) and not noteOf(manyItemIds[8]):find(outsideMark, 1, true), "item mark survives expansion")
 local itemFewer = u.overviewFewerButton
 assert(itemFewer and itemFewer:IsShown(), "Fewer control appears after item expansion")
 itemFewer.scripts.OnClick(itemFewer)
+renderComponent()
 local _, itemCompacted = summary()
 assert(#itemCompacted.steps == 6 and itemCompacted.remainingSteps == 2, "Fewer restores the item cap")
 assert(noteOf(manyItemIds[1]):find(itemMark, 1, true) and not noteOf(manyItemIds[1]):find(outsideMark, 1, true), "item mark survives Fewer")
@@ -401,6 +446,7 @@ assert(emptyNote:find(a.L("BRANCH_INSPECT"), 1, true), "empty-alternative item r
 rowById(9731).scripts.OnClick()
 assert(u.quest == 9731 and u.dungeon == emptySingleDungeon and routes == 0, "empty-alternative item click inspects its own card without routing")
 assert(u:BackQuest() and u.quest == nil)
+renderComponent()
 render(emptyGuardDungeon)
 assert(noteOf(9732):find(itemMark, 1, true) and not noteOf(9732):find(outsideMark, 1, true), "item + nil stays PREP_item")
 assert(noteOf(9733):find(outsideMark, 1, true) and not noteOf(9733):find(itemMark, 1, true), "item + {{npcID}} stays PREP_outside")
@@ -417,6 +463,7 @@ end
 rowById(9735).scripts.OnClick()
 assert(u.quest == 9735 and u.dungeon == supportEmptyDungeon and routes == 0, "support empty-alternative click inspects its own card without routing")
 assert(u:BackQuest() and u.quest == nil)
+renderComponent()
 render(malformedDungeon)
 local _, malformed = summary()
 assert(#malformed.steps == 1 and malformed.steps[1].id == 9741, "malformed alternatives keep a listed pickup step")
@@ -449,12 +496,14 @@ local emptyMore = u.overviewMoreButton
 assert(emptyMore and emptyMore:IsShown(), "More control appears past the empty-alternative cap")
 assert(noteOf(manyEmptyIds[1]):find(itemMark, 1, true) and not noteOf(manyEmptyIds[1]):find(outsideMark, 1, true), "paged empty-alternative row keeps PREP_item")
 emptyMore.scripts.OnClick(emptyMore)
+renderComponent()
 local _, emptyExpanded = summary()
 assert(#emptyExpanded.steps == 8 and emptyExpanded.remainingSteps == 0, "More reveals the empty-alternative tail")
 assert(noteOf(manyEmptyIds[8]):find(itemMark, 1, true) and not noteOf(manyEmptyIds[8]):find(outsideMark, 1, true), "empty-alternative mark survives expansion")
 local emptyFewer = u.overviewFewerButton
 assert(emptyFewer and emptyFewer:IsShown(), "Fewer control appears after empty-alternative expansion")
 emptyFewer.scripts.OnClick(emptyFewer)
+renderComponent()
 local _, emptyCompacted = summary()
 assert(#emptyCompacted.steps == 6 and emptyCompacted.remainingSteps == 2, "Fewer restores the empty-alternative cap")
 assert(noteOf(manyEmptyIds[1]):find(itemMark, 1, true) and not noteOf(manyEmptyIds[1]):find(outsideMark, 1, true), "empty-alternative mark survives Fewer")
@@ -481,9 +530,11 @@ assert(not summonInsideNote:find(insideMark, 1, true), "summon inside never show
 rowById(9801).scripts.OnClick()
 assert(u.quest == 9801 and u.dungeon == summonDungeon and routes == 0, "summon pickup click inspects its own card without routing")
 assert(u:BackQuest() and u.quest == nil)
+renderComponent()
 rowById(9802).scripts.OnClick()
 assert(u.quest == 9802 and u.dungeon == summonDungeon and routes == 0, "summon inside click inspects its own card without routing")
 assert(u:BackQuest() and u.quest == nil)
+renderComponent()
 
 -- (11) supporting summon keeps SUPPORTING·UNCERTAIN·STATUS·INSPECT exactly once.
 a.quests[9811] = { id = 9811, name = "Listed summon parent", minLevel = 1, requirementsKnown = true, requires = { { ids = { 9812 } } } }
@@ -505,6 +556,7 @@ end
 rowById(9812).scripts.OnClick()
 assert(u.quest == 9812 and u.dungeon == supportSummonDungeon and routes == 0, "support-summon click inspects its own card without routing")
 assert(u:BackQuest() and u.quest == nil)
+renderComponent()
 
 -- (12) summonItem mutation retires overview ownership.
 render(summonDungeon)
@@ -545,9 +597,11 @@ assert(not noteOf(9831):find(itemMark, 1, true) and not noteOf(9832):find(itemMa
 rowById(9831).scripts.OnClick()
 assert(u.quest == 9831 and u.dungeon == mixedSummonDungeon and routes == 0, "mixed npc summon click inspects its own card without routing")
 assert(u:BackQuest() and u.quest == nil)
+renderComponent()
 rowById(9832).scripts.OnClick()
 assert(u.quest == 9832 and u.dungeon == mixedSummonDungeon and routes == 0, "mixed map summon click inspects its own card without routing")
 assert(u:BackQuest() and u.quest == nil)
+renderComponent()
 
 -- (14) garbage summonItem stays outside; clean item-only stays item without impurities.
 a.quests[9841] = { id = 9841, name = "String summon", minLevel = 1, requirementsKnown = true, start = { objectID = 112877, summonItem = "cord" } }
@@ -570,6 +624,7 @@ assert(not noteOf(9845):find(summonUncertain, 1, true), "clean item-only never s
 rowById(9845).scripts.OnClick()
 assert(u.quest == 9845 and u.dungeon == garbageSummonDungeon and routes == 0, "clean item click inspects its own card without routing")
 assert(u:BackQuest() and u.quest == nil)
+renderComponent()
 
 -- (15) regression: 9801/9802 stay uncertain; inner itemID and mapID mutations retire ownership.
 render(summonDungeon)
@@ -616,6 +671,7 @@ assert(not noteOf(9851):find(itemMark, 1, true), "summon + well-formed alternati
 rowById(9851).scripts.OnClick()
 assert(u.quest == 9851 and u.dungeon == summonAltDungeon and routes == 0, "summon alt click inspects its own card without routing")
 assert(u:BackQuest() and u.quest == nil)
+renderComponent()
 assert(noteOf(9852):find(summonUncertain, 1, true) and not noteOf(9852):find(outsideMark, 1, true), "summon + {} stays PREP_uncertain without outside (parity 9731)")
 assert(not noteOf(9852):find(itemMark, 1, true), "summon + {} never shows the item mark")
 assert(noteOf(9853):find(outsideMark, 1, true) and not noteOf(9853):find(summonUncertain, 1, true), "malformed summon alternatives stay PREP_outside without a crash (parity 9741)")
@@ -651,4 +707,4 @@ a.quests[9851].startAlternatives = originalAlt
 render(summonAltDungeon)
 assert(noteOf(9851):find(summonUncertain, 1, true) and not noteOf(9851):find(outsideMark, 1, true), "composition recovers after alternatives restore")
 
-print("Overview kinds UI: PASS (pickup/inside distinct + order + clicks; level/unknown under NEXT without availability or green; More/Fewer and dungeon-switch ownership; supporting-kind composition without doubles)")
+print("Overview kinds compatibility component: PASS (explicit real renderer, compact default preserved; pickup/inside distinct + order + clicks; level/unknown under NEXT without availability or green; More/Fewer and dungeon-switch ownership; supporting-kind composition without doubles)")
