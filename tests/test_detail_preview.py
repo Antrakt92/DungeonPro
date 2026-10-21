@@ -31,7 +31,7 @@ class OverviewPreview(unittest.TestCase):
     self.assertEqual(sum(prose in value for value in text),1,"authentic prose appears exactly once in every legacy alias")
     for key,ident in snapshot['roles'].items():
      if key.startswith('detailTab_'):self.assertFalse(visible(objects[ident]))
- def test_overview_actual_compact_panel_and_retained_central_plan(self):
+ def test_overview_actual_image_only_panel_and_retained_central_plan(self):
   for locale in ('enUS','ruRU'):
    for collapsed in ('','collapsed'):
     r=lua(CAPTURE,'overview:dm',locale,'',collapsed,'','155')
@@ -39,8 +39,11 @@ class OverviewPreview(unittest.TestCase):
     self.assertEqual(s['mode'],'overview');self.assertNotIn('questID',s);self.assertFalse(s['fixtureRewards'])
     self.assertNotIn('overview',s,"removed rendered summary must not be fabricated as preview metadata")
     panel=s['compactOverview'];self.assertEqual(panel['centralPlanRowCount'],9)
-    self.assertEqual(len(panel['texts']),3)
-    self.assertEqual(panel['texts'][2],'Select a listed quest to see its details and preparation steps.'if locale=='enUS'else'Выберите задание из списка, чтобы посмотреть его условия и подготовку.')
+    self.assertFalse(panel['texts'],"image-only overview has no title, range or prompt text")
+    self.assertGreater(panel['artWidth'],40);self.assertGreater(panel['artHeight'],40)
+    self.assertGreater(panel['artTexture'],0)
+    for provider in ('Description','QuestObjectives','QuestRewards','DialogueRewards'):
+     self.assertFalse(s['providerCalls'].get(provider),"overview must not hydrate selected-quest narrative or rewards")
     objects={row['id']:row for row in s['objects']}
     def visible(row):
      seen=set()
@@ -50,7 +53,11 @@ class OverviewPreview(unittest.TestCase):
      return True
     detail=s['roles']['detail']
     actual=[row.get('text','')for row in objects.values()if row.get('parent')==detail and row.get('text')and visible(row)]
-    self.assertEqual(actual,panel['texts'],"compact payload must describe actual rendered FontStrings, not a separate model")
+    self.assertEqual(actual,[],"actual visible detail FontStrings must be empty, not merely omitted from metadata")
+    art=objects[s['roles']['overviewArt']]
+    self.assertTrue(visible(art));self.assertEqual(art['parent'],detail);self.assertEqual(art['kind'],'Texture')
+    self.assertEqual(art['texture'],panel['artTexture'])
+    self.assertEqual(art['width'],panel['artWidth']);self.assertEqual(art['height'],panel['artHeight'])
     self.assertEqual(s['catalogCollapsed'],bool(collapsed));self.assertEqual(s['locale'],locale)
  def test_legacy_and_overview_check_commands(self):
   for args in [('check',),('overview:dm','enUS','','','','155','check'),('overview:dm','ruRU','','collapsed','','155','check')]:

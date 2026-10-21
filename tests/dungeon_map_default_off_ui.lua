@@ -13,7 +13,9 @@ u.OpenDungeonMap=function()opens=opens+1;return true end
 local function hidden()
  local b=assert(u.overviewMapControl)
  assert(not b:IsShown()and not b.enabled and b.scripts.OnClick==nil,"normal overview must not offer an unverified dungeon map")
- assert(u.overviewMapBinding==nil and (not u.overviewArt or not u.overviewArt:IsShown()))
+ assert(u.overviewMapBinding==nil,"dungeon illustration does not authorize a map binding")
+ assert(u.overviewArt and u.overviewArt:IsShown()and u.overviewArt.texture==a.DungeonArt(u.dungeon),"ordinary browsing retains the selected dungeon illustration")
+ for _,field in ipairs(u.details or{})do assert(not field:IsShown(),"illustration overview contains no duplicate text")end
 end
 u.dungeon,u.quest=a.dungeons[1],nil;u:Refresh();hidden()
 for _,d in ipairs(a.dungeons)do
@@ -32,4 +34,4 @@ a.db.locale="enUS";a.experimentalDungeonMaps=true;u:RefreshDetail();hidden()
 u.frame:Hide();u.frame.scripts.OnHide(u.frame);u.frame:Show();u:RefreshDetail();hidden()
 assert(fetches==0 and opens==0)
 a.DungeonMapSnapshot,u.OpenDungeonMap=provider,opener
-print("PASS default-off map entry: every dungeon, three locales, internal opt-in stays hidden, no browsing fetch or extra layout row")
+print("PASS default-off map entry: every dungeon illustration remains visible, three locales, internal map opt-in stays hidden, no browsing fetch or extra controls")

@@ -18,6 +18,7 @@ local narrative="Selected quest journal narrative marker."
 a.Description=function(id)if id==92458 then return narrative end end
 a.DialogueText=nil
 local routes,overviewReads,overviewPaints=0,0,0
+local lastArt
 a.Navigation={Start=function()routes=routes+1;return true end,Map=function()routes=routes+1;return true end}
 local overview=u.RenderPreparationOverview
 u.RenderPreparationOverview=function(self,...)
@@ -25,8 +26,15 @@ u.RenderPreparationOverview=function(self,...)
 end
 local painter=a.PaintDungeonArt
 a.PaintDungeonArt=function(texture,d,scope,...)
- if scope=="overview"then overviewPaints=overviewPaints+1 end
- if painter then return painter(texture,d,scope,...)end
+ if scope=="overview"then
+  overviewPaints=overviewPaints+1
+  lastArt={texture=texture,dungeon=d,show=select(1,...)}
+ end
+ if painter then
+  local ok,kind,aspect=painter(texture,d,scope,...)
+  if scope=="overview"then lastArt.aspect=aspect end
+  return ok,kind,aspect
+ end
 end
 local function visibleFields()
  local out={};for _,field in ipairs(u.details or{})do if field:IsShown()then out[#out+1]=field end end;return out
@@ -57,15 +65,20 @@ local function noControls(pool)
 end
 local function compact()
  assert(u.dungeon==dungeon and u.quest==nil and u.renderedQuest==nil,"overview owns no selected quest")
- assert(overviewReads==0 and overviewPaints==0,"compact overview does not hydrate duplicate preparation rows or dungeon artwork")
+ assert(overviewReads==0 and overviewPaints>0,"image-only overview paints art without hydrating preparation rows")
  local fields=visibleFields()
- assert(#fields==3,"right overview contains only dungeon title, level range and quest-selection prompt")
- assert(fields[1].text==a.DungeonName(dungeon)and fields[1].detailStyle=="title","dungeon title is the only right-pane heading")
- assert(fields[2].text==a.L("CATALOG_LEVELS",dungeon.minLevel,dungeon.maxLevel),"actual dungeon range remains readable")
- assert(fields[3].text==a.L("OVERVIEW_PICK"),"existing localized prompt directs quest selection to the middle column")
+ assert(#fields==0,"right overview does not repeat title, range, prompt or quest text")
  assert(not text(narrative)and not text(a.quests[92458].name),"old selected quest title and prose cannot survive overview selection")
  assert(u.action==nil and u.giverAction==nil and u.overviewBinding==nil,"overview publishes no quest action or duplicate preparation binding")
- assert(not u.overviewArt or not u.overviewArt:IsShown(),"overview does not show large dungeon artwork")
+ local art=assert(u.overviewArt)
+ assert(art:IsShown()and art.texture==a.DungeonArt(dungeon),"selected dungeon uses actual native artwork")
+ assert(lastArt and lastArt.texture==art and lastArt.dungeon==dungeon and type(lastArt.show)=="function","art is painted through an owned current callback")
+ local width=u.detail:GetWidth()-8
+ assert(math.abs(art:GetWidth()-width)<0.001,"illustration fits actual content width")
+ local aspect=dungeon.art.previewWidth/dungeon.art.previewHeight
+ assert(math.abs(lastArt.aspect-aspect)<0.001 and math.abs(art:GetHeight()-width/aspect)<0.001,"verified source aspect is contained without stretching")
+ assert(art.texCoords and art.texCoords[1]==0 and art.texCoords[2]==1 and art.texCoords[3]==0 and art.texCoords[4]==1,"whole overview illustration is retained")
+ assert(u.detail:GetHeight()>=art:GetHeight(),"scroll extent includes the complete illustration")
  for _,key in ipairs({"overviewMoreButton","overviewFewerButton","overviewMapControl","source"})do
   local control=u[key];assert(not control or not control:IsShown(),"compact overview has no extra right-pane actions: "..key)
  end
@@ -81,6 +94,8 @@ local function inspectCentral()
  assert(selected and selected.scripts.OnClick,"actual selected quest remains available in the middle column")
  selected.scripts.OnClick(selected,"LeftButton",false)
  assert(u.quest==92458 and u.renderedQuest==92458 and text(narrative),"actual central quest click still opens the selected journal")
+ assert(not u.overviewArt:IsShown(),"selected quest hides dungeon illustration")
+ assert(lastArt.show(lastArt.texture)==false and not u.overviewArt:IsShown(),"old artwork callback cannot revive an illustration over a newer quest")
  local title=assert(text(a.QuestName(92458)));assert(title.detailStyle=="title","selected quest retains journal title")
  local contact=assert(u.detailContactRows[1]);local binding=assert(contact.detailContactBinding)
  assert(contact:IsShown()and binding.questID==92458 and binding.endpoint==a.quests[92458].start and binding.current(),"selected journal retains exact current pickup contact")
@@ -102,5 +117,26 @@ for code in pairs(a.locales)do
 end
 end
 assert(localeCount==20,"all ten supported locales and both character filters exercise overview and journal transitions")
+selectDungeon()
+local viewportHeight=u.detailScroll:GetHeight()
+u.detailScroll:SetHeight(100);u:RefreshDetail()
+local art=assert(u.overviewArt)
+local aspect=dungeon.art.previewWidth/dungeon.art.previewHeight
+assert(art:IsShown()and math.abs(art:GetHeight()-76)<0.001,"small viewport contains the full illustration vertically")
+assert(math.abs(art:GetWidth()-76*aspect)<0.001,"small viewport preserves source aspect")
+assert(art:GetWidth()<u.detail:GetWidth()-8 and art.point and art.point[2]==u.detail and art.point[3]=="TOPLEFT"and
+ math.abs(art.point[4]-(4+(u.detail:GetWidth()-8-art:GetWidth())/2))<0.001,"narrower contained artwork remains centered")
+assert(#visibleFields()==0,"small viewport does not introduce duplicate text")
+u.detailScroll:SetHeight(viewportHeight);u:RefreshDetail();compact();inspectCentral()
+u.quest=nil;u:RefreshQuests();art:Hide()
+local scroll=u.detailScroll
+local viewportGetter,fired=scroll.GetHeight,false
+scroll.GetHeight=function(self)
+ fired=true;self.GetHeight=function()return 41 end
+ return 100
+end
+u:RefreshDetail();scroll.GetHeight=viewportGetter
+assert(fired and not art:IsShown(),"replaced viewport provider cannot publish artwork from stale geometry")
+u:RefreshDetail();compact();inspectCentral()
 assert(routes==0,"overview, central inspection and journal transitions never dispatch navigation automatically")
-print("PASS compact dungeon overview: title/range/prompt only; no duplicate right quests/actions/art; central discovery and journal transitions retained in ten locales (modeled only)")
+print("PASS image-only dungeon overview: native contained art, no duplicate right text/actions; central discovery, journal transitions and retired art callbacks retained in ten locales (modeled only)")

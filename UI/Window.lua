@@ -6679,20 +6679,63 @@ function UI:RefreshDetail(sourceFocus)
     else
         self:SetFooterEnabled(self.source, false)
         if renderDungeon then
-            local name = addon.Read(addon.DungeonName, "string", renderDungeon)
-            if not portraitCardCurrent() then return end
-            if line(name or addon.Clean(renderDungeon.name, "string") or addon.L("UNKNOWN_PLACE"), "title", nil, nil, portraitCardCurrent) == false then return end
-            local minimum, maximum = addon.Clean(renderDungeon.minLevel, "number"), addon.Clean(renderDungeon.maxLevel, "number")
-            if not portraitCardCurrent() then return end
-            if minimum and maximum and minimum > 0 and maximum >= minimum and minimum % 1 == 0 and maximum % 1 == 0 then
-                local shared = renderWingMetadata and addon.Clean(renderWingMetadata.complexKey, "string") == "sm" and
-                    addon.Clean(renderWingMetadata.levelScope, "string") == "complex"
-                if not portraitCardCurrent() then return end
-                local range = addon.L(shared and "SM_SHARED_LEVEL_RANGE" or "CATALOG_LEVELS", minimum, maximum)
-                if not portraitCardCurrent() or line(range, "caption", nil, nil, portraitCardCurrent) == false then return end
+            local painter, resolver, clean, read, checker = addon.PaintDungeonArt, addon.DungeonArt, addon.Clean, addon.Read, issecretvalue
+            local parent, scroll, art = self.detail, self.detailScroll, self.overviewArt
+            local viewportGetter = scroll and scroll.GetHeight
+            local rawArt, rawInstance = rawget(renderDungeon, "art"), rawget(renderDungeon, "instanceID")
+            local artDefinition = clean(rawArt, "table")
+            if not portraitCardCurrent() or addon.Clean ~= clean or addon.Read ~= read then return end
+            local artFields = {}
+            if artDefinition then
+                for _, key in ipairs({ "fileID", "gameMapID", "previewWidth", "previewHeight" }) do
+                    artFields[key] = rawget(artDefinition, key)
+                end
             end
-            local prompt = addon.L("OVERVIEW_PICK")
-            if not portraitCardCurrent() or line(prompt, nil, nil, nil, portraitCardCurrent) == false then return end
+            local function current()
+                local ok, valid = pcall(function()
+                    if not portraitCardCurrent() or self.detail ~= parent or self.detailScroll ~= scroll or self.overviewArt ~= art or
+                        (scroll and scroll.GetHeight ~= viewportGetter) or
+                        addon.PaintDungeonArt ~= painter or addon.DungeonArt ~= resolver or addon.Clean ~= clean or addon.Read ~= read or
+                        issecretvalue ~= checker or not rawequal(rawget(renderDungeon, "art"), rawArt) or
+                        not rawequal(rawget(renderDungeon, "instanceID"), rawInstance) then return false end
+                    if artDefinition then
+                        for _, key in ipairs({ "fileID", "gameMapID", "previewWidth", "previewHeight" }) do
+                            if not rawequal(rawget(artDefinition, key), artFields[key]) then return false end
+                        end
+                    end
+                    return true
+                end)
+                return ok and valid == true
+            end
+            if not current() then return end
+            if not art then
+                local ok, created = pcall(parent.CreateTexture, parent, nil, "ARTWORK")
+                if not current() then return end
+                if not ok or not created then return end
+                art, self.overviewArt = created, created
+            end
+            local viewport = read(viewportGetter, "number", scroll)
+            if not current() then return end
+            viewport = viewport and viewport > 40 and viewport < 10000 and viewport or 622
+            local size = math.min(contentWidth, viewport - 24)
+            if not sourceWrite(current, art, "ClearAllPoints") or
+                not sourceWrite(current, art, "SetPoint", nil, "TOPLEFT", parent, "TOPLEFT", 4, -4) or
+                not sourceWrite(current, art, "SetSize", nil, size, size) then return end
+            local ok, painted, _, aspect = pcall(painter, art, renderDungeon, "overview", function(texture)
+                return texture == art and sourceWrite(current, texture, "Show")
+            end)
+            if not current() then return end
+            if ok and clean(painted, "boolean") == true then
+                aspect = clean(aspect, "number")
+                if not current() then return end
+                aspect = aspect and aspect > 0 and aspect < 10000 and aspect or 1
+                local width = math.min(contentWidth, (viewport - 24) * aspect)
+                local height = width / aspect
+                if not sourceWrite(current, art, "SetSize", nil, width, height) or
+                    not sourceWrite(current, art, "ClearAllPoints") or
+                    not sourceWrite(current, art, "SetPoint", nil, "TOPLEFT", parent, "TOPLEFT", 4 + (contentWidth - width) / 2, -4) then return end
+                y = height + 8
+            elseif not sourceWrite(current, art, "Hide") then return end
         else line(addon.L("PICK")) end
     end
     if renderQuest and self.copyQuest == renderQuest and self.copy then

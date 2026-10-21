@@ -4,7 +4,7 @@
 
 ## 0.3.0 - 21-Oct-2026 — Quest details Beta
 
-- Keep quest selection in the middle list; show a compact dungeon heading until
+- Keep quest selection in the middle list; show the dungeon illustration until
   a quest is selected.
 - Read selected quest details in one stream, with objectives, items, rewards and
   practical source information before available quest text.

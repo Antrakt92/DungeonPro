@@ -160,16 +160,21 @@ end
 local compactOverview
 if overviewKey then
     assert(ui.overviewBinding==nil and ui.overviewMapBinding==nil and effects==0,"compact panel cannot publish removed summary/map bindings")
-    assert(not ui.overviewArt or not ui.overviewArt:IsShown(),"compact panel cannot retain right-side artwork")
+    local art=assert(ui.overviewArt,"selected dungeon illustration exists")
+    assert(art:IsShown()and art.texture==addon.DungeonArt(ui.dungeon),"capture uses actual selected dungeon artwork")
+    local width=ui.detail:GetWidth()-8
+    local source=ui.dungeon.art
+    local aspect=source and source.previewWidth and source.previewHeight and source.previewWidth/source.previewHeight or 1
+    assert(math.abs(art:GetWidth()-width)<0.001 and math.abs(art:GetHeight()-width/aspect)<0.001,"overview contains source aspect within content width")
+    assert(ui.detail:GetHeight()>=art:GetHeight(),"complete artwork fits scroll content")
     for _,row in ipairs(ui.actionInspectButtons or {})do assert(not row:IsShown(),"compact panel cannot repeat the middle quest list")end
     assert(not providerCalls.Description and not providerCalls.QuestObjectives and not providerCalls.QuestRewards and not providerCalls.DialogueRewards and rewardResults==0,"overview cannot display sample quest detail or native reward data")
     local texts={}
     for _,fs in ipairs(ui.details)do if fs:IsShown()then texts[#texts+1]=fs.text end end
-    assert(#texts==3,"compact selected-dungeon panel has only title, range and selection prompt")
-    assert(texts[1]==addon.DungeonName(ui.dungeon)and texts[3]==addon.L("OVERVIEW_PICK"),"capture must use actual localized compact content")
+    assert(#texts==0,"selected-dungeon panel contains only illustration, without duplicated title, range or prompt")
     assert(ui.currentPlan and ui.currentPlan.dungeon==ui.dungeon and ui.currentPlan.engine==ui.engine,"central plan remains actual and selected")
-    compactOverview={texts=texts,centralPlanRowCount=#ui.currentPlan.rows}
-    if checking then print("Offline compact overview geometry: PASS (actual title/range/prompt and central plan; native rendering unverified)");return end
+    compactOverview={texts=texts,artWidth=art:GetWidth(),artHeight=art:GetHeight(),artTexture=art.texture,centralPlanRowCount=#ui.currentPlan.rows}
+    if checking then print("Offline image-only overview geometry: PASS (actual contained dungeon art and central plan; native rendering unverified)");return end
 end
 if checking then print("Offline detail geometry: PASS (actual anchors, three reward tiles; native rendering unverified)"); return end
 local ids = {}; for index, object in ipairs(fixture.objects) do ids[object] = index end
@@ -189,7 +194,7 @@ for index, object in ipairs(fixture.objects) do
     objects[#objects+1]=row
 end
 local roles = {}
-for _, key in ipairs({"frame","catalogScroll","questScroll","detailScroll","detail","narrativeToggle","referenceToggle","title","giver","source","catalogToggle"}) do roles[key]=ids[ui[key]] end
+for _, key in ipairs({"frame","catalogScroll","questScroll","detailScroll","detail","overviewArt","narrativeToggle","referenceToggle","title","giver","source","catalogToggle"}) do roles[key]=ids[ui[key]] end
 for key, control in pairs(ui.detailTabButtons or {}) do roles["detailTab_" .. key] = ids[control] end
 local function quote(value)
     return '"' .. value:gsub('[%z\1-\31\\"]',function(char)
