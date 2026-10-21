@@ -546,6 +546,66 @@ function UI:HasSummonSource(endpoint)
     return relation ~= nil
 end
 
+-- Shared start-record predicates: one classification for list grouping and
+-- overview labels, so summon and item-only pickups never diverge by surface.
+-- A nil or non-table alternatives value counts as absent; the catalogue schema
+-- rejects such input and no live record carries it.
+function UI:IsEmptyAlternatives(value)
+    local list = addon.Clean(value, "table")
+    if list == nil then return true end
+    return #list == 0
+end
+
+-- Classify a pickup start once: "uncertain" for a summon pickup, "item" for an
+-- item-only starter, nil for ordinary or unshaped starts. Bounds, exclusivity
+-- and secret rejection mirror the overview shape rules; start-less records
+-- classify as nil and callers map a missing place to uncertain so the
+-- row/detail unknown-start wording stays truthful.
+function UI:PickupStartKind(start, alternatives)
+    local clean, read, checker = addon.Clean, addon.Read, issecretvalue
+    if type(clean) ~= "function" or type(read) ~= "function" then return nil end
+    local function restricted(value)
+        return type(checker) == "function" and read(checker, "boolean", value) ~= false
+    end
+    local function validID(value)
+        value = clean(value, "number")
+        if not value or value % 1 ~= 0 or value < 1 or value > 4294967295 then return nil end
+        return value
+    end
+    start = clean(start, "table")
+    if not start or restricted(start) then return nil end
+    local alternativeList
+    if alternatives ~= nil then
+        alternativeList = clean(alternatives, "table")
+        if not alternativeList then return nil end
+        if self:IsEmptyAlternatives(alternativeList) then
+            for _ in pairs(alternativeList) do return nil end
+        else
+            if restricted(alternatives) then return nil end
+            local count = 0
+            for key, entry in pairs(alternativeList) do
+                if type(key) ~= "number" or key % 1 ~= 0 or key < 1 then return nil end
+                if not clean(entry, "table") then return nil end
+                if restricted(entry) then return nil end
+                count = count + 1
+            end
+            if count ~= #alternativeList then return nil end
+        end
+    end
+    local hasAlternatives = alternativeList ~= nil and not self:IsEmptyAlternatives(alternativeList)
+    if validID(rawget(start, "objectID")) and rawget(start, "npcID") == nil and rawget(start, "itemID") == nil and
+        rawget(start, "mapID") == nil and rawget(start, "x") == nil and rawget(start, "y") == nil and
+        rawget(start, "reportedLocations") == nil and not restricted(rawget(start, "summonItem")) then
+        local summonItem = clean(rawget(start, "summonItem"), "table")
+        if summonItem and validID(rawget(summonItem, "itemID")) then return "uncertain" end
+    end
+    if not hasAlternatives and validID(rawget(start, "itemID")) and
+        rawget(start, "npcID") == nil and rawget(start, "objectID") == nil and not restricted(rawget(start, "itemID")) then
+        return "item"
+    end
+    return nil
+end
+
 -- Informational use-item relation for a mapless object endpoint, never a travel destination.
 function UI:SummonSource(endpoint)
     local clean, reader, checker = addon.Clean, addon.Read, issecretvalue
@@ -661,7 +721,7 @@ function UI:BindQuestRowNavigation(row, id, ownerCurrent)
     if summon then binding.inspect, binding.reason = true, "SOURCE_DETAILS_HINT"
     elseif declaredSummon then binding.reason = "GIVER_LOCATION_UNKNOWN"
     elseif rawSummon ~= nil and summon == nil then binding.reason = "QUEST_START_UNKNOWN"
-    elseif definition and rawequal(rawStart, nil) and alternativeCount == 0 then binding.reason = "QUEST_START_UNKNOWN"
+    elseif definition and rawequal(rawStart, nil) and UI:IsEmptyAlternatives(alternatives) then binding.reason = "QUEST_START_UNKNOWN"
     elseif rawValues.itemID ~= nil then
         if itemOnly and readable and values.itemID > 0 and values.itemID <= 4294967295 and values.itemID % 1 == 0 then
             binding.inspect, binding.reason = true, "START_ITEM_NAVIGATION"

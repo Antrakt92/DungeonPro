@@ -20,8 +20,10 @@ local routes = 0
 a.Navigation = { Start = function() routes = routes + 1; return true end, Map = function() routes = routes + 1; return true end }
 
 -- Controlled catalogue, not new facts: two pickups (outside/inside), one level gate, one unknown.
+-- Outside/inside steps model ordinary giver starts; start-less coverage lives with 9503 below.
 a.quests = {
-    [9001] = { id = 9001, name = "Outside pickup", minLevel = 1, requirementsKnown = true },
+    [9001] = { id = 9001, name = "Outside pickup", minLevel = 1, requirementsKnown = true,
+        start = { npcID = 90001, name = "Outside giver", mapID = 1436, x = 10, y = 20 } },
     [9002] = { id = 9002, name = "Inside pickup", minLevel = 1, requirementsKnown = true, startsInside = true },
     [9003] = { id = 9003, name = "Level gate", minLevel = 100, requirementsKnown = true },
     [9004] = { id = 9004, name = "Unknown work", minLevel = 1, requirementsKnown = false },
@@ -156,7 +158,8 @@ local manyIds = {}
 for index = 1, 8 do
     local id = 9100 + index
     manyIds[index] = id
-    a.quests[id] = { id = id, name = "Many step " .. index, minLevel = 1, requirementsKnown = true, startsInside = index == 3 }
+    a.quests[id] = { id = id, name = "Many step " .. index, minLevel = 1, requirementsKnown = true, startsInside = index == 3,
+        start = { npcID = 91000 + index, name = "Many giver " .. index, mapID = 1436, x = 10 + index, y = 20 } }
 end
 a.quests[9200] = { id = 9200, name = "Many level", minLevel = 100, requirementsKnown = true }
 manyIds[#manyIds + 1] = 9200
@@ -192,7 +195,8 @@ assert(u.quest == nil and routes == 0, "retired many-dungeon row cannot inspect 
 
 -- (4) supporting x kind: shared support appears once as SUPPORTING·KIND·STATUS·INSPECT.
 a.quests[9301] = { id = 9301, name = "Listed one", minLevel = 1, requirementsKnown = true, requires = { { ids = { 9302 } } } }
-a.quests[9302] = { id = 9302, name = "Support outside", minLevel = 1, requirementsKnown = true }
+a.quests[9302] = { id = 9302, name = "Support outside", minLevel = 1, requirementsKnown = true,
+    start = { npcID = 93021, name = "Support giver", mapID = 1436, x = 11, y = 21 } }
 a.quests[9303] = { id = 9303, name = "Listed two", minLevel = 1, requirementsKnown = true, requires = { { ids = { 9304 } } } }
 a.quests[9304] = { id = 9304, name = "Support inside", minLevel = 1, requirementsKnown = true, startsInside = true }
 a.quests[9305] = { id = 9305, name = "Listed three", minLevel = 1, requirementsKnown = true, requires = { { ids = { 9306 } } } }
@@ -293,7 +297,8 @@ for index = 1, 8 do
     local target, support = 9410 + index, 9430 + index
     supTargets[index], supSupports[index] = target, support
     a.quests[target] = { id = target, name = "Support target " .. index, minLevel = 1, requirementsKnown = true, requires = { { ids = { support } } } }
-    a.quests[support] = { id = support, name = "Support pickup " .. index, minLevel = 1, requirementsKnown = true }
+    a.quests[support] = { id = support, name = "Support pickup " .. index, minLevel = 1, requirementsKnown = true,
+        start = { npcID = 94300 + index, name = "Support many giver " .. index, mapID = 1436, x = 12 + index, y = 22 } }
 end
 local supManyDungeon = { key = "controlled-support-many", name = "Support many fixture", minLevel = 1, maxLevel = 60, coverage = "partial", quests = supTargets }
 a.dungeons = { kindsDungeon, manyDungeon, supportDungeon, sharedDungeon, supManyDungeon }
@@ -367,7 +372,7 @@ end
 a.db.locale = "enUS"
 render(itemMixedDungeon)
 assert(noteOf(9502):find(outsideMark, 1, true) and not noteOf(9502):find(itemMark, 1, true), "giver starter stays outside")
-assert(noteOf(9503):find(outsideMark, 1, true) and not noteOf(9503):find(itemMark, 1, true), "nil starter stays outside")
+assert(noteOf(9503):find(a.L("PREP_uncertain"), 1, true) and not noteOf(9503):find(outsideMark, 1, true), "nil starter stays uncertain like row/detail unknown-start, never outside")
 assert(noteOf(9504):find(outsideMark, 1, true) and not noteOf(9504):find(itemMark, 1, true), "mixed starter stays outside")
 assert(noteOf(9505):find(outsideMark, 1, true) and not noteOf(9505):find(itemMark, 1, true), "alternative starter stays outside")
 assert(noteOf(9506):find(outsideMark, 1, true) and not noteOf(9506):find(itemMark, 1, true), "invalid item starter stays outside")
@@ -709,5 +714,34 @@ assert(u.quest == nil and routes == 0, "retired summon-alt row cannot inspect af
 a.quests[9851].startAlternatives = originalAlt
 render(summonAltDungeon)
 assert(noteOf(9851):find(summonUncertain, 1, true) and not noteOf(9851):find(outsideMark, 1, true), "composition recovers after alternatives restore")
+
+-- (17) U1/U2/U4 pickup-kind agreement: catalogue-modeled summon (2204 shape),
+-- item-only with drop sources (2198 shape), start-less and ordinary giver.
+a.quests[9861] = { id = 9861, name = "Modeled summon pickup", minLevel = 1, requirementsKnown = true,
+    start = { objectID = 112877, name = "Talvash's Scrying Bowl", summonItem = { itemID = 7667, name = "Talvash's Phial of Scrying" } } }
+a.quests[9862] = { id = 9862, name = "Modeled item starter", minLevel = 1, requirementsKnown = true,
+    start = { itemID = 7666, name = "Shattered Necklace",
+        dropSources = { { npcID = 4852, name = "Stonevault Oracle", locationName = "Uldaman", zoneName = "Uldaman" } } } }
+a.quests[9863] = { id = 9863, name = "Modeled start-less", minLevel = 1, requirementsKnown = true }
+a.quests[9864] = { id = 9864, name = "Modeled ordinary giver", minLevel = 1, requirementsKnown = true,
+    start = { npcID = 98641, name = "Modeled giver", mapID = 1436, x = 13, y = 23 } }
+local modeledDungeon = { key = "controlled-modeled-pickup", name = "Modeled pickup fixture", minLevel = 1, maxLevel = 60, coverage = "partial", quests = { 9861, 9862, 9863, 9864 } }
+a.dungeons[#a.dungeons + 1] = modeledDungeon
+render(modeledDungeon)
+local _, modeled = summary()
+assert(#modeled.steps == 4, "modeled pickup fixture keeps all four listed pickups")
+assert(modeled.steps[1].kind == "pickup" and modeled.steps[2].kind == "pickup" and
+    modeled.steps[3].kind == "pickup" and modeled.steps[4].kind == "pickup", "modeled steps stay engine pickups")
+assert(noteOf(9861):find(summonUncertain, 1, true) and not noteOf(9861):find(outsideMark, 1, true), "2204-modeled summon stays PREP_uncertain without outside")
+assert(not noteOf(9861):find(itemMark, 1, true), "2204-modeled summon never shows the item mark")
+assert(noteOf(9862):find(itemMark, 1, true) and not noteOf(9862):find(outsideMark, 1, true), "2198-modeled item starter stays PREP_item without outside")
+assert(not noteOf(9862):find(summonUncertain, 1, true), "2198-modeled item starter never shows uncertain despite drop sources")
+assert(noteOf(9863):find(summonUncertain, 1, true) and not noteOf(9863):find(outsideMark, 1, true), "modeled start-less stays PREP_uncertain without outside")
+assert(noteOf(9864):find(outsideMark, 1, true) and not noteOf(9864):find(summonUncertain, 1, true), "modeled ordinary giver stays PREP_outside")
+assert(not noteOf(9864):find(itemMark, 1, true), "modeled ordinary giver never shows the item mark")
+rowById(9861).scripts.OnClick()
+assert(u.quest == 9861 and u.dungeon == modeledDungeon and routes == 0, "modeled summon click inspects its own card without routing")
+assert(u:BackQuest() and u.quest == nil)
+renderComponent()
 
 print("Overview kinds compatibility component: PASS (explicit real renderer, compact default preserved; pickup/inside distinct + order + clicks; level/unknown under NEXT without availability or green; More/Fewer and dungeon-switch ownership; supporting-kind composition without doubles)")

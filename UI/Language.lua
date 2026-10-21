@@ -253,14 +253,23 @@ end
 function Language:Leave(state)
     if not current(state) then return end
     local token = {}; state.leave = token
+    state.leaveElapsed = 0
     local function stop()
         if self.session == state and state.leave == token then
             state.leave = nil; invoke(state.popup, "SetScript", "OnUpdate", nil)
         end
     end
-    invoke(state.popup, "SetScript", "OnUpdate", function()
+    -- Sampled like the map-marker ticker: accumulate frame deltas and read
+    -- hover state at most every 0.1s instead of paying up to 13 IsMouseOver
+    -- reads per frame. Cancellation still follows the first settled sample.
+    invoke(state.popup, "SetScript", "OnUpdate", function(_, elapsed)
         if state.leave ~= token or self.session ~= state then return end
         if not current(state) then stop(); return end
+        elapsed = addon.Clean(elapsed, "number")
+        if not elapsed or elapsed < 0 then return end
+        state.leaveElapsed = (state.leaveElapsed or 0) + elapsed
+        if state.leaveElapsed < 0.1 then return end
+        state.leaveElapsed = 0
         stop()
         local buttonOver = addon.Read(method(state.button, "IsMouseOver"), "boolean", state.button)
         local popupOver = addon.Read(method(state.popup, "IsMouseOver"), "boolean", state.popup)

@@ -38,7 +38,7 @@ end
 
 function UI:InspectQuest(id, refreshList, sourceFocus)
     id = addon.Clean(id, "number")
-    if not id or id <= 0 or id % 1 ~= 0 then return false end
+    if not id or id <= 0 or id > 9007199254740991 or id % 1 ~= 0 then return false end
     local history, dungeon = self.detailHistory, self.dungeon
     local offsets = self:HistoryOffsets()
     local revision = {}

@@ -2472,12 +2472,23 @@ function UI:RefreshQuests()
         local entries = plan.rows
         if self.preparation then
             entries = {}
-            local groups = { outside = {}, inside = {}, level = {}, progress = {}, uncertain = {}, unavailable = {} }
+            local groups = { outside = {}, inside = {}, item = {}, level = {}, progress = {}, uncertain = {}, unavailable = {} }
+            -- Shared pickup-shape authority (QuestNavigation, earlier in TOC order)
+            -- so list grouping cannot diverge from overview labels.
+            local questSources = addon.QuestNavigation
+            local classifyPickup = questSources and questSources.PickupStartKind
+            if type(classifyPickup) ~= "function" then classifyPickup, questSources = nil, nil end
             for _, action in ipairs(plan.actions) do
                 local q, group = addon.quests[action.id], "progress"
                 if action.kind == "level" then group = "level"
                 elseif action.kind == "inside" or (action.kind == "pickup" and q and q.startsInside) then group = "inside"
-                elseif action.kind == "pickup" then group = "outside" end
+                elseif action.kind == "pickup" then
+                    local pickupKind = (classifyPickup and q) and classifyPickup(questSources, q.start, q.startAlternatives) or nil
+                    if pickupKind == "uncertain" then group = "uncertain"
+                    elseif pickupKind == "item" then group = "item"
+                    elseif action.place == nil then group = "uncertain"
+                    else group = "outside" end
+                end
                 local rows = groups[group]
                 rows[#rows + 1] = { id = action.id, state = engine:State(action.id), action = action }
             end
@@ -2487,7 +2498,7 @@ function UI:RefreshQuests()
                 if entry.state.status == "UNAVAILABLE" then groups.unavailable[#groups.unavailable + 1] = entry
                 elseif entry.state.status == "UNKNOWN" or uncertain then groups.uncertain[#groups.uncertain + 1] = entry end
             end
-            for _, group in ipairs({ "outside", "inside", "level", "progress", "uncertain", "unavailable" }) do
+            for _, group in ipairs({ "outside", "inside", "item", "level", "progress", "uncertain", "unavailable" }) do
                 if #groups[group] > 0 then
                     entries[#entries + 1] = { heading = "PREP_" .. group }
                     for _, entry in ipairs(groups[group]) do entries[#entries + 1] = entry end
@@ -2629,7 +2640,23 @@ function UI:RefreshQuests()
                 elseif entry.action then
                     local action = entry.action
                     note = addon.L(action.kind) .. (action.level and (" " .. action.level) or "")
-                    if action.place then note = note .. " — " .. giverName(action.place) end
+                    if action.place then
+                        -- Reviewed locale names via proofs, like the row hover hint
+                        -- and detail card; stale proofs fall back to today's output.
+                        local sourceNameGetter, sourceAreaGetter = addon.SourceName, addon.SourceAreaName
+                        local nameProofs = {}
+                        local function namesCurrent(proofs)
+                            if addon.SourceName ~= sourceNameGetter or addon.SourceAreaName ~= sourceAreaGetter then return false end
+                            for _, proof in ipairs(proofs) do if addon.Read(proof, "boolean") ~= true then return false end end
+                            return addon.SourceName == sourceNameGetter and addon.SourceAreaName == sourceAreaGetter and current()
+                        end
+                        local localizedGiver = giverName(action.place, current, nameProofs)
+                        if type(localizedGiver) == "string" and localizedGiver:find("%S") and namesCurrent(nameProofs) then
+                            note = note .. " — " .. localizedGiver
+                        else
+                            note = note .. " — " .. giverName(action.place)
+                        end
+                    end
                 elseif state.reason == "level" then
                     note = addon.L("level") .. " " .. addon.quests[id].minLevel
                 end
@@ -4567,6 +4594,12 @@ function UI:RefreshDetail(sourceFocus)
             return current()
         end
         local function isEmptyAlternatives(value)
+            -- Single shared helper (QuestNavigation, earlier in TOC order);
+            -- a nil or non-table value counts as absent. Local fallback keeps
+            -- today's shape if the shared helper is ever unavailable.
+            local questSources = addon.QuestNavigation
+            local helper = questSources and questSources.IsEmptyAlternatives
+            if type(helper) == "function" then return helper(questSources, value) == true end
             local list = addon.Clean(value, "table")
             return list ~= nil and #list == 0
         end

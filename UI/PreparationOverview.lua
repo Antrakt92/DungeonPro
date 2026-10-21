@@ -87,6 +87,9 @@ function UI:RenderPreparationOverview(ownerCurrent, width, offset, presentation)
         local binding = { formatStatus = rawget(presentation,"formatStatus"), geometryWrite = rawget(presentation,"geometryWrite"), presentation = presentation, plan = plan, engine = renderEngine, base = portraitCardCurrent, listCurrent = listCurrent, listRaw = listRaw, titles = {}, starters = {} }
         local localize, read, clean, checker = addon.L, addon.Read, addon.Clean, issecretvalue
         local inspect, keyGetter, dictionaryGetter = self.InspectQuest, self.CatalogLanguageKey, addon.GetNameTranslations
+        -- Shared pickup-shape authority lives on the earlier QuestNavigation
+        -- module (TOC order), so list grouping and these labels cannot diverge.
+        local questSources = addon.QuestNavigation
         local database, language, frame = addon.db, addon.Language, self.frame
         local choice = type(database) == "table" and rawget(database,"locale")
         local preview = type(language) == "table" and rawget(language,"GetSelection")
@@ -109,6 +112,7 @@ function UI:RenderPreparationOverview(ownerCurrent, width, offset, presentation)
                 addon.UI == self and self.frame == frame and self.currentPlan == binding.plan and binding.plan.current == binding.listCurrent and binding.plan.rawCurrent == binding.listRaw and
                 addon.DungeonOverview == provider and provider.Get == get and addon.L == localize and addon.Read == read and
                 addon.Clean == clean and issecretvalue == checker and self.InspectQuest == inspect and self.CatalogLanguageKey == keyGetter and
+                addon.QuestNavigation == questSources and
                 addon.GetNameTranslations == dictionaryGetter and addon.CachedQuestName == titleGetter and addon.quests == definitions and
                 addon.db == database and (type(database) ~= "table" or rawequal(rawget(database,"locale"),choice)) and
                 addon.Language == language and (type(language) ~= "table" or rawequal(rawget(language,"GetSelection"),preview)) and
@@ -199,12 +203,24 @@ function UI:RenderPreparationOverview(ownerCurrent, width, offset, presentation)
             for _, title in ipairs(binding.titles) do if titleCounts[title.text]>1 then title.text=title.text.." #"..title.id end end
             local starterById = {}
             for _, starter in ipairs(binding.starters) do starterById[starter.id] = starter end
+            local function sharedEmpty(value)
+                local helper = questSources and questSources.IsEmptyAlternatives
+                if type(helper) ~= "function" then return nil end
+                return helper(questSources, value)
+            end
+            local function sharedPickupKind(start, alternatives)
+                local classifier = questSources and questSources.PickupStartKind
+                if type(classifier) ~= "function" then return nil end
+                return classifier(questSources, start, alternatives)
+            end
+            -- Snapshot/ownership gates stay local; the shape verdict is single-sourced
+            -- from the shared classifier so overview labels and list grouping agree.
             local function isItemOnlyPickup(stepID)
                 local starter = starterById[stepID]
                 if not starter then return false end
                 if starter.alternatives ~= nil then
                     local alternativeList = clean(starter.alternatives,"table")
-                    if not alternativeList or #alternativeList ~= 0 then return false end
+                    if not alternativeList or not sharedEmpty(alternativeList) then return false end
                 end
                 if starter.npcID ~= nil or starter.objectID ~= nil then return false end
                 if type(starter.start) ~= "table" then return false end
@@ -214,9 +230,7 @@ function UI:RenderPreparationOverview(ownerCurrent, width, offset, presentation)
                     if read(checker,"boolean",starter.itemID) ~= false then return false end
                     if read(checker,"boolean",starter.alternatives) ~= false then return false end
                 end
-                local itemID = clean(starter.itemID,"number")
-                if not itemID or itemID % 1 ~= 0 or itemID < 1 or itemID > 4294967295 then return false end
-                return true
+                return sharedPickupKind(starter.start, starter.alternatives) == "item"
             end
             local function isSummonPickup(stepID)
                 local starter = starterById[stepID]
@@ -224,18 +238,8 @@ function UI:RenderPreparationOverview(ownerCurrent, width, offset, presentation)
                 if starter.alternatives ~= nil then
                     local alternativeList = clean(starter.alternatives,"table")
                     if not alternativeList then return false end
-                    if #alternativeList == 0 then
+                    if sharedEmpty(alternativeList) then
                         for _ in pairs(alternativeList) do return false end
-                    else
-                        if type(checker) == "function" and read(checker,"boolean",starter.alternatives) ~= false then return false end
-                        local count = 0
-                        for key, entry in pairs(alternativeList) do
-                            if type(key) ~= "number" or key % 1 ~= 0 or key < 1 then return false end
-                            if not clean(entry,"table") then return false end
-                            if type(checker) == "function" and read(checker,"boolean",entry) ~= false then return false end
-                            count = count + 1
-                        end
-                        if count ~= #alternativeList then return false end
                     end
                 end
                 if type(starter.start) ~= "table" then return false end
@@ -245,14 +249,7 @@ function UI:RenderPreparationOverview(ownerCurrent, width, offset, presentation)
                     if read(checker,"boolean",starter.summonItem) ~= false then return false end
                     if read(checker,"boolean",starter.alternatives) ~= false then return false end
                 end
-                local objectID = clean(starter.objectID,"number")
-                if not objectID or objectID % 1 ~= 0 or objectID < 1 or objectID > 4294967295 then return false end
-                if starter.npcID ~= nil or starter.itemID ~= nil then return false end
-                if starter.mapID ~= nil or starter.x ~= nil or starter.y ~= nil or starter.reportedLocations ~= nil then return false end
-                if not clean(starter.summonItem,"table") then return false end
-                local summonItemID = clean(starter.summonItemID,"number")
-                if not summonItemID or summonItemID % 1 ~= 0 or summonItemID < 1 or summonItemID > 4294967295 then return false end
-                return true
+                return sharedPickupKind(starter.start, starter.alternatives) == "uncertain"
             end
             local textIndex=0
             local function summaryLine(value,style)
@@ -316,7 +313,13 @@ function UI:RenderPreparationOverview(ownerCurrent, width, offset, presentation)
                     if stepStatus == "UNKNOWN" then kindKey = "PREP_uncertain"
                     elseif step.kind == "pickup" then
                         if isSummonPickup(step.id) then kindKey = "PREP_uncertain"
-                        elseif isItemOnlyPickup(step.id) then kindKey = "PREP_item" else kindKey = "PREP_outside" end
+                        elseif isItemOnlyPickup(step.id) then kindKey = "PREP_item"
+                        else
+                            -- Start-less records carry no place; row/detail stay
+                            -- honest with unknown-start, so the label does too.
+                            local starter = starterById[step.id]
+                            kindKey = (starter and starter.start ~= nil) and "PREP_outside" or "PREP_uncertain"
+                        end
                     elseif step.kind == "inside" then
                         if isSummonPickup(step.id) then kindKey = "PREP_uncertain" else kindKey = "PREP_inside" end
                     elseif step.kind == "level" then kindKey = "PREP_level"

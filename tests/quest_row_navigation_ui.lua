@@ -436,4 +436,78 @@ do
  end
  addon.quests[990101].start=savedStart;refreshRows()
 end
+-- U5/U6 SHARED-EMPTINESS: one helper answers nil/empty/malformed inputs directly.
+do
+ assert(ui:IsEmptyAlternatives(nil)==true,"nil alternatives count as absent")
+ assert(ui:IsEmptyAlternatives({})==true,"empty alternatives count as absent")
+ assert(ui:IsEmptyAlternatives({{npcID=5}})==false,"non-empty alternatives stay present")
+ assert(ui:IsEmptyAlternatives(5)==true,"non-table alternatives count as absent without a crash")
+ assert(ui:IsEmptyAlternatives("cord")==true,"string alternatives count as absent without a crash")
+ assert(ui:PickupStartKind(nil,nil)==nil,"missing start classifies as ordinary")
+ assert(ui:PickupStartKind({itemID=801},5)==nil,"malformed alternatives keep item starters unshaped")
+ assert(ui:PickupStartKind({itemID=801,name="Own starter"})=="item","item-only starter classifies once")
+ assert(ui:PickupStartKind({objectID=112877,summonItem={itemID=7667}})=="uncertain","summon pickup classifies once")
+end
+-- U1/U2/U4 LIST-KIND-AGREEMENT + U3 ROW-NOTE-LOCALE: preparation grouping and
+-- row notes share the overview shape authority and reviewed locale names.
+do
+ addon.quests[991201]={id=991201,name="List summon pickup",minLevel=1,requirementsKnown=true,
+  start={objectID=112877,name="Scrying Bowl",summonItem={itemID=7667,name="Summon tool"}}}
+ addon.quests[991202]={id=991202,name="List item starter",minLevel=1,requirementsKnown=true,
+  start={itemID=7666,name="Shattered Necklace",
+   dropSources={{npcID=4852,name="Stonevault Oracle",locationName="Uldaman",zoneName="Uldaman"}}}}
+ addon.quests[991203]={id=991203,name="List start-less",minLevel=1,requirementsKnown=true}
+ addon.quests[991204]={id=991204,name="List ordinary giver",minLevel=1,requirementsKnown=true,
+  start={npcID=991204,name="Ordinary giver",mapID=1453,x=10,y=20}}
+ addon.quests[991205]={id=991205,name="List bottle object",minLevel=1,requirementsKnown=true,
+  start={objectID=142702,name="Venom Bottle",mapID=1425,x=23.6,y=58.7}}
+ local kindDungeon={key="pickup-kind-list",name="Pickup kind list",minLevel=1,maxLevel=80,
+  quests={991201,991202,991203,991204,991205}}
+ local savedDungeon,savedQuest,savedPrep,savedRoot,savedRootDungeon,savedLocale,savedSource=
+  ui.dungeon,ui.quest,ui.preparation,ui.questTreeRoot,ui.questTreeDungeon,addon.db.locale,addon.SourceName
+ local function preparationHeadings()
+  ui.dungeon,ui.quest,ui.preparation=kindDungeon,nil,true
+  ui.questTreeRoot,ui.questTreeDungeon,ui.search,ui.includeUnavailable=nil,nil,"",true
+  ui.frame:Show();ui:RefreshQuests();ui:RefreshDetail()
+  local group,found=nil,{}
+  for _,r in ipairs(ui.rows)do
+   if r:IsShown()then
+    if r.heading then group=r.heading
+    elseif r.questID then found[r.questID]=group end
+   end
+  end
+  return found
+ end
+ local function prepNote(id)
+  for _,r in ipairs(ui.rows)do if r:IsShown()and not r.heading and r.questID==id then return r.note.text end end
+  error("missing preparation row "..id)
+ end
+ local groups=preparationHeadings()
+ assert(groups[991201]=="PREP_uncertain","2204-modeled summon pickup lists under uncertain, not outside")
+ assert(groups[991202]=="PREP_item","2198-modeled item starter lists under item, not outside")
+ assert(groups[991203]=="PREP_uncertain","start-less pickup lists under uncertain, not outside")
+ assert(groups[991204]=="PREP_outside","ordinary giver pickup stays outside")
+ assert(groups[991205]=="PREP_outside","ordinary object pickup stays outside")
+ addon.SourceName=function(point,owner)
+  if owner and not owner()then return nil end
+  if point.objectID==142702 and addon.db.locale=="ruRU" then
+   local raw=point.name
+   local function current()return addon.db.locale=="ruRU" and point.name==raw and point.objectID==142702 end
+   return "Reviewed bottle label",current,current
+  end
+  return savedSource(point,owner)
+ end
+ addon.db.locale="ruRU"
+ preparationHeadings()
+ local bottleNote=prepNote(991205)
+ assert(bottleNote:find("Reviewed bottle label",1,true),"row note carries the reviewed locale giver name")
+ assert(not bottleNote:find("Venom Bottle",1,true),"row note replaces the source-language giver name")
+ addon.SourceName=savedSource;addon.db.locale=savedLocale
+ preparationHeadings()
+ assert(prepNote(991205):find("Venom Bottle",1,true),"restored resolver keeps the source-language note")
+ ui.dungeon,ui.quest,ui.preparation=savedDungeon,savedQuest,savedPrep
+ ui.questTreeRoot,ui.questTreeDungeon=savedRoot,savedRootDungeon
+ for _,id in ipairs({991201,991202,991203,991204,991205})do addon.quests[id]=nil end
+ ui:Refresh()
+end
 print("Middle quest navigation checks passed (modeled, no native input or layout proof)")
