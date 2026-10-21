@@ -1412,6 +1412,30 @@ class CatalogTests(unittest.TestCase):
             with self.subTest(missing=missing), self.assertRaises(ValueError):
                 catalog.validate(broken)
 
+    def test_catalogue_checked_date_rejects_malformed_and_nonstring_values(self):
+        for checked in ("16-10-2026", "2026-13-01", "2026-00-10", "2026-01-32",
+                        "", " ", "October 16 2026", "2026/10/16", "16-10-26",
+                        None, False, True, 20261016, 2026.0, [], {}):
+            data = self.minimal_catalog()
+            data["checked"] = checked
+            with self.subTest(checked=repr(checked)), self.assertRaisesRegex(ValueError, "checked"):
+                catalog.validate(data)
+        for checked in ("2026-10-16", "2026-01-01", "2026-12-31"):
+            data = self.minimal_catalog()
+            data["checked"] = checked
+            catalog.validate(data)
+
+    def test_dungeon_source_rejects_empty_and_nonurl_values(self):
+        for source in ("", " ", "not a url", "Recorded guide", "javascript:invalid",
+                       "/relative", "https://", "https://[broken",
+                       None, False, True, 1, {}, []):
+            data = self.minimal_catalog()
+            data["dungeons"][0]["source"] = source
+            with self.subTest(source=repr(source)), self.assertRaisesRegex(ValueError, "guide source"):
+                catalog.validate(data)
+        data = self.minimal_catalog()
+        data["dungeons"][0]["source"] = "https://www.wowhead.com/forever/zone=718"
+        catalog.validate(data)
 
     def test_wing_metadata_requires_a_known_wing_and_instance(self):
         for wing in (None, False, 1, {}, [], "", "north", "LOWER"):

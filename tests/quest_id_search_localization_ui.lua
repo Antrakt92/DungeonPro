@@ -21,10 +21,17 @@ local function cards(id,expected)
     return result
 end
 local locales={"zhCN","enUS","ruRU","deDE","frFR","esES","itIT","ptBR","koKR","zhTW"}
+-- Reviewed quest-1654 titles; a translation change must update this pin deliberately.
+local pinnedTitles={
+    enUS="The Test of Righteousness",deDE="Die Prüfung der Rechtschaffenheit",frFR="Le test de droiture",
+    esES="La prueba de rectitud",itIT="La prova della rettitudine",ptBR="A prova da retidão",
+    ruRU="Испытание доблести",koKR="정의의 시험",zhCN="正义试炼",zhTW="正義試煉",
+}
 for _,locale in ipairs(locales)do
     addon.db.locale=locale;ui.search=" 1654 ";reads=0
     ui:RefreshDungeons()
     local expected=cached(1654)or addon.quests[1654].name
+    assert(expected==pinnedTitles[locale],"numeric ID search uses the reviewed title for "..locale)
     local initial=cards(1654,expected);local notes={}
     assert(reads==1,"initial ID search memoizes one pure title read across three parents")
     for index,card in ipairs(initial)do notes[index]=card.note.text end

@@ -31,6 +31,8 @@ class PackageTests(unittest.TestCase):
                     self.assertEqual(archive.read("DungeonPro/" + name), (ROOT / name).read_bytes())
                 self.assertFalse(any("tests/" in p or "scripts/" in p or "data/" in p or "Media/Flags/" in p for p in names))
                 self.assertTrue(all(p.startswith("DungeonPro/") for p in names))
+                for info in archive.infolist():
+                    self.assertEqual(info.create_system, 0, f"host-independent archive: {info.filename}")
 
     def test_default_archive_name_and_required_toc_follow_the_new_addon_identifier(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -59,6 +61,23 @@ class PackageTests(unittest.TestCase):
             _, a = packager.package(output=Path(tmp) / "a.zip")
             _, b = packager.package(output=Path(tmp) / "b.zip")
             self.assertEqual(a, b)
+
+    def test_archive_pins_create_system_zero_even_for_foreign_host_defaults(self):
+        native = zipfile.ZipInfo
+
+        class ForeignHostZipInfo(native):
+            def __init__(self, filename, date_time=(2026, 1, 1, 0, 0, 0)):
+                super().__init__(filename, date_time)
+                self.create_system = 3  # Simulate a Unix builder on any host.
+
+        with mock.patch.object(zipfile, "ZipInfo", ForeignHostZipInfo):
+            with tempfile.TemporaryDirectory() as tmp:
+                path, _ = packager.package(output=Path(tmp) / "addon.zip")
+                with zipfile.ZipFile(path) as archive:
+                    infos = archive.infolist()
+        self.assertTrue(infos, "expected a non-empty installable archive")
+        for info in infos:
+            self.assertEqual(info.create_system, 0, f"host-independent archive: {info.filename}")
 
     def test_toc_changes_during_build_cannot_publish_inconsistent_membership_or_version(self):
         for mutation in ("append", "remove", "version"):
