@@ -54,6 +54,14 @@ check("Clean zero and player sentinel explicitly hide instead of allowing select
         assert(portrait.hidden == true and portrait.source == "dialogue" and portrait.displayID == nil)
     end
 end)
+check("Oversized display identities stay unknown instead of precision-collapsed portraits", function()
+    open()
+    state.display = 4294967295
+    assert(read().displayID == 4294967295)
+    for _, display in ipairs({ 4294967296, 2^53, 2^53 + 1 }) do
+        state.display = display; assert(read() == nil)
+    end
+end)
 check("Missing throwing restricted and malformed portrait values remain unknown rather than explicit hide", function()
     open()
     for _, value in ipairs({ secret, -2, 0.5, "88001", math.huge, 0/0, false }) do

@@ -28,8 +28,13 @@ function addon.Notify(reason)
     -- One throwing listener cannot abort the update for the rest; the first
     -- error still surfaces after every listener ran. Refresh callers keep
     -- their pcall/rethrow handling unchanged.
+    -- Snapshot first: a listener that unregisters a later listener leaves a
+    -- nil hole that stops ipairs, and an appended listener would otherwise
+    -- receive the in-flight reason.
     local failed, first = false, nil
-    for _, callback in ipairs(addon.listeners) do
+    local snapshot = {}
+    for i, callback in ipairs(addon.listeners) do snapshot[i] = callback end
+    for _, callback in ipairs(snapshot) do
         local ok, message = pcall(callback, reason)
         if not ok and not failed then failed, first = true, message end
     end

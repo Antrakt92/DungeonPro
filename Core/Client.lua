@@ -313,7 +313,7 @@ function addon.DialoguePortrait(id)
     local display = addon.Read(getter, "number")
     if not live() then return nil end
     if display == 0 or display == -1 then return { hidden = true, source = "dialogue" } end
-    display = dialogueInteger(display, 1)
+    display = dialogueInteger(display, 1, 4294967295)
     if display and live() then return { displayID = display, source = "dialogue" } end
 end
 
@@ -1703,7 +1703,7 @@ function addon.QuestPortrait(id)
         if current() then return { hidden = true } end
         return nil
     end
-    displayID = dialogueInteger(displayID, 1)
+    displayID = dialogueInteger(displayID, 1, 4294967295)
     if not displayID then return nil end
     local result = { displayID = displayID }
     name = addon.Clean(name, "string")

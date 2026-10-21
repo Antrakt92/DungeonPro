@@ -50,6 +50,14 @@ check("Negative restricted and malformed display IDs produce no portrait", funct
     end
     display = nil; assert(addon.QuestPortrait(95036) == nil)
 end)
+check("Precision-collapsed and over-wide display IDs are unknown while uint32 max stays valid", function()
+    display = 4294967295
+    local p = addon.QuestPortrait(95036)
+    assert(p and p.displayID == 4294967295, "uint32 max display stays accepted")
+    display = 4294967296; assert(addon.QuestPortrait(95036) == nil)
+    display = 9007199254740992; assert(addon.QuestPortrait(95036) == nil)
+    display = 9007199254740993; assert(addon.QuestPortrait(95036) == nil)
+end)
 check("Native zero portrait is an explicit hidden instruction", function()
     display = 0
     local p = addon.QuestPortrait(95036)

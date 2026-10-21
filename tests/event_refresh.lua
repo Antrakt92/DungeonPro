@@ -48,6 +48,21 @@ check("Throwing listeners cannot abort later listeners while the first error sti
     assert(not ok and later == 1 and #m.reasons == 1 and m.reasons[1] == "full")
     assert(tostring(message):find("first listener unavailable", 1, true))
 end)
+check("Mutating listeners cannot skip or extend the in-flight broadcast", function()
+    local m = model()
+    local ran = { remover = 0, mid = 0, victim = 0, appended = 0 }
+    m.addon.listeners[2] = function()
+        ran.remover = ran.remover + 1
+        m.addon.listeners[4] = nil
+        m.addon.listeners[5] = function() ran.appended = ran.appended + 1 end
+    end
+    m.addon.listeners[3] = function() ran.mid = ran.mid + 1 end
+    m.addon.listeners[4] = function() ran.victim = ran.victim + 1 end
+    m.addon.Notify("data")
+    assert(ran.remover == 1 and ran.mid == 1 and ran.victim == 1, "all originally-registered listeners must run exactly once")
+    assert(ran.appended == 0, "appended listener must not receive the in-flight reason")
+    assert(#m.reasons == 1 and m.reasons[1] == "data")
+end)
 check("Coalesced cache and dialogue events stay data-only", function()
     local m = model()
     for _, event in ipairs({ "QUEST_DATA_LOAD_RESULT", "ITEM_DATA_LOAD_RESULT", "GOSSIP_SHOW", "QUEST_DETAIL", "QUEST_COMPLETE" }) do m.event(event) end
