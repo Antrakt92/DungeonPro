@@ -1697,8 +1697,14 @@ function addon.QuestPortrait(id)
     if not current() then return nil end
     -- The optional argument is a log index, and the portrait is not an NPC ID.
     local ok, displayID, _, name = pcall(getter, index)
+    if not ok then return nil end
+    -- A native zero is an explicit "no portrait" instruction, not unknown.
+    if addon.Clean(displayID, "number") == 0 then
+        if current() then return { hidden = true } end
+        return nil
+    end
     displayID = dialogueInteger(displayID, 1)
-    if not ok or not displayID then return nil end
+    if not displayID then return nil end
     local result = { displayID = displayID }
     name = addon.Clean(name, "string")
     if name and name ~= "" and #name <= 1024 then result.name = name end

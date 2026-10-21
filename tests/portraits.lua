@@ -44,11 +44,16 @@ check("Invalid quest IDs and absent or invalid log indexes never reach the reade
     end
     index = nil; assert(addon.QuestPortrait(95036) == nil and calls == 0)
 end)
-check("Player sentinel zero restricted and malformed display IDs produce no portrait", function()
-    for _, value in ipairs({ -1, 0, -22, 1.5, false, "12345", math.huge, 0 / 0, secret }) do
+check("Negative restricted and malformed display IDs produce no portrait", function()
+    for _, value in ipairs({ -1, -22, 1.5, false, "12345", math.huge, 0 / 0, secret }) do
         display = value; assert(addon.QuestPortrait(95036) == nil)
     end
     display = nil; assert(addon.QuestPortrait(95036) == nil)
+end)
+check("Native zero portrait is an explicit hidden instruction", function()
+    display = 0
+    local p = addon.QuestPortrait(95036)
+    assert(calls == 1 and p.hidden == true and p.displayID == nil and p.name == nil and p.source == nil)
 end)
 check("Missing tuple and native selection index or portrait errors remain unknown", function()
     C_QuestLog.GetQuestLogPortraitGiver = function() end

@@ -78,7 +78,8 @@ function addon.DungeonArt(d)
     if not journalCurrent() then return generic end
     if journalID and info then
         local values = { pcall(info, journalID) }
-        local texture = values[1] and artInteger(values[7])
+        local texture = values[1] and (artInteger(values[7]) or addon.Clean(values[7], "string"))
+        if type(texture) == "string" and (texture == "" or #texture > 1024) then texture = nil end
         if not journalCurrent() then return generic end
         if texture then return texture end
     end

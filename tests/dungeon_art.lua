@@ -35,6 +35,20 @@ check("Encounter Journal remains first and avoids LFG scans", function()
     EJ_GetInstanceInfo = function(id) assert(id == 99); return nil, nil, nil, nil, 111, 222 end
     assert(addon.DungeonArt({ instanceID = 36 }) == 222 and state.calls == 0)
 end)
+check("Journal string artwork resolves while empty and oversized strings stay generic", function()
+    GetLFDChoiceOrder, GetLFGDungeonInfo = nil, nil
+    C_EncounterJournal = { GetInstanceForGameMap = function(id) assert(id == 36); return 99 end }
+    EJ_GetInstanceInfo = function(id) assert(id == 99); return nil, nil, nil, nil, 111, "Interface/Addons/DungeonArt" end
+    assert(addon.DungeonArt({ instanceID = 36 }) == "Interface/Addons/DungeonArt")
+    EJ_GetInstanceInfo = function() return nil, nil, nil, nil, 111, string.rep("a", 1024) end
+    assert(addon.DungeonArt({ instanceID = 36 }) == string.rep("a", 1024))
+    EJ_GetInstanceInfo = function() return nil, nil, nil, nil, 111, 7963781 end
+    assert(addon.DungeonArt({ instanceID = 36 }) == 7963781)
+    EJ_GetInstanceInfo = function() return nil, nil, nil, nil, 111, "" end
+    assert(addon.DungeonArt({ instanceID = 36 }) == generic)
+    EJ_GetInstanceInfo = function() return nil, nil, nil, nil, 111, string.rep("a", 1025) end
+    assert(addon.DungeonArt({ instanceID = 36 }) == generic)
+end)
 check("Journal map lookup cannot return artwork after the dungeon identity changes", function()
     local dungeon, infoCalls = {instanceID=36}, 0
     C_EncounterJournal = {GetInstanceForGameMap=function(id)

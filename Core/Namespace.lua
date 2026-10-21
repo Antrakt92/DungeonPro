@@ -25,5 +25,13 @@ function addon.Read(fn, expected, ...)
 end
 
 function addon.Notify(reason)
-    for _, callback in ipairs(addon.listeners) do callback(reason) end
+    -- One throwing listener cannot abort the update for the rest; the first
+    -- error still surfaces after every listener ran. Refresh callers keep
+    -- their pcall/rethrow handling unchanged.
+    local failed, first = false, nil
+    for _, callback in ipairs(addon.listeners) do
+        local ok, message = pcall(callback, reason)
+        if not ok and not failed then failed, first = true, message end
+    end
+    if failed then error(first) end
 end

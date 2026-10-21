@@ -38,6 +38,16 @@ check("Notify forwards data reasons and preserves ordinary full notifications", 
     m.addon.Notify("data"); m.addon.Notify()
     assert(m.reasons[1] == "data" and m.reasons[2] == "full")
 end)
+check("Throwing listeners cannot abort later listeners while the first error still surfaces", function()
+    local m = model()
+    local later = 0
+    m.addon.listeners[2] = function() error("first listener unavailable") end
+    m.addon.listeners[3] = function() error("second listener unavailable") end
+    m.addon.listeners[4] = function(reason) later = later + 1; assert(reason == nil) end
+    local ok, message = pcall(m.addon.Notify)
+    assert(not ok and later == 1 and #m.reasons == 1 and m.reasons[1] == "full")
+    assert(tostring(message):find("first listener unavailable", 1, true))
+end)
 check("Coalesced cache and dialogue events stay data-only", function()
     local m = model()
     for _, event in ipairs({ "QUEST_DATA_LOAD_RESULT", "ITEM_DATA_LOAD_RESULT", "GOSSIP_SHOW", "QUEST_DETAIL", "QUEST_COMPLETE" }) do m.event(event) end
