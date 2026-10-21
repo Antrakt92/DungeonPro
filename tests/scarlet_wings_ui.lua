@@ -48,7 +48,7 @@ for _, d in ipairs(wings) do
 end
 local questCount = 0
 for _, record in pairs(native.quests) do questCount = questCount + 1 end
-assert(questCount == 571, "no quest definition changes")
+assert(questCount == 577, "catalogue includes reviewed additions")
 for _, d in ipairs(wings) do
     for _, id in ipairs(d.sharedQuests) do assert(native.quests[id], "shared quest defined " .. id) end
 end

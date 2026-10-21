@@ -2303,6 +2303,30 @@
         "7631": {
           "source": "Dreadsteed of Xoroth",
           "name": "Il destriero del terrore di Xoroth"
+        },
+        "1701": {
+          "source": "Fire Hardened Mail",
+          "name": "Maglia temprata al fuoco"
+        },
+        "1838": {
+          "source": "Brutal Armor",
+          "name": "Armatura brutale"
+        },
+        "1192": {
+          "source": "Indurium Ore",
+          "name": "Minerale di indurio"
+        },
+        "5305": {
+          "source": "Sweet Serenity",
+          "name": "Dolce serenità"
+        },
+        "5307": {
+          "source": "Corruption",
+          "name": "Corruzione"
+        },
+        "9257": {
+          "source": "Atiesh, Greatstaff of the Guardian",
+          "name": "Atiesh, Granbastone del Guardiano"
         }
       },
       "dungeons": {

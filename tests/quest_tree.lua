@@ -295,7 +295,7 @@ check("Every generated catalogue quest builds from the real planner without rewr
         assert(targets==1)
         count=count+1
     end
-    assert(count==571)
+    assert(count==577)
 end)
 check("Private hierarchy construction stays linear while retained source proofs remain complete",function()
     local function measured(size)

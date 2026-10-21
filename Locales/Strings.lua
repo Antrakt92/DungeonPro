@@ -260,3 +260,8 @@ strings.ruRU.SM_CLASSIC_BADGE = "Classic"
 strings.ruRU.SM_CLASSIC_QUEST = "Распределение по крыльям: Classic"
 strings.ruRU.SM_CLASSIC_MULTI_WING = "Classic · цели в нескольких крыльях"
 strings.ruRU.SM_SHARED_QUESTS = "Список заданий монастыря"
+
+strings.enUS.PROFESSION = "Profession: %s"
+strings.enUS.PROFESSION_BLACKSMITHING = "Blacksmithing"
+strings.ruRU.PROFESSION = "Профессия: %s"
+strings.ruRU.PROFESSION_BLACKSMITHING = "Кузнечное дело"

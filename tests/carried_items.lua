@@ -347,7 +347,7 @@ check("Repeated actual-catalogue item reads reuse only positive source ownership
     assert(addon.CarriedItemCount(selected)==0 and reads==21,"inventory counts must stay live")
     local warmChecks=checks
     addon.Clean=clean
-    assert(warmChecks<2000,"repainting one known item must not rescan all571quest definitions twice per read: "..warmChecks)
+    assert(warmChecks<2000,"repainting one known item must not rescan all577quest definitions twice per read: "..warmChecks)
     print("Actual catalogue repeated item source checks: "..warmChecks.." /20reads")
 end)
 issecretvalue = nil

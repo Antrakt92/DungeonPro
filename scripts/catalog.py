@@ -14,8 +14,9 @@ CLASSES = frozenset({
     "WARRIOR", "PALADIN", "HUNTER", "ROGUE", "PRIEST", "DEATHKNIGHT", "SHAMAN",
     "MAGE", "WARLOCK", "MONK", "DRUID", "DEMONHUNTER", "EVOKER",
 })
+PROFESSIONS = frozenset({"BLACKSMITHING"})
 QUEST_FIELDS = frozenset({
-    "id", "name", "level", "minLevel", "requirementsKnown", "source", "factions", "classes", "races",
+    "id", "name", "level", "minLevel", "requirementsKnown", "source", "factions", "classes", "races", "profession",
     "start", "finish", "startAlternatives", "finishAlternatives", "startsInside", "repeatable", "requiredMoney",
     "objectiveItems", "objectiveKills", "objectiveObjects", "objectiveEvents", "objectiveItemSources", "providedItems",
     "requires", "storyline", "storylineGroups", "storylineEvidence", "completionQuests",
@@ -157,6 +158,8 @@ def validate(data):
             raise ValueError(f"Invalid quest level: {q['id']}")
         if type(q.get("requirementsKnown")) is not bool:
             raise ValueError(f"Explicit requirements evidence needed: {q['id']}")
+        if "profession" in q and (type(q["profession"]) is not str or q["profession"] not in PROFESSIONS):
+            raise ValueError(f"Invalid profession context: {q['id']}")
         for field, tokens in (("factions", FACTIONS), ("classes", CLASSES), ("races", None)):
             if field not in q:
                 continue

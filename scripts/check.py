@@ -213,6 +213,7 @@ def main():
     run(lua, "tests/map_marker_purpose_ui.lua")
     run(lua, "tests/scarlet_wings_ui.lua")
     run(lua, "tests/scarlet_classic_membership_ui.lua")
+    run(lua, "tests/audit_quest_additions_ui.lua")
     run(lua, "tests/scarlet_discovery_view_ui.lua")
     run(lua, "tests/map_clicks.lua")
     run(lua, "tests/entrances.lua")

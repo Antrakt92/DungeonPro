@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-## 0.3.0 - 20-Oct-2026 — Quest details Beta
+## 0.3.0 - 21-Oct-2026 — Quest details Beta
 
 - Keep quest selection in the middle list; show a compact dungeon heading until
   a quest is selected.
@@ -15,6 +15,8 @@
 - Populate Scarlet wing lists using a labelled Classic baseline, including quests
   with objectives across several wings.
 - Add reviewed giver portraits and recorded source locations for more quests.
+- Add warrior material quests for Razorfen Kraul, repeatable Indurium Ore
+  collection and special Stratholme quests, with visible profession labels.
 
 This remains an early beta. Quest coverage, requirements and some locations are
 incomplete. Unseen quest text depends on what the game client can provide;

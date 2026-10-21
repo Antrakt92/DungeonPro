@@ -41,8 +41,8 @@
       "excavation": 16732,
       "dalaran": 16560
     },
-    "catalogueQuestCount": 571,
-    "englishVerifiedCount": 571,
+    "catalogueQuestCount": 577,
+    "englishVerifiedCount": 577,
     "questCoverage": {
       "deDE": {
         "translated": 533,
@@ -2814,6 +2814,31 @@
           "source": "Dreadsteed of Xoroth",
           "name": "Schreckensross von Xoroth",
           "url": "https://nether.wowhead.com/forever/tooltip/quest/7631?locale=3"
+        },
+        "1701": {
+          "source": "Fire Hardened Mail",
+          "name": "Feuergehärteter Panzer",
+          "url": "https://nether.wowhead.com/forever/tooltip/quest/1701?locale=3"
+        },
+        "1838": {
+          "source": "Brutal Armor",
+          "name": "Brutale Rüstung",
+          "url": "https://nether.wowhead.com/forever/tooltip/quest/1838?locale=3"
+        },
+        "1192": {
+          "source": "Indurium Ore",
+          "name": "Induriumerz",
+          "url": "https://nether.wowhead.com/forever/tooltip/quest/1192?locale=3"
+        },
+        "5305": {
+          "source": "Sweet Serenity",
+          "name": "Süße Beschaulichkeit",
+          "url": "https://nether.wowhead.com/forever/tooltip/quest/5305?locale=3"
+        },
+        "5307": {
+          "source": "Corruption",
+          "name": "Verderbnis",
+          "url": "https://nether.wowhead.com/forever/tooltip/quest/5307?locale=3"
         }
       },
       "dungeons": {
@@ -5590,6 +5615,26 @@
           "source": "Dreadsteed of Xoroth",
           "name": "Le destrier de l'effroi de Xoroth",
           "url": "https://nether.wowhead.com/forever/tooltip/quest/7631?locale=2"
+        },
+        "1701": {
+          "source": "Fire Hardened Mail",
+          "name": "Une cotte de mailles en acier trempé",
+          "url": "https://nether.wowhead.com/forever/tooltip/quest/1701?locale=2"
+        },
+        "1838": {
+          "source": "Brutal Armor",
+          "name": "Armure de brutalité",
+          "url": "https://nether.wowhead.com/forever/tooltip/quest/1838?locale=2"
+        },
+        "1192": {
+          "source": "Indurium Ore",
+          "name": "Minerai d'indurium",
+          "url": "https://nether.wowhead.com/forever/tooltip/quest/1192?locale=2"
+        },
+        "5305": {
+          "source": "Sweet Serenity",
+          "name": "Douce sérénité",
+          "url": "https://nether.wowhead.com/forever/tooltip/quest/5305?locale=2"
         }
       },
       "dungeons": {
@@ -8376,6 +8421,31 @@
           "source": "Dreadsteed of Xoroth",
           "name": "Terrorecus de Xoroth",
           "url": "https://nether.wowhead.com/forever/tooltip/quest/7631?locale=6"
+        },
+        "1701": {
+          "source": "Fire Hardened Mail",
+          "name": "Armadura de mallas endurecida con fuego",
+          "url": "https://nether.wowhead.com/forever/tooltip/quest/1701?locale=6"
+        },
+        "1838": {
+          "source": "Brutal Armor",
+          "name": "Armadura brutal",
+          "url": "https://nether.wowhead.com/forever/tooltip/quest/1838?locale=6"
+        },
+        "1192": {
+          "source": "Indurium Ore",
+          "name": "Mineral de indurio",
+          "url": "https://nether.wowhead.com/forever/tooltip/quest/1192?locale=6"
+        },
+        "5305": {
+          "source": "Sweet Serenity",
+          "name": "Dulce serenidad",
+          "url": "https://nether.wowhead.com/forever/tooltip/quest/5305?locale=6"
+        },
+        "5307": {
+          "source": "Corruption",
+          "name": "Corrupción",
+          "url": "https://nether.wowhead.com/forever/tooltip/quest/5307?locale=6"
         }
       },
       "dungeons": {
@@ -11136,6 +11206,31 @@
           "source": "Dreadsteed of Xoroth",
           "name": "Corcel Medonho de Zoroth",
           "url": "https://nether.wowhead.com/forever/tooltip/quest/7631?locale=8"
+        },
+        "1701": {
+          "source": "Fire Hardened Mail",
+          "name": "Malha endurecida a fogo",
+          "url": "https://nether.wowhead.com/forever/tooltip/quest/1701?locale=8"
+        },
+        "1838": {
+          "source": "Brutal Armor",
+          "name": "Armadura brutal",
+          "url": "https://nether.wowhead.com/forever/tooltip/quest/1838?locale=8"
+        },
+        "1192": {
+          "source": "Indurium Ore",
+          "name": "Minério de Indúrio",
+          "url": "https://nether.wowhead.com/forever/tooltip/quest/1192?locale=8"
+        },
+        "5305": {
+          "source": "Sweet Serenity",
+          "name": "Doce serenidade",
+          "url": "https://nether.wowhead.com/forever/tooltip/quest/5305?locale=8"
+        },
+        "5307": {
+          "source": "Corruption",
+          "name": "Corrupção",
+          "url": "https://nether.wowhead.com/forever/tooltip/quest/5307?locale=8"
         }
       },
       "dungeons": {
@@ -14012,6 +14107,31 @@
           "source": "Dreadsteed of Xoroth",
           "name": "Ксоротианский конь погибели",
           "url": "https://nether.wowhead.com/forever/tooltip/quest/7631?locale=7"
+        },
+        "1701": {
+          "source": "Fire Hardened Mail",
+          "name": "Закаленный доспех",
+          "url": "https://nether.wowhead.com/forever/tooltip/quest/1701?locale=7"
+        },
+        "1838": {
+          "source": "Brutal Armor",
+          "name": "Доспехи Жестокости",
+          "url": "https://nether.wowhead.com/forever/tooltip/quest/1838?locale=7"
+        },
+        "1192": {
+          "source": "Indurium Ore",
+          "name": "Индарилиевая руда",
+          "url": "https://nether.wowhead.com/forever/tooltip/quest/1192?locale=7"
+        },
+        "5305": {
+          "source": "Sweet Serenity",
+          "name": "Секрет безмятежности",
+          "url": "https://nether.wowhead.com/forever/tooltip/quest/5305?locale=7"
+        },
+        "5307": {
+          "source": "Corruption",
+          "name": "Порча",
+          "url": "https://nether.wowhead.com/forever/tooltip/quest/5307?locale=7"
         }
       },
       "dungeons": {
@@ -16858,6 +16978,31 @@
           "source": "Dreadsteed of Xoroth",
           "name": "소로스의 공포마",
           "url": "https://nether.wowhead.com/forever/tooltip/quest/7631?locale=1"
+        },
+        "1701": {
+          "source": "Fire Hardened Mail",
+          "name": "불에 달궈 만든 갑옷",
+          "url": "https://nether.wowhead.com/forever/tooltip/quest/1701?locale=1"
+        },
+        "1838": {
+          "source": "Brutal Armor",
+          "name": "투사의 방어구",
+          "url": "https://nether.wowhead.com/forever/tooltip/quest/1838?locale=1"
+        },
+        "1192": {
+          "source": "Indurium Ore",
+          "name": "인듀리움 광석",
+          "url": "https://nether.wowhead.com/forever/tooltip/quest/1192?locale=1"
+        },
+        "5305": {
+          "source": "Sweet Serenity",
+          "name": "진홍십자군 작업복",
+          "url": "https://nether.wowhead.com/forever/tooltip/quest/5305?locale=1"
+        },
+        "5307": {
+          "source": "Corruption",
+          "name": "부패의 검",
+          "url": "https://nether.wowhead.com/forever/tooltip/quest/5307?locale=1"
         }
       },
       "dungeons": {
@@ -19654,6 +19799,31 @@
           "source": "Dreadsteed of Xoroth",
           "name": "克索诺斯恐惧战马",
           "url": "https://nether.wowhead.com/forever/tooltip/quest/7631?locale=4"
+        },
+        "1701": {
+          "source": "Fire Hardened Mail",
+          "name": "弗伦的铠甲",
+          "url": "https://nether.wowhead.com/forever/tooltip/quest/1701?locale=4"
+        },
+        "1838": {
+          "source": "Brutal Armor",
+          "name": "野蛮护甲",
+          "url": "https://nether.wowhead.com/forever/tooltip/quest/1838?locale=4"
+        },
+        "1192": {
+          "source": "Indurium Ore",
+          "name": "精铁矿石",
+          "url": "https://nether.wowhead.com/forever/tooltip/quest/1192?locale=4"
+        },
+        "5305": {
+          "source": "Sweet Serenity",
+          "name": "甜美的平静",
+          "url": "https://nether.wowhead.com/forever/tooltip/quest/5305?locale=4"
+        },
+        "5307": {
+          "source": "Corruption",
+          "name": "腐蚀",
+          "url": "https://nether.wowhead.com/forever/tooltip/quest/5307?locale=4"
         }
       },
       "dungeons": {
@@ -22390,6 +22560,31 @@
           "source": "Dreadsteed of Xoroth",
           "name": "克索諾斯恐懼戰馬",
           "url": "https://nether.wowhead.com/forever/tooltip/quest/7631?locale=10"
+        },
+        "1701": {
+          "source": "Fire Hardened Mail",
+          "name": "弗倫的鎧甲",
+          "url": "https://nether.wowhead.com/forever/tooltip/quest/1701?locale=10"
+        },
+        "1838": {
+          "source": "Brutal Armor",
+          "name": "野蠻護甲",
+          "url": "https://nether.wowhead.com/forever/tooltip/quest/1838?locale=10"
+        },
+        "1192": {
+          "source": "Indurium Ore",
+          "name": "精鐵礦石",
+          "url": "https://nether.wowhead.com/forever/tooltip/quest/1192?locale=10"
+        },
+        "5305": {
+          "source": "Sweet Serenity",
+          "name": "甜美的平靜",
+          "url": "https://nether.wowhead.com/forever/tooltip/quest/5305?locale=10"
+        },
+        "5307": {
+          "source": "Corruption",
+          "name": "腐蝕",
+          "url": "https://nether.wowhead.com/forever/tooltip/quest/5307?locale=10"
         }
       },
       "dungeons": {

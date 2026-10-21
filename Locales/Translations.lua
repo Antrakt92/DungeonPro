@@ -739,3 +739,27 @@ for _, locale in ipairs({ "deDE", "frFR", "esES", "itIT", "ptBR", "koKR", "zhCN"
     addon.locales[locale].SM_CLASSIC_MULTI_WING = "Classic · objectives in several wings"
     addon.locales[locale].SM_SHARED_QUESTS = "Monastery quest index"
 end
+
+addon.locales.deDE.PROFESSION = "Beruf: %s"
+addon.locales.deDE.PROFESSION_BLACKSMITHING = "Schmiedekunst"
+
+addon.locales.frFR.PROFESSION = "Métier : %s"
+addon.locales.frFR.PROFESSION_BLACKSMITHING = "Forge"
+
+addon.locales.esES.PROFESSION = "Profesión: %s"
+addon.locales.esES.PROFESSION_BLACKSMITHING = "Herrería"
+
+addon.locales.itIT.PROFESSION = "Professione: %s"
+addon.locales.itIT.PROFESSION_BLACKSMITHING = "Forgiatura"
+
+addon.locales.ptBR.PROFESSION = "Profissão: %s"
+addon.locales.ptBR.PROFESSION_BLACKSMITHING = "Ferraria"
+
+addon.locales.koKR.PROFESSION = "전문 기술: %s"
+addon.locales.koKR.PROFESSION_BLACKSMITHING = "대장기술"
+
+addon.locales.zhCN.PROFESSION = "专业：%s"
+addon.locales.zhCN.PROFESSION_BLACKSMITHING = "锻造"
+
+addon.locales.zhTW.PROFESSION = "專業：%s"
+addon.locales.zhTW.PROFESSION_BLACKSMITHING = "鍛造"

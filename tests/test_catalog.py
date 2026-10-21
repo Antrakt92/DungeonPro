@@ -19,6 +19,42 @@ class CatalogTests(unittest.TestCase):
     def setUp(self):
         self.data = json.loads((ROOT / "data/catalog.json").read_text(encoding="utf-8"))
 
+    def test_optional_profession_context_generates_without_inferring_requirements(self):
+        for known in (False, True):
+            data = self.minimal_catalog()
+            quest = data["quests"][1]
+            quest["requirementsKnown"] = known
+            quest["profession"] = "BLACKSMITHING"
+            before = copy.deepcopy(data)
+            generated = catalog.generate(data)
+            self.assertIn('["profession"] = "BLACKSMITHING"', generated)
+            self.assertEqual(data, before)
+            self.assertIs(quest["requirementsKnown"], known)
+            self.assertEqual(generated, catalog.generate(data))
+        data = self.minimal_catalog()
+        self.assertNotIn('["profession"]', catalog.generate(data))
+
+    def test_profession_context_rejects_unreviewed_or_malformed_tokens(self):
+        for value in (None, False, True, 0, 164, 164.0, [], {}, ["BLACKSMITHING"],
+                      "", " ", "Blacksmithing", "blacksmithing", "BLACKSMITHING ",
+                      " BLACKSMITHING", "BLACKSMITHING\n", "ALCHEMY", "ARMORSMITH", "164"):
+            data = self.minimal_catalog()
+            data["quests"][1]["profession"] = value
+            with self.subTest(value=value), self.assertRaisesRegex(ValueError, "profession"):
+                catalog.generate(data)
+
+    def test_profession_context_is_not_a_dungeon_field_or_invented_skill_gate(self):
+        data = self.minimal_catalog()
+        data["dungeons"][0]["profession"] = "BLACKSMITHING"
+        with self.assertRaisesRegex(ValueError, "dungeon fields"):
+            catalog.validate(data)
+        for field in ("professionSkillID", "professionSkillLevel", "professionSpecialization"):
+            data = self.minimal_catalog()
+            data["quests"][1]["profession"] = "BLACKSMITHING"
+            data["quests"][1][field] = 164
+            with self.subTest(field=field), self.assertRaisesRegex(ValueError, "quest fields"):
+                catalog.validate(data)
+
     def scarlet_classic_catalog(self):
         data = self.minimal_catalog()
         data["dungeons"] = [dict(key="sm_" + wing, name=wing, minLevel=28, maxLevel=45,

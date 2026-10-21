@@ -141,7 +141,7 @@ test("Every actual catalogue claim has a second displayed tree ID and all single
         if tree then assert(dto.chain==(#tree>1),"tree disagreement for "..id)end
         count=count+1
     end
-    assert(count==571 and claims>0);print("Catalogue roots "..count..", chain claims "..claims)
+    assert(count==577 and claims>0);print("Catalogue roots "..count..", chain claims "..claims)
 end)
 test("Third return checks captured sources without Clean Read or checker callbacks", function()
     local clean, read, armed, calls = addon.Clean, addon.Read, false, 0

@@ -166,6 +166,10 @@
         "96392": {
           "source": "Farsen's Watch",
           "name": "法尔森的哨所"
+        },
+        "9257": {
+          "source": "Atiesh, Greatstaff of the Guardian",
+          "name": "埃提耶什，守护者之杖"
         }
       },
       "dungeons": {
@@ -400,6 +404,10 @@
         "8943": {
           "source": "Just Compensation",
           "name": "應得的補償"
+        },
+        "9257": {
+          "source": "Atiesh, Greatstaff of the Guardian",
+          "name": "埃提耶什，守護者之杖"
         }
       },
       "dungeons": {
@@ -546,6 +554,10 @@
         "8942": {
           "source": "Just Compensation",
           "name": "정당한 보상"
+        },
+        "9257": {
+          "source": "Atiesh, Greatstaff of the Guardian",
+          "name": "아티쉬, 수호자의 지팡이"
         }
       },
       "dungeons": {
@@ -648,6 +660,10 @@
         "96774": {
           "source": "Ancient Gurubashi Idol",
           "name": "Древний идол Гурубаши"
+        },
+        "9257": {
+          "source": "Atiesh, Greatstaff of the Guardian",
+          "name": "Атиеш, великий посох Стража"
         }
       },
       "dungeons": {
@@ -839,6 +855,10 @@
         "7623": {
           "source": "Lord Banehollow",
           "name": "Lord Schattenfluch"
+        },
+        "9257": {
+          "source": "Atiesh, Greatstaff of the Guardian",
+          "name": "Atiesh, Großstab des Wächters"
         }
       },
       "dungeons": {
@@ -1060,6 +1080,15 @@
         "9063": {
           "source": "Torwa Pathfinder",
           "name": "Torwa le Guide"
+        },
+        "5307": {
+          "source": "Corruption",
+          "name": "Corruption",
+          "unchangedProperName": true
+        },
+        "9257": {
+          "source": "Atiesh, Greatstaff of the Guardian",
+          "name": "Atiesh, grand bâton du Gardien"
         }
       },
       "dungeons": {
@@ -1269,6 +1298,10 @@
           "source": "Bazil Thredd",
           "name": "Bazil Thredd",
           "unchangedProperName": true
+        },
+        "9257": {
+          "source": "Atiesh, Greatstaff of the Guardian",
+          "name": "Atiesh, gran báculo del Guardián"
         }
       },
       "dungeons": {
@@ -1499,6 +1532,10 @@
         "96392": {
           "source": "Farsen's Watch",
           "name": "Vigia de Farsen"
+        },
+        "9257": {
+          "source": "Atiesh, Greatstaff of the Guardian",
+          "name": "Atiesh, grande cajado do Guardião"
         }
       },
       "dungeons": {

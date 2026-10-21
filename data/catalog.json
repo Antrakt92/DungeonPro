@@ -37935,6 +37935,226 @@
           "name": "Mor'zul's Instructions"
         }
       ]
+    },
+    {
+      "id": 1701,
+      "name": "Fire Hardened Mail",
+      "source": "https://www.wowhead.com/forever/quest=1701/fire-hardened-mail",
+      "level": 28,
+      "minLevel": 20,
+      "factions": [
+        "Alliance"
+      ],
+      "requirementsKnown": false,
+      "classes": [
+        "WARRIOR"
+      ],
+      "start": {
+        "npcID": 5413,
+        "name": "Furen Longbeard",
+        "zoneName": "Stormwind City"
+      },
+      "finish": {
+        "npcID": 5413,
+        "name": "Furen Longbeard",
+        "zoneName": "Stormwind City"
+      },
+      "objectiveItems": [
+        {
+          "itemID": 6838,
+          "name": "Scorched Spider Fang",
+          "quantity": 50
+        },
+        {
+          "itemID": 6839,
+          "name": "Charred Horn",
+          "quantity": 12
+        },
+        {
+          "itemID": 6840,
+          "name": "Galvanized Horn"
+        },
+        {
+          "itemID": 6841,
+          "name": "Vial of Phlogiston"
+        }
+      ],
+      "providedItems": [
+        {
+          "itemID": 6842,
+          "name": "Furen's Instructions"
+        }
+      ]
+    },
+    {
+      "id": 1838,
+      "name": "Brutal Armor",
+      "source": "https://www.wowhead.com/forever/quest=1838/brutal-armor",
+      "level": 30,
+      "minLevel": 20,
+      "factions": [
+        "Horde"
+      ],
+      "requirementsKnown": false,
+      "classes": [
+        "WARRIOR"
+      ],
+      "start": {
+        "npcID": 5878,
+        "name": "Thun'grim Firegaze",
+        "zoneName": "The Barrens"
+      },
+      "finish": {
+        "npcID": 5878,
+        "name": "Thun'grim Firegaze",
+        "zoneName": "The Barrens"
+      },
+      "objectiveItems": [
+        {
+          "itemID": 7126,
+          "name": "Smoky Iron Ingot",
+          "quantity": 15
+        },
+        {
+          "itemID": 7127,
+          "name": "Powdered Azurite",
+          "quantity": 10
+        },
+        {
+          "itemID": 3575,
+          "name": "Iron Bar",
+          "quantity": 10
+        },
+        {
+          "itemID": 6841,
+          "name": "Vial of Phlogiston"
+        }
+      ],
+      "providedItems": [
+        {
+          "itemID": 7587,
+          "name": "Thun'grim's Instructions"
+        }
+      ]
+    },
+    {
+      "id": 1192,
+      "name": "Indurium Ore",
+      "source": "https://www.wowhead.com/forever/quest=1192/indurium-ore",
+      "level": 42,
+      "minLevel": 29,
+      "factions": [
+        "Alliance",
+        "Horde"
+      ],
+      "requirementsKnown": false,
+      "repeatable": true,
+      "start": {
+        "npcID": 4630,
+        "name": "Pozzik",
+        "zoneName": "Thousand Needles"
+      },
+      "finish": {
+        "npcID": 4630,
+        "name": "Pozzik",
+        "zoneName": "Thousand Needles"
+      },
+      "objectiveItems": [
+        {
+          "itemID": 5833,
+          "name": "Indurium Ore",
+          "quantity": 4
+        }
+      ],
+      "objectiveItemSources": [
+        {
+          "itemID": 5833,
+          "containerSources": [
+            {
+              "objectID": 19903,
+              "name": "Indurium Mineral Vein",
+              "zoneName": "Uldaman",
+              "source": "https://www.wowhead.com/forever/object=19903/indurium-mineral-vein"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 5305,
+      "name": "Sweet Serenity",
+      "source": "https://www.wowhead.com/forever/quest=5305/sweet-serenity",
+      "level": 60,
+      "minLevel": 50,
+      "factions": [
+        "Alliance",
+        "Horde"
+      ],
+      "requirementsKnown": false,
+      "start": {
+        "npcID": 11191,
+        "name": "Lilith the Lithe",
+        "zoneName": "Winterspring"
+      },
+      "finish": {
+        "npcID": 11191,
+        "name": "Lilith the Lithe",
+        "zoneName": "Winterspring"
+      },
+      "objectiveItems": [
+        {
+          "itemID": 13351,
+          "name": "Crimson Hammersmith's Apron"
+        }
+      ],
+      "profession": "BLACKSMITHING"
+    },
+    {
+      "id": 5307,
+      "name": "Corruption",
+      "source": "https://www.wowhead.com/forever/quest=5307/corruption",
+      "level": 60,
+      "minLevel": 50,
+      "factions": [
+        "Alliance",
+        "Horde"
+      ],
+      "requirementsKnown": false,
+      "start": {
+        "npcID": 11193,
+        "name": "Seril Scourgebane",
+        "zoneName": "Winterspring"
+      },
+      "finish": {
+        "npcID": 11193,
+        "name": "Seril Scourgebane",
+        "zoneName": "Winterspring"
+      },
+      "objectiveItems": [
+        {
+          "itemID": 13350,
+          "name": "Insignia of the Black Guard"
+        }
+      ],
+      "profession": "BLACKSMITHING"
+    },
+    {
+      "id": 9257,
+      "name": "Atiesh, Greatstaff of the Guardian",
+      "source": "https://www.wowhead.com/forever/quest=9257/atiesh-greatstaff-of-the-guardian",
+      "level": 60,
+      "minLevel": 60,
+      "factions": [
+        "Alliance",
+        "Horde"
+      ],
+      "requirementsKnown": false,
+      "objectiveEvents": [
+        {
+          "npcID": 16387,
+          "name": "Atiesh Cleansed"
+        }
+      ]
     }
   ],
   "dungeons": [
@@ -38200,7 +38420,9 @@
         1144,
         1221,
         1142,
-        6522
+        6522,
+        1701,
+        1838
       ],
       "source": "https://www.wowhead.com/forever/guide/dungeons-overview-locations-details",
       "instanceID": 47,
@@ -38480,7 +38702,8 @@
         2338,
         2204,
         3375,
-        1956
+        1956,
+        1192
       ],
       "source": "https://www.wowhead.com/forever/guide/dungeons-overview-locations-details",
       "instanceID": 70,
@@ -38876,7 +39099,10 @@
         5212,
         6163,
         8968,
-        8991
+        8991,
+        5305,
+        5307,
+        9257
       ],
       "source": "https://www.wowhead.com/forever/guide/dungeons-overview-locations-details",
       "instanceID": 329,
