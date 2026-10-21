@@ -4,26 +4,63 @@
 
 ## 0.3.0 - 21-Oct-2026 — Quest details Beta
 
-- Apply the My Quests filter to expanded chains while keeping quests in your log
-  visible.
-- Keep quest selection in the middle list; show the dungeon illustration until
-  a quest is selected.
+### New quests and catalogue updates
+
+- Add six quest records, expanding the catalogue from 571 to 577 quests,
+  including supporting preparation and story steps.
+- Razorfen Kraul: add Fire Hardened Mail for Alliance warriors and Brutal Armor
+  for Horde warriors, with recorded materials and quest-provided instructions.
+- Uldaman: add the repeatable Indurium Ore quest, its four-ore objective and the
+  recorded Indurium Mineral Vein source.
+- Stratholme: add Sweet Serenity and Corruption, with blacksmithing labels and
+  their recorded objective items.
+- Stratholme: add Atiesh, Greatstaff of the Guardian and its cleansing event.
+  Unverified acquisition requirements remain explicitly marked.
+- Update 216 existing quest records, mainly pickup and turn-in contacts, NPC
+  references and alternative locations; also expand recorded item sources and
+  clarify supporting story relationships.
+- Add reviewed giver portraits and recorded source locations for more quests.
+- Extend translated quest titles for the newly added records.
+
+### Scarlet Monastery wings
+
+- Replace the single monastery card with Graveyard, Library, Armory and Cathedral.
+- Graveyard: list Vorrel's Revenge.
+- Library: list Mythology of the Titans, Test of Lore, Rituals of Power and
+  Compendium of the Fallen.
+- List Into The Scarlet Monastery and In the Name of the Light in Library,
+  Armory and Cathedral because their objectives span those wings.
+- Keep the monastery-wide quest index available separately, including Past Due
+  and Hearts of Zeal, whose exact wing assignments remain unverified.
+- Label assignments drawn from the Classic baseline. These are redistributed
+  existing monastery quests, not additional new quest records or a claim of
+  complete Forever coverage.
+
+### Quest details and interface
+
 - Read selected quest details in one stream, with objectives, items, rewards and
   practical source information before available quest text.
-- Refresh quest details with larger headings, highlighted objectives and clearer
+- Refresh the right pane with larger headings, highlighted objectives and clearer
   contact cards.
+- Use separate pickup and turn-in contact rows, including recorded alternative
+  locations and explanations when exact positions are missing.
+- Keep quest selection in the middle list. Until a quest is selected, show only
+  the dungeon illustration on the right, without a repeated title or prompt.
 - Improve navigation and reading-position restoration when switching quests or
   changing filters.
-- Use separate pickup and turn-in contact rows, including recorded alternative
-  locations and clear explanations when exact positions are missing.
+
+### Filtering and navigation
+
+- Apply the My Quests filter to expanded chains as well as the main quest list,
+  while keeping quests already in your log visible.
+- Hide foreign-faction and other known ineligible chain steps in My Quests;
+  retain All quests for inspecting those alternatives without enabling them.
 - Distinguish quest pickups, turn-ins and dungeon entrances with map icons.
-- Browse Scarlet Monastery as four wings: Graveyard, Library, Armory and Cathedral.
-- Populate Scarlet wing lists using a labelled Classic baseline, including quests
-  with objectives across several wings.
-- Keep unassigned Scarlet Monastery quests in a separate monastery quest index.
-- Add reviewed giver portraits and recorded source locations for more quests.
-- Add warrior material quests for Razorfen Kraul, repeatable Indurium Ore
-  collection and special Stratholme quests, with visible profession labels.
+- Keep pickup and turn-in destinations distinct, including when one NPC has
+  different recorded locations.
+
+### Reuse terms
+
 - Update reuse terms: derivative authors choose a positive CurseForge reward
   share, with no fixed minimum.
 
