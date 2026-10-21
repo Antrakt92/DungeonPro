@@ -22,7 +22,7 @@ assignees: ''
 - Game language and selected addon language:
 - Dungeon and quest name or ID, if relevant:
 - Character level, class and faction, if relevant:
-- View: dungeon overview, Quest, Sources or Story:
+- View: dungeon overview or quest details:
 - Quest filter: Mine or All quests:
 - For layout problems: window size, interface scale, dungeon list collapsed
   or expanded:

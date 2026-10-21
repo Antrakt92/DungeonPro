@@ -70,6 +70,7 @@ Click the minimap button or type `/DP` and pick a dungeon.
 ## Commands
 
 - `/DP` or `/DungeonPro` — open or close the planner.
+- `/dprep` or `/dungeonprep` — legacy aliases that do the same.
 - `/DP clear` — stop the current guide and remove the waypoint it created.
 - `/DP minimap` — hide or show the minimap button.
 - `/DP minimap reset` — show the button at its default position.
