@@ -2315,13 +2315,35 @@ function UI:RefreshQuests()
     local infoProofs, infoRawProofs, infoRawMissing, infoFailed = {}, {}, false, false
     self.questListGeneration = generation
     local released, read, clean, checker = false, addon.Read, addon.Clean, issecretvalue
+    local audience
+    local function audienceCurrent()
+        if not audience then return true end
+        local ok, valid = pcall(function()
+            return rawequal(rawget(addon, "Planner"), audience.planner) and
+                rawequal(rawget(audience.planner, "Eligible"), audience.eligible) and
+                rawequal(rawget(audience.planner, "RelevantToCharacter"), audience.relevant) and
+                rawequal(rawget(addon, "QuestRowInfo"), audience.info) and
+                rawequal(rawget(audience.info, "Get"), audience.get) and
+                rawequal(rawget(addon, "quests"), audience.catalogue) and
+                rawequal(rawget(engine, "quests"), audience.engineQuests) and
+                rawequal(rawget(engine, "context"), audience.context) and
+                rawequal(rawget(audience.context, "current"), audience.contextCurrent) and
+                rawequal(rawget(audience.context, "faction"), audience.faction) and
+                rawequal(rawget(audience.context, "class"), audience.class)
+        end)
+        if not ok or valid ~= true then return false end
+        if not rendering then
+            for _, proof in ipairs(infoRawProofs) do if proof() ~= true then return false end end
+        end
+        return true
+    end
     local releaseShared
     self.questListRelease = function()
         released = true
         if releaseShared then releaseShared(); releaseShared = nil end
         planLease.current, planLease.raw = nil, nil
         engineLease.engine, engine, context, treeCurrent, treeRaw = nil, nil, nil, nil, nil
-        infoProofs, infoRawProofs = {}, {}
+        infoProofs, infoRawProofs, audience = {}, {}, nil
     end
     local scopeGetter = self.ScarletDiscoveryScope
     local classicCaptionGetter, classicLocalize = self.ScarletClassicCaption, addon.L
@@ -2361,7 +2383,7 @@ function UI:RefreshQuests()
         if released or self.questListRequest ~= request or addon.Read ~= read or addon.Clean ~= clean or issecretvalue ~= checker then return false end
         local owned = self.layoutRevision == layoutRevision and self.questListGeneration == generation and self.engine == engine and self.dungeon == d and addon.char == character and
             self.preparation == preparation and self.includeUnavailable == includeUnavailable
-        if not owned or treeFailed or infoFailed or not sharedProof(true) then return false end
+        if not owned or treeFailed or infoFailed or not sharedProof(true) or not audienceCurrent() then return false end
         if d and (d.quests ~= targets or #targets ~= #targetIDs) then return false end
         for index, id in ipairs(targetIDs) do if targets[index] ~= id then return false end end
         if not rendering and not proveTree() then return false end
@@ -2412,7 +2434,7 @@ function UI:RefreshQuests()
             self.includeUnavailable ~= includeUnavailable or addon.Read ~= read or addon.Clean ~= clean or issecretvalue ~= checker then return false end
         if d and (rawget(d, "quests") ~= targets or #targets ~= #targetIDs) then return false end
         for index, id in ipairs(targetIDs) do if not rawequal(rawget(targets,index),id) then return false end end
-        if not sharedProof(true) then return false end
+        if not sharedProof(true) or not audienceCurrent() then return false end
         if treeCurrent and (not treeRaw or treeRaw() ~= true) then return false end
         for _, proof in ipairs(infoRawProofs) do if proof() ~= true then return false end end
         return true
@@ -2483,12 +2505,56 @@ function UI:RefreshQuests()
         local tree, treeBuilder = nil, addon.Clean(addon.QuestTree, "table")
         if not preparation and self.questTreeDungeon == d and self.questTreeRoot and treeBuilder then
             local build = addon.Clean(treeBuilder.Build, "function")
-            tree = build and addon.Read(build, "table", addon.quests, engine, self.questTreeRoot)
-            if not current() then return end
+            local treeCatalogue = addon.quests
+            tree = build and addon.Read(build, "table", treeCatalogue, engine, self.questTreeRoot)
+            if not current() or not rawequal(addon.quests, treeCatalogue) then return end
             if tree then
                 local expanded, treeIDs, anchor = {}, {}, false
                 local presentation = addon.Clean(tree.presentation, "table") or tree
                 treeCurrent = addon.Clean(tree.current, "function")
+                local planner, info = clean(addon.Planner, "table"), clean(addon.QuestRowInfo, "table")
+                local ordinaryContext = clean(context, "table")
+                if not current() then return end
+                if planner and info and ordinaryContext then
+                    local projection = { planner = planner, eligible = rawget(planner, "Eligible"),
+                        relevant = rawget(planner, "RelevantToCharacter"), info = info, get = rawget(info, "Get"),
+                        catalogue = treeCatalogue, engineQuests = rawget(engine, "quests"),
+                        context = context, contextCurrent = rawget(context, "current"),
+                        faction = rawget(context, "faction"), class = rawget(context, "class") }
+                    audience = projection
+                    local eligible = clean(projection.eligible, "function")
+                    local relevant = clean(projection.relevant, "function")
+                    local getter = clean(projection.get, "function")
+                    local faction, class = clean(projection.faction, "string"), clean(projection.class, "string")
+                    if not current() then return end
+                    local supported = eligible and relevant and getter and projection.engineQuests == treeCatalogue and
+                        (type(projection.faction) == "nil" or faction ~= nil) and
+                        (type(projection.class) == "nil" or class ~= nil)
+                    local projected = {}
+                    for _, node in ipairs(presentation) do
+                        local definition = clean(rawget(treeCatalogue, node.id), "table")
+                        if not current() then return end
+                        local proof, rawProof
+                        if getter and definition then
+                            local ok, _, observed, raw = pcall(getter, treeCatalogue, node.id)
+                            if not current() then return end
+                            if ok then proof, rawProof = clean(observed, "function"), clean(raw, "function") end
+                            if not current() then return end
+                            if proof and rawProof then
+                                infoProofs[#infoProofs + 1], infoRawProofs[#infoRawProofs + 1] = proof, rawProof
+                            else infoRawMissing = true end
+                        end
+                        local visible = true
+                        if not includeUnavailable and supported and definition and proof and rawProof then
+                            local permitted = read(eligible, "boolean", definition, context)
+                            if not current() or read(proof, "boolean") ~= true or not current() or rawProof() ~= true then return end
+                            visible = read(relevant, "boolean", permitted, node.state.status)
+                            if not current() or read(proof, "boolean") ~= true or not current() or rawProof() ~= true or visible == nil then return end
+                        end
+                        if visible then projected[#projected + 1] = node end
+                    end
+                    presentation = projected
+                end
                 local names, counts = {}, {}
                 for _, entry in ipairs(entries) do if entry.id == self.questTreeRoot then anchor = true end end
                 anchor = anchor and #presentation > 1

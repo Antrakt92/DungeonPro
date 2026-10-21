@@ -97,6 +97,7 @@ def main():
     run(lua, "tests/detail_tabs_retirement_ui.lua")
     run(lua, "tests/detail_tabs_work_ui.lua")
     run(lua, "tests/quest_tree_ui.lua")
+    run(lua, "tests/quest_tree_character_filter_ui.lua")
     run(lua, "tests/detail_role_caption_ui.lua")
     run(lua, "tests/detail_contact_binding.lua")
     run(lua, "tests/detail_contact_rows_ui.lua")

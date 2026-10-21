@@ -691,17 +691,24 @@ check("Middle OR controls preserve persisted choices automatic reset and safe st
     addon.char.choices = { [999] = { retain = true }, [400] = { [2] = 777 } }
     local choices = addon.char.choices
     ui.dungeon = { name = "Branch fixture", coverage = "reviewed", quests = { 400 } }
-    ui.preparation, ui.quest = false, 400; ui:Refresh();expandDetail()
+    ui.preparation, ui.quest, ui.includeUnavailable = false, 400, false; ui:Refresh();expandDetail()
     ui.questTreeRoot,ui.questTreeDungeon=400,ui.dungeon;ui:RefreshQuests()
-    local function option(parent)
+    local function option(parent, optional)
         for _,row in ipairs(ui.rows)do local b=row.branchControl
             if row.shown and b and b.shown and b.branchChild==400 and b.branchGroup==1 and b.branchParent==parent then return b end
         end
-        error("Missing middle alternative control "..tostring(parent))
+        if not optional then error("Missing middle alternative control "..tostring(parent))end
     end
     assert(ui.action.id == 401)
-    assert(not option(403).enabled);option(403).scripts.OnClick();assert(choices[400][1]==nil)
+    assert(not option(403,true),"Mine hides the foreign-faction alternative control")
+    for _,row in ipairs(ui.rows)do assert(not(row.shown and row.questID==403),"Mine hides the foreign-faction alternative row")end
     assert(not ui:ChooseBranch(400, 1, 403) and not ui:ChooseBranch(400, 1, 999))
+    ui.characterButton.scripts.OnClick(ui.characterButton,"LeftButton")
+    assert(ui.includeUnavailable and not option(403).enabled,"All exposes the foreign branch for disabled inspection only")
+    option(403).scripts.OnClick();assert(choices[400][1]==nil)
+    assert(not ui:ChooseBranch(400,1,403),"All does not authorize selecting an unavailable branch")
+    ui.characterButton.scripts.OnClick(ui.characterButton,"LeftButton")
+    assert(not ui.includeUnavailable and not option(403,true),"returning to Mine hides the foreign branch again")
     assert(not ui:ChooseBranch(math.huge, 1, 401) and choices[400][1] == nil)
     option(402).scripts.OnClick()
     assert(ui.action.id == 402 and choices[400][1] == 402)
@@ -1094,14 +1101,20 @@ check("Grouped middle stories keep source grouping separate from acceptance requ
     addon.quests[912]={id=912,minLevel=1,requirementsKnown=true,factions={"Horde"}}
     addon.Context=function()return {level=20,faction="Alliance",completed=function()return false end,active=function()return false end}end
     ui.dungeon={key="grouped",quests={910}};ui.quest,ui.questTreeRoot,ui.questTreeDungeon=910,910,ui.dungeon
+    ui.includeUnavailable=false
     ui:RefreshQuests();ui:RefreshDetail()
     assert(ui.engine:State(910).status=="UNKNOWN" and not ui.action)
     local byID={};for _,row in ipairs(ui.rows)do if row.shown and row.questTreeNode and row.questID then byID[row.questID]=row end end
-    assert(byID[911] and byID[912] and byID[910] and byID[1],"optional source ancestors remain inspectable")
+    assert(byID[911] and not byID[912] and byID[910] and byID[1],"Mine retains eligible optional source ancestors while hiding the foreign peer")
     assert(byID[1].questTreeRelation=="required" and not byID[1].questTreePath)
+    ui.characterButton.scripts.OnClick(ui.characterButton,"LeftButton")
+    byID={};for _,row in ipairs(ui.rows)do if row.shown and row.questTreeNode and row.questID then byID[row.questID]=row end end
+    assert(ui.includeUnavailable and byID[911]and byID[912]and byID[910]and byID[1],"All preserves the complete optional source group for inspection")
     assert(byID[911].questTreeRelation=="story" and byID[912].questTreeRelation=="story")
     byID[912].scripts.OnClick();assert(ui.quest==912 and ui.engine:State(912).status=="UNAVAILABLE" and not ui.action)
     assert(not detailHas(addon.L("STORY_GROUP_NOTICE")))
+    ui.characterButton.scripts.OnClick(ui.characterButton,"LeftButton")
+    assert(not ui.includeUnavailable,"grouped inspection returns to Mine before cleanup")
     addon.quests[910],addon.quests[911],addon.quests[912]=nil,nil,nil
     addon.Context,ui.dungeon=context,dungeon;ui.questTreeRoot,ui.questTreeDungeon=nil,nil;showDetail(2);ui:RefreshQuests()
 end)
@@ -1332,7 +1345,13 @@ check("Middle prerequisites expose AND and OR structure and distinguish acceptan
     local row=rowFor(971);assert(row and row.title.text=="Quest 971" and row.height>=84 and row.questTreeRelation=="required")
     assert(row.note.text:find(addon.L("ACTIVE"),1,true))
     assert(rowFor(972).note.text:find(addon.L("REQUIREMENT_ACTIVE"),1,true))
+    assert(not rowFor(973)and not ui:ChooseBranch(970,2,973),"Mine hides and rejects the foreign prerequisite alternative")
+    ui.characterButton.scripts.OnClick(ui.characterButton,"LeftButton")
     local unavailable=rowFor(973).branchControl;assert(unavailable and not unavailable.enabled)
+    assert(ui.includeUnavailable and rowFor(972).note.text:find(addon.L("REQUIREMENT_ACTIVE"),1,true),"All retains active-mode OR grouping for disabled inspection")
+    ui.characterButton.scripts.OnClick(ui.characterButton,"LeftButton")
+    assert(not ui.includeUnavailable and not rowFor(973)and ui.action.id==971,"Mine restores the same active prerequisite guidance")
+    row=assert(rowFor(971))
     local click=row.scripts.OnClick;click();assert(ui.quest==971 and ui.engine:State(971).status=="ACTIVE" and ui.questTreeRoot==970)
     ui.quest=970;ui:RefreshQuests();ui:RefreshDetail();click();assert(ui.quest==970,"old middle-row callbacks expire after publication")
     addon.quests[970].requirementsKnown=false;addon.quests[970].requires={{ids={974}}}
@@ -3522,14 +3541,18 @@ check("Middle OR inspection remains separate from preference and foreign-charact
     addon.quests[19002]={id=19002,minLevel=1,requirementsKnown=true}
     addon.quests[19003]={id=19003,minLevel=1,requirementsKnown=true,factions={"Horde"}}
     ui.dungeon={name="Inspection fixture",key="inspection-fixture",quests={19001},coverage="partial"}
-    addon.char.choices={[19001]={[1]=19002}};ui.detailHistory={};showDetail(19001)
+    addon.char.choices={[19001]={[1]=19002}};ui.detailHistory={};ui.includeUnavailable=false;showDetail(19001)
     ui.questTreeRoot,ui.questTreeDungeon=19001,ui.dungeon;ui:RefreshQuests();ui:RefreshDetail()
     local function rowFor(id)for _,row in ipairs(ui.rows)do if row.shown and row.questTreeNode and row.questID==id then return row end end end
+    assert(not rowFor(19003)and not ui:ChooseBranch(19001,1,19003),"Mine hides the foreign OR option without changing the saved preference")
+    ui.characterButton.scripts.OnClick(ui.characterButton,"LeftButton")
     local button=rowFor(19003);assert(button and button.enabled and not button.branchControl.enabled and ui.action.id==19002)
     local picked=addon.char.choices;ui.detailScroll:SetVerticalScroll(12);button.scripts.OnClick()
     assert(ui.quest==19003 and addon.char.choices==picked and picked[19001][1]==19002)
     assert(detailHas(addon.L("REASON_faction")) and not ui.action)
     assert(ui:BackQuest() and ui.quest==19001 and ui.action.id==19002 and ui.detailScroll.verticalScroll==math.min(12,math.max(0,ui.detail.height-ui.detailScroll:GetHeight())))
+    ui.characterButton.scripts.OnClick(ui.characterButton,"LeftButton")
+    assert(not ui.includeUnavailable and not rowFor(19003),"Mine hides the inspected foreign option after returning to its root")
     local stale=rowFor(19002).scripts.OnClick;ui:RefreshQuests();stale();assert(ui.quest==19001)
     for language in pairs(addon.locales)do
         addon.db.locale=language;ui:RefreshQuests();assert(rowFor(19002).note.text:find(addon.L("REQUIREMENT_NOTICE"),1,true))
