@@ -74,7 +74,12 @@ ui.includeUnavailable=false
 -- A populated dungeon with no matching roots is not missing catalogue data.
 a.quests[8].classes={"WARRIOR"};d.quests={8};epoch=epoch+1;ui:Refresh();assertCount(0)
 local function has(text)for _,line in ipairs(ui.details)do if line.shown and line.text==text then return true end end end
-assert(ui.currentPlan.notice=="NO_CHARACTER_QUESTS" and has(a.L("OVERVIEW_PICK")) and not has(a.L("EMPTY")), "middle list owns the filtered-empty notice; compact overview remains a prompt")
+local function imageOnly()
+ assert(ui.quest==nil and ui.overviewArt and ui.overviewArt:IsShown()and ui.overviewArt.texture==a.DungeonArt(ui.dungeon),"right pane retains actual selected dungeon illustration")
+ for _,line in ipairs(ui.details)do assert(not line:IsShown(),"right illustration does not repeat catalogue or middle-list text")end
+ return true
+end
+assert(ui.currentPlan.notice=="NO_CHARACTER_QUESTS" and imageOnly() and not has(a.L("EMPTY")), "middle list owns the filtered-empty notice; right overview contains only illustration")
 ui.characterButton.scripts.OnClick(ui.characterButton);assertCount(1)
 -- Compact detail rendering never asks for the removed aggregate count caption.
 ui.includeUnavailable=false;d.quests={1,2};epoch=epoch+1;ui:Refresh()
@@ -85,7 +90,7 @@ assert(armed and not has("STALECOUNT "..a.L("CATALOG_QUESTS",0)),"compact overvi
 
 -- Hiding a catalogue card cannot introduce a duplicate count into the compact overview.
 ui.search="not a matching dungeon";ui:Refresh();assert(#ui.currentPlan.rows==0)
-assert(not has(a.L("CATALOG_QUESTS",0)) and has(a.L("OVERVIEW_PICK")))
+assert(not has(a.L("CATALOG_QUESTS",0)) and imageOnly())
 ui.search="";ui:Refresh()
 -- A native metadata setter may invalidate an excluded root before publication.
 a.quests[2].factions={"Horde"};epoch=epoch+1;ui:Refresh()

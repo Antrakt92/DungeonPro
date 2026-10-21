@@ -33,7 +33,10 @@ local function assertCompactDefault()
     assert(u.quest==nil and u.overviewBinding==nil,"ordinary refresh keeps the default compact overview")
     local count=0
     for _,field in ipairs(u.details or{})do if field:IsShown()then count=count+1 end end
-    assert(count==3,"default right pane has only title, range and choose-quest prompt")
+    assert(count==0,"default right pane does not repeat title, range or choose-quest prompt")
+    local art=assert(u.overviewArt,"default selected dungeon has an illustration")
+    assert(art:IsShown()and art.texture==a.DungeonArt(u.dungeon),"default displays actual selected dungeon artwork")
+    assert(art:GetWidth()>0 and art:GetHeight()>0 and art:GetWidth()<=u.detail:GetWidth()-8,"default illustration fits the detail content")
     for _,row in ipairs(u.actionInspectButtons or{})do assert(not row:IsShown(),"default does not publish compatibility component rows")end
     assert(not u.overviewMoreButton or not u.overviewMoreButton:IsShown())
     assert(not u.overviewFewerButton or not u.overviewFewerButton:IsShown())

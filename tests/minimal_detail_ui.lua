@@ -230,12 +230,21 @@ addon.quests[parentB]={id=parentB,name="Alternative B",requirementsKnown=true,mi
 addon.quests[testID].requires={{ids={parentA,parentB}}}
 local branchDungeon={key="minimal-or",name="OR alternatives",quests={testID}}
 ui.dungeon,ui.quest,ui.questTreeDungeon,ui.questTreeRoot=branchDungeon,testID,branchDungeon,testID
+ui.includeUnavailable=false
 ui:RefreshQuests()
 local function choiceRow(id)
     for _,row in ipairs(ui.rows)do if row:IsShown() and row.questID==id and row.questTreeNode then return row end end
 end
 local available,unavailable=choiceRow(parentA),choiceRow(parentB)
+assert(available and not unavailable and available.branchControl:IsShown(),"Mine hides the foreign alternative without removing the eligible preference")
+assert(not ui:ChooseBranch(testID,1,parentB),"Mine cannot prefer an unavailable foreign alternative")
+ui.characterButton.scripts.OnClick(ui.characterButton,"LeftButton")
+available,unavailable=choiceRow(parentA),choiceRow(parentB)
 assert(available and unavailable and available.branchControl:IsShown() and unavailable.branchControl.enabled==false)
+assert(ui.includeUnavailable and not ui:ChooseBranch(testID,1,parentB),"All permits disabled inspection without authorizing foreign preference")
+ui.characterButton.scripts.OnClick(ui.characterButton,"LeftButton")
+available=assert(choiceRow(parentA))
+assert(not ui.includeUnavailable and not choiceRow(parentB),"Mine is restored before preference and optional-story checks")
 assert(available.branchReserve==22 and available.branchControl.branchChild==testID)
 function tip:SetText(text) self.title=text end
 function tip:AddLine(text) self.note=text end

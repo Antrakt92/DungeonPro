@@ -60,7 +60,9 @@ for _,locale in ipairs({"enUS","ruRU","deDE","frFR","esES","itIT","ptBR","koKR",
  assert(arity==1,"empty guidance must format exactly one existing filter label")
  local notice=a.L("NO_CHARACTER_QUESTS",all)
  assert(notice:find(all,1,true)and not notice:find("%%s",1,true))
- assert(noticeVisible(notice)==1 and noticeVisible(a.L("OVERVIEW_PICK"))==1,"middle empty state owns the actionable filter choice while the right panel stays a compact prompt")
+ assert(noticeVisible(notice)==1 and noticeVisible(a.L("OVERVIEW_PICK"))==0,"middle empty state owns the actionable filter choice without duplicated right text")
+ assert(u.overviewArt and u.overviewArt:IsShown()and u.overviewArt.texture==a.DungeonArt(root),"right panel keeps the actual selected dungeon illustration")
+ for _,field in ipairs(u.details)do assert(not field:IsShown(),"right illustration contains no duplicate guidance text")end
  assert(u.characterButton.filterCaption.text==mine)
  u.characterButton.scripts.OnEnter();assert(tooltip.shown and tooltip.lines[1]==mine and tooltip.lines[2]==a.L("FILTER_SWITCH",all))
  u.characterButton.scripts.OnClick();drain()
