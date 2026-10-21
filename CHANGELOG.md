@@ -1,8 +1,6 @@
 # Changelog
 
-## Unreleased
-
-## 0.3.0 - 21-Oct-2026 — Quest details Beta
+## 0.3.0 - 20-Oct-2026 — Quest details Beta
 
 ### New quests and catalogue updates
 
