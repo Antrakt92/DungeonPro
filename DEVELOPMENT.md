@@ -77,8 +77,9 @@ tools stay out. This command builds locally; it does not publish a release.
 ## Optional layout preview
 
 `scripts/render-detail-preview.py` renders modeled UI anchors with sample data.
-It needs Pillow in addition to the tools above. Pillow is not required for the
-normal checks or packaging. A generated preview is not an in-game screenshot.
+It needs Pillow 8.2 or newer in addition to the tools above. Pillow is not
+required for the normal checks or packaging. A generated preview is not an
+in-game screenshot.
 
 To preview a dungeon overview with a simulated ready quest:
 

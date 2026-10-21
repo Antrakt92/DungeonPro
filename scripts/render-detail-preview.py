@@ -194,8 +194,6 @@ def main() -> None:
         from PIL import Image, ImageDraw, ImageFont
     except ImportError:
         raise SystemExit("Optional preview rendering requires Pillow. Use an existing Pillow-enabled Python interpreter; no installation is performed.") from None
-    if not args.lua:
-        parser.error("Lua 5.1 is required; pass --lua with the existing executable")
     args.output.mkdir(parents=True, exist_ok=True)
     for quest in ([0] if args.overview else args.quest or (4764, 4766)):
         stem = "overview-" + args.overview if args.overview else str(quest)
