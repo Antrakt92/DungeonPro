@@ -48,7 +48,7 @@ recorded. Missing information stays marked.
 Use the small arrow beside the dungeon list to collapse it and give long quest
 chains more room; use the arrow again to restore the list.
 
-Selecting a dungeon shows its name and levels on the right. Choose a quest or
+Selecting a dungeon shows its illustration on the right. Choose a quest or
 chain step in the middle list to open its details; the right pane does not repeat
 the quest list. Progress and preparation information remain with the middle list.
 Unverified conditions stay marked.

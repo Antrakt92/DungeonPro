@@ -10,15 +10,22 @@
   a quest is selected.
 - Read selected quest details in one stream, with objectives, items, rewards and
   practical source information before available quest text.
+- Refresh quest details with larger headings, highlighted objectives and clearer
+  contact cards.
+- Improve navigation and reading-position restoration when switching quests or
+  changing filters.
 - Use separate pickup and turn-in contact rows, including recorded alternative
   locations and clear explanations when exact positions are missing.
 - Distinguish quest pickups, turn-ins and dungeon entrances with map icons.
 - Browse Scarlet Monastery as four wings: Graveyard, Library, Armory and Cathedral.
 - Populate Scarlet wing lists using a labelled Classic baseline, including quests
   with objectives across several wings.
+- Keep unassigned Scarlet Monastery quests in a separate monastery quest index.
 - Add reviewed giver portraits and recorded source locations for more quests.
 - Add warrior material quests for Razorfen Kraul, repeatable Indurium Ore
   collection and special Stratholme quests, with visible profession labels.
+- Update reuse terms: derivative authors choose a positive CurseForge reward
+  share, with no fixed minimum.
 
 This remains an early beta. Quest coverage, requirements and some locations are
 incomplete. Unseen quest text depends on what the game client can provide;
