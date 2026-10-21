@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import argparse
+import datetime
 import json
 import math
 import re
@@ -145,11 +146,18 @@ def objective_item_source_places(quest):
 def validate(data):
     if type(data.get("schema")) is not int or data["schema"] != 1:
         raise ValueError("Unsupported catalogue schema")
-    if "checked" in data and (
-        type(data["checked"]) is not str or
-        re.fullmatch(r"\d{4}-(?:0[1-9]|1[0-2])-(?:0[1-9]|[12][0-9]|3[01])", data["checked"]) is None
-    ):
-        raise ValueError("Invalid catalogue checked date")
+    if "checked" in data:
+        checked = data["checked"]
+        try:
+            valid = (type(checked) is str and
+                     re.fullmatch(r"\d{4}-(?:0[1-9]|1[0-2])-(?:0[1-9]|[12][0-9]|3[01])",
+                                  checked) is not None)
+            if valid:
+                datetime.date.fromisoformat(checked)
+        except ValueError:
+            valid = False
+        if not valid:
+            raise ValueError("Invalid catalogue checked date")
     quests = {}
     for q in data["quests"]:
         if set(q) - QUEST_FIELDS:
@@ -262,7 +270,7 @@ def validate(data):
                                     not p["zoneName"].strip() or len(p["zoneName"]) > 500):
                 raise ValueError(f"Invalid place zone name: {q['id']}")
             for identity in ("npcID", "objectID", "itemID", "dropNPCID"):
-                if identity in p and not integer(p[identity]):
+                if identity in p and (not integer(p[identity]) or p[identity] > 2 ** 32 - 1):
                     raise ValueError(f"Invalid {identity} entity ID: {q['id']}")
             if sum(identity in p for identity in ("npcID", "objectID", "itemID")) > 1:
                 raise ValueError(f"Ambiguous quest place identity: {q['id']}")

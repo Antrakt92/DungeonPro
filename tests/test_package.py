@@ -79,6 +79,15 @@ class PackageTests(unittest.TestCase):
         for info in infos:
             self.assertEqual(info.create_system, 0, f"host-independent archive: {info.filename}")
 
+    def test_packager_references_zipinfo_by_attribute(self):
+        # The foreign-host test above patches zipfile.ZipInfo on the module. If
+        # the packager ever switched to `from zipfile import ZipInfo`, that
+        # patch would silently stop applying while the test stayed green. Pin
+        # the attribute reference form so the pin cannot be neutered.
+        source = (ROOT / "scripts" / "package.py").read_text(encoding="utf-8")
+        self.assertIn("zipfile.ZipInfo", source)
+        self.assertNotRegex(source, r"(?m)^\s*from\s+zipfile\s+import\s+.*\bZipInfo\b")
+
     def test_toc_changes_during_build_cannot_publish_inconsistent_membership_or_version(self):
         for mutation in ("append", "remove", "version"):
             with self.subTest(mutation=mutation), tempfile.TemporaryDirectory() as tmp:

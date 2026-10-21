@@ -848,6 +848,22 @@ class CatalogTests(unittest.TestCase):
         self.data["quests"][0]["start"] = {"objectID": 142487}
         catalog.validate(self.data)
 
+    def test_place_identity_ids_keep_uint32_boundaries(self):
+        for field in ("npcID", "objectID", "itemID", "dropNPCID"):
+            data = self.minimal_catalog()
+            place = {"itemID": 1} if field == "dropNPCID" else {}
+            place[field] = 2 ** 32 - 1
+            data["quests"][1]["start"] = place
+            catalog.validate(data)
+            for value in (2 ** 32, 2 ** 53 - 1):
+                with self.subTest(field=field, value=value):
+                    data = self.minimal_catalog()
+                    place = {"itemID": 1} if field == "dropNPCID" else {}
+                    place[field] = value
+                    data["quests"][1]["start"] = place
+                    with self.assertRaisesRegex(ValueError, f"{field} entity ID"):
+                        catalog.validate(data)
+
     def test_item_container_sources_preserve_facts_and_generate_without_mutation(self):
         quest = self.data["quests"][0]
         quest["start"] = {"itemID": 5791, "name": "Henrig's Journal"}
@@ -1424,6 +1440,19 @@ class CatalogTests(unittest.TestCase):
             data = self.minimal_catalog()
             data["checked"] = checked
             catalog.validate(data)
+
+    def test_catalogue_checked_date_requires_a_real_calendar_day(self):
+        for checked in ("2024-02-29", "2026-10-16", "2000-02-29"):
+            data = self.minimal_catalog()
+            data["checked"] = checked
+            catalog.validate(data)
+        for checked in ("2026-02-29", "2023-02-29", "2026-02-30", "2026-02-31",
+                        "2026-04-31", "2026-06-31", "2026-09-31", "2026-11-31",
+                        "0000-01-01", "2026-00-01", "2026-01-00"):
+            data = self.minimal_catalog()
+            data["checked"] = checked
+            with self.subTest(checked=checked), self.assertRaisesRegex(ValueError, "checked"):
+                catalog.validate(data)
 
     def test_dungeon_source_rejects_empty_and_nonurl_values(self):
         for source in ("", " ", "not a url", "Recorded guide", "javascript:invalid",

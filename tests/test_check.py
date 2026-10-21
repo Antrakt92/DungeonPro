@@ -59,9 +59,14 @@ class RunnerSyntaxBatchTests(unittest.TestCase):
             module, calls, gates = exercise(root)
             with self.assertRaises(SyntaxFinished):
                 module.main()
-            self.assertEqual(gates, [("scripts/catalog.py", "--check"), ("scripts/casefold.py", "--check"),
-                                     ("scripts/names.py", "--check"), ("scripts/check_toc.py",),
-                                     ("scripts/check_version.py",)])
+            # Membership, not order: these five gates are independent, so their
+            # relative order is brittle to pin. The current sequence
+            # (catalog, casefold, names, toc, version) is still the intentional
+            # convention — cheapest static gates first, cross-file version sync
+            # last — but only the set is load-bearing here.
+            self.assertCountEqual(gates, [("scripts/catalog.py", "--check"), ("scripts/casefold.py", "--check"),
+                                          ("scripts/names.py", "--check"), ("scripts/check_toc.py",),
+                                          ("scripts/check_version.py",)])
             self.assertEqual([len(call) for call in calls], [32, 21])
             self.assertEqual([path for call in calls for path in call], expected)
             self.assertEqual(
@@ -86,27 +91,61 @@ class RunnerSyntaxBatchTests(unittest.TestCase):
 
 
 class RunnerGateWiringTests(unittest.TestCase):
-    # This module already pins the check.py python-gate order (see above), so it
-    # also owns the companion wiring pin: every tests/*.lua file must be
-    # registered in scripts/check.py. Presence, not order, is asserted so that
-    # multi-invocation files (large_dungeon_performance.lua, detail_visual.lua)
-    # satisfy the pin with any one of their invocations.
-    def test_every_lua_test_is_registered_in_check_runner(self):
+    # This module already pins the check.py python-gate membership (see above),
+    # so it also owns the companion wiring pin: every tests/*.lua file must be
+    # registered in scripts/check.py as an explicit run(lua, "tests/<name>")
+    # call. Presence, not order, is asserted so that multi-invocation files
+    # (large_dungeon_performance.lua, detail_visual.lua) satisfy the pin only
+    # when each of their argument sets is present (pinned separately below).
+    def test_every_lua_test_is_registered_as_a_runner_call(self):
         runner_source = RUNNER.read_text(encoding="utf-8")
         root = RUNNER.resolve().parents[1]
         missing = sorted(path.name for path in sorted((root / "tests").glob("*.lua"))
-                         if f"tests/{path.name}" not in runner_source)
+                         if f'run(lua, "tests/{path.name}"' not in runner_source)
         self.assertEqual(missing, [])
+
+    def test_multi_invocation_argument_sets_are_pinned(self):
+        runner_source = RUNNER.read_text(encoding="utf-8")
+        for args in ('"missing"', '"items"', '"chain"'):
+            self.assertIn(f'run(lua, "tests/large_dungeon_performance.lua", {args})', runner_source)
+        self.assertIn('run(lua, "tests/detail_visual.lua", "check")', runner_source)
+        self.assertIn('run(lua, "tests/detail_visual.lua", "overview:dm", "enUS", "", "", "", "155", "check")',
+                      runner_source)
+        self.assertIn('run(lua, "tests/detail_visual.lua", "overview:dm", "ruRU", "", "collapsed", "", "155", "check")',
+                      runner_source)
+
+    def test_tail_wires_are_present_in_check_runner(self):
+        # scripts/check.py tail. The syntax-phase mock above raises
+        # SyntaxFinished before the tail runs, so deleting any of these lines
+        # passes every other test in this module: pin them here by source
+        # presence. This test never executes the tail itself.
+        runner_source = RUNNER.read_text(encoding="utf-8")
+        self.assertIn('run(sys.executable, "-m", "unittest", "discover", "-s", "tests", "-p", "test_*.py", "-v")',
+                      runner_source)
+        self.assertIn('run(sys.executable, "scripts/package.py")', runner_source)
+        self.assertIn('run("git", "diff", "--check")', runner_source)
+
+    def test_registered_lua_runner_count_has_a_floor(self):
+        # Live count on 2026-10-21 is 198 run(lua, ...) invocations (194 unique
+        # files; large_dungeon_performance.lua and detail_visual.lua run three
+        # times each). Growth is allowed; shrinkage fails. An intentional mass
+        # removal must lower this floor deliberately, in the same change.
+        runner_source = RUNNER.read_text(encoding="utf-8")
+        self.assertGreaterEqual(runner_source.count("run(lua,"), 198)
 
 
 class TocParityTests(unittest.TestCase):
-    def fixture(self, root, toc_lines, tracked=()):
+    def fixture(self, root, toc_lines, tracked=(), untracked=()):
         subprocess.run(["git", "init", "-q"], cwd=root, check=True, capture_output=True)
         for name in tracked:
             path = root / name
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_text("-- fixture\n", encoding="utf-8")
         subprocess.run(["git", "add", "-A"], cwd=root, check=True, capture_output=True)
+        for name in untracked:
+            path = root / name
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text("-- untracked fixture\n", encoding="utf-8")
         (root / "DungeonPro.toc").write_text(
             "## Interface: 16001\n## Title: DungeonPro\n## Version: 0.3.0\n"
             + "".join(line + "\n" for line in toc_lines),
@@ -141,6 +180,44 @@ class TocParityTests(unittest.TestCase):
             with self.assertRaisesRegex(SystemExit, "missing"):
                 module.main()
 
+    def test_database_file_missing_fails(self):
+        with tempfile.TemporaryDirectory(prefix="quest toc database ") as folder:
+            module = self.fixture(Path(folder), ["Core/A.lua"], ["Core/A.lua", "Database/Catalog.lua"])
+            with self.assertRaisesRegex(SystemExit, "Database/Catalog.lua"):
+                module.main()
+
+    def test_locales_file_missing_fails(self):
+        with tempfile.TemporaryDirectory(prefix="quest toc locales ") as folder:
+            module = self.fixture(Path(folder), ["Core/A.lua"], ["Core/A.lua", "Locales/Strings.lua"])
+            with self.assertRaisesRegex(SystemExit, "Locales/Strings.lua"):
+                module.main()
+
+    def test_untracked_runtime_file_missing_fails(self):
+        with tempfile.TemporaryDirectory(prefix="quest toc untracked ") as folder:
+            module = self.fixture(Path(folder), ["Core/A.lua"], ["Core/A.lua"],
+                                  untracked=["Database/Catalog.lua"])
+            with self.assertRaisesRegex(SystemExit, "Database/Catalog.lua"):
+                module.main()
+
+    def test_untracked_files_outside_runtime_scope_are_ignored(self):
+        # The untracked sweep is scoped to the runtime directories, so
+        # unrelated WIP elsewhere never fails this gate.
+        with tempfile.TemporaryDirectory(prefix="quest toc wip ") as folder:
+            module = self.fixture(Path(folder), ["Core/A.lua"], ["Core/A.lua"],
+                                  untracked=["notes/scratch.lua", "data/x.lua"])
+            self.assertIsNone(module.main())
+
+    def test_case_only_difference_still_matches(self):
+        with tempfile.TemporaryDirectory(prefix="quest toc case ") as folder:
+            module = self.fixture(Path(folder), ["core/a.lua"], ["Core/A.lua"])
+            self.assertIsNone(module.main())
+
+    def test_case_variant_duplicate_fails(self):
+        with tempfile.TemporaryDirectory(prefix="quest toc casedup ") as folder:
+            module = self.fixture(Path(folder), ["Core/A.lua", "core/a.lua"], ["Core/A.lua"])
+            with self.assertRaisesRegex(SystemExit, "Duplicate"):
+                module.main()
+
 
 class VersionSyncTests(unittest.TestCase):
     def fixture(self, root, toc="0.3.0", namespace="0.3.0", changelog="0.3.0"):
@@ -170,12 +247,128 @@ class VersionSyncTests(unittest.TestCase):
                 with self.assertRaisesRegex(SystemExit, "drift"):
                     module.main()
 
+    def test_malformed_versions_fail_closed_in_each_source(self):
+        for field in ("toc", "namespace", "changelog"):
+            for bad in ("v0.3.0", "0.3", ""):
+                with self.subTest(field=field, bad=bad), tempfile.TemporaryDirectory(
+                        prefix="quest version malformed ") as folder:
+                    module = self.fixture(Path(folder), **{field: bad})
+                    with self.assertRaisesRegex(SystemExit, "not found"):
+                        module.main()
+
+    def test_missing_version_lines_fail_closed(self):
+        with tempfile.TemporaryDirectory(prefix="quest version absent ") as folder:
+            root = Path(folder)
+            module = self.fixture(root)
+            (root / "DungeonPro.toc").write_text("## Interface: 16001\nCore/Namespace.lua\n", encoding="utf-8")
+            with self.assertRaisesRegex(SystemExit, "not found"):
+                module.main()
+        with tempfile.TemporaryDirectory(prefix="quest version absent ") as folder:
+            root = Path(folder)
+            module = self.fixture(root)
+            (root / "Core" / "Namespace.lua").write_text("local name, addon = ...\n", encoding="utf-8")
+            with self.assertRaisesRegex(SystemExit, "not found"):
+                module.main()
+        with tempfile.TemporaryDirectory(prefix="quest version absent ") as folder:
+            root = Path(folder)
+            module = self.fixture(root)
+            (root / "CHANGELOG.md").write_text("# Changelog\n\nNo headings yet.\n", encoding="utf-8")
+            with self.assertRaisesRegex(SystemExit, "not found"):
+                module.main()
+
+    def test_duplicate_toc_version_with_drift_fails(self):
+        for extra in ("## Version: 9.9.9\n", "## Version: 0.3.0\n"):
+            with self.subTest(extra=extra.strip()), tempfile.TemporaryDirectory(
+                    prefix="quest version dup ") as folder:
+                root = Path(folder)
+                module = self.fixture(root)
+                with (root / "DungeonPro.toc").open("a", encoding="utf-8") as handle:
+                    handle.write(extra)
+                with self.assertRaisesRegex(SystemExit, "[Aa]mbiguous"):
+                    module.main()
+
+    def test_duplicate_namespace_version_with_drift_fails(self):
+        for extra in ('addon.version = "9.9.9"\n', 'addon.version = "0.3.0"\n'):
+            with self.subTest(extra=extra.strip()), tempfile.TemporaryDirectory(
+                    prefix="quest version dup ") as folder:
+                root = Path(folder)
+                module = self.fixture(root)
+                with (root / "Core" / "Namespace.lua").open("a", encoding="utf-8") as handle:
+                    handle.write(extra)
+                with self.assertRaisesRegex(SystemExit, "[Aa]mbiguous"):
+                    module.main()
+
+    def test_changelog_history_below_top_heading_still_passes(self):
+        # Older release headings are history, not ambiguity: only the top
+        # heading drives the sync. TOC and Namespace.lua stay strict (above).
+        with tempfile.TemporaryDirectory(prefix="quest version history ") as folder:
+            root = Path(folder)
+            module = self.fixture(root)
+            with (root / "CHANGELOG.md").open("a", encoding="utf-8") as handle:
+                handle.write("\n## 0.2.0 - 19-Oct-2026 — Fixture history\n")
+            self.assertIsNone(module.main())
+
     def test_real_tree_versions_are_synchronized(self):
         spec = importlib.util.spec_from_file_location(
             "check_version_real_tree", RUNNER.parent / "check_version.py")
         module = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(module)
         self.assertIsNone(module.main())
+
+
+LUA = shutil.which("lua5.1")
+
+
+@unittest.skipUnless(LUA, "lua5.1 is required to drive the baseline shim")
+class BaselineShimTests(unittest.TestCase):
+    # tests/large_dungeon_performance.lua:3-28 replaces loadfile only when a
+    # second (baseline) argument is present. The gate never passes one, so this
+    # class drives both baseline shapes directly against minimal fixture trees:
+    # a legacy tree where the artwork and diagnostics modules are absent (the
+    # stub branches) and a current tree where they load from the baseline (the
+    # redirect branches). Either tree would fail if the shim stopped working:
+    # a missing passthrough file breaks originalLoad, and a legacy tree without
+    # the legacy artwork APIs trips the DungeonArt stub assert.
+    PASSTHROUGH = ("UI/Window.lua", "UI/RewardCache.lua", "Core/Client.lua",
+                   "Core/DungeonStatus.lua", "Core/Events.lua", "Core/Namespace.lua")
+
+    def _baseline(self, folder, legacy):
+        repo = RUNNER.resolve().parents[1]
+        base = Path(folder) / ("legacy" if legacy else "current")
+        for name in self.PASSTHROUGH:
+            target = base / name
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_bytes((repo / name).read_bytes())
+        if legacy:
+            with (base / "Core/Client.lua").open("a", encoding="utf-8") as handle:
+                handle.write('\nfunction addon.DungeonArt(d) return "legacy-art" end\n'
+                             'function addon.PaintDungeonArt(texture, dungeon, mode, showOwned) return true end\n')
+            with (base / "Core/Events.lua").open("r+", encoding="utf-8") as handle:
+                original = handle.read()
+                handle.seek(0)
+                handle.write('local name0, addon0 = ...\naddon0.Diagnostics = addon0.Diagnostics or '
+                             '{ Navigation = function() end, Minimap = function() end }\n' + original)
+        else:
+            for name in ("Core/DungeonArt.lua", "Core/Diagnostics.lua"):
+                target = base / name
+                target.parent.mkdir(parents=True, exist_ok=True)
+                target.write_bytes((repo / name).read_bytes())
+        return base
+
+    def _run_baseline(self, base):
+        repo = RUNNER.resolve().parents[1]
+        proc = subprocess.run([LUA, "tests/large_dungeon_performance.lua", "missing", str(base)],
+                              cwd=repo, capture_output=True, text=True, timeout=300)
+        self.assertEqual(proc.returncode, 0, msg=(proc.stdout or "")[-2000:] + (proc.stderr or "")[-2000:])
+        self.assertIn("Large dungeon workload: PASS", proc.stdout)
+
+    def test_legacy_baseline_without_art_or_diagnostics_uses_stubs(self):
+        with tempfile.TemporaryDirectory(prefix="quest baseline legacy ") as folder:
+            self._run_baseline(self._baseline(folder, legacy=True))
+
+    def test_current_baseline_loads_art_and_diagnostics_from_baseline(self):
+        with tempfile.TemporaryDirectory(prefix="quest baseline current ") as folder:
+            self._run_baseline(self._baseline(folder, legacy=False))
 
 
 if __name__ == "__main__":
