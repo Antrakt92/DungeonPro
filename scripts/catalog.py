@@ -145,6 +145,11 @@ def objective_item_source_places(quest):
 def validate(data):
     if type(data.get("schema")) is not int or data["schema"] != 1:
         raise ValueError("Unsupported catalogue schema")
+    if "checked" in data and (
+        type(data["checked"]) is not str or
+        re.fullmatch(r"\d{4}-(?:0[1-9]|1[0-2])-(?:0[1-9]|[12][0-9]|3[01])", data["checked"]) is None
+    ):
+        raise ValueError("Invalid catalogue checked date")
     quests = {}
     for q in data["quests"]:
         if set(q) - QUEST_FIELDS:
@@ -271,6 +276,8 @@ def validate(data):
                     raise ValueError(f"Invalid sourced giver portrait: {q['id']}")
             if "dropNPCID" in p and "itemID" not in p:
                 raise ValueError(f"Item drop source without starter item: {q['id']}")
+            if "dropName" in p and "dropNPCID" not in p:
+                raise ValueError(f"Drop label without drop identity: {q['id']}")
             if "itemClasses" in p or "itemMinLevel" in p:
                 if key != "start" or "itemID" not in p:
                     raise ValueError(f"Item requirements without starter item: {q['id']}")
@@ -411,6 +418,8 @@ def validate(data):
             raise ValueError("Unknown dungeon fields")
         if not nonempty_string(d.get("key")) or not nonempty_string(d.get("name")):
             raise ValueError("Invalid dungeon key/name")
+        if "source" in d and not web_source(d["source"]):
+            raise ValueError("Invalid dungeon guide source")
         if d["key"] in keys:
             raise ValueError("Duplicate dungeon")
         keys.add(d["key"])

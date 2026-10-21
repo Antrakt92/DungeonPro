@@ -1395,8 +1395,22 @@ class CatalogTests(unittest.TestCase):
         target["requires"] = [{"ids": [1], "mode": "active"}]
         target["storyline"] = [1, 2]
         data["dungeons"][0]["quests"] = [1, 2]
-        target["start"] = {"name": "Known giver", "dropName": "Known drop source"}
+        target["start"] = {"name": "Known giver"}
         catalog.validate(data)
+
+    def test_drop_label_requires_drop_identity(self):
+        data = self.minimal_catalog()
+        data["quests"][1]["start"] = {"name": "Known giver", "itemID": 100,
+                                      "dropName": "Known drop source", "dropNPCID": 200}
+        catalog.validate(data)
+        for missing in ("dropNPCID", "itemID"):
+            broken = self.minimal_catalog()
+            place = {"name": "Known giver", "itemID": 100,
+                     "dropName": "Known drop source", "dropNPCID": 200}
+            del place[missing]
+            broken["quests"][1]["start"] = place
+            with self.subTest(missing=missing), self.assertRaises(ValueError):
+                catalog.validate(broken)
 
 
     def test_wing_metadata_requires_a_known_wing_and_instance(self):
