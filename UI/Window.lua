@@ -4604,8 +4604,19 @@ function UI:RefreshDetail(sourceFocus)
             return list ~= nil and #list == 0
         end
         local startItemID = start and addon.Clean(rawget(start, "itemID"), "number")
-        local itemStarter = startItemID and startItemID > 0 and startItemID <= 4294967295 and startItemID % 1 == 0 and
-            rawget(start, "npcID") == nil and rawget(start, "objectID") == nil and (q.startAlternatives == nil or isEmptyAlternatives(q.startAlternatives))
+        -- Single shared pickup-shape authority: the strict classifier runs
+        -- first so malformed/secret alternatives cannot claim an item
+        -- starter while list/overview say outside. The lenient inline
+        -- verdict stays as the fallback when the helper is unavailable.
+        local pickupSources = addon.QuestNavigation
+        local pickupClassifier = pickupSources and pickupSources.PickupStartKind
+        local itemStarter
+        if type(pickupClassifier) == "function" then
+            itemStarter = pickupClassifier(pickupSources, q.start, q.startAlternatives) == "item"
+        else
+            itemStarter = startItemID and startItemID > 0 and startItemID <= 4294967295 and startItemID % 1 == 0 and
+                rawget(start, "npcID") == nil and rawget(start, "objectID") == nil and (q.startAlternatives == nil or isEmptyAlternatives(q.startAlternatives))
+        end
         local missingStart = rawequal(rawget(q, "start"), nil) and (rawequal(rawget(q, "startAlternatives"), nil) or isEmptyAlternatives(q.startAlternatives))
         local function missingStartCurrent()
             return metadataCurrent() and portraitCardCurrent() and addon.quests[id] == definition and

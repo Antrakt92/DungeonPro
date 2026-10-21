@@ -517,8 +517,8 @@ assert(#emptyCompacted.steps == 6 and emptyCompacted.remainingSteps == 2, "Fewer
 assert(noteOf(manyEmptyIds[1]):find(itemMark, 1, true) and not noteOf(manyEmptyIds[1]):find(outsideMark, 1, true), "empty-alternative mark survives Fewer")
 
 -- (10) DP-5 OVERVIEW-SUMMON-KIND-COHERENCE: summon pickups map to uncertain, not outside/item/inside.
-a.quests[9801] = { id = 9801, name = "Summon pickup", minLevel = 1, requirementsKnown = true, start = { objectID = 112877, summonItem = { itemID = 7667 } } }
-a.quests[9802] = { id = 9802, name = "Summon inside", minLevel = 1, requirementsKnown = true, startsInside = true, start = { objectID = 112877, summonItem = { itemID = 7667 } } }
+a.quests[9801] = { id = 9801, name = "Summon pickup", minLevel = 1, requirementsKnown = true, start = { objectID = 112877, summonItem = { itemID = 7667, name = "Summon tool" } } }
+a.quests[9802] = { id = 9802, name = "Summon inside", minLevel = 1, requirementsKnown = true, startsInside = true, start = { objectID = 112877, summonItem = { itemID = 7667, name = "Summon tool" } } }
 local summonDungeon = { key = "controlled-summon", name = "Summon fixture", minLevel = 1, maxLevel = 60, coverage = "partial", quests = { 9801, 9802 } }
 a.dungeons[#a.dungeons + 1] = summonDungeon
 render(summonDungeon)
@@ -546,7 +546,7 @@ renderComponent()
 
 -- (11) supporting summon keeps SUPPORTING·UNCERTAIN·STATUS·INSPECT exactly once.
 a.quests[9811] = { id = 9811, name = "Listed summon parent", minLevel = 1, requirementsKnown = true, requires = { { ids = { 9812 } } } }
-a.quests[9812] = { id = 9812, name = "Support summon", minLevel = 1, requirementsKnown = true, start = { objectID = 112877, summonItem = { itemID = 7667 } } }
+a.quests[9812] = { id = 9812, name = "Support summon", minLevel = 1, requirementsKnown = true, start = { objectID = 112877, summonItem = { itemID = 7667, name = "Summon tool" } } }
 local supportSummonDungeon = { key = "controlled-support-summon", name = "Support summon fixture", minLevel = 1, maxLevel = 60, coverage = "partial", quests = { 9811 } }
 a.dungeons[#a.dungeons + 1] = supportSummonDungeon
 render(supportSummonDungeon)
@@ -664,8 +664,8 @@ render(summonDungeon)
 assert(noteOf(9801):find(summonUncertain, 1, true), "composition recovers after mapID removal")
 
 -- (16) DP-5 OVERVIEW-SUMMON-ALTERNATIVES-COHERENCE: valid summon + well-formed alternatives stays uncertain (summon wins, routeless); empty parity, malformed/secret/mixed/garbage stay outside.
-a.quests[9851] = { id = 9851, name = "Summon alt", minLevel = 1, requirementsKnown = true, start = { objectID = 112877, summonItem = { itemID = 7667 } }, startAlternatives = { { npcID = 5678 } } }
-a.quests[9852] = { id = 9852, name = "Summon empty alt", minLevel = 1, requirementsKnown = true, start = { objectID = 112877, summonItem = { itemID = 7667 } }, startAlternatives = {} }
+a.quests[9851] = { id = 9851, name = "Summon alt", minLevel = 1, requirementsKnown = true, start = { objectID = 112877, summonItem = { itemID = 7667, name = "Summon tool" } }, startAlternatives = { { npcID = 5678 } } }
+a.quests[9852] = { id = 9852, name = "Summon empty alt", minLevel = 1, requirementsKnown = true, start = { objectID = 112877, summonItem = { itemID = 7667, name = "Summon tool" } }, startAlternatives = {} }
 a.quests[9853] = { id = 9853, name = "Summon malformed alt", minLevel = 1, requirementsKnown = true, start = { objectID = 112877, summonItem = { itemID = 7667 } }, startAlternatives = 5 }
 a.quests[9855] = { id = 9855, name = "Summon mixed alt", minLevel = 1, requirementsKnown = true, start = { objectID = 112877, summonItem = { itemID = 7667 } }, startAlternatives = { { npcID = 5678 }, "bad" } }
 a.quests[9856] = { id = 9856, name = "Summon garbage alt", minLevel = 1, requirementsKnown = true, start = { objectID = 112877, summonItem = { itemID = 7667 } }, startAlternatives = { "cord" } }
@@ -744,4 +744,34 @@ assert(u.quest == 9861 and u.dungeon == modeledDungeon and routes == 0, "modeled
 assert(u:BackQuest() and u.quest == nil)
 renderComponent()
 
+-- F-D OVERVIEW-SHARED-FALLBACK: with the shared helpers absent, overview kind
+-- labels degrade to their documented fallback verdicts (no item-only or
+-- summon pickup can be proven, so placed pickups label outside); restoring
+-- the helpers recovers the shared marks.
+do
+ local questSources = a.QuestNavigation
+ local savedEmpty, savedKind = questSources.IsEmptyAlternatives, questSources.PickupStartKind
+ render(itemSingleDungeon)
+ assert(noteOf(9501):find(itemMark, 1, true), "shared helpers present keep the item mark")
+ questSources.PickupStartKind = nil
+ render(itemSingleDungeon)
+ assert(noteOf(9501):find(outsideMark, 1, true) and not noteOf(9501):find(itemMark, 1, true), "missing classifier falls back to outside for a placed pickup, never item")
+ questSources.PickupStartKind = savedKind
+ render(itemSingleDungeon)
+ assert(noteOf(9501):find(itemMark, 1, true) and not noteOf(9501):find(outsideMark, 1, true), "restored classifier recovers the item mark")
+ questSources.IsEmptyAlternatives = nil
+ render(itemSingleDungeon)
+ assert(noteOf(9501):find(itemMark, 1, true) and not noteOf(9501):find(outsideMark, 1, true), "missing emptiness helper alone keeps the item mark for absent alternatives")
+ questSources.IsEmptyAlternatives = savedEmpty
+ render(emptySingleDungeon)
+ assert(noteOf(9731):find(itemMark, 1, true) and not noteOf(9731):find(outsideMark, 1, true), "shared helpers present keep the item mark for empty alternatives")
+ -- Both helpers are nil-ed together because the classifier delegates
+ -- emptiness to its sibling; the combined fallback proves no item pickup.
+ questSources.IsEmptyAlternatives, questSources.PickupStartKind = nil, nil
+ render(emptySingleDungeon)
+ assert(noteOf(9731):find(outsideMark, 1, true) and not noteOf(9731):find(itemMark, 1, true), "missing helpers fall back to outside for empty alternatives, never item")
+ questSources.IsEmptyAlternatives, questSources.PickupStartKind = savedEmpty, savedKind
+ render(emptySingleDungeon)
+ assert(noteOf(9731):find(itemMark, 1, true) and not noteOf(9731):find(outsideMark, 1, true), "restored helpers recover the item mark")
+end
 print("Overview kinds compatibility component: PASS (explicit real renderer, compact default preserved; pickup/inside distinct + order + clicks; level/unknown under NEXT without availability or green; More/Fewer and dungeon-switch ownership; supporting-kind composition without doubles)")

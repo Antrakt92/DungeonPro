@@ -446,7 +446,17 @@ do
  assert(ui:PickupStartKind(nil,nil)==nil,"missing start classifies as ordinary")
  assert(ui:PickupStartKind({itemID=801},5)==nil,"malformed alternatives keep item starters unshaped")
  assert(ui:PickupStartKind({itemID=801,name="Own starter"})=="item","item-only starter classifies once")
- assert(ui:PickupStartKind({objectID=112877,summonItem={itemID=7667}})=="uncertain","summon pickup classifies once")
+ assert(ui:PickupStartKind({objectID=112877,name="Scrying Bowl",summonItem={itemID=7667,name="Summon tool"}})=="uncertain","summon pickup classifies once")
+end
+-- F-C NAMELESS-SUMMON-TOOL: a summon tool without a nonblank, length-bounded
+-- name never classifies as uncertain, matching SummonSource strictness.
+do
+ assert(ui:PickupStartKind({objectID=112877,summonItem={itemID=7667}})==nil,"nameless summon tool classifies as ordinary, never uncertain")
+ assert(ui:PickupStartKind({objectID=112877,summonItem={itemID=7667,name=""}})==nil,"blank summon tool name classifies as ordinary")
+ assert(ui:PickupStartKind({objectID=112877,summonItem={itemID=7667,name="   "}})==nil,"whitespace-only summon tool name classifies as ordinary")
+ assert(ui:PickupStartKind({objectID=112877,summonItem={itemID=7667,name=5}})==nil,"non-string summon tool name classifies as ordinary")
+ assert(ui:PickupStartKind({objectID=112877,summonItem={itemID=7667,name=("n"):rep(501)}})==nil,"overlong summon tool name classifies as ordinary")
+ assert(ui:PickupStartKind({objectID=112877,summonItem={itemID=7667,name=("n"):rep(500)}})=="uncertain","500-char summon tool name keeps the uncertain pickup")
 end
 -- U1/U2/U4 LIST-KIND-AGREEMENT + U3 ROW-NOTE-LOCALE: preparation grouping and
 -- row notes share the overview shape authority and reviewed locale names.
@@ -508,6 +518,71 @@ do
  ui.dungeon,ui.quest,ui.preparation=savedDungeon,savedQuest,savedPrep
  ui.questTreeRoot,ui.questTreeDungeon=savedRoot,savedRootDungeon
  for _,id in ipairs({991201,991202,991203,991204,991205})do addon.quests[id]=nil end
+ ui:Refresh()
+end
+-- F-A ROW-ITEM-ALTERNATIVES-AGREEMENT: an item start with well-formed
+-- alternatives is not an item-only pickup (the shared classifier returns nil
+-- for it), so the row must not claim START_ITEM_NAVIGATION while list and
+-- overview say outside and detail keeps GIVER_CHOICES_REQUIRED. With known
+-- choices the row stays inspectable (SOURCE_DETAILS_HINT, mirroring the
+-- start-less + alternatives branch) instead of dead-ending the user with a
+-- disabled QUEST_START_UNKNOWN despite recorded alternatives.
+do
+ addon.quests[990104].start={itemID=50033}
+ addon.quests[990104].startAlternatives={{npcID=5678}}
+ ui.search="";ui.questTreeRoot=nil;ui.questTreeDungeon=nil;ui.quest=990104;ui.frame:Show();ui:Refresh()
+ assert(ui:PickupStartKind(addon.quests[990104].start,addon.quests[990104].startAlternatives)==nil,"item + choices classifies as ordinary, never item")
+ assert(not ui:IsEmptyAlternatives(addon.quests[990104].startAlternatives),"non-empty alternatives stay present")
+ do
+  local target=row(990104);local button=target.navigationControl;local binding=target.navigationBinding
+  assert(binding.reason=="SOURCE_DETAILS_HINT","item + choices keeps details hint, never item navigation")
+  assert(binding.inspect==true and binding.action==nil,"item + choices has inspection without route")
+  assert(button:IsShown() and button.enabled,"item + choices stays enabled")
+  button.scripts.OnEnter()
+  assert(tip.shown and tip.owner==button and tip.title==addon.L("SOURCE_DETAILS") and tip.body==addon.L("SOURCE_DETAILS_HINT"),"item + choices explains choices under source title")
+  local routedBefore,mappedBefore=#routed,#mapped
+  button.scripts.OnClick()
+  assert(#routed==routedBefore and #mapped==mappedBefore,"item + choices click dispatches no route and no map")
+  assert(ui.quest==990104 and ui.renderedQuest==990104,"item + choices click inspects its own details")
+ end
+ addon.quests[990104].start={itemID=801,name="Own starter"};addon.quests[990104].startAlternatives=nil
+ ui.search="";ui.questTreeRoot=nil;ui.questTreeDungeon=nil;ui.quest=990104;ui.frame:Show();ui:Refresh()
+ do
+  local binding=row(990104).navigationBinding
+  assert(binding.reason=="START_ITEM_NAVIGATION" and binding.inspect==true,"restored lone item starter keeps item navigation")
+ end
+end
+-- F-D LIST-CLASSIFY-FALLBACK: with the shared classifier absent, list grouping
+-- degrades to its documented place verdict (a placed pickup lists outside,
+-- never item); restoring the helper recovers PREP_item.
+do
+ addon.quests[991301]={id=991301,name="Fallback item starter",minLevel=1,requirementsKnown=true,
+  start={itemID=7666,name="Shattered Necklace"}}
+ local fallbackDungeon={key="classify-fallback",name="Classify fallback fixture",minLevel=1,maxLevel=80,quests={991301}}
+ local savedDungeon,savedQuest,savedPrep,savedRoot,savedRootDungeon=
+  ui.dungeon,ui.quest,ui.preparation,ui.questTreeRoot,ui.questTreeDungeon
+ local function fallbackHeadings()
+  ui.dungeon,ui.quest,ui.preparation=fallbackDungeon,nil,true
+  ui.questTreeRoot,ui.questTreeDungeon,ui.search,ui.includeUnavailable=nil,nil,"",true
+  ui.frame:Show();ui:RefreshQuests();ui:RefreshDetail()
+  local group,found=nil,{}
+  for _,r in ipairs(ui.rows)do
+   if r:IsShown()then
+    if r.heading then group=r.heading
+    elseif r.questID then found[r.questID]=group end
+   end
+  end
+  return found
+ end
+ assert(fallbackHeadings()[991301]=="PREP_item","shared classifier present lists the item starter under item")
+ local savedClassifier=addon.QuestNavigation.PickupStartKind
+ addon.QuestNavigation.PickupStartKind=nil
+ assert(fallbackHeadings()[991301]=="PREP_outside","missing classifier falls back to outside for a placed pickup, never item")
+ addon.QuestNavigation.PickupStartKind=savedClassifier
+ assert(fallbackHeadings()[991301]=="PREP_item","restored classifier recovers the item group")
+ ui.dungeon,ui.quest,ui.preparation=savedDungeon,savedQuest,savedPrep
+ ui.questTreeRoot,ui.questTreeDungeon=savedRoot,savedRootDungeon
+ addon.quests[991301]=nil
  ui:Refresh()
 end
 print("Middle quest navigation checks passed (modeled, no native input or layout proof)")

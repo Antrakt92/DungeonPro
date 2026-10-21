@@ -252,7 +252,19 @@ function UI:DetailContactBinding(definition, endpointField, ownerCurrent)
         if (type(values.x)=="nil")~=(type(values.y)=="nil") then return nil end
         if x and (x<0 or x>100 or y<0 or y>100) then return nil end
         mapOnly=not(x and y)
-        if item then reason="START_ITEM_NAVIGATION"
+        -- Start-field item grants follow the shared pickup classifier so an
+        -- item start with well-formed alternatives cannot claim item
+        -- navigation while list/overview/detail say outside/choices. The
+        -- finish field keeps its local shape logic; a missing helper keeps
+        -- the legacy grant.
+        local itemGrant = item
+        if field == "start" then
+            local classifier = self.PickupStartKind
+            if type(classifier) == "function" then
+                itemGrant = read(classifier, "string", self, starts, startAlternatives) == "item"
+            end
+        end
+        if itemGrant then reason="START_ITEM_NAVIGATION"
         elseif drop or type(values.summonItem)~="nil" then reason="SOURCE_DETAILS_HINT"
         elseif not (typed(npc) or typed(object)) then reason="QUEST_START_UNKNOWN"
         elseif not map then reason="SOURCE_POSITION_UNKNOWN"
@@ -597,7 +609,11 @@ function UI:PickupStartKind(start, alternatives)
         rawget(start, "mapID") == nil and rawget(start, "x") == nil and rawget(start, "y") == nil and
         rawget(start, "reportedLocations") == nil and not restricted(rawget(start, "summonItem")) then
         local summonItem = clean(rawget(start, "summonItem"), "table")
-        if summonItem and validID(rawget(summonItem, "itemID")) then return "uncertain" end
+        -- A summon tool without a nonblank, length-bounded name agrees with
+        -- SummonSource: it never classifies as uncertain on its own.
+        local summonName = summonItem and clean(rawget(summonItem, "name"), "string")
+        if summonItem and validID(rawget(summonItem, "itemID")) and summonName and #summonName <= 500 and
+            summonName:find("%S") then return "uncertain" end
     end
     if not hasAlternatives and validID(rawget(start, "itemID")) and
         rawget(start, "npcID") == nil and rawget(start, "objectID") == nil and not restricted(rawget(start, "itemID")) then
@@ -717,7 +733,18 @@ function UI:BindQuestRowNavigation(row, id, ownerCurrent)
     end
     binding.current = current
     local markerPurpose
-    local itemOnly = values.itemID and not values.npcID and not values.objectID
+    -- Single shared pickup-shape authority: the row item grant follows
+    -- PickupStartKind on the same raw inputs so item+alternatives shapes
+    -- cannot claim item navigation while list/overview/detail say
+    -- outside/choices. The legacy inline verdict stays as the fallback
+    -- when the shared helper is ever unavailable.
+    local pickupClassifier = self.PickupStartKind
+    local itemOnly
+    if type(pickupClassifier) == "function" then
+        itemOnly = addon.Read(pickupClassifier, "string", self, rawStart, alternatives) == "item"
+    else
+        itemOnly = values.itemID and not values.npcID and not values.objectID
+    end
     if summon then binding.inspect, binding.reason = true, "SOURCE_DETAILS_HINT"
     elseif declaredSummon then binding.reason = "GIVER_LOCATION_UNKNOWN"
     elseif rawSummon ~= nil and summon == nil then binding.reason = "QUEST_START_UNKNOWN"
@@ -725,6 +752,7 @@ function UI:BindQuestRowNavigation(row, id, ownerCurrent)
     elseif rawValues.itemID ~= nil then
         if itemOnly and readable and values.itemID > 0 and values.itemID <= 4294967295 and values.itemID % 1 == 0 then
             binding.inspect, binding.reason = true, "START_ITEM_NAVIGATION"
+        elseif alternativeList and alternativeCount > 0 then binding.inspect, binding.reason = true, "SOURCE_DETAILS_HINT"
         else binding.reason = "QUEST_START_UNKNOWN" end
     elseif not start and alternativeList and alternativeCount > 0 then binding.inspect, binding.reason = true, "SOURCE_DETAILS_HINT"
     elseif not readable or not start or not values.mapID or values.mapID <= 0 or values.mapID > 9007199254740991 or values.mapID % 1 ~= 0 then

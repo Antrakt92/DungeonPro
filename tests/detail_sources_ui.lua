@@ -57,6 +57,69 @@ assert(#toggles() == 1 and quest.start.reportedLocations == source and quest.fin
     "presentation deduplication leaves both source records untouched")
 print("Quest endpoint source disclosures: PASS (actual q971, five exact points, distinct sources and stale clicks)")
 
+-- F-B DETAIL-ITEM-STARTER-STRICTNESS: malformed/secret alternatives never claim
+-- a detail item starter (the shared classifier returns nil for them while the
+-- lenient emptiness check alone says absent). Well-formed choices keep
+-- GIVER_CHOICES_REQUIRED and a lone starter keeps its acquisition key.
+do
+ local qItem = assert(addon.quests[98423])
+ assert(qItem.startAlternatives == nil, "catalogue item starter carries no alternatives")
+ local savedStart, savedAlternatives = qItem.start, qItem.startAlternatives
+ local savedDungeon, savedQuest = ui.dungeon, ui.quest
+ local function renderItem()
+  for _, dungeon in ipairs(addon.dungeons) do
+   for _, id in ipairs(dungeon.quests) do if id == 98423 then ui.dungeon = dungeon end end
+  end
+  ui.quest = 98423; ui:Refresh()
+  assert(ui:SetDetailTab("quest"))
+ end
+ renderItem()
+ assert(ui.giverUnavailableKey == "START_ITEM_LOCATION_UNKNOWN", "lone item starter keeps its acquisition key")
+ qItem.startAlternatives = 5
+ renderItem()
+ assert(ui.giverUnavailableKey == "GIVER_LOCATION_UNKNOWN", "malformed alternatives claim no item starter and no choices")
+ qItem.startAlternatives = { { npcID = 5678 } }
+ renderItem()
+ -- Well-formed alternatives on a valid item start are recorded but not
+ -- rendered as choice buttons (that branch serves start-less records), so the
+ -- card keeps the honest location warning instead of an item claim.
+ assert(ui.giverUnavailableKey == "GIVER_LOCATION_UNKNOWN", "well-formed alternatives keep the location warning, never an item starter")
+ do
+  local secretAlt = {}
+  local savedChecker = issecretvalue
+  qItem.startAlternatives = secretAlt
+  issecretvalue = function(value) return value == secretAlt end
+  renderItem()
+  assert(ui.giverUnavailableKey == "GIVER_LOCATION_UNKNOWN", "secret alternatives claim no item starter and no choices")
+  issecretvalue = savedChecker
+ end
+ qItem.start, qItem.startAlternatives = savedStart, savedAlternatives
+ ui.dungeon, ui.quest = savedDungeon, savedQuest; ui:Refresh()
+ assert(ui:SetDetailTab("sources"))
+end
+-- F-D DETAIL-EMPTY-FALLBACK: with the shared helpers absent, the detail uses
+-- its documented local verdicts (a Clean empty table still counts as absent,
+-- so an item starter with empty alternatives keeps its acquisition key);
+-- restoring the helpers recovers the shared verdict. Both helpers are nil-ed
+-- together because the classifier delegates emptiness to its sibling.
+do
+ local qItem = assert(addon.quests[98423])
+ local savedAlternatives = qItem.startAlternatives
+ local questSources = addon.QuestNavigation
+ local savedEmpty, savedKind = questSources.IsEmptyAlternatives, questSources.PickupStartKind
+ qItem.startAlternatives = {}
+ ui.quest = 98423; ui:Refresh()
+ assert(ui:SetDetailTab("quest"))
+ assert(ui.giverUnavailableKey == "START_ITEM_LOCATION_UNKNOWN", "shared helpers present keep the item starter for empty alternatives")
+ questSources.IsEmptyAlternatives, questSources.PickupStartKind = nil, nil
+ ui:RefreshDetail()
+ assert(ui.giverUnavailableKey == "START_ITEM_LOCATION_UNKNOWN", "missing helpers fall back to absent for empty alternatives, never choices")
+ questSources.IsEmptyAlternatives, questSources.PickupStartKind = savedEmpty, savedKind
+ ui:RefreshDetail()
+ assert(ui.giverUnavailableKey == "START_ITEM_LOCATION_UNKNOWN", "restored helpers recover the shared verdict")
+ qItem.startAlternatives = savedAlternatives
+end
+print("Detail item-starter strictness checks passed (malformed/secret alternatives claim no item starter)")
 -- The right quest card has no entrance action; that belongs to dungeon cards.
 -- Its redraws must not query unrelated entrance metadata or retain overview state.
 local entrances, entranceReads = addon.Entrances, 0
