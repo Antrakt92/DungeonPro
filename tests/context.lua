@@ -88,6 +88,23 @@ check("Explicit clean quest reads preserve the ready fallback and stable pre-DB 
         assert(c.ready(id) == nil)
     end
 end)
+check("Huge quest IDs never reach native completion readers", function()
+    local reads = 0
+    local function counting() reads = reads + 1; return false end
+    C_QuestLog.IsQuestFlaggedCompleted = counting
+    C_QuestLog.IsOnQuest = counting
+    C_QuestLog.ReadyForTurnIn = counting
+    C_QuestLog.IsComplete = counting
+    local c = addon.Context()
+    for _, huge in ipairs({ 9007199254740992, 2 ^ 60 }) do
+        assert(c.completed(huge) == nil, "huge completed ID reached a reader")
+        assert(c.active(huge) == nil, "huge active ID reached a reader")
+        assert(c.ready(huge) == nil, "huge ready ID reached a reader")
+    end
+    assert(reads == 0, "huge quest ID reached a native reader")
+    assert(c.completed(7) == false and c.active(7) == false and c.ready(7) == false, "valid ID lost its read")
+    assert(reads > 0, "valid ID lost its native read")
+end)
 check("Planning discards cached completion and restrictions after context invalidation", function()
     C_QuestLog.IsQuestFlaggedCompleted = function() return true end
     local c = addon.Context()

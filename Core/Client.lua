@@ -486,7 +486,8 @@ function addon.Context()
         return addon.Clean(values[index + 1], expected)
     end
     local function evidence(fn, id)
-        id = dialogueInteger(id, 1)
+        -- Cap IDs at 2^53 so huge doubles cannot wrap into another valid quest ID in native readers.
+        id = dialogueInteger(id, 1, 9007199254740991)
         if not id or not current() then return nil end
         local value = addon.Read(fn, "boolean", id)
         if current() then return value end
@@ -1530,10 +1531,11 @@ end
 function addon.CachedQuestRewards(id)
     local clean, read, generation = addon.Clean, addon.Read, contextGeneration
     local character, database = addon.char, addon.db
-    id = dialogueInteger(id, 1)
+    -- Cap IDs at 2^53 so huge doubles cannot wrap into another valid quest ID in native readers.
+    id = dialogueInteger(id, 1, 9007199254740991)
     local catalogue = clean(addon.quests, "table")
     local catalog = id and catalogue and clean(rawget(catalogue, id), "table")
-    if not catalog or dialogueInteger(rawget(catalog, "id"), 1) ~= id then return nil end
+    if not catalog or dialogueInteger(rawget(catalog, "id"), 1, 9007199254740991) ~= id then return nil end
     local api = { loaded = HaveQuestRewardData, locale = GetLocale, rewards = GetNumQuestLogRewards,
         choices = GetNumQuestLogChoices, fixed = GetQuestLogRewardInfo, choice = GetQuestLogChoiceInfo,
         money = GetQuestLogRewardMoney, xp = GetQuestLogRewardXP, secret = issecretvalue }

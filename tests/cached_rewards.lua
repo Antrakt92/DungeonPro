@@ -78,10 +78,30 @@ check("Unknown or restricted loaded evidence rejects before all reward getters",
     assert(addon.CachedQuestRewards(65) == nil and calls == 0)
 end)
 check("Only known clean positive integer catalogue IDs can use cached rewards", function()
-    for _, id in ipairs({ false, 0, -1, 1.5, math.huge, 0 / 0, "65", secret, 66 }) do
+    for _, id in ipairs({ false, 0, -1, 1.5, math.huge, 0 / 0, "65", secret, 66, 9007199254740992, 2 ^ 60 }) do
         assert(addon.CachedQuestRewards(id) == nil and calls == 0)
     end
     assert(addon.CachedQuestRewards(nil) == nil)
+end)
+check("Huge catalogue IDs never reach native reward readers", function()
+    for _, huge in ipairs({ 9007199254740992, 2 ^ 60 }) do
+        reset()
+        addon.quests[huge] = { id = huge }
+        local loadedReads = 0
+        HaveQuestRewardData = function(id, ...) loadedReads = loadedReads + 1; return true end
+        assert(addon.CachedQuestRewards(huge) == nil, "huge rewards ID reached a reader")
+        assert(loadedReads == 0 and calls == 0, "huge quest ID reached a native reader")
+    end
+    reset()
+    local MAX = 9007199254740991
+    addon.quests[MAX] = { id = MAX }
+    HaveQuestRewardData = function(id, ...) assert(id == MAX and select("#", ...) == 0); return true end
+    GetNumQuestLogRewards = function(id, ...) calls = calls + 1; assert(id == MAX and select("#", ...) == 0); return 0 end
+    GetNumQuestLogChoices = function(id, ...) calls = calls + 1; assert(id == MAX and select("#", ...) == 0); return 0 end
+    GetQuestLogRewardMoney = function(id, ...) assert(id == MAX and select("#", ...) == 0); return 0 end
+    GetQuestLogRewardXP = function(id, ...) assert(id == MAX and select("#", ...) == 0); return 0 end
+    local r = addon.CachedQuestRewards(MAX)
+    assert(r and #r.items == 0 and #r.choices == 0, "2^53-1 rewards lost")
 end)
 check("Loaded zero counts are real empty arrays even without item or optional scalar getters", function()
     fixedCount, choiceCount = 0, 0
