@@ -475,5 +475,46 @@ check("Uncapped quest-log counts fail closed while generous boundaries stay trut
     end
     Constants = nil
 end)
+check("Dialogue and selected-log money enforce integer 2^53-1 caps", function()
+    local MAX = 9007199254740991
+    addon.quests = { [65] = {} }
+    GetQuestID = function() return 65 end
+    UnitGUID = function(unit) assert(unit == "player"); return "Player-1-ABC" end
+    QuestFrame = { IsShown = function() return true end }
+    QuestFrameDetailPanel = { IsShown = function() return true end }
+    C_QuestLog = { ShouldShowQuestRewards = function(id) assert(id == 65); return true end }
+    GetNumQuestRewards = function() return 0 end
+    GetNumQuestChoices = function() return 0 end
+    GetQuestItemInfo = function() error("no items expected") end
+    local function dialogueMoney(value)
+        GetRewardMoney = function() return value end
+        GetRewardXP = function() return 0 end
+        return addon.DialogueRewards(65)
+    end
+    addon.DialogueRewardEvent("QUEST_DETAIL")
+    assert(dialogueMoney(0).money == 0, "valid zero dialogue money lost")
+    assert(dialogueMoney(MAX).money == MAX, "2^53-1 dialogue money lost")
+    for _, huge in ipairs({ 9007199254740992, 1e18, 1.5 }) do
+        local r = dialogueMoney(huge)
+        assert(r and r.money == nil, "uncapped dialogue money reached display")
+    end
+    addon.DialogueRewardEvent("QUEST_FINISHED")
+    C_QuestLog = { GetSelectedQuest = function() return 65 end,
+        GetLogIndexForQuestID = function(id) assert(id == 65); return 1 end }
+    GetNumQuestLogRewards = function() return 0 end
+    GetNumQuestLogChoices = function() return 0 end
+    GetQuestLogRewardInfo = nil
+    GetQuestLogChoiceInfo = function() error("no choices expected") end
+    local function selectedMoney(value)
+        GetQuestLogRewardMoney = function() return value end
+        return addon.QuestRewards(65)
+    end
+    assert(selectedMoney(0).money == 0, "valid zero selected-log money lost")
+    assert(selectedMoney(MAX).money == MAX, "2^53-1 selected-log money lost")
+    for _, huge in ipairs({ 9007199254740992, 1e18, 1.5 }) do
+        local r = selectedMoney(huge)
+        assert(r and r.money == nil, "uncapped selected-log money reached display")
+    end
+end)
 issecretvalue = nil
 print("Quest portrait adapter modeled checks passed: " .. total .. " (native client unverified)")

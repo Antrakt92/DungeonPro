@@ -183,4 +183,41 @@ check("Optional validity adapters fail closed while absent adapters preserve leg
         assert(state.status == "UNKNOWN" and state.completedHistory == false)
     end
 end)
+check("Huge native creature and race IDs fail closed at 2^53-1", function()
+    local MAX = 9007199254740991
+    GetLocale = function() return "enUS" end
+    -- A huge race input never reaches the native info reader, even when the
+    -- native side would echo the same huge identity back.
+    local raceReads = 0
+    C_CreatureInfo = { GetRaceInfo = function(id)
+        raceReads = raceReads + 1
+        return { raceID = id, raceName = "Echo race" }
+    end }
+    assert(addon.RaceName(3) == "Echo race" and raceReads == 1, "valid race ID lost its read")
+    assert(addon.RaceName(MAX) == "Echo race", "2^53-1 race ID lost its read")
+    for _, huge in ipairs({ 9007199254740992, 2 ^ 60 }) do
+        raceReads = 0
+        assert(addon.RaceName(huge) == nil, "huge race ID published a name")
+        assert(raceReads == 0, "huge race ID reached the native info reader")
+    end
+    -- A huge returned race identity cannot match a valid input either.
+    C_CreatureInfo = { GetRaceInfo = function(id)
+        return { raceID = 9007199254740992, raceName = "Wrong race" }
+    end }
+    assert(addon.RaceName(3) == nil, "huge returned race ID published a name")
+    -- A huge native creature ID never authorizes the giver unit name.
+    local nameReads = 0
+    UnitGUID = function(unit) assert(unit == "npc"); return "Creature-GUID" end
+    C_CreatureInfo = { GetCreatureID = function(guid)
+        assert(guid == "Creature-GUID"); return 9007199254740992
+    end }
+    UnitName = function(unit) nameReads = nameReads + 1; return "Native name" end
+    local place = { npcID = 234, name = "Source name" }
+    assert(addon.GiverName(place) == nil, "huge native creature ID published a name")
+    assert(nameReads == 0, "huge native creature ID reached the unit name reader")
+    C_CreatureInfo = { GetCreatureID = function(guid)
+        assert(guid == "Creature-GUID"); return 234
+    end }
+    assert(addon.GiverName(place) == "Native name" and nameReads == 1, "matching creature ID lost its name")
+end)
 print("Character context modeled checks passed: " .. total .. " (no native character validation)")

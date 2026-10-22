@@ -38,7 +38,7 @@ function addon.GiverName(place)
             not locale or #locale > 32 or not locale:find("%S") then return nil end
         local id = dialogueInteger(addon.Read(function()
             return C_CreatureInfo.GetCreatureID(guid)
-        end, "number"), 1)
+        end, "number"), 1, 9007199254740991)
         return guid, id, locale
     end
     local guid, id, locale = scope()
@@ -118,7 +118,7 @@ function addon.ClassName(token)
 end
 
 function addon.RaceName(id)
-    id = dialogueInteger(id, 1)
+    id = dialogueInteger(id, 1, 9007199254740991)
     if not id then return nil end
     local scope = restrictionNameScope()
     if not scope then return nil end
@@ -128,7 +128,7 @@ function addon.RaceName(id)
     local info = addon.Read(getter, "table", id)
     if not scope() or addon.Clean(C_CreatureInfo, "table") ~= library or
         addon.Clean(rawget(library, "GetRaceInfo"), "function") ~= getter or not info then return nil end
-    local returnedID = dialogueInteger(rawget(info, "raceID"), 1)
+    local returnedID = dialogueInteger(rawget(info, "raceID"), 1, 9007199254740991)
     local name = addon.Clean(rawget(info, "raceName"), "string")
     if returnedID ~= id or not name or #name > 500 or not name:find("%S") then return nil end
     if not scope() or addon.Clean(C_CreatureInfo, "table") ~= library or
@@ -271,7 +271,7 @@ function addon.DialogueRewards(id)
     if not fixed then return nil end
     local choice = items("choice", choices)
     if not choice then return nil end
-    local money = dialogueInteger(addon.Read(api.money, "number"), 0)
+    local money = dialogueInteger(addon.Read(api.money, "number"), 0, 9007199254740991)
     if not live() then return nil end
     local xp = dialogueInteger(addon.Read(api.xp, "number"), 0, 9007199254740991)
     if not live() then return nil end
@@ -1475,8 +1475,7 @@ function addon.QuestRewards(id)
     if not fixed or not selected() then return nil end
     local choice = items(choices, api.choice)
     if not fixed or not choice then return nil end
-    local money = addon.Read(api.money, "number")
-    if money and money < 0 then money = nil end
+    local money = integer(addon.Read(api.money, "number"), 0, 9007199254740991)
     if not selected() then return nil end
     local xp
     local xpFunction = addon.Clean(xpGetter, "function")

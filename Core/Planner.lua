@@ -160,9 +160,17 @@ function Planner.New(quests, context, choices)
                     place = state.status == "READY" and q and q.finish or nil } }, false)
             end
             if state.status == "AVAILABLE" then
+                -- The catalogue can mutate between State and this re-read; a
+                -- missing entry fails closed as unknown, never a throw.
+                if not q then return publish({}, true) end
                 return publish({ { id = id, kind = q.startsInside and "inside" or "pickup", place = q.start } }, false)
             end
-            if state.reason == "level" then return publish({ { id = id, kind = "level", level = q.minLevel } }, false) end
+            if state.reason == "level" then
+                if not q then return publish({}, true) end
+                return publish({ { id = id, kind = "level", level = q.minLevel } }, false)
+            end
+            -- Any later traversal needs the entry; a vanished entry fails closed.
+            if not q then return publish({}, true) end
             path[id] = true
             local actions, uncertain, seen = {}, state.status == "UNKNOWN" and q.requirementsKnown ~= true, {}
             if q.requires ~= nil and type(q.requires) ~= "table" then path[id] = nil; return publish({}, true) end

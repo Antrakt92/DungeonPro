@@ -853,4 +853,45 @@ check("Non-table quest catalogues fail closed as unknown without throwing", func
         eq(plan.ready, false); eq(plan.unknown, true)
     end
 end)
+check("Mutated catalogue entries between State and Next fail closed without throwing", function()
+    -- The cached AVAILABLE state must not throw once the entry vanishes before the re-read.
+    local quests = { [1] = q(1) }
+    local engine = P.New(quests, ctx())
+    eq(engine:State(1).status, "AVAILABLE")
+    quests[1] = nil
+    local actions, unknown = engine:Next(1)
+    eq(#actions, 0); eq(unknown, true)
+    -- A non-table replacement is the same absent entry after the table guard.
+    local replaced = { [1] = q(1) }
+    local engine2 = P.New(replaced, ctx())
+    eq(engine2:State(1).status, "AVAILABLE")
+    replaced[1] = 5
+    local actions2, unknown2 = engine2:Next(1)
+    eq(#actions2, 0); eq(unknown2, true)
+    -- A cached level gate must not throw once its entry vanishes.
+    local gated = { [1] = q(1, nil, { minLevel = 10 }) }
+    local low = ctx(); low.level = 1
+    local engine3 = P.New(gated, low)
+    local gatedState = engine3:State(1)
+    eq(gatedState.status, "LOCKED"); eq(gatedState.reason, "level")
+    gated[1] = nil
+    local actions3, unknown3 = engine3:Next(1)
+    eq(#actions3, 0); eq(unknown3, true)
+    -- A cached locked requirement must not throw while traversing a vanished entry.
+    local chained = { [1] = q(1), [2] = q(2, { { ids = { 1 } } }) }
+    local engine4 = P.New(chained, ctx())
+    eq(engine4:State(2).status, "LOCKED")
+    chained[2] = nil
+    local actions4, unknown4 = engine4:Next(2)
+    eq(#actions4, 0); eq(unknown4, true)
+    -- READY keeps its established nil-place parity for a vanished entry.
+    local finish = { npcID = 7, mapID = 1, x = 1, y = 1 }
+    local held = { [1] = q(1, nil, { finish = finish }) }
+    local active = ctx({}, { [1] = true }); active.ready = function() return true end
+    local engine5 = P.New(held, active)
+    eq(engine5:State(1).status, "READY")
+    held[1] = nil
+    local actions5, unknown5 = engine5:Next(1)
+    eq(#actions5, 1); eq(actions5[1].kind, "turnin"); eq(actions5[1].place, nil); eq(unknown5, false)
+end)
 print("Planner checks passed: " .. passed)
