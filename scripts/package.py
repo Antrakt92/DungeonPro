@@ -24,7 +24,10 @@ def package(root=ROOT, output=None):
     toc_name = f"{ADDON_NAME}.toc"
     toc_bytes = exact_path(root, toc_name).read_bytes()
     toc = toc_bytes.decode("utf-8").replace("\r\n", "\n").replace("\r", "\n")
-    version = re.search(r"^## Version: ([0-9]+\.[0-9]+\.[0-9]+)$", toc, re.MULTILINE).group(1)
+    version_match = re.search(r"^## Version: ([0-9]+\.[0-9]+\.[0-9]+)$", toc, re.MULTILINE)
+    if not version_match:
+        raise ValueError(f"{toc_name} is missing a valid ## Version: X.Y.Z line")
+    version = version_match.group(1)
     names = [toc_name, "README.md", "CHANGELOG.md", "LICENSE"]
     names += ["Media/Fonts/NotoSans-Regular.ttf", "Media/Fonts/OFL.txt", "Media/Fonts/NOTICE.txt"]
     names += ["Media/Icons/Wowhead.tga", "Media/Icons/Language.tga", "Media/Icons/NOTICE.txt"]

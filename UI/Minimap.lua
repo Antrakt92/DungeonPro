@@ -455,7 +455,7 @@ function M:ToggleVisibility()
         if not current() then return false end
         local placed, reason = self:Place(position)
         if not current() then return false end
-        if not placed then if reason ~= "superseded" then self:HideForPlacement() end; return false end
+        if not placed then if reason ~= "superseded" then self:HideForPlacement(); self:RetryPlacement(self.db) end; return false end
         config.hide = false
         self:SetVisible(true)
     end

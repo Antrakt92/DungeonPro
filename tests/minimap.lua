@@ -473,5 +473,24 @@ check("Reset schedules bounded retry when placement geometry is unavailable",fun
     assert(m.button.shown and not m.retry)
     assert(m:Reset() and config.angle==225 and config.hide==false and m.button.shown)
 end)
+check("Toggle show schedules bounded retry when placement geometry is unavailable",function()
+    local config={hide=false,angle=17};local m=reset(config);assert(m:Initialize())
+    local queue=scheduled();m.button:Hide()
+    width=0
+    assert(m:ToggleVisibility()==false and #queue==1 and config.angle==17 and config.hide==false)
+    assert(not m.button.shown and m.retry)
+    width=200;queue[1]()
+    assert(m.button.shown and not m.retry and #queue==1 and not m.button.scripts.OnUpdate)
+    assert(config.hide==false and config.angle==17)
+end)
+check("Toggle show recovers through a manual repeat after unavailable geometry",function()
+    local config={hide=false,angle=17};local m=reset(config);assert(m:Initialize())
+    local queue=scheduled();m.button:Hide()
+    width=0
+    assert(m:ToggleVisibility()==false and #queue==1 and config.hide==false)
+    width=200
+    assert(m:ToggleVisibility() and m.button.shown and config.hide==false and config.angle==17)
+    queue[1]();assert(m.button.shown and config.hide==false)
+end)
 issecretvalue=nil
 print("Minimap modeled checks passed: "..total.." (native client unverified)")
