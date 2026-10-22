@@ -888,4 +888,80 @@ do
  ui.search="";ui.questTreeRoot=nil;ui.questTreeDungeon=nil;ui.quest=990104;ui.includeUnavailable=true;ui.frame:Show();ui:Refresh()
  assert(row(990101).navigationControl.enabled,"recreated window restores navigation rows")
 end
+-- A9 SEARCHFOLD-NONSTRING-GUARD: hostile SearchFold returning a truthy non-string falls back to the raw value without throwing.
+do
+ local savedFold=addon.SearchFold
+ local function shownCards()
+  local count=0
+  for _,card in ipairs(ui.cards)do if card:IsShown()then count=count+1 end end
+  return count
+ end
+ ui.search="own";ui.questTreeRoot=nil;ui.questTreeDungeon=nil;ui.includeUnavailable=true;ui.frame:Show();ui:RefreshDungeons()
+ local expected={}
+ for _,card in ipairs(ui.cards)do if card:IsShown()then expected[#expected+1]=card.title.text..":"..tostring(card.matchQuestID) end end
+ table.sort(expected)
+ assert(#expected>0,"valid search publishes dungeon cards")
+ for _,bad in ipairs({42,true,{}})do
+  addon.SearchFold=function()return bad end
+  local ok,err=pcall(function()
+   ui.search="own";ui:RefreshDungeons()
+   ui.search="";ui:RefreshQuests()
+   ui.search="own";ui:Refresh()
+  end)
+  local actual={}
+  if ok then
+   for _,card in ipairs(ui.cards)do if card:IsShown()then actual[#actual+1]=card.title.text..":"..tostring(card.matchQuestID) end end
+   table.sort(actual)
+  end
+  addon.SearchFold=savedFold
+  assert(ok,"hostile SearchFold "..type(bad).." threw: "..tostring(err))
+  -- Fallback keeps the raw value without case folding, so hostile matching is a
+  -- case-sensitive subset of the folded baseline: never throws, never invents rows.
+  local known={}
+  for _,key in ipairs(expected)do known[key]=true end
+  for _,key in ipairs(actual)do assert(known[key],"hostile SearchFold "..type(bad).." invented a row: "..key) end
+  assert(#actual<=#expected,"hostile SearchFold "..type(bad).." must not widen results")
+ end
+ addon.SearchFold=savedFold
+ ui.search="";ui.frame:Show();ui:RefreshDungeons()
+ assert(shownCards()>0,"valid fold restores dungeon cards")
+end
+-- A9 DETAIL-XP-UPPER-BOUND: xp capped at 2^53-1 mirroring money.
+do
+ local savedDialogue, savedLog, savedCache=addon.DialogueRewards, addon.QuestRewards, addon.CachedQuestRewards
+ local savedDungeons=addon.dungeons
+ addon.quests[990402]={id=990402,name="XP bound quest",minLevel=1,requirementsKnown=true}
+ local boundDungeon={key="xp-bound",name="XP bound dungeon",minLevel=1,maxLevel=80,quests={990402}}
+ addon.dungeons={boundDungeon}
+ ui.dungeon,ui.quest,ui.questTreeRoot,ui.questTreeDungeon=boundDungeon,990402,nil,nil
+ ui.search="";ui.includeUnavailable=true;ui.frame:Show()
+ if type(ui.SetDetailTab)=="function" then ui:SetDetailTab("quest") end
+ local function fieldShown(fs)
+  if fs.shown ~= nil then return fs.shown == true end
+  if type(fs.IsShown)=="function" then local ok,v=pcall(function()return fs:IsShown()end);return ok and v==true end
+  return false
+ end
+ local function hasText(want)
+  for _,fs in ipairs(ui.details)do if fieldShown(fs) and fs.text and fs.text:find(want,1,true)then return true end end
+  return false
+ end
+ local function renderWith(xp)
+  addon.DialogueRewards=function(id) if id==990402 then return {source="dialogue",items={},choices={},xp=xp} end end
+  addon.QuestRewards=function()return nil end
+  addon.CachedQuestRewards=function()return nil end
+  ui:Refresh()
+  return hasText(addon.L("REWARD_XP",xp))
+ end
+ assert(renderWith(0)==true,"xp 0 keeps its detail gain")
+ assert(renderWith(9007199254740991)==true,"xp 2^53-1 keeps its detail gain")
+ assert(renderWith(9007199254740992)==false,"xp 2^53 must not paint a detail gain")
+ assert(renderWith(-1)==false,"negative xp must not paint a detail gain")
+ assert(renderWith(1.5)==false,"fractional xp must not paint a detail gain")
+ assert(renderWith(9007199254740992)==false and not hasText(addon.L("DETAIL_REWARDS")),"uncapped xp must not publish a rewards heading")
+ addon.DialogueRewards,addon.QuestRewards,addon.CachedQuestRewards=savedDialogue,savedLog,savedCache
+ addon.dungeons=savedDungeons
+ addon.quests[990402]=nil
+ ui.dungeon,ui.quest=dungeon,990104
+ ui.search="";ui.questTreeRoot=nil;ui.questTreeDungeon=nil;ui.frame:Show();ui:Refresh()
+end
 print("Middle quest navigation checks passed (modeled, no native input or layout proof)")

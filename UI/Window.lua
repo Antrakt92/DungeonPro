@@ -347,7 +347,7 @@ local function searchText(value)
     -- Non-string search keys fail closed as empty instead of throwing in fold or find.
     if type(value) ~= "string" then return "" end
     if type(addon.SearchFold) == "function" then
-        local folded = addon.SearchFold(value)
+        local folded = addon.Clean(addon.SearchFold(value), "string")
         if not folded then return value end
         -- Normalize common pasted typography in search keys, never displayed names.
         return folded:gsub("’", "'"):gsub("‧", "·"):gsub("\194\160", " "):gsub("\227\128\128", " "):gsub("^%s+", ""):gsub("%s+$", "")
@@ -6556,7 +6556,7 @@ function UI:RefreshDetail(sourceFocus)
         local xp = rewards and addon.Clean(rewards.xp, "number")
         local money = rewards and addon.Clean(rewards.money, "number")
         if not (money and money > 0 and money <= 9007199254740991 and money % 1 == 0) then money = nil end
-        local validXP = xp and xp >= 0 and xp % 1 == 0
+        local validXP = xp and xp >= 0 and xp <= 9007199254740991 and xp % 1 == 0
         if not hidden and items and choices and (#items > 0 or #choices > 0 or validXP or (money and money > 0)) then
             line(addon.L("DETAIL_REWARDS"), "caption")
         end
