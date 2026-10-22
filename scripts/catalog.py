@@ -318,7 +318,7 @@ def validate(data):
                         raise ValueError(f"Duplicate item drop source: {q['id']}")
                     seen_drops.add(drop["npcID"])
                     places.append(("dropSource", drop))
-            if "mapID" in p and not integer(p["mapID"]):
+            if "mapID" in p and (not integer(p["mapID"]) or p["mapID"] > 2 ** 32 - 1):
                 raise ValueError("Invalid map ID")
             if ("x" in p) != ("y" in p):
                 raise ValueError("Both coordinates are required")
@@ -335,7 +335,7 @@ def validate(data):
                 seen_points = set()
                 for point in points:
                     if (type(point) is not dict or not {"mapID", "x", "y"}.issubset(point) or
-                        set(point) - {"mapID", "x", "y", "zoneName"} or not integer(point["mapID"])):
+                        set(point) - {"mapID", "x", "y", "zoneName"} or not integer(point["mapID"]) or point["mapID"] > 2 ** 32 - 1):
                         raise ValueError(f"Invalid reported location identity: {q['id']}")
                     for axis in ("x", "y"):
                         value = point[axis]
@@ -386,7 +386,8 @@ def validate(data):
             seen_related = set()
             for entry in related:
                 if (type(entry) is not dict or set(entry) - {"id", "itemID"} or
-                        not integer(entry.get("id")) or not integer(entry.get("itemID"))):
+                        not integer(entry.get("id")) or not integer(entry.get("itemID")) or
+                        entry["itemID"] > 2 ** 32 - 1):
                     raise ValueError(f"Invalid completion quest link: {q['id']}")
                 qid = entry["id"]
                 if qid == q["id"] or qid in seen_related:
@@ -467,13 +468,13 @@ def validate(data):
             required = {"mapID", "x", "y", "source"}
             if (type(entrance) is not dict or not required <= set(entrance) or
                     set(entrance) - required - {"gameMapID", "scope", "kind"} or
-                    not integer(entrance.get("mapID")) or entrance["mapID"] > 2 ** 53 - 1 or
+                    not integer(entrance.get("mapID")) or entrance["mapID"] > 2 ** 32 - 1 or
                     ("scope" in entrance and entrance["scope"] != "shared") or
                     ("kind" in entrance and entrance["kind"] != "approach") or
                     ("wing" in d and entrance.get("scope") != "shared") or
                     ("instanceID" in d and entrance.get("gameMapID") != d["instanceID"]) or
                     ("gameMapID" in entrance and (not integer(entrance["gameMapID"]) or
-                     entrance["gameMapID"] > 2 ** 53 - 1 or entrance["gameMapID"] != d.get("instanceID")))):
+                     entrance["gameMapID"] > 2 ** 32 - 1 or entrance["gameMapID"] != d.get("instanceID")))):
                 raise ValueError("Invalid dungeon entrance identity/source")
             if d.get("instanceID") == 189 and entrance.get("kind") != "approach":
                 raise ValueError("Scarlet entrance must be a shared complex approach")

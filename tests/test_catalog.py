@@ -864,6 +864,25 @@ class CatalogTests(unittest.TestCase):
                     with self.assertRaisesRegex(ValueError, f"{field} entity ID"):
                         catalog.validate(data)
 
+    def test_place_map_ids_keep_uint32_boundaries(self):
+        data = self.minimal_catalog()
+        data["quests"][1]["start"] = {"npcID": 1, "mapID": 2 ** 32 - 1, "x": 10, "y": 20}
+        catalog.validate(data)
+        for value in (2 ** 32, 2 ** 40, 2 ** 53 - 1):
+            with self.subTest(value=value):
+                data = self.minimal_catalog()
+                data["quests"][1]["start"] = {"npcID": 1, "mapID": value, "x": 10, "y": 20}
+                with self.assertRaisesRegex(ValueError, "map ID"):
+                    catalog.validate(data)
+        for value in (2 ** 32, 2 ** 40, 2 ** 53 - 1):
+            with self.subTest(reported=value):
+                data = self.minimal_catalog()
+                data["quests"][1]["start"] = {"npcID": 1, "mapID": 1441, "x": 10, "y": 20,
+                    "reportedLocations": [{"mapID": 1441, "x": 10, "y": 20},
+                                            {"mapID": value, "x": 11, "y": 21}]}
+                with self.assertRaisesRegex(ValueError, "reported location identity"):
+                    catalog.validate(data)
+
     def test_item_container_sources_preserve_facts_and_generate_without_mutation(self):
         quest = self.data["quests"][0]
         quest["start"] = {"itemID": 5791, "name": "Henrig's Journal"}
@@ -1135,6 +1154,17 @@ class CatalogTests(unittest.TestCase):
                     data["quests"][0]["completionQuests"] = [entry]
                     with self.assertRaisesRegex(ValueError, "completion quest"):
                         catalog.validate(data)
+
+    def test_completion_quest_item_ids_keep_uint32_boundaries(self):
+        data = self.minimal_catalog()
+        data["quests"][0]["completionQuests"] = [{"id": 2, "itemID": 2 ** 32 - 1}]
+        catalog.validate(data)
+        for value in (2 ** 32, 2 ** 40, 2 ** 53 - 1):
+            with self.subTest(value=value):
+                data = self.minimal_catalog()
+                data["quests"][0]["completionQuests"] = [{"id": 2, "itemID": value}]
+                with self.assertRaisesRegex(ValueError, "completion quest"):
+                    catalog.validate(data)
 
     def test_completion_quests_reject_missing_duplicate_and_self_links(self):
         quest, other = self.data["quests"][:2]
@@ -1549,6 +1579,26 @@ class CatalogTests(unittest.TestCase):
         data["dungeons"][0].update(instanceID=3065, entrance={**valid, "gameMapID": 1455, "mapID": 3065})
         with self.assertRaisesRegex(ValueError, "dungeon entrance"):
             catalog.validate(data)
+
+    def test_recorded_entrance_map_ids_keep_uint32_boundaries(self):
+        maximum = 2 ** 32 - 1
+        valid = {"gameMapID": maximum, "mapID": maximum, "x": 27.5, "y": 48,
+                 "source": f"https://phylactery.io/instance/{maximum}"}
+        data = self.minimal_catalog()
+        data["dungeons"][0].update(instanceID=maximum, entrance=dict(valid))
+        catalog.validate(data)
+        cases = (
+            ("gameMapID", 2 ** 40, {"gameMapID": 2 ** 40, "mapID": 1455, "x": 27.5, "y": 48,
+                                    "source": "https://phylactery.io/instance/1099511627776"}),
+            ("mapID", 3065, {"gameMapID": 3065, "mapID": 2 ** 40, "x": 27.5, "y": 48,
+                             "source": "https://phylactery.io/instance/3065"}),
+        )
+        for field, instance, entrance in cases:
+            with self.subTest(field=field):
+                data = self.minimal_catalog()
+                data["dungeons"][0].update(instanceID=instance, entrance=entrance)
+                with self.assertRaisesRegex(ValueError, "dungeon entrance"):
+                    catalog.validate(data)
 
     def test_recorded_entrance_accepts_literal_percent_boundaries_and_rejects_nonfinite_or_boolean_coordinates(self):
         valid = {"gameMapID": 3065, "mapID": 1455, "x": 27.5, "y": 48,
