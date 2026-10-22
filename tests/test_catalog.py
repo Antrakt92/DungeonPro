@@ -824,6 +824,36 @@ class CatalogTests(unittest.TestCase):
         )
         catalog.validate(self.data)
 
+    def test_races_reject_absurd_integers_but_keep_live_ids(self):
+        # Live race IDs are small (1..8, 95); 255 is a generous fail-closed cap.
+        for value in (256, 2 ** 40):
+            with self.subTest(value=value):
+                data = self.minimal_catalog()
+                data["quests"][0]["races"] = [value]
+                with self.assertRaisesRegex(ValueError, "restriction"):
+                    catalog.validate(data)
+        for races in ([95], [3, 4, 7, 95], [1, 8, 95, 255]):
+            with self.subTest(races=races):
+                data = self.minimal_catalog()
+                data["quests"][0]["races"] = races
+                catalog.validate(data)
+
+    def test_explicit_null_places_are_rejected_fail_closed(self):
+        # Omission marks unknown navigation; explicit null must fail closed
+        # so the Lua emitter never sees a nil place again.
+        for field in ("start", "finish"):
+            with self.subTest(field=field):
+                data = self.minimal_catalog()
+                data["quests"][1][field] = None
+                with self.assertRaisesRegex(ValueError, "null"):
+                    catalog.validate(data)
+        for field in ("startAlternatives", "finishAlternatives"):
+            with self.subTest(field=field):
+                data = self.minimal_catalog()
+                data["quests"][1][field] = None
+                with self.assertRaisesRegex(ValueError, "null"):
+                    catalog.validate(data)
+
     def test_starts_inside_requires_boolean(self):
         for value in (None, "false", 0, 1, [], {}):
             with self.subTest(value=value):
@@ -1155,7 +1185,7 @@ class CatalogTests(unittest.TestCase):
         q["finish"] = {"mapID": 1436}
         catalog.validate(self.data)
         del q["start"]
-        q["finish"] = None
+        del q["finish"]
         catalog.validate(self.data)
 
     def test_unknown_requirements_must_be_explicit(self):
@@ -1264,7 +1294,7 @@ class CatalogTests(unittest.TestCase):
                 data["quests"][0]["startAlternatives"] = value
                 with self.assertRaises(ValueError):
                     catalog.validate(data)
-        for start in (None, {"npcID": 3}):
+        for start in ({"npcID": 3},):
             data = copy.deepcopy(self.data)
             data["quests"][0].update(start=start, startAlternatives=valid)
             with self.assertRaisesRegex(ValueError, "single and alternative"):
@@ -1336,7 +1366,7 @@ class CatalogTests(unittest.TestCase):
             data = copy.deepcopy(self.data)
             data["quests"][0]["finishAlternatives"][0].update(fields)
             with self.subTest(fields=fields), self.assertRaises(ValueError): catalog.validate(data)
-        for finish in (None, {"npcID": 8888}):
+        for finish in ({"npcID": 8888},):
             data = copy.deepcopy(self.data)
             data["quests"][0]["finish"] = finish
             with self.assertRaisesRegex(ValueError, "single and alternative"):

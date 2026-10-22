@@ -187,7 +187,9 @@ def validate(data):
             if type(values) is not list or not values:
                 raise ValueError(f"Invalid {field} restriction: {q['id']}")
             for value in values:
-                if (tokens is None and not integer(value)) or (
+                # Race IDs are small live values (1..8, 95); 255 is a generous
+                # fail-closed cap that only rejects absurd integers.
+                if (tokens is None and (not integer(value) or value > 255)) or (
                     tokens is not None and (type(value) is not str or value not in tokens)
                 ):
                     raise ValueError(f"Invalid {field} restriction: {q['id']}")
@@ -220,6 +222,8 @@ def validate(data):
             if key not in q:
                 continue
             alternatives = q[key]
+            if alternatives is None:
+                raise ValueError(f"Explicit null alternative {kind} points: {q['id']}")
             if type(alternatives) is not list or not 2 <= len(alternatives) <= 100:
                 raise ValueError(f"Invalid alternative {kind} points: {q['id']}")
             if single in q:
@@ -240,6 +244,10 @@ def validate(data):
             places.extend((key, p) for p in alternatives)
         for key, p in places:
             if p is None:
+                # Omission marks unknown navigation; explicit null fails closed
+                # so the Lua emitter never sees a nil place again.
+                if key in q:
+                    raise ValueError(f"Explicit null quest {key} place: {q['id']}")
                 continue
             if type(p) is not dict:
                 raise ValueError(f"Invalid quest {key} place: {q['id']}")

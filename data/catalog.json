@@ -15136,7 +15136,6 @@
         "creatureDisplayID": 3486,
         "portraitSource": "https://www.wowhead.com/forever/npc=1480/caitlin-grassman"
       },
-      "finish": null,
       "requirementsKnown": false,
       "factions": [
         "Alliance"
@@ -15362,7 +15361,6 @@
         "creatureDisplayID": 3353,
         "portraitSource": "https://www.wowhead.com/forever/npc=956/dorin-songblade"
       },
-      "finish": null,
       "requirementsKnown": false,
       "factions": [
         "Alliance"
@@ -15374,7 +15372,6 @@
       "source": "https://www.wowhead.com/forever/quest=95809/heartwoven",
       "level": 31,
       "minLevel": 24,
-      "start": null,
       "finish": {
         "npcID": 1480,
         "name": "Caitlin Grassman",
@@ -15528,7 +15525,6 @@
       "source": "https://www.wowhead.com/forever/quest=95795/fallen-in-the-fen",
       "level": 31,
       "minLevel": 24,
-      "start": null,
       "finish": {
         "npcID": 956,
         "name": "Dorin Songblade",
