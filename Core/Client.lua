@@ -17,7 +17,7 @@ function addon.GiverName(place)
     place = addon.Clean(place, "table")
     if not place then return nil end
     local function sourceIdentity()
-        local id = dialogueInteger(rawget(place, "npcID"), 1)
+        local id = dialogueInteger(rawget(place, "npcID"), 1, 4294967295)
         local name = rawget(place, "name")
         if type(issecretvalue) == "function" then
             local ok, secret = pcall(issecretvalue, name)
@@ -374,7 +374,8 @@ end
 
 function addon.CurrentOffer(id)
     id = addon.Clean(id, "number")
-    if not id or id < 1 or id % 1 ~= 0 or not addon.quests[id] then return nil end
+    local catalogue = addon.Clean(addon.quests, "table")
+    if not id or id < 1 or id % 1 ~= 0 or not catalogue or not rawget(catalogue, id) then return nil end
     local snapshot = currentOffers
     if not snapshot then return nil end
     local now, player, npc = offerScope()
@@ -1326,7 +1327,8 @@ local function selectedLogReadScope(id)
 end
 
 function addon.Description(id)
-    id = dialogueInteger(id, 1)
+    -- Cap IDs at 2^53 so huge IDs fall back without native reads or texts writes.
+    id = dialogueInteger(id, 1, 9007199254740991)
     if not id then return addon.L("NO_TEXT") end
     local generation, clean, read, checker, provider = textCaptureGeneration, addon.Clean, addon.Read, issecretvalue, addon.Description
     local character = addon.Clean(addon.char, "table")
@@ -1377,8 +1379,9 @@ function addon.Description(id)
 end
 
 function addon.QuestObjectives(id)
-    id = addon.Clean(id, "number")
-    if not id or id < 1 or id % 1 ~= 0 then return nil end
+    -- Cap IDs at 2^53 so huge IDs never reach the native objective reader.
+    id = dialogueInteger(id, 1, 9007199254740991)
+    if not id then return nil end
     local quest = addon.Clean(C_QuestLog, "table")
     local getter = quest and addon.Clean(quest.GetQuestObjectives, "function")
     if not getter then return nil end
@@ -1413,7 +1416,7 @@ function addon.QuestRewards(id)
         value = addon.Clean(value, "number")
         if value and value >= minimum and value % 1 == 0 and (not maximum or value <= maximum) then return value end
     end
-    id = integer(id, 1)
+    id = integer(id, 1, 9007199254740991)
     if not id then return nil end
     local scope, _, scopeIndex = selectedLogReadScope(id)
     if not scope then return nil end
@@ -1685,7 +1688,8 @@ function addon.RequestQuestRewardItems(id, ownerCurrent)
 end
 
 function addon.QuestPortrait(id)
-    id = dialogueInteger(id, 1)
+    -- Cap IDs at 2^53 so huge IDs never reach the native portrait reader.
+    id = dialogueInteger(id, 1, 9007199254740991)
     if not id then return nil end
     local quest = addon.Clean(C_QuestLog, "table")
     local getter = quest and addon.Clean(rawget(quest, "GetQuestLogPortraitGiver"), "function")

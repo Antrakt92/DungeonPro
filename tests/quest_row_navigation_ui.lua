@@ -609,4 +609,21 @@ do
  for _, id in ipairs({ 990201, 990202, 990203, 990204, 990205 }) do addon.quests[id] = nil end
  addon.char.choices = savedChoices
 end
+-- NEW-6: malformed dungeon quest list fails closed without throwing.
+do
+ local savedTargets = dungeon.quests
+ local function refreshRows()
+  ui.search="";ui.questTreeRoot=nil;ui.questTreeDungeon=nil;ui.quest=990104;ui.includeUnavailable=true;ui.frame:Show();ui:Refresh()
+ end
+ dungeon.quests = "bad"
+ local ok, err = pcall(function() refreshRows() end)
+ assert(ok, "bad dungeon quests threw in Refresh: "..tostring(err))
+ assert(ui.currentPlan == nil, "corrupt dungeon must not publish a quest plan")
+ local enginePlan = ui.engine:Dungeon(ui.dungeon, { includeUnavailable = true })
+ assert(#enginePlan.rows == 0 and #enginePlan.actions == 0 and enginePlan.unknown == true and enginePlan.ready == false,
+  "corrupt dungeon must plan fail-closed")
+ dungeon.quests = savedTargets
+ refreshRows()
+ assert(row(990101).navigationControl.enabled, "valid dungeon restores navigation rows")
+end
 print("Middle quest navigation checks passed (modeled, no native input or layout proof)")

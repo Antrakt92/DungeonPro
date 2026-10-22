@@ -780,4 +780,42 @@ check("Non-table Dungeon options fail closed without throwing", function()
     end
     eq(#P.New(quests, ctx()):Dungeon(dungeon, { includeUnavailable = true }).rows, 2)
 end)
+check("Malformed audience lists fail closed as unknown requirements without throwing", function()
+    for _, bad in ipairs({ "Horde", "MAGE", 1, false, 5 }) do
+        for _, field in ipairs({ "factions", "classes" }) do
+            local extra = { requirementsKnown = false }
+            extra[field] = bad
+            local quest = q(1, nil, extra)
+            local eligible, reason = P.Eligible(quest, ctx())
+            eq(eligible, nil); eq(reason, "requirements")
+            local e = P.New({ [1] = quest }, ctx())
+            local state = e:State(1)
+            eq(state.status, "UNKNOWN"); eq(state.reason, "requirements")
+            local actions, unknown = e:Next(1)
+            eq(#actions, 0); eq(unknown, true)
+            eq(e.visiting[1], nil)
+            local plan = e:Dungeon({ quests = { 1 }, coverage = "reviewed" })
+            eq(#plan.rows, 1); eq(plan.rows[1].state.reason, "requirements")
+            eq(plan.ready, false); eq(plan.unknown, true)
+        end
+    end
+end)
+check("Malformed minimum levels fail closed as unknown requirements without throwing", function()
+    for _, bad in ipairs({ "high", false, true, {}, 0 / 0, math.huge }) do
+        local e = P.New({ [1] = q(1, nil, { minLevel = bad }) }, ctx())
+        local state = e:State(1)
+        eq(state.status, "UNKNOWN"); eq(state.reason, "requirements")
+        local actions, unknown = e:Next(1)
+        eq(#actions, 0); eq(unknown, true)
+        eq(e.visiting[1], nil)
+        local plan = e:Dungeon({ quests = { 1 }, coverage = "reviewed" })
+        eq(#plan.rows, 1); eq(plan.rows[1].state.reason, "requirements")
+        eq(plan.ready, false); eq(plan.unknown, true)
+    end
+    local missing = q(1); missing.minLevel = nil
+    eq(P.New({ [1] = missing }, ctx()):State(1).status, "AVAILABLE")
+    local c = ctx(); c.level = "high"
+    local levelState = P.New({ [1] = q(1) }, c):State(1)
+    eq(levelState.status, "UNKNOWN"); eq(levelState.reason, "level")
+end)
 print("Planner checks passed: " .. passed)

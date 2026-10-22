@@ -1306,7 +1306,8 @@ function UI:RefreshDungeons()
     local renderInput, inputByDungeon, staging = nil, {}, true
     local sourceGetter, idParser, relationGetter = addon.QuestSourceSearchTerms, addon.SearchQuestID, addon.QuestSearchRelations
     for index, dungeon in ipairs(catalogue) do
-        local targets = dungeon.quests
+        -- A malformed quest list fails closed as empty instead of throwing in ipairs.
+        local targets = type(dungeon.quests) == "table" and dungeon.quests or {}
         local discovery
         local input = { dungeon = dungeon, name = dungeon.name, key = dungeon.key, wing = dungeon.wing,
             minimum = dungeon.minLevel, maximum = dungeon.maxLevel, targets = targets, members = {},
@@ -2304,6 +2305,8 @@ function UI:RefreshQuests()
     local d, character, previousGeneration = self.dungeon, addon.char, self.questListGeneration
     local preparation, includeUnavailable = self.preparation, self.includeUnavailable
     local targets, targetIDs, targetSet = d and d.quests, {}, {}
+    -- A malformed quest list fails closed as empty instead of throwing in ipairs.
+    if type(targets) ~= "table" then targets = nil end
     for index, id in ipairs(targets or {}) do targetIDs[index] = id; targetSet[id] = true end
     local needsEngine = d ~= nil or self.quest ~= nil
     local context = needsEngine and addon.Context() or nil

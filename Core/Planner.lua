@@ -17,6 +17,10 @@ local function contains(list, value)
     return false
 end
 
+local function finiteNumber(value)
+    return type(value) == "number" and value == value and value ~= math.huge and value ~= -math.huge
+end
+
 local function prerequisiteSatisfied(state, mode)
     return state.completedHistory == true or (mode == "active" and
         (state.status == "ACTIVE" or state.status == "READY"))
@@ -31,10 +35,13 @@ function Planner.Eligible(q, context)
     if not contextCurrent(context) then return nil, "character" end
     local unknown
     for _, rule in ipairs({ { "factions", "faction" }, { "classes", "class" } }) do
-        if q[rule[1]] then
+        local list = q[rule[1]]
+        if list ~= nil then
+            -- Malformed audience data is unknown requirements, never a throw or an exclusion.
+            if type(list) ~= "table" then return nil, "requirements" end
             local value = context[rule[2]]
             if value == nil then unknown = unknown or rule[2]
-            elseif not contains(q[rule[1]], value) then return false, rule[2] end
+            elseif not contains(list, value) then return false, rule[2] end
         end
     end
     if unknown then return nil, unknown end
@@ -73,9 +80,17 @@ function Planner.New(quests, context, choices)
         if done == true then return save("COMPLETED") end
         local eligible, restriction = Planner.Eligible(q, self.context)
         if eligible == false then return save("UNAVAILABLE", restriction) end
-        if eligible == nil or done == nil or active == nil then return save("UNKNOWN", "character") end
-        if not self.context.level then return save("UNKNOWN", "level") end
-        if self.context.level < q.minLevel then return save("LOCKED", "level") end
+        if eligible == nil then
+            if restriction == "requirements" then return save("UNKNOWN", "requirements") end
+            return save("UNKNOWN", "character")
+        end
+        if done == nil or active == nil then return save("UNKNOWN", "character") end
+        if not finiteNumber(self.context.level) then return save("UNKNOWN", "level") end
+        if q.minLevel ~= nil then
+            -- A malformed minimum level is unknown requirements, never a compare throw.
+            if not finiteNumber(q.minLevel) then return save("UNKNOWN", "requirements") end
+            if self.context.level < q.minLevel then return save("LOCKED", "level") end
+        end
         if q.requirementsKnown ~= true then return save("UNKNOWN", "requirements") end
         if self.visiting[id] then return save("UNKNOWN", "cycle") end
         self.visiting[id] = true

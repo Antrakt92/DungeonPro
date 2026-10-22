@@ -217,5 +217,39 @@ check("QuestName caps IDs at 2^53 and never hydrates uncatalogued IDs", function
     addon.quests, C_Timer, C_QuestLog, addon.db, addon.Language, addon.nameTranslations =
         savedQuests, savedTimer, savedLog, savedDB, savedLanguage, savedNames
 end)
+check("Huge quest IDs never reach selected-log readers and write no cached text", function()
+    local savedQuests, savedChar, savedL = addon.quests, addon.char, addon.L
+    addon.quests = { [65] = { id = 65 }, [95036] = { id = 95036 } }
+    addon.char = { texts = {} }
+    addon.L = function(key) return key end
+    local nativeReads = 0
+    C_QuestLog.GetLogIndexForQuestID = function(id) nativeReads = nativeReads + 1; return index end
+    GetQuestLogQuestText = function() nativeReads = nativeReads + 1; return "Huge text" end
+    C_QuestLog.GetQuestObjectives = function(id) nativeReads = nativeReads + 1; return {} end
+    GetNumQuestLogRewards = function() nativeReads = nativeReads + 1; return 0 end
+    for _, huge in ipairs({ 9007199254740992, 2 ^ 60 }) do
+        assert(addon.Description(huge) == "NO_TEXT", "huge description ID missed its fallback")
+        assert(addon.QuestObjectives(huge) == nil, "huge objectives ID reached a reader")
+        assert(addon.QuestRewards(huge) == nil, "huge rewards ID reached a reader")
+        assert(addon.QuestPortrait(huge) == nil, "huge portrait ID reached a reader")
+    end
+    assert(nativeReads == 0, "huge quest ID reached a native reader")
+    assert(next(addon.char.texts) == nil, "huge quest ID wrote cached text")
+    addon.quests, addon.char, addon.L = savedQuests, savedChar, savedL
+end)
+check("Boundary quest ID 2^53-1 keeps its selected-log portrait and description", function()
+    local savedChar, savedL = addon.char, addon.L
+    local MAX = 9007199254740991
+    selected = MAX
+    C_QuestLog.GetLogIndexForQuestID = function(id) assert(id == MAX); return index end
+    local p = addon.QuestPortrait(MAX)
+    assert(p and p.displayID == 12345, "2^53-1 portrait lost")
+    addon.char = { texts = {} }
+    addon.L = function(key) return key end
+    GetQuestLogQuestText = function(...) assert(select("#", ...) == 0); return "Boundary text" end
+    assert(addon.Description(MAX) == "Boundary text", "2^53-1 description lost")
+    assert(addon.char.texts[MAX].text == "Boundary text", "2^53-1 description lost its cache write")
+    addon.char, addon.L = savedChar, savedL
+end)
 issecretvalue = nil
 print("Quest portrait adapter modeled checks passed: " .. total .. " (native client unverified)")
