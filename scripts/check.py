@@ -104,6 +104,8 @@ def main():
     run(lua, "tests/detail_contact_binding.lua")
     run(lua, "tests/detail_contact_rows_ui.lua")
     run(lua, "tests/compact_contacts_ui.lua")
+    run(lua, "tests/starter_detail_hierarchy_ui.lua")
+    run(lua, "tests/starter_source_hint_ui.lua")
     run(lua, "tests/single_stream_detail_ui.lua")
     run(lua, "tests/single_stream_history_ui.lua")
     run(lua, "tests/quest_tree_limit_notice_ui.lua")

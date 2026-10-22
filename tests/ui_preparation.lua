@@ -1177,7 +1177,7 @@ check("Starter item requirements stay informational for unknown and available qu
         active = function() return false end }
     showSources(920, context)
     assert(detailHas(addon.L("ITEM_CLASSES", "Localized warrior, Localized paladin")))
-    assert(detailHas(addon.L("ITEM_MIN_LEVEL", 54)) and detailHas(addon.L("ITEM_REQUIREMENTS_NOTICE")))
+    assert(detailHas(addon.L("ITEM_MIN_LEVEL", 54)) and not detailHas(addon.L("ITEM_REQUIREMENTS_NOTICE")))
     assert(addon.Planner.Eligible(addon.quests[920], context) == true)
     assert(ui.engine:State(920).status == "UNKNOWN" and ui.action == nil)
     local actions, uncertain = ui.engine:Next(920)

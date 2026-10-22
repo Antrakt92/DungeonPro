@@ -467,13 +467,154 @@ function UI:RefreshQuestEntrance(ownerCurrent)
     return current()
 end
 
+-- Readonly acquisition labels never turn an item drop into a quest giver or route.
+function UI:StarterAcquisitionHint(definition, ownerCurrent)
+    local clean,read,checker=addon.Clean,addon.Read,issecretvalue
+    local itemName,sourceName,npcName,areaName,localize,dungeonName=addon.ItemName,addon.SourceName,addon.GiverName,addon.SourceAreaName,addon.L,addon.DungeonName
+    local provider=self.StarterAcquisitionHint
+    local catalogue,dungeons,database,language,localeGetter=addon.quests,addon.dungeons,addon.db,addon.Language,GetLocale
+    local nativeZoneGetter=GetRealZoneText
+    local snapshots,proofs={},{}
+    local function capabilities()
+        return addon.Clean==clean and addon.Read==read and issecretvalue==checker and self.StarterAcquisitionHint==provider and
+            addon.ItemName==itemName and addon.SourceName==sourceName and addon.GiverName==npcName and addon.SourceAreaName==areaName and addon.L==localize and addon.DungeonName==dungeonName and
+            addon.quests==catalogue and addon.dungeons==dungeons and addon.db==database and addon.Language==language and GetLocale==localeGetter and GetRealZoneText==nativeZoneGetter
+    end
+    local function current()
+        if not capabilities()then return false end
+        local ok,fresh=pcall(function()
+            if read(ownerCurrent,"boolean")~=true or not capabilities()then return false end
+            for _,v in ipairs(snapshots)do
+                local value=rawget(v[1],v[2])
+                if type(checker)=="function"and read(checker,"boolean",value)~=false then return false end
+                if not capabilities()or not rawequal(value,v[3])then return false end
+            end
+            for _,v in ipairs(snapshots)do if not rawequal(rawget(v[1],v[2]),v[3])then return false end end
+            return capabilities()
+        end)
+        return ok and fresh==true and capabilities()
+    end
+    local function watch(object,keys)
+        if not current()then return false end
+        for _,key in ipairs(keys)do
+            local value=rawget(object,key)
+            if type(checker)=="function"and read(checker,"boolean",value)~=false then return false end
+            if not current()then return false end
+            snapshots[#snapshots+1]={object,key,value}
+        end
+        return current()
+    end
+    local function valid()
+        if not current()then return false end
+        for _,proof in ipairs(proofs)do if read(proof,"boolean")~=true or not current()then return false end end
+        return current()
+    end
+    local function call(fn,...)
+        if not valid()then return nil end
+        if type(fn)~="function"then return nil end
+        local ok,value,proof=pcall(fn,...)
+        if not ok or not valid()then return nil end
+        proof=clean(proof,"function")
+        if proof then proofs[#proofs+1]=proof end
+        local text=clean(value,"string")
+        if not valid()or not text or not text:find("%S")or #text>4096 then return nil end
+        return text
+    end
+    local function id(value)
+        local n=clean(value,"number")
+        return current()and n and n>0 and n<=4294967295 and n%1==0 and n or nil
+    end
+    if type(definition)~="table"or not watch(definition,{"id","start","startAlternatives"})then return nil end
+    local questID=id(rawget(definition,"id"));if not questID or type(catalogue)~="table"or not watch(catalogue,{questID})or rawget(catalogue,questID)~=definition then return nil end
+    if type(database)=="table"and not watch(database,{"locale"})then return nil end
+    if type(language)=="table"then
+        if not watch(language,{"session","GetSelection"})then return nil end
+        local session=clean(rawget(language,"session"),"table")
+        if session and not watch(session,{"preview"})then return nil end
+    end
+    if not watch(addon,{"locales"})then return nil end
+    local dictionaries=clean(rawget(addon,"locales"),"table")
+    if dictionaries then for _,code in ipairs({"enUS","ruRU","deDE","frFR","esES","itIT","ptBR","koKR","zhCN","zhTW"})do
+        if not watch(dictionaries,{code})then return nil end
+        local dictionary=clean(rawget(dictionaries,code),"table")
+        if dictionary and not watch(dictionary,{"ITEM_STARTER","ITEM_DROP_SOURCE","CONTAINER_SOURCE","UNKNOWN_PLACE"})then return nil end
+    end end
+    local gameLocale=read(localeGetter,"string")
+    if not current()then return nil end
+    proofs[#proofs+1]=function()return current()and read(localeGetter,"string")==gameLocale and current()end
+    local start=clean(rawget(definition,"start"),"table")
+    if not start or not watch(start,{"itemID","npcID","objectID","name","dropNPCID","dropName","dungeonKey","dropSources","containerSource","zoneName","locationName"})then return nil end
+    local itemID=id(rawget(start,"itemID"));if not itemID or rawget(start,"npcID")~=nil or rawget(start,"objectID")~=nil then return nil end
+    local lines={}
+    local item=call(itemName,itemID)or clean(rawget(start,"name"),"string")
+    if item and valid()then local label=call(localize,"ITEM_STARTER",item);if label then lines[#lines+1]=label end end
+    local function dungeonLabel(key)
+        if not key or type(dungeons)~="table"then return nil end
+        local count=#dungeons;if count>100 then return nil end
+        local label
+        for index=1,count do
+            if not watch(dungeons,{index})then return nil end
+            local dungeon=clean(rawget(dungeons,index),"table")
+            if not dungeon or not watch(dungeon,{"key","name"})then return nil end
+            if rawget(dungeon,"key")==key then
+                if not watch(dungeon,{"wing","activityID","complexKey","instanceID","art"})then return nil end
+                local art=clean(rawget(dungeon,"art"),"table")
+                if art and not watch(art,{"fileID","gameMapID"})then return nil end
+                label=call(dungeonName,dungeon)or clean(rawget(dungeon,"name"),"string")
+            end
+        end
+        proofs[#proofs+1]=function()return current()and #dungeons==count and current()end
+        return label
+    end
+    local function addSource(point,container,ownedZone)
+        if not watch(point,{"npcID","objectID","itemID","name","zoneName","locationName","dungeonKey"})then return false end
+        local npc,object=id(rawget(point,"npcID")),id(rawget(point,"objectID"))
+        if rawget(point,"itemID")~=nil or(container and(not object or rawget(point,"npcID")~=nil)or not container and(not npc or rawget(point,"objectID")~=nil))then return valid()end
+        local name=call(sourceName,point,current)or(not container and call(npcName,point))or clean(rawget(point,"name"),"string")
+        local canonical=clean(rawget(point,"zoneName"),"string")or clean(rawget(point,"locationName"),"string")
+        local zone=ownedZone or(canonical and(call(areaName,canonical,current)or canonical))or dungeonLabel(clean(rawget(point,"dungeonKey"),"string"))
+        if not name or not name:find("%S")or #name>1024 or not valid()then return valid()end
+        zone=zone or call(localize,"UNKNOWN_PLACE")
+        if not zone then return false end
+        local label=container and(call(localize,"CONTAINER_SOURCE")or"")..": "..name.." — "..zone or call(localize,"ITEM_DROP_SOURCE",name,zone)
+        if label and valid()then lines[#lines+1]=label end
+        return valid()
+    end
+    local drop=id(rawget(start,"dropNPCID"));local dropLabel=clean(rawget(start,"dropName"),"string")
+    if drop and dropLabel then
+        local point={npcID=drop,name=dropLabel}
+        -- Legacy drop location is joined only by its recorded dungeon key.
+        local zone=dungeonLabel(clean(rawget(start,"dungeonKey"),"string"))
+        if not addSource(point,false,zone)then return nil end
+    end
+    local sources=clean(rawget(start,"dropSources"),"table")
+    if sources then
+        local count=#sources;if count>100 then return nil end
+        for key in pairs(sources)do if type(key)~="number"or key%1~=0 or key<1 or key>count then return nil end end
+        for index=1,count do
+            if not watch(sources,{index})then return nil end
+            local point=clean(rawget(sources,index),"table");if not point or not addSource(point,false)then return nil end
+        end
+        proofs[#proofs+1]=function()
+            if not current()or #sources~=count then return false end
+            for key in pairs(sources)do if type(key)~="number"or key%1~=0 or key<1 or key>count then return false end end
+            return current()
+        end
+    end
+    local container=clean(rawget(start,"containerSource"),"table")
+    if container and not addSource(container,true)then return nil end
+    if not valid()then return nil end
+    return {lines=lines,current=valid}
+end
+
 function UI:QuestRowNavigationHint(row, binding)
     local control = row.navigationControl
     if row.navigationBinding ~= binding or not binding.current() then return end
     self:HideNavigationHint()
     local tip, localize = addon.Clean(GameTooltip, "table") or addon.Clean(GameTooltip, "userdata"), addon.L
     local nameGetter, areaGetter, sourceGetter = addon.GiverName, addon.SourceAreaName, addon.SourceName
-    local sourceProof, areaProof
+    local sourceProof, areaProof, acquisition
+    local acquisitionGetter=self.StarterAcquisitionHint
     local frame, engine, character = self.frame, self.engine, addon.char
     local quest, dungeon, generation, listGeneration = self.quest, self.dungeon, self.rewardGeneration, self.questListGeneration
     local mapRoot = C_Map
@@ -483,7 +624,7 @@ function UI:QuestRowNavigationHint(row, binding)
     local gameLocale = addon.Read(localeGetter, "string")
     local database = addon.db
     local locale = database and rawget(database, "locale")
-    local function current()
+    local function baseCurrent()
         local language = addon.Read(localeGetter, "string")
         return row.navigationBinding == binding and binding.current() and addon.L == localize and addon.GiverName == nameGetter and addon.SourceAreaName == areaGetter and addon.SourceName == sourceGetter and addon.db == database and
             C_Map == mapRoot and (not mapNamespace or rawget(mapNamespace, "GetMapInfo") == mapGetter) and
@@ -495,6 +636,7 @@ function UI:QuestRowNavigationHint(row, binding)
             self.frame == frame and self.engine == engine and addon.char == character and self.quest == quest and self.dungeon == dungeon and
             self.rewardGeneration == generation and self.questListGeneration == listGeneration and row.navigationBinding == binding and GameTooltip == tip
     end
+    local function current()return self.StarterAcquisitionHint==acquisitionGetter and baseCurrent()and(not acquisition or acquisition.current())and baseCurrent()end
     if not tip or not current() then return end
     local title = addon.Read(localize, "string", (binding.inspect or binding.reason == "QUEST_START_UNKNOWN") and "SOURCE_DETAILS" or binding.action and (binding.mapOnly and "GIVER_MAP" or "VISIT_GIVER") or "DETAIL_GIVER")
     local text = binding.reason and addon.Read(localize, "string", binding.reason)
@@ -533,9 +675,18 @@ function UI:QuestRowNavigationHint(row, binding)
         if text and zone then text = text .. " — " .. zone end
         if text and not binding.mapOnly then text = text .. string.format(" (%.1f, %.1f)", binding.x, binding.y) end
     end
+    if binding.inspect and binding.reason=="START_ITEM_NAVIGATION"and type(acquisitionGetter)=="function"then
+        local ok,value=pcall(acquisitionGetter,self,addon.quests[row.questID],baseCurrent)
+        if not ok or not current()then return end
+        if value then acquisition=value;if not current()then return end end
+    end
     if not title or not text or not current() then return end
     local held = { tip = tip, button = control }; self.navigationTooltip = held
-    for _, operation in ipairs({ { "SetOwner", control, "ANCHOR_RIGHT" }, { "SetText", title }, { "AddLine", text, 1, 1, 1, true }, { "Show" } }) do
+    local operations={ { "SetOwner", control, "ANCHOR_RIGHT" }, { "SetText", title } }
+    if acquisition then for _,line in ipairs(acquisition.lines)do operations[#operations+1]={"AddLine",line,1,1,1,true}end end
+    operations[#operations+1]={"AddLine",text,1,1,1,true}
+    operations[#operations+1]={"Show"}
+    for _, operation in ipairs(operations) do
         if not current() or self.navigationTooltip ~= held then return end
         local fn = addon.Clean(tip[operation[1]], "function")
         if not fn or not pcall(fn, tip, unpack(operation, 2)) or not current() or self.navigationTooltip ~= held or
