@@ -255,7 +255,7 @@ function addon.DialogueRewards(id)
                 end
             end
             name = addon.Clean(name, "string")
-            amount, itemID = dialogueInteger(amount, 1), dialogueInteger(itemID, 1, 4294967295)
+            amount, itemID = dialogueInteger(amount, 1, 9007199254740991), dialogueInteger(itemID, 1, 4294967295)
             if not name or name == "" or #name > 30000 or not amount or not itemID then return nil end
             local row = { id = itemID, name = name, count = amount }
             local icon = addon.Clean(texture, "string")
@@ -273,7 +273,7 @@ function addon.DialogueRewards(id)
     if not choice then return nil end
     local money = dialogueInteger(addon.Read(api.money, "number"), 0)
     if not live() then return nil end
-    local xp = dialogueInteger(addon.Read(api.xp, "number"), 0)
+    local xp = dialogueInteger(addon.Read(api.xp, "number"), 0, 9007199254740991)
     if not live() then return nil end
     return { items = fixed, choices = choice, money = money, xp = xp, source = "dialogue" }
 end
@@ -853,7 +853,7 @@ function addon.QuestLogCapacity()
     if not getter then
         constants = addon.Clean(Constants, "table")
         limits = constants and addon.Clean(constants.QuestLogConsts, "table")
-        fallback = limits and dialogueInteger(limits.MAXIMUM_NUM_QUESTS_LOG_CAN_ACCEPT, 1)
+        fallback = limits and dialogueInteger(limits.MAXIMUM_NUM_QUESTS_LOG_CAN_ACCEPT, 1, 1000000)
         if not fallback then return nil end
     end
     local checker = issecretvalue
@@ -872,9 +872,9 @@ function addon.QuestLogCapacity()
     if not current() then return nil end
     local ok, _, count = pcall(entries)
     if not ok then return nil end
-    count = dialogueInteger(count, 0)
+    count = dialogueInteger(count, 0, 1000000)
     if not count or not current() then return nil end
-    local capacity = getter and dialogueInteger(addon.Read(getter, "number"), 1) or fallback
+    local capacity = getter and dialogueInteger(addon.Read(getter, "number"), 1, 1000000) or fallback
     if not capacity or not current() then return nil end
     return { count = count, capacity = capacity }
 end
@@ -1459,7 +1459,7 @@ function addon.QuestRewards(id)
                 end
             end
             name = addon.Clean(name, "string")
-            amount, itemID = integer(amount, 1), integer(itemID, 1, 4294967295)
+            amount, itemID = integer(amount, 1, 9007199254740991), integer(itemID, 1, 4294967295)
             if not name or name == "" or #name > 30000 or not amount or not itemID then return nil end
             local row = { id = itemID, name = name, count = amount }
             local icon = addon.Clean(texture, "string")
@@ -1575,7 +1575,7 @@ function addon.CachedQuestRewards(id)
                 end
             end
             name = addon.Clean(name, "string")
-            amount, itemID = dialogueInteger(amount, 1), dialogueInteger(itemID, 1, 4294967295)
+            amount, itemID = dialogueInteger(amount, 1, 9007199254740991), dialogueInteger(itemID, 1, 4294967295)
             if not name or name == "" or #name > 30000 or not amount or not itemID then return nil end
             local row = { id = itemID, name = name, count = amount }
             local icon = addon.Clean(texture, "string")
@@ -1595,7 +1595,8 @@ function addon.CachedQuestRewards(id)
         local ok, value = pcall(getter, id)
         if not ok then return nil, false end
         value = addon.Clean(value, "number")
-        if value and value < 0 then value = nil end
+        -- Cap display integers at 2^53 so huge or fractional doubles stay a nil field, not a wrapped value.
+        if value and (value < 0 or value % 1 ~= 0 or value > 9007199254740991) then value = nil end
         return value, true
     end
     local money, moneyOK = scalar(api.money)

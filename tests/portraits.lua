@@ -336,5 +336,144 @@ check("Huge carried counts fail closed while 2^53-1 stays live", function()
     end
     assert(calls == 4)
 end)
+check("Uncapped display amounts fail closed while 2^53-1 stays live", function()
+    local MAX = 9007199254740991
+    addon.quests = { [65] = {} }
+    GetQuestID = function() return 65 end
+    UnitGUID = function(unit) assert(unit == "player"); return "Player-1-ABC" end
+    QuestFrame = { IsShown = function() return true end }
+    QuestFrameDetailPanel = { IsShown = function() return true end }
+    C_QuestLog = { ShouldShowQuestRewards = function(id) assert(id == 65); return true end }
+    GetNumQuestRewards = function() return 1 end
+    GetNumQuestChoices = function() return 0 end
+    GetRewardMoney = function() return 0 end
+    GetRewardXP = function() return 0 end
+    local function dialogueWith(amount)
+        GetQuestItemInfo = function(kind, index)
+            assert(kind == "reward" and index == 1)
+            return "Reward", 123, amount, 2, true, 7001
+        end
+        return addon.DialogueRewards(65)
+    end
+    addon.DialogueRewardEvent("QUEST_DETAIL")
+    assert(dialogueWith(1).items[1].count == 1, "valid dialogue amount lost")
+    assert(dialogueWith(MAX).items[1].count == MAX, "2^53-1 dialogue amount lost")
+    for _, huge in ipairs({ 9007199254740992, 1e18 }) do
+        assert(dialogueWith(huge) == nil, "huge dialogue amount reached display")
+    end
+    addon.DialogueRewardEvent("QUEST_FINISHED")
+    C_QuestLog = { GetSelectedQuest = function() return 65 end,
+        GetLogIndexForQuestID = function(id) assert(id == 65); return 1 end }
+    GetNumQuestLogRewards = function() return 1 end
+    GetNumQuestLogChoices = function() return 0 end
+    GetQuestLogRewardMoney = function() return 0 end
+    GetQuestLogChoiceInfo = function() error("no choices expected") end
+    local function selectedWith(amount)
+        GetQuestLogRewardInfo = function(index)
+            assert(index == 1)
+            return "Reward", 123, amount, 2, true, 7001
+        end
+        return addon.QuestRewards(65)
+    end
+    assert(selectedWith(1).items[1].count == 1, "valid selected-log amount lost")
+    assert(selectedWith(MAX).items[1].count == MAX, "2^53-1 selected-log amount lost")
+    for _, huge in ipairs({ 9007199254740992, 1e18 }) do
+        assert(selectedWith(huge) == nil, "huge selected-log amount reached display")
+    end
+    addon.quests = { [65] = { id = 65 } }
+    HaveQuestRewardData = function(id) assert(id == 65); return true end
+    GetNumQuestLogRewards = function(id) assert(id == 65); return 1 end
+    GetNumQuestLogChoices = function(id) assert(id == 65); return 0 end
+    GetQuestLogRewardMoney = function(id) assert(id == 65); return 0 end
+    GetQuestLogChoiceInfo = nil
+    local function cachedWith(amount)
+        GetQuestLogRewardInfo = function(index, id)
+            assert(index == 1 and id == 65)
+            return "Reward", 123, amount, 2, true, 7001
+        end
+        return addon.CachedQuestRewards(65)
+    end
+    assert(cachedWith(1).items[1].count == 1, "valid cached amount lost")
+    assert(cachedWith(MAX).items[1].count == MAX, "2^53-1 cached amount lost")
+    for _, huge in ipairs({ 9007199254740992, 1e18 }) do
+        assert(cachedWith(huge) == nil, "huge cached amount reached display")
+    end
+end)
+check("Uncapped dialogue and cached XP fail safe while 2^53-1 stays live", function()
+    local MAX = 9007199254740991
+    addon.quests = { [65] = {} }
+    GetQuestID = function() return 65 end
+    UnitGUID = function(unit) assert(unit == "player"); return "Player-1-ABC" end
+    QuestFrame = { IsShown = function() return true end }
+    QuestFrameDetailPanel = { IsShown = function() return true end }
+    C_QuestLog = { ShouldShowQuestRewards = function(id) assert(id == 65); return true end }
+    GetNumQuestRewards = function() return 1 end
+    GetNumQuestChoices = function() return 0 end
+    GetRewardMoney = function() return 0 end
+    GetQuestItemInfo = function(kind, index)
+        assert(kind == "reward" and index == 1)
+        return "Reward", 123, 1, 2, true, 7001
+    end
+    local function dialogueXP(value)
+        GetRewardXP = function() return value end
+        return addon.DialogueRewards(65)
+    end
+    addon.DialogueRewardEvent("QUEST_DETAIL")
+    assert(dialogueXP(0).xp == 0, "valid zero dialogue XP lost")
+    assert(dialogueXP(MAX).xp == MAX, "2^53-1 dialogue XP lost")
+    for _, huge in ipairs({ 9007199254740992, 1e18, 1.5 }) do
+        local r = dialogueXP(huge)
+        assert(r and r.xp == nil and r.items[1].count == 1, "huge dialogue XP reached display")
+    end
+    addon.DialogueRewardEvent("QUEST_FINISHED")
+    addon.quests = { [65] = { id = 65 } }
+    HaveQuestRewardData = function(id) assert(id == 65); return true end
+    GetNumQuestLogRewards = function(id) assert(id == 65); return 0 end
+    GetNumQuestLogChoices = function(id) assert(id == 65); return 0 end
+    GetQuestLogRewardMoney = function(id) assert(id == 65); return 0 end
+    local function cachedXP(value)
+        GetQuestLogRewardXP = function(id) assert(id == 65); return value end
+        return addon.CachedQuestRewards(65)
+    end
+    assert(cachedXP(0).xp == 0, "valid zero cached XP lost")
+    assert(cachedXP(MAX).xp == MAX, "2^53-1 cached XP lost")
+    for _, huge in ipairs({ 9007199254740992, 1e18, 1.5 }) do
+        local r = cachedXP(huge)
+        assert(r and r.xp == nil and #r.items == 0, "huge cached XP reached display")
+    end
+end)
+check("Uncapped quest-log counts fail closed while generous boundaries stay truthful", function()
+    local count, capacity = 7, 40
+    C_QuestLog = {
+        GetNumQuestLogEntries = function(...) assert(select("#", ...) == 0); return 12, count end,
+        GetMaxNumQuestsCanAccept = function(...) assert(select("#", ...) == 0); return capacity end,
+    }
+    Constants = { QuestLogConsts = { MAXIMUM_NUM_QUESTS_LOG_CAN_ACCEPT = 25 } }
+    local r = addon.QuestLogCapacity()
+    assert(r.count == 7 and r.capacity == 40, "valid occupancy lost")
+    count, capacity = 0, 1
+    r = addon.QuestLogCapacity()
+    assert(r.count == 0 and r.capacity == 1, "zero boundary lost")
+    count, capacity = 1000000, 1000000
+    r = addon.QuestLogCapacity()
+    assert(r.count == 1000000 and r.capacity == 1000000, "generous boundary lost")
+    for _, huge in ipairs({ 1000001, 9007199254740992, 1e18 }) do
+        count, capacity = huge, 40
+        assert(addon.QuestLogCapacity() == nil, "huge log count reached display")
+        count, capacity = 7, huge
+        assert(addon.QuestLogCapacity() == nil, "huge log capacity reached display")
+    end
+    C_QuestLog.GetMaxNumQuestsCanAccept = nil
+    local function fallbackWith(value)
+        Constants.QuestLogConsts.MAXIMUM_NUM_QUESTS_LOG_CAN_ACCEPT = value
+        count = 7
+        return addon.QuestLogCapacity()
+    end
+    assert(fallbackWith(1000000).capacity == 1000000, "generous fallback boundary lost")
+    for _, huge in ipairs({ 1000001, 9007199254740992, 1e18 }) do
+        assert(fallbackWith(huge) == nil, "huge fallback capacity reached display")
+    end
+    Constants = nil
+end)
 issecretvalue = nil
 print("Quest portrait adapter modeled checks passed: " .. total .. " (native client unverified)")
