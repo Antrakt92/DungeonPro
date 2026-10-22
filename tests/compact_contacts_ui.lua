@@ -18,12 +18,24 @@ for _,row in ipairs({s,t})do
  assert(not row.title:IsShown()and not row.note:IsShown()and not row.detailPurpose:IsShown(),"contact text belongs to tooltip instead of tall rows")
  assert(row.motionWhileDisabled==true,"mapless disabled contact still receives hover")
 end
-assert(s.point[4]==92,"contact icons follow measured faction text instead of sitting across the pane")
+assert(s.point[1]=="TOPRIGHT"and s.point[2]==u.detail and s.point[3]=="TOPRIGHT"and s.point[4]==-40 and t.point[4]==-8,"contact icons occupy the standalone right-edge slots")
 assert(s.point[5]==t.point[5]and t.point[4]-s.point[4]==32,"both actions share the audience line without overlap")
 local audience
 for _,fs in ipairs(u.details)do if fs:IsShown()and fs.text and fs.text:find("Alliance",1,true)then audience=fs end end
 assert(audience and audience.width==u.detail:GetWidth()-8-68,"audience reserves contact space instead of drawing underneath icons")
-assert(s.point[5]==audience.point[3],"icons line up with faction metadata")
+assert(s.point[5]==audience.point[3]+6,"28px contact buttons center beside the 15px faction caption")
+local divider=assert(u.detailJournalSections.header)
+assert(-divider.point[3]+audience.point[3]<35,"contact icons do not inflate the faction row or divider gap")
+local measured,originalWidth=0,audience.GetStringWidth
+audience.GetStringWidth=function()measured=measured+1;error("contact placement must not measure faction text")end
+local originalDetailWidth=u.detail.width
+for _,width in ipairs({260,540})do
+ u.detail:SetWidth(width);u:RefreshDetail()
+ assert(s.point[1]=="TOPRIGHT"and s.point[4]==-40 and t.point[4]==-8,"right anchors survive narrow and wide detail panes")
+ assert(audience.width==width-8-68,"faction text retains space for right-edge actions after resize")
+end
+u.detail.width=originalDetailWidth;audience.GetStringWidth=originalWidth;u:RefreshDetail()
+assert(measured==0,"right-edge contact placement is independent of faction text measurements")
 local tip={lines={},shown=false}
 function tip:SetOwner(owner)self.owner=owner;self.lines={}end
 function tip:IsOwned(owner)return self.owner==owner end
@@ -46,7 +58,7 @@ t.scripts.OnLeave()
 -- No faction and no pickup: the finishing contact keeps its fixed slot and header.
 q.factions=nil;q.start=nil;q.finish={npcID=82,name="No map finisher",zoneName="Unknown zone"}
 u:Refresh();t=assert(u.detailContactRows[2])
-assert(t.point[4]==36,"finish retains second slot even when faction text is absent")
+assert(t.point[4]==-8 and t.point[1]=="TOPRIGHT","finish retains rightmost slot even when faction text is absent")
 assert(not u.detailContactRows[1]:IsShown()and t:IsShown()and t.height==28,"finish-only contact does not require faction or pickup")
 assert(not t.enabled and t.scripts.OnClick==nil and t.motionWhileDisabled,"missing navigation remains inert and informative")
 t.scripts.OnEnter();assert(tip.shown and tip.lines[1]=="No map finisher","mapless contact still identifies the actor")

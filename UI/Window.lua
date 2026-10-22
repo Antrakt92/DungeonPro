@@ -3588,7 +3588,7 @@ function UI:RefreshDetail(sourceFocus)
     self:RefreshQuestStyles()
     if self.rewardGeneration ~= rewardGeneration or self.quest ~= renderQuest then return end
     local pool, n, y = self.details, 0, 0
-    local journalInset, contactHeaderY, contactHeaderX = 0, nil, nil
+    local journalInset, contactHeaderY = 0, nil
     local detailWidth = addon.Read(self.detail.GetWidth, "number", self.detail)
     if self.rewardGeneration ~= rewardGeneration or self.quest ~= renderQuest or self.dungeon ~= renderDungeon then return end
     local contentWidth = detailWidth and detailWidth > 56 and detailWidth < 2000 and detailWidth - 8 or 334
@@ -3903,7 +3903,7 @@ function UI:RefreshDetail(sourceFocus)
         end
         style = DETAIL_STYLES[style] and style or "body"
         local format = DETAIL_STYLES[style]
-        local height = contactReserve and math.max(28, format.minimum) or format.minimum
+        local height = format.minimum
         y = y + (format.before or 0)
         n = n + 1
         local fs = pool[n]
@@ -4307,12 +4307,8 @@ function UI:RefreshDetail(sourceFocus)
             if value and value:find("%S") then metadataParts[#metadataParts + 1] = value end
         end
         if #metadataParts > 0 and line(table.concat(metadataParts, " · "), "caption", nil, nil, metadataCurrent) == false then return end
-        contactHeaderY = y + DETAIL_STYLES.caption.before
+        contactHeaderY = y + DETAIL_STYLES.caption.before - 6
         if line(factions or "", "caption", nil, nil, metadataCurrent, nil, 68) == false then return end
-        local audienceWidth = factions and addon.Read(pool[n].GetStringWidth, "number", pool[n]) or 0
-        if not metadataCurrent() then return end
-        if not audienceWidth or audienceWidth < 0 or audienceWidth > 2000 or audienceWidth ~= audienceWidth then audienceWidth = contentWidth - 72 end
-        contactHeaderX = math.min(contentWidth - 60, audienceWidth + (factions and 12 or 4))
         if detailClassicScope then
             local caption, proof = self:ScarletClassicCaption(detailClassicScope, id)
             if not metadataCurrent() then return end
@@ -5756,7 +5752,7 @@ function UI:RefreshDetail(sourceFocus)
                     return sourceGeometryWrite(current,row,method,...)
                 end
                 if not position("SetSize",28,28) or not position("ClearAllPoints") or
-                    not position("SetPoint","TOPLEFT",self.detail,"TOPLEFT",contactHeaderX+(index-1)*32,-contactHeaderY) or
+                    not position("SetPoint","TOPRIGHT",self.detail,"TOPRIGHT",-8-(2-index)*32,-contactHeaderY) or
                     not write(row.title,"Hide") or not write(row.note,"Hide") or
                     not write(row,"SetScript","OnEnter",function()
                         if liveCurrent() then contactHint=self:DetailContactHint(row,heading,name,zone,liveCurrent) end
