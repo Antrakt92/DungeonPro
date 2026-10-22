@@ -260,7 +260,7 @@ function addon.DialogueRewards(id)
             local row = { id = itemID, name = name, count = amount }
             local icon = addon.Clean(texture, "string")
             if icon and icon ~= "" and #icon <= 1024 then row.texture = icon
-            else row.texture = dialogueInteger(texture, 1) end
+            else row.texture = dialogueInteger(texture, 1, 9007199254740991) end
             row.quality = dialogueInteger(quality, 0)
             row.usable = addon.Clean(usable, "boolean")
             result[i] = row
@@ -976,7 +976,7 @@ function addon.CarriedItemCount(id)
     if not before or not current() or not before() then return nil end
     local count = addon.Read(getter, "number", id, false, false, false, false)
     local after = linked()
-    if not count or count < 0 or count % 1 ~= 0 or not after or not current() or not after() then return nil end
+    if not count or count < 0 or count > 9007199254740991 or count % 1 ~= 0 or not after or not current() or not after() then return nil end
     return count
 end
 
@@ -1464,7 +1464,7 @@ function addon.QuestRewards(id)
             local row = { id = itemID, name = name, count = amount }
             local icon = addon.Clean(texture, "string")
             if icon and icon ~= "" and #icon <= 1024 then row.texture = icon
-            else row.texture = integer(texture, 1) end
+            else row.texture = integer(texture, 1, 9007199254740991) end
             row.quality = integer(quality, 0)
             row.usable = addon.Clean(usable, "boolean")
             result[i] = row
@@ -1580,7 +1580,7 @@ function addon.CachedQuestRewards(id)
             local row = { id = itemID, name = name, count = amount }
             local icon = addon.Clean(texture, "string")
             if icon and icon ~= "" and #icon <= 1024 then row.texture = icon
-            else row.texture = dialogueInteger(texture, 1) end
+            else row.texture = dialogueInteger(texture, 1, 9007199254740991) end
             row.quality, row.usable = dialogueInteger(quality, 0), addon.Clean(usable, "boolean")
             result[index] = row
             if not unchanged() then return nil end

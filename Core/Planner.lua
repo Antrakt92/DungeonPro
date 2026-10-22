@@ -33,6 +33,8 @@ end
 
 function Planner.Eligible(q, context)
     if not contextCurrent(context) then return nil, "character" end
+    -- A non-table quest entry is unknown requirements, never a throw.
+    if type(q) ~= "table" then return nil, "requirements" end
     local unknown
     for _, rule in ipairs({ { "factions", "faction" }, { "classes", "class" } }) do
         local list = q[rule[1]]
@@ -67,6 +69,8 @@ function Planner.New(quests, context, choices)
             return result
         end
         if not self:Current() then return save("UNKNOWN", "character") end
+        -- A non-table quest catalogue fails closed as missing, never a throw.
+        if type(self.quests) ~= "table" then return save("UNKNOWN", "missing") end
         if self.states[id] then return self.states[id] end
         local q = self.quests[id]
         if not q then return save("UNKNOWN", "missing") end
@@ -140,7 +144,11 @@ function Planner.New(quests, context, choices)
                 if not cyclic then memo[id] = { actions = actions, unknown = unknown } end
                 return actions, unknown, cyclic
             end
-            local state, q = self:State(id), self.quests[id]
+            local state = self:State(id)
+            -- A non-table catalogue fails closed as unknown, never a throw.
+            local q = type(self.quests) == "table" and self.quests[id] or nil
+            -- A non-table quest entry carries no places or groups; treat it as absent.
+            if type(q) ~= "table" then q = nil end
             -- Known groups can expose safe work while the quest's full conditions
             -- remain unknown. An unknown leaf never authorizes pickup.
             if state.status == "UNKNOWN" and not (q and state.reason == "requirements" and
@@ -149,7 +157,7 @@ function Planner.New(quests, context, choices)
             if state.status == "ACTIVE" or state.status == "READY" then
                 -- The turn-in NPC is not an objective location for an unfinished quest.
                 return publish({ { id = id, kind = state.status == "READY" and "turnin" or "complete",
-                    place = state.status == "READY" and q.finish or nil } }, false)
+                    place = state.status == "READY" and q and q.finish or nil } }, false)
             end
             if state.status == "AVAILABLE" then
                 return publish({ { id = id, kind = q.startsInside and "inside" or "pickup", place = q.start } }, false)
@@ -202,8 +210,12 @@ function Planner.New(quests, context, choices)
     function engine:CompletionSteps(id)
         id = addon.Clean(id, "number")
         if not id or id < 1 or id > 4294967295 or id % 1 ~= 0 then return {} end
+        -- A non-table catalogue fails closed as empty, never a throw.
+        if type(self.quests) ~= "table" then return {} end
         local q = self.quests[id]
-        local related = q and addon.Clean(q.completionQuests, "table")
+        -- A non-table quest entry carries no completion links; treat it as absent.
+        if type(q) ~= "table" then return {} end
+        local related = addon.Clean(q.completionQuests, "table")
         local result, seen = {}, {}
         if not related then return result end
         for i = 1, math.min(#related, 100) do
@@ -235,7 +247,10 @@ function Planner.New(quests, context, choices)
         local result = { rows = {}, actions = {}, counts = {}, unknown = dungeon.coverage ~= "reviewed", ready = true }
         local seen, relevant = {}, 0
         for _, id in ipairs(dungeon.quests) do
-            local q = self.quests[id]
+            -- A non-table catalogue fails closed per quest, never a throw.
+            local q = type(self.quests) == "table" and self.quests[id] or nil
+            -- A non-table quest entry carries no places; treat it as absent.
+            if type(q) ~= "table" then q = nil end
             local eligible = q and Planner.Eligible(q, self.context)
             local state = self:State(id)
             -- Current log evidence outweighs stale catalog restrictions; past history does not.

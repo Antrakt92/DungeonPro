@@ -664,4 +664,71 @@ do
  refreshCatalogue()
  assert(shownCards()>0,"valid catalogue restores dungeon cards")
 end
+-- A7 REFRESH-QUESTS-CHAR-GUARD: nil/non-table character fails closed without throwing.
+do
+ local savedChar=addon.char
+ local function refreshQuests()
+  ui.search="";ui.questTreeRoot=nil;ui.questTreeDungeon=nil;ui.quest=990104;ui.includeUnavailable=true;ui.frame:Show();ui:RefreshQuests()
+ end
+ refreshQuests()
+ for _,bad in ipairs({nil,"bad",7})do
+  addon.char=bad
+  local ok,err=pcall(refreshQuests)
+  addon.char=savedChar
+  assert(ok,"bad character "..tostring(bad).." threw in RefreshQuests: "..tostring(err))
+ end
+ refreshQuests()
+ assert(row(990101).navigationControl.enabled,"valid character restores navigation rows")
+end
+-- A7 CHOOSE-BRANCH-CHAR-GUARD: nil/non-table character fails closed without throwing or writing choices.
+do
+ local savedChar=addon.char
+ addon.quests[990301]={id=990301,name="Branch A",minLevel=1,requirementsKnown=true}
+ addon.quests[990302]={id=990302,name="Branch B",minLevel=1,requirementsKnown=true}
+ addon.quests[990303]={id=990303,name="Branch root",minLevel=1,requirementsKnown=true,requires={{ids={990301,990302}}}}
+ addon.char={choices={}}
+ for _,bad in ipairs({nil,"bad",7})do
+  addon.char=bad
+  local ok,result=pcall(function()return ui:ChooseBranch(990303,1,nil)end)
+  assert(ok and result==false,"bad character "..tostring(bad).." must fail closed without throwing (clear)")
+  ok,result=pcall(function()return ui:ChooseBranch(990303,1,990301)end)
+  assert(ok and result==false,"bad character "..tostring(bad).." must fail closed without throwing (parent)")
+ end
+ addon.char=savedChar
+ assert(addon.char.choices==nil or next(addon.char.choices)==nil,"failed branch choices must not leak")
+ for _,id in ipairs({990301,990302,990303})do addon.quests[id]=nil end
+end
+-- A7 DETAIL-REWARD-ICON-BOUNDS: itemID capped at 2^32-1, numeric texture at 2^53-1.
+do
+ local savedDialogue, savedLog, savedCache=addon.DialogueRewards, addon.QuestRewards, addon.CachedQuestRewards
+ local savedDungeons=addon.dungeons
+ addon.quests[990401]={id=990401,name="Reward bound quest",minLevel=1,requirementsKnown=true}
+ local boundDungeon={key="reward-bound",name="Reward bound dungeon",minLevel=1,maxLevel=80,quests={990401}}
+ addon.dungeons={boundDungeon}
+ ui.dungeon,ui.quest,ui.questTreeRoot,ui.questTreeDungeon=boundDungeon,990401,nil,nil
+ ui.search="";ui.includeUnavailable=true;ui.frame:Show()
+ local function visibleRewardCount()
+  local n=0
+  for _,b in ipairs(ui.rewardButtons or {})do if b:IsShown()then n=n+1 end end
+  return n
+ end
+ local function renderWith(item)
+  addon.DialogueRewards=function(id)if id==990401 then return {source="dialogue",items={item},choices={}} end end
+  addon.QuestRewards=function()return nil end
+  addon.CachedQuestRewards=function()return nil end
+  ui:Refresh()
+  return visibleRewardCount()
+ end
+ assert(renderWith({id=4294967296,name="Huge item",count=1,texture=134400})==0,"itemID 2^32 must not paint a detail icon")
+ assert(renderWith({id=0,name="Zero item",count=1,texture=134400})==0,"itemID 0 must not paint a detail icon")
+ assert(renderWith({id=4294967295,name="Max item",count=1,texture=134400})==1,"itemID 2^32-1 keeps its detail icon")
+ assert(renderWith({id=801,name="Huge texture",count=1,texture=9007199254740992})==0,"numeric texture 2^53 must not paint a detail icon")
+ assert(renderWith({id=801,name="Zero texture",count=1,texture=0})==0,"numeric texture 0 must not paint a detail icon")
+ assert(renderWith({id=801,name="Max texture",count=1,texture=9007199254740991})==1,"numeric texture 2^53-1 keeps its detail icon")
+ addon.DialogueRewards,addon.QuestRewards,addon.CachedQuestRewards=savedDialogue,savedLog,savedCache
+ addon.dungeons=savedDungeons
+ addon.quests[990401]=nil
+ ui.dungeon,ui.quest=dungeon,990104
+ ui.search="";ui.questTreeRoot=nil;ui.questTreeDungeon=nil;ui.frame:Show();ui:Refresh()
+end
 print("Middle quest navigation checks passed (modeled, no native input or layout proof)")

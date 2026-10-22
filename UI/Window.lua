@@ -786,6 +786,8 @@ function UI:ChooseBranch(id, index, parent)
     local group = requires and addon.Clean(rawget(requires, index), "table")
     local ids = group and addon.Clean(rawget(group, "ids"), "table")
     if not ids or #ids < 2 then return false end
+    -- A malformed character source fails closed without throwing or writing choices.
+    if type(addon.char) ~= "table" then return false end
     if type(parent) ~= "nil" then
         parent = addon.Clean(parent, "number")
         if not parent or parent <= 0 or parent ~= math.floor(parent) then return false end
@@ -2309,6 +2311,8 @@ function UI:RefreshQuests()
     local layoutRevision = self.layoutRevision
     if not self:ApplyColumns() or self.layoutRevision ~= layoutRevision or self.questListRequest ~= request then return end
     local d, character, previousGeneration = self.dungeon, addon.char, self.questListGeneration
+    -- Malformed character sources fail closed as empty instead of throwing on choices.
+    if type(character) ~= "table" then character = {} end
     local preparation, includeUnavailable = self.preparation, self.includeUnavailable
     local targets, targetIDs, targetSet = d and d.quests, {}, {}
     -- A malformed quest list fails closed as empty instead of throwing in ipairs.
@@ -3949,8 +3953,8 @@ function UI:RefreshDetail(sourceFocus)
         local itemID = reward and addon.Clean(reward.item.id, "number")
         local texture = reward and (addon.Clean(reward.item.texture, "string") or addon.Clean(reward.item.texture, "number"))
         local validTexture = type(texture) == "string" and texture ~= "" and #texture <= 1024 or
-            type(texture) == "number" and texture > 0 and texture % 1 == 0
-        if itemID and itemID > 0 and itemID % 1 == 0 and validTexture and rewardIndex < 200 and not self.rewardTextureBusy then
+            type(texture) == "number" and texture > 0 and texture <= 9007199254740991 and texture % 1 == 0
+        if itemID and itemID > 0 and itemID <= 4294967295 and itemID % 1 == 0 and validTexture and rewardIndex < 200 and not self.rewardTextureBusy then
             rewardIndex = rewardIndex + 1
             local b = self.rewardButtons[rewardIndex]
             if not b then

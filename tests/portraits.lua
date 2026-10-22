@@ -251,5 +251,90 @@ check("Boundary quest ID 2^53-1 keeps its selected-log portrait and description"
     assert(addon.char.texts[MAX].text == "Boundary text", "2^53-1 description lost its cache write")
     addon.char, addon.L = savedChar, savedL
 end)
+check("Oversized selected-log numeric textures fail safe while 2^53-1 passes", function()
+    C_QuestLog = { GetSelectedQuest = function() return 65 end,
+        GetLogIndexForQuestID = function(id) assert(id == 65); return 1 end }
+    GetNumQuestLogRewards = function() return 1 end
+    GetNumQuestLogChoices = function() return 0 end
+    GetQuestLogRewardMoney = function() return 0 end
+    GetQuestLogChoiceInfo = function() error("no choices expected") end
+    local function selectedWith(texture)
+        GetQuestLogRewardInfo = function(index)
+            assert(index == 1)
+            return "Reward", texture, 1, 2, true, 7001
+        end
+        return addon.QuestRewards(65)
+    end
+    assert(selectedWith(123).items[1].texture == 123, "valid numeric texture lost")
+    assert(selectedWith(9007199254740991).items[1].texture == 9007199254740991, "2^53-1 texture lost")
+    for _, huge in ipairs({ 9007199254740992, 1e18 }) do
+        local r = selectedWith(huge)
+        assert(r and r.items[1].texture == nil, "huge texture kept an icon")
+    end
+end)
+check("Oversized cached numeric textures fail safe while a valid file ID passes", function()
+    addon.quests = { [65] = { id = 65 } }
+    HaveQuestRewardData = function(id) assert(id == 65); return true end
+    GetNumQuestLogRewards = function(id) assert(id == 65); return 1 end
+    GetNumQuestLogChoices = function(id) assert(id == 65); return 0 end
+    GetQuestLogRewardMoney = function(id) assert(id == 65); return 0 end
+    GetQuestLogChoiceInfo = nil
+    local function cachedWith(texture)
+        GetQuestLogRewardInfo = function(index, id)
+            assert(index == 1 and id == 65)
+            return "Reward", texture, 1, 2, true, 7001
+        end
+        return addon.CachedQuestRewards(65)
+    end
+    assert(cachedWith(123).items[1].texture == 123, "valid cached texture lost")
+    assert(cachedWith(9007199254740991).items[1].texture == 9007199254740991, "cached 2^53-1 texture lost")
+    for _, huge in ipairs({ 9007199254740992, 1e18 }) do
+        local r = cachedWith(huge)
+        assert(r and r.items[1].texture == nil, "huge cached texture kept an icon")
+    end
+end)
+check("Oversized dialogue numeric textures fail safe while a valid file ID passes", function()
+    addon.quests = { [65] = {} }
+    GetQuestID = function() return 65 end
+    UnitGUID = function(unit) assert(unit == "player"); return "Player-1-ABC" end
+    QuestFrame = { IsShown = function() return true end }
+    QuestFrameDetailPanel = { IsShown = function() return true end }
+    C_QuestLog = { ShouldShowQuestRewards = function(id) assert(id == 65); return true end }
+    GetNumQuestRewards = function() return 1 end
+    GetNumQuestChoices = function() return 0 end
+    GetRewardMoney = function() return 0 end
+    GetRewardXP = function() return 0 end
+    local function dialogueWith(texture)
+        GetQuestItemInfo = function(kind, index)
+            assert(kind == "reward" and index == 1)
+            return "Reward", texture, 1, 2, true, 7001
+        end
+        return addon.DialogueRewards(65)
+    end
+    addon.DialogueRewardEvent("QUEST_DETAIL")
+    assert(dialogueWith(123).items[1].texture == 123, "valid dialogue texture lost")
+    assert(dialogueWith(9007199254740991).items[1].texture == 9007199254740991, "dialogue 2^53-1 texture lost")
+    for _, huge in ipairs({ 9007199254740992, 1e18 }) do
+        local r = dialogueWith(huge)
+        assert(r and r.items[1].texture == nil, "huge dialogue texture kept an icon")
+    end
+    addon.DialogueRewardEvent("QUEST_FINISHED")
+end)
+check("Huge carried counts fail closed while 2^53-1 stays live", function()
+    local native, calls = 3, 0
+    addon.quests = { [68] = { id = 68, objectiveItems = { { itemID = 20606 } } } }
+    C_Item = { GetItemCount = function(id, bank, uses, reagent, account)
+        assert(id == 20606 and bank == false and uses == false and reagent == false and account == false)
+        calls = calls + 1; return native
+    end }
+    assert(addon.CarriedItemCount(20606) == 3 and calls == 1)
+    native = 9007199254740991
+    assert(addon.CarriedItemCount(20606) == 9007199254740991 and calls == 2)
+    for _, huge in ipairs({ 9007199254740992, 1e18 }) do
+        native = huge
+        assert(addon.CarriedItemCount(20606) == nil, "huge carried count reached display")
+    end
+    assert(calls == 4)
+end)
 issecretvalue = nil
 print("Quest portrait adapter modeled checks passed: " .. total .. " (native client unverified)")
