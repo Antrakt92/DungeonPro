@@ -24,14 +24,15 @@ local function render(id,tab)
  if tab then assert(ui:SetDetailTab(tab))end
  assert(ui.quest==id and ui.renderedQuest==id)
 end
-local function visible(text)
+-- Visible body text or source-owned compact contact tooltip metadata.
+local function represented(text)
  for _,field in ipairs(ui.details)do if field:IsShown()and field.text and field.text:find(text,1,true)then return true end end
  for index,row in ipairs(ui.detailContactRows or{})do
   local binding=row.detailContactBinding
   if row:IsShown()and binding and binding.questID==ui.quest and binding.field==(index==1 and "start"or"finish")and
    binding.endpoint==a.quests[ui.quest][binding.field]and binding.current()then
    for _,field in ipairs({row.title,row.note})do
-    if field:IsShown()and field.text and field.text:find(text,1,true)then return field end
+    if not field:IsShown()and field.text and field.text:find(text,1,true)then return field end
    end
   end
  end
@@ -58,7 +59,7 @@ for index,row in ipairs(choices)do
 end
 a.Navigation=nav
 render(2204)
-assert(visible(labels.Ironforge),"actual finisher area is translated independently of the mapless summoned start")
+assert(represented(labels.Ironforge),"actual finisher area is translated independently of the mapless summoned start")
 local finish=a.quests[2204].finish
 assert(finish.mapID==1455 and not a.quests[2204].start.mapID)
 assert(nav.Start({id=2204,kind="visit",place=finish}))
@@ -89,8 +90,8 @@ assert(tip.shown and tip.body:find(labels["The Hinterlands"],1,true),"row hint r
 local contact=assert(ui.detailContactRows[1]);local binding=assert(contact.detailContactBinding)
 assert(contact:IsShown()and binding.current()and binding.questID==166 and binding.field=="start"and binding.endpoint==q.start and
  binding.action.kind=="visit"and binding.action.place==q.start,"visible own contact retains the exact source route")
-assert(contact.detailPurpose:IsShown()and contact.detailPurpose.text==a.L("DETAIL_GIVER")and
- contact.title.text==(a.SourceName(q.start)or q.start.name)and contact.note.text==labels["The Hinterlands"],"visible purpose, source actor and selected area remain distinct")
+assert(not contact.detailPurpose:IsShown()and contact.detailPurpose.text==a.L("DETAIL_GIVER")and
+ contact.title.text==(a.SourceName(q.start)or q.start.name)and contact.note.text==labels["The Hinterlands"],"tooltip purpose, source actor and selected area remain distinct")
 assert(not ui.giver:IsShown()and not ui.giver.enabled and ui.giver.scripts.OnClick==nil,"retired giver cannot duplicate the actual contact action")
 q.start=original
 -- The real registry and lazy reviewed dictionary supply the production labels.
@@ -103,7 +104,7 @@ render(2933,"sources")
 for _,pool in ipairs({ui.giverButtons,ui.startButtons})do for _,r in ipairs(pool)do
  if r:IsShown()then assert(r.note.text:find(hinterlands,1,true),"actual reviewed world label reaches every source row")end
 end end
-render(2204);assert(visible(ironforge),"actual reviewed finisher area reaches Quest")
+render(2204);assert(represented(ironforge),"actual reviewed finisher area reaches Quest")
 render(1100,"sources");ui.reportedExpanded["container:1"]=true;ui:RefreshDetail()
 local thousand=assert(dictionary.areas["Thousand Needles"]).name
 local count=0;for _,r in ipairs(ui.reportedRows)do if r:IsShown()and r.locationKey=="container:1"then

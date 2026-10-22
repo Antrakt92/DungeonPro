@@ -26,14 +26,15 @@ end
 local function first()
  local row=assert(ui.giverButtons[1]);assert(row.shown and row.enabled and row.scripts.OnClick);return row
 end
-local function visible(text)
+-- Visible body text or source-owned compact contact tooltip metadata.
+local function represented(text)
  for _,field in ipairs(ui.details)do if field.shown and field.text and field.text:find(text,1,true)then return field end end
  for index,row in ipairs(ui.detailContactRows or{})do
   local binding=row.detailContactBinding
   if row:IsShown()and binding and binding.questID==ui.quest and binding.field==(index==1 and "start"or"finish")and
    binding.endpoint==a.quests[ui.quest][binding.field]and binding.current()then
    for _,field in ipairs({row.title,row.note})do
-    if field:IsShown()and field.text and field.text:find(text,1,true)then return field end
+    if not field:IsShown()and field.text and field.text:find(text,1,true)then return field end
    end
   end
  end
@@ -51,7 +52,7 @@ for _,case in ipairs({{"ruRU","Внутренние земли"},{"zhCN","辛特
  assert(first().note.text:find("23.6, 58.7",1,true)and #routes==0,"area presentation never changes coordinates or starts navigation")
 end
 a.db.locale="ruRU";render(2204,"quest")
-assert(visible("Стальгорн")and not visible("Ironforge"),"actual2204 turn-in uses the reviewed world-area caption")
+assert(represented("Стальгорн")and not represented("Ironforge"),"actual2204 turn-in uses the reviewed world-area caption")
 assert(a.quests[2204].finish.mapID==1455 and a.quests[2204].finish.x==36 and a.quests[2204].finish.y==3.4)
 local root=a.nameTranslations;local ru=assert(root.ruRU);local zh=assert(root.zhCN)
 local areas=assert(ru.areas);local entry=assert(areas[area]);local registry=assert(a.sourceAreaNames)
@@ -103,7 +104,7 @@ a.SourceAreaName=function(name,current)
  return text,proof,raw
 end
 local before=#routes;ui:RefreshDetail()
-assert(fired and ui.quest==2204 and ui.renderedQuest==2204 and not visible("Retired world-area caption")and #routes==before)
+assert(fired and ui.quest==2204 and ui.renderedQuest==2204 and not represented("Retired world-area caption")and #routes==before)
 reset();local armedProof,proofFired=false,false
 a.SourceAreaName=function(name,current)
  local text,proof,raw=provider(name,current)
@@ -152,8 +153,8 @@ assert(tip.shown and tip.body:find(translated,1,true)and not tip.body:find(area,
 local contact=assert(ui.detailContactRows[1]);local binding=assert(contact.detailContactBinding)
 assert(contact:IsShown()and binding.current()and binding.questID==2204 and binding.field=="start"and binding.endpoint==point and
  binding.action.kind=="visit"and binding.action.place==point,"actual current contact retains its exact typed object route")
-assert(contact.detailPurpose:IsShown()and contact.detailPurpose.text==a.L("DETAIL_GIVER")and
- contact.title.text==(a.SourceName(point)or source)and contact.note.text==translated,"contact purpose, actor and translated area are visible independently")
+assert(not contact.detailPurpose:IsShown()and contact.detailPurpose.text==a.L("DETAIL_GIVER")and
+ contact.title.text==(a.SourceName(point)or source)and contact.note.text==translated,"contact purpose, actor and translated area remain available independently")
 assert(not ui.giver:IsShown()and not ui.giver.enabled and ui.giver.scripts.OnClick==nil,"retired giver has no duplicate contact capability")
 assert(#routes==before and ui.quest==selected and ui.engine==engine and ui.currentPlan==plan,"hints never start navigation or rebuild the inspected plan")
 local savedNavigation = a.Navigation; a.Navigation = nativeNavigation

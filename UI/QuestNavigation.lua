@@ -904,6 +904,39 @@ function UI:RetainTooltipHint(held, ownerCurrent, slot)
     if addon.TooltipLease then addon.TooltipLease.Retain(tip, held, held.restore) end
 end
 
+function UI:DetailContactHint(control, heading, name, zone, ownerCurrent)
+    local read, clean = addon.Read, addon.Clean
+    if read(ownerCurrent, "boolean") ~= true then return end
+    self:HideNavigationHint()
+    if read(ownerCurrent, "boolean") ~= true then return end
+    local tip = clean(GameTooltip, "table") or clean(GameTooltip, "userdata")
+    if not tip then return end
+    local methods = {}
+    for _, key in ipairs({ "IsOwned", "SetOwner", "SetText", "AddLine", "Show" }) do
+        methods[key] = clean(tip[key], "function")
+        if not methods[key] then return end
+    end
+    local held = { tip = tip, button = control }
+    local function current()
+        if addon.Read ~= read or addon.Clean ~= clean or GameTooltip ~= tip or read(ownerCurrent, "boolean") ~= true then return false end
+        for key, method in pairs(methods) do if tip[key] ~= method then return false end end
+        return GameTooltip == tip and addon.Read == read and addon.Clean == clean
+    end
+    if not current() then return end
+    self.navigationTooltip = held
+    for _, call in ipairs({ { "SetOwner", control, "ANCHOR_RIGHT" }, { "SetText", heading },
+        { "AddLine", name, 1, .82, .35, true }, { "AddLine", zone, .7, .7, .7, true }, { "Show" } }) do
+        if self.navigationTooltip ~= held or not current() then self:HideNavigationHint(held); return end
+        local ok = pcall(methods[call[1]], tip, unpack(call, 2))
+        if not ok or self.navigationTooltip ~= held or not current() or
+            read(methods.IsOwned, "boolean", tip, control) ~= true or not current() then
+            self:HideNavigationHint(held); return
+        end
+    end
+    self:RetainNavigationHint(held, current)
+    return held
+end
+
 function UI:RetainNavigationHint(held, ownerCurrent)
     self:RetainTooltipHint(held, ownerCurrent, "navigationTooltip")
 end

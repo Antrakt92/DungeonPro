@@ -57,11 +57,13 @@ local live=false;assert(not t.StyleDetailText(text,"title",function()return live
 local row=region();row.title,row.note,row.bg,row.highlight=region(),region(),region(),region()
 local click=function()end;row.OnClick=click;assert(t.StyleRow(row,{kind="quest"}));assert(t.StyleDetailContact(row))
 assert(row.purpose==row.detailPurpose and row.avatar==row.detailAvatar and row.detailName==row.title and row.detailZone==row.note)
-assert(row.avatar.width==36 and row.avatar.height==36 and row.avatar.shown)
+assert(row.avatar.width==24 and row.avatar.height==24 and row.avatar.shown)
 assert(row.avatar.texture=="Interface\\GossipFrame\\AvailableQuestIcon","unresolved actor or object uses a neutral quest glyph, never an invented human portrait")
 assert(row.title.fontSize==15 and row.note.fontSize==11 and row.purpose.fontSize==11)
 assert(row.bg.color[4]==0 and row.highlight.color[4]==0 and row.OnClick==click,"contact styling removes heavy fill and never changes navigation")
-rgb(row.detailSeparator.color,60,56,57);assert(row.detailSeparator.height==1)
+assert(not row.detailSeparator.shown and not row.detailMapGlyph.shown and not row.title.shown and not row.note.shown and not row.purpose.shown,"compact style hides full-row decoration and label regions")
+-- Window owns the 28px hit target; Theme owns the 24px glyph and hidden labels.
+assert(t.StyleDetailContact(row,nil,"finish")and row.avatar.texture=="Interface\\GossipFrame\\ActiveQuestIcon","turn-in uses its distinct native quest glyph")
 local before=#all;assert(t.StyleDetailContact(row));assert(#all==before,"contact decoration is pooled")
 -- First-time optional decoration creation may synchronously paint a newer contact.
 for _,capability in ipairs({"CreateFontString","CreateTexture"})do
@@ -73,7 +75,7 @@ for _,capability in ipairs({"CreateFontString","CreateTexture"})do
   return created
  end
  assert(not t.StyleDetailContact(fresh));assert(fresh.detailPurpose==newest and fresh.purpose==newest,"retired creation cannot publish an older purpose object")
- assert(fresh.detailAvatar==fresh.avatar and fresh.avatar.width==36 and fresh.avatar.height==36)
+ assert(fresh.detailAvatar==fresh.avatar and fresh.avatar.width==24 and fresh.avatar.height==24)
 end
 local frame=region();assert(t.StyleDetailSection(frame,"objectives"));local surface=frame.detailJournalSurface
 rgb(surface.background.color,35,36,44);rgb(surface.left.color,227,195,136);assert(surface.background.shown and surface.left.width==2 and surface.left.shown and not surface.top.shown)

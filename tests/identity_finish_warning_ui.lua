@@ -28,12 +28,17 @@ local function finish()
   local binding=assert(row.detailContactBinding)
   assert(binding.field=="finish"and binding.questID==u.quest and binding.endpoint==a.quests[u.quest].finish and binding.current(),
    "the visible turn-in caption owns the exact selected current finisher")
-  local bottom=-row.point[3]+row.height
-  local following,top
+  local bottom=-row.point[5]+row.height
+  local following,top,warning,warningCount=nil,nil,nil,0
   for _,fs in ipairs(u.details)do
    local y=fs.point and fs.point[1]=="TOPLEFT"and -fs.point[3]
-   if fs:IsShown()and y and y>=bottom and fs.text~=a.L("VISIT_TURNIN")and(not top or y<top)then following,top=fs,y end
+   if fs:IsShown()and y and y>=bottom then
+    if fs.text~=a.L("VISIT_TURNIN")and(not top or y<top)then following,top=fs,y end
+    if fs.text==a.L("SOURCE_POSITION_UNKNOWN")then warning,warningCount=fs,warningCount+1 end
+   end
   end
+  assert(warningCount<=1,"identity-only finisher keeps one distinct missing-position explanation")
+  following=warning or following
   return row.title,following
  end
  for i,fs in ipairs(u.details)do if fs:IsShown()and fs.text and fs.text:find(prefix,1,true)==1 then
@@ -45,7 +50,7 @@ local originalArea=assert(originalFinish.zoneName,"the recorded object area is r
 local function warned()
  local caption,warning=finish()
  assert(caption and warning and warning:IsShown()and warning.text==a.L("SOURCE_POSITION_UNKNOWN")and warning.detailStyle=="warning",
-  "known identity-only finisher needs an adjacent exact-position-unknown explanation")
+  "known identity-only finisher needs a separate exact-position-unknown explanation")
  return caption,warning
 end
 for _,locale in ipairs({"enUS","ruRU","deDE","frFR","esES","ptBR","itIT","koKR","zhCN","zhTW"})do

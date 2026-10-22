@@ -85,7 +85,7 @@ for _,locale in ipairs({"enUS","ruRU","deDE","frFR","esES","ptBR","koKR","zhCN",
  render(214);local pickup=assert(ui.detailContactRows[1]);local binding=assert(pickup.detailContactBinding)
  local purpose=assert(pickup.detailPurpose);local point=assert(addon.quests[214].start)
  assert(pickup:IsShown()and binding.current()and binding.questID==214 and binding.field=="start"and binding.endpoint==point and
-  purpose:IsShown()and purpose.text==addon.L("DETAIL_GIVER")and pickup.title.text==(addon.SourceName(point)or point.name),"NPC giver keeps a distinct purpose and its own exact typed actor name")
+  not purpose:IsShown()and purpose.text==addon.L("DETAIL_GIVER")and pickup.title.text==(addon.SourceName(point)or point.name),"NPC giver keeps a distinct purpose and its own exact typed actor name")
  render(7492);assert(visible(addon.L("DETAIL_GIVER")),"alternative givers keep their heading")
 end
 addon.db.locale="enUS"

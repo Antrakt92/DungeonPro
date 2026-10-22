@@ -17,6 +17,7 @@ function methods:SetText(value) self.text = value end
 function methods:GetText() return self.text or "" end
 function methods:GetStringHeight() return 18 end
 function methods:SetEnabled(value) self.enabled = value end
+function methods:SetMotionScriptsWhileDisabled(value) self.motionWhileDisabled = value end
 function methods:IsShown() return self.shown end
 function methods:Show()
     local changed = not self.shown; self.shown = true
@@ -148,7 +149,7 @@ check("Real TOC details show an own full contact and separate Wowhead icon", fun
     local ui = addon.UI
     ui.quest = 166; ui:Refresh()
     local contact=primaryContact(ui)
-    assert(contact.width>80 and contact.height>=28 and contact.title.text:find(addon.SourceName(addon.quests[166].start),1,true),"full contact visibly identifies its own giver")
+    assert(contact.width==28 and contact.height==28 and contact.title.text:find(addon.SourceName(addon.quests[166].start),1,true),"compact contact retains its own giver label for the tooltip")
     assert(ui.source.text == "" and ui.source.width == 32 and ui.source.height == 32)
     assert(ui.giver.navigationGold and #ui.giver.footerIconParts == 3 and ui.giver.footerIcon.texture == "Interface\\Buttons\\WHITE8X8")
     assert(ui.source.footerIcon.texture == "Interface\\AddOns\\DungeonPro\\Media\\Icons\\Wowhead")

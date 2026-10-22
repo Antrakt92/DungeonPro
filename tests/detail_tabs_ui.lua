@@ -94,14 +94,14 @@ for _,sample in ipairs({{2933,12},{7492,3},{8151,5}})do
   if row:IsShown()then choices[#choices+1]=row end
  end end
  assert(#choices==count,"every recorded manual source remains visible")
- local finish=assert(ui.detailContactRows and ui.detailContactRows[2],"actual finisher uses the full contact row")
+ local finish=assert(ui.detailContactRows and ui.detailContactRows[2],"actual finisher uses the compact header contact")
  local finishBinding=assert(finish.detailContactBinding)
  assert(finish:IsShown()and finishBinding.questID==id and finishBinding.field=="finish"and
   finishBinding.endpoint==a.quests[id].finish and finishBinding.current(),"the actual alternative-source quest keeps its own current turn-in identity")
- local finishTop=-assert(finish.point)[3]
+ local finishTop=-assert(finish.point)[5]
  for _,row in ipairs(choices)do
-  assert(-row.point[3]+row:GetHeight()<=finishTop,
-   "all starting choices form one uninterrupted list before the turn-in caption")
+  assert(finishTop+finish:GetHeight()<=-row.point[3],
+   "all starting choices remain below the compact turn-in header")
  end
  for index,row in ipairs(choices)do
   assert(row.enabled and row.scripts.OnClick)

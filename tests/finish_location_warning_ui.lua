@@ -35,27 +35,30 @@ local function finish()
  if row and row:IsShown()then
   local binding=assert(row.detailContactBinding)
   assert(binding.questID==u.quest and binding.field=="finish"and binding.endpoint==a.quests[u.quest].finish,"visible finisher belongs to exact selected quest")
-  local bottom=-row.point[3]+row:GetHeight()
-  local following,followingY,second,secondY
+  local bottom=-row.point[5]+row:GetHeight()
+  -- A visible READY visit caption separates the finish body from pickup warnings.
+  for _,fs in ipairs(u.details)do if fs:IsShown()and fs.text==a.L("VISIT_TURNIN")then
+   assert(u.turnin:IsShown()and u.turnin.enabled and u.action.place==binding.endpoint,"visit caption remains an owned READY action")
+   bottom=math.max(bottom,-fs.point[3])
+  end end
+  local following,followingY,warning,warningCount=nil,nil,nil,0
   for _,fs in ipairs(u.details)do if fs:IsShown()and fs.point then
    local y=-fs.point[3]
    if y>=bottom then
-    if not followingY or y<followingY then second,secondY=following,followingY;following,followingY=fs,y
-    elseif not secondY or y<secondY then second,secondY=fs,y end
+    if not followingY or y<followingY then following,followingY=fs,y end
+    if fs.text==a.L("SOURCE_POSITION_UNKNOWN")then warning,warningCount=fs,warningCount+1 end
    end
   end end
-  assert(following,"actual finisher has following visible content")
-  if following.text==a.L("VISIT_TURNIN")and second and second.text==a.L("SOURCE_POSITION_UNKNOWN")then
-   assert(u.turnin:IsShown()and u.turnin.enabled and u.action.place==binding.endpoint,"only the separate owned READY action may precede its warning")
-   following=second
-  end
+  assert(warningCount<=1,"compact finisher keeps one distinct missing-position explanation")
+  following=warning or following
+  assert(following,"actual finisher has visible body context below its compact header")
   return row.title,following
  end
 end
 local function warned()
  local caption,warning=finish()
  assert(caption and warning and warning:IsShown()and warning.text==a.L("SOURCE_POSITION_UNKNOWN")and warning.detailStyle=="warning",
- "known finisher area needs one adjacent exact-position-unknown explanation")
+ "known finisher area needs one separate exact-position-unknown explanation")
  return caption,warning
 end
 for _,locale in ipairs({"enUS","ruRU","deDE","frFR","esES","ptBR","itIT","koKR","zhCN","zhTW"})do
@@ -85,7 +88,10 @@ for _,quest in ipairs({96987,3801})do
  render(quest,"READY");assert(not finish(),"absent or alternative-only finisher must not gain a synthetic primary destination")
 end
 render(2201,"READY",assert(owners[2204]));local caption,nextLine=finish()
-assert(caption and nextLine.text~=a.L("SOURCE_POSITION_UNKNOWN"),"item-created source keeps its creation instruction rather than a fixed-position warning")
+local finishSource=a.quests[2201].finish;local creation=a.L("SOURCE_SUMMON_ITEM",finishSource.summonItem.name,finishSource.name)
+local creationLine;for _,fs in ipairs(u.details)do if fs:IsShown()and fs.text==creation then creationLine=fs end end
+assert(caption and creationLine and creationLine.detailStyle~="warning"and u.detailContactRows[2].detailContactBinding.reason=="SOURCE_DETAILS_HINT",
+ "item-created finisher keeps its explicit creation instruction, independently of a pickup-position warning")
 for _,phase in ipairs({"before","after"})do
  render(4241);local _,field=warned();local native=field.SetText;local fired=false
  field.SetText=function(self,value)

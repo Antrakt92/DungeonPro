@@ -95,13 +95,14 @@ for index,field in ipairs({"start","finish"})do
  assert(row:IsShown()and binding.current()and binding.questID==92458 and binding.endpoint==a.quests[92458][field],"journal contact belongs to selected exact endpoint")
  local purpose=assert(row.purpose or row.detailPurpose,"purpose is a separate text region")
  local avatar=assert(row.avatar or row.detailAvatar,"contact has a visible portrait region")
- assert(purpose:IsShown()and purpose.text==a.L(field=="start"and"DETAIL_GIVER"or"DETAIL_TURNIN"),"contact purpose is separate from its actor name")
- assert(row.title.text==a.quests[92458][field].name and row.note.text and row.note.text~="","contact actor and zone are separately readable")
+ assert(not purpose:IsShown()and purpose.text==a.L(field=="start"and"DETAIL_GIVER"or"DETAIL_TURNIN"),"hidden contact purpose remains separate tooltip data")
+ assert(row.title.text==a.quests[92458][field].name and row.note.text and row.note.text~="","contact actor and zone retain separate tooltip values")
  assert(purpose.fontSize==11 and row.title.fontSize==15 and row.note.fontSize==11,"contact purpose/name/zone preserve intended hierarchy")
- assert(avatar:IsShown()and avatar.width==36 and avatar.height==36,"contact portrait is thirty-six pixels rather than the retired glyph")
- local px,py=rectangle(purpose);local nx,ny=rectangle(row.title);local zx,zy=rectangle(row.note);local ax,_,aw=rectangle(avatar)
- assert(py<ny and ny<zy and nx==px and zx==px and nx>=ax+aw+8,"purpose/name/zone stack clearly beside the portrait")
- assert(top(objective)<top(row)and top(supplied)<top(row),"goals and provided items precede both practical contact rows")
+ assert(avatar:IsShown()and avatar.width==24 and avatar.height==24,"compact contact quest icon is twenty-four pixels")
+ assert(row.width==28 and row.height==28 and not row.title:IsShown()and not row.note:IsShown(),"header contacts hide text while retaining tooltip metadata")
+ assert(avatar.texture==(field=="start"and"Interface\\GossipFrame\\AvailableQuestIcon"or"Interface\\GossipFrame\\ActiveQuestIcon"),"pickup and turn-in use distinct native quest icons")
+ local _,cy,_,ch=rectangle(row)
+ assert(cy+ch<=top(objective)and cy+ch<=top(supplied),"both compact contacts stay in the header above goals and provided items")
  assert(top(prose)>top(row)+row.height,"both practical contacts precede long prose")
 end
 assert(routes==0,"visual composition never starts navigation automatically")
@@ -167,4 +168,4 @@ do
  end
  a.CarriedItemCount=counts
 end
-print("PASS journal visual contract: actual role/title hierarchy, tinted objective accent, distinct36px contacts, readable native prose and selected ownership")
+print("PASS journal visual contract: actual role/title hierarchy, tinted objective accent, compact24px header contact icons, readable native prose and selected ownership")

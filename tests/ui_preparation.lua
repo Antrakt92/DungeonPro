@@ -1079,8 +1079,8 @@ check("Known source zones display without inventing a client map or navigation",
     showDetail(2)
     local pickup,ending=assert(ui.detailContactRows[1]),assert(ui.detailContactRows[2])
     assert(pickup:IsShown()and pickup.title.text:find("Olvek",1,true)and pickup.note.text=="Alterac Mountains")
-    assert(ending:IsShown()and ending.title.text=="Other"and ending.detailPurpose:IsShown()and ending.detailPurpose.text==addon.L("DETAIL_TURNIN")and ending.note.text=="Known finish")
-    assert(pickup.detailPurpose:IsShown()and pickup.detailPurpose.text==addon.L("DETAIL_GIVER"),"pickup keeps its distinct visible purpose")
+    assert(ending:IsShown()and ending.title.text=="Other"and not ending.detailPurpose:IsShown()and ending.detailPurpose.text==addon.L("DETAIL_TURNIN")and ending.note.text=="Known finish")
+    assert(not pickup.detailPurpose:IsShown()and pickup.detailPurpose.text==addon.L("DETAIL_GIVER"),"pickup keeps its distinct tooltip purpose")
     assert(pickup.detailContactBinding.questID==2 and pickup.detailContactBinding.endpoint==addon.quests[2].start and pickup.detailContactBinding.current())
     assert(ending.detailContactBinding.questID==2 and ending.detailContactBinding.endpoint==addon.quests[2].finish and ending.detailContactBinding.current())
     assert(not pickup.enabled and not hasDestination(true)and not hasDestination(false))
@@ -1531,8 +1531,8 @@ check("Current NPC names refresh start finish and preparation without changing p
     end end
     assert(marked, "preparation uses same fresh giver name")
     current = 102; ui:RefreshDetail()
-    assert(detailIncludes("Catalog start") and detailIncludes("Native 102")and detailIncludes(addon.L("DETAIL_TURNIN")))
-    local ending=assert(ui.detailContactRows[2]);assert(ending:IsShown()and ending.title.text=="Native 102"and ending.detailPurpose:IsShown()and ending.detailPurpose.text==addon.L("DETAIL_TURNIN")and ending.detailContactBinding.endpoint==finish and ending.detailContactBinding.current(),"native finish name and separate purpose belong to the current exact finisher")
+    assert(detailIncludes("Catalog start") and detailIncludes("Native 102"))
+    local ending=assert(ui.detailContactRows[2]);assert(ending:IsShown()and ending.title.text=="Native 102"and not ending.detailPurpose:IsShown()and ending.detailPurpose.text==addon.L("DETAIL_TURNIN")and ending.detailContactBinding.endpoint==finish and ending.detailContactBinding.current(),"native finish name and separate purpose belong to the current exact finisher")
     current = nil; ui:RefreshDetail()
     assert(not detailIncludes("Native 101") and not detailIncludes("Native 102") and detailIncludes("Catalog finish"))
     addon.quests[2].start, addon.quests[2].finish, addon.GiverName = oldStart, oldFinish, producer
@@ -2271,7 +2271,11 @@ check("Missing zero failing or restricted icons revert recycled text to ordinary
     issecretvalue = f.oldSecret
     f.data = nil; ui:RefreshDetail()
     assert(not first.shown and not first.scripts.OnEnter and first.icon.texture == nil)
-    for _, fs in ipairs(ui.details) do if fs.shown then assert(fs.width == ui.detail:GetWidth()-8-(fs.detailStyle=="title"and 40 or fs.navigationInset or 0) and fs.point[2] == 4+(fs.navigationInset or 0)) end end
+    for _, fs in ipairs(ui.details) do if fs.shown then
+        local contactReserve=fs.detailContactReserve or 0
+        assert(contactReserve==0 or(contactReserve==68 and fs.detailStyle=="caption"),"only the audience caption reserves space for compact contacts")
+        assert(fs.width == ui.detail:GetWidth()-8-(fs.detailStyle=="title"and 40 or fs.navigationInset or 0)-contactReserve and fs.point[2] == 4+(fs.navigationInset or 0))
+    end end
     f:finish()
 end)
 check("Hover freshly rejects changed source hidden dialogue kind slot and item before redraw", function()
@@ -6528,10 +6532,12 @@ local function firstDetailPrefix(prefix)
 end
 check("Actual1654 accepted native progress precedes long source item goals provided tools and every reference location",function()
     local f,q=hierarchyFixture(1654)
-    local giverY=detailSectionY(addon.L("DETAIL_GIVER"));local progressY=detailSectionY(addon.L("OBJECTIVE_PROGRESS"))
+    local pickup=assert(ui.detailContactRows[1]);local binding=assert(pickup.detailContactBinding)
+    assert(pickup:IsShown()and binding.current()and binding.endpoint==q.start and pickup.height==28,"own compact pickup remains in the selected header")
+    local giverY=-pickup.point[5];local progressY=detailSectionY(addon.L("OBJECTIVE_PROGRESS"))
     local dialogueY=detailSectionY(addon.L("OBJECTIVE_DIALOGUE"));local itemsY=detailSectionY(addon.L("DETAIL_OBJECTIVES"))
     local suppliedY=detailSectionY(addon.L("PROVIDED_ITEMS"));local startY=firstDetailPrefix("")
-    assert(progressY<dialogueY and dialogueY<itemsY and itemsY<suppliedY and suppliedY<giverY and not detailHas(addon.L("NEXT")),"native goals and supplied tools precede the separate pickup contact")
+    assert(giverY+pickup.height<=progressY and progressY<dialogueY and dialogueY<itemsY and itemsY<suppliedY and not detailHas(addon.L("NEXT")),"compact pickup stays above native goals, source goals and supplied tools")
     assert(progressY<ui.detailScroll:GetHeight() and detailHas("|cff88bfffCurrent native counter 0/1|r"))
     assert(q.requirementsKnown==false and ui.engine:State(1654).status=="ACTIVE" and ui.action.kind=="complete" and not ui.action.place)
     local material=assert(materialFields(addon.QuestName(q.completionQuests[1].id)))
@@ -6552,7 +6558,7 @@ check("Native-first hierarchy preserves actual source role text in all locales a
     end
     f.held=false;f.dialogue=nil;showDetail(1654,f.context)
     assert(ui.engine:State(1654).status=="UNKNOWN" and not ui.action and not detailHas(addon.L("OBJECTIVE_PROGRESS")))
-    assert(detailSectionY(addon.L("DETAIL_OBJECTIVES"))<detailSectionY(addon.L("DETAIL_GIVER")),"recorded goals remain before pickup even without accepted native progress")
+    local pickup=assert(ui.detailContactRows[1]);assert(pickup:IsShown()and pickup.detailContactBinding.current()and pickup.detailContactBinding.endpoint==q.start and -pickup.point[5]+pickup.height<=detailSectionY(addon.L("DETAIL_OBJECTIVES")),"compact pickup remains in the header above recorded goals even without native progress")
     addon.QuestObjectives,addon.DialogueObjectiveText=nil,nil;ui:RefreshDetail()
     assert(not detailHas(addon.L("OBJECTIVE_PROGRESS")) and not detailHas(addon.L("OBJECTIVE_DIALOGUE")))
     addon.db.locale=locale;f:restore()
@@ -6910,7 +6916,7 @@ check("Game waypoint is a separate optional manual destination after native obje
     assert(button and button.shown and button.enabled and button.label.text==addon.L("GAME_WAYPOINT_FOLLOW"),"game waypoint needs a separate explicit follow control")
     assert(detailHas(addon.L("GAME_WAYPOINT_NOTICE"))and detailHas("Native route instruction")and #f.visits==0)
     assert(detailSectionY(addon.L("OBJECTIVE_DIALOGUE"))<detailSectionY(addon.L("GAME_WAYPOINT")))
-    assert(detailSectionY(addon.L("GAME_WAYPOINT"))<detailSectionY(addon.L("DETAIL_GIVER")),"manual native goal destination precedes the separate recorded pickup")
+    local pickup=assert(ui.detailContactRows[1]);assert(pickup:IsShown()and pickup.detailContactBinding.current()and pickup.detailContactBinding.endpoint==q.start and -pickup.point[5]+pickup.height<=detailSectionY(addon.L("GAME_WAYPOINT")),"manual native goal destination remains below the independent compact pickup header")
     assert(action.id==9970 and action.kind=="complete" and giver.place==q.start and ui.engine:State(9970).status=="ACTIVE")
     button.scripts.OnClick(button,"LeftButton");local visit=f.visits[1]
     assert(visit.id==9970 and visit.kind=="visit" and visit.place.mapID==43 and visit.place.x==10 and visit.place.y==90)

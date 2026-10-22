@@ -39,9 +39,9 @@ local function ownContact(field,zone)
  local binding=assert(contact.detailContactBinding);local purpose=assert(contact.detailPurpose)
  assert(contact:IsShown()and binding.current()and binding.questID==ui.quest and binding.field==field and binding.endpoint==point,
   "reviewed area belongs to the exact selected typed endpoint")
- assert(purpose:IsShown()and purpose.text==a.L(field=="start"and "DETAIL_GIVER"or"DETAIL_TURNIN")and contact.title.text==point.name,
-  "source purpose and actor are independently visible")
- if zone then assert(contact.note.text==zone,"recorded own endpoint area stays immediately visible")end
+ assert(not purpose:IsShown()and purpose.text==a.L(field=="start"and "DETAIL_GIVER"or"DETAIL_TURNIN")and contact.title.text==point.name,
+  "source purpose and actor retain independent tooltip values")
+ if zone then assert(contact.note.text==zone,"recorded own endpoint area remains tooltip metadata")end
  return contact
 end
 local function row(id)
@@ -86,22 +86,13 @@ assert(ownContact("finish","Maraudon"),"Celebras area belongs to this quest's tu
 assert(field(a.L("GIVER_LOCATION_UNKNOWN"))and ui.giverUnavailableKey=="GIVER_LOCATION_UNKNOWN" and
  not field(q.start.name.." — Maraudon"),"unknown Cavindra start does not borrow Celebras's known area")
 local finishLine=assert(ownContact("finish","Maraudon"))
-local finishWarning
-if finishLine.detailContactBinding then
- local bottom= -assert(finishLine.point[3])+finishLine:GetHeight()
- local closest
- for _,line in ipairs(ui.details)do if line:IsShown()and line.point then
-  local top= -line.point[3]
-  if top>=bottom and(not closest or top<closest)then closest,finishWarning=top,line end
- end end
-else
- for index,v in ipairs(ui.details)do
-  if v==finishLine then
-   for nextIndex=index+1,#ui.details do if ui.details[nextIndex]:IsShown()then finishWarning=ui.details[nextIndex];break end end
-   break
-  end
- end
-end
+local finishWarning,warningCount
+warningCount=0
+for _,line in ipairs(ui.details)do if line:IsShown()and line.text==a.L("SOURCE_POSITION_UNKNOWN")then
+ warningCount=warningCount+1;finishWarning=line
+end end
+assert(warningCount==1 and -finishLine.point[5]+finishLine:GetHeight()<=-finishWarning.point[3],
+ "the compact finisher header keeps one separate missing-position warning below it")
 assert(finishWarning and finishWarning.text==a.L("SOURCE_POSITION_UNKNOWN")and finishWarning.detailStyle=="warning",
  "the distinct known Maraudon finisher explains its own missing exact position")
 assert(not row(7044).navigationControl.enabled and not ui.giver.enabled and not ui:NavigationDestination(false) and not ui.turnin.enabled,

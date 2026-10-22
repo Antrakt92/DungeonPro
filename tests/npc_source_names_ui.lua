@@ -47,7 +47,7 @@ local function ownContact(field)
  local binding=assert(contact.detailContactBinding)
  assert(contact:IsShown()and binding.questID==q.id and binding.field==field and binding.endpoint==point and binding.current(),"actual contact owns exact selected source")
  local purpose=assert(contact.detailPurpose,"contact purpose is a distinct region")
- assert(purpose:IsShown()and purpose.text==a.L(field=="start"and "DETAIL_GIVER"or"DETAIL_TURNIN"),"current source purpose remains independently visible")
+ assert(not purpose:IsShown()and purpose.text==a.L(field=="start"and "DETAIL_GIVER"or"DETAIL_TURNIN"),"current source purpose remains independently available for its tooltip")
  return contact
 end
 local function sourceHint()

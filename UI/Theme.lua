@@ -551,7 +551,7 @@ function Theme.StyleDetailText(region, role, ownerCurrent)
     end)
 end
 
-function Theme.StyleDetailContact(row, ownerCurrent)
+function Theme.StyleDetailContact(row, ownerCurrent, endpointField)
     row = cleanObject(row)
     if not row then return false end
     return journalPaint(row, ownerCurrent, function(current, write)
@@ -594,13 +594,13 @@ function Theme.StyleDetailContact(row, ownerCurrent)
         local highlight = objectResult(row, "GetHighlightTexture")
         if not current() then return false end
         if highlight and not write(highlight, "SetColorTexture", 0, 0, 0, 0) then return false end
-        if not write(avatar, "SetSize", 36, 36) or not write(avatar, "ClearAllPoints") or
-            not write(avatar, "SetPoint", "TOPLEFT", row, "TOPLEFT", 4, -10) or not write(avatar, "Show") or
-            not write(glyph, "SetText", "↗") or not write(glyph, "ClearAllPoints") or
-            not write(glyph, "SetPoint", "RIGHT", row, "RIGHT", -4, 0) or not write(glyph, "Show") or
-            not write(separator, "SetColorTexture", unpack(journal.line)) or not write(separator, "SetHeight", 1) or
-            not write(separator, "ClearAllPoints") or not write(separator, "SetPoint", "TOPLEFT", row, "TOPLEFT", 0, 0) or
-            not write(separator, "SetPoint", "TOPRIGHT", row, "TOPRIGHT", 0, 0) or not write(separator, "Show") then return false end
+        local icon = endpointField == "finish" and "Interface\\GossipFrame\\ActiveQuestIcon" or "Interface\\GossipFrame\\AvailableQuestIcon"
+        if not write(avatar, "SetTexture", icon) or not write(avatar, "SetSize", 24, 24) or
+            not write(avatar, "ClearAllPoints") or not write(avatar, "SetPoint", "CENTER", row, "CENTER", 0, 0) or
+            not write(avatar, "Show") then return false end
+        for _, region in ipairs({ title, note, purpose, glyph, separator }) do
+            if not write(region, "Hide") then return false end
+        end
         return true
     end)
 end

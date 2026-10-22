@@ -103,6 +103,7 @@ def main():
     run(lua, "tests/detail_role_caption_ui.lua")
     run(lua, "tests/detail_contact_binding.lua")
     run(lua, "tests/detail_contact_rows_ui.lua")
+    run(lua, "tests/compact_contacts_ui.lua")
     run(lua, "tests/single_stream_detail_ui.lua")
     run(lua, "tests/single_stream_history_ui.lua")
     run(lua, "tests/quest_tree_limit_notice_ui.lua")

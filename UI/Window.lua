@@ -3588,7 +3588,7 @@ function UI:RefreshDetail(sourceFocus)
     self:RefreshQuestStyles()
     if self.rewardGeneration ~= rewardGeneration or self.quest ~= renderQuest then return end
     local pool, n, y = self.details, 0, 0
-    local journalInset = 0
+    local journalInset, contactHeaderY, contactHeaderX = 0, nil, nil
     local detailWidth = addon.Read(self.detail.GetWidth, "number", self.detail)
     if self.rewardGeneration ~= rewardGeneration or self.quest ~= renderQuest or self.dungeon ~= renderDungeon then return end
     local contentWidth = detailWidth and detailWidth > 56 and detailWidth < 2000 and detailWidth - 8 or 334
@@ -3758,7 +3758,10 @@ function UI:RefreshDetail(sourceFocus)
         if row then
             local function current() return portraitCardCurrent() and self.detailContactRows[index] == row end
             if not sourceWrite(current,row,"Hide",nil) or not sourceWrite(current,row,"SetEnabled",nil,false) or
-                not sourceWrite(current,row,"SetScript",nil,"OnClick",nil) then return end
+                not sourceWrite(current,row,"SetScript",nil,"OnClick",nil) or
+                not sourceWrite(current,row,"SetScript",nil,"OnEnter",nil) or
+                not sourceWrite(current,row,"SetScript",nil,"OnLeave",nil) or
+                not sourceWrite(current,row,"SetScript",nil,"OnHide",nil) then return end
             row.detailContactOwner, row.detailContactBinding = nil, nil
         end
     end
@@ -3856,7 +3859,7 @@ function UI:RefreshDetail(sourceFocus)
         not sourceWrite(function() return primaryCurrent() end, primaryGiver, "Hide", nil) or
         not sourceWrite(function() return primaryCurrent() end, primaryGiver, "SetScript", nil, "OnClick", nil) then return end
     local rewardIndex, objectiveIndex = 0, 0
-    local function line(value, style, reward, objective, ownerCurrent, navigation)
+    local function line(value, style, reward, objective, ownerCurrent, navigation, contactReserve)
         if detailTextLease.released or self.detailTextLease ~= detailTextLease or (ownerCurrent and not ownerCurrent()) then return false end
         local function write(object, method, ...)
             if detailTextLease.released or self.detailTextLease ~= detailTextLease or (ownerCurrent and not ownerCurrent()) then return false end
@@ -3900,7 +3903,7 @@ function UI:RefreshDetail(sourceFocus)
         end
         style = DETAIL_STYLES[style] and style or "body"
         local format = DETAIL_STYLES[style]
-        local height = format.minimum
+        local height = contactReserve and math.max(28, format.minimum) or format.minimum
         y = y + (format.before or 0)
         n = n + 1
         local fs = pool[n]
@@ -3911,9 +3914,10 @@ function UI:RefreshDetail(sourceFocus)
         end
         local font = setFont(fs, format.size)
         if ownerCurrent and not ownerCurrent() then return false end
-        local width = (navigation and contentWidth - 32 or style == "title" and contentWidth - 40 or contentWidth) - journalInset * 2
+        local width = (navigation and contentWidth - 32 or style == "title" and contentWidth - 40 or contentWidth) - journalInset * 2 - (contactReserve or 0)
         if fs.detailStyle ~= style or fs.detailFont ~= font or fs.detailWidth ~= width then fs.measuredHeight = nil end
         fs.detailStyle, fs.detailFont, fs.detailWidth, fs.navigationInset = style, font, width, navigation and 32 or 0
+        fs.detailContactReserve = contactReserve
         if navigation then height = math.max(height, 24) end
         if not write(fs, "SetTextColor", unpack(format.color)) or not write(fs, "SetWidth", width) or
             not write(fs, "ClearAllPoints") or not write(fs, "SetPoint", "TOPLEFT", (navigation and 36 or 4) + journalInset, -y) or
@@ -4303,7 +4307,12 @@ function UI:RefreshDetail(sourceFocus)
             if value and value:find("%S") then metadataParts[#metadataParts + 1] = value end
         end
         if #metadataParts > 0 and line(table.concat(metadataParts, " · "), "caption", nil, nil, metadataCurrent) == false then return end
-        if factions and line(factions, "caption", nil, nil, metadataCurrent) == false then return end
+        contactHeaderY = y + DETAIL_STYLES.caption.before
+        if line(factions or "", "caption", nil, nil, metadataCurrent, nil, 68) == false then return end
+        local audienceWidth = factions and addon.Read(pool[n].GetStringWidth, "number", pool[n]) or 0
+        if not metadataCurrent() then return end
+        if not audienceWidth or audienceWidth < 0 or audienceWidth > 2000 or audienceWidth ~= audienceWidth then audienceWidth = contentWidth - 72 end
+        contactHeaderX = math.min(contentWidth - 60, audienceWidth + (factions and 12 or 4))
         if detailClassicScope then
             local caption, proof = self:ScarletClassicCaption(detailClassicScope, id)
             if not metadataCurrent() then return end
@@ -5466,11 +5475,10 @@ function UI:RefreshDetail(sourceFocus)
                 local function write(object,method,...)return sourceWrite(current,object,method,nil,...)end
                 local theme = addon.Theme
                 if theme and type(theme.StyleDetailContact)=="function" then
-                    if not theme.StyleDetailContact(row,current) or not current() then return false end
+                    if not theme.StyleDetailContact(row,current,field) or not current() then return false end
                     row.detailJournalContact=true
                     if not write(row.detailPurpose,"SetText",heading) or
-                        not write(row.detailPurpose,"SetWidth",contentWidth-84) or
-                        not write(row.detailMapGlyph,"SetShown",action~=nil) then return false end
+                        not write(row.detailPurpose,"Hide") then return false end
                 end
                 local textWidth=contentWidth-(row.detailJournalContact and 84 or 16)
                 if not current() or not write(row.title,"SetWidth",textWidth) or not write(row.note,"SetWidth",textWidth) or
@@ -5483,9 +5491,23 @@ function UI:RefreshDetail(sourceFocus)
                         self.detailContactExpanded=field
                         self:RefreshDetail()
                     end or nil) then return false end
-                local nextY=layoutRow(self,row,52,y,current,function(object,method,...)return sourceGeometryWrite(current,object,method,...)end)
-                if not nextY or not liveCurrent() or not write(row,"Show") then return false end
-                y=nextY;contactRendered[field]=true
+                local contactHint
+                if not contactHeaderY then return false end
+                if type(row.SetMotionScriptsWhileDisabled)=="function" then
+                    if not write(row,"SetMotionScriptsWhileDisabled",true) then return false end
+                elseif not write(row,"SetEnabled",true) then return false end
+                local function position(method,...)
+                    return sourceGeometryWrite(current,row,method,...)
+                end
+                if not position("SetSize",28,28) or not position("ClearAllPoints") or
+                    not position("SetPoint","TOPLEFT",self.detail,"TOPLEFT",contactHeaderX+(index-1)*32,-contactHeaderY) or
+                    not write(row.title,"Hide") or not write(row.note,"Hide") or
+                    not write(row,"SetScript","OnEnter",function()
+                        if liveCurrent() then contactHint=self:DetailContactHint(row,heading,name,zone,liveCurrent) end
+                    end) or not write(row,"SetScript","OnLeave",function()if contactHint then self:HideNavigationHint(contactHint)end end) or
+                    not write(row,"SetScript","OnHide",function()if contactHint then self:HideNavigationHint(contactHint)end end) or
+                    not liveCurrent() or not write(row,"Show") then return false end
+                contactRendered[field]=true
                 if self.detailContactExpanded==field then
                     if point and rawget(point,"reportedLocations")~=nil then if reported(point,field,current)==false then return false end end
                     local alternatives=rawget(definition,field.."Alternatives")
