@@ -464,5 +464,14 @@ check("Explicit recovery attempts during zero-size retain the later resize recov
         near(m.button.point[4],208)
     end
 end)
+check("Reset schedules bounded retry when placement geometry is unavailable",function()
+    local config={hide=false,angle=17};local m=reset(config);assert(m:Initialize())
+    local queue=scheduled();width=0
+    assert(m:Reset()==false and #queue==1 and config.angle==17 and config.hide==false)
+    assert(not m.button.shown and m.retry)
+    width=200;queue[1]()
+    assert(m.button.shown and not m.retry)
+    assert(m:Reset() and config.angle==225 and config.hide==false and m.button.shown)
+end)
 issecretvalue=nil
 print("Minimap modeled checks passed: "..total.." (native client unverified)")

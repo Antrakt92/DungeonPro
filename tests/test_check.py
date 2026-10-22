@@ -138,6 +138,47 @@ class RunnerGateWiringTests(unittest.TestCase):
         self.assertGreaterEqual(runner_source.count("run(lua,"), 198)
 
 
+class LuaRosterGateTests(unittest.TestCase):
+    # scripts/check.py owns a runtime completeness gate (not just the source
+    # pins above): every top-level tests/*.lua file must be registered in
+    # lua_checks, unless documented in LUA_CHECK_FIXTURE_EXCEPTIONS. A new
+    # test file without a runner call must fail check.py, not silently skip.
+    def load_gate(self, root):
+        spec = importlib.util.spec_from_file_location("check_roster_under_test", RUNNER)
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        module.ROOT = root
+        return module
+
+    def test_forgotten_file_fails(self):
+        with tempfile.TemporaryDirectory(prefix="quest roster forgotten ") as folder:
+            root = Path(folder)
+            (root / "tests").mkdir()
+            (root / "tests" / "kept.lua").write_text("-- fixture\n", encoding="utf-8")
+            (root / "tests" / "forgotten.lua").write_text("-- fixture\n", encoding="utf-8")
+            module = self.load_gate(root)
+            commands = [("lua", "tests/kept.lua")]
+            with self.assertRaisesRegex(SystemExit, "forgotten.lua"):
+                module.check_lua_roster_completeness(commands)
+
+    def test_allow_listed_fixture_passes(self):
+        with tempfile.TemporaryDirectory(prefix="quest roster allowlist ") as folder:
+            root = Path(folder)
+            (root / "tests").mkdir()
+            (root / "tests" / "kept.lua").write_text("-- fixture\n", encoding="utf-8")
+            (root / "tests" / "helper_fixture.lua").write_text("-- fixture\n", encoding="utf-8")
+            module = self.load_gate(root)
+            commands = [("lua", "tests/kept.lua")]
+            self.assertIsNone(module.check_lua_roster_completeness(
+                commands, exceptions=frozenset({"helper_fixture.lua"})))
+
+    def test_real_tree_roster_is_complete(self):
+        module = self.load_gate(RUNNER.parents[1])
+        commands = []
+        module.lua_checks("lua", lambda *args: commands.append(args))
+        self.assertIsNone(module.check_lua_roster_completeness(commands))
+
+
 class CollectedLuaRosterTests(unittest.TestCase):
     def test_collected_roster_keeps_every_file_and_exact_multi_invocation_arguments(self):
         module, _, _ = exercise(RUNNER.parents[1])
@@ -238,6 +279,41 @@ class TocParityTests(unittest.TestCase):
         with tempfile.TemporaryDirectory(prefix="quest toc casedup ") as folder:
             module = self.fixture(Path(folder), ["Core/A.lua", "core/a.lua"], ["Core/A.lua"])
             with self.assertRaisesRegex(SystemExit, "Duplicate"):
+                module.main()
+
+    # Load-order pin: Language must load before Window, and
+    # QuestNavigation/QuestHistory/PreparationOverview must load before
+    # Window, in the canonical UI sequence. Membership alone cannot catch a
+    # reorder, so relative order among the present UI entries is asserted.
+    # The check only constrains entries present in the TOC, so minimal
+    # fixtures above keep passing.
+    CANONICAL_UI = ["UI/TooltipLease.lua", "UI/Theme.lua", "UI/Language.lua",
+                    "UI/QuestStatus.lua", "UI/QuestListRewards.lua", "UI/RewardCache.lua",
+                    "UI/QuestNavigation.lua", "UI/QuestHistory.lua", "UI/DungeonMap.lua",
+                    "UI/PreparationOverview.lua", "UI/Window.lua",
+                    "UI/Navigation.lua", "UI/Minimap.lua"]
+
+    def test_canonical_ui_order_passes(self):
+        with tempfile.TemporaryDirectory(prefix="quest toc order ") as folder:
+            module = self.fixture(Path(folder), list(self.CANONICAL_UI), self.CANONICAL_UI)
+            self.assertIsNone(module.main())
+
+    def test_window_above_quest_navigation_fails(self):
+        with tempfile.TemporaryDirectory(prefix="quest toc reorder ") as folder:
+            moved = list(self.CANONICAL_UI)
+            moved.remove("UI/Window.lua")
+            moved.insert(moved.index("UI/QuestNavigation.lua"), "UI/Window.lua")
+            module = self.fixture(Path(folder), moved, moved)
+            with self.assertRaisesRegex(SystemExit, "(?i)order"):
+                module.main()
+
+    def test_language_below_window_fails(self):
+        with tempfile.TemporaryDirectory(prefix="quest toc langorder ") as folder:
+            moved = list(self.CANONICAL_UI)
+            moved.remove("UI/Language.lua")
+            moved.insert(moved.index("UI/Window.lua") + 1, "UI/Language.lua")
+            module = self.fixture(Path(folder), moved, moved)
+            with self.assertRaisesRegex(SystemExit, "(?i)order"):
                 module.main()
 
 

@@ -275,6 +275,35 @@ def lua_checks(lua, run):
     run(lua, "tests/minimap.lua")
 
 
+# Every top-level tests/*.lua file must run through lua_checks above, or be
+# named here with a one-line reason. Fixture-only helpers that must never
+# execute standalone belong in this allow-list; an undocumented new test file
+# fails the gate below instead of silently skipping coverage. The set is
+# currently empty: each tests/*.lua file on disk has a registered runner call.
+LUA_CHECK_FIXTURE_EXCEPTIONS = frozenset()
+
+
+def check_lua_roster_completeness(commands=None, exceptions=None):
+    """Fail when a tests/*.lua file has no registered lua_checks invocation."""
+    if commands is None:
+        collected = []
+        lua_checks("<lua>", lambda *args: collected.append(args))
+        commands = collected
+    if exceptions is None:
+        exceptions = LUA_CHECK_FIXTURE_EXCEPTIONS
+    registered = {args[1] for args in commands
+                  if len(args) >= 2 and isinstance(args[1], str)
+                  and args[1].startswith("tests/") and args[1].endswith(".lua")}
+    on_disk = {"tests/" + path.name for path in sorted((ROOT / "tests").glob("*.lua"))}
+    allowed = {"tests/" + name for name in exceptions}
+    missing = sorted(on_disk - registered - allowed)
+    if missing:
+        raise SystemExit(
+            "Lua checks missing tests/*.lua files "
+            "(register in lua_checks or document in LUA_CHECK_FIXTURE_EXCEPTIONS): "
+            + ", ".join(missing))
+
+
 def main(argv=()):
     parser = argparse.ArgumentParser(description=__doc__)
     default_jobs = min(4, max(1, (os.cpu_count() or 2) // 2))
@@ -312,6 +341,7 @@ def check(options):
     commands = []
     lua_checks(lua, lambda *args: commands.append(args))
     print(f"Lua checks: {len(commands)} invocations; {options.jobs} isolated processes", flush=True)
+    check_lua_roster_completeness(commands)
     lua_started = time.perf_counter()
     try:
         run_lua_checks(commands, options.jobs)

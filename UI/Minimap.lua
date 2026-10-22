@@ -473,7 +473,10 @@ function M:Reset()
     if not current() then return false end
     local placed, reason = self:Place(225)
     if not current() then return false end
-    if not placed then if reason ~= "superseded" then self:HideForPlacement() end; return false end
+    if not placed then
+        if reason ~= "superseded" then self:HideForPlacement(); self:RetryPlacement(self.db) end
+        return false
+    end
     config.angle, config.hide = 225, false
     self:SetVisible(true)
     return current()

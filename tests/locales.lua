@@ -31,4 +31,17 @@ addon.db.locale = "esMX"
 assert(addon.L("NEXT") == addon.locales.esES.NEXT)
 addon.db.locale = "enGB"
 assert(addon.L("NEXT") == addon.locales.enUS.NEXT)
+-- Reverse coverage: keys present in any locale but absent from enUS are dead
+-- (or untranslated-new) and fail closed. Live exceptions belong in
+-- LOCALE_EXTRA_ALLOW with a one-line reason each; empty is preferred.
+local LOCALE_EXTRA_ALLOW = {}
+for locale, strings in pairs(addon.locales) do
+    if locale ~= "enUS" then
+        for key, _ in pairs(strings) do
+            if addon.locales.enUS[key] == nil and not LOCALE_EXTRA_ALLOW[locale .. ":" .. key] then
+                error(locale .. " has extra key without enUS: " .. key)
+            end
+        end
+    end
+end
 print("Localization checks passed: " .. n .. " dictionaries, esMX/enGB aliases; visual review pending")

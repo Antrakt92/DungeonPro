@@ -12,6 +12,44 @@ ROOT = Path(__file__).resolve().parents[1]
 # in either directory is covered without a script change.
 RUNTIME_DIRS = ("Core/", "UI/", "Database/", "Locales/")
 
+# Canonical UI load order, matching DungeonPro.toc. Only relative order among
+# entries present in the TOC is asserted, so minimal fixtures keep passing.
+# Load-bearing pins: Language before Window (Window reads localized strings
+# at build) and QuestNavigation/QuestHistory/PreparationOverview before
+# Window (Window mixes their views).
+CANONICAL_UI_ORDER = (
+    "UI/TooltipLease.lua",
+    "UI/Theme.lua",
+    "UI/Language.lua",
+    "UI/QuestStatus.lua",
+    "UI/QuestListRewards.lua",
+    "UI/RewardCache.lua",
+    "UI/QuestNavigation.lua",
+    "UI/QuestHistory.lua",
+    "UI/DungeonMap.lua",
+    "UI/PreparationOverview.lua",
+    "UI/Window.lua",
+    "UI/Navigation.lua",
+    "UI/Minimap.lua",
+)
+
+
+def _check_ui_order(entries):
+    positions = {}
+    for index, entry in enumerate(entries):
+        lowered = entry.lower()
+        if lowered not in positions:
+            positions[lowered] = index
+    canonical = [name.lower() for name in CANONICAL_UI_ORDER]
+    present = [name for name in canonical if name in positions]
+    for first in range(len(present)):
+        for second in range(first + 1, len(present)):
+            if positions[present[first]] > positions[present[second]]:
+                raise SystemExit(
+                    "TOC order violation: "
+                    f"{present[first]} must load before {present[second]} "
+                    "(see CANONICAL_UI_ORDER in scripts/check_toc.py)")
+
 
 def _tracked(root):
     out = subprocess.run(
@@ -53,6 +91,10 @@ def main():
         problems.append("TOC entries with no tracked file: " + ", ".join(stale))
     if duplicates:
         problems.append("Duplicate TOC entries: " + ", ".join(duplicates))
+    try:
+        _check_ui_order(entries)
+    except SystemExit as order:
+        problems.append(str(order))
     if problems:
         raise SystemExit("; ".join(problems))
     print(f"TOC parity: {len(runtime)} runtime files listed")
