@@ -516,5 +516,31 @@ check("Dialogue and selected-log money enforce integer 2^53-1 caps", function()
         assert(r and r.money == nil, "uncapped selected-log money reached display")
     end
 end)
+check("Fractional and oversized objective counters fail closed while 2^53-1 stays live", function()
+    local MAX = 9007199254740991
+    local fulfilled, required = 2, 6
+    C_QuestLog.GetQuestObjectives = function(id)
+        assert(id == 65)
+        return { { text = "Defias defeated", type = "monster", finished = false,
+            numFulfilled = fulfilled, numRequired = required } }
+    end
+    local r = addon.QuestObjectives(65)
+    assert(r and r[1].numFulfilled == 2 and r[1].numRequired == 6, "valid objective counters lost")
+    fulfilled, required = MAX, MAX
+    r = addon.QuestObjectives(65)
+    assert(r and r[1].numFulfilled == MAX and r[1].numRequired == MAX, "2^53-1 objective counters lost")
+    for _, huge in ipairs({ 9007199254740992, 1e18 }) do
+        fulfilled, required = huge, 6
+        assert(addon.QuestObjectives(65) == nil, "huge fulfilled reached display")
+        fulfilled, required = 2, huge
+        assert(addon.QuestObjectives(65) == nil, "huge required reached display")
+    end
+    for _, fractional in ipairs({ 1.5, 2.5 }) do
+        fulfilled, required = fractional, 6
+        assert(addon.QuestObjectives(65) == nil, "fractional fulfilled reached display")
+        fulfilled, required = 2, fractional
+        assert(addon.QuestObjectives(65) == nil, "fractional required reached display")
+    end
+end)
 issecretvalue = nil
 print("Quest portrait adapter modeled checks passed: " .. total .. " (native client unverified)")

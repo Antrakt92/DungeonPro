@@ -1401,10 +1401,10 @@ function addon.QuestObjectives(id)
         local text = addon.Clean(row.text, "string")
         local kind = addon.Clean(row.type, "string")
         local finished = addon.Clean(row.finished, "boolean")
-        local fulfilled = addon.Clean(row.numFulfilled, "number")
-        local required = addon.Clean(row.numRequired, "number")
+        local fulfilled = dialogueInteger(row.numFulfilled, 0, 9007199254740991)
+        local required = dialogueInteger(row.numRequired, 0, 9007199254740991)
         if not text or #text > 30000 or not kind or #kind > 200 or finished == nil
-            or not fulfilled or fulfilled < 0 or not required or required < 0 then return nil end
+            or not fulfilled or not required then return nil end
         result[i] = { text = text, type = kind, finished = finished,
             numFulfilled = fulfilled, numRequired = required,
             objectiveType = addon.Clean(row.objectiveType, "number") }
