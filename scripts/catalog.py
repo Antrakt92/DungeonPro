@@ -201,7 +201,8 @@ def validate(data):
             raise ValueError(f"Invalid repeatable flag: {q['id']}")
         if "requiredMoney" in q and (not integer(q["requiredMoney"]) or q["requiredMoney"] > 2 ** 53 - 1):
             raise ValueError(f"Invalid required money: {q['id']}")
-        validate_named_facts(q, "objectiveItems", "itemID", 2 ** 32 - 1, "objective item")
+        validate_named_facts(q, "objectiveItems", "itemID", 2 ** 32 - 1, "objective item",
+                             utf8_name=True)
         validate_named_facts(q, "objectiveKills", "npcID", 2 ** 32 - 1, "objective kill",
                              required_name=True, utf8_name=True)
         validate_named_facts(q, "objectiveObjects", "objectID", 2 ** 32 - 1, "objective object",

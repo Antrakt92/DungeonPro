@@ -71,7 +71,7 @@ def guarded(name,*a,**kw):
 builtins.__import__=guarded
 runpy.run_path('scripts/render-detail-preview.py',run_name='__main__')
 '''
-  for args in [('--ready-quest','155'),('--overview','dm','--quest','166'),('--overview','dm','--detail-tab','quest'),('--overview','dm','--ready-quest','0'),('--overview','dm','--ready-quest','4294967296'),('--overview',''),('--overview','not-existing'),('--overview','bad!'),('--overview','dm','--ready-quest','4294967295')]:
+  for args in [('--ready-quest','155'),('--overview','dm','--quest','166'),('--overview','dm','--detail-tab','quest'),('--overview','dm','--ready-quest','0'),('--overview','dm','--ready-quest','4294967296'),('--quest','0'),('--quest','-1'),('--quest','4294967296'),('--overview',''),('--overview','not-existing'),('--overview','bad!'),('--overview','dm','--ready-quest','4294967295')]:
    r=subprocess.run([sys.executable,'-c',code,'--lua',LUA,*args],cwd=ROOT,text=True,encoding='utf-8',capture_output=True)
    self.assertEqual(r.returncode,2,(args,r.stderr));self.assertNotIn('PIL_IMPORT_FORBIDDEN',r.stderr)
  def test_repeat_ready_ids_normalized(self):

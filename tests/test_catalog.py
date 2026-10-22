@@ -1779,6 +1779,19 @@ class CatalogTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "Duplicate objective item"):
             catalog.validate(data)
 
+    def test_objective_item_name_budget_matches_utf8_runtime_bytes(self):
+        for name in ("x" * 500, "中" * 166, "Ж" * 250, "😀" * 125):
+            with self.subTest(valid_bytes=len(name.encode("utf-8"))):
+                data = self.minimal_catalog()
+                data["quests"][0]["objectiveItems"] = [{"itemID": 1, "name": name}]
+                catalog.validate(data)
+        for name in ("x" * 501, "中" * 200, "Ж" * 251, "😀" * 126, "\ud800"):
+            with self.subTest(invalid_name=repr(name)):
+                data = self.minimal_catalog()
+                data["quests"][0]["objectiveItems"] = [{"itemID": 1, "name": name}]
+                with self.assertRaisesRegex(ValueError, "objective item name"):
+                    catalog.validate(data)
+
     def test_dungeon_artwork_keeps_exact_source_identity(self):
         data = self.minimal_catalog()
         dungeon = data["dungeons"][0]
