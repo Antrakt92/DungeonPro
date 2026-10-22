@@ -40,6 +40,12 @@ def integer(value):
     return type(value) is int and 0 < value <= 2 ** 53 - 1
 
 
+def level(value):
+    # Quest/dungeon/item levels: live max is 60; 255 is a generous cap that
+    # only rejects absurd values (e.g. 2**40) while leaving real data alone.
+    return type(value) is int and 1 <= value <= 255
+
+
 def unique_fields(pairs):
     fields = {}
     for key, value in pairs:
@@ -165,9 +171,9 @@ def validate(data):
         if not integer(q["id"]) or q["id"] in quests:
             raise ValueError("Invalid or duplicate quest ID")
         quests[q["id"]] = q
-        if not nonempty_string(q.get("name")) or not integer(q.get("minLevel")):
+        if not nonempty_string(q.get("name")) or not level(q.get("minLevel")):
             raise ValueError(f"Missing quest name/level: {q['id']}")
-        if "level" in q and not integer(q["level"]):
+        if "level" in q and not level(q["level"]):
             raise ValueError(f"Invalid quest level: {q['id']}")
         if type(q.get("requirementsKnown")) is not bool:
             raise ValueError(f"Explicit requirements evidence needed: {q['id']}")
@@ -257,10 +263,14 @@ def validate(data):
                     raise ValueError(f"Invalid summoned object tool name: {q['id']}")
             if "containerSource" in p:
                 container = p["containerSource"]
+                try:
+                    valid_name = (nonempty_string(container.get("name")) and
+                                  len(container["name"].encode("utf-8")) <= 500)
+                except (AttributeError, UnicodeEncodeError):
+                    valid_name = False
                 if (key != "start" or "itemID" not in p or type(container) is not dict or
                     set(container) - {"objectID", "name", "zoneName", "mapID", "x", "y", "reportedLocations"} or
-                    not integer(container.get("objectID")) or not nonempty_string(container.get("name")) or
-                    len(container["name"]) > 500):
+                    not integer(container.get("objectID")) or not valid_name):
                     raise ValueError(f"Invalid starter item container source: {q['id']}")
                 places.append(("containerSource", container))
             for field in ("name", "dropName"):
@@ -296,7 +306,7 @@ def validate(data):
                     raise ValueError(f"Invalid starter item classes: {q['id']}")
                 if len(classes) != len(set(classes)):
                     raise ValueError(f"Duplicate starter item classes: {q['id']}")
-            if "itemMinLevel" in p and not integer(p["itemMinLevel"]):
+            if "itemMinLevel" in p and not level(p["itemMinLevel"]):
                 raise ValueError(f"Invalid starter item minimum level: {q['id']}")
             if "dungeonKey" in p and (type(p["dungeonKey"]) is not str or not p["dungeonKey"]):
                 raise ValueError(f"Invalid pickup dungeon: {q['id']}")
@@ -434,7 +444,7 @@ def validate(data):
         if d["key"] in keys:
             raise ValueError("Duplicate dungeon")
         keys.add(d["key"])
-        if ("instanceID" in d and not integer(d["instanceID"])) or not integer(d["minLevel"]) or not integer(d["maxLevel"]) or d["maxLevel"] < d["minLevel"]:
+        if ("instanceID" in d and not integer(d["instanceID"])) or not level(d["minLevel"]) or not level(d["maxLevel"]) or d["maxLevel"] < d["minLevel"]:
             raise ValueError("Invalid dungeon identity/levels")
         if "wing" in d and (type(d["wing"]) is not str or
                 d["wing"] not in ({"lower", "upper"} | SCARLET_WINGS) or "instanceID" not in d):

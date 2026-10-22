@@ -146,15 +146,47 @@ class CatalogTests(unittest.TestCase):
 
     def test_optional_quest_level_is_a_positive_safe_integer(self):
         for value in (None, True, False, 0, -1, 1.0, "1", float("nan"),
-                      float("inf"), 2 ** 53, 10 ** 400):
+                      float("inf"), 256, 2 ** 40, 2 ** 53, 2 ** 53 - 1, 10 ** 400):
             data = self.minimal_catalog()
             data["quests"][0]["level"] = value
             with self.subTest(value=repr(value)), self.assertRaisesRegex(ValueError, "level"):
                 catalog.generate(data)
-        for value in (1, 60, 2 ** 53 - 1):
+        for value in (1, 60, 255):
             data = self.minimal_catalog()
             data["quests"][0]["level"] = value
             self.assertIn(f'["level"] = {value}', catalog.generate(data))
+
+    def test_level_fields_cap_at_255_and_reject_absurd_integers(self):
+        # Live max is 60; the 255 cap only rejects absurd values like 2**40.
+        for value in (256, 2 ** 40, 2 ** 53 - 1):
+            with self.subTest(field="minLevel", value=value):
+                data = self.minimal_catalog()
+                data["quests"][1]["minLevel"] = value
+                with self.assertRaisesRegex(ValueError, "level"):
+                    catalog.validate(data)
+            with self.subTest(field="itemMinLevel", value=value):
+                data = self.minimal_catalog()
+                data["quests"][1]["start"] = {"itemID": 18469, "itemMinLevel": value}
+                with self.assertRaisesRegex(ValueError, "starter item"):
+                    catalog.validate(data)
+            with self.subTest(field="dungeon maxLevel", value=value):
+                data = self.minimal_catalog()
+                data["dungeons"][0].update(minLevel=1, maxLevel=value)
+                with self.assertRaisesRegex(ValueError, "dungeon identity/levels"):
+                    catalog.validate(data)
+            with self.subTest(field="dungeon minLevel", value=value):
+                data = self.minimal_catalog()
+                data["dungeons"][0].update(minLevel=value, maxLevel=value)
+                with self.assertRaisesRegex(ValueError, "dungeon identity/levels"):
+                    catalog.validate(data)
+        for value in (1, 60, 255):
+            with self.subTest(valid=value):
+                data = self.minimal_catalog()
+                data["quests"][1]["minLevel"] = value
+                data["quests"][1]["level"] = value
+                data["quests"][1]["start"] = {"itemID": 18469, "itemMinLevel": value}
+                data["dungeons"][0].update(minLevel=value, maxLevel=value)
+                catalog.validate(data)
 
     def test_unknown_schema_fields_cannot_silently_drop_restrictions_or_facts(self):
         for field in ("faction", "class", "requirementKnown", "minimumLevel", "questID", "storyLine"):
@@ -922,6 +954,21 @@ class CatalogTests(unittest.TestCase):
                 with self.assertRaises(ValueError):
                     catalog.validate(self.data)
                 self.assertEqual(self.data, before)
+
+    def test_item_container_source_name_budget_matches_utf8_runtime_bytes(self):
+        for name in ("x" * 500, "中" * 166, "Ж" * 250, "😀" * 125):
+            with self.subTest(valid_bytes=len(name.encode("utf-8"))):
+                data = self.minimal_catalog()
+                data["quests"][1]["start"] = {"itemID": 5791,
+                                              "containerSource": {"objectID": 19861, "name": name}}
+                catalog.validate(data)
+        for name in ("x" * 501, "中" * 200, "Ж" * 251, "😀" * 126, "\ud800"):
+            with self.subTest(invalid_name=repr(name)):
+                data = self.minimal_catalog()
+                data["quests"][1]["start"] = {"itemID": 5791,
+                                              "containerSource": {"objectID": 19861, "name": name}}
+                with self.assertRaises(ValueError):
+                    catalog.validate(data)
 
     def test_item_container_source_is_restricted_to_single_item_start(self):
         container = {"objectID": 19861, "name": "Journal"}
