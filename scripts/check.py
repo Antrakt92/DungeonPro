@@ -1,29 +1,77 @@
 """Run the local verification matrix; no downloads or hosted jobs."""
+import argparse
+from concurrent.futures import ThreadPoolExecutor, wait, FIRST_COMPLETED
+import json
+import os
 from pathlib import Path
 import shutil
 import subprocess
 import sys
+import time
 
 ROOT = Path(__file__).resolve().parents[1]
 
 
+TIMINGS = []
+
+
+def execute(args):
+    started = time.perf_counter()
+    result = subprocess.run(args, cwd=ROOT, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    return result, time.perf_counter() - started
+
+
+def report(args, result, seconds):
+    print("> " + repr(list(map(str, args))), flush=True)
+    if result.stdout:
+        print(result.stdout.decode("utf-8", errors="replace"), end="", flush=True)
+    TIMINGS.append({"argv": list(map(str, args)), "seconds": seconds,
+                    "returncode": result.returncode})
+    print(f"[{seconds:.3f}s; exit {result.returncode}]", flush=True)
+    result.check_returncode()
+
+
 def run(*args):
-    print("> " + " ".join(map(str, args)), flush=True)
-    subprocess.run(args, cwd=ROOT, check=True)
+    result, seconds = execute(args)
+    report(args, result, seconds)
 
 
-def main():
-    lua, luac = shutil.which("lua5.1"), shutil.which("luac5.1")
-    if not lua or not luac:
-        raise SystemExit("Lua 5.1 and luac5.1 are required; no automatic install is performed")
-    run(sys.executable, "scripts/catalog.py", "--check")
-    run(sys.executable, "scripts/casefold.py", "--check")
-    run(sys.executable, "scripts/names.py", "--check")
-    run(sys.executable, "scripts/check_toc.py")
-    run(sys.executable, "scripts/check_version.py")
-    syntax_paths = [str(path) for path in sorted(ROOT.rglob("*.lua")) if "dist" not in path.parts]
-    for offset in range(0, len(syntax_paths), 32):
-        run(luac, "-p", *syntax_paths[offset:offset + 32])
+def run_lua_checks(commands, jobs):
+    """Keep each mutable Lua fixture in its own process; drain before later gates."""
+    if not 1 <= jobs <= 4:
+        raise ValueError("jobs must be between 1 and 4")
+    remaining = iter(commands)
+    # No queued backlog: a failure stops submission, then the context manager
+    # waits for owned running children. Killing a launcher can orphan its child.
+    with ThreadPoolExecutor(max_workers=jobs) as pool:
+        pending = {}
+        def submit():
+            args = next(remaining, None)
+            if args is not None:
+                pending[pool.submit(execute, args)] = args
+        for _ in range(jobs):
+            submit()
+        failure = None
+        while pending:
+            finished, _ = wait(pending, return_when=FIRST_COMPLETED)
+            for future in finished:
+                args = pending.pop(future)
+                try:
+                    result, seconds = future.result()
+                    report(args, result, seconds)
+                except Exception as error:
+                    if not isinstance(error, subprocess.CalledProcessError):
+                        print(f"Could not run {list(args)!r}: {error}", flush=True)
+                    if failure is None:
+                        failure = error
+            if failure is None:
+                for _ in finished:
+                    submit()
+        if failure is not None:
+            raise failure
+
+
+def lua_checks(lua, run):
     run(lua, "tests/planner.lua")
     run(lua, "tests/dungeon_overview.lua")
     run(lua, "tests/preparation_priority_model.lua")
@@ -225,6 +273,50 @@ def main():
     run(lua, "tests/entrances.lua")
     run(lua, "tests/entrance_action_retirement_ui.lua")
     run(lua, "tests/minimap.lua")
+
+
+def main(argv=()):
+    parser = argparse.ArgumentParser(description=__doc__)
+    default_jobs = min(4, max(1, (os.cpu_count() or 2) // 2))
+    parser.add_argument("--jobs", type=int, choices=range(1, 5), default=default_jobs,
+                        help=f"isolated Lua processes (1-4, default: {default_jobs})")
+    parser.add_argument("--timings", type=Path, help="write per-command JSON timing report")
+    options = parser.parse_args(argv)
+    TIMINGS.clear()
+    started = time.perf_counter()
+    passed = False
+    try:
+        check(options)
+        passed = True
+    finally:
+        if options.timings:
+            options.timings.write_text(json.dumps({"jobs": options.jobs,
+                "elapsed_seconds": time.perf_counter() - started,
+                "passed": passed,
+                "lua_elapsed_seconds": getattr(options, "lua_elapsed_seconds", None),
+                "commands": TIMINGS}, indent=2) + "\n", encoding="utf-8")
+
+
+def check(options):
+    lua, luac = shutil.which("lua5.1"), shutil.which("luac5.1")
+    if not lua or not luac:
+        raise SystemExit("Lua 5.1 and luac5.1 are required; no automatic install is performed")
+    run(sys.executable, "scripts/catalog.py", "--check")
+    run(sys.executable, "scripts/casefold.py", "--check")
+    run(sys.executable, "scripts/names.py", "--check")
+    run(sys.executable, "scripts/check_toc.py")
+    run(sys.executable, "scripts/check_version.py")
+    syntax_paths = [str(path) for path in sorted(ROOT.rglob("*.lua")) if "dist" not in path.parts]
+    for offset in range(0, len(syntax_paths), 32):
+        run(luac, "-p", *syntax_paths[offset:offset + 32])
+    commands = []
+    lua_checks(lua, lambda *args: commands.append(args))
+    print(f"Lua checks: {len(commands)} invocations; {options.jobs} isolated processes", flush=True)
+    lua_started = time.perf_counter()
+    try:
+        run_lua_checks(commands, options.jobs)
+    finally:
+        options.lua_elapsed_seconds = time.perf_counter() - lua_started
     run(sys.executable, "-m", "unittest", "discover", "-s", "tests", "-p", "test_*.py", "-v")
     run(sys.executable, "scripts/package.py")
     run("git", "diff", "--check")
@@ -232,4 +324,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    main(sys.argv[1:])

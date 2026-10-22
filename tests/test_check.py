@@ -36,7 +36,11 @@ def exercise(root):
         else:
             raise SyntaxFinished()
 
+    def finished(commands, jobs):
+        raise SyntaxFinished()
+
     module.run = run
+    module.run_lua_checks = finished
     return module, calls, gates
 
 
@@ -132,6 +136,24 @@ class RunnerGateWiringTests(unittest.TestCase):
         # removal must lower this floor deliberately, in the same change.
         runner_source = RUNNER.read_text(encoding="utf-8")
         self.assertGreaterEqual(runner_source.count("run(lua,"), 198)
+
+
+class CollectedLuaRosterTests(unittest.TestCase):
+    def test_collected_roster_keeps_every_file_and_exact_multi_invocation_arguments(self):
+        module, _, _ = exercise(RUNNER.parents[1])
+        commands = []
+        lua = "C:/Lua tools/lua5.1.exe"
+        module.lua_checks(lua, lambda *args: commands.append(args))
+        self.assertGreaterEqual(len(commands), 198)
+        self.assertTrue(all(command[0] == lua for command in commands))
+        expected_files = {"tests/" + path.name for path in (RUNNER.parents[1] / "tests").glob("*.lua")}
+        self.assertEqual({command[1] for command in commands}, expected_files)
+        self.assertEqual(len(commands), len(set(commands)), "distinct invocations must not be lost or duplicated")
+        for mode in ("missing", "items", "chain"):
+            self.assertIn((lua, "tests/large_dungeon_performance.lua", mode), commands)
+        self.assertIn((lua, "tests/detail_visual.lua", "check"), commands)
+        self.assertIn((lua, "tests/detail_visual.lua", "overview:dm", "enUS", "", "", "", "155", "check"), commands)
+        self.assertIn((lua, "tests/detail_visual.lua", "overview:dm", "ruRU", "", "collapsed", "", "155", "check"), commands)
 
 
 class TocParityTests(unittest.TestCase):

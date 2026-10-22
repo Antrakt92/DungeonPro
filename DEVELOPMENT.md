@@ -23,6 +23,25 @@ the repository root:
 python scripts/check.py
 ```
 
+Lua suites run in separate processes: half the reported logical CPU count,
+rounded down, with a minimum of one and a maximum of four. Each suite keeps
+its own Lua 5.1 state; generated-data checks, syntax checks, Python tests and
+packaging remain ordered phases. Use `--jobs 1` for sequential troubleshooting or
+`--jobs 4` for at most four concurrent Lua suites. No test is skipped.
+
+For per-command durations, exit codes and complete argument lists:
+
+```text
+python scripts/check.py --timings dist/check-timings.json
+```
+
+The JSON report includes total and Lua-phase wall time and a `passed` flag.
+Failed runs retain completed-command results; an unavailable executable is
+reported as an error. Command output is grouped by process, in completion order.
+After a failure, no more suites are scheduled; already running suites finish
+before the runner exits, and later phases do not run. Reports require an
+existing parent directory and are excluded from installable packages.
+
 This checks Lua syntax, modeled behavior, translations, catalogue consistency,
 generated-file drift and deterministic packaging. It does not install tools,
 download dependencies or start the game. Passing it does not establish native
