@@ -1143,7 +1143,8 @@ end
 function UI:CatalogLanguageKey()
     local language = addon.Clean(addon.Language, "table")
     local selection = language and addon.Read(language.GetSelection, "string", language)
-    local locale = selection or addon.Clean(addon.db.locale, "string") or "auto"
+    local database = addon.db
+    local locale = selection or (type(database) == "table" and addon.Clean(database.locale, "string")) or "auto"
     if locale == "auto" then locale = addon.Read(GetLocale, "string") end
     return locale
 end
@@ -1293,7 +1294,12 @@ function UI:RefreshDungeons()
     self.catalogSearchRelease = nil
     if previousRelease then previousRelease() end
     local catalogue, definitions, character, database = addon.dungeons, addon.quests, addon.char, addon.db
-    local search, range, locale, catalogScroll = self.search, self.range, addon.db.locale, self.catalogScroll
+    -- Malformed catalogue sources fail closed as empty instead of throwing before the ownership barrier.
+    if type(catalogue) ~= "table" then catalogue = {} end
+    if type(definitions) ~= "table" then definitions = {} end
+    if type(character) ~= "table" then character = {} end
+    if type(database) ~= "table" then database = {} end
+    local search, range, locale, catalogScroll = self.search, self.range, database.locale, self.catalogScroll
     local includeUnavailable = self.includeUnavailable
     local getter, dungeonGetter, fold, checker = addon.CachedQuestName, addon.DungeonName, addon.SearchFold, issecretvalue
     local discoveryGetter, cleaner, reader = self.ScarletDiscoveryScope, addon.Clean, addon.Read

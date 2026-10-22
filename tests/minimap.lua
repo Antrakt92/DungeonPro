@@ -492,5 +492,18 @@ check("Toggle show recovers through a manual repeat after unavailable geometry",
     assert(m:ToggleVisibility() and m.button.shown and config.hide==false and config.angle==17)
     queue[1]();assert(m.button.shown and config.hide==false)
 end)
+check("Unavailable resize geometry schedules bounded retry like explicit recovery",function()
+    local config={hide=false,angle=17};local m=reset(config);local resize
+    function Minimap:HasScript(key)return key=="OnSizeChanged"end
+    function Minimap:HookScript(_,callback)resize=callback end
+    assert(m:Initialize())
+    local queue=scheduled()
+    width=0;resize()
+    assert(not m.button.shown and config.hide==false and config.angle==17)
+    assert(m.retry and #queue==1,"zero-size resize must schedule bounded retry")
+    width=200;queue[1]()
+    assert(m.button.shown and not m.retry and #queue==1 and not m.button.scripts.OnUpdate)
+    assert(config.hide==false and config.angle==17)
+end)
 issecretvalue=nil
 print("Minimap modeled checks passed: "..total.." (native client unverified)")

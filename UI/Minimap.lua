@@ -264,6 +264,7 @@ function M:WatchSize()
             if not placed then
                 if reason ~= "superseded" and shown == true then
                     self:HideForPlacement()
+                    self:RetryPlacement(self.db)
                 end
             elseif held.hiddenForSize then
                 local hidden = held.hiddenForSize

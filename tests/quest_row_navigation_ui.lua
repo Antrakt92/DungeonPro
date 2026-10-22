@@ -626,4 +626,42 @@ do
  refreshRows()
  assert(row(990101).navigationControl.enabled, "valid dungeon restores navigation rows")
 end
+-- A6 CATALOGUE-GUARDS: nil/malformed catalogue sources fail closed without throwing.
+do
+ local savedDungeons, savedQuests, savedDB, savedChar = addon.dungeons, addon.quests, addon.db, addon.char
+ local function refreshCatalogue()
+  ui.search="";ui.questTreeRoot=nil;ui.questTreeDungeon=nil;ui.includeUnavailable=true;ui.frame:Show();ui:RefreshDungeons()
+ end
+ local function shownCards()
+  local count=0
+  for _,card in ipairs(ui.cards)do if card:IsShown()then count=count+1 end end
+  return count
+ end
+ refreshCatalogue()
+ assert(shownCards()>0,"valid catalogue publishes dungeon cards")
+ local cases={
+  {"nil dungeons",function()addon.dungeons=nil end},
+  {"non-table dungeons",function()addon.dungeons="bad" end},
+  {"nil quests",function()addon.quests=nil end},
+  {"non-table quests",function()addon.quests=7 end},
+  {"nil db",function()addon.db=nil end},
+  {"non-table db",function()addon.db="bad" end},
+  {"nil char",function()addon.char=nil end},
+ }
+ for _,case in ipairs(cases)do
+  case[2]()
+  local ok,err=pcall(refreshCatalogue)
+  addon.dungeons,addon.quests,addon.db,addon.char=savedDungeons,savedQuests,savedDB,savedChar
+  assert(ok,case[1].." threw in RefreshDungeons: "..tostring(err))
+ end
+ for _,card in ipairs(ui.cards)do card:Hide() end
+ ui.catalogNotice:Hide()
+ addon.dungeons=nil;addon.quests=nil;addon.db=nil
+ local ok,err=pcall(refreshCatalogue)
+ addon.dungeons,addon.quests,addon.db,addon.char=savedDungeons,savedQuests,savedDB,savedChar
+ assert(ok,"combined corrupt catalogue threw: "..tostring(err))
+ assert(shownCards()==0,"combined corrupt catalogue must publish no rows")
+ refreshCatalogue()
+ assert(shownCards()>0,"valid catalogue restores dungeon cards")
+end
 print("Middle quest navigation checks passed (modeled, no native input or layout proof)")
