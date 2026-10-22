@@ -193,5 +193,29 @@ check("Oversized cached reward item IDs fail the snapshot closed", function()
     local r = addon.CachedQuestRewards(65)
     assert(r and r.items[1].id == 4294967295)
 end)
+check("QuestName caps IDs at 2^53 and never hydrates uncatalogued IDs", function()
+    local savedQuests, savedTimer, savedLog, savedDB, savedLanguage, savedNames =
+        addon.quests, C_Timer, C_QuestLog, addon.db, addon.Language, addon.nameTranslations
+    addon.quests = { [123] = { id = 123, name = "Source name" } }
+    addon.db, addon.Language, addon.nameTranslations = nil, nil, nil
+    GetLocale = function() return "enUS" end
+    local titleCalls, loadCalls, timerCalls = 0, 0, 0
+    C_QuestLog = {
+        GetTitleForQuestID = function(id) titleCalls = titleCalls + 1; return nil end,
+        RequestLoadQuestByID = function(id) loadCalls = loadCalls + 1 end,
+    }
+    C_Timer = { After = function(delay, fn) timerCalls = timerCalls + 1 end }
+    assert(addon.QuestName(9007199254740992) == "#?")
+    assert(addon.QuestName(2 ^ 60) == "#?")
+    assert(titleCalls == 0 and loadCalls == 0 and timerCalls == 0, "huge quest ID reached native title APIs")
+    assert(addon.QuestName(99999) == "#99999")
+    assert(titleCalls == 0 and loadCalls == 0 and timerCalls == 0, "uncatalogued quest ID reached native title APIs")
+    assert(addon.QuestName(123) == "Source name")
+    assert(loadCalls == 1 and timerCalls == 1, "catalogued cold quest ID lost its bounded hydration request")
+    assert(addon.QuestName(99999) == "#99999")
+    assert(loadCalls == 1 and timerCalls == 1, "uncatalogued quest ID leaked a hydration request")
+    addon.quests, C_Timer, C_QuestLog, addon.db, addon.Language, addon.nameTranslations =
+        savedQuests, savedTimer, savedLog, savedDB, savedLanguage, savedNames
+end)
 issecretvalue = nil
 print("Quest portrait adapter modeled checks passed: " .. total .. " (native client unverified)")

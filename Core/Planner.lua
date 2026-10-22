@@ -215,6 +215,8 @@ function Planner.New(quests, context, choices)
         if type(dungeon) ~= "table" or type(dungeon.quests) ~= "table" then
             return { rows = {}, actions = {}, counts = {}, unknown = true, ready = false }
         end
+        -- Non-table options carry no includeUnavailable flag; treat them as absent.
+        if options ~= nil and type(options) ~= "table" then options = nil end
         local result = { rows = {}, actions = {}, counts = {}, unknown = dungeon.coverage ~= "reviewed", ready = true }
         local seen, relevant = {}, 0
         for _, id in ipairs(dungeon.quests) do

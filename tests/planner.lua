@@ -768,4 +768,16 @@ check("Empty OR groups stay locked without manufacturing uncertainty", function(
     local actions, unknown = e:Next(2)
     eq(#actions, 0); eq(unknown, false)
 end)
+check("Non-table Dungeon options fail closed without throwing", function()
+    local quests = { [1] = q(1), [2] = q(2, nil, { factions = { "Horde" } }) }
+    local dungeon = { quests = { 1, 2 }, coverage = "reviewed" }
+    local baseline = P.New(quests, ctx()):Dungeon(dungeon)
+    eq(#baseline.rows, 1); eq(baseline.rows[1].id, 1)
+    for _, options in ipairs({ true, 1, "include", function() end }) do
+        local plan = P.New(quests, ctx()):Dungeon(dungeon, options)
+        eq(#plan.rows, #baseline.rows); eq(plan.rows[1].id, 1)
+        eq(plan.ready, baseline.ready); eq(plan.unknown, baseline.unknown)
+    end
+    eq(#P.New(quests, ctx()):Dungeon(dungeon, { includeUnavailable = true }).rows, 2)
+end)
 print("Planner checks passed: " .. passed)

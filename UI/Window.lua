@@ -780,14 +780,17 @@ end
 function UI:ChooseBranch(id, index, parent)
     id, index = addon.Clean(id, "number"), addon.Clean(index, "number")
     if not id or id <= 0 or id ~= math.floor(id) or not index or index <= 0 or index ~= math.floor(index) then return false end
-    local q = addon.quests[id]
-    local group = q and q.requires and q.requires[index]
-    if not group or #group.ids < 2 then return false end
+    local catalogue = addon.Clean(addon.quests, "table")
+    local q = catalogue and addon.Clean(rawget(catalogue, id), "table")
+    local requires = q and addon.Clean(rawget(q, "requires"), "table")
+    local group = requires and addon.Clean(rawget(requires, index), "table")
+    local ids = group and addon.Clean(rawget(group, "ids"), "table")
+    if not ids or #ids < 2 then return false end
     if type(parent) ~= "nil" then
         parent = addon.Clean(parent, "number")
         if not parent or parent <= 0 or parent ~= math.floor(parent) then return false end
         local member = false
-        for _, candidate in ipairs(group.ids) do if candidate == parent then member = true end end
+        for _, candidate in ipairs(ids) do if candidate == parent then member = true end end
         if not member then return false end
         local fresh = addon.Planner.New(addon.quests, addon.Context(), addon.Clean(addon.char.choices, "table"))
         if fresh:State(parent).status == "UNAVAILABLE" then return false end

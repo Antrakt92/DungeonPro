@@ -731,7 +731,7 @@ function addon.CachedQuestName(id)
 end
 
 function addon.QuestName(id)
-    id = dialogueInteger(id, 1)
+    id = dialogueInteger(id, 1, 9007199254740991)
     if not id then return "#?" end
     local bundled, bundleCurrent
     local function fallback()
@@ -743,6 +743,8 @@ function addon.QuestName(id)
     end
     local catalogue = addon.Clean(addon.quests, "table")
     local definition = catalogue and addon.Clean(rawget(catalogue, id), "table")
+    -- Hydration requests address catalogue IDs only; uncatalogued IDs stay a local fallback.
+    if not definition then return fallback() end
     local locale, clientLocale, localeCurrent = nameLocaleScope()
     local function sourceCurrent()
         return localeCurrent and localeCurrent() and addon.quests == catalogue and catalogue and rawget(catalogue, id) == definition

@@ -585,4 +585,28 @@ do
  addon.quests[991301]=nil
  ui:Refresh()
 end
+-- LOW-2: malformed requires fail closed without throwing or writing choices.
+do
+ local savedChoices, savedQuests = addon.char.choices, addon.quests
+ addon.char.choices = {}
+ addon.quests[990201] = { id = 990201, name = "Malformed group", requires = { "bad" } }
+ addon.quests[990202] = { id = 990202, name = "Numeric group", requires = { 5 } }
+ addon.quests[990203] = { id = 990203, name = "String ids", requires = { { ids = "bad" } } }
+ addon.quests[990204] = { id = 990204, name = "Numeric ids", requires = { { ids = 5 } } }
+ addon.quests[990205] = { id = 990205, name = "Thin group", requires = { { ids = { 990101 } } } }
+ for _, id in ipairs({ 990101, 990201, 990202, 990203, 990204, 990205 }) do
+  local ok, result = pcall(function() return ui:ChooseBranch(id, 1, nil) end)
+  assert(ok and result == false, "malformed requires must fail closed without throwing for " .. id)
+ end
+ local ok, result = pcall(function() return ui:ChooseBranch(990203, 1, 990101) end)
+ assert(ok and result == false, "malformed ids must reject parent membership without throwing")
+ local savedCatalogue = addon.quests
+ addon.quests = nil
+ ok, result = pcall(function() return ui:ChooseBranch(990101, 1, nil) end)
+ assert(ok and result == false, "missing catalogue must fail closed without throwing")
+ addon.quests = savedCatalogue
+ assert(next(addon.char.choices) == nil, "failed branch choices must not leak")
+ for _, id in ipairs({ 990201, 990202, 990203, 990204, 990205 }) do addon.quests[id] = nil end
+ addon.char.choices = savedChoices
+end
 print("Middle quest navigation checks passed (modeled, no native input or layout proof)")
