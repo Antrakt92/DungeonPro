@@ -731,4 +731,161 @@ do
  ui.dungeon,ui.quest=dungeon,990104
  ui.search="";ui.questTreeRoot=nil;ui.questTreeDungeon=nil;ui.frame:Show();ui:Refresh()
 end
+-- A8 DUNGEON-ENTRY-GUARDS: non-table catalogue entries fail closed without throwing.
+do
+ local savedDungeons=addon.dungeons
+ local function refreshCatalogue()
+  ui.search="";ui.questTreeRoot=nil;ui.questTreeDungeon=nil;ui.includeUnavailable=true;ui.frame:Show();ui:RefreshDungeons()
+ end
+ local function shownCards()
+  local count=0
+  for _,card in ipairs(ui.cards)do if card:IsShown()then count=count+1 end end
+  return count
+ end
+ addon.dungeons={dungeon}
+ refreshCatalogue()
+ assert(shownCards()>0,"valid catalogue publishes dungeon cards")
+ for _,bad in ipairs({"bad",7,false})do
+  addon.dungeons={dungeon,bad}
+  local ok,err=pcall(refreshCatalogue)
+  addon.dungeons=savedDungeons
+  assert(ok,"non-table dungeon entry "..tostring(bad).." threw in RefreshDungeons: "..tostring(err))
+ end
+ addon.dungeons={dungeon,"bad",7,false}
+ refreshCatalogue()
+ assert(shownCards()>0,"valid entries still publish with malformed neighbours")
+ addon.dungeons={"bad"}
+ local ok,err=pcall(refreshCatalogue)
+ assert(ok,"all-malformed catalogue threw: "..tostring(err))
+ addon.dungeons=savedDungeons
+ refreshCatalogue()
+ assert(shownCards()>0,"valid catalogue restores dungeon cards")
+end
+-- A8 SEARCH-NAME-GUARD: non-string dungeon names fail closed without throwing.
+do
+ local savedName=dungeon.name
+ local function refreshCatalogue()
+  ui.search="own";ui.questTreeRoot=nil;ui.questTreeDungeon=nil;ui.includeUnavailable=true;ui.frame:Show();ui:RefreshDungeons()
+ end
+ for _,bad in ipairs({7,false})do
+  dungeon.name=bad
+  local ok,err=pcall(refreshCatalogue)
+  dungeon.name=savedName
+  assert(ok,"non-string dungeon name "..tostring(bad).." threw in RefreshDungeons: "..tostring(err))
+ end
+ dungeon.name=savedName
+ ui.search="";ui.frame:Show();ui:RefreshDungeons()
+end
+-- A8 QUEST-ROW-DUNGEON-GUARD: non-table dungeon selection fails closed without throwing.
+do
+ local savedDungeon=ui.dungeon
+ local function refreshQuests()
+  ui.search="";ui.questTreeRoot=nil;ui.questTreeDungeon=nil;ui.quest=990104;ui.includeUnavailable=true;ui.frame:Show();ui:RefreshQuests()
+ end
+ for _,bad in ipairs({"bad",7,false})do
+  ui.dungeon=bad
+  local ok,err=pcall(refreshQuests)
+  ui.dungeon=savedDungeon
+  assert(ok,"non-table dungeon "..tostring(bad).." threw in RefreshQuests: "..tostring(err))
+  assert(ui.currentPlan==nil,"non-table dungeon must not publish a quest plan")
+ end
+ ui.dungeon=nil
+ local ok,err=pcall(refreshQuests)
+ ui.dungeon=savedDungeon
+ assert(ok,"nil dungeon threw in RefreshQuests: "..tostring(err))
+ -- A quests-less dungeon table fails closed instead of throwing on length.
+ local savedTargets=dungeon.quests
+ dungeon.quests=nil
+ ok,err=pcall(refreshQuests)
+ dungeon.quests=savedTargets
+ assert(ok,"quests-less dungeon threw in RefreshQuests: "..tostring(err))
+ refreshQuests()
+ assert(row(990101).navigationControl.enabled,"valid dungeon restores navigation rows")
+end
+-- A8 DROP-DUNGEON-KEY-GUARD: non-table catalogue entries fail closed in detail drop lookup.
+do
+ local savedDungeons=addon.dungeons
+ addon.quests[990501]={id=990501,name="Drop quest",minLevel=1,requirementsKnown=true,start={itemID=801,name="Drop starter",dropNPCID=9,dropName="Dropper"}}
+ local dropDungeon={key="drop-dungeon",name="Drop dungeon",minLevel=1,maxLevel=80,quests={990501}}
+ addon.dungeons={dropDungeon}
+ ui.dungeon,ui.quest,ui.questTreeRoot,ui.questTreeDungeon=dropDungeon,990501,nil,nil
+ ui.search="";ui.includeUnavailable=true;ui.frame:Show();ui:Refresh()
+ addon.dungeons={dropDungeon,7,"bad"}
+ local ok,err=pcall(function()ui:RefreshDetail()end)
+ addon.dungeons=savedDungeons
+ addon.quests[990501]=nil
+ assert(ok,"non-table dungeon entries threw in detail drop lookup: "..tostring(err))
+ ui.dungeon,ui.quest=dungeon,990104
+ ui.search="";ui.questTreeRoot=nil;ui.questTreeDungeon=nil;ui.frame:Show();ui:Refresh()
+end
+-- A8 FILTER-CHAR-GUARDS: nil/non-table character fails closed in LoadFilters/SaveFilters.
+do
+ local savedChar=addon.char
+ local function checkBad(bad,label)
+  addon.char=bad
+  local ok,err=pcall(function()ui:LoadFilters()end)
+  assert(ok,"character "..label.." threw in LoadFilters: "..tostring(err))
+  ok,err=pcall(function()ui:SaveFilters()end)
+  assert(ok,"character "..label.." threw in SaveFilters: "..tostring(err))
+ end
+ checkBad(nil,"nil")
+ for _,bad in ipairs({"bad",7,false})do checkBad(bad,tostring(bad)) end
+ addon.char={}
+ ui.range=true;ui.includeUnavailable=false
+ ui:SaveFilters()
+ assert(addon.char.filters.range==true and addon.char.filters.includeUnavailable==false,"SaveFilters persists toggles")
+ addon.char=savedChar
+ ui:LoadFilters()
+end
+-- A8 OBJECTIVE-ICON-BOUNDS: objective textures render only under reward icon bounds.
+do
+ local savedIcon=addon.ItemIcon
+ local savedDungeons=addon.dungeons
+ addon.quests[990601]={id=990601,name="Objective bound quest",minLevel=1,requirementsKnown=true,objectiveItems={{itemID=801,name="Bound item",quantity=1}}}
+ local boundDungeon={key="objective-bound",name="Objective bound dungeon",minLevel=1,maxLevel=80,quests={990601}}
+ addon.dungeons={boundDungeon}
+ ui.dungeon,ui.quest,ui.questTreeRoot,ui.questTreeDungeon=boundDungeon,990601,nil,nil
+ ui.search="";ui.includeUnavailable=true;ui.frame:Show()
+ local function visibleObjectiveCount()
+  local n=0
+  for _,b in ipairs(ui.objectiveButtons or {})do if b:IsShown()then n=n+1 end end
+  return n
+ end
+ local function renderWith(icon)
+  addon.ItemIcon=function(itemID)assert(itemID==801);return icon end
+  ui:Refresh()
+  return visibleObjectiveCount()
+ end
+ assert(renderWith(134400)==1,"valid objective icon paints")
+ assert(renderWith(4294967295)==1,"max uint32 objective icon paints")
+ for _,bad in ipairs({0,-1,1.5,4294967296,9007199254740992})do
+  assert(renderWith(bad)==0,"objective icon "..tostring(bad).." must not paint")
+ end
+ addon.ItemIcon=savedIcon
+ addon.dungeons=savedDungeons
+ addon.quests[990601]=nil
+ ui.dungeon,ui.quest=dungeon,990104
+ ui.search="";ui.questTreeRoot=nil;ui.questTreeDungeon=nil;ui.frame:Show();ui:Refresh()
+end
+-- A8 CREATE-CHAR-GUARDS: nil/non-table catalogue and character fail closed in Create.
+do
+ local savedDungeons,savedChar,savedDungeon=addon.dungeons,addon.char,ui.dungeon
+ addon.dungeons={dungeon,7,"bad"}
+ local ok,err=pcall(function()ui:Create()end)
+ assert(ok,"non-table dungeon entries threw in Create: "..tostring(err))
+ addon.dungeons=savedDungeons
+ for _,bad in ipairs({"bad",7})do
+  addon.char=bad
+  ok,err=pcall(function()ui:Create()end)
+  assert(ok,"character "..tostring(bad).." threw in Create: "..tostring(err))
+ end
+ addon.char=nil
+ ok,err=pcall(function()ui:Create()end)
+ assert(ok,"nil character threw in Create: "..tostring(err))
+ addon.dungeons,addon.char=savedDungeons,savedChar
+ ui:Create()
+ ui.dungeon=savedDungeon
+ ui.search="";ui.questTreeRoot=nil;ui.questTreeDungeon=nil;ui.quest=990104;ui.includeUnavailable=true;ui.frame:Show();ui:Refresh()
+ assert(row(990101).navigationControl.enabled,"recreated window restores navigation rows")
+end
 print("Middle quest navigation checks passed (modeled, no native input or layout proof)")

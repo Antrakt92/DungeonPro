@@ -344,6 +344,8 @@ local function reportedPlaces(parent)
 end
 
 local function searchText(value)
+    -- Non-string search keys fail closed as empty instead of throwing in fold or find.
+    if type(value) ~= "string" then return "" end
     if type(addon.SearchFold) == "function" then
         local folded = addon.SearchFold(value)
         if not folded then return value end
@@ -763,6 +765,11 @@ local function hideRest(pool, n)
 end
 
 function UI:LoadFilters()
+    -- A malformed character source fails closed with defaults instead of throwing on filters.
+    if type(addon.char) ~= "table" then
+        self.range, self.includeUnavailable, self.preparation = false, false, false
+        return
+    end
     local filters = addon.Clean(addon.char.filters, "table") or {}
     for _, key in ipairs({ "range", "includeUnavailable" }) do
         self[key] = addon.Clean(filters[key], "boolean") == true
@@ -771,6 +778,8 @@ function UI:LoadFilters()
 end
 
 function UI:SaveFilters()
+    -- A malformed character source fails closed without throwing or creating filters.
+    if type(addon.char) ~= "table" then return end
     if not addon.Clean(addon.char.filters, "table") then addon.char.filters = {} end
     for _, key in ipairs({ "range", "includeUnavailable" }) do
         addon.char.filters[key] = addon.Clean(self[key], "boolean") == true
@@ -1314,6 +1323,15 @@ function UI:RefreshDungeons()
     local renderInput, inputByDungeon, staging = nil, {}, true
     local sourceGetter, idParser, relationGetter = addon.QuestSourceSearchTerms, addon.SearchQuestID, addon.QuestSearchRelations
     for index, dungeon in ipairs(catalogue) do
+        if type(dungeon) ~= "table" then
+            -- A non-table catalogue entry fails closed as an empty inert input instead of throwing.
+            -- Inert inputs own only their catalogue slot and never publish cards (see matches/scanMember).
+            local inert = { dungeon = dungeon, name = "", key = nil, wing = nil, minimum = 0, maximum = 0,
+                targets = {}, members = {}, skipped = true, activityID = nil, instanceID = nil, complexKey = nil,
+                levelScope = nil, coverage = nil, discovery = nil, discoveryIDs = nil, discoveryCurrent = nil,
+                discoveryRaw = nil }
+            inputs[index], inert.index, inputByDungeon[dungeon] = inert, index, inert
+        else
         -- A malformed quest list fails closed as empty instead of throwing in ipairs.
         local targets = type(dungeon.quests) == "table" and dungeon.quests or {}
         local discovery
@@ -1328,6 +1346,7 @@ function UI:RefreshDungeons()
         for other, id in ipairs(targets) do
             local quest = definitions[id]
             input.members[other] = { id = id, quest = quest, name = quest and quest.name, questID = quest and quest.id }
+        end
         end
     end
     local sourceReady = true
@@ -1359,6 +1378,8 @@ function UI:RefreshDungeons()
             if sourceOnly == true then return true end
             local function matches(input, index)
                 local dungeon = input.dungeon
+                -- Inert inputs own only their catalogue slot; field reads would throw on non-table entries.
+                if input.skipped then return catalogue[index] == dungeon end
                 if catalogue[index] ~= dungeon or dungeon.name ~= input.name or dungeon.key ~= input.key or dungeon.wing ~= input.wing or
                     dungeon.minLevel ~= input.minimum or dungeon.maxLevel ~= input.maximum or dungeon.quests ~= input.targets or
                     #input.targets ~= #input.members then return false end
@@ -1522,6 +1543,8 @@ function UI:RefreshDungeons()
     end
     local function scanMember(input, index, member, other)
         local ok, valid = pcall(function()
+            -- Inert inputs own only their catalogue slot; field reads would throw on non-table entries.
+            if input.skipped then return catalogue[index] == input.dungeon end
             local dungeon = input.dungeon
             return baseCurrent(true) and catalogue[index] == dungeon and dungeon.name == input.name and
                 dungeon.key == input.key and dungeon.minLevel == input.minimum and dungeon.maxLevel == input.maximum and
@@ -1949,7 +1972,7 @@ function UI:RefreshDungeons()
                 else matchedName=title end
             end
             if not current(true) then return end
-            if matches or matchedName then
+            if (matches or matchedName) and not input.skipped then
                 local result = { dungeon = dungeon, title = name, questID = matchedID, sourceMatch = sourceMatch,
                     idMatch = idMatch, idFallbackName = idFallbackName, related = relatedRootID~=nil, relatedRootID = relatedRootID, includeUnavailable = includeUnavailable, minimum = input.minimum, maximum = input.maximum, count = includeUnavailable == true and #input.members or nil, matchedName = matchedName }
                 result.sharedDiscovery = sharedDiscovery == true
@@ -2314,7 +2337,8 @@ function UI:RefreshQuests()
     -- Malformed character sources fail closed as empty instead of throwing on choices.
     if type(character) ~= "table" then character = {} end
     local preparation, includeUnavailable = self.preparation, self.includeUnavailable
-    local targets, targetIDs, targetSet = d and d.quests, {}, {}
+    -- A non-table dungeon selection fails closed as empty instead of throwing on quests.
+    local targets, targetIDs, targetSet = type(d) == "table" and d.quests or nil, {}, {}
     -- A malformed quest list fails closed as empty instead of throwing in ipairs.
     if type(targets) ~= "table" then targets = nil end
     for index, id in ipairs(targets or {}) do targetIDs[index] = id; targetSet[id] = true end
@@ -2363,8 +2387,9 @@ function UI:RefreshQuests()
     end
     local scopeGetter = self.ScarletDiscoveryScope
     local classicCaptionGetter, classicLocalize = self.ScarletClassicCaption, addon.L
-    local scopeSelector, scopeKey = d or character, d and "complexKey" or "selectedDungeon"
-    local scopeSelectionRaw = scopeSelector and rawget(scopeSelector, scopeKey)
+    -- A non-table dungeon selection carries no discovery scope instead of throwing in rawget.
+    local scopeSelector, scopeKey = type(d) == "table" and d or (d == nil and character or nil), type(d) == "table" and "complexKey" or "selectedDungeon"
+    local scopeSelectionRaw = type(scopeSelector) == "table" and rawget(scopeSelector, scopeKey) or nil
     local scopeSelection = addon.Clean(scopeSelectionRaw, "string")
     local scopeInputSafe = type(scopeSelectionRaw) == "nil" or scopeSelection ~= nil
     local scope = scopeSelection == "sm" and type(scopeGetter) == "function" and addon.Read(scopeGetter, "table", self, d) or nil
@@ -2380,9 +2405,9 @@ function UI:RefreshQuests()
     end
     local function sharedProof(raw)
         local ok, same = pcall(function()
-            if not scopeInputSafe or self.ScarletDiscoveryScope ~= scopeGetter or not rawequal(rawget(scopeSelector, scopeKey), scopeSelectionRaw) then return false end
+            if not scopeInputSafe or self.ScarletDiscoveryScope ~= scopeGetter or not rawequal(type(scopeSelector) == "table" and rawget(scopeSelector, scopeKey) or nil, scopeSelectionRaw) then return false end
             if scope and (self.ScarletClassicCaption ~= classicCaptionGetter or addon.L ~= classicLocalize) then return false end
-            if not scope then return not (d and (type(rawget(d, "classicQuests")) ~= "nil" or type(rawget(d, "classicSource")) ~= "nil")) end
+            if not scope then return not (type(d) == "table" and (type(rawget(d, "classicQuests")) ~= "nil" or type(rawget(d, "classicSource")) ~= "nil")) end
             if not scopeCurrent or not scopeRaw or not scopeIDs or scope.current ~= scopeCurrent or scope.rawCurrent ~= scopeRaw or
                 scope.ids ~= scopeIDs or scope.legacy ~= scopeLegacy or #scopeIDs ~= #sharedIDs then return false end
             for index, id in ipairs(sharedIDs) do if scopeIDs[index] ~= id then return false end end
@@ -2400,7 +2425,7 @@ function UI:RefreshQuests()
         local owned = self.layoutRevision == layoutRevision and self.questListGeneration == generation and self.engine == engine and self.dungeon == d and addon.char == character and
             self.preparation == preparation and self.includeUnavailable == includeUnavailable
         if not owned or treeFailed or infoFailed or not sharedProof(true) or not audienceCurrent() then return false end
-        if d and (d.quests ~= targets or #targets ~= #targetIDs) then return false end
+        if d ~= nil and (type(d) ~= "table" or type(targets) ~= "table" or d.quests ~= targets or #targets ~= #targetIDs) then return false end
         for index, id in ipairs(targetIDs) do if targets[index] ~= id then return false end end
         if not rendering and not proveTree() then return false end
         return self.layoutRevision == layoutRevision and self.questListGeneration == generation and self.engine == engine and self.dungeon == d and addon.char == character and
@@ -2448,7 +2473,7 @@ function UI:RefreshQuests()
             self.questListRequest ~= request or self.layoutRevision ~= layoutRevision or self.questListGeneration ~= generation or
             self.engine ~= engine or self.dungeon ~= d or addon.char ~= character or self.preparation ~= preparation or
             self.includeUnavailable ~= includeUnavailable or addon.Read ~= read or addon.Clean ~= clean or issecretvalue ~= checker then return false end
-        if d and (rawget(d, "quests") ~= targets or #targets ~= #targetIDs) then return false end
+        if d ~= nil and (type(d) ~= "table" or type(targets) ~= "table" or rawget(d, "quests") ~= targets or #targets ~= #targetIDs) then return false end
         for index, id in ipairs(targetIDs) do if not rawequal(rawget(targets,index),id) then return false end end
         if not sharedProof(true) or not audienceCurrent() then return false end
         if treeCurrent and (not treeRaw or treeRaw() ~= true) then return false end
@@ -3087,7 +3112,7 @@ function UI:RefreshQuests()
                 local valid = self.layoutRevision == layoutRevision and addon.UI == self and self.frame == frame and self.questListGeneration == generation and
                     self.engine == engine and self.dungeon == d and addon.char == character and not treeFailed and not infoFailed and
                     self.preparation == preparation and self.includeUnavailable == includeUnavailable and
-                    (not d or (d.quests == targets and #targets == #targetIDs))
+                    (d == nil or (type(d) == "table" and type(targets) == "table" and d.quests == targets and #targets == #targetIDs))
                 if not valid or not sharedProof(false) then return false end
                 for index, id in ipairs(targetIDs) do if targets[index] ~= id then return false end end
                 return true
@@ -3992,7 +4017,11 @@ function UI:RefreshDetail(sourceFocus)
                 if self.rewardGeneration ~= rewardGeneration or self.quest ~= renderQuest then return false end
             end
         end
-        if objective and not self.rewardTextureBusy then
+        -- Journal objective textures render only under the same bounds as reward icons.
+        local objectiveTexture = type(objective) == "table" and (addon.Clean(objective.texture, "string") or addon.Clean(objective.texture, "number")) or nil
+        local validObjectiveTexture = type(objectiveTexture) == "string" and objectiveTexture ~= "" and #objectiveTexture <= 1024 or
+            type(objectiveTexture) == "number" and objectiveTexture > 0 and objectiveTexture <= 9007199254740991 and objectiveTexture % 1 == 0
+        if type(objective) == "table" and validObjectiveTexture and not self.rewardTextureBusy then
             objectiveIndex = objectiveIndex + 1
             local button = self.objectiveButtons[objectiveIndex]
             if not button then
@@ -4000,7 +4029,7 @@ function UI:RefreshDetail(sourceFocus)
                 button.icon = button:CreateTexture(nil, "ARTWORK"); button.icon:SetAllPoints()
                 self.objectiveButtons[objectiveIndex] = button
             end
-            local rendered = self:SetRewardTexture(button.icon, objective.texture)
+            local rendered = self:SetRewardTexture(button.icon, objectiveTexture)
             if self.rewardGeneration ~= rewardGeneration or self.quest ~= renderQuest or not objective.current() then return false end
             if rendered then
                 objective.generation = rewardGeneration; button.objectiveBinding = objective
@@ -5490,8 +5519,10 @@ function UI:RefreshDetail(sourceFocus)
             local dropID = positive(rawget(starterSource, "dropNPCID"))
             if dropID then
                 local dungeonName = addon.L("UNKNOWN_PLACE")
-                for _, dungeon in ipairs(addon.dungeons) do
-                    if dungeon.key == starterSource.dungeonKey then dungeonName = addon.DungeonName(dungeon); break end
+                -- A malformed dungeon catalogue fails closed as unknown instead of throwing.
+                local dungeonCatalogue = type(addon.dungeons) == "table" and addon.dungeons or {}
+                for _, dungeon in ipairs(dungeonCatalogue) do
+                    if type(dungeon) == "table" and dungeon.key == starterSource.dungeonKey then dungeonName = addon.DungeonName(dungeon); break end
                 end
                 if not acquisitionCurrent() then return end
                 local name = giverName({ npcID = dropID, name = addon.Clean(starterSource.dropName, "string") or ("#" .. dropID) }, acquisitionCurrent, nameProofs)
@@ -7339,7 +7370,10 @@ function UI:Create()
     self.startButtons, self.finishButtons, self.containerButtons, self.dropButtons, self.giverButtons = {}, {}, {}, {}, {}
     self.objectiveContainerButtons = {}
     UISpecialFrames[#UISpecialFrames + 1] = "DungeonProWindow"
-    for _, d in ipairs(addon.dungeons) do if d.key == addon.char.selectedDungeon then self.dungeon = d end end
+    -- Malformed catalogue or character sources fail closed without selecting instead of throwing.
+    local initialCatalogue = type(addon.dungeons) == "table" and addon.dungeons or {}
+    local initialSelected = type(addon.char) == "table" and addon.char.selectedDungeon or nil
+    for _, d in ipairs(initialCatalogue) do if type(d) == "table" and initialSelected ~= nil and d.key == initialSelected then self.dungeon = d end end
     frame:RegisterEvent("DISPLAY_SIZE_CHANGED")
     frame:RegisterEvent("UI_SCALE_CHANGED")
     frame:SetScript("OnEvent", function(f, event)
