@@ -255,7 +255,7 @@ function addon.DialogueRewards(id)
                 end
             end
             name = addon.Clean(name, "string")
-            amount, itemID = dialogueInteger(amount, 1), dialogueInteger(itemID, 1)
+            amount, itemID = dialogueInteger(amount, 1), dialogueInteger(itemID, 1, 4294967295)
             if not name or name == "" or #name > 30000 or not amount or not itemID then return nil end
             local row = { id = itemID, name = name, count = amount }
             local icon = addon.Clean(texture, "string")
@@ -876,7 +876,7 @@ function addon.QuestLogCapacity()
 end
 
 function addon.CarriedItemCount(id)
-    id = dialogueInteger(id, 1)
+    id = dialogueInteger(id, 1, 4294967295)
     local item = addon.Clean(C_Item, "table")
     local getter = item and addon.Clean(item.GetItemCount, "function")
     local quests = addon.Clean(addon.quests, "table")
@@ -999,7 +999,7 @@ end
 
 function addon.ItemName(id, ownerCurrent)
     id = addon.Clean(id, "number")
-    if not id or id < 1 or id % 1 ~= 0 then return nil end
+    if not id or id < 1 or id > 4294967295 or id % 1 ~= 0 then return nil end
     local item = addon.Clean(C_Item, "table")
     local scope = restrictionNameScope()
     local owner = addon.Clean(ownerCurrent, "function")
@@ -1453,7 +1453,7 @@ function addon.QuestRewards(id)
                 end
             end
             name = addon.Clean(name, "string")
-            amount, itemID = integer(amount, 1), integer(itemID, 1)
+            amount, itemID = integer(amount, 1), integer(itemID, 1, 4294967295)
             if not name or name == "" or #name > 30000 or not amount or not itemID then return nil end
             local row = { id = itemID, name = name, count = amount }
             local icon = addon.Clean(texture, "string")
@@ -1568,7 +1568,7 @@ function addon.CachedQuestRewards(id)
                 end
             end
             name = addon.Clean(name, "string")
-            amount, itemID = dialogueInteger(amount, 1), dialogueInteger(itemID, 1)
+            amount, itemID = dialogueInteger(amount, 1), dialogueInteger(itemID, 1, 4294967295)
             if not name or name == "" or #name > 30000 or not amount or not itemID then return nil end
             local row = { id = itemID, name = name, count = amount }
             local icon = addon.Clean(texture, "string")

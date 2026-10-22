@@ -80,7 +80,15 @@ function Planner.New(quests, context, choices)
         if self.visiting[id] then return save("UNKNOWN", "cycle") end
         self.visiting[id] = true
         local blocked, unknown = false, false
+        if q.requires ~= nil and type(q.requires) ~= "table" then
+            self.visiting[id] = nil
+            return save("UNKNOWN", "requirements")
+        end
         for _, group in ipairs(q.requires or {}) do
+            if type(group) ~= "table" or type(group.ids) ~= "table" then
+                self.visiting[id] = nil
+                return save("UNKNOWN", "requirements")
+            end
             local satisfied, uncertain = false, false
             for _, parent in ipairs(group.ids) do
                 local state = self:State(parent)
@@ -134,7 +142,9 @@ function Planner.New(quests, context, choices)
             if state.reason == "level" then return publish({ { id = id, kind = "level", level = q.minLevel } }, false) end
             path[id] = true
             local actions, uncertain, seen = {}, state.status == "UNKNOWN" and q.requirementsKnown ~= true, {}
+            if q.requires ~= nil and type(q.requires) ~= "table" then path[id] = nil; return publish({}, true) end
             for groupIndex, group in ipairs(q.requires or {}) do
+                if type(group) ~= "table" or type(group.ids) ~= "table" then path[id] = nil; return publish({}, true) end
                 local satisfied = false
                 for _, parent in ipairs(group.ids) do
                     if prerequisiteSatisfied(self:State(parent), group.mode) then
@@ -158,7 +168,8 @@ function Planner.New(quests, context, choices)
                             if not bestScore or score < bestScore then best, bestUnknown, bestScore = candidates, missing, score end
                         end
                     end
-                    if bestUnknown or not best or #best == 0 then uncertain = true end
+                    -- An empty OR group is known to be unsatisfiable, not unknown evidence.
+                    if bestUnknown or ((not best or #best == 0) and #group.ids > 0) then uncertain = true end
                     for _, action in ipairs(best or {}) do
                         local key = action.id .. ":" .. action.kind
                         if not seen[key] then actions[#actions + 1], seen[key] = action, true end
@@ -201,6 +212,9 @@ function Planner.New(quests, context, choices)
     end
 
     function engine:Dungeon(dungeon, options)
+        if type(dungeon) ~= "table" or type(dungeon.quests) ~= "table" then
+            return { rows = {}, actions = {}, counts = {}, unknown = true, ready = false }
+        end
         local result = { rows = {}, actions = {}, counts = {}, unknown = dungeon.coverage ~= "reviewed", ready = true }
         local seen, relevant = {}, 0
         for _, id in ipairs(dungeon.quests) do

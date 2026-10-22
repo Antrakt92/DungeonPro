@@ -148,5 +148,50 @@ check("Malformed portrait namespaces never reach a selected reader", function()
         assert(addon.QuestPortrait(95036) == nil and calls == 0)
     end
 end)
+check("Oversized item IDs never reach the native name getter", function()
+    local calls = 0
+    C_Item = { GetItemNameByID = function(id) calls = calls + 1; return "Native Item" end,
+        IsItemDataCachedByID = function() return true end,
+        RequestLoadItemDataByID = function() end }
+    assert(addon.ItemName(4294967295) == "Native Item" and calls == 1)
+    for _, id in ipairs({ 4294967296, 2 ^ 40 }) do
+        calls = 0
+        assert(addon.ItemName(id) == nil and calls == 0, "huge item ID reached the native name getter")
+    end
+end)
+check("Oversized carried item IDs never reach the native bag count", function()
+    local calls = 0
+    addon.quests = { [1] = { objectiveItems = { { itemID = 4294967295 } } },
+        [2] = { objectiveItems = { { itemID = 2 ^ 40 } } } }
+    C_Item = { GetItemCount = function(id) calls = calls + 1; return 3 end }
+    assert(addon.CarriedItemCount(4294967295) == 3 and calls == 1)
+    calls = 0
+    assert(addon.CarriedItemCount(2 ^ 40) == nil and calls == 0, "huge item ID reached the native bag count")
+end)
+check("Oversized selected-log reward item IDs fail the snapshot closed", function()
+    C_QuestLog = { GetSelectedQuest = function() return 65 end,
+        GetLogIndexForQuestID = function(id) assert(id == 65); return 1 end }
+    GetNumQuestLogRewards = function() return 1 end
+    GetNumQuestLogChoices = function() return 0 end
+    GetQuestLogRewardMoney = function() return 0 end
+    GetQuestLogChoiceInfo = function() error("no choices expected") end
+    GetQuestLogRewardInfo = function(index) return "Reward", 123, 1, 2, true, 2 ^ 40 end
+    assert(addon.QuestRewards(65) == nil)
+    GetQuestLogRewardInfo = function(index) return "Reward", 123, 1, 2, true, 4294967295 end
+    local r = addon.QuestRewards(65)
+    assert(r and r.items[1].id == 4294967295)
+end)
+check("Oversized cached reward item IDs fail the snapshot closed", function()
+    addon.quests = { [65] = { id = 65 } }
+    HaveQuestRewardData = function(id) assert(id == 65); return true end
+    GetNumQuestLogRewards = function(id) assert(id == 65); return 1 end
+    GetNumQuestLogChoices = function(id) assert(id == 65); return 0 end
+    GetQuestLogRewardInfo = function(index, id) return "Reward", 123, 1, 2, true, 2 ^ 40 end
+    GetQuestLogChoiceInfo = nil
+    assert(addon.CachedQuestRewards(65) == nil)
+    GetQuestLogRewardInfo = function(index, id) return "Reward", 123, 1, 2, true, 4294967295 end
+    local r = addon.CachedQuestRewards(65)
+    assert(r and r.items[1].id == 4294967295)
+end)
 issecretvalue = nil
 print("Quest portrait adapter modeled checks passed: " .. total .. " (native client unverified)")
