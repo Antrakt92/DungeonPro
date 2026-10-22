@@ -2680,7 +2680,9 @@ function UI:RefreshQuests()
                     if note == false then return end
                 elseif entry.action then
                     local action = entry.action
-                    note = addon.L(action.kind) .. (action.level and (" " .. action.level) or "")
+                    local rawLevel = type(action) == "table" and rawget(action, "level") or nil
+                    local actionLevel = addon.Clean(rawLevel, "number")
+                    note = addon.L(action.kind) .. (actionLevel and (" " .. actionLevel) or "")
                     if action.place then
                         -- Reviewed locale names via proofs, like the row hover hint
                         -- and detail card; stale proofs fall back to today's output.
@@ -4731,8 +4733,13 @@ function UI:RefreshDetail(sourceFocus)
                 if line(addon.L("OBJECTIVE_PROGRESS"), "caption", nil, nil, objectivesCurrent) == false then return end
             end
             for _, objective in ipairs(objectives or {}) do
-                local text = "|cff" .. (objective.finished and COLOR.COMPLETED or COLOR.ACTIVE) .. objective.text .. "|r"
-                if line(text, nil, nil, nil, objectivesCurrent) == false then return end
+                local entry = addon.Clean(objective, "table")
+                local rawText = entry and addon.Clean(rawget(entry, "text"), "string")
+                local finished = entry and addon.Clean(rawget(entry, "finished"), "boolean")
+                if entry and rawText and #rawText <= 30000 and finished ~= nil then
+                    local text = "|cff" .. (finished and COLOR.COMPLETED or COLOR.ACTIVE) .. rawText .. "|r"
+                    if line(text, nil, nil, nil, objectivesCurrent) == false then return end
+                end
             end
             if objectives and #objectives > 0 and #objectives <= 100 then
                 local snapshots, meaningful = {}, false
@@ -6568,11 +6575,16 @@ function UI:RefreshDetail(sourceFocus)
                 local tileWidth = (contentWidth - (columns - 1) * 8) / columns
                 local top, rowHeight = y, 0
                 for index, item in ipairs(entries) do
+                    local cleanItem = addon.Clean(item, "table")
+                    local itemName = cleanItem and addon.Clean(rawget(cleanItem, "name"), "string")
+                    local itemCount = cleanItem and addon.Clean(rawget(cleanItem, "count"), "number")
+                    if cleanItem and itemName and #itemName > 0 and #itemName <= 30000 and
+                        itemCount and itemCount >= 1 and itemCount <= 9007199254740991 and itemCount % 1 == 0 then
                     local column = (index - 1) % columns
                     y = top
-                    local rewardText = addon.Clean(item.count, "number") == 1 and item.name or addon.L("REWARD_ITEM", item.name, item.count)
+                    local rewardText = itemCount == 1 and itemName or addon.L("REWARD_ITEM", itemName, itemCount)
                     if line(rewardText, "reward",
-                        { item = item, origin = rewardOrigin, source = addon.Clean(rewards.source, "string"), kind = kind, index = index }) == false then return false end
+                        { item = cleanItem, origin = rewardOrigin, source = addon.Clean(rewards.source, "string"), kind = kind, index = index }) == false then return false end
                     if not portraitCardCurrent() then return false end
                     local field, button = pool[n], self.rewardButtons[rewardIndex]
                     local binding = button and button.rewardBinding
@@ -6593,6 +6605,7 @@ function UI:RefreshDetail(sourceFocus)
                     rowHeight = math.max(rowHeight, hasIcon and 32 or 20, height)
                     if column == columns - 1 or index == #entries then
                         top, rowHeight = top + rowHeight + 8, 0
+                    end
                     end
                 end
                 y = top

@@ -964,4 +964,133 @@ do
  ui.dungeon,ui.quest=dungeon,990104
  ui.search="";ui.questTreeRoot=nil;ui.questTreeDungeon=nil;ui.frame:Show();ui:Refresh()
 end
+-- A10 OBJECTIVES-RENDER-GUARD: hostile objective entries are skipped, never thrown.
+do
+ local savedObjectives=addon.QuestObjectives
+ local savedDungeons=addon.dungeons
+ local savedSecret=issecretvalue
+ issecretvalue=function()return false end
+ addon.quests[990701]={id=990701,name="Objectives guard quest",minLevel=1,requirementsKnown=true}
+ local guardDungeon={key="objectives-guard",name="Objectives guard dungeon",minLevel=1,maxLevel=80,quests={990701}}
+ addon.dungeons={guardDungeon}
+ ui.dungeon,ui.quest,ui.questTreeRoot,ui.questTreeDungeon=guardDungeon,990701,nil,nil
+ ui.search="";ui.includeUnavailable=true;ui.frame:Show()
+ if type(ui.SetDetailTab)=="function" then ui:SetDetailTab("quest") end
+ local function fieldShown(fs)
+  if fs.shown ~= nil then return fs.shown == true end
+  if type(fs.IsShown)=="function" then local ok,v=pcall(function()return fs:IsShown()end);return ok and v==true end
+  return false
+ end
+ local function hasText(want)
+  for _,fs in ipairs(ui.details)do if fieldShown(fs) and fs.text and fs.text:find(want,1,true)then return true end end
+  return false
+ end
+ local function renderWith(list)
+  addon.QuestObjectives=function(id) if id==990701 then return list end end
+  local ok,err=pcall(function() ui:Refresh() end)
+  return ok,err
+ end
+ do
+  local ok,err=renderWith({{text="Good objective",finished=true}})
+  assert(ok,"valid objectives threw: "..tostring(err))
+  assert(hasText("Good objective"),"valid objective keeps its detail line")
+ end
+ do
+  local hostile={7,"bad",{text=5,finished=true},{text="Missing finished"},
+   {text=("x"):rep(30001),finished=false},{finished=true},{text="Good survivor",finished=false}}
+  local ok,err=renderWith(hostile)
+  assert(ok,"hostile objectives threw: "..tostring(err))
+  assert(hasText("Good survivor"),"valid survivor renders after broken objective entries")
+  assert(not hasText("Missing finished"),"finish-less objective stays skipped")
+  assert(not hasText(("x"):rep(100)),"overlong objective text stays skipped")
+ end
+ addon.QuestObjectives=savedObjectives
+ issecretvalue=savedSecret
+ addon.dungeons=savedDungeons
+ addon.quests[990701]=nil
+ ui.dungeon,ui.quest=dungeon,990104
+ ui.search="";ui.questTreeRoot=nil;ui.questTreeDungeon=nil;ui.frame:Show();ui:Refresh()
+end
+-- A10 LOOT-ITEM-GUARD: hostile loot entries are skipped, counts capped at 2^53-1.
+do
+ local savedDialogue,savedLog,savedCache=addon.DialogueRewards,addon.QuestRewards,addon.CachedQuestRewards
+ local savedDungeons=addon.dungeons
+ local savedSecret=issecretvalue
+ issecretvalue=function()return false end
+ addon.quests[990702]={id=990702,name="Loot guard quest",minLevel=1,requirementsKnown=true}
+ local guardDungeon={key="loot-guard",name="Loot guard dungeon",minLevel=1,maxLevel=80,quests={990702}}
+ addon.dungeons={guardDungeon}
+ ui.dungeon,ui.quest,ui.questTreeRoot,ui.questTreeDungeon=guardDungeon,990702,nil,nil
+ ui.search="";ui.includeUnavailable=true;ui.frame:Show()
+ if type(ui.SetDetailTab)=="function" then ui:SetDetailTab("quest") end
+ local function fieldShown(fs)
+  if fs.shown ~= nil then return fs.shown == true end
+  if type(fs.IsShown)=="function" then local ok,v=pcall(function()return fs:IsShown()end);return ok and v==true end
+  return false
+ end
+ local function hasText(want)
+  for _,fs in ipairs(ui.details)do if fieldShown(fs) and fs.text and fs.text:find(want,1,true)then return true end end
+  return false
+ end
+ local function renderWith(items)
+  addon.DialogueRewards=function(id) if id==990702 then return {source="dialogue",items=items,choices={}} end end
+  addon.QuestRewards=function()return nil end
+  addon.CachedQuestRewards=function()return nil end
+  local ok,err=pcall(function() ui:Refresh() end)
+  return ok,err
+ end
+ do
+  local ok,err=renderWith({{id=801,name="Fixed reward",count=2}})
+  assert(ok,"valid loot threw: "..tostring(err))
+  assert(hasText(addon.L("REWARD_ITEM","Fixed reward",2)),"valid loot keeps its detail line")
+ end
+ do
+  local hostile={7,{name="No count"},{count=2},{name="",count=1},{name="Huge count",count=9007199254740992},
+   {name="Table count",count={}},{name=("y"):rep(30001),count=1},{id=801,name="Lone survivor",count=3}}
+  local ok,err=renderWith(hostile)
+  assert(ok,"hostile loot threw: "..tostring(err))
+  assert(hasText(addon.L("REWARD_ITEM","Lone survivor",3)),"valid survivor renders after broken loot entries")
+  assert(not hasText("No count"),"count-less loot stays skipped")
+  assert(not hasText("Huge count"),"uncapped loot count stays skipped")
+  assert(not hasText(("y"):rep(100)),"overlong loot name stays skipped")
+ end
+ addon.DialogueRewards,addon.QuestRewards,addon.CachedQuestRewards=savedDialogue,savedLog,savedCache
+ issecretvalue=savedSecret
+ addon.dungeons=savedDungeons
+ addon.quests[990702]=nil
+ ui.dungeon,ui.quest=dungeon,990104
+ ui.search="";ui.questTreeRoot=nil;ui.questTreeDungeon=nil;ui.frame:Show();ui:Refresh()
+end
+-- A10 ROW-ACTION-LEVEL-GUARD: a mutated minLevel between State and Next drops
+-- the suffix instead of concatenating a table.
+do
+ local savedDungeons=addon.dungeons
+ local savedDungeon,savedPrep=ui.dungeon,ui.preparation
+ local reads=0
+ local proxy={id=990801,name="Level guard quest",requirementsKnown=true}
+ setmetatable(proxy,{__index=function(t,k)
+  if k=="minLevel" then reads=reads+1;return reads<=3 and 80 or {} end
+ end})
+ addon.quests[990801]=proxy
+ addon.quests[990802]={id=990802,name="Plain level quest",minLevel=80,requirementsKnown=true}
+ local guardDungeon={key="level-guard",name="Level guard dungeon",minLevel=1,maxLevel=80,quests={990801,990802}}
+ addon.dungeons={guardDungeon}
+ ui.dungeon=guardDungeon;ui.preparation=true;ui.includeUnavailable=true
+ ui.search="";ui.questTreeRoot=nil;ui.questTreeDungeon=nil;ui.frame:Show()
+ local function noteOf(id)
+  for _,r in ipairs(ui.rows)do if r:IsShown() and not r.heading and r.questID==id and r.note then return r.note.text end end
+ end
+ reads=0
+ local ok,err=pcall(function() ui:RefreshQuests() end)
+ assert(ok,"mutated minLevel threw in RefreshQuests: "..tostring(err))
+ local plain=noteOf(990802)
+ assert(plain and plain:find("80",1,true),"plain level action keeps its suffix")
+ local hostile=noteOf(990801)
+ assert(hostile and hostile:find(addon.L("level"),1,true),"mutated level action keeps its kind label")
+ assert(hostile and not hostile:find("table:",1,true),"mutated minLevel drops the suffix instead of concatenating a table")
+ addon.quests[990801]=nil;addon.quests[990802]=nil
+ addon.dungeons=savedDungeons
+ ui.dungeon,ui.preparation=savedDungeon,savedPrep
+ ui.search="";ui.questTreeRoot=nil;ui.questTreeDungeon=nil;ui.includeUnavailable=true;ui.frame:Show();ui:RefreshQuests()
+end
 print("Middle quest navigation checks passed (modeled, no native input or layout proof)")
