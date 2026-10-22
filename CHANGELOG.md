@@ -1,5 +1,55 @@
 # Changelog
 
+## 0.3.1 - 22-Oct-2026 — Compact quest contacts Beta
+
+### Quest contacts and layout
+
+- Replace tall pickup and turn-in contact rows with compact buttons beside the
+  faction information: an exclamation mark for pickup and a question mark for
+  turn-in.
+- Keep both buttons together at the right edge of the detail pane and remove
+  the extra height previously reserved in the faction row.
+- Show the contact name, known location and purpose in each button's tooltip,
+  including when its exact location is unavailable and directions are disabled.
+- Preserve separate pickup and turn-in destinations, alternative locations and
+  the selected quest when opening source information.
+
+### Quest-starting items
+
+- Move known starter-item acquisition information beside the item, before
+  rewards, so recorded drops and other sources are easier to find.
+- Include the starter item and its known acquisition sources in the book
+  inspection tooltip. Item drops remain distinct from NPC quest givers.
+- Remove the generic item-requirements notice and omit an item minimum level
+  when the quest already shows an equal or higher minimum. Stricter item levels
+  and recorded class restrictions remain visible.
+- Use consistent pickup classification across the preparation list, overview
+  and contact actions, including item starts with alternative sources.
+
+### Localization and stability
+
+- Use localized NPC and place names in pickup descriptions and source labels.
+- Reduce repeated hover updates in the language menu.
+- Treat a zero portrait ID as unavailable and accept valid journal artwork
+  returned as a texture path.
+- Keep other interface refresh listeners running when one callback fails, and
+  prevent listener changes from disrupting an update already in progress.
+- Validate quest-history and portrait identifiers more strictly.
+
+### Development checks
+
+- Run independent Lua suites in isolated processes, automatically choosing up
+  to four workers, with sequential execution still available for diagnosis.
+- Add timing reports and regression coverage for worker limits, argument
+  preservation, failures and interrupted runs.
+- Strengthen catalogue bounds and source validation, version
+  alignment, runtime-file membership and deterministic archive checks.
+- Keep verification tools, tests and caches out of the installable addon.
+
+This remains an early beta. Quest coverage, requirements and some locations are
+incomplete. Unseen quest text depends on what the game client can provide;
+interior dungeon maps are not included.
+
 ## 0.3.0 - 20-Oct-2026 — Quest details Beta
 
 ### New quests and catalogue updates

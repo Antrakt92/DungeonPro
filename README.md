@@ -42,8 +42,10 @@ These matches identify the quest; directions remain tied to its known sources.
 
 Select a quest in the chain to read its details in one place. Objectives, useful
 items, rewards and known pickup or turn-in sources appear before available quest
-text. Pickup and turn-in contacts have separate rows, with location choices where
-recorded. Missing information stays marked.
+text. Compact pickup (!) and turn-in (?) buttons sit at the right of the faction
+information; their tooltips identify the contact and known location. Location
+choices remain available where recorded. Starter-item acquisition sources appear
+beside the item, before rewards. Missing information stays marked.
 
 Use the small arrow beside the dungeon list to collapse it and give long quest
 chains more room; use the arrow again to restore the list.
