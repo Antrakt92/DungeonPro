@@ -193,7 +193,7 @@ def validate(data):
             raise ValueError(f"Invalid repeatable flag: {q['id']}")
         if "requiredMoney" in q and (not integer(q["requiredMoney"]) or q["requiredMoney"] > 2 ** 53 - 1):
             raise ValueError(f"Invalid required money: {q['id']}")
-        validate_named_facts(q, "objectiveItems", "itemID", 2 ** 53 - 1, "objective item")
+        validate_named_facts(q, "objectiveItems", "itemID", 2 ** 32 - 1, "objective item")
         validate_named_facts(q, "objectiveKills", "npcID", 2 ** 32 - 1, "objective kill",
                              required_name=True, utf8_name=True)
         validate_named_facts(q, "objectiveObjects", "objectID", 2 ** 32 - 1, "objective object",
@@ -381,7 +381,7 @@ def validate(data):
             raise ValueError("Missing storyline quest")
         if "completionQuests" in q:
             related = q["completionQuests"]
-            if type(related) is not list or len(related) > 100:
+            if type(related) is not list or not 1 <= len(related) <= 100:
                 raise ValueError(f"Invalid completion quest links: {q['id']}")
             seen_related = set()
             for entry in related:
@@ -394,6 +394,8 @@ def validate(data):
                 if qid not in quests:
                     raise ValueError(f"Missing completion quest definition: {q['id']}")
                 seen_related.add(qid)
+        if "requires" in q and not q["requires"]:
+            raise ValueError(f"Invalid requires list: {q['id']}")
         for g in q.get("requires", []):
             if (type(g) is not dict or set(g) - {"ids", "mode"} or type(g.get("ids")) is not list or not g["ids"] or
                 g.get("mode", "completed") not in ("completed", "active")):

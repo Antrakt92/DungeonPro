@@ -1114,7 +1114,8 @@ class CatalogTests(unittest.TestCase):
         catalog.validate(self.data)
         self.assertIn('["completionQuests"]', catalog.generate(self.data))
         quest["completionQuests"] = []
-        catalog.validate(self.data)
+        with self.assertRaisesRegex(ValueError, "completion quest"):
+            catalog.validate(self.data)
 
     def test_completion_quests_require_bounded_lists_and_typed_entries(self):
         other = self.data["quests"][1]["id"]
@@ -1404,7 +1405,7 @@ class CatalogTests(unittest.TestCase):
         data = self.minimal_catalog()
         catalog.validate(data)
         target = data["quests"][1]
-        target.update(requires=[], start={}, finish={})
+        target.update(start={}, finish={})
         data["dungeons"][0]["quests"] = []
         catalog.validate(data)
         self.assertNotIn('["storyline"]', catalog.generate(data))
@@ -1412,6 +1413,25 @@ class CatalogTests(unittest.TestCase):
         target["storyline"] = [1, 2]
         data["dungeons"][0]["quests"] = [1, 2]
         target["start"] = {"name": "Known giver"}
+        catalog.validate(data)
+
+    def test_empty_requires_and_completion_links_are_rejected(self):
+        data = self.minimal_catalog()
+        data["quests"][1]["requires"] = []
+        with self.assertRaisesRegex(ValueError, "requires"):
+            catalog.validate(data)
+        data = self.minimal_catalog()
+        data["quests"][0]["completionQuests"] = []
+        with self.assertRaisesRegex(ValueError, "completion quest"):
+            catalog.validate(data)
+
+    def test_objective_items_reject_item_ids_above_uint32(self):
+        data = self.minimal_catalog()
+        data["quests"][0]["objectiveItems"] = [{"itemID": 2 ** 40, "quantity": 1}]
+        with self.assertRaisesRegex(ValueError, "objective item"):
+            catalog.validate(data)
+        data = self.minimal_catalog()
+        data["quests"][0]["objectiveItems"] = [{"itemID": 2 ** 32 - 1, "quantity": 2 ** 53 - 1}]
         catalog.validate(data)
 
     def test_drop_label_requires_drop_identity(self):
