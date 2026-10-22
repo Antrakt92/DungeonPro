@@ -12,6 +12,10 @@ ROOT = Path(__file__).resolve().parents[1]
 # in either directory is covered without a script change.
 RUNTIME_DIRS = ("Core/", "UI/", "Database/", "Locales/")
 
+# Folded copy for the case-insensitive runtime gate in main() (Windows
+# checkout); the git pathspecs above keep their on-disk case.
+RUNTIME_DIRS_FOLDED = tuple(entry.lower() for entry in RUNTIME_DIRS)
+
 # Canonical UI load order, matching DungeonPro.toc. Only relative order among
 # entries present in the TOC is asserted, so minimal fixtures keep passing.
 # Load-bearing pins: Language before Window (Window reads localized strings
@@ -81,7 +85,7 @@ def main():
     tracked = _tracked(ROOT)
     tracked_files = {path.lower() for path in tracked}
     runtime = {path for path in tracked | _untracked(ROOT)
-               if path.lower().endswith(".lua") and path.startswith(RUNTIME_DIRS)}
+               if path.lower().endswith(".lua") and path.lower().startswith(RUNTIME_DIRS_FOLDED)}
     missing = sorted(path for path in runtime if path.lower() not in toc_files)
     stale = sorted(path for path in entries if path.lower().endswith(".lua") and path.lower() not in tracked_files)
     problems = []

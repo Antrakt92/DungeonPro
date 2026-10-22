@@ -281,6 +281,20 @@ class TocParityTests(unittest.TestCase):
             with self.assertRaisesRegex(SystemExit, "Duplicate"):
                 module.main()
 
+    def test_lowercase_dir_prefix_still_counts_as_runtime(self):
+        # Case-fold gate: a runtime path with the wrong directory case
+        # (core/x.lua) must still be treated as runtime and fail as missing
+        # from the TOC. The membership sets are injected directly because a
+        # case-insensitive Windows checkout cannot hold a real core/ sibling
+        # of Core/ on disk; this simulates the git index of a case-sensitive
+        # checkout carrying the wrong-case entry.
+        with tempfile.TemporaryDirectory(prefix="quest toc dircase ") as folder:
+            module = self.fixture(Path(folder), ["Core/A.lua"], ["Core/A.lua"])
+            module._tracked = lambda root: {"Core/A.lua", "core/x.lua"}
+            module._untracked = lambda root: set()
+            with self.assertRaisesRegex(SystemExit, "core/x.lua"):
+                module.main()
+
     # Load-order pin: Language must load before Window, and
     # QuestNavigation/QuestHistory/PreparationOverview must load before
     # Window, in the canonical UI sequence. Membership alone cannot catch a
