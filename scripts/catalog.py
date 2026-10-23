@@ -198,6 +198,12 @@ def validate(data):
             # Omit unrestricted fields; an empty Lua restriction blocks everyone.
             if type(values) is not list or not values:
                 raise ValueError(f"Invalid {field} restriction: {q['id']}")
+            # Token-bounded lists cannot outgrow their token set (factions: 3,
+            # classes: 13); races carry small live IDs with a 100-entry
+            # consistency cap matching every other list guard in this file.
+            bounds = {"factions": len(FACTIONS), "classes": len(CLASSES), "races": 100}
+            if len(values) > bounds[field]:
+                raise ValueError(f"Invalid {field} restriction: {q['id']}")
             for value in values:
                 # Race IDs are small live values (1..8, 95); 255 is a generous
                 # fail-closed cap that only rejects absurd integers.
@@ -459,7 +465,10 @@ def validate(data):
         if "requires" in q and not q["requires"]:
             raise ValueError(f"Invalid requires list: {q['id']}")
         for g in q.get("requires", []):
-            if (type(g) is not dict or set(g) - {"ids", "mode"} or type(g.get("ids")) is not list or not g["ids"] or
+            # Group membership mirrors the runtime graph budget (nodes: 80,
+            # edges: 320 in SearchRelations.lua); the 100-entry cap matches
+            # every other list guard in this file while real data peaks at 1.
+            if (type(g) is not dict or set(g) - {"ids", "mode"} or type(g.get("ids")) is not list or not 1 <= len(g["ids"]) <= 100 or
                 g.get("mode", "completed") not in ("completed", "active")):
                 raise ValueError("Invalid requirement group")
             if any(not integer(parent) for parent in g["ids"]):
@@ -470,17 +479,38 @@ def validate(data):
                 raise ValueError(f"Missing prerequisite definition: {q['id']}")
     visiting, visited = set(), set()
 
-    def visit(qid):
-        if qid in visiting:
-            raise ValueError("Quest dependency cycle")
-        if qid in visited:
+    def parents_of(qid):
+        return [parent for g in quests[qid].get("requires", []) for parent in g["ids"]]
+
+    def visit(start):
+        # Iterative DFS with an explicit stack: a hostile reverse-ordered
+        # chain must raise ValueError, never a bare RecursionError (a
+        # RuntimeError subclass) that would violate the ValueError-only
+        # contract. Chain depth mirrors the runtime cap of 50
+        # (SearchRelations.lua:155-156); true cycles keep their message.
+        if start in visited:
             return
-        visiting.add(qid)
-        for g in quests[qid].get("requires", []):
-            for parent in g["ids"]:
-                visit(parent)
-        visiting.remove(qid)
-        visited.add(qid)
+        if start in visiting:
+            raise ValueError("Quest dependency cycle")
+        visiting.add(start)
+        stack = [(start, 0, parents_of(start), 0)]
+        while stack:
+            qid, depth, parents, index = stack[-1]
+            if depth > 50:
+                raise ValueError("Quest dependency chain too deep")
+            if index >= len(parents):
+                stack.pop()
+                visiting.remove(qid)
+                visited.add(qid)
+                continue
+            stack[-1] = (qid, depth, parents, index + 1)
+            parent = parents[index]
+            if parent in visiting:
+                raise ValueError("Quest dependency cycle")
+            if parent in visited:
+                continue
+            visiting.add(parent)
+            stack.append((parent, depth + 1, parents_of(parent), 0))
 
     for qid in quests:
         visit(qid)
@@ -590,7 +620,7 @@ def validate(data):
             wings.add(wing)
         if d.get("coverage") not in ("pending", "partial", "reviewed"):
             raise ValueError("Explicit dungeon coverage needed")
-        if type(d.get("quests")) is not list:
+        if type(d.get("quests")) is not list or len(d["quests"]) > 100:
             raise ValueError("Invalid dungeon quest list")
         if any(not integer(qid) for qid in d["quests"]):
             raise ValueError("Invalid dungeon quest ID")

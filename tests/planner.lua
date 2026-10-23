@@ -939,4 +939,44 @@ check("Non-table Next path fails closed without throwing and valid paths are unc
     local valid, validUnknown = fine:Next(1, {})
     eq(#valid, #expected); eq(validUnknown, expectedUnknown)
 end)
+check("Partial table contexts without log probes fail closed as unknown character without throwing", function()
+    local quests = { [1] = q(1) }
+    local partials = {
+        {},
+        { level = 20 },
+        { current = function() return true end },
+        { current = function() return false end },
+        { level = 20, completed = function() return false end },
+        { level = 20, active = function() return false end },
+        { level = 20, faction = "Alliance", class = "MAGE",
+            completed = function() return false end },
+        { level = 20, faction = "Alliance", class = "MAGE",
+            active = function() return false end },
+    }
+    for _, partial in ipairs(partials) do
+        local engine = P.New(quests, partial)
+        local okState, state = pcall(function() return engine:State(1) end)
+        assert(okState, "State with partial context threw")
+        eq(state.status, "UNKNOWN"); eq(state.reason, "character")
+        local okNext, actions, unknown = pcall(function() return engine:Next(1) end)
+        assert(okNext, "Next with partial context threw")
+        eq(#actions, 0); eq(unknown, true)
+        local okSteps, steps = pcall(function() return engine:CompletionSteps(1) end)
+        assert(okSteps, "CompletionSteps with partial context threw")
+        eq(#steps, 0)
+        local okDungeon, plan = pcall(function()
+            return engine:Dungeon({ quests = { 1 }, coverage = "reviewed" })
+        end)
+        assert(okDungeon, "Dungeon with partial context threw")
+        eq(plan.unknown, true); eq(plan.ready, false)
+    end
+    local linked = { [1] = q(1, nil, { completionQuests = { { id = 2, itemID = 7000 } } }), [2] = q(2) }
+    local linkedEngine = P.New(linked, {})
+    local okLinked, linkedSteps = pcall(function() return linkedEngine:CompletionSteps(1) end)
+    assert(okLinked, "CompletionSteps with linked partial context threw")
+    eq(#linkedSteps, 1)
+    eq(linkedSteps[1].state.status, "UNKNOWN"); eq(linkedSteps[1].state.reason, "character")
+    eq(linkedSteps[1].unknown, true)
+    eq(P.New(quests, ctx()):State(1).status, "AVAILABLE")
+end)
 print("Planner checks passed: " .. passed)

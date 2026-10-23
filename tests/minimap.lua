@@ -147,6 +147,23 @@ check("Optional native texture failure retains a visible text launcher",function
     local m=reset(); textureResult=false; assert(m:Initialize())
     assert(not m.button.icon.shown and m.button.label.text=="DP" and m.button.label.shown and m.button.shown)
 end)
+check("Hostile texture creation fails closed to the text fallback without throwing",function()
+    for _,mode in ipairs({"throw","nil"})do
+        local m=reset();local factory=CreateFrame
+        CreateFrame=function(...)
+            local b=factory(...)
+            if mode=="throw"then b.CreateTexture=function() error("texture unavailable") end
+            else b.CreateTexture=function() return nil end end
+            return b
+        end
+        local ok,result=pcall(m.Initialize,m)
+        assert(ok and result==true,mode.." must not throw")
+        assert(m.button.shown,mode)
+        assert(m.button.label and m.button.label.text=="DP" and m.button.label.shown,mode)
+    end
+    local m=reset();assert(m:Initialize())
+    assert(m.button.icon.texture=="Interface\\Icons\\INV_Misc_Map_01" and m.button.icon.shown and m.button.shown)
+end)
 check("Fresh left press opens after drag when the client emits no release click",function()
     local m=reset(); assert(m:Initialize()); local b=m.button
     b.scripts.OnDragStart(b,"LeftButton"); b.scripts.OnUpdate(); b.scripts.OnDragStop(b)

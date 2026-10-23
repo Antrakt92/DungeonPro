@@ -285,6 +285,15 @@ class TocParityTests(unittest.TestCase):
             with self.assertRaisesRegex(SystemExit, "Duplicate"):
                 module.main()
 
+    def test_indented_comment_lines_are_ignored(self):
+        # The comment filter consumes stripped lines, so it must test the
+        # stripped value: "  # see Core/B.lua" is a comment, not a phantom
+        # entry ending in .lua that would fail as stale.
+        with tempfile.TemporaryDirectory(prefix="quest toc comment ") as folder:
+            module = self.fixture(Path(folder), ["Core/A.lua", "  # see Core/B.lua", "# full comment"],
+                                  ["Core/A.lua"])
+            self.assertIsNone(module.main())
+
     def test_lowercase_dir_prefix_still_counts_as_runtime(self):
         # Case-fold gate: a runtime path with the wrong directory case
         # (core/x.lua) must still be treated as runtime and fail as missing

@@ -374,13 +374,18 @@ function M:Initialize(retry)
         self.button = button
         button:SetSize(32, 32); button:EnableMouse(true); button:RegisterForClicks("LeftButtonUp")
         button:RegisterForDrag("LeftButton")
-        local icon = button:CreateTexture(nil, "ARTWORK")
-        button.icon = icon
-        icon:SetSize(26, 26); icon:ClearAllPoints(); icon:SetPoint("CENTER", button, "CENTER", 0, 0)
-        local rendered, success = pcall(icon.SetTexture, icon, "Interface\\Icons\\INV_Misc_Map_01")
-        if rendered and addon.Clean(success, "boolean") == true then icon:Show()
+        local okC, icon = pcall(button.CreateTexture, button, nil, "ARTWORK")
+        if okC and cleanFrame(icon) then
+            button.icon = icon
+            icon:SetSize(26, 26); icon:ClearAllPoints(); icon:SetPoint("CENTER", button, "CENTER", 0, 0)
+            local rendered, success = pcall(icon.SetTexture, icon, "Interface\\Icons\\INV_Misc_Map_01")
+            if rendered and addon.Clean(success, "boolean") == true then icon:Show()
+            else
+                icon:Hide()
+                local text = button:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+                text:SetAllPoints(); text:SetText("DP"); text:Show()
+            end
         else
-            icon:Hide()
             local text = button:CreateFontString(nil, "OVERLAY", "GameFontNormal")
             text:SetAllPoints(); text:SetText("DP"); text:Show()
         end

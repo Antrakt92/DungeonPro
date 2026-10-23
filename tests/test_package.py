@@ -183,6 +183,28 @@ class PackageTests(unittest.TestCase):
             self.assertEqual(output.read_bytes(), original)
             self.assertEqual(list(Path(tmp).iterdir()), [output])
 
+    def test_indented_toc_comment_is_ignored_not_packaged(self):
+        # The comment filter consumes stripped lines, so it must test the
+        # stripped value: "  # indented note" is a comment, not a phantom
+        # entry that would fail filename-case resolution.
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "DungeonPro.toc").write_text(
+                "## Version: 1.2.3\n  # indented note\n# full comment\nCore.lua\n", encoding="utf-8")
+            for name in ("README.md", "CHANGELOG.md", "LICENSE", "Core.lua"):
+                (root / name).write_text("fixture\n", encoding="utf-8")
+            media = root / "Media" / "Fonts"
+            media.mkdir(parents=True)
+            for name in ("NotoSans-Regular.ttf", "OFL.txt", "NOTICE.txt"):
+                (media / name).write_bytes(b"fixture")
+            icons = root / "Media" / "Icons"
+            icons.mkdir()
+            for name in ("Wowhead.tga", "Language.tga", "NOTICE.txt"):
+                (icons / name).write_bytes(b"fixture")
+            path, _ = packager.package(root=root, output=root / "dist" / "addon.zip")
+            with zipfile.ZipFile(path) as archive:
+                self.assertFalse(any("indented" in name for name in archive.namelist()))
+
     def test_missing_toc_version_fails_with_value_error(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)

@@ -31,7 +31,7 @@ def package(root=ROOT, output=None):
     names = [toc_name, "README.md", "CHANGELOG.md", "LICENSE"]
     names += ["Media/Fonts/NotoSans-Regular.ttf", "Media/Fonts/OFL.txt", "Media/Fonts/NOTICE.txt"]
     names += ["Media/Icons/Wowhead.tga", "Media/Icons/Language.tga", "Media/Icons/NOTICE.txt"]
-    names += [line.strip().replace("\\", "/") for line in toc.splitlines() if line.strip() and not line.startswith("#")]
+    names += [line.strip().replace("\\", "/") for line in toc.splitlines() if line.strip() and not line.strip().startswith("#")]
     output = output or root / "dist" / f"{ADDON_NAME}-{version}-Forever-dev.zip"
     output.parent.mkdir(parents=True, exist_ok=True)
     staged = None

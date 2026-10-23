@@ -95,7 +95,7 @@ def _untracked(root):
 def main():
     toc = (ROOT / "DungeonPro.toc").read_text(encoding="utf-8").replace("\r\n", "\n").replace("\r", "\n")
     entries = [line.strip().replace("\\", "/") for line in toc.splitlines()
-               if line.strip() and not line.startswith("#")]
+               if line.strip() and not line.strip().startswith("#")]
     # Case-fold for comparison (Windows checkout); originals stay in messages.
     folded = Counter(entry.lower() for entry in entries)
     duplicates = sorted(entry for entry in entries if folded[entry.lower()] > 1)

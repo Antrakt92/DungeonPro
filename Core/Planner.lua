@@ -81,6 +81,12 @@ function Planner.New(quests, context, choices)
         if self.states[id] then return self.states[id] end
         local q = self.quests[id]
         if not q then return save("UNKNOWN", "missing") end
+        -- A partial table context missing the log probes fails closed as
+        -- unknown character instead of throwing, mirroring the non-table
+        -- context path above (ready alone stays optional).
+        if type(self.context.completed) ~= "function" or type(self.context.active) ~= "function" then
+            return save("UNKNOWN", "character")
+        end
         local done = self.context.completed(id)
         -- Past completion can satisfy a prerequisite while a new run remains active.
         completedHistory = done == true

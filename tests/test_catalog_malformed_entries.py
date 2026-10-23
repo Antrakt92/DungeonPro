@@ -92,6 +92,113 @@ class MalformedCatalogEntriesTests(unittest.TestCase):
     def test_valid_catalog_still_passes(self):
         catalog.validate(minimal_catalog())
 
+    def _large_quest_pool(self, count, start=3):
+        pool = []
+        for quest_id in range(start, start + count):
+            pool.append({"id": quest_id, "name": f"Q{quest_id}", "minLevel": 1,
+                         "requirementsKnown": True,
+                         "source": f"https://www.wowhead.com/forever/quest={quest_id}"})
+        return pool
+
+    def test_dungeon_quest_list_capped_at_runtime_limit(self):
+        # Runtime refuses dungeon quest lists above 100 (SearchRelations
+        # array cap); the validator must match. 100 still passes.
+        data = minimal_catalog()
+        data["quests"].extend(self._large_quest_pool(110))
+        data["dungeons"][0]["quests"] = [q["id"] for q in data["quests"][:100]]
+        catalog.validate(data)
+        data["dungeons"][0]["quests"] = [q["id"] for q in data["quests"][:101]]
+        with self.assertRaises(ValueError):
+            catalog.validate(data)
+
+    def test_requirement_group_ids_capped_at_runtime_budget(self):
+        # Runtime caps traversal at 80 nodes / 320 edges; sibling list
+        # guards cap at 100. A 500-id group must fail closed.
+        data = minimal_catalog()
+        data["quests"].extend(self._large_quest_pool(500))
+        data["quests"][1]["requires"] = [
+            {"ids": [q["id"] for q in data["quests"] if q["id"] != 2]}]
+        with self.assertRaises(ValueError):
+            catalog.validate(data)
+        try:
+            catalog.validate(copy.deepcopy(data))
+        except ValueError:
+            pass
+        except (TypeError, KeyError) as error:
+            self.fail(f"fail-open {type(error).__name__}: {error}")
+        else:
+            self.fail("expected ValueError")
+
+    def test_restriction_lists_capped_by_token_set_size(self):
+        # factions/classes cannot outgrow their token sets (3/13); races
+        # use the 100-entry consistency cap. Real data peaks at 2/2/4.
+        data = minimal_catalog()
+        data["quests"][1]["factions"] = ["Alliance", "Horde", "Neutral", "Alliance"]
+        with self.assertRaises(ValueError):
+            catalog.validate(data)
+        data = minimal_catalog()
+        data["quests"][1]["classes"] = ["MAGE"] * 14
+        with self.assertRaises(ValueError):
+            catalog.validate(data)
+        data = minimal_catalog()
+        data["quests"][1]["races"] = list(range(1, 102))
+        with self.assertRaises(ValueError):
+            catalog.validate(data)
+
+    def test_deep_reverse_chain_raises_value_error_not_recursion_error(self):
+        # A reverse-ordered requires chain (1->2->...->N) recursed N deep
+        # under the old recursive visit, leaking bare RecursionError (a
+        # RuntimeError, not ValueError). The iterative walk must raise
+        # ValueError; chains deeper than the runtime cap of 50 fail closed.
+        size = 1500
+        quests = []
+        for quest_id in range(1, size + 1):
+            quest = {"id": quest_id, "name": f"Q{quest_id}", "minLevel": 1,
+                     "requirementsKnown": True,
+                     "source": f"https://www.wowhead.com/forever/quest={quest_id}"}
+            if quest_id < size:
+                quest["requires"] = [{"ids": [quest_id + 1]}]
+            quests.append(quest)
+        data = {"schema": 1, "quests": quests,
+                "dungeons": [{"key": "test", "name": "Test", "minLevel": 1,
+                              "maxLevel": 10, "coverage": "partial",
+                              "quests": [1]}]}
+        try:
+            catalog.validate(copy.deepcopy(data))
+        except ValueError:
+            pass
+        except RecursionError as error:
+            self.fail(f"fail-open RecursionError: {error}")
+        else:
+            self.fail("expected ValueError")
+
+    def test_chain_beyond_runtime_depth_cap_is_rejected(self):
+        # Runtime caps traversal depth at 50; depths 0..50 pass, depth 51
+        # fails closed with ValueError (not RecursionError).
+        def chain(size):
+            quests = []
+            for quest_id in range(1, size + 1):
+                quest = {"id": quest_id, "name": f"Q{quest_id}", "minLevel": 1,
+                         "requirementsKnown": True,
+                         "source": f"https://www.wowhead.com/forever/quest={quest_id}"}
+                if quest_id < size:
+                    quest["requires"] = [{"ids": [quest_id + 1]}]
+                quests.append(quest)
+            return {"schema": 1, "quests": quests,
+                    "dungeons": [{"key": "test", "name": "Test", "minLevel": 1,
+                                  "maxLevel": 10, "coverage": "partial",
+                                  "quests": [1]}]}
+        catalog.validate(chain(51))  # depths 0..50
+        with self.assertRaises(ValueError):
+            catalog.validate(chain(52))  # reaches depth 51
+
+    def test_true_cycle_keeps_cycle_message(self):
+        data = minimal_catalog()
+        data["quests"][0]["requires"] = [{"ids": [2]}]
+        data["quests"][1]["requires"] = [{"ids": [1]}]
+        with self.assertRaisesRegex(ValueError, "cycle"):
+            catalog.validate(data)
+
 
 if __name__ == "__main__":
     unittest.main()
