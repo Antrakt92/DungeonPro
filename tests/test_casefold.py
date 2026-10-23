@@ -311,6 +311,46 @@ assert(addon.SearchFold('')=='')
                         self.assertIn(b"search_casefold.json is invalid", result.stderr)
                         self.assertEqual(output.read_bytes(), expected)
 
+    def test_generate_with_unwritable_output_fails_closed_without_traceback(self):
+        # Generate mode with an unwritable Database/SearchCaseFold.lua target
+        # must fail as a clean SystemExit naming the output ("case-fold
+        # output is unwritable"), never a raw OSError traceback. Mirrors
+        # _read's "is unreadable" convention for input failures.
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            for directory in ("scripts", "data"):
+                (root / directory).mkdir()
+            shutil.copy2(ROOT / "scripts/casefold.py", root / "scripts/casefold.py")
+            shutil.copy2(ROOT / "data/search_casefold.json", root / "data/search_casefold.json")
+            database = root / "Database"
+            # Case 1: Database/ blocked by a regular file, so mkdir fails.
+            database.write_bytes(b"blocking file")
+            result = subprocess.run([sys.executable, "scripts/casefold.py"], cwd=root,
+                                    capture_output=True, timeout=30)
+            self.assertNotEqual(result.returncode, 0)
+            self.assertNotIn(b"Traceback", result.stderr)
+            self.assertIn(b"case-fold output is unwritable", result.stderr)
+            self.assertEqual(database.read_bytes(), b"blocking file")
+            database.unlink()
+            # Case 2: output path blocked by a directory, so write_text fails.
+            output = database / "SearchCaseFold.lua"
+            database.mkdir()
+            output.mkdir()
+            result = subprocess.run([sys.executable, "scripts/casefold.py"], cwd=root,
+                                    capture_output=True, timeout=30)
+            self.assertNotEqual(result.returncode, 0)
+            self.assertNotIn(b"Traceback", result.stderr)
+            self.assertIn(b"case-fold output is unwritable", result.stderr)
+            self.assertTrue(output.is_dir())
+            self.assertEqual(list(output.iterdir()), [])
+            # Valid generate in the same layout stays byte-identical.
+            shutil.rmtree(database)
+            result = subprocess.run([sys.executable, "scripts/casefold.py"], cwd=root,
+                                    capture_output=True, timeout=30)
+            self.assertEqual(result.returncode, 0, result.stderr.decode(errors="replace"))
+            self.assertEqual((root / "Database/SearchCaseFold.lua").read_text(encoding="utf-8"),
+                             casefold.generate(self.data))
+
     def test_check_with_unreadable_output_fails_closed_without_traceback(self):
         # An unreadable/undecodable Database/SearchCaseFold.lua in --check
         # mode must fail as a clean SystemExit ("Generated case-fold table

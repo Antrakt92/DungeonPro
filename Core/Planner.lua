@@ -66,6 +66,10 @@ function Planner.Eligible(q, context)
         if list ~= nil then
             -- Malformed audience data is unknown requirements, never a throw or an exclusion.
             if type(list) ~= "table" then return nil, "requirements" end
+            -- A sparse audience list would silently drop entries under ipairs
+            -- (wrong exclusion instead of unknown), mirroring the requires
+            -- census above. Raw integer-key census only, never Clean walks.
+            if not denseSequence(list) then return nil, "requirements" end
             local value = context[rule[2]]
             if value == nil then unknown = unknown or rule[2]
             elseif not contains(list, value) then return false, rule[2] end

@@ -127,8 +127,23 @@ function Status.Get(dungeon, engine)
                         if (field == "factions" or field == "classes") and value ~= nil then
                             local list = clean(value, "table")
                             if not list or #list > 100 then return false end
-                            arrays[#arrays + 1] = { object = list, length = #list }
-                            for item = 1, #list + 1 do local _, allowed = keep(list, item); if not allowed then return false end end
+                            -- A sparse audience list would silently drop entries
+                            -- under ipairs while preserving # (wrong exclusion
+                            -- instead of fail-closed source). Census the integer
+                            -- keys via next, mirroring the root-list guard, so a
+                            -- malformed/hand-edited catalogue fails closed.
+                            -- Dense arrays pass through unchanged.
+                            local length = #list
+                            local keys = 0
+                            for key in next, list do
+                                keys = keys + 1
+                                if keys > 100 then return false end
+                                key = clean(key, "number")
+                                if not key or key % 1 ~= 0 or key < 1 or key > length then return false end
+                            end
+                            if keys ~= length then return false end
+                            arrays[#arrays + 1] = { object = list, length = length }
+                            for item = 1, length + 1 do local _, allowed = keep(list, item); if not allowed then return false end end
                         elseif field == "requires" and value ~= nil then
                             local groups = clean(value, "table")
                             if not groups or #groups > 100 then return false end

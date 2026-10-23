@@ -1056,6 +1056,48 @@ check("Sparse requires lists fail closed without throwing or silently dropping A
     eq(e:State(2).reason, "requirements")
     eq(P.New(denseQuests, done):State(2).status, "LOCKED")
 end)
+check("Sparse audience lists fail closed as unknown requirements without excluding", function()
+    -- A sparse factions/classes list would silently drop entries under ipairs:
+    -- e.g. {[1]="Alliance",[3]="Horde"} stops at the hole, wrongly excluding
+    -- e.g. {[1]="Alliance",[3]="Horde"} stops at the hole, wrongly excluding
+    -- a Horde character instead of failing closed as unknown requirements.
+    local holeCount = 0
+    local factions = { factions = { [1] = "Alliance", [3] = "Horde" } }
+    for _ in pairs(factions.factions) do holeCount = holeCount + 1 end
+    eq(holeCount, 2)
+    for _, field in ipairs({ "factions", "classes" }) do
+        local sparse = field == "factions"
+            and { [1] = "Alliance", [3] = "Horde" }
+            or { [1] = "MAGE", [3] = "WARRIOR" }
+        local quest = q(1, nil, { [field] = sparse })
+        local c = ctx()
+        if field == "factions" then c.faction = "Horde" else c.class = "WARRIOR" end
+        local okEligible, eligible, reason = pcall(function() return P.Eligible(quest, c) end)
+        assert(okEligible, "Eligible with sparse " .. field .. " threw")
+        eq(eligible, nil); eq(reason, "requirements")
+        local e = P.New({ [1] = quest }, c)
+        local okState, state = pcall(function() return e:State(1) end)
+        assert(okState, "State with sparse " .. field .. " threw")
+        eq(state.status, "UNKNOWN"); eq(state.reason, "requirements")
+        eq(e.visiting[1], nil)
+        local okNext, actions, unknown = pcall(function() return e:Next(1) end)
+        assert(okNext, "Next with sparse " .. field .. " threw")
+        eq(#actions, 0); eq(unknown, true)
+        local plan = e:Dungeon({ quests = { 1 }, coverage = "reviewed" })
+        eq(#plan.rows, 1); eq(plan.rows[1].state.reason, "requirements")
+        eq(plan.ready, false); eq(plan.unknown, true)
+    end
+    -- Dense valid audiences are unchanged: matching faction eligible,
+    -- mismatched faction still excluded, unknown context still character.
+    local c = ctx()
+    eq(P.Eligible(q(1, nil, { factions = { "Alliance" } }), c), true)
+    c.faction = "Horde"
+    local eligible, reason = P.Eligible(q(1, nil, { factions = { "Alliance" } }), c)
+    eq(eligible, false); eq(reason, "faction")
+    c.faction = nil
+    local unknownEligible, unknownReason = P.Eligible(q(1, nil, { factions = { "Alliance" } }), c)
+    eq(unknownEligible, nil); eq(unknownReason, "faction")
+end)
 check("Hostile metatable choices fail closed to no override without throwing", function()
     local quests = { [1] = q(1), [2] = q(2, nil, { factions = { "Horde" } }),
         [3] = q(3, { { ids = { 1, 2 } } }) }

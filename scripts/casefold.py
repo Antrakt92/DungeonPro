@@ -77,8 +77,11 @@ def main():
         if current != generated:
             raise SystemExit("Generated case-fold table differs; run python scripts/casefold.py")
     else:
-        output.parent.mkdir(exist_ok=True)
-        output.write_text(generated, encoding="utf-8")
+        try:
+            output.parent.mkdir(exist_ok=True)
+            output.write_text(generated, encoding="utf-8")
+        except OSError as error:
+            raise SystemExit(f"case-fold output is unwritable: {error}") from error
     print(f"Unicode case-fold mappings: {len(data['mappings'])}; valid")
 
 

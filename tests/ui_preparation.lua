@@ -10505,4 +10505,188 @@ check("Hostile copy-link factory fails closed without throwing", function()
     ui.copy, ui.copyHint, ui.copyQuest, ui.copyReturn = copy, hint, copyQuest, copyReturn
     ui:Refresh()
 end)
+check("Window render hardening: LayoutRow fallback write fails closed on hostile methods", function()
+    local function fakeControl(overrides)
+        local c = {
+            ClearAllPoints = function(self) end,
+            SetPoint = function(self, ...) end,
+            SetHeight = function(self, ...) end,
+            SetShown = function(self, ...) end,
+            GetStringHeight = function(self) return 18 end,
+        }
+        if overrides then for k, v in pairs(overrides) do c[k] = v end end
+        return c
+    end
+    local function fakeRow(noteOverride)
+        local row = fakeControl()
+        row.note = fakeControl(noteOverride)
+        row.title = fakeControl()
+        return row
+    end
+    local function live() return true end
+    local valid = ui:LayoutRow(fakeRow(), 30, 0, live)
+    assert(type(valid) == "number", "valid LayoutRow fallback path must return an offset number")
+    for _, mode in ipairs({ "throw", "nil" }) do
+        local override = mode == "throw" and { SetShown = function(self) error("note unavailable") end } or { SetShown = false }
+        local ok, result = pcall(ui.LayoutRow, ui, fakeRow(override), 30, 0, live)
+        assert(ok, mode .. " LayoutRow method must not escape")
+        assert(result == nil, mode .. " LayoutRow failure must stay fail-closed with nil")
+    end
+end)
+check("Window render hardening: hostile quest-list width aborts the PICK row without throwing", function()
+    local dungeon, quest, preparation, history, treeRoot, treeDungeon = ui.dungeon, ui.quest, ui.preparation, ui.detailHistory, ui.questTreeRoot, ui.questTreeDungeon
+    ui.dungeon, ui.quest, ui.preparation, ui.detailHistory, ui.questTreeRoot, ui.questTreeDungeon = nil, nil, false, {}, nil, nil
+    ui:RefreshQuests()
+    assert(ui.rows[1].shown and ui.rows[1].title.text == addon.L("PICK"), "PICK fixture must render before hostile width")
+    local getter = ui.questList.GetWidth
+    for _, mode in ipairs({ "throw", "nil" }) do
+        ui.questList.GetWidth = mode == "throw" and function() error("width unavailable") end or false
+        local ok = pcall(ui.RefreshQuests, ui)
+        ui.questList.GetWidth = getter
+        assert(ok, mode .. " quest-list width must not escape RefreshQuests")
+    end
+    ui.questList.GetWidth = getter
+    ui:RefreshQuests()
+    assert(ui.rows[1].shown and ui.rows[1].title.text == addon.L("PICK"), "valid PICK render must recover")
+    ui.dungeon, ui.quest, ui.preparation, ui.detailHistory = dungeon, quest, preparation, history
+    ui.questTreeRoot, ui.questTreeDungeon = treeRoot, treeDungeon
+    ui:Refresh()
+end)
+check("Window render hardening: hostile catalogue inspect factory fails closed without throwing", function()
+    local factory, texture = CreateFrame, methods.CreateTexture
+    local dungeons, search, range = addon.dungeons, ui.search, ui.range
+    local dungeon, quest, preparation, history = ui.dungeon, ui.quest, ui.preparation, ui.detailHistory
+    local cards, inspects = ui.cards, ui.catalogInspectButtons
+    addon.dungeons = { { key = "inspect-a", name = "Inspect A", minLevel = 1, maxLevel = 60, quests = { 2 } } }
+    ui.search, ui.range, ui.dungeon, ui.quest, ui.preparation, ui.detailHistory = "2", false, nil, nil, false, {}
+    ui.cards, ui.catalogInspectButtons = {}, {}
+    ui:RefreshDungeons()
+    assert(ui.catalogInspectButtons[1] and ui.catalogInspectButtons[1].label.text == addon.L("BRANCH_INSPECT"),
+        "inspect fixture must publish an inspect control")
+    for _, mode in ipairs({ "throw", "nil" }) do
+        ui.cards, ui.catalogInspectButtons = {}, {}
+        CreateFrame = mode == "throw" and function() error("inspect factory unavailable") end or function() return nil end
+        local ok = pcall(ui.RefreshDungeons, ui)
+        CreateFrame = factory
+        assert(ok, mode .. " inspect creation must not escape RefreshDungeons")
+        assert(ui.catalogInspectButtons[1] == nil, mode .. " must publish no half-built inspect control")
+        ui.cards, ui.catalogInspectButtons = {}, {}
+        ui:RefreshDungeons()
+        assert(ui.catalogInspectButtons[1] and ui.catalogInspectButtons[1].label.text == addon.L("BRANCH_INSPECT"),
+            mode .. " valid inspect render must recover")
+        ui.catalogInspectButtons[1].SetHighlightTexture = function() error("highlight unavailable") end
+        ui.catalogInspectButtons[1].label = nil
+        ui.catalogInspectButtons[1] = nil
+        ok = pcall(ui.RefreshDungeons, ui)
+        assert(ok, mode .. " inspect setter must not escape RefreshDungeons")
+        ui:RefreshDungeons()
+        assert(ui.catalogInspectButtons[1] and ui.catalogInspectButtons[1].label.text == addon.L("BRANCH_INSPECT"),
+            mode .. " inspect setter recovery must rebuild")
+    end
+    methods.CreateTexture = function() error("texture unavailable") end
+    ui.cards, ui.catalogInspectButtons = {}, {}
+    local ok = pcall(ui.RefreshDungeons, ui)
+    methods.CreateTexture = texture
+    assert(ok, "inspect texture failure must not escape RefreshDungeons")
+    CreateFrame, methods.CreateTexture = factory, texture
+    addon.dungeons, ui.search, ui.range = dungeons, search, range
+    ui.dungeon, ui.quest, ui.preparation, ui.detailHistory = dungeon, quest, preparation, history
+    ui.cards, ui.catalogInspectButtons = cards, inspects
+    ui:Refresh()
+end)
+check("Window render hardening: hostile detail factories fail closed without throwing", function()
+    local factory, texture, highlight = CreateFrame, methods.CreateTexture, methods.SetHighlightTexture
+    local function hostileRound(refresh, unpublished, rebuilt)
+        for _, mode in ipairs({ "throw", "nil" }) do
+            CreateFrame = mode == "throw" and function() error("detail factory unavailable") end or function() return nil end
+            local ok = pcall(refresh)
+            CreateFrame = factory
+            assert(ok, mode .. " detail creation must not escape")
+            assert(unpublished(mode), mode .. " must publish no half-built detail control")
+        end
+        refresh()
+        assert(rebuilt(), "valid detail render must recover")
+        methods.CreateTexture = function() error("texture unavailable") end
+        local ok = pcall(refresh)
+        methods.CreateTexture = texture
+        assert(ok, "detail texture creation must not escape")
+        refresh()
+        assert(rebuilt(), "detail texture recovery must rebuild")
+        methods.SetHighlightTexture = function() error("highlight unavailable") end
+        ok = pcall(refresh)
+        methods.SetHighlightTexture = highlight
+        assert(ok, "detail highlight setter must not escape")
+        refresh()
+        assert(rebuilt(), "detail highlight recovery must rebuild")
+    end
+    do
+        local f = rewardPresentationFixture()
+        ui.rewardButtons = {}
+        hostileRound(function() ui:RefreshDetail() end,
+            function() return ui.rewardButtons[1] == nil end,
+            function() return ui.rewardButtons[1] and ui.rewardButtons[1].shown end)
+        f:finish()
+    end
+    do
+        local f = objectivePresentationFixture()
+        ui.objectiveButtons = {}
+        hostileRound(function() ui:RefreshDetail() end,
+            function() return ui.objectiveButtons[1] == nil end,
+            function() return ui.objectiveButtons[1] and ui.objectiveButtons[1].shown end)
+        f:finish()
+    end
+    do
+        local f = questLogControlFixture()
+        ui.questLogButton = nil
+        hostileRound(function() ui:RefreshDetail() end,
+            function() return ui.questLogButton == nil end,
+            function() return ui.questLogButton and ui.questLogButton.shown end)
+        f:finish()
+    end
+    do
+        local f = clientWaypointFixture()
+        ui.clientWaypointButton = nil
+        hostileRound(function() ui:RefreshDetail() end,
+            function() return ui.clientWaypointButton == nil end,
+            function() return ui.clientWaypointButton and ui.clientWaypointButton.shown end)
+        f:finish()
+    end
+    do
+        local f = rewardPresentationFixture()
+        ui.detailJournalSections = {}
+        hostileRound(function() ui:RefreshDetail() end,
+            function() return next(ui.detailJournalSections) == nil end,
+            function() return next(ui.detailJournalSections) ~= nil end)
+        f:finish()
+    end
+    do
+        local f = rewardPresentationFixture()
+        local quests = addon.quests
+        addon.quests[9970].objectiveKills = { { npcID = 101, name = "Recorded kill", quantity = 2 } }
+        addon.QuestObjectives = function(id) if id == 9970 then return { { text = "Native objective row", finished = false } } end end
+        local nativeLog = C_QuestLog
+        C_QuestLog = { GetQuestObjectives = function() return {} end }
+        ui.detailObjectivesExpanded = true
+        ui:RefreshDetail()
+        if ui.recordedObjectivesToggle then
+            ui.recordedObjectivesToggle = nil
+            hostileRound(function() ui:RefreshDetail() end,
+                function() return ui.recordedObjectivesToggle == nil end,
+                function() return ui.recordedObjectivesToggle ~= nil end)
+        else
+            for _, mode in ipairs({ "throw", "nil" }) do
+                CreateFrame = mode == "throw" and function() error("detail factory unavailable") end or function() return nil end
+                local ok = pcall(ui.RefreshDetail, ui)
+                CreateFrame = factory
+                assert(ok, mode .. " detail creation must not escape without recorded goals")
+            end
+            ui:RefreshDetail()
+        end
+        C_QuestLog = nativeLog
+        addon.quests = quests
+        ui.detailObjectivesExpanded = false
+        f:finish()
+    end
+    CreateFrame, methods.CreateTexture, methods.SetHighlightTexture = factory, texture, highlight
+end)
 print("Preparation UI modeled checks passed: " .. total .. " (no native layout validation)")

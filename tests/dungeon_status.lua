@@ -316,4 +316,31 @@ check("Direct checker callbacks cannot retain changed source or capability owner
         assert(ok and value==false and not armed,mode.." checker reentry retained its old source")
     end
 end)
+check("Sparse audience lists fail closed as source without publishing",function()
+    -- A sparse factions/classes hole preserving # would pass the sentinel and
+    -- length checks, then Eligible would wrongly exclude instead of unknown.
+    for _,case in ipairs({{"factions",{[1]="Alliance",[3]="Horde"}},
+        {"classes",{[1]="MAGE",[3]="WARRIOR"}}})do
+        local field,sparse=case[1],case[2]
+        local holes=0;for _ in pairs(sparse)do holes=holes+1 end
+        assert(holes==2,field.." fixture lost its hole")
+        local definition={minLevel=1,requirementsKnown=true};definition[field]=sparse
+        local f=fixture({{"AVAILABLE"}},{{minLevel=1,requirementsKnown=true}})
+        f.engine.quests[1]=definition
+        local value,reason=addon.DungeonStatus.Get(f.dungeon,f.engine)
+        assert(value==nil and reason=="source",field.." sparse audience published")
+        -- Dense valid audiences are unchanged: Alliance sees Alliance quests.
+        local dense={minLevel=1,requirementsKnown=true}
+        dense[field]=field=="factions"and{"Alliance"}or{"MAGE"}
+        local g=fixture({{"AVAILABLE"}},{{minLevel=1,requirementsKnown=true}})
+        g.engine.quests[1]=dense
+        local published=addon.DungeonStatus.Get(g.dungeon,g.engine)
+        assert(published,"dense "..field.." failed closed")
+        local excluded={minLevel=1,requirementsKnown=true}
+        excluded[field]=field=="factions"and{"Horde"}or{"WARRIOR"}
+        local h=fixture({{"UNAVAILABLE","class"}},{{minLevel=1,requirementsKnown=true}})
+        h.engine.quests[1]=excluded
+        local dto=status(h);assert(dto.excluded==1,field.." dense exclusion changed")
+    end
+end)
 print("Dungeon status modeled checks passed: "..total)

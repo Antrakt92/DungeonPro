@@ -32,7 +32,19 @@ function Info.Get(quests, questID)
         return value, true
     end
     local factions, factionValid = list(definition, "factions")
-    local faction
+    local faction, factionKeyCount = nil, 0
+    -- A sparse factions list would silently drop entries under the 1..#
+    -- walk below (wrong faction label, display-only), mirroring the classes
+    -- census. Raw integer-key census only; dense arrays pass through unchanged.
+    if factions then
+        for key in next, factions do
+            factionKeyCount = factionKeyCount + 1
+            if factionKeyCount > 100 then factionValid = false; break end
+            local index = clean(key, "number")
+            if not index or index < 1 or index > #factions or index % 1 ~= 0 then factionValid = false end
+        end
+        if factionKeyCount ~= #factions then factionValid = false end
+    end
     for index = 1, factions and #factions or 0 do
         local value = clean(keep(factions, index), "string")
         if value ~= "Alliance" and value ~= "Horde" then factionValid = false
@@ -58,6 +70,12 @@ function Info.Get(quests, questID)
         end
     end
     if not classesValid then classes = {} end
+    local function factionKeysCurrent()
+        if not factions then return true end
+        local count = 0
+        for _ in next, factions do count = count + 1; if count > 100 then break end end
+        return count == factionKeyCount
+    end
     local function classKeysCurrent()
         if not sourceClasses then return true end
         local count = 0
@@ -111,7 +129,7 @@ function Info.Get(quests, questID)
                 if not rawequal(rawget(field.object, field.key), field.value) then return false end
             end
             for _, length in ipairs(lengths) do if #length.object ~= length.length then return false end end
-            return classKeysCurrent()
+            return classKeysCurrent() and factionKeysCurrent()
         end)
         return ok and same == true
     end
@@ -128,6 +146,7 @@ function Info.Get(quests, questID)
         end
         for _, length in ipairs(lengths) do if #length.object ~= length.length then return false end end
         if not classKeysCurrent() then return false end
+        if not factionKeysCurrent() then return false end
         return rawCurrent()
     end
     if not current() then return nil end

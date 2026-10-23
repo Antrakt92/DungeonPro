@@ -749,8 +749,10 @@ function UI:LayoutRow(row, minimum, offset, ownerCurrent, ownerWrite)
     local function write(object, method, ...)
         if not current() then return false end
         if ownerWrite then return ownerWrite(object, method, ...) end
-        object[method](object, ...)
-        return current()
+        local fn = object[method]
+        if type(fn) ~= "function" then return false end
+        local ok = pcall(fn, object, ...)
+        return ok and current()
     end
     if not current() then return nil end
     if row.detailJournalContact then
@@ -2250,11 +2252,25 @@ function UI:RefreshDungeons()
             inspectIndex = inspectIndex + 1
             local inspect = self.catalogInspectButtons[inspectIndex]
             if not inspect then
-                inspect = CreateFrame("Button", nil, self.catalog)
-                if not write(inspect, "Hide") then return end
-                inspect:SetWidth(self.catalog:GetWidth() - 16); inspect.label = label(inspect, "", 7, -5, self.catalog:GetWidth() - 30, 14)
+                local okCreate, fresh = pcall(CreateFrame, "Button", nil, self.catalog)
+                if not okCreate then return end
+                inspect = addon.Clean(fresh, "table") or addon.Clean(fresh, "userdata")
+                if not inspect then return end
+                local function abandon()
+                    pcall(function() fresh:Hide() end)
+                end
+                if not inspectCurrent() then abandon(); return end
+                if not write(inspect, "Hide") then abandon(); return end
+                local catalogWidth = addon.Read(self.catalog.GetWidth, "number", self.catalog)
+                if not inspectCurrent() or not catalogWidth then abandon(); return end
+                if not pcall(inspect.SetWidth, inspect, catalogWidth - 16) then abandon(); return end
+                local okLabel, freshLabel = pcall(label, inspect, "", 7, -5, catalogWidth - 30, 14)
+                if not okLabel or not freshLabel then abandon(); return end
+                if not inspectCurrent() then abandon(); return end
+                inspect.label = freshLabel
                 inspect.title = inspect.label
-                inspect:SetHighlightTexture("Interface\\QuestFrame\\UI-QuestTitleHighlight")
+                if not pcall(inspect.SetHighlightTexture, inspect, "Interface\\QuestFrame\\UI-QuestTitleHighlight") then abandon(); return end
+                if not inspectCurrent() then abandon(); return end
                 self.catalogInspectButtons[inspectIndex] = inspect
             end
             if not inspectCurrent() then return end
@@ -3115,7 +3131,9 @@ function UI:RefreshQuests()
         for _, field in ipairs({ "factionIcon", "dungeonBadge", "dungeonTargetLabel", "statusIcon", "completedStrike", "treeRail", "treeElbow", "branchControl" }) do
             if row[field] and not write(row[field], "Hide") then return end
         end
-        if not write(row, "SetWidth", self.questList:GetWidth() - 4) or not write(row.title, "SetWidth", self.questList:GetWidth() - 22) then return end
+        local width = addon.Read(self.questList.GetWidth, "number", self.questList)
+        if not current() or not width then return end
+        if not write(row, "SetWidth", width - 4) or not write(row.title, "SetWidth", width - 22) then return end
         if not writeText(row.title, addon.L(scopeLegacy and "SM_CHOOSE_WING" or "PICK")) or not writeText(row.note, "") then return end
         offset = self:LayoutRow(row, 32, 0, current)
         if not offset then return end
@@ -4099,8 +4117,22 @@ function UI:RefreshDetail(sourceFocus)
             rewardIndex = rewardIndex + 1
             local b = self.rewardButtons[rewardIndex]
             if not b then
-                b = CreateFrame("Button", nil, self.detail); b:SetSize(32, 32)
-                b.icon = b:CreateTexture(nil, "ARTWORK"); b.icon:SetAllPoints()
+                local okCreate, fresh = pcall(CreateFrame, "Button", nil, self.detail)
+                if not okCreate then return false end
+                b = addon.Clean(fresh, "table") or addon.Clean(fresh, "userdata")
+                if not b then return false end
+                local function abandon()
+                    pcall(function() fresh:Hide() end)
+                end
+                if ownerCurrent and not ownerCurrent() then abandon(); return false end
+                if not pcall(b.SetSize, b, 32, 32) then abandon(); return false end
+                local okIcon, freshIcon = pcall(b.CreateTexture, b, nil, "ARTWORK")
+                local icon = okIcon and (addon.Clean(freshIcon, "table") or addon.Clean(freshIcon, "userdata")) or nil
+                if not icon then abandon(); return false end
+                if ownerCurrent and not ownerCurrent() then abandon(); return false end
+                b.icon = icon
+                if not pcall(icon.SetAllPoints, icon) then abandon(); return false end
+                if ownerCurrent and not ownerCurrent() then abandon(); return false end
                 self.rewardButtons[rewardIndex] = b
             end
             local rendered = self:SetRewardTexture(b.icon, texture)
@@ -4141,8 +4173,22 @@ function UI:RefreshDetail(sourceFocus)
             objectiveIndex = objectiveIndex + 1
             local button = self.objectiveButtons[objectiveIndex]
             if not button then
-                button = CreateFrame("Button", nil, self.detail); button:SetSize(24, 24)
-                button.icon = button:CreateTexture(nil, "ARTWORK"); button.icon:SetAllPoints()
+                local okCreate, fresh = pcall(CreateFrame, "Button", nil, self.detail)
+                if not okCreate then return false end
+                button = addon.Clean(fresh, "table") or addon.Clean(fresh, "userdata")
+                if not button then return false end
+                local function abandon()
+                    pcall(function() fresh:Hide() end)
+                end
+                if not objective.current() then abandon(); return false end
+                if not pcall(button.SetSize, button, 24, 24) then abandon(); return false end
+                local okIcon, freshIcon = pcall(button.CreateTexture, button, nil, "ARTWORK")
+                local icon = okIcon and (addon.Clean(freshIcon, "table") or addon.Clean(freshIcon, "userdata")) or nil
+                if not icon then abandon(); return false end
+                if not objective.current() then abandon(); return false end
+                button.icon = icon
+                if not pcall(icon.SetAllPoints, icon) then abandon(); return false end
+                if not objective.current() then abandon(); return false end
                 self.objectiveButtons[objectiveIndex] = button
             end
             local rendered = self:SetRewardTexture(button.icon, objectiveTexture)
@@ -4186,8 +4232,11 @@ function UI:RefreshDetail(sourceFocus)
         if not theme or type(theme.StyleDetailSection) ~= "function" then return true end
         local section = self.detailJournalSections[kind]
         if not section then
-            section = CreateFrame("Frame", nil, self.detail)
-            if not portraitCardCurrent() then section:Hide(); return false end
+            local okCreate, fresh = pcall(CreateFrame, "Frame", nil, self.detail)
+            if not okCreate then return false end
+            section = addon.Clean(fresh, "table") or addon.Clean(fresh, "userdata")
+            if not section then return false end
+            if not portraitCardCurrent() then pcall(function() fresh:Hide() end); return false end
             self.detailJournalSections[kind] = section
         end
         local function write(method, ...) return sourceGeometryWrite(portraitCardCurrent, section, method, ...) end
@@ -4365,11 +4414,23 @@ function UI:RefreshDetail(sourceFocus)
         if canOpen == true and usableOpener then
             local control = self.questLogButton
             if not control then
-                control = CreateFrame("Button", nil, self.detail); control:Hide(); control:SetWidth(contentWidth)
-                control.label = label(control, "", 7, -5, contentWidth - 14, 14)
+                local okCreate, fresh = pcall(CreateFrame, "Button", nil, self.detail)
+                if not okCreate then return end
+                control = addon.Clean(fresh, "table") or addon.Clean(fresh, "userdata")
+                if not control then return end
+                local function abandon()
+                    pcall(function() fresh:Hide() end)
+                end
+                if not logCurrent() then abandon(); return end
+                if not pcall(control.Hide, control) then abandon(); return end
+                if not pcall(control.SetWidth, control, contentWidth) then abandon(); return end
+                local okLabel, freshLabel = pcall(label, control, "", 7, -5, contentWidth - 14, 14)
+                if not okLabel or not freshLabel then abandon(); return end
+                if not logCurrent() then abandon(); return end
+                control.label = freshLabel
                 control.title = control.label
-                control:SetHighlightTexture("Interface\\QuestFrame\\UI-QuestTitleHighlight")
-                if not logCurrent() then return end
+                if not pcall(control.SetHighlightTexture, control, "Interface\\QuestFrame\\UI-QuestTitleHighlight") then abandon(); return end
+                if not logCurrent() then abandon(); return end
                 self.questLogButton = control
             end
             local function write(object, method, ...)
@@ -5038,10 +5099,22 @@ function UI:RefreshDetail(sourceFocus)
                     if start then
                         local control = self.clientWaypointButton
                         if not control then
-                            control = CreateFrame("Button", nil, self.detail); control:Hide(); control:SetWidth(contentWidth)
-                            control.label = label(control, "", 7, -5, contentWidth - 14, 14); control.title = control.label
-                            control:SetHighlightTexture("Interface\\QuestFrame\\UI-QuestTitleHighlight")
-                            if not previewCurrent() then return end
+                            local okCreate, fresh = pcall(CreateFrame, "Button", nil, self.detail)
+                            if not okCreate then return end
+                            control = addon.Clean(fresh, "table") or addon.Clean(fresh, "userdata")
+                            if not control then return end
+                            local function abandon()
+                                pcall(function() fresh:Hide() end)
+                            end
+                            if not previewCurrent() then abandon(); return end
+                            if not pcall(control.Hide, control) then abandon(); return end
+                            if not pcall(control.SetWidth, control, contentWidth) then abandon(); return end
+                            local okLabel, freshLabel = pcall(label, control, "", 7, -5, contentWidth - 14, 14)
+                            if not okLabel or not freshLabel then abandon(); return end
+                            if not previewCurrent() then abandon(); return end
+                            control.label = freshLabel; control.title = control.label
+                            if not pcall(control.SetHighlightTexture, control, "Interface\\QuestFrame\\UI-QuestTitleHighlight") then abandon(); return end
+                            if not previewCurrent() then abandon(); return end
                             self.clientWaypointButton = control
                         end
                         local function write(object, method, ...)
@@ -5246,10 +5319,21 @@ function UI:RefreshDetail(sourceFocus)
         if recordedGoals and #recordedGoals > 0 then
             local toggle = self.recordedObjectivesToggle
             if not toggle then
-                toggle = CreateFrame("Button", nil, self.detail); toggle:Hide()
-                toggle.label = label(toggle, "", 4, -3, contentWidth - 8, 13)
-                toggle:SetHighlightTexture("Interface\\QuestFrame\\UI-QuestTitleHighlight")
-                if not portraitCardCurrent() then return end
+                local okCreate, fresh = pcall(CreateFrame, "Button", nil, self.detail)
+                if not okCreate then return end
+                toggle = addon.Clean(fresh, "table") or addon.Clean(fresh, "userdata")
+                if not toggle then return end
+                local function abandon()
+                    pcall(function() fresh:Hide() end)
+                end
+                if not portraitCardCurrent() then abandon(); return end
+                if not pcall(toggle.Hide, toggle) then abandon(); return end
+                local okLabel, freshLabel = pcall(label, toggle, "", 4, -3, contentWidth - 8, 13)
+                if not okLabel or not freshLabel then abandon(); return end
+                if not portraitCardCurrent() then abandon(); return end
+                toggle.label = freshLabel
+                if not pcall(toggle.SetHighlightTexture, toggle, "Interface\\QuestFrame\\UI-QuestTitleHighlight") then abandon(); return end
+                if not portraitCardCurrent() then abandon(); return end
                 self.recordedObjectivesToggle = toggle
             end
             local frame, refresh = self.frame, self.RefreshDetail

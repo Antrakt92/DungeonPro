@@ -185,4 +185,24 @@ test("Final callback mutations retire a successful dynamic preflight", function(
     local function finalCallback() q.classes[1] = "MAGE"; return true end
     assert(finalCallback() and not raw())
 end)
+test("Sparse faction lists produce no marker and expire the existing source proof",function()
+    -- A sparse factions hole would silently drop entries under the 1..# walk:
+    -- e.g. {[1]="Alliance",[3]="Horde"} reads only Alliance (wrong label).
+    for _, sparse in ipairs({{ [1]="Alliance", [3]="Horde" }, { [1]="Alliance", [3]="Alliance" }, { [2]="Horde" }}) do
+        local holes = 0; for _ in pairs(sparse) do holes = holes + 1 end
+        assert(holes >= 1, "sparse factions fixture lost its shape")
+        local dto, current = get({factions=sparse})
+        assert(dto and dto.faction==nil, "sparse factions produced a marker")
+    end
+    -- Dense valid audiences are unchanged.
+    for _, faction in ipairs({"Alliance","Horde"}) do
+        local dto, current = get({factions={faction}})
+        assert(dto.faction==faction and current())
+    end
+    -- Late sparsification retires a successful preflight, mirroring classes.
+    local q = {factions={"Alliance"}}
+    local dto, current = get(q); assert(dto.faction=="Alliance" and current())
+    q.factions[2] = "Horde"; q.factions[1] = nil
+    assert(not current())
+end)
 print("Quest row info: "..total.." checks passed")
