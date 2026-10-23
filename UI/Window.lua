@@ -883,7 +883,8 @@ function UI:FlushPendingSearch(expected)
     local shown = frame and addon.Read(frame.IsShown, "boolean", frame)
     if self.pendingSearch or addon.UI ~= self or self.frame ~= frame or self.search ~= pending.query or
         self.RefreshDungeons ~= pending.refresh or shown ~= true then return false end
-    if self.catalogCollapsed == true and pending.query:find("%S") then
+    local query = addon.Clean(pending.query, "string") or ""
+    if self.catalogCollapsed == true and query:find("%S") then
         if not self:SetCatalogCollapsed(false,true) then return false end
         self:Refresh(nil,true)
     else self:RefreshDungeons() end

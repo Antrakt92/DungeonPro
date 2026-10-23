@@ -811,7 +811,7 @@ function UI:SummonSource(endpoint)
     end
     if not current() then return nil end
     if not itemID or itemID<=0 or itemID>4294967295 or itemID%1~=0 or not objectID or objectID<=0 or objectID>4294967295 or objectID%1~=0 or
-        not name or #name>500 or not name:find("%S") or not objectName or not objectName:find("%S") or
+        not name or #name>500 or not name:find("%S") or not objectName or #objectName>500 or not objectName:find("%S") or
         values.npcID~=nil or values.itemID~=nil or values.mapID~=nil or values.x~=nil or values.y~=nil or values.reportedLocations~=nil or not current() then return nil end
     return { itemID=itemID, name=name, objectID=objectID, objectName=objectName, current=current, same=same }
 end

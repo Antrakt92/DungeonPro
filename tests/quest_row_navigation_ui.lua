@@ -1915,4 +1915,77 @@ do
  ui.search="";ui.frame:Show();ui:RefreshDungeons()
  assert(shownCards()==baseline,"valid catalogue restores dungeon cards")
 end
+-- A24 DUNGEONART-WHITESPACE-GUARD: whitespace-only journal/finder textures
+-- fall back to generic instead of painting blanks, mirroring the e392b3c %S
+-- texture guards; a valid texture still resolves and kind stays generic.
+do
+ local savedJournal,savedInfo,savedEnumerate,savedFinder=C_EncounterJournal,EJ_GetInstanceInfo,GetLFDChoiceOrder,GetLFGDungeonInfo
+ local generic="Interface\\Icons\\INV_Misc_Map_01"
+ local canvas=function()
+  return {SetTexture=function(self,value)self.texture=value;return true end,
+   SetTexCoord=function(self,...)self.coords={...}end,Show=function(self)self.shown=true end,Hide=function(self)self.shown=false end}
+ end
+ C_EncounterJournal={GetInstanceForGameMap=function(id)assert(id==36);return 99 end}
+ for _,blank in ipairs({"   ","\t\n ","  \r "})do
+  EJ_GetInstanceInfo=function(id)assert(id==99);return nil,nil,nil,nil,111,blank end
+  local ok,art=pcall(addon.DungeonArt,{instanceID=36})
+  assert(ok,"whitespace journal texture threw: "..tostring(art))
+  assert(art==generic,"whitespace journal texture kept a blank image")
+  local icon=canvas()
+  local ok,success,kind=pcall(addon.PaintDungeonArt,icon,{instanceID=36})
+  assert(ok and success==true and kind=="generic","whitespace journal texture kept a blank paint kind")
+ end
+ EJ_GetInstanceInfo=function(id)assert(id==99);return nil,nil,nil,nil,111,"Interface/Addons/DungeonArt" end
+ assert(addon.DungeonArt({instanceID=36})=="Interface/Addons/DungeonArt","valid journal texture lost its art")
+ C_EncounterJournal,EJ_GetInstanceInfo=nil,nil
+ local lfgTexture="   "
+ local function armFinder()
+  GetLFDChoiceOrder=function()return{101}end
+  GetLFGDungeonInfo=function(id)
+   assert(id==101)
+   local values={};values[11],values[22]=lfgTexture,36
+   return unpack(values,1,22)
+  end
+ end
+ armFinder()
+ do
+  local ok,art=pcall(addon.DungeonArt,{instanceID=36})
+  assert(ok,"whitespace finder texture threw: "..tostring(art))
+  assert(art==generic,"whitespace finder texture kept a blank image")
+ end
+ lfgTexture="native/deadmines"
+ armFinder()
+ assert(addon.DungeonArt({instanceID=36})=="native/deadmines","valid finder texture lost its art")
+ C_EncounterJournal,EJ_GetInstanceInfo,GetLFDChoiceOrder,GetLFGDungeonInfo=savedJournal,savedInfo,savedEnumerate,savedFinder
+end
+-- A24 SUMMON-OBJECTNAME-500-CAP: an overlong object name declares no summon,
+-- mirroring the 500-char summon-tool cap at :814; boundary 500 stays bound.
+do
+ local function summonEndpoint(objectName)
+  return{objectID=112877,name=objectName,summonItem={itemID=7667,name="Summon tool"}}
+ end
+ assert(ui:SummonSource(summonEndpoint("Scrying Bowl"))~=nil,"valid object name lost its summon relation")
+ assert(ui:SummonSource(summonEndpoint(("n"):rep(500)))~=nil,"500-char object name lost its summon relation")
+ assert(ui:SummonSource(summonEndpoint(("n"):rep(501)))==nil,"501-char object name kept a summon relation")
+ assert(ui:SummonSource(summonEndpoint("   "))==nil,"whitespace object name kept a summon relation")
+end
+-- A24 FLUSHPENDINGSEARCH-NONSTRING-GUARD: a hostile non-string pending query
+-- fails closed through RefreshDungeons instead of throwing in :find,
+-- mirroring the Clean-guarded direct search path at :1332.
+do
+ local savedSearch,savedPending,savedCollapsed=ui.search,ui.pendingSearch,ui.catalogCollapsed
+ ui.frame:Show()
+ for _,bad in ipairs({42,true,{}})do
+  ui.search=bad
+  ui.catalogCollapsed=true
+  local pending={frame=ui.frame,query=bad,refresh=ui.RefreshDungeons}
+  ui.pendingSearch=pending
+  local ok,result=pcall(function()return ui:FlushPendingSearch(pending)end)
+  assert(ok,"non-string pending query threw: "..tostring(result))
+  assert(result==true,"non-string pending query must roll back through RefreshDungeons")
+  assert(ui.pendingSearch==nil,"flushed pending search must clear")
+ end
+ ui.search,ui.pendingSearch,ui.catalogCollapsed=savedSearch,savedPending,savedCollapsed
+ ui.search="";ui.frame:Show();ui:Refresh()
+end
 print("Middle quest navigation checks passed (modeled, no native input or layout proof)")

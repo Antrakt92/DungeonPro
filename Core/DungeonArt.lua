@@ -36,7 +36,7 @@ local function lfgDungeonArt(mapID)
             if not values[1] then return {} end
             local instanceID = artInteger(values[23])
             local texture = artInteger(values[12]) or addon.Clean(values[12], "string")
-            if type(texture) == "string" and (texture == "" or #texture > 1024) then texture = nil end
+            if type(texture) == "string" and (texture == "" or #texture > 1024 or not texture:find("%S")) then texture = nil end
             if instanceID and texture then
                 if found[instanceID] == nil then found[instanceID] = texture
                 elseif found[instanceID] ~= texture then found[instanceID] = false end
@@ -79,7 +79,7 @@ function addon.DungeonArt(d)
     if journalID and info then
         local values = { pcall(info, journalID) }
         local texture = values[1] and (artInteger(values[7]) or addon.Clean(values[7], "string"))
-        if type(texture) == "string" and (texture == "" or #texture > 1024) then texture = nil end
+        if type(texture) == "string" and (texture == "" or #texture > 1024 or not texture:find("%S")) then texture = nil end
         if not journalCurrent() then return generic end
         if texture then return texture end
     end
@@ -114,7 +114,7 @@ function addon.PaintDungeonArt(texture, dungeon, mode, showOwned)
     local generic = "Interface\\Icons\\INV_Misc_Map_01"
     local image = addon.DungeonArt(dungeon)
     local resolved = artInteger(image) or addon.Clean(image, "string")
-    if type(resolved) == "string" and (resolved == "" or #resolved > 1024) then resolved = nil end
+    if type(resolved) == "string" and (resolved == "" or #resolved > 1024 or not resolved:find("%S")) then resolved = nil end
     local kind = resolved and (resolved == generic and "generic" or "art")
     local function owned() return dungeonArtPaints[texture] == token end
     local function current()
