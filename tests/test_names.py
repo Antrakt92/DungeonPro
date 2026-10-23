@@ -463,6 +463,20 @@ class NamesTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             names.generate(candidate)
 
+    def test_generate_rejects_invalid_source_area_identities(self):
+        data, catalog = fixture()
+        for evil in ("", "   ", "\x01evil", "x" * 1025, "界" * 400):
+            with self.subTest(key=repr(evil[:12])):
+                candidate = copy.deepcopy(data)
+                candidate["sourceAreas"] = {evil: {}}
+                with self.assertRaises(ValueError):
+                    names.generate(candidate)
+        candidate = copy.deepcopy(data)
+        candidate["sourceAreas"] = {"The Hinterlands": {}}
+        content = names.generate(candidate)
+        self.assertIn('[\"The Hinterlands\"] = { name = \"The Hinterlands\" }', content)
+        self.assertEqual(names.generate(copy.deepcopy(data)), names.generate(data))
+
     def test_quoted_escapes_controls_to_parseable_lua(self):
         # Defense in depth (cf. scripts/catalog.py lua()): any C0 control or
         # DEL must emit as an escape, never a raw byte, so generated output

@@ -230,4 +230,28 @@ check("A closed-map hide cannot erase a newer map request",function()
     tick()
     assert(entered and marker.shown and marker.point[4]==800 and native()==0)
 end)
+check("A scriptless ticker constructor cannot throw and leaves no live ticker", function()
+    local _, _, _, getMarker, tick = fixture()
+    local fresh = {}
+    assert(loadfile("Core/Namespace.lua"))("DungeonPro", fresh)
+    assert(loadfile("UI/Navigation.lua"))("DungeonPro", fresh)
+    local freshNav = fresh.Navigation
+    local savedCreate = CreateFrame
+    local scriptless = {}
+    CreateFrame = function() return scriptless end
+    local ok, opened = pcall(freshNav.Map, destination)
+    CreateFrame = savedCreate
+    assert(ok, "scriptless ticker must not throw")
+    assert(opened, "an opened map must still report opened without a ticker")
+    assert(scriptless.OnUpdate == nil, "scriptless ticker must not gain an OnUpdate")
+    tick()
+    assert(not getMarker(), "failed ticker install must not publish a marker")
+    assert(freshNav.Map(destination), "ticker install must rebuild once construction works")
+    local marker = assert(getMarker())
+    assert(marker.shown and math.abs(marker.point[4] - 328) < .001)
+    tick()
+    assert(marker.shown)
+    freshNav.Stop()
+    assert(not marker.shown)
+end)
 print("Owned map marker checks passed: " .. total .. " (native acceptance pending)")

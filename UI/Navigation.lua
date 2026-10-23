@@ -369,7 +369,8 @@ function N.Map(point, markerRole, questID, ownerCurrent)
             if not mapCurrent() then return opened end
             mapMarkerTicker = created
             if mapMarkerTicker then
-                mapMarkerTicker:SetScript("OnUpdate", function(_, delta)
+                local setTicker = markerMethod(mapMarkerTicker, "SetScript")
+                local attached = setTicker and pcall(setTicker, mapMarkerTicker, "OnUpdate", function(_, delta)
                     local state = mapMarkerState
                     if state and state.purposeCurrent and not state.purposeCurrent() then
                         if mapMarkerState == state then clearMapMarker() end
@@ -382,6 +383,11 @@ function N.Map(point, markerRole, questID, ownerCurrent)
                     markerElapsed = 0
                     refreshMapMarker()
                 end)
+                if not attached then
+                    if mapMarkerTicker == created then mapMarkerTicker = nil end
+                    if mapMarkerState and mapMarkerState.generation == generation then clearMapMarker() end
+                    return opened
+                end
             end
         end
         if mapMarkerTicker then

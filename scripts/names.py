@@ -412,7 +412,7 @@ def generate(data):
     if type(source_areas) is not dict:
         raise ValueError("Invalid localized source areas")
     for source in source_areas:
-        if type(source) is not str:
+        if not title(source) or len(source.encode("utf-8")) > 1024:
             raise ValueError("Invalid localized source-area identity")
     for locale in sorted(LOCALES):
         payload = locales[locale]

@@ -67,7 +67,10 @@ def main():
     parser.add_argument("--check", action="store_true")
     args = parser.parse_args()
     data = _load("data/search_casefold.json", ROOT / "data/search_casefold.json")
-    generated = generate(data)
+    try:
+        generated = generate(data)
+    except ValueError as error:
+        raise SystemExit(f"data/search_casefold.json is invalid: {error}") from error
     output = ROOT / "Database/SearchCaseFold.lua"
     if args.check:
         try:

@@ -284,6 +284,52 @@ assert(addon.SearchFold('')=='')
                     self.assertIn(b"search_casefold.json", result.stderr)
                     self.assertEqual(output.read_bytes(), expected)
 
+    def test_cli_rejects_valid_json_with_invalid_semantics_without_traceback(self):
+        # Parseable-but-invalid data/search_casefold.json (bad code point,
+        # bad version) must fail as a clean SystemExit naming the input
+        # ("search_casefold.json is invalid"), never a raw ValueError
+        # traceback from generate(). Mirrors _load's "is invalid" mapping.
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            for directory in ("scripts", "data", "Database"):
+                (root / directory).mkdir()
+            shutil.copy2(ROOT / "scripts/casefold.py", root / "scripts/casefold.py")
+            shutil.copy2(ROOT / "data/search_casefold.json", root / "data/search_casefold.json")
+            shutil.copy2(ROOT / "Database/SearchCaseFold.lua", root / "Database/SearchCaseFold.lua")
+            source = root / "data/search_casefold.json"
+            output = root / "Database/SearchCaseFold.lua"
+            expected = output.read_bytes()
+            bad_point = copy.deepcopy(self.data)
+            bad_point["mappings"] = {"-1": "a"}
+            bad_version = copy.deepcopy(self.data)
+            bad_version["unicodeVersion"] = "15.0.0"
+            for data in (bad_point, bad_version):
+                with self.subTest(mappings=list(data["mappings"])[:1] if isinstance(data["mappings"], dict) else None,
+                                   version=data.get("unicodeVersion")):
+                    with self.assertRaises(ValueError):
+                        casefold.generate(data)
+                    source.write_text(json.dumps(data), encoding="utf-8")
+                    for args in (["--check"], []):
+                        output.write_bytes(expected)
+                        result = subprocess.run([sys.executable, "scripts/casefold.py", *args],
+                                                cwd=root, capture_output=True, timeout=30)
+                        self.assertNotEqual(result.returncode, 0)
+                        self.assertNotIn(b"Traceback", result.stderr)
+                        self.assertIn(b"search_casefold.json is invalid", result.stderr)
+                        self.assertEqual(output.read_bytes(), expected)
+            # Valid --check/generate paths stay byte-identical.
+            shutil.copy2(ROOT / "data/search_casefold.json", source)
+            output.write_bytes(expected)
+            result = subprocess.run([sys.executable, "scripts/casefold.py", "--check"],
+                                    cwd=root, capture_output=True, timeout=30)
+            self.assertEqual(result.returncode, 0, result.stderr.decode(errors="replace"))
+            self.assertEqual(output.read_bytes(), expected)
+            result = subprocess.run([sys.executable, "scripts/casefold.py"],
+                                    cwd=root, capture_output=True, timeout=30)
+            self.assertEqual(result.returncode, 0, result.stderr.decode(errors="replace"))
+            self.assertEqual(output.read_text(encoding="utf-8"),
+                             casefold.generate(self.data))
+
     def test_deeply_nested_json_fails_as_system_exit_without_traceback(self):
         # 20k-nested JSON input must fail as a clean SystemExit naming the
         # input file: RecursionError is a RuntimeError, not a ValueError, so
