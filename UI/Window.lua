@@ -1816,7 +1816,7 @@ function UI:RefreshDungeons()
                     if member.id == queryID and member.quest and member.questID == queryID then
                         local title = addon.Clean(member.name, "string")
                         if not current(true) then return end
-                        idFallbackName = title and title ~= "" and (title .. " (#" .. query .. ")") or ("#" .. query)
+                        idFallbackName = title and #title <= 1024 and title:find("%S") and (title .. " (#" .. query .. ")") or ("#" .. query)
                         local cached = memo[member.id]
                         if not cached then
                             cached = { name = addon.Read(getter, "string", member.id) }; memo[member.id] = cached
@@ -4521,7 +4521,9 @@ function UI:RefreshDetail(sourceFocus)
                 local row = self:MakeRow(self.detail, self.reportedRows, reportIndex, 59, sourceCallback(current), true)
                 if not current() then return false end
                 row.locationKey, row.destination, row.heading = key, point, nil
-                if not locationWrite(current, row.title, "SetText", zoneName .. string.format(" (%.1f, %.1f)", point.x, point.y)) or
+                local x, py = addon.Clean(point.x, "number"), addon.Clean(point.y, "number")
+                local coordinates = x ~= nil and py ~= nil and x >= 0 and x <= 100 and py >= 0 and py <= 100
+                if not locationWrite(current, row.title, "SetText", zoneName .. (coordinates and string.format(" (%.1f, %.1f)", x, py) or "")) or
                     not locationWrite(current, row.note, "SetText", addon.L("REPORTED_VISIT")) or
                     not locationWrite(current, row, "SetEnabled", true) then return false end
                 if not locationWrite(current, row, "SetScript", "OnClick", function()
@@ -5476,7 +5478,7 @@ function UI:RefreshDetail(sourceFocus)
                     if token and #token > 0 and #token <= 100 and not seen[token] then
                         seen[token] = true
                         local name = localized and addon.Read(function() return localized[token] end, "string")
-                        names[#names + 1] = audienceName("classes", token, name and name ~= "" and #name <= 500 and name or token)
+                        names[#names + 1] = audienceName("classes", token, name and #name <= 500 and name:find("%S") and name or token)
                     end
                 end
                 if #names > 0 then line(addon.L("ITEM_CLASSES", table.concat(names, ", "))) end

@@ -2127,4 +2127,164 @@ do
  ui.dungeon,ui.quest=savedDungeon,savedQuest
  ui.search="";ui.questTreeRoot=nil;ui.questTreeDungeon=nil;ui.frame:Show();ui:Refresh()
 end
+-- A26 GOLD-ICON-PCALL-GUARD: hostile frame/texture methods never throw out of
+-- CreateGoldNavigationIcon, mirroring PaintQuestRowSourceIcon's pcall writes;
+-- a valid control keeps its 3-part gold icon. A stale owner during icon
+-- creation short-circuits the row bind before any repaint instead of leaking
+-- a stale binding.
+do
+ local savedQuest = ui.quest
+ ui.search = ""; ui.questTreeRoot = nil; ui.questTreeDungeon = nil; ui.quest = 990104
+ ui.includeUnavailable = true; ui.frame:Show(); ui:Refresh()
+ local valid = CreateFrame("Button", nil, UIParent)
+ local icon = ui:CreateGoldNavigationIcon(valid)
+ assert(icon and valid.navigationGold == true and valid.footerIconParts and #valid.footerIconParts == 3,
+  "valid gold icon keeps three parts")
+ assert(icon == valid.footerIconParts[1], "gold icon returns its first part")
+ local hostile = CreateFrame("Button", nil, UIParent)
+ local realCreate = hostile.CreateTexture
+ hostile.CreateTexture = function(self, ...)
+  local part = realCreate(self, ...)
+  part.SetTexture = function() error("hostile SetTexture") end
+  part.SetSize = function() error("hostile SetSize") end
+  part.SetPoint = function() error("hostile SetPoint") end
+  part.SetRotation = function() error("hostile SetRotation") end
+  part.Show = function() error("hostile Show") end
+  return part
+ end
+ local ok, hostileIcon = pcall(function() return ui:CreateGoldNavigationIcon(hostile) end)
+ assert(ok and hostileIcon ~= nil, "hostile texture methods must not throw out of CreateGoldNavigationIcon")
+ local stillborn = CreateFrame("Button", nil, UIParent)
+ stillborn.CreateTexture = function() error("hostile CreateTexture") end
+ local okCreate, stillbornIcon = pcall(function() return ui:CreateGoldNavigationIcon(stillborn) end)
+ assert(okCreate and stillbornIcon == nil, "hostile texture creation fails closed without throwing")
+ local target = row(990101)
+ local savedControl = target.navigationControl
+ local realGold = ui.CreateGoldNavigationIcon
+ local realPaint = ui.PaintQuestRowSourceIcon
+ local currentFlag = true
+ local paints = 0
+ ui.CreateGoldNavigationIcon = function(self, control)
+  local result = realGold(self, control)
+  currentFlag = false
+  return result
+ end
+ ui.PaintQuestRowSourceIcon = function(self, ...)
+  paints = paints + 1
+  return realPaint(self, ...)
+ end
+ target.navigationControl = nil
+ local owner = function() return currentFlag end
+ assert(ui:BindQuestRowNavigation(target, 990101, owner) == false, "stale owner fails the row bind closed")
+ assert(paints == 0, "stale owner short-circuits before any source repaint")
+ assert(target.navigationBinding == nil, "stale owner leaks no row binding")
+ ui.CreateGoldNavigationIcon = realGold
+ ui.PaintQuestRowSourceIcon = realPaint
+ target.navigationControl = savedControl
+ ui.quest = savedQuest
+ ui.search = ""; ui.questTreeRoot = nil; ui.questTreeDungeon = nil; ui.frame:Show(); ui:Refresh()
+ assert(row(990101).navigationControl.enabled, "restored row keeps its navigation control")
+end
+-- A26 REPORTED-ROW-COORDINATE-GUARD: reported rows paint Cleaned 0..100
+-- coordinates like every sibling %.1f site, and malformed catalogue reports
+-- fail closed with no rows instead of throwing. Upstream reportedPlaces
+-- already sanitizes these points, so this pins the rendering contract.
+do
+ local savedDungeons = addon.dungeons
+ local savedDungeon, savedQuest = ui.dungeon, ui.quest
+ local savedExpanded = ui.reportedExpanded.start
+ addon.quests[990907] = { id = 990907, name = "Coordinate guard quest", minLevel = 1, requirementsKnown = true,
+  start = { npcID = 91, name = "Coordinate giver", mapID = 1453, x = 10, y = 20, zoneName = "Stormwind City",
+   reportedLocations = { { mapID = 1453, x = 10, y = 20, zoneName = "Stormwind City" }, { mapID = 1453, x = 40, y = 50, zoneName = "Ironforge" } } } }
+ local coordDungeon = { key = "a26-reported-coords", name = "Coordinate guard dungeon", minLevel = 1, maxLevel = 80, quests = { 990907 } }
+ addon.dungeons = { coordDungeon }
+ ui.dungeon, ui.quest, ui.questTreeRoot, ui.questTreeDungeon = coordDungeon, 990907, nil, nil
+ ui.search = ""; ui.includeUnavailable = true; ui.frame:Show()
+ if type(ui.SetDetailTab) == "function" then ui:SetDetailTab("sources") end
+ local function startTitles()
+  local out = {}
+  for _, found in ipairs(ui.reportedRows or {}) do
+   local shown = found:IsShown()
+   if shown and found.locationKey == "start" and found.title and found.title.text then out[#out + 1] = found.title.text end
+  end
+  return out
+ end
+ ui.reportedExpanded.start = true
+ ui:Refresh()
+ ui.reportedExpanded.start = true
+ ui:Refresh()
+ local titles = startTitles()
+ assert(#titles == 2, "valid reports paint two coordinate rows")
+ assert(titles[1]:find("(10.0, 20.0)", 1, true) and titles[2]:find("(40.0, 50.0)", 1, true),
+  "valid reports keep their cleaned coordinates")
+ addon.quests[990907].start.reportedLocations = { { mapID = 1453, x = "bad", y = 20 }, { mapID = 1453, x = 40, y = 50 } }
+ ui.reportedExpanded.start = true
+ local ok, err = pcall(function() ui:Refresh() end)
+ assert(ok, "malformed report coordinates threw in Refresh: " .. tostring(err))
+ assert(#startTitles() == 0, "malformed report coordinates publish no rows")
+ ui.reportedExpanded.start = savedExpanded
+ addon.quests[990907] = nil
+ addon.dungeons = savedDungeons
+ ui.dungeon, ui.quest = savedDungeon, savedQuest
+ ui.search = ""; ui.questTreeRoot = nil; ui.questTreeDungeon = nil; ui.frame:Show(); ui:Refresh()
+end
+-- A26 ID-FALLBACK-NAME-GUARD: a blank or overlong catalogue name falls back
+-- to the bare #id label in numeric search, mirroring the %S/cap guards at
+-- :1826/:1942/:1279; the whitespace form never paints.
+do
+ local savedName = addon.quests[990101].name
+ local savedCache = addon.CachedQuestName
+ local savedSearch, savedRange = ui.search, ui.range
+ local function noteFor(name, cached)
+  addon.quests[990101].name = name
+  addon.CachedQuestName = function() return cached end
+  ui.search = "990101"; ui.includeUnavailable = true; ui.range = false; ui.frame:Show()
+  ui:RefreshDungeons()
+  for _, card in ipairs(ui.cards) do
+   if card:IsShown() and card.matchQuestID == 990101 then return card.note.text end
+  end
+  error("missing numeric match card for 990101")
+ end
+ local blankNote = noteFor("   ", "   ")
+ assert(blankNote:find("#990101", 1, true), "blank fallback keeps the id cue")
+ assert(not blankNote:find("(#990101)", 1, true), "blank catalogue name stays unpainted")
+ local longNote = noteFor(("x"):rep(1025), ("y"):rep(1025))
+ assert(longNote:find("#990101", 1, true), "overlong fallback keeps the id cue")
+ assert(not longNote:find(("x"):rep(100), 1, true) and not longNote:find(("y"):rep(100), 1, true),
+  "overlong catalogue name stays unpainted")
+ addon.quests[990101].name = savedName
+ addon.CachedQuestName = savedCache
+ ui.search = savedSearch; ui.range = savedRange
+ ui.frame:Show(); ui:RefreshDungeons()
+end
+-- A26 ITEM-CLASS-NAME-GUARD: a whitespace-only localized class name falls
+-- back to its token in the starter ITEM_CLASSES line, mirroring the %S guard
+-- at :277; a valid localized name keeps its label.
+do
+ local savedClasses = LOCALIZED_CLASS_NAMES_MALE
+ local start = addon.quests[990104].start
+ start.itemClasses = { "MAGE" }
+ local savedDungeon, savedQuest = ui.dungeon, ui.quest
+ ui.dungeon, ui.quest = dungeon, 990104
+ ui.search = ""; ui.questTreeRoot = nil; ui.questTreeDungeon = nil; ui.includeUnavailable = true; ui.frame:Show()
+ local function hasText(want)
+  for _, fs in ipairs(ui.details) do
+   local shown = fs.shown == true
+   if not shown and type(fs.IsShown) == "function" then local ok, value = pcall(function() return fs:IsShown() end); shown = ok and value == true end
+   if shown and fs.text and fs.text:find(want, 1, true) then return true end
+  end
+  return false
+ end
+ LOCALIZED_CLASS_NAMES_MALE = { MAGE = "   " }
+ local ok, err = pcall(function() ui:Refresh() end)
+ assert(ok, "whitespace class name threw in Refresh: " .. tostring(err))
+ assert(hasText("classicon-mage:14:14|a MAGE"), "whitespace class name falls back to its token")
+ LOCALIZED_CLASS_NAMES_MALE = { MAGE = "Native Mage" }
+ ui:Refresh()
+ assert(hasText("Native Mage"), "valid localized class name keeps its label")
+ LOCALIZED_CLASS_NAMES_MALE = savedClasses
+ start.itemClasses = nil
+ ui.dungeon, ui.quest = savedDungeon, savedQuest
+ ui.search = ""; ui.questTreeRoot = nil; ui.questTreeDungeon = nil; ui.frame:Show(); ui:Refresh()
+end
 print("Middle quest navigation checks passed (modeled, no native input or layout proof)")

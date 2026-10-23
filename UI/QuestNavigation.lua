@@ -833,6 +833,7 @@ function UI:BindQuestRowNavigation(row, id, ownerCurrent)
         control:SetSize(24, 24)
         if type(control.SetMotionScriptsWhileDisabled) == "function" then control:SetMotionScriptsWhileDisabled(true) end
         control.footerIcon = self:CreateGoldNavigationIcon(control)
+        if not ownerCurrent() then return false end
         control.sourceInspect = false
     end
     local catalogue, definition, checker = addon.quests, addon.quests[id], issecretvalue
@@ -1240,13 +1241,16 @@ end
 function UI:CreateGoldNavigationIcon(control)
     local parts = {}
     for index, geometry in ipairs({ { 3, 14, 0, -3, 0 }, { 3, 10, -3, 3, -math.pi / 4 }, { 3, 10, 3, 3, math.pi / 4 } }) do
-        local part = control:CreateTexture(nil, "ARTWORK")
-        part:SetTexture("Interface\\Buttons\\WHITE8X8")
-        part:SetSize(geometry[1], geometry[2]); part:SetPoint("CENTER", control, "CENTER", geometry[3], geometry[4])
-        if type(part.SetRotation) == "function" then part:SetRotation(geometry[5]) end
-        if type(part.SetVertexColor) == "function" then part:SetVertexColor(1, .78, .15, 1)
-        else part:SetColorTexture(1, .78, .15, 1) end
-        part:Show(); parts[index] = part
+        local ok, part = pcall(control.CreateTexture, control, nil, "ARTWORK")
+        if not ok or part == nil then break end
+        if type(part.SetTexture) == "function" then pcall(part.SetTexture, part, "Interface\\Buttons\\WHITE8X8") end
+        if type(part.SetSize) == "function" then pcall(part.SetSize, part, geometry[1], geometry[2]) end
+        if type(part.SetPoint) == "function" then pcall(part.SetPoint, part, "CENTER", control, "CENTER", geometry[3], geometry[4]) end
+        if type(part.SetRotation) == "function" then pcall(part.SetRotation, part, geometry[5]) end
+        if type(part.SetVertexColor) == "function" then pcall(part.SetVertexColor, part, 1, .78, .15, 1)
+        elseif type(part.SetColorTexture) == "function" then pcall(part.SetColorTexture, part, 1, .78, .15, 1) end
+        if type(part.Show) == "function" then pcall(part.Show, part) end
+        parts[index] = part
     end
     control.navigationGold, control.footerIconParts = true, parts
     return parts[1]
