@@ -993,7 +993,7 @@ function UI:CatalogEntranceHint(row)
         if addon.Clean(point.origin, "string") == "recorded" then
             text = text .. "\n" .. addon.L("DUNGEON_ENTRANCE_RECORDED")
             local source = addon.Clean(point.source, "string")
-            if source and #source <= 2048 and source:match("^https://") then text = text .. "\n" .. source end
+            if source and #source <= 2048 and source:match("^https://") and not source:find("[|%c]") then text = text .. "\n" .. source end
         end
         if addon.Clean(point.kind, "string") == "approach" then text = text .. "\n" .. addon.L("DUNGEON_ENTRANCE_APPROACH") end
         if addon.Clean(point.scope, "string") == "shared" then text = text .. "\n" .. addon.L("DUNGEON_ENTRANCE_SHARED") end

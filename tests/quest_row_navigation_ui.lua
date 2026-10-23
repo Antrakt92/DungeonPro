@@ -1632,4 +1632,238 @@ do
  ui.quest=savedQuest
  ui.search="";ui.questTreeRoot=nil;ui.questTreeDungeon=nil;ui.frame:Show();ui:Refresh()
 end
+-- A19 CONTACT-ZONE-500-CAP: contact-card zones mirror the 500-char
+-- detail-row caps at :4546-4549; overlong or blank catalogue zones fall back
+-- to UNKNOWN_PLACE instead of painting.
+do
+ local savedDungeons=addon.dungeons
+ local savedDungeon,savedQuest=ui.dungeon,ui.quest
+ addon.quests[990911]={id=990911,name="Contact cap quest",minLevel=1,requirementsKnown=true,
+  start={npcID=91,name="Cap giver",zoneName=("z"):rep(501)}}
+ addon.quests[990912]={id=990912,name="Contact edge quest",minLevel=1,requirementsKnown=true,
+  start={npcID=92,name="Edge giver",zoneName=("z"):rep(500)}}
+ local capDungeon={key="contact-cap",name="Contact cap dungeon",minLevel=1,maxLevel=80,quests={990911,990912}}
+ addon.dungeons={capDungeon}
+ ui.dungeon,ui.questTreeRoot,ui.questTreeDungeon=capDungeon,nil,nil
+ ui.search="";ui.includeUnavailable=true;ui.frame:Show()
+ if type(ui.SetDetailTab)=="function" then ui:SetDetailTab("quest") end
+ local function contactNote(id)
+  ui.quest=id;ui:Refresh()
+  local contact=assert(ui.detailContactRows and ui.detailContactRows[1],"contact row missing for "..id)
+  assert(contact:IsShown(),"contact row stays visible for "..id)
+  return contact.note.text
+ end
+ local over=contactNote(990911)
+ assert(not over:find(("z"):rep(100),1,true),"overlong contact zone stays unpainted")
+ assert(over==addon.L("UNKNOWN_PLACE"),"overlong contact zone falls back to unknown")
+ local edge=contactNote(990912)
+ assert(edge==("z"):rep(500),"500-char contact zone keeps its place")
+ addon.quests[990911],addon.quests[990912]=nil,nil
+ addon.dungeons=savedDungeons
+ ui.dungeon,ui.quest=savedDungeon,savedQuest
+ ui.search="";ui.questTreeRoot=nil;ui.questTreeDungeon=nil;ui.frame:Show();ui:Refresh()
+end
+-- A19 CONTACT-ZONE-NATIVE-CAP: an overlong native map name falls back to
+-- UNKNOWN_PLACE in the contact card like an overlong catalogue zone.
+do
+ local savedMap=C_Map
+ local savedDungeons=addon.dungeons
+ local savedDungeon,savedQuest=ui.dungeon,ui.quest
+ addon.quests[990913]={id=990913,name="Contact native cap quest",minLevel=1,requirementsKnown=true,
+  start={npcID=93,name="Native cap giver",mapID=1453}}
+ local capDungeon={key="contact-native-cap",name="Contact native cap dungeon",minLevel=1,maxLevel=80,quests={990913}}
+ addon.dungeons={capDungeon}
+ ui.dungeon,ui.questTreeRoot,ui.questTreeDungeon=capDungeon,nil,nil
+ ui.search="";ui.includeUnavailable=true;ui.frame:Show()
+ if type(ui.SetDetailTab)=="function" then ui:SetDetailTab("quest") end
+ C_Map={GetMapInfo=function(id) assert(id==1453); return {name=("m"):rep(501)} end}
+ ui.quest=990913;ui:Refresh()
+ local contact=assert(ui.detailContactRows and ui.detailContactRows[1],"native contact row missing")
+ assert(contact:IsShown(),"native contact row stays visible")
+ assert(not contact.note.text:find(("m"):rep(100),1,true),"overlong native contact zone stays unpainted")
+ assert(contact.note.text==addon.L("UNKNOWN_PLACE"),"overlong native contact zone falls back to unknown")
+ C_Map=savedMap
+ addon.quests[990913]=nil
+ addon.dungeons=savedDungeons
+ ui.dungeon,ui.quest=savedDungeon,savedQuest
+ ui.search="";ui.questTreeRoot=nil;ui.questTreeDungeon=nil;ui.frame:Show();ui:Refresh()
+end
+-- A19 RECORDED-URL-CONTROL-GUARD: a recorded source carrying control
+-- characters never splits the entrance hint, mirroring the [|:%c] texture
+-- rejection in QuestListRewards; a clean URL still paints.
+do
+ local savedEntrances=addon.Entrances
+ local savedQuest=ui.quest
+ local function entranceBody(point)
+  addon.Entrances={Get=function(d)
+   if d~=dungeon then return nil end
+   return point,function()return true end
+  end}
+  ui.search="";ui.questTreeRoot=nil;ui.questTreeDungeon=nil;ui.quest=nil;ui.frame:Show();ui:RefreshDungeons()
+  local card
+  for _,c in ipairs(ui.cards)do if c:IsShown() and c.entranceDungeon==dungeon then card=c end end
+  assert(card and card.entranceBinding,"catalogue card keeps its entrance binding")
+  tip.shown=false;tip.owner=nil;tip.title=nil;tip.body=nil
+  local ok,err=pcall(ui.CatalogEntranceHint,ui,card)
+  assert(ok,"entrance hint threw: "..tostring(err))
+  assert(tip.shown and tip.body,"entrance hint stays owned without a crash")
+  return tip.body
+ end
+ local function recordedPoint(source)
+  return {mapID=1453,x=30,y=40,zoneName="Ember vault",name="Stone vault mouth",origin="recorded",source=source}
+ end
+ local body=entranceBody(recordedPoint("https://example.com/mouth\nINJECTED"))
+ assert(not body:find("INJECTED",1,true),"control-char recorded source stays unpainted")
+ assert(body:find("Ember vault",1,true),"recorded hint keeps its catalogue place")
+ local piped=entranceBody(recordedPoint("https://example.com/a|T134400:18|t"))
+ assert(not piped:find("|T134400",1,true),"pipe recorded source stays unpainted")
+ body=entranceBody(recordedPoint("https://example.com/safe"))
+ assert(body:find("https://example.com/safe",1,true),"clean recorded source keeps its hint line")
+ addon.Entrances=savedEntrances
+ ui.quest=savedQuest
+ ui.search="";ui.questTreeRoot=nil;ui.questTreeDungeon=nil;ui.frame:Show();ui:Refresh()
+end
+-- A19 ACQUISITION-NAME-RACE-GUARD: a SourceName proof that wins
+-- registration and the trailing guard but loses the next race check forces
+-- giverName race-nil inside drop routes; the routes fail closed instead of
+-- throwing in ITEM_DROP_SOURCE format.
+do
+ local savedDungeons=addon.dungeons
+ local savedDungeon,savedQuest=ui.dungeon,ui.quest
+ local savedSource=addon.SourceName
+ addon.quests[990922]={id=990922,name="Race drop quest",minLevel=1,requirementsKnown=true,
+  start={itemID=801,name="Race starter",dropNPCID=9,dropName="Dropper",dropSources={{npcID=10,name="Second dropper",locationName="Drop vale"}}}}
+ local raceDungeon={key="race-guard",name="Race guard dungeon",minLevel=1,maxLevel=80,quests={990922}}
+ addon.dungeons={raceDungeon}
+ ui.dungeon,ui.questTreeRoot,ui.questTreeDungeon=raceDungeon,nil,nil
+ ui.search="";ui.includeUnavailable=true;ui.frame:Show()
+ if type(ui.SetDetailTab)=="function" then ui:SetDetailTab("sources") end
+ local function dropLines()
+  local out={}
+  for _,fs in ipairs(ui.details)do if fs.shown and fs.text and fs.text:find("Drops from",1,true) then out[#out+1]=fs.text end end
+  return out
+ end
+ ui.quest=990922;ui:Refresh()
+ assert(#dropLines()==2,"healthy drop routes paint both sources")
+ local reads=0
+ local function flipProof() reads=reads+1; return reads~=3 end
+ addon.SourceName=function(point,owner)
+  local id=point and point.npcID
+  if id==9 or id==10 then return "Race name",flipProof end
+  return point and point.name
+ end
+ local ok,err=pcall(function() ui:Refresh() end)
+ assert(ok,"giver race threw in Refresh: "..tostring(err))
+ local raced=dropLines()
+ for _,line in ipairs(raced) do assert(not line:find("Race name",1,true),"raced drop route painted an unowned name") end
+ assert(#raced==2,"raced drop routes keep their owned lines instead of throwing")
+ addon.SourceName=savedSource
+ ui:Refresh()
+ assert(#dropLines()==2,"restored resolver repaints both drop sources")
+ addon.quests[990922]=nil
+ addon.dungeons=savedDungeons
+ ui.dungeon,ui.quest=savedDungeon,savedQuest
+ ui.search="";ui.questTreeRoot=nil;ui.questTreeDungeon=nil;ui.frame:Show();ui:Refresh()
+end
+-- A19 ITEM-STARTER-UNKNOWN-GUARD: an item starter with an unknown native
+-- name falls back to UNKNOWN_PLACE instead of throwing in ITEM_STARTER
+-- format, pinning the :4561 fail-closed seam.
+do
+ local savedDungeons=addon.dungeons
+ local savedDungeon,savedQuest=ui.dungeon,ui.quest
+ local savedItemName=addon.ItemName
+ addon.quests[990924]={id=990924,name="Unknown item quest",minLevel=1,requirementsKnown=true,
+  start={itemID=801}}
+ local itemDungeon={key="unknown-item",name="Unknown item dungeon",minLevel=1,maxLevel=80,quests={990924}}
+ addon.dungeons={itemDungeon}
+ ui.dungeon,ui.questTreeRoot,ui.questTreeDungeon=itemDungeon,nil,nil
+ ui.search="";ui.includeUnavailable=true;ui.frame:Show()
+ if type(ui.SetDetailTab)=="function" then ui:SetDetailTab("quest") end
+ addon.ItemName=function() return nil end
+ ui.quest=990924
+ local ok,err=pcall(function() ui:Refresh() end)
+ assert(ok,"unknown item name threw in Refresh: "..tostring(err))
+ local found=false
+ for _,fs in ipairs(ui.details)do if fs.shown and fs.text==addon.L("ITEM_STARTER",addon.L("UNKNOWN_PLACE")) then found=true end end
+ assert(found,"unknown item starter falls back to the unknown label")
+ addon.ItemName=savedItemName
+ addon.quests[990924]=nil
+ addon.dungeons=savedDungeons
+ ui.dungeon,ui.quest=savedDungeon,savedQuest
+ ui.search="";ui.questTreeRoot=nil;ui.questTreeDungeon=nil;ui.frame:Show();ui:Refresh()
+end
+-- A19 PORTRAIT-REFERENCE-RACE-GUARD: a checker that fails exactly the first
+-- read inside the reference race check forces giverName race-nil; the
+-- reference portrait fails closed instead of throwing in its caption format.
+do
+ local savedDungeons=addon.dungeons
+ local savedDungeon,savedQuest=ui.dungeon,ui.quest
+ local savedSource=addon.SourceName
+ local savedProducer=addon.GiverPortrait
+ local savedQuestPortrait,savedDialoguePortrait=addon.QuestPortrait,addon.DialoguePortrait
+ local savedSetter=SetPortraitTextureFromCreatureDisplayID
+ local realChecker=issecretvalue
+ addon.quests[990923]={id=990923,name="Portrait race quest",minLevel=1,requirementsKnown=true,
+  start={npcID=95,creatureDisplayID=5001,name="Portrait giver",portraitSource="https://www.wowhead.com/forever/npc=95"}}
+ local raceDungeon={key="portrait-race",name="Portrait race dungeon",minLevel=1,maxLevel=80,quests={990923}}
+ addon.dungeons={raceDungeon}
+ local armed,reads=false,0
+ local racedName="Healthy giver"
+ local raceArmed=false
+ local function reference(place)
+  return {npcID=place.npcID,displayID=place.creatureDisplayID,source=place.portraitSource,name=place.name}
+ end
+ local function fromSourceReference()
+  if type(debug)~="table" or type(debug.getinfo)~="function" then return false end
+  local level=2
+  while true do
+   local info=debug.getinfo(level,"n")
+   if not info then return false end
+   if info.name=="sourceReference" then return true end
+   level=level+1
+  end
+ end
+ addon.GiverPortrait=function(place) return reference(place) end
+ addon.QuestPortrait,addon.DialoguePortrait=nil,nil
+ SetPortraitTextureFromCreatureDisplayID=function(texture,id) texture:SetTexture("display:"..id) end
+ addon.SourceName=function(point,owner)
+  if raceArmed and fromSourceReference() then armed=true; reads=0 end
+  return racedName,function() return true end,function() return true end
+ end
+ issecretvalue=function(v)
+  if not armed then
+   if type(realChecker)=="function" then return realChecker(v) end
+   return false
+  end
+  reads=reads+1
+  if reads==1 then return true end
+  return false
+ end
+ ui.dungeon,ui.questTreeRoot,ui.questTreeDungeon=raceDungeon,nil,nil
+ ui.search="";ui.includeUnavailable=true;ui.frame:Show()
+ if type(ui.SetDetailTab)=="function" then ui:SetDetailTab("sources") end
+ local function hasCaption(name)
+  local caption=addon.L("GIVER_REFERENCE_PORTRAIT",name)
+  for _,fs in ipairs(ui.details)do if fs.shown and fs.text==caption then return true end end
+  return false
+ end
+ racedName="Healthy giver";ui.quest=990923;ui:Refresh()
+ assert(hasCaption("Healthy giver"),"healthy reference portrait paints its caption")
+ raceArmed=true;armed,reads=false,0
+ racedName="Raced giver"
+ local ok,err=pcall(function() ui:Refresh() end)
+ assert(ok,"reference race threw in Refresh: "..tostring(err))
+ assert(not hasCaption("Raced giver"),"raced reference portrait paints no unowned caption")
+ issecretvalue=realChecker
+ addon.SourceName=savedSource
+ addon.GiverPortrait=savedProducer
+ addon.QuestPortrait,addon.DialoguePortrait=savedQuestPortrait,savedDialoguePortrait
+ ui:Refresh()
+ assert(hasCaption("Portrait giver"),"restored reference portrait repaints its caption")
+ SetPortraitTextureFromCreatureDisplayID=savedSetter
+ addon.quests[990923]=nil
+ addon.dungeons=savedDungeons
+ ui.dungeon,ui.quest=savedDungeon,savedQuest
+ ui.search="";ui.questTreeRoot=nil;ui.questTreeDungeon=nil;ui.frame:Show();ui:Refresh()
+end
 print("Middle quest navigation checks passed (modeled, no native input or layout proof)")

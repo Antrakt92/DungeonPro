@@ -187,7 +187,7 @@ local function paint(self, dungeon, requestedMapID, inputCurrent)
     end
     state.model = model
     local title = clean(model.name,"string")
-    if not title or not title:find("%S") then title=caption("DUNGEON_MAP_OPEN") end
+    if not title or #title>500 or not title:find("%S") then title=caption("DUNGEON_MAP_OPEN") end
     if not text(overlay.title,title,12,44,16) then return false end
     local titleHeight=measured(overlay.title,20)
     if not titleHeight then return false end
@@ -203,7 +203,7 @@ local function paint(self, dungeon, requestedMapID, inputCurrent)
     if not index and not (#floorView==0 and integer(model.baseMapID)==mapID) then self:CloseDungeonMap(true); return false end
     if #floorView>1 then
         local name=floorView[index].name
-        if not name or not name:find("%S") then name=caption("DUNGEON_MAP_FLOOR",index) end
+        if not name or #name>500 or not name:find("%S") then name=caption("DUNGEON_MAP_FLOOR",index) end
         if not text(overlay.floor,name,12,top,13) then return false end
         local floorHeight=measured(overlay.floor,18)
         if not floorHeight then return false end

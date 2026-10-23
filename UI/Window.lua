@@ -4558,7 +4558,9 @@ function UI:RefreshDetail(sourceFocus)
             local name = giverName(p, current, nameProofs)
             if not current() then return nil end
             if p.itemID then
-                name = addon.L("ITEM_STARTER", addon.Read(addon.ItemName, "string", p.itemID) or name)
+                local itemName = addon.Read(addon.ItemName, "string", p.itemID) or name
+                if not itemName or not current() then return nil end
+                name = addon.L("ITEM_STARTER", itemName)
                 if not current() then return nil end
             end
             local x, py = addon.Clean(p.x, "number"), addon.Clean(p.y, "number")
@@ -5571,7 +5573,7 @@ function UI:RefreshDetail(sourceFocus)
                 end
                 if not acquisitionCurrent() then return end
                 local name = giverName({ npcID = dropID, name = addon.Clean(starterSource.dropName, "string") or ("#" .. dropID) }, acquisitionCurrent, nameProofs)
-                if not acquisitionCurrent() then return end
+                if not name or not acquisitionCurrent() then return end
                 routes[#routes + 1] = { text = addon.L("ITEM_DROP_SOURCE", name, dungeonName) }
             end
             local drops = addon.Clean(rawget(starterSource, "dropSources"), "table")
@@ -5596,7 +5598,7 @@ function UI:RefreshDetail(sourceFocus)
                             name = giverName(drop, acquisitionCurrent, nameProofs)
                             if not acquisitionCurrent() then return end
                             location = areaName(location, acquisitionCurrent, nameProofs) or location
-                            if not acquisitionCurrent() then return end
+                            if not name or not location or not acquisitionCurrent() then return end
                             routes[#routes + 1] = { text = addon.L("ITEM_DROP_SOURCE", name, location), drop = drop }
                             local map = positive(rawget(drop, "mapID"))
                             local reportedPoints = reportedPlaces(drop)
@@ -5782,9 +5784,9 @@ function UI:RefreshDetail(sourceFocus)
                     if not name or not name:find("%S") or #name>1024 then name,fresh=safe(rawget(point,"name"),"string") end
                     if not fresh then return false end
                     local canonical;canonical,fresh=safe(rawget(point,"zoneName"),"string");if not fresh then return false end
-                    if canonical and canonical:find("%S") and #canonical<=1024 then
+                    if canonical and canonical:find("%S") and #canonical<=500 then
                         zone,fresh=external(areaGetter,"string",canonical,modelRaw);if not fresh then return false end
-                        if not zone or not zone:find("%S") or #zone>1024 then zone=canonical end
+                        if not zone or not zone:find("%S") or #zone>500 then zone=canonical end
                     end
                 end
                 if not zone then
@@ -5794,7 +5796,7 @@ function UI:RefreshDetail(sourceFocus)
                         if info then
                             mapInfo,mapName=info,rawget(info,"name")
                             zone,fresh=safe(mapName,"string");if not fresh then return false end
-                            if zone and (not zone:find("%S") or #zone>1024) then zone=nil end
+                            if zone and (not zone:find("%S") or #zone>500) then zone=nil end
                         end
                     end
                 end
@@ -6359,7 +6361,7 @@ function UI:RefreshDetail(sourceFocus)
                     local name = addon.Clean(rawget(reference, "name"), "string")
                     if not name or #name > 1024 or not name:find("%S") then name = nil end
                     name = giverName(point, sourceCurrent, nameProofs, name)
-                    if not sourceCurrent() then return false end
+                    if not name or not sourceCurrent() then return false end
                     if not renderPortrait("giverPortrait", referenceDisplay, addon.L(captionKey, name), sourceCurrent) then return false end
                     return true, true
                 end
