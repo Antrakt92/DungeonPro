@@ -731,7 +731,10 @@ def main():
     parser.add_argument("--check", action="store_true")
     args = parser.parse_args()
     data = _load("data/catalog.json", ROOT / "data/catalog.json")
-    content = generate(data)
+    try:
+        content = generate(data)
+    except ValueError as error:
+        raise SystemExit(f"data/catalog.json is invalid: {error}") from error
     target = ROOT / "Database/Catalog.lua"
     if args.check:
         try:

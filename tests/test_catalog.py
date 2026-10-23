@@ -654,6 +654,36 @@ class CatalogTests(unittest.TestCase):
                     self.assertIn(b"data/catalog.json is unreadable", result.stderr)
                     self.assertEqual(output.read_bytes(), expected)
 
+    def test_cli_rejects_valid_json_with_invalid_semantics_without_traceback(self):
+        # Parseable-but-invalid data/catalog.json (unknown top-level field,
+        # unsupported schema) must fail as a clean SystemExit naming the input
+        # ("data/catalog.json is invalid"), never a raw ValueError traceback
+        # from generate(). Mirrors scripts/casefold.py generate mapping.
+        evil = {"schema": 1, "quests": [], "dungeons": [], "evil": 1}
+        bad_version = {"schema": 2, "quests": [], "dungeons": []}
+        for data in (evil, bad_version):
+            with self.assertRaises(ValueError):
+                catalog.generate(data)
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            for name in ("scripts", "data", "Database"):
+                (root / name).mkdir()
+            shutil.copy2(ROOT / "scripts/catalog.py", root / "scripts/catalog.py")
+            source = root / "data/catalog.json"
+            output = root / "Database/Catalog.lua"
+            expected = b"previous verified catalogue\n"
+            for data in (evil, bad_version):
+                with self.subTest(schema=data.get("schema"), extra="evil" in data):
+                    source.write_text(json.dumps(data), encoding="utf-8")
+                    for args in ([], ["--check"]):
+                        output.write_bytes(expected)
+                        result = subprocess.run([sys.executable, str(root / "scripts/catalog.py"), *args],
+                                                capture_output=True)
+                        self.assertNotEqual(result.returncode, 0)
+                        self.assertNotIn(b"Traceback", result.stderr)
+                        self.assertIn(b"data/catalog.json is invalid", result.stderr)
+                        self.assertEqual(output.read_bytes(), expected)
+
     def test_deeply_nested_json_fails_as_system_exit_without_traceback(self):
         # 20k-nested JSON input must fail as a clean SystemExit naming
         # data/catalog.json: RecursionError is a RuntimeError, not a

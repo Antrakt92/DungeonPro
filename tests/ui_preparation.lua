@@ -10725,4 +10725,175 @@ check("Window creation fails closed when frame factories are hostile", function(
     ui.frame:Show()
     assert(ui.frame:IsShown(), "rebuilt window must accept Show")
 end)
+-- Window catalogue-read hardening: a hostile nilled addon.quests mid-render must
+-- fail closed (abort without escape) and recover fully after restore.
+local function hardeningQuestFixture()
+    for _, id in ipairs({ 61001, 61002, 61003 }) do
+        addon.quests[id] = { id = id, minLevel = 1, requirementsKnown = true,
+            start = { mapID = 1, x = 10, y = 20, name = "Giver " .. id } }
+    end
+    addon.quests[61004] = { id = 61004, minLevel = 1, requirementsKnown = true, factions = { "Horde" },
+        start = { mapID = 1, x = 10, y = 20, name = "Giver 61004" } }
+    local saved = { dungeon = ui.dungeon, quest = ui.quest, preparation = ui.preparation,
+        include = ui.includeUnavailable, context = addon.Context, root = ui.questTreeRoot,
+        treeDungeon = ui.questTreeDungeon, catalogue = addon.quests }
+    addon.Context = function() return { level = 20, faction = "Alliance",
+        completed = function(id) return done[id] or false end, active = function(id) return id == 6 end } end
+    ui.dungeon = { key = "hardening", name = "Hardening", minLevel = 1, maxLevel = 60,
+        coverage = "reviewed", quests = { 61001, 61002, 61003, 61004 } }
+    ui.quest, ui.questTreeRoot, ui.questTreeDungeon = nil, nil, nil
+    return saved
+end
+local function endHardeningQuestFixture(saved)
+    addon.quests = saved.catalogue
+    for _, id in ipairs({ 61001, 61002, 61003, 61004 }) do addon.quests[id] = nil end
+    addon.Context = saved.context
+    ui.dungeon, ui.quest, ui.preparation, ui.includeUnavailable = saved.dungeon, saved.quest, saved.preparation, saved.include
+    ui.questTreeRoot, ui.questTreeDungeon = saved.root, saved.treeDungeon
+    ui:RefreshQuests()
+end
+local function shownQuestRows()
+    local found = {}
+    for _, row in ipairs(ui.rows) do if row.shown and row.questID then found[#found + 1] = row end end
+    return found
+end
+check("Hostile catalogue mutation aborts preparation grouping without escape and recovers", function()
+    local saved = hardeningQuestFixture()
+    ui.preparation, ui.includeUnavailable = true, false
+    ui:RefreshQuests()
+    assert(ui.currentPlan and #ui.currentPlan.actions >= 2, "setup needs multiple grouped actions")
+    local classify, armed = addon.QuestNavigation.PickupStartKind, true
+    addon.QuestNavigation.PickupStartKind = function(...)
+        if armed then armed = false; addon.quests = nil end
+        if classify then return classify(...) end
+    end
+    local ok, err = pcall(ui.RefreshQuests, ui)
+    addon.QuestNavigation.PickupStartKind = classify
+    addon.quests = saved.catalogue
+    assert(ok, "nil catalogue during grouping must not escape: " .. tostring(err))
+    assert(not armed, "catalogue mutation must fire mid-render")
+    ui:RefreshQuests()
+    assert(#shownQuestRows() >= 3, "grouped list must recover after catalogue restore")
+    endHardeningQuestFixture(saved)
+end)
+check("Quest-row status paint fails closed when the catalogue is nilled and repaints after restore", function()
+    local saved = hardeningQuestFixture()
+    ui.preparation, ui.includeUnavailable = false, false
+    ui:RefreshQuests()
+    local row
+    for _, candidate in ipairs(ui.rows) do if candidate.shown and candidate.questID == 61001 then row = candidate break end end
+    assert(row ~= nil, "setup needs a rendered quest row")
+    local owner = function() return true end
+    local entry = { id = 61001, state = ui.engine:State(61001) }
+    local catalogue = addon.quests
+    addon.quests = nil
+    local ok, painted = pcall(ui.PaintQuestRowStatus, ui, row, entry, ui.engine, owner)
+    addon.quests = catalogue
+    assert(ok, "nil catalogue must not escape status paint: " .. tostring(painted))
+    assert(painted == false, "nil catalogue must fail closed")
+    local okRestore, repainted = pcall(ui.PaintQuestRowStatus, ui, row, entry, ui.engine, owner)
+    assert(okRestore and repainted == true, "status paint must recover after catalogue restore")
+    endHardeningQuestFixture(saved)
+end)
+check("Hostile catalogue mutation aborts unavailable audience labels without escape and recovers", function()
+    local saved = hardeningQuestFixture()
+    ui.preparation, ui.includeUnavailable = false, true
+    ui:RefreshQuests()
+    assert(ui.engine:State(61004).status == "UNAVAILABLE", "setup needs an unavailable entry")
+    local names, armed = addon.QuestName, true
+    addon.QuestName = function(id)
+        if armed and id == 61004 then armed = false; addon.quests = nil end
+        return names(id)
+    end
+    local ok, err = pcall(ui.RefreshQuests, ui)
+    addon.QuestName = names
+    addon.quests = saved.catalogue
+    assert(ok, "nil catalogue during audience labels must not escape: " .. tostring(err))
+    assert(not armed, "catalogue mutation must fire mid-render")
+    ui:RefreshQuests()
+    local labelled
+    for _, row in ipairs(shownQuestRows()) do
+        if row.questID == 61004 then labelled = row.note.text end
+    end
+    assert(labelled and labelled:find("Horde", 1, true), "audience label must recover after catalogue restore")
+    endHardeningQuestFixture(saved)
+end)
+check("Row navigation binding fails closed when the quest catalogue is nilled and recovers", function()
+    local saved = hardeningQuestFixture()
+    local owner = function() return true end
+    local row = CreateFrame("Button", nil, ui.frame)
+    local catalogue = addon.quests
+    addon.quests = nil
+    local ok, result = pcall(ui.BindQuestRowNavigation, ui, row, 61001, owner)
+    addon.quests = catalogue
+    assert(ok, "nil catalogue must not escape navigation binding: " .. tostring(result))
+    assert(result == false, "nil catalogue must fail closed")
+    local okRestore, rebound = pcall(ui.BindQuestRowNavigation, ui, row, 61001, owner)
+    assert(okRestore and rebound == true, "navigation binding must recover after catalogue restore")
+    endHardeningQuestFixture(saved)
+end)
+check("MakeRow abandons factory rows with a hostile GetWidth before pooling and rebuilds", function()
+    local factory, made = CreateFrame, nil
+    for _, mode in ipairs({ "throw", "nil" }) do
+        CreateFrame = function(kind, name, parent)
+            local frame = factory(kind, name, parent)
+            made = frame
+            if mode == "throw" then frame.GetWidth = function() error("hostile GetWidth") end
+            else setmetatable(frame, { __index = function(_, key)
+                if key == "GetWidth" then return nil end
+                return methods[key]
+            end }) end
+            return frame
+        end
+        local pool = {}
+        local ok, row = pcall(ui.MakeRow, ui, ui.frame, pool, 1, 30, function() return true end)
+        CreateFrame = factory
+        assert(ok, mode .. " MakeRow must not escape")
+        assert(row == nil and pool[1] == nil, mode .. " partial-method row must abandon before pooling")
+        assert(made.shown == false, mode .. " abandoned factory row must hide its orphan")
+    end
+    CreateFrame = factory
+    local pool = {}
+    local row = ui:MakeRow(ui.frame, pool, 1, 30, function() return true end)
+    assert(row ~= nil and pool[1] == row, "valid factory must rebuild after hostile attempts")
+end)
+check("MakeRow re-proves pooled rows that lose GetWidth and reuses them after restore", function()
+    local pool = {}
+    local row = ui:MakeRow(ui.frame, pool, 1, 30, function() return true end)
+    assert(row ~= nil and pool[1] == row, "setup row must build")
+    local savedMt = getmetatable(row)
+    for _, mode in ipairs({ "throw", "nil" }) do
+        if mode == "throw" then row.GetWidth = function() error("hostile GetWidth") end
+        else setmetatable(row, { __index = function(_, key)
+            if key == "GetWidth" then return nil end
+            return methods[key]
+        end }) end
+        local ok, result = pcall(ui.MakeRow, ui, ui.frame, pool, 1, 30, function() return true end)
+        if mode == "throw" then row.GetWidth = nil else setmetatable(row, savedMt) end
+        assert(ok, mode .. " pooled MakeRow must not escape")
+        assert(result == nil, mode .. " pooled row without GetWidth must abandon")
+        assert(row.shown == false, mode .. " abandoned pooled row must hide")
+        assert(pool[1] == row, mode .. " abandoned pooled row must stay pooled for ipairs traversal")
+    end
+    local ok, rebuilt = pcall(ui.MakeRow, ui, ui.frame, pool, 1, 30, function() return true end)
+    assert(ok and rebuilt == row and row.shown, "pooled row must render again after restore")
+end)
+check("Catalog card art claim fails closed on hostile CreateTexture and rebuilds", function()
+    local savedSearch = ui.search
+    ui.search = ""
+    ui:RefreshDungeons()
+    local card
+    for _, row in ipairs(ui.cards) do if row.shown and row.catalogCard then card = row break end end
+    assert(card ~= nil, "setup needs a rendered catalog card")
+    card.art = nil
+    card.CreateTexture = function() error("hostile CreateTexture") end
+    local ok, err = pcall(ui.RefreshDungeons, ui)
+    card.CreateTexture = nil
+    assert(ok, "throwing card CreateTexture must not escape catalog render: " .. tostring(err))
+    assert(card.art == nil, "no partial card art may publish")
+    ui:RefreshDungeons()
+    assert(card.art ~= nil, "card art must rebuild after restore")
+    ui.search = savedSearch
+    ui:RefreshDungeons()
+end)
 print("Preparation UI modeled checks passed: " .. total .. " (no native layout validation)")

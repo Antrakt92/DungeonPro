@@ -584,6 +584,49 @@ class NamesTests(unittest.TestCase):
                 self.assertIn(b"name_translations.json is unreadable", result.stderr)
                 self.assertEqual(target.read_bytes(), expected)
 
+    def test_cli_rejects_valid_json_with_invalid_semantics_without_traceback(self):
+        # Parseable-but-invalid localized-name inputs (locale removed from
+        # name_translations.json, hostile catalog shape) must fail as a clean
+        # SystemExit naming the input ("localized-name input is invalid"),
+        # never a raw ValueError traceback from load_data()/generate().
+        # Mirrors scripts/casefold.py generate mapping; output never touched
+        # in either mode (generate runs before any write).
+        data, catalog = fixture()
+        authored = authored_fixture(data, catalog)
+        italian = copy.deepcopy(authored)
+        italian["locales"] = {"itIT": italian["locales"]["itIT"]}
+        authored["locales"].pop("itIT")
+        inputs = {"area_name_translations.json": dict(area_fixture(), sources={}, locales={}),
+                  "source_name_translations.json": dict(source_fixture(), locales={}), "catalog.json": catalog,
+                  "name_translations.json": data, "name_translation_supplements.json": authored,
+                  "name_translation_itIT.json": italian}
+        bad_locale = copy.deepcopy(data)
+        bad_locale["locales"].pop("koKR")
+        with self.assertRaises(ValueError):
+            names.validate(bad_locale, catalog)
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            for name in ("scripts", "data", "Database"):
+                (root / name).mkdir()
+            shutil.copy2(ROOT / "scripts/names.py", root / "scripts/names.py")
+            target = root / "Database/NameTranslations.lua"
+            expected = b"previous verified localized titles\n"
+            variants = {"locale_removed": {"name_translations.json": bad_locale},
+                        "hostile_catalog": {"catalog.json": []}}
+            for label, override in variants.items():
+                with self.subTest(variant=label):
+                    for name, payload in inputs.items():
+                        (root / "data" / name).write_text(
+                            json.dumps(override.get(name, payload)), encoding="utf-8")
+                    for options in ([], ["--check"]):
+                        target.write_bytes(expected)
+                        result = subprocess.run([sys.executable, str(root / "scripts/names.py"), *options],
+                                                capture_output=True)
+                        self.assertNotEqual(result.returncode, 0)
+                        self.assertNotIn(b"Traceback", result.stderr)
+                        self.assertIn(b"localized-name input is invalid", result.stderr)
+                        self.assertEqual(target.read_bytes(), expected)
+
     def test_deeply_nested_json_fails_as_system_exit_without_traceback(self):
         # 20k-nested JSON input must fail as a clean SystemExit naming the
         # input file: RecursionError is a RuntimeError, not a ValueError, so

@@ -24,6 +24,17 @@ local function finiteNumber(value)
     return type(value) == "number" and value == value and value ~= math.huge and value ~= -math.huge
 end
 
+-- Catalogue reads go through a throwing-__index firewall mirroring
+-- QuestPayment.field / DialogueText.method: the direct read is preserved so
+-- legitimate non-throwing __index delegation still resolves, while a throw
+-- fails closed to nil (absent) and each call site maps that to
+-- UNKNOWN/missing/empty. Plain-table catalogues behave bit-identically.
+-- Side-effect-free single-key probe only, never Clean() element walks.
+local function field(object, key)
+    local ok, value = pcall(function() return object and object[key] end)
+    if ok then return value end
+end
+
 local function prerequisiteSatisfied(state, mode)
     return state.completedHistory == true or (mode == "active" and
         (state.status == "ACTIVE" or state.status == "READY"))
@@ -72,7 +83,7 @@ function Planner.Eligible(q, context)
     if type(q) ~= "table" then return nil, "requirements" end
     local unknown
     for _, rule in ipairs({ { "factions", "faction" }, { "classes", "class" } }) do
-        local list = q[rule[1]]
+        local list = field(q, rule[1])
         if list ~= nil then
             -- Malformed audience data is unknown requirements, never a throw or an exclusion.
             if type(list) ~= "table" then return nil, "requirements" end
@@ -120,7 +131,7 @@ function Planner.New(quests, context, choices)
         -- A non-table quest catalogue fails closed as missing, never a throw.
         if type(self.quests) ~= "table" then return save("UNKNOWN", "missing") end
         if self.states[id] then return self.states[id] end
-        local q = self.quests[id]
+        local q = field(self.quests, id)
         if not q then return save("UNKNOWN", "missing") end
         -- A partial table context missing the log probes fails closed as
         -- unknown character instead of throwing, mirroring the non-table
@@ -149,33 +160,37 @@ function Planner.New(quests, context, choices)
         end
         if done == nil or active == nil then return save("UNKNOWN", "character") end
         if not finiteNumber(self.context.level) then return save("UNKNOWN", "level") end
-        if q.minLevel ~= nil then
+        local minLevel = field(q, "minLevel")
+        if minLevel ~= nil then
             -- A malformed minimum level is unknown requirements, never a compare throw.
-            if not finiteNumber(q.minLevel) then return save("UNKNOWN", "requirements") end
-            if self.context.level < q.minLevel then return save("LOCKED", "level") end
+            if not finiteNumber(minLevel) then return save("UNKNOWN", "requirements") end
+            if self.context.level < minLevel then return save("LOCKED", "level") end
         end
-        if q.requirementsKnown ~= true then return save("UNKNOWN", "requirements") end
+        if field(q, "requirementsKnown") ~= true then return save("UNKNOWN", "requirements") end
         if depth > MAX_TRAVERSAL_DEPTH then return save("UNKNOWN", "requirements") end
         if self.visiting[id] then return save("UNKNOWN", "cycle") end
         self.visiting[id] = true
         local blocked, unknown = false, false
-        if q.requires ~= nil and type(q.requires) ~= "table" then
+        local requires = field(q, "requires")
+        if requires ~= nil and type(requires) ~= "table" then
             self.visiting[id] = nil
             return save("UNKNOWN", "requirements")
         end
-        if type(q.requires) == "table" and not denseSequence(q.requires) then
+        if type(requires) == "table" and not denseSequence(requires) then
             self.visiting[id] = nil
             return save("UNKNOWN", "requirements")
         end
-        for _, group in ipairs(q.requires or {}) do
-            if type(group) ~= "table" or type(group.ids) ~= "table" then
+        for _, group in ipairs(requires or {}) do
+            local ids = type(group) == "table" and field(group, "ids") or nil
+            if type(group) ~= "table" or type(ids) ~= "table" then
                 self.visiting[id] = nil
                 return save("UNKNOWN", "requirements")
             end
+            local mode = field(group, "mode")
             local satisfied, uncertain = false, false
-            for _, parent in ipairs(group.ids) do
+            for _, parent in ipairs(ids) do
                 local state = self:State(parent, depth + 1)
-                if prerequisiteSatisfied(state, group.mode) then satisfied = true end
+                if prerequisiteSatisfied(state, mode) then satisfied = true end
                 if state.status == "UNKNOWN" then uncertain = true end
             end
             if not satisfied then
@@ -216,40 +231,48 @@ function Planner.New(quests, context, choices)
             if depth > MAX_TRAVERSAL_DEPTH then return publish({}, true) end
             local state = self:State(id)
             -- A non-table catalogue fails closed as unknown, never a throw.
-            local q = type(self.quests) == "table" and self.quests[id] or nil
+            local q = type(self.quests) == "table" and field(self.quests, id) or nil
             -- A non-table quest entry carries no places or groups; treat it as absent.
             if type(q) ~= "table" then q = nil end
+            -- Catalogue field probes below fail closed to nil on a throwing
+            -- __index; explicit locals preserve false so only a throw (never a
+            -- legitimate false) collapses to absent.
+            local requires, requirementsKnown
+            if q then requires = field(q, "requires"); requirementsKnown = field(q, "requirementsKnown") end
             -- Known groups can expose safe work while the quest's full conditions
             -- remain unknown. An unknown leaf never authorizes pickup.
             if state.status == "UNKNOWN" and not (q and state.reason == "requirements" and
-                type(q.requires) == "table" and #q.requires > 0) then return {}, true, false end
+                type(requires) == "table" and #requires > 0) then return {}, true, false end
             if state.status == "COMPLETED" or state.status == "UNAVAILABLE" then return {}, false, false end
             if state.status == "ACTIVE" or state.status == "READY" then
                 -- The turn-in NPC is not an objective location for an unfinished quest.
                 return publish({ { id = id, kind = state.status == "READY" and "turnin" or "complete",
-                    place = state.status == "READY" and q and q.finish or nil } }, false)
+                    place = state.status == "READY" and q and field(q, "finish") or nil } }, false)
             end
             if state.status == "AVAILABLE" then
                 -- The catalogue can mutate between State and this re-read; a
                 -- missing entry fails closed as unknown, never a throw.
                 if not q then return publish({}, true) end
-                return publish({ { id = id, kind = q.startsInside and "inside" or "pickup", place = q.start } }, false)
+                return publish({ { id = id, kind = field(q, "startsInside") and "inside" or "pickup",
+                    place = field(q, "start") } }, false)
             end
             if state.reason == "level" then
                 if not q then return publish({}, true) end
-                return publish({ { id = id, kind = "level", level = q.minLevel } }, false)
+                return publish({ { id = id, kind = "level", level = field(q, "minLevel") } }, false)
             end
             -- Any later traversal needs the entry; a vanished entry fails closed.
             if not q then return publish({}, true) end
             path[id] = true
-            local actions, uncertain, seen = {}, state.status == "UNKNOWN" and q.requirementsKnown ~= true, {}
-            if q.requires ~= nil and type(q.requires) ~= "table" then path[id] = nil; return publish({}, true) end
-            if type(q.requires) == "table" and not denseSequence(q.requires) then path[id] = nil; return publish({}, true) end
-            for groupIndex, group in ipairs(q.requires or {}) do
-                if type(group) ~= "table" or type(group.ids) ~= "table" then path[id] = nil; return publish({}, true) end
+            local actions, uncertain, seen = {}, state.status == "UNKNOWN" and requirementsKnown ~= true, {}
+            if requires ~= nil and type(requires) ~= "table" then path[id] = nil; return publish({}, true) end
+            if type(requires) == "table" and not denseSequence(requires) then path[id] = nil; return publish({}, true) end
+            for groupIndex, group in ipairs(requires or {}) do
+                local ids = type(group) == "table" and field(group, "ids") or nil
+                if type(group) ~= "table" or type(ids) ~= "table" then path[id] = nil; return publish({}, true) end
+                local mode = field(group, "mode")
                 local satisfied = false
-                for _, parent in ipairs(group.ids) do
-                    if prerequisiteSatisfied(self:State(parent), group.mode) then
+                for _, parent in ipairs(ids) do
+                    if prerequisiteSatisfied(self:State(parent), mode) then
                         satisfied = true
                     end
                 end
@@ -257,10 +280,10 @@ function Planner.New(quests, context, choices)
                     local best, bestUnknown, bestScore
                     local selected = type(self.choices) == "table" and rawget(self.choices, id) or nil
                     selected = type(selected) == "table" and addon.Clean(rawget(selected, groupIndex), "number") or nil
-                    if selected and (not contains(group.ids, selected) or self:State(selected).status == "UNAVAILABLE") then
+                    if selected and (not contains(ids, selected) or self:State(selected).status == "UNAVAILABLE") then
                         selected = nil
                     end
-                    for _, parent in ipairs(group.ids) do
+                    for _, parent in ipairs(ids) do
                         if (not selected or parent == selected) and self:State(parent).status ~= "UNAVAILABLE" then
                             local candidates, missing, cycle = resolve(parent, path, depth + 1)
                             cyclic = cyclic or cycle == true
@@ -271,7 +294,7 @@ function Planner.New(quests, context, choices)
                         end
                     end
                     -- An empty OR group is known to be unsatisfiable, not unknown evidence.
-                    if bestUnknown or ((not best or #best == 0) and #group.ids > 0) then uncertain = true end
+                    if bestUnknown or ((not best or #best == 0) and #ids > 0) then uncertain = true end
                     for _, action in ipairs(best or {}) do
                         local key = action.id .. ":" .. action.kind
                         if not seen[key] then actions[#actions + 1], seen[key] = action, true end
@@ -291,16 +314,16 @@ function Planner.New(quests, context, choices)
         if not id or id < 1 or id > 4294967295 or id % 1 ~= 0 then return {} end
         -- A non-table catalogue fails closed as empty, never a throw.
         if type(self.quests) ~= "table" then return {} end
-        local q = self.quests[id]
+        local q = field(self.quests, id)
         -- A non-table quest entry carries no completion links; treat it as absent.
         if type(q) ~= "table" then return {} end
-        local related = addon.Clean(q.completionQuests, "table")
+        local related = addon.Clean(field(q, "completionQuests"), "table")
         local result, seen = {}, {}
         if not related then return result end
         for i = 1, math.min(#related, 100) do
-            local entry = addon.Clean(related[i], "table")
-            local other = entry and addon.Clean(entry.id, "number")
-            local itemID = entry and addon.Clean(entry.itemID, "number")
+            local entry = addon.Clean(field(related, i), "table")
+            local other = entry and addon.Clean(field(entry, "id"), "number")
+            local itemID = entry and addon.Clean(field(entry, "itemID"), "number")
             if other and other > 0 and other <= 4294967295 and other % 1 == 0 and other ~= id and not seen[other] and
                 itemID and itemID > 0 and itemID <= 4294967295 and itemID % 1 == 0 then
                 seen[other] = true
@@ -339,7 +362,7 @@ function Planner.New(quests, context, choices)
         local seen, relevant = {}, 0
         for _, id in ipairs(dungeon.quests) do
             -- A non-table catalogue fails closed per quest, never a throw.
-            local q = type(self.quests) == "table" and self.quests[id] or nil
+            local q = type(self.quests) == "table" and field(self.quests, id) or nil
             -- A non-table quest entry carries no places; treat it as absent.
             if type(q) ~= "table" then q = nil end
             local eligible = q and Planner.Eligible(q, self.context)
@@ -354,7 +377,7 @@ function Planner.New(quests, context, choices)
                 if relevantToCharacter then
                     relevant = relevant + 1
                     if state.status ~= "COMPLETED" and state.status ~= "ACTIVE" and state.status ~= "READY" and
-                        not (q and q.startsInside and state.status == "AVAILABLE") then
+                        not (q and field(q, "startsInside") and state.status == "AVAILABLE") then
                         result.ready = false
                     end
                     local actions, uncertain = self:Next(id)

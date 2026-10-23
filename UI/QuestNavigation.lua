@@ -842,7 +842,11 @@ function UI:BindQuestRowNavigation(row, id, ownerCurrent)
         if not ownerCurrent() then return false end
         control.sourceInspect = false
     end
-    local catalogue, definition, checker = addon.quests, addon.quests[id], issecretvalue
+    -- The catalogue is hostile-mutable mid-read; capture it under Clean so a
+    -- nilled addon.quests fails closed here instead of throwing on index.
+    local catalogue, checker = addon.Clean(addon.quests, "table"), issecretvalue
+    if id and not catalogue then return false end
+    local definition = catalogue and catalogue[id]
     local rawStart = definition and rawget(definition, "start")
     local start = addon.Clean(rawStart, "table")
     local sourceID = definition and rawget(definition, "id")

@@ -729,6 +729,12 @@ function UI:MakeRow(parent, pool, index, height, ownerCurrent, staged)
             return nil
         end
         if not current() then return abandon() end
+        -- The row's own width feeds later arithmetic (catalog and list width
+        -- math); prove it like the parent width so a partial-method factory
+        -- abandons before pooling instead of throwing later in render.
+        local okRowWidth, rowWidth = pcall(row.GetWidth, row)
+        rowWidth = okRowWidth and addon.Clean(rowWidth, "number") or nil
+        if not rowWidth then return abandon() end
         local okWidth, width = pcall(parent.GetWidth, parent)
         width = okWidth and addon.Clean(width, "number") or nil
         if not width then return abandon() end
@@ -751,6 +757,17 @@ function UI:MakeRow(parent, pool, index, height, ownerCurrent, staged)
         if not current() then return abandon() end
         row.note = note
         pool[index] = row
+    else
+        -- A pooled row may have lost GetWidth after creation (hostile swap via
+        -- an uncaptured callback); re-prove before publishing. Hide without
+        -- evicting so ipairs traversal over the pool stays intact; the next
+        -- render re-proves (and rebuilds once the method is trustworthy).
+        local okRowWidth, rowWidth = pcall(row.GetWidth, row)
+        rowWidth = okRowWidth and addon.Clean(rowWidth, "number") or nil
+        if not rowWidth then
+            pcall(function() row:Hide() end)
+            return nil
+        end
     end
     if ownerCurrent then self:QuestListWrite(row, staged and "Hide" or "Show", ownerCurrent) else row:Show() end
     styleRow(row, "quest", false)
@@ -2116,7 +2133,14 @@ function UI:RefreshDungeons()
         row.catalogResult = result
         if not current() or not write(row, "Hide") then return end
         if not row.art then
-            row.art = row:CreateTexture(nil, "ARTWORK")
+            -- CreateTexture may have been swapped after MakeRow proved it (via
+            -- the uncaptured theme.ApplyFont callback above); claim it under
+            -- pcall like the entrance icon below and publish only a validated
+            -- texture so a hostile row aborts instead of throwing on retry.
+            local okArt, art = pcall(row.CreateTexture, row, nil, "ARTWORK")
+            art = okArt and (addon.Clean(art, "table") or addon.Clean(art, "userdata")) or nil
+            if not art then return end
+            row.art = art
             if not write(row.art, "SetSize", 56, 60) or not write(row.art, "SetPoint", "TOPLEFT", 8, -8) then return end
         end
         if not row.entranceControl then
@@ -2378,7 +2402,11 @@ function UI:PaintQuestRowStatus(row, entry, engine, ownerCurrent, engineLease)
     local status = state and state.status
     local compactRole = row.compact and status ~= "ACTIVE" and status ~= "READY"
     local painter, checker, token = compactRole and addon.PaintCompactQuestStatus or addon.PaintQuestStatus, issecretvalue, {}
-    local definition = id and addon.quests[id]
+    -- The catalogue is hostile-mutable mid-read; capture it under Clean so a
+    -- nilled addon.quests fails closed here instead of throwing on index.
+    local catalogue = addon.Clean(addon.quests, "table")
+    if id and not catalogue then return false end
+    local definition = (id and catalogue) and catalogue[id] or nil
     local widthGetter, widthSetter = row.title.GetWidth, row.title.SetWidth
     local eligible = not heading and (row.compact or status == "ACTIVE" or status == "READY")
     row.statusGeneration = token
@@ -2645,7 +2673,12 @@ function UI:RefreshQuests()
             local classifyPickup = questSources and questSources.PickupStartKind
             if type(classifyPickup) ~= "function" then classifyPickup, questSources = nil, nil end
             for _, action in ipairs(plan.actions) do
-                local q, group = addon.quests[action.id], "progress"
+                -- The catalogue is hostile-mutable mid-read; capture it per
+                -- entry under Clean so a nilled addon.quests aborts the
+                -- grouping pass instead of throwing on index.
+                local catalogue = addon.Clean(addon.quests, "table")
+                if not catalogue then return end
+                local q, group = catalogue[action.id], "progress"
                 if action.kind == "level" then group = "level"
                 elseif action.kind == "inside" or (action.kind == "pickup" and q and q.startsInside) then group = "inside"
                 elseif action.kind == "pickup" then
@@ -2801,7 +2834,11 @@ function UI:RefreshQuests()
                 title = entry.title or addon.QuestName(id)
                 if not current() then return end
                 if state.status == "UNAVAILABLE" then
-                    note = audienceLabel(addon.quests[id], current)
+                    -- Capture the catalogue under Clean: the callee Cleans its
+                    -- argument, but indexing a nilled addon.quests throws first.
+                    local catalogue = addon.Clean(addon.quests, "table")
+                    if not catalogue then return end
+                    note = audienceLabel(catalogue[id], current)
                     if note == false then return end
                 elseif entry.action then
                     local action = entry.action

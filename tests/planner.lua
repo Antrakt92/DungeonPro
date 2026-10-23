@@ -1197,4 +1197,123 @@ check("Cyclic pathological graphs terminate quickly without availability", funct
     eq(fanUnknown, true)
     assert(os.clock() - started < 5, "cyclic traversal must terminate quickly")
 end)
+check("Throwing catalogue metatables fail closed without throwing", function()
+    local function hostile()
+        return setmetatable({}, { __index = function() error("hostile catalogue") end })
+    end
+    -- Throwing quests root: absent-key reads fail closed to missing/empty.
+    local root = hostile()
+    local e = P.New(root, ctx())
+    local okState, state = pcall(function() return e:State(1) end)
+    assert(okState, "State with hostile catalogue root threw")
+    eq(state.status, "UNKNOWN"); eq(state.reason, "missing")
+    local okNext, actions, unknown = pcall(function() return e:Next(1) end)
+    assert(okNext, "Next with hostile catalogue root threw")
+    eq(#actions, 0); eq(unknown, true)
+    local okSteps, steps = pcall(function() return e:CompletionSteps(1) end)
+    assert(okSteps, "CompletionSteps with hostile catalogue root threw")
+    eq(#steps, 0)
+    local okDungeon, plan = pcall(function()
+        return e:Dungeon({ quests = { 1 }, coverage = "reviewed" })
+    end)
+    assert(okDungeon, "Dungeon with hostile catalogue root threw")
+    eq(plan.unknown, true); eq(plan.ready, false)
+    -- Present root entries still resolve through the direct read.
+    local rooted = P.New(setmetatable({ [1] = q(1) }, { __index = function() error("hostile root") end }), ctx())
+    eq(rooted:State(1).status, "AVAILABLE")
+    local missingState = rooted:State(999)
+    eq(missingState.status, "UNKNOWN"); eq(missingState.reason, "missing")
+    -- Throwing quest entry: every absent-key probe fails closed (throw reads as absent).
+    local entry = hostile()
+    local okEligible, eligible = pcall(function() return P.Eligible(entry, ctx()) end)
+    assert(okEligible, "Eligible with hostile quest entry threw")
+    eq(eligible, true)
+    local e2 = P.New({ [1] = entry }, ctx())
+    local okState2, state2 = pcall(function() return e2:State(1) end)
+    assert(okState2, "State with hostile quest entry threw")
+    eq(state2.status, "UNKNOWN"); eq(state2.reason, "requirements")
+    eq(e2.visiting[1], nil)
+    local okNext2, actions2, unknown2 = pcall(function() return e2:Next(1) end)
+    assert(okNext2, "Next with hostile quest entry threw")
+    eq(#actions2, 0); eq(unknown2, true)
+    local okSteps2, steps2 = pcall(function() return e2:CompletionSteps(1) end)
+    assert(okSteps2, "CompletionSteps with hostile quest entry threw")
+    eq(#steps2, 0)
+    local okDungeon2, plan2 = pcall(function()
+        return e2:Dungeon({ quests = { 1 }, coverage = "reviewed" })
+    end)
+    assert(okDungeon2, "Dungeon with hostile quest entry threw")
+    eq(#plan2.rows, 1); eq(plan2.rows[1].state.reason, "requirements")
+    eq(plan2.ready, false); eq(plan2.unknown, true)
+    -- Throwing group: a throwing ids read fails closed as unknown requirements.
+    local quests = { [1] = q(1), [2] = q(2, { hostile() }) }
+    local e3 = P.New(quests, ctx())
+    local okState3, state3 = pcall(function() return e3:State(2) end)
+    assert(okState3, "State with hostile prerequisite group threw")
+    eq(state3.status, "UNKNOWN"); eq(state3.reason, "requirements")
+    eq(e3.visiting[2], nil)
+    local okNext3, actions3, unknown3 = pcall(function() return e3:Next(2) end)
+    assert(okNext3, "Next with hostile prerequisite group threw")
+    eq(#actions3, 0); eq(unknown3, true)
+    local okSteps3, steps3 = pcall(function() return e3:CompletionSteps(2) end)
+    assert(okSteps3, "CompletionSteps with hostile prerequisite group threw")
+    eq(#steps3, 0)
+    local okDungeon3, plan3 = pcall(function()
+        return e3:Dungeon({ quests = { 2 }, coverage = "reviewed" })
+    end)
+    assert(okDungeon3, "Dungeon with hostile prerequisite group threw")
+    eq(plan3.unknown, true); eq(plan3.ready, false)
+    -- A throwing mode read alone reads as absent (completed-mode), never a throw.
+    local modeless = { [1] = q(1),
+        [2] = q(2, { setmetatable({ ids = { 1 } }, { __index = function() error("hostile mode") end }) }) }
+    local e4 = P.New(modeless, ctx())
+    eq(e4:State(2).status, "LOCKED")
+    local actions4, unknown4 = e4:Next(2)
+    eq(#actions4, 1); eq(actions4[1].id, 1); eq(unknown4, false)
+    -- Throwing completion entries fail closed to empty without throwing.
+    local linked = { [1] = q(1, nil, { completionQuests = { hostile() } }), [2] = q(2) }
+    local e5 = P.New(linked, ctx())
+    local okSteps5, steps5 = pcall(function() return e5:CompletionSteps(1) end)
+    assert(okSteps5, "CompletionSteps with hostile completion entry threw")
+    eq(#steps5, 0)
+    local partial = { [1] = q(1, nil, { completionQuests = {
+        setmetatable({ id = 2 }, { __index = function() error("hostile item") end }),
+    } }), [2] = q(2) }
+    eq(#P.New(partial, ctx()):CompletionSteps(1), 0)
+    eq(e5:State(1).status, "AVAILABLE")
+end)
+check("Legitimate catalogue __index delegation still resolves", function()
+    -- Root-level delegation in the reward-cache style: absent IDs resolve
+    -- through the backing table instead of failing closed.
+    local definitions = { [1] = q(1), [2] = q(2, { { ids = { 1 } } }) }
+    local lookups = 0
+    local delegated = setmetatable({}, { __index = function(_, id)
+        lookups = lookups + 1
+        return definitions[id]
+    end })
+    local e = P.New(delegated, ctx())
+    eq(e:State(1).status, "AVAILABLE")
+    eq(e:State(2).status, "LOCKED")
+    assert(lookups > 0, "delegation must actually fire through the guarded read")
+    local actions, unknown = e:Next(2)
+    eq(#actions, 1); eq(actions[1].id, 1); eq(actions[1].kind, "pickup"); eq(unknown, false)
+    local plan = e:Dungeon({ quests = { 1, 2 }, coverage = "reviewed" })
+    eq(#plan.rows, 2); eq(plan.ready, false); eq(plan.unknown, false)
+    -- Entry-level delegation: absent fields resolve through the backing table.
+    local backing = { minLevel = 1, requirementsKnown = true }
+    local entry = setmetatable({ id = 1 }, { __index = function(_, key) return backing[key] end })
+    local e2 = P.New({ [1] = entry }, ctx())
+    eq(e2:State(1).status, "AVAILABLE")
+    local actions2, unknown2 = e2:Next(1)
+    eq(#actions2, 1); eq(actions2[1].kind, "pickup"); eq(unknown2, false)
+    -- Group-level delegation: ids resolve through the backing table.
+    local group = setmetatable({}, { __index = function(_, key)
+        if key == "ids" then return { 1 } end
+    end })
+    local quests = { [1] = q(1), [2] = q(2, { group }) }
+    local e3 = P.New(quests, ctx())
+    eq(e3:State(2).status, "LOCKED")
+    local actions3, unknown3 = e3:Next(2)
+    eq(#actions3, 1); eq(actions3[1].id, 1); eq(unknown3, false)
+end)
 print("Planner checks passed: " .. passed)
