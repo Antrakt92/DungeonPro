@@ -360,4 +360,18 @@ check("RestoreDB drops malformed texts members while keeping valid quest texts",
     assert(addon.RestoreDB() == true and type(addon.char.texts) == "table" and next(addon.char.texts) == nil)
     DungeonProDB, DungeonProCharDB, DungeonPrepDB, DungeonPrepCharDB = savedPro, savedChar, savedPrep, savedPrepChar
 end)
+check("Truthy non-table probe namespaces fail closed without throwing", function()
+    for _, key in ipairs({ "C_QuestLine", "C_QuestLog", "C_CreatureInfo", "C_Item", "C_Map", "TomTom" }) do
+        for _, bad in ipairs({ true, 1, "namespace" }) do
+            reset()
+            GetBuildInfo = function() return "11.0.0", "60000", "", "110000" end
+            _G[key] = bad
+            local ok, result = pcall(addon.ProbeClient)
+            assert(ok, key .. "=" .. tostring(bad) .. " threw in ProbeClient: " .. tostring(result))
+            assert(type(result) == "table" and type(result.api) == "table" and type(result.questLines) == "table", key .. " lost its probe shape")
+            _G[key] = nil
+        end
+    end
+    reset()
+end)
 print("Character context modeled checks passed: " .. total .. " (no native character validation)")

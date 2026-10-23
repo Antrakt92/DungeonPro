@@ -679,4 +679,42 @@ check("Whitespace-only reward textures are omitted without rejecting clean rows"
         assert(r and r.items[1].name == "Reward" and r.items[1].texture == nil, "blank cached texture kept an icon")
     end
 end)
+check("Truthy non-table C_Timer fails closed on data hydration timeouts without throwing", function()
+    local savedQuests, savedTimer, savedLog, savedDB, savedLanguage, savedNames =
+        addon.quests, C_Timer, C_QuestLog, addon.db, addon.Language, addon.nameTranslations
+    addon.quests = { [123] = { id = 123, name = "Source name" } }
+    addon.db, addon.Language, addon.nameTranslations = nil, nil, nil
+    GetLocale = function() return "enUS" end
+    local loadCalls = 0
+    C_QuestLog = {
+        GetTitleForQuestID = function(id) return nil end,
+        RequestLoadQuestByID = function(id) loadCalls = loadCalls + 1 end,
+    }
+    for index, bad in ipairs({ true, 1, "timer" }) do
+        local id = 222 + index
+        addon.quests[id] = { id = id, name = "Source name" }
+        C_Timer = bad
+        local before = loadCalls
+        local ok, result = pcall(addon.QuestName, id)
+        assert(ok, "non-table C_Timer threw on quest hydration: " .. tostring(result))
+        assert(result == "Source name", "non-table C_Timer lost the catalogue name")
+        assert(loadCalls == before + 1, "non-table C_Timer skipped the bounded hydration request")
+        addon.quests[id] = nil
+    end
+    local itemLoads, wantItem = 0, 0
+    C_Item = { GetItemNameByID = function(id) assert(id == wantItem); return nil end,
+        IsItemDataCachedByID = function(id) assert(id == wantItem); return false end,
+        RequestLoadItemDataByID = function(id) assert(id == wantItem); itemLoads = itemLoads + 1 end }
+    for index, bad in ipairs({ true, 1, "timer" }) do
+        C_Timer = bad
+        wantItem = 20605 + index
+        local before = itemLoads
+        local ok, result = pcall(addon.ItemName, wantItem)
+        assert(ok, "non-table C_Timer threw on item hydration: " .. tostring(result))
+        assert(result == nil, "non-table C_Timer published an unhydrated item name")
+        assert(itemLoads == before + 1, "non-table C_Timer skipped the bounded item request")
+    end
+    addon.quests, C_Timer, C_QuestLog, addon.db, addon.Language, addon.nameTranslations =
+        savedQuests, savedTimer, savedLog, savedDB, savedLanguage, savedNames
+end)
 print("Quest portrait adapter modeled checks passed: " .. total .. " (native client unverified)")

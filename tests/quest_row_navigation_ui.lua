@@ -1400,4 +1400,91 @@ do
  assert(found, "hostile selected id falls back to #?")
  ui.search = ""; ui.questTreeRoot = nil; ui.questTreeDungeon = nil; ui.frame:Show(); ui:Refresh()
 end
+-- A15 DUNGEONART-SHOW-GUARD: a throwing Show cannot escape PaintDungeonArt,
+-- mirroring the pcall guards around SetTexture/Hide/SetTexCoord.
+do
+ local tex = {
+  SetTexture = function(self, value) return true end,
+  SetTexCoord = function(self, ...) end,
+  Show = function(self) error("hostile Show") end,
+  Hide = function(self) end,
+ }
+ local ok, result = pcall(addon.PaintDungeonArt, tex, {}, nil, nil)
+ assert(ok, "throwing Show threw in PaintDungeonArt: " .. tostring(result))
+ assert(result == true, "valid paint with a throwing Show keeps its success")
+end
+-- A15 LOOT-WHITESPACE-GUARD: a whitespace-only loot name stays skipped like
+-- empty and overlong names, mirroring every sibling %S item guard.
+do
+ local savedDialogue, savedLog, savedCache = addon.DialogueRewards, addon.QuestRewards, addon.CachedQuestRewards
+ local savedDungeons = addon.dungeons
+ local savedSecret = issecretvalue
+ issecretvalue = function() return false end
+ addon.quests[990703] = { id = 990703, name = "Whitespace loot quest", minLevel = 1, requirementsKnown = true }
+ local guardDungeon = { key = "loot-whitespace", name = "Loot whitespace dungeon", minLevel = 1, maxLevel = 80, quests = { 990703 } }
+ addon.dungeons = { guardDungeon }
+ ui.dungeon, ui.quest, ui.questTreeRoot, ui.questTreeDungeon = guardDungeon, 990703, nil, nil
+ ui.search = ""; ui.includeUnavailable = true; ui.frame:Show()
+ if type(ui.SetDetailTab) == "function" then ui:SetDetailTab("quest") end
+ local function blankPainted()
+  for _, fs in ipairs(ui.details) do
+   if fs.shown and fs.text == "   " then return true end
+   if fs.shown and fs.text == "\t" then return true end
+  end
+  return false
+ end
+ local function hasText(want)
+  for _, fs in ipairs(ui.details) do if fs.shown and fs.text and fs.text:find(want, 1, true) then return true end end
+  return false
+ end
+ addon.DialogueRewards = function(id) if id == 990703 then return { source = "dialogue",
+  items = { { id = 801, name = "   ", count = 1 }, { id = 802, name = "\t", count = 1 } }, choices = {} } end end
+ addon.QuestRewards = function() return nil end
+ addon.CachedQuestRewards = function() return nil end
+ local ok, err = pcall(function() ui:Refresh() end)
+ assert(ok, "whitespace loot threw in Refresh: " .. tostring(err))
+ assert(not blankPainted(), "whitespace-only loot names stay skipped")
+ addon.DialogueRewards = function(id) if id == 990703 then return { source = "dialogue",
+  items = { { id = 801, name = "   ", count = 1 }, { id = 803, name = "Lone survivor", count = 3 } }, choices = {} } end end
+ ok, err = pcall(function() ui:Refresh() end)
+ assert(ok, "mixed whitespace loot threw in Refresh: " .. tostring(err))
+ assert(not blankPainted(), "whitespace entry stays skipped beside a valid survivor")
+ assert(hasText(addon.L("REWARD_ITEM", "Lone survivor", 3)), "valid survivor renders after whitespace loot entries")
+ addon.DialogueRewards, addon.QuestRewards, addon.CachedQuestRewards = savedDialogue, savedLog, savedCache
+ issecretvalue = savedSecret
+ addon.dungeons = savedDungeons
+ addon.quests[990703] = nil
+ ui.dungeon, ui.quest = dungeon, 990104
+ ui.search = ""; ui.questTreeRoot = nil; ui.questTreeDungeon = nil; ui.frame:Show(); ui:Refresh()
+end
+-- A15 SOURCE-SEARCH-WHITESPACE-GUARD: a whitespace-only member title cannot
+-- authorize a source match, mirroring the %S title guard at :1825.
+do
+ local savedDungeons = addon.dungeons
+ local savedGetter = addon.QuestSourceSearchTerms
+ local hostileID = {}
+ addon.quests[hostileID] = { id = hostileID, name = "   " }
+ local hostileDungeon = { key = "whitespace-search", name = "Whitespace search dungeon", minLevel = 1, maxLevel = 80, quests = { hostileID } }
+ addon.QuestSourceSearchTerms = function(quest)
+  if quest and quest.id == hostileID then
+   return { { kind = "npc", text = "zzzqqq whitespace match" } }, function() return true end, function() return true end
+  end
+  return savedGetter(quest)
+ end
+ addon.dungeons = { hostileDungeon }
+ local function shownCards()
+  local count = 0
+  for _, card in ipairs(ui.cards) do if card:IsShown() then count = count + 1 end end
+  return count
+ end
+ ui.search = "zzzqqq"; ui.questTreeRoot = nil; ui.questTreeDungeon = nil; ui.includeUnavailable = true; ui.frame:Show()
+ local ok, err = pcall(function() ui:RefreshDungeons() end)
+ addon.dungeons = savedDungeons
+ addon.quests[hostileID] = nil
+ addon.QuestSourceSearchTerms = savedGetter
+ assert(ok, "whitespace source title threw in RefreshDungeons: " .. tostring(err))
+ assert(shownCards() == 0, "whitespace source title publishes no card")
+ ui.search = ""; ui.frame:Show(); ui:RefreshDungeons()
+ assert(shownCards() > 0, "valid catalogue restores dungeon cards")
+end
 print("Middle quest navigation checks passed (modeled, no native input or layout proof)")

@@ -186,7 +186,7 @@ function addon.PaintDungeonArt(texture, dungeon, mode, showOwned)
     if showOwned then
         local ok, shown = pcall(showOwned, texture)
         if not ok or addon.Clean(shown, "boolean") ~= true then return false end
-    else texture:Show() end
+    else pcall(texture.Show, texture) end
     local success = current()
     local aspect = overview and kind == "art" and image == fileID and artMap and
         (not mapID or mapID == artMap) and previewWidth and previewHeight and previewWidth / previewHeight or nil

@@ -121,4 +121,15 @@ check("Missing or throwing GetBuildInfo fails closed without throwing", function
         assert(#m.reasons == 0, "uninitialized client must not notify for build mode " .. mode)
     end
 end)
+check("Truthy non-table C_Timer fails closed to inline refresh without throwing", function()
+    for _, bad in ipairs({ true, 1, "timer" }) do
+        local m = model()
+        C_Timer = bad
+        local ok, err = pcall(m.event, "QUEST_LOG_UPDATE")
+        assert(ok, "non-table C_Timer threw: " .. tostring(err))
+        assert(#m.queue == 0, "non-table C_Timer must not queue a delayed refresh")
+        m.drain()
+        assert(#m.reasons == 1 and m.reasons[1] == "full", "non-table C_Timer lost its inline refresh")
+    end
+end)
 print("Event refresh checks passed: " .. total)

@@ -41,7 +41,7 @@ local function refresh(dataOnly)
         refreshing = false
         if not ok then error(message) end
     end
-    if C_Timer and type(C_Timer.After) == "function" and pcall(C_Timer.After, 0.1, run) then
+    if type(C_Timer) == "table" and type(C_Timer.After) == "function" and pcall(C_Timer.After, 0.1, run) then
         immediate = false
     else run() end
 end

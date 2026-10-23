@@ -368,7 +368,7 @@ function addon.CaptureOffers()
         addon.ClearOffers()
         addon.Notify("data")
     end
-    scheduled = C_Timer and type(C_Timer.After) == "function" and pcall(C_Timer.After, 30, expire) or false
+    scheduled = type(C_Timer) == "table" and type(C_Timer.After) == "function" and pcall(C_Timer.After, 30, expire) or false
     scheduling = false
 end
 
@@ -405,7 +405,7 @@ local function refreshRetries()
         retryRefreshing = nil
         if not ok then error(message) end
     end
-    local after = C_Timer and addon.Clean(C_Timer.After, "function")
+    local after = type(C_Timer) == "table" and addon.Clean(C_Timer.After, "function")
     local ok, result
     if after then ok, result = pcall(after, .1, run) end
     if ok and addon.Clean(result, "boolean") ~= false then inline = false
@@ -424,7 +424,7 @@ local function dataResult(requests, id, success)
         request.waiting = false
         refreshRetries()
     end
-    if not C_Timer or type(C_Timer.After) ~= "function" or not pcall(C_Timer.After, 2, retry) then
+    if type(C_Timer) ~= "table" or type(C_Timer.After) ~= "function" or not pcall(C_Timer.After, 2, retry) then
         request.waiting = false
     end
 end
@@ -784,7 +784,7 @@ function addon.QuestName(id)
                     addon.QuestDataResult(id, false)
                 end
             end
-            if not C_Timer or type(C_Timer.After) ~= "function" or not pcall(C_Timer.After, 10, timeout) then
+            if type(C_Timer) ~= "table" or type(C_Timer.After) ~= "function" or not pcall(C_Timer.After, 10, timeout) then
                 addon.QuestDataResult(id, false)
             end
         end
@@ -1045,7 +1045,7 @@ function addon.ItemName(id, ownerCurrent)
                 addon.ItemDataResult(id, false)
             end
         end
-        if not C_Timer or type(C_Timer.After) ~= "function" or not pcall(C_Timer.After, 10, timeout) then
+        if type(C_Timer) ~= "table" or type(C_Timer.After) ~= "function" or not pcall(C_Timer.After, 10, timeout) then
             addon.ItemDataResult(id, false)
         end
     end
@@ -1815,27 +1815,27 @@ function addon.ProbeClient()
         interface = addon.Clean(interface, "number")
         if interface and (interface < 0 or interface % 1 ~= 0 or interface > 9007199254740991) then interface = nil end
     end
-    local line = C_QuestLine or {}
+    local line = type(C_QuestLine) == "table" and C_QuestLine or {}
     -- Object presence does not establish that a dialogue is open or readable.
     local function panelPresent(frame)
         return addon.Clean(frame, "table") ~= nil or addon.Clean(frame, "userdata") ~= nil
     end
     local result = { build = build, interface = interface, api = {}, questLines = {},
         frames = { questFrame = panelPresent(QuestFrame), questDetailPanel = panelPresent(QuestFrameDetailPanel) } }
-    for _, entry in ipairs({ { "titles", C_QuestLog and C_QuestLog.GetTitleForQuestID },
-        { "objectives", C_QuestLog and C_QuestLog.GetQuestObjectives }, { "lines", line.GetQuestLineInfo },
+    for _, entry in ipairs({ { "titles", type(C_QuestLog) == "table" and C_QuestLog.GetTitleForQuestID },
+        { "objectives", type(C_QuestLog) == "table" and C_QuestLog.GetQuestObjectives }, { "lines", line.GetQuestLineInfo },
         { "lineQuests", line.GetQuestLineQuests }, { "offerText", GetQuestText }, { "logText", GetQuestLogQuestText },
         { "offerObjectiveText", GetObjectiveText }, { "offerQuestID", GetQuestID },
         { "offerPortrait", GetQuestPortraitGiver },
         { "offerRewardItems", GetNumQuestRewards }, { "offerRewardChoices", GetNumQuestChoices },
         { "offerRewardInfo", GetQuestItemInfo }, { "offerRewardMoney", GetRewardMoney },
-        { "offerRewardXP", GetRewardXP }, { "offerRewardVisibility", C_QuestLog and C_QuestLog.ShouldShowQuestRewards },
+        { "offerRewardXP", GetRewardXP }, { "offerRewardVisibility", type(C_QuestLog) == "table" and C_QuestLog.ShouldShowQuestRewards },
         { "rewardItems", GetNumQuestLogRewards }, { "rewardChoices", GetNumQuestLogChoices },
-        { "rewardMoney", GetQuestLogRewardMoney }, { "portraits", C_QuestLog and C_QuestLog.GetQuestLogPortraitGiver },
+        { "rewardMoney", GetQuestLogRewardMoney }, { "portraits", type(C_QuestLog) == "table" and C_QuestLog.GetQuestLogPortraitGiver },
         { "rewardCache", HaveQuestRewardData }, { "rewardXP", GetQuestLogRewardXP },
-        { "npcNames", UnitName }, { "creatureIDs", C_CreatureInfo and C_CreatureInfo.GetCreatureID },
-        { "itemNames", C_Item and C_Item.GetItemNameByID }, { "itemRequests", C_Item and C_Item.RequestLoadItemDataByID },
-        { "nativeWaypoints", C_Map and C_Map.SetUserWaypoint }, { "tomtom", TomTom and TomTom.AddWaypoint } }) do
+        { "npcNames", UnitName }, { "creatureIDs", type(C_CreatureInfo) == "table" and C_CreatureInfo.GetCreatureID },
+        { "itemNames", type(C_Item) == "table" and C_Item.GetItemNameByID }, { "itemRequests", type(C_Item) == "table" and C_Item.RequestLoadItemDataByID },
+        { "nativeWaypoints", type(C_Map) == "table" and C_Map.SetUserWaypoint }, { "tomtom", type(TomTom) == "table" and TomTom.AddWaypoint } }) do
         result.api[entry[1]] = type(entry[2]) == "function"
     end
     for _, id in ipairs({ 166, 5728, 96393, 92753 }) do

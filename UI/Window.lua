@@ -1867,7 +1867,8 @@ function UI:RefreshDungeons()
                         if found then
                             local title = addon.Clean(member.name, "string")
                             local safeID = addon.Clean(member.id, "number") or addon.Clean(member.id, "string")
-                            matchedName = title and title ~= "" and title or (memo[member.id] and memo[member.id].name) or (safeID and ("#" .. safeID) or nil)
+                            local memoName = memo[member.id] and memo[member.id].name
+                            matchedName = title and title:find("%S") and title or (memoName and memoName:find("%S") and memoName) or (safeID and ("#" .. safeID) or nil)
                             matchedID, sourceMatch = member.id, entry
                             if not cached.matched then cached.matched = true; sourceMatches[#sourceMatches + 1] = cached end
                             break
@@ -4506,7 +4507,7 @@ function UI:RefreshDetail(sourceFocus)
                 if zoneName and (#zoneName > 500 or not zoneName:find("%S")) then zoneName = nil end
                 if not current() then return false end
                 if not zoneName then
-                    local zone = addon.Read(C_Map and C_Map.GetMapInfo, "table", point.mapID)
+                    local zone = addon.Read(type(C_Map) == "table" and C_Map.GetMapInfo, "table", point.mapID)
                     if not current() then return false end
                     local nativeZone = zone and addon.Clean(zone.name, "string")
                     if nativeZone and (#nativeZone > 500 or not nativeZone:find("%S")) then nativeZone = nil end
@@ -4548,7 +4549,7 @@ function UI:RefreshDetail(sourceFocus)
             if zoneName and (#zoneName > 500 or not zoneName:find("%S")) then zoneName = nil end
             if not current() then return nil end
             if not zoneName then
-                local zone = p.mapID and addon.Read(C_Map and C_Map.GetMapInfo, "table", p.mapID)
+                local zone = p.mapID and addon.Read(type(C_Map) == "table" and C_Map.GetMapInfo, "table", p.mapID)
                 if not current() then return nil end
                 local nativeZone = zone and addon.Clean(zone.name, "string")
                 if nativeZone and (#nativeZone > 500 or not nativeZone:find("%S")) then nativeZone = nil end
@@ -5508,7 +5509,7 @@ function UI:RefreshDetail(sourceFocus)
             -- Route facts remain separate from the item that starts the quest.
             local routes, snapshots, mappedDrops = {}, {}, {}
             local nameProofs = {}
-            local mapNamespace, mapGetter = C_Map, C_Map and C_Map.GetMapInfo
+            local mapNamespace, mapGetter = C_Map, type(C_Map) == "table" and C_Map.GetMapInfo
             local giverGetter, dungeonGetter = addon.GiverName, addon.DungeonName
             local function capture(object, fields, list, exact)
                 local values, count = {}, 0
@@ -6395,7 +6396,7 @@ function UI:RefreshDetail(sourceFocus)
             local checker, localize, nameGetter = issecretvalue, addon.L, addon.ItemName
             local database, choice, localeGetter = addon.db, addon.db.locale, GetLocale
             local locale = addon.Read(localeGetter, "string")
-            local mapNamespace, mapGetter = C_Map, C_Map and C_Map.GetMapInfo
+            local mapNamespace, mapGetter = C_Map, type(C_Map) == "table" and C_Map.GetMapInfo
             local navigation = addon.Navigation
             local navigate, showMap = navigation and navigation.Start, navigation and navigation.Map
             local snapshots = {}
@@ -6615,7 +6616,7 @@ function UI:RefreshDetail(sourceFocus)
                     local cleanItem = addon.Clean(item, "table")
                     local itemName = cleanItem and addon.Clean(rawget(cleanItem, "name"), "string")
                     local itemCount = cleanItem and addon.Clean(rawget(cleanItem, "count"), "number")
-                    if cleanItem and itemName and #itemName > 0 and #itemName <= 30000 and
+                    if cleanItem and itemName and #itemName > 0 and #itemName <= 30000 and itemName:find("%S") and
                         itemCount and itemCount >= 1 and itemCount <= 9007199254740991 and itemCount % 1 == 0 then
                     local column = (index - 1) % columns
                     y = top
