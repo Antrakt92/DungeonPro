@@ -7650,6 +7650,27 @@ check("language setter recovery follows replacement setters profiles and owners"
 end)
 
 
+check("hostile language setters fail closed without throwing when the language module is missing",function()
+    local database,owner,language=addon.db,ui.language,addon.Language
+    local setter,locale=owner.SetText,database.locale
+    addon.Language=nil;database.locale="enUS"
+    for _,mode in ipairs({"absent","throw","nonfunction"})do
+        -- A bare replacement owner has no setter at all (assigning nil would
+        -- merely delete a raw key and keep the shared metatable setter, so a
+        -- truly absent setter needs a table without that metatable).
+        if mode=="absent"then ui.language={}
+        elseif mode=="throw"then owner.SetText=function()error("setter unavailable")end
+        else owner.SetText="not-a-function"end
+        local ok,result=pcall(function()return ui:RefreshLanguageLabel()end)
+        assert(ok and result==false,mode)
+        owner.SetText=setter;ui.language=owner
+    end
+    addon.Language=language;database.locale=locale
+    assert(ui:RefreshLanguageLabel()==true)
+    ui:Refresh()
+end)
+
+
 check("existing header catalogue detail and input roles update on UI language font transitions",function()
     local locale,getter,creator=addon.db.locale,GetLocale,CreateFont
     local made=0

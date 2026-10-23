@@ -234,6 +234,42 @@ class PackageTests(unittest.TestCase):
                     packager.package(output=output)
             self.assertEqual(list(Path(tmp).iterdir()), [])
 
+    def test_unreadable_package_input_fails_with_value_error(self):
+        # An input that exact_path resolves but read_bytes cannot serve
+        # (permissions, transient I/O) must fail as ValueError naming the
+        # entry, never as an escaped OSError traceback.
+        for unreadable in ("toc", "payload", "reread", "digest"):
+            with self.subTest(unreadable=unreadable), tempfile.TemporaryDirectory() as tmp:
+                root = Path(tmp)
+                (root / "DungeonPro.toc").write_text("## Version: 1.2.3\nCore.lua\n", encoding="utf-8")
+                for name in ("README.md", "CHANGELOG.md", "LICENSE", "Core.lua"):
+                    (root / name).write_text("fixture\n", encoding="utf-8")
+                (root / "Media" / "Fonts").mkdir(parents=True)
+                for name in ("NotoSans-Regular.ttf", "OFL.txt", "NOTICE.txt"):
+                    (root / "Media" / "Fonts" / name).write_bytes(b"fixture")
+                (root / "Media" / "Icons").mkdir()
+                for name in ("Wowhead.tga", "Language.tga", "NOTICE.txt"):
+                    (root / "Media" / "Icons" / name).write_bytes(b"fixture")
+                native = Path.read_bytes
+                reads = []
+
+                def gated(self):
+                    reads.append(str(self))
+                    if unreadable == "toc" and self.name == "DungeonPro.toc":
+                        raise PermissionError("denied")
+                    if unreadable == "payload" and self.name == "Core.lua":
+                        raise PermissionError("denied")
+                    if unreadable == "reread" and self.name == "Core.lua" and len(
+                            [seen for seen in reads if seen.endswith("Core.lua")]) > 1:
+                        raise PermissionError("denied")
+                    if unreadable == "digest" and self.suffix == ".zip":
+                        raise PermissionError("denied")
+                    return native(self)
+
+                with mock.patch.object(Path, "read_bytes", gated):
+                    with self.assertRaisesRegex(ValueError, "Unreadable package input"):
+                        packager.package(root=root, output=root / "dist" / "addon.zip")
+
 
 if __name__ == "__main__":
     unittest.main()

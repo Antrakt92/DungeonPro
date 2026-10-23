@@ -37,7 +37,8 @@ function addon.GiverName(place)
         if not guid or #guid > 256 or not guid:find("%S") or
             not locale or #locale > 32 or not locale:find("%S") then return nil end
         local id = dialogueInteger(addon.Read(function()
-            return C_CreatureInfo.GetCreatureID(guid)
+            local getter = type(C_CreatureInfo) == "table" and rawget(C_CreatureInfo, "GetCreatureID")
+            if type(getter) == "function" then return getter(guid) end
         end, "number"), 1, 9007199254740991)
         return guid, id, locale
     end
@@ -335,7 +336,12 @@ function addon.CaptureOffers()
     local generation = offerGeneration
     local now, player, npc = offerScope()
     if not now then return end
-    local rows = addon.Read(function() return C_GossipInfo and C_GossipInfo.GetAvailableQuests() end, "table")
+    local rows = addon.Read(function()
+        local gossip = C_GossipInfo
+        if type(gossip) ~= "table" then return nil end
+        local getter = rawget(gossip, "GetAvailableQuests")
+        if type(getter) == "function" then return getter() end
+    end, "table")
     if not rows then return end
     local ok, ids = pcall(function()
         local found, count, maximum = {}, 0, 0
@@ -368,7 +374,7 @@ function addon.CaptureOffers()
         addon.ClearOffers()
         addon.Notify("data")
     end
-    scheduled = type(C_Timer) == "table" and type(C_Timer.After) == "function" and pcall(C_Timer.After, 30, expire) or false
+    scheduled = type(C_Timer) == "table" and type(rawget(C_Timer, "After")) == "function" and pcall(rawget(C_Timer, "After"), 30, expire) or false
     scheduling = false
 end
 
@@ -405,7 +411,7 @@ local function refreshRetries()
         retryRefreshing = nil
         if not ok then error(message) end
     end
-    local after = type(C_Timer) == "table" and addon.Clean(C_Timer.After, "function")
+    local after = addon.Clean(type(C_Timer) == "table" and rawget(C_Timer, "After"), "function")
     local ok, result
     if after then ok, result = pcall(after, .1, run) end
     if ok and addon.Clean(result, "boolean") ~= false then inline = false
@@ -424,7 +430,7 @@ local function dataResult(requests, id, success)
         request.waiting = false
         refreshRetries()
     end
-    if type(C_Timer) ~= "table" or type(C_Timer.After) ~= "function" or not pcall(C_Timer.After, 2, retry) then
+    if type(C_Timer) ~= "table" or type(rawget(C_Timer, "After")) ~= "function" or not pcall(rawget(C_Timer, "After"), 2, retry) then
         request.waiting = false
     end
 end
@@ -457,10 +463,10 @@ function addon.Context()
     local quest = addon.Clean(C_QuestLog, "table")
     local level, faction = addon.Clean(UnitLevel, "function"), addon.Clean(UnitFactionGroup, "function")
     local class, race = addon.Clean(UnitClass, "function"), addon.Clean(UnitRace, "function")
-    local completed = quest and addon.Clean(quest.IsQuestFlaggedCompleted, "function")
-    local active = quest and addon.Clean(quest.IsOnQuest, "function")
-    local ready = quest and addon.Clean(quest.ReadyForTurnIn, "function")
-    local complete = quest and addon.Clean(quest.IsComplete, "function")
+    local completed = quest and addon.Clean(rawget(quest, "IsQuestFlaggedCompleted"), "function")
+    local active = quest and addon.Clean(rawget(quest, "IsOnQuest"), "function")
+    local ready = quest and addon.Clean(rawget(quest, "ReadyForTurnIn"), "function")
+    local complete = quest and addon.Clean(rawget(quest, "IsComplete"), "function")
     local valid = readable
     local function forget()
         result.level, result.faction, result.class, result.race = nil, nil, nil, nil
@@ -472,9 +478,9 @@ function addon.Context()
         valid = generation == contextGeneration and known and root == character and issecretvalue == checker and addon.Clean(C_QuestLog, "table") == quest and
             addon.Clean(UnitLevel, "function") == level and addon.Clean(UnitFactionGroup, "function") == faction and
             addon.Clean(UnitClass, "function") == class and addon.Clean(UnitRace, "function") == race and
-            (not quest or (addon.Clean(quest.IsQuestFlaggedCompleted, "function") == completed and
-                addon.Clean(quest.IsOnQuest, "function") == active and addon.Clean(quest.ReadyForTurnIn, "function") == ready and
-                addon.Clean(quest.IsComplete, "function") == complete))
+            (not quest or (addon.Clean(rawget(quest, "IsQuestFlaggedCompleted"), "function") == completed and
+                addon.Clean(rawget(quest, "IsOnQuest"), "function") == active and addon.Clean(rawget(quest, "ReadyForTurnIn"), "function") == ready and
+                addon.Clean(rawget(quest, "IsComplete"), "function") == complete))
         valid = valid and generation == contextGeneration
         if not valid then return forget() end
         return true
@@ -784,7 +790,7 @@ function addon.QuestName(id)
                     addon.QuestDataResult(id, false)
                 end
             end
-            if type(C_Timer) ~= "table" or type(C_Timer.After) ~= "function" or not pcall(C_Timer.After, 10, timeout) then
+            if type(C_Timer) ~= "table" or type(rawget(C_Timer, "After")) ~= "function" or not pcall(rawget(C_Timer, "After"), 10, timeout) then
                 addon.QuestDataResult(id, false)
             end
         end
@@ -807,8 +813,8 @@ local function questLogOpener(id)
     local catalogue = addon.Clean(addon.quests, "table")
     local definition = id and catalogue and addon.Clean(rawget(catalogue, id), "table")
     local quest = addon.Clean(C_QuestLog, "table")
-    local held = quest and addon.Clean(quest.IsOnQuest, "function")
-    local logIndex = quest and addon.Clean(quest.GetLogIndexForQuestID, "function")
+    local held = quest and addon.Clean(rawget(quest, "IsOnQuest"), "function")
+    local logIndex = quest and addon.Clean(rawget(quest, "GetLogIndexForQuestID"), "function")
     local opener = addon.Clean(QuestMapFrame_OpenToQuestDetails, "function")
     if not id or not character or not definition or not held or not logIndex or not opener or
         dialogueInteger(rawget(definition, "id"), 1, 9007199254740991) ~= id then return nil end
@@ -817,7 +823,7 @@ local function questLogOpener(id)
         local ok, same = pcall(function()
             return issecretvalue == checker and addon.char == character and addon.quests == catalogue and
                 rawget(catalogue, id) == definition and rawget(definition, "id") == id and
-                C_QuestLog == quest and quest.IsOnQuest == held and quest.GetLogIndexForQuestID == logIndex and
+                C_QuestLog == quest and rawget(quest, "IsOnQuest") == held and rawget(quest, "GetLogIndexForQuestID") == logIndex and
                 QuestMapFrame_OpenToQuestDetails == opener
         end)
         return ok and same == true
@@ -844,28 +850,28 @@ end
 
 function addon.QuestLogCapacity()
     local quest = addon.Clean(C_QuestLog, "table")
-    local entries = quest and addon.Clean(quest.GetNumQuestLogEntries, "function")
+    local entries = quest and addon.Clean(rawget(quest, "GetNumQuestLogEntries"), "function")
     if not entries then return nil end
-    local maximum = quest.GetMaxNumQuestsCanAccept
+    local maximum = quest and rawget(quest, "GetMaxNumQuestsCanAccept")
     local getter = addon.Clean(maximum, "function")
     local constants, limits, fallback
     if type(maximum) ~= "nil" and not getter then return nil end
     if not getter then
         constants = addon.Clean(Constants, "table")
-        limits = constants and addon.Clean(constants.QuestLogConsts, "table")
-        fallback = limits and dialogueInteger(limits.MAXIMUM_NUM_QUESTS_LOG_CAN_ACCEPT, 1, 1000000)
+        limits = constants and addon.Clean(rawget(constants, "QuestLogConsts"), "table")
+        fallback = limits and dialogueInteger(rawget(limits, "MAXIMUM_NUM_QUESTS_LOG_CAN_ACCEPT"), 1, 1000000)
         if not fallback then return nil end
     end
     local checker = issecretvalue
     local function current()
         if addon.Clean(C_QuestLog, "table") ~= quest or
-            addon.Clean(quest.GetNumQuestLogEntries, "function") ~= entries or
-            addon.Clean(quest.GetMaxNumQuestsCanAccept, "function") ~= getter or
-            (not getter and type(quest.GetMaxNumQuestsCanAccept) ~= "nil") or issecretvalue ~= checker then return false end
+            addon.Clean(rawget(quest, "GetNumQuestLogEntries"), "function") ~= entries or
+            addon.Clean(rawget(quest, "GetMaxNumQuestsCanAccept"), "function") ~= getter or
+            (not getter and type(rawget(quest, "GetMaxNumQuestsCanAccept")) ~= "nil") or issecretvalue ~= checker then return false end
         if not getter then
             return addon.Clean(Constants, "table") == constants and
-                addon.Clean(constants.QuestLogConsts, "table") == limits and
-                addon.Clean(limits.MAXIMUM_NUM_QUESTS_LOG_CAN_ACCEPT, "number") == fallback
+                addon.Clean(rawget(constants, "QuestLogConsts"), "table") == limits and
+                addon.Clean(rawget(limits, "MAXIMUM_NUM_QUESTS_LOG_CAN_ACCEPT"), "number") == fallback
         end
         return true
     end
@@ -882,7 +888,7 @@ end
 function addon.CarriedItemCount(id)
     id = dialogueInteger(id, 1, 4294967295)
     local item = addon.Clean(C_Item, "table")
-    local getter = item and addon.Clean(item.GetItemCount, "function")
+    local getter = item and addon.Clean(rawget(item, "GetItemCount"), "function")
     local quests = addon.Clean(addon.quests, "table")
     local checker = issecretvalue
     if not id or not getter or not quests then return nil end
@@ -969,7 +975,7 @@ function addon.CarriedItemCount(id)
         return false
     end
     local function current()
-        return addon.Clean(C_Item, "table") == item and addon.Clean(item.GetItemCount, "function") == getter and
+        return addon.Clean(C_Item, "table") == item and addon.Clean(rawget(item, "GetItemCount"), "function") == getter and
             addon.Clean(addon.quests, "table") == quests and issecretvalue == checker
     end
     local before = linked()
@@ -1008,14 +1014,14 @@ function addon.ItemName(id, ownerCurrent)
     local scope = restrictionNameScope()
     local owner = addon.Clean(ownerCurrent, "function")
     if not item or not scope or (ownerCurrent ~= nil and not owner) then return nil end
-    local nameGetter = addon.Clean(item.GetItemNameByID, "function")
-    local cacheGetter = addon.Clean(item.IsItemDataCachedByID, "function")
-    local loader = addon.Clean(item.RequestLoadItemDataByID, "function")
+    local nameGetter = addon.Clean(rawget(item, "GetItemNameByID"), "function")
+    local cacheGetter = addon.Clean(rawget(item, "IsItemDataCachedByID"), "function")
+    local loader = addon.Clean(rawget(item, "RequestLoadItemDataByID"), "function")
     local function capabilities()
         return scope() and addon.Clean(C_Item, "table") == item and
-            addon.Clean(item.GetItemNameByID, "function") == nameGetter and
-            addon.Clean(item.IsItemDataCachedByID, "function") == cacheGetter and
-            addon.Clean(item.RequestLoadItemDataByID, "function") == loader
+            addon.Clean(rawget(item, "GetItemNameByID"), "function") == nameGetter and
+            addon.Clean(rawget(item, "IsItemDataCachedByID"), "function") == cacheGetter and
+            addon.Clean(rawget(item, "RequestLoadItemDataByID"), "function") == loader
     end
     local function current()
         if not capabilities() then return false end
@@ -1045,7 +1051,7 @@ function addon.ItemName(id, ownerCurrent)
                 addon.ItemDataResult(id, false)
             end
         end
-        if type(C_Timer) ~= "table" or type(C_Timer.After) ~= "function" or not pcall(C_Timer.After, 10, timeout) then
+        if type(C_Timer) ~= "table" or type(rawget(C_Timer, "After")) ~= "function" or not pcall(rawget(C_Timer, "After"), 10, timeout) then
             addon.ItemDataResult(id, false)
         end
     end
@@ -1302,8 +1308,8 @@ end
 local function selectedLogReadScope(id)
     local quest = addon.Clean(C_QuestLog, "table")
     if not quest then return nil end
-    local selected = addon.Clean(quest.GetSelectedQuest, "function")
-    local logIndex = addon.Clean(quest.GetLogIndexForQuestID, "function")
+    local selected = addon.Clean(rawget(quest, "GetSelectedQuest"), "function")
+    local logIndex = addon.Clean(rawget(quest, "GetLogIndexForQuestID"), "function")
     local localeGetter, checker = addon.Clean(GetLocale, "function"), issecretvalue
     local character = addon.Clean(addon.char, "table")
     local locale = addon.Read(localeGetter, "string")
@@ -1311,8 +1317,8 @@ local function selectedLogReadScope(id)
     local index = dialogueInteger(addon.Read(logIndex, "number", id), 1)
     local function unchanged()
         return addon.Clean(C_QuestLog, "table") == quest and
-            addon.Clean(quest.GetSelectedQuest, "function") == selected and
-            addon.Clean(quest.GetLogIndexForQuestID, "function") == logIndex and
+            addon.Clean(rawget(quest, "GetSelectedQuest"), "function") == selected and
+            addon.Clean(rawget(quest, "GetLogIndexForQuestID"), "function") == logIndex and
             addon.Clean(GetLocale, "function") == localeGetter and issecretvalue == checker and
             addon.Clean(addon.char, "table") == character
     end
@@ -1384,12 +1390,12 @@ function addon.QuestObjectives(id)
     id = dialogueInteger(id, 1, 9007199254740991)
     if not id then return nil end
     local quest = addon.Clean(C_QuestLog, "table")
-    local getter = quest and addon.Clean(quest.GetQuestObjectives, "function")
+    local getter = quest and addon.Clean(rawget(quest, "GetQuestObjectives"), "function")
     if not getter then return nil end
     local character, scope = addon.Clean(addon.char, "table"), restrictionNameScope()
     local function current()
         return scope and scope() and addon.Clean(C_QuestLog, "table") == quest and
-            addon.Clean(quest.GetQuestObjectives, "function") == getter and addon.Clean(addon.char, "table") == character
+            addon.Clean(rawget(quest, "GetQuestObjectives"), "function") == getter and addon.Clean(addon.char, "table") == character
     end
     if not current() then return nil end
     local objectives = addon.Read(getter, "table", id)
@@ -1764,34 +1770,36 @@ function addon.RestoreDB()
     local db, char = DungeonProDB, DungeonProCharDB
     if type(db) == "nil" then db = DungeonPrepDB end
     if type(char) == "nil" then char = DungeonPrepCharDB end
-    if type(db) ~= "nil" and not addon.Clean(db, "table") then return false end
-    if type(char) ~= "nil" and not addon.Clean(char, "table") then return false end
+    if type(db) ~= "nil" and (not addon.Clean(db, "table") or getmetatable(db) ~= nil) then return false end
+    if type(char) ~= "nil" and (not addon.Clean(char, "table") or getmetatable(char) ~= nil) then return false end
     db, char = db or {}, char or {}
-    if type(db.schema) ~= "nil" then
-        local schema = addon.Clean(db.schema, "number")
+    local schemaValue = rawget(db, "schema")
+    if type(schemaValue) ~= "nil" then
+        local schema = addon.Clean(schemaValue, "number")
         if not schema or schema < 1 or schema % 1 ~= 0 or schema > 1 then return false end
     end
     db.schema = 1
-    local locale = addon.Clean(db.locale, "string")
+    local locale = addon.Clean(rawget(db, "locale"), "string")
     local supported = { auto = true, enUS = true, enGB = true, ruRU = true, deDE = true, frFR = true,
         esES = true, esMX = true, itIT = true, ptBR = true, koKR = true, zhCN = true, zhTW = true }
     db.locale = supported[locale or ""] and locale or "auto"
-    if type(db.window) ~= "table" then db.window = {} end
-    if type(char.texts) ~= "table" then char.texts = {} end
+    if type(rawget(db, "window")) ~= "table" then db.window = {} end
+    if type(rawget(char, "texts")) ~= "table" then char.texts = {} end
     do
         -- Retention hygiene only: reads already validate each member, so drop
         -- absurd retained members (non-integer or huge IDs, non-table values)
         -- while keeping every legitimate quest text untouched.
+        local texts = rawget(char, "texts")
         local invalid = {}
-        for key, value in pairs(char.texts) do
+        for key, value in pairs(texts) do
             local id = addon.Clean(key, "number")
             if not id or id < 1 or id % 1 ~= 0 or id > 9007199254740991 or addon.Clean(value, "table") == nil then
                 invalid[#invalid + 1] = key
             end
         end
-        for _, key in ipairs(invalid) do char.texts[key] = nil end
+        for _, key in ipairs(invalid) do texts[key] = nil end
     end
-    if type(char.filters) ~= "table" then char.filters = {} end
+    if type(rawget(char, "filters")) ~= "table" then char.filters = {} end
     addon.db, addon.char = db, char
     DungeonProDB, DungeonProCharDB = db, char
     return true
@@ -1822,28 +1830,29 @@ function addon.ProbeClient()
     end
     local result = { build = build, interface = interface, api = {}, questLines = {},
         frames = { questFrame = panelPresent(QuestFrame), questDetailPanel = panelPresent(QuestFrameDetailPanel) } }
-    for _, entry in ipairs({ { "titles", type(C_QuestLog) == "table" and C_QuestLog.GetTitleForQuestID },
-        { "objectives", type(C_QuestLog) == "table" and C_QuestLog.GetQuestObjectives }, { "lines", line.GetQuestLineInfo },
-        { "lineQuests", line.GetQuestLineQuests }, { "offerText", GetQuestText }, { "logText", GetQuestLogQuestText },
+    for _, entry in ipairs({ { "titles", type(C_QuestLog) == "table" and rawget(C_QuestLog, "GetTitleForQuestID") },
+        { "objectives", type(C_QuestLog) == "table" and rawget(C_QuestLog, "GetQuestObjectives") }, { "lines", rawget(line, "GetQuestLineInfo") },
+        { "lineQuests", rawget(line, "GetQuestLineQuests") }, { "offerText", GetQuestText }, { "logText", GetQuestLogQuestText },
         { "offerObjectiveText", GetObjectiveText }, { "offerQuestID", GetQuestID },
         { "offerPortrait", GetQuestPortraitGiver },
         { "offerRewardItems", GetNumQuestRewards }, { "offerRewardChoices", GetNumQuestChoices },
         { "offerRewardInfo", GetQuestItemInfo }, { "offerRewardMoney", GetRewardMoney },
-        { "offerRewardXP", GetRewardXP }, { "offerRewardVisibility", type(C_QuestLog) == "table" and C_QuestLog.ShouldShowQuestRewards },
+        { "offerRewardXP", GetRewardXP }, { "offerRewardVisibility", type(C_QuestLog) == "table" and rawget(C_QuestLog, "ShouldShowQuestRewards") },
         { "rewardItems", GetNumQuestLogRewards }, { "rewardChoices", GetNumQuestLogChoices },
-        { "rewardMoney", GetQuestLogRewardMoney }, { "portraits", type(C_QuestLog) == "table" and C_QuestLog.GetQuestLogPortraitGiver },
+        { "rewardMoney", GetQuestLogRewardMoney }, { "portraits", type(C_QuestLog) == "table" and rawget(C_QuestLog, "GetQuestLogPortraitGiver") },
         { "rewardCache", HaveQuestRewardData }, { "rewardXP", GetQuestLogRewardXP },
-        { "npcNames", UnitName }, { "creatureIDs", type(C_CreatureInfo) == "table" and C_CreatureInfo.GetCreatureID },
-        { "itemNames", type(C_Item) == "table" and C_Item.GetItemNameByID }, { "itemRequests", type(C_Item) == "table" and C_Item.RequestLoadItemDataByID },
-        { "nativeWaypoints", type(C_Map) == "table" and C_Map.SetUserWaypoint }, { "tomtom", type(TomTom) == "table" and TomTom.AddWaypoint } }) do
+        { "npcNames", UnitName }, { "creatureIDs", type(C_CreatureInfo) == "table" and rawget(C_CreatureInfo, "GetCreatureID") },
+        { "itemNames", type(C_Item) == "table" and rawget(C_Item, "GetItemNameByID") }, { "itemRequests", type(C_Item) == "table" and rawget(C_Item, "RequestLoadItemDataByID") },
+        { "nativeWaypoints", type(C_Map) == "table" and rawget(C_Map, "SetUserWaypoint") }, { "tomtom", type(TomTom) == "table" and rawget(TomTom, "AddWaypoint") } }) do
         result.api[entry[1]] = type(entry[2]) == "function"
     end
+    local lineInfo, lineQuests = rawget(line, "GetQuestLineInfo"), rawget(line, "GetQuestLineQuests")
     for _, id in ipairs({ 166, 5728, 96393, 92753 }) do
-        local info = addon.Read(line.GetQuestLineInfo, "table", id, nil, false)
+        local info = addon.Read(lineInfo, "table", id, nil, false)
         local lineID = info and addon.Clean(info.questLineID, "number")
         -- Cap IDs at 2^53 so huge doubles cannot wrap into another valid line ID in the membership reader.
         if lineID and lineID > 0 and lineID % 1 == 0 and lineID <= 9007199254740991 then
-            local ids = addon.Read(line.GetQuestLineQuests, "table", lineID)
+            local ids = addon.Read(lineQuests, "table", lineID)
             local clean, seen, invalid = {}, {}, false
             for i = 1, math.min(100, ids and #ids or 0) do
                 local qid = addon.Clean(ids[i], "number")

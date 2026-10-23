@@ -66,4 +66,14 @@ do
     assert(addon.L("SUMMARY", {}, {}, {}, {}) == template, "unformattable args must return raw text")
     assert(addon.L("SEARCH_QUEST_MATCH", "Example quest (#166)"):find("Example quest (#166)", 1, true))
 end
+-- Fail-closed: non-string keys never throw and return as-is; valid keys
+-- are byte-identical. All live callers pass string literals (latent path).
+do
+    local probe = {}
+    assert(addon.L(nil) == nil)
+    assert(addon.L(5) == 5)
+    assert(addon.L(probe) == probe)
+    assert(addon.L(nil, "x") == nil, "non-string key with format args must not throw")
+    assert(addon.L("NEXT") == addon.locales.enUS.NEXT, "valid keys byte-identical")
+end
 print("Localization checks passed: " .. n .. " dictionaries, esMX/enGB aliases; visual review pending")

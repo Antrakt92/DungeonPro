@@ -110,7 +110,11 @@ function UI:RefreshLanguageLabel()
     if not current() then return false end
     local binding = { current = current, value = name }
     owner.languageLabelText = binding
-    owner:SetText(name)
+    -- Guard the label write like the repair write below: a hostile or missing
+    -- setter fails closed with false instead of throwing. The closure reports
+    -- success explicitly because a native SetText returns nil, which would
+    -- read as failure under a direct "boolean" Read and break the valid path.
+    if not addon.Read(function() owner:SetText(name) return true end, "boolean") then return false end
     if current() then return true end
     local newer = owner.languageLabelText
     if newer ~= binding and newer and newer.current() and not owner.languageLabelRepair then

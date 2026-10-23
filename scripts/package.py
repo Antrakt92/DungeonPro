@@ -24,9 +24,16 @@ def exact_path(root, name):
     return path
 
 
+def _read_bytes(path, name):
+    try:
+        return path.read_bytes()
+    except OSError as error:
+        raise ValueError(f"Unreadable package input: {name}") from error
+
+
 def package(root=ROOT, output=None):
     toc_name = f"{ADDON_NAME}.toc"
-    toc_bytes = exact_path(root, toc_name).read_bytes()
+    toc_bytes = _read_bytes(exact_path(root, toc_name), toc_name)
     toc = toc_bytes.decode("utf-8").replace("\r\n", "\n").replace("\r", "\n")
     version_match = re.search(r"^## Version: ([0-9]+\.[0-9]+\.[0-9]+)$", toc, re.MULTILINE)
     if not version_match:
@@ -52,19 +59,19 @@ def package(root=ROOT, output=None):
                 info = zipfile.ZipInfo(f"{ADDON_NAME}/" + name, (2026, 1, 1, 0, 0, 0))
                 info.create_system = 0  # Pin host-independent archives on every builder.
                 info.compress_type = zipfile.ZIP_DEFLATED
-                archive.writestr(info, toc_bytes if name == toc_name else path.read_bytes())
+                archive.writestr(info, toc_bytes if name == toc_name else _read_bytes(path, name))
         with zipfile.ZipFile(staged) as archive:
             if archive.testzip() is not None or len(archive.namelist()) != len(set(archive.namelist())) or len(archive.namelist()) != len(names):
                 raise ValueError("Package integrity or entry identity failed")
             for name in names:
-                if archive.read(f"{ADDON_NAME}/" + name) != (root / name).read_bytes():
+                if archive.read(f"{ADDON_NAME}/" + name) != _read_bytes(root / name, name):
                     raise ValueError("Package source changed during build")
         # Keep the previous verified archive until its replacement passes every check.
         staged.replace(output)
     finally:
         if staged is not None:
             staged.unlink(missing_ok=True)
-    return output, hashlib.sha256(output.read_bytes()).hexdigest()
+    return output, hashlib.sha256(_read_bytes(output, output.name)).hexdigest()
 
 
 if __name__ == "__main__":

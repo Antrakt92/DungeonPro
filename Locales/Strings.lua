@@ -209,6 +209,10 @@ strings.ruRU.OVERVIEW_SUPPORTING_QUEST = "Вспомогательное зад�
 strings.ruRU.OVERVIEW_MORE_STEPS = "Ещё шагов не показано: %d."
 
 function addon.L(key, ...)
+    -- Fail-closed: non-string keys return as-is instead of throwing at the
+    -- table index below. All live callers pass string literals; this guards
+    -- the latent L(nil) path before the pcall-format guard.
+    if type(key) ~= "string" then return key end
     local locale = addon.db and addon.db.locale or "auto"
     local language = addon.Clean and addon.Clean(addon.Language, "table")
     local preview = language and addon.Read(language.GetSelection, "string", language)

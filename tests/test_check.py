@@ -399,6 +399,43 @@ class TocParityTests(unittest.TestCase):
                 module._untracked(Path(folder))
             self.assertEqual(seen.get("timeout"), module.GIT_TIMEOUT_SECONDS)
 
+    def test_tracked_git_failure_fails_closed_as_system_exit_without_traceback(self):
+        # A corrupt repo (CalledProcessError) or a missing git binary
+        # (OSError) must fail the gate with a clean SystemExit, mirroring the
+        # bounded-timeout tests above rather than escaping as a traceback.
+        for failure in (subprocess.CalledProcessError(128, ["git", "ls-files"]),
+                        OSError("git missing")):
+            with self.subTest(failure=type(failure).__name__):
+                with tempfile.TemporaryDirectory(prefix="quest toc git failure ") as folder:
+                    module = self.fixture(Path(folder), ["Core/A.lua"], ["Core/A.lua"])
+                    with mock.patch.object(module.subprocess, "run", side_effect=failure):
+                        with self.assertRaisesRegex(SystemExit, "git file enumeration failed"):
+                            module._tracked(Path(folder))
+
+    def test_untracked_git_failure_fails_closed_as_system_exit_without_traceback(self):
+        for failure in (subprocess.CalledProcessError(128, ["git", "ls-files"]),
+                        OSError("git missing")):
+            with self.subTest(failure=type(failure).__name__):
+                with tempfile.TemporaryDirectory(prefix="quest toc untracked failure ") as folder:
+                    module = self.fixture(Path(folder), ["Core/A.lua"], ["Core/A.lua"])
+                    with mock.patch.object(module.subprocess, "run", side_effect=failure):
+                        with self.assertRaisesRegex(SystemExit, "git file enumeration failed"):
+                            module._untracked(Path(folder))
+
+    def test_missing_toc_fails_closed_as_system_exit_without_traceback(self):
+        with tempfile.TemporaryDirectory(prefix="quest toc absent ") as folder:
+            module = self.fixture(Path(folder), ["Core/A.lua"], ["Core/A.lua"])
+            (Path(folder) / "DungeonPro.toc").unlink()
+            with self.assertRaisesRegex(SystemExit, "unreadable"):
+                module.main()
+
+    def test_undecodable_toc_fails_closed_as_system_exit_without_traceback(self):
+        with tempfile.TemporaryDirectory(prefix="quest toc encoding ") as folder:
+            module = self.fixture(Path(folder), ["Core/A.lua"], ["Core/A.lua"])
+            (Path(folder) / "DungeonPro.toc").write_bytes(b"## Version: 0.3.0\n\xff\xfe\n")
+            with self.assertRaisesRegex(SystemExit, "unreadable"):
+                module.main()
+
 
 class VersionSyncTests(unittest.TestCase):
     def fixture(self, root, toc="0.3.0", namespace="0.3.0", changelog="0.3.0"):

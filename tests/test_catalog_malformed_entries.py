@@ -192,6 +192,75 @@ class MalformedCatalogEntriesTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             catalog.validate(chain(52))  # reaches depth 51
 
+    def test_deeply_nested_extra_field_raises_value_error(self):
+        # Hostile {"schema":1,"quests":[],"dungeons":[],"evil":<3000-deep>}
+        # recursed unbounded under the old recursive validate_unicode,
+        # leaking bare RecursionError (a RuntimeError, not ValueError).
+        # The iterative walk with MAX_NESTING_DEPTH=100 must raise
+        # ValueError. No deepcopy here: copy.deepcopy itself recurses.
+        deep = 0
+        for _ in range(3000):
+            deep = {"x": deep}
+        data = {"schema": 1, "quests": [], "dungeons": [], "evil": deep}
+        try:
+            catalog.validate(data)
+        except ValueError:
+            pass
+        except RecursionError as error:
+            self.fail(f"fail-open RecursionError: {error}")
+        else:
+            self.fail("expected ValueError")
+        # Defense in depth: the iterative walker itself caps depth even
+        # when called directly (e.g. on valid-shaped but hostile nests).
+        try:
+            catalog.validate_unicode(deep)
+        except ValueError:
+            pass
+        except RecursionError as error:
+            self.fail(f"fail-open RecursionError: {error}")
+        else:
+            self.fail("expected ValueError")
+
+    def test_unknown_top_level_field_rejected(self):
+        # Live data/catalog.json carries exactly {schema, checked, quests,
+        # dungeons}, so the top-level key set is closed. A hostile nested
+        # list under an unknown key is rejected by the whitelist (the
+        # walker depth cap is covered by the deep-extra-field test).
+        self.assertFailClosed(lambda data: data.update(evil=1))
+        deep = 0
+        for _ in range(101):
+            deep = [deep]
+        data = minimal_catalog()
+        data["nested"] = deep
+        with self.assertRaises(ValueError):
+            catalog.validate(data)
+
+    def test_requires_group_count_capped(self):
+        # Sibling list guards cap at 100; an empty requires list was already
+        # rejected. Exactly 100 groups pass, 101 fail closed.
+        data = minimal_catalog()
+        data["quests"][1]["requires"] = [{"ids": [1]}] * 100
+        catalog.validate(data)
+        data["quests"][1]["requires"] = [{"ids": [1]}] * 101
+        with self.assertRaises(ValueError):
+            catalog.validate(data)
+
+    def test_requirement_group_ids_boundary_100_passes(self):
+        # Inner ids already capped at 1..100; exactly 100 passes.
+        data = minimal_catalog()
+        data["quests"].extend(self._large_quest_pool(100))
+        data["quests"][1]["requires"] = [
+            {"ids": [q["id"] for q in data["quests"] if q["id"] != 2][:100]}]
+        catalog.validate(data)
+
+    def test_top_level_lists_capped(self):
+        # Real data holds 577 quests / 32 dungeons; the generous 10000 cap
+        # only rejects absurd payloads. 10001 quests fail closed.
+        data = minimal_catalog()
+        data["quests"].extend(self._large_quest_pool(10001))
+        with self.assertRaises(ValueError):
+            catalog.validate(data)
+
     def test_true_cycle_keeps_cycle_message(self):
         data = minimal_catalog()
         data["quests"][0]["requires"] = [{"ids": [2]}]

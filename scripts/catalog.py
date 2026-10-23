@@ -10,6 +10,14 @@ from pathlib import Path
 from urllib.parse import urlsplit
 
 ROOT = Path(__file__).resolve().parents[1]
+CATALOG_FIELDS = frozenset({"schema", "checked", "quests", "dungeons"})
+# Hostile nesting budget, mirroring scripts/names.py MAX_NESTING_DEPTH = 100:
+# real catalogue data nests a handful deep; anything past 100 is hostile.
+MAX_NESTING_DEPTH = 100
+# Top-level list budget: real data holds 577 quests / 32 dungeons
+# (`python scripts/catalog.py --check`); 10000 is a generous fail-closed
+# cap that only rejects absurd or hostile payloads.
+MAX_TOP_LEVEL_ENTRIES = 10000
 FACTIONS = frozenset({"Alliance", "Horde", "Neutral"})
 CLASSES = frozenset({
     "WARRIOR", "PALADIN", "HUNTER", "ROGUE", "PRIEST", "DEATHKNIGHT", "SHAMAN",
@@ -56,18 +64,29 @@ def unique_fields(pairs):
 
 
 def validate_unicode(value):
-    if isinstance(value, str):
-        try:
-            value.encode("utf-8")
-        except UnicodeEncodeError:
-            raise ValueError("Invalid Unicode scalar in catalogue") from None
-    elif isinstance(value, dict):
-        for key, child in value.items():
-            validate_unicode(key)
-            validate_unicode(child)
-    elif isinstance(value, list):
-        for child in value:
-            validate_unicode(child)
+    # Iterative walk with an explicit depth cap: a hostile deeply-nested
+    # extra field must raise ValueError, never a bare RecursionError (a
+    # RuntimeError subclass) that would violate the ValueError-only
+    # contract. Precedent: scripts/names.py MAX_NESTING_DEPTH = 100.
+    stack = [(value, 0)]
+    while stack:
+        current, depth = stack.pop()
+        if isinstance(current, str):
+            try:
+                current.encode("utf-8")
+            except UnicodeEncodeError:
+                raise ValueError("Invalid Unicode scalar in catalogue") from None
+        elif isinstance(current, dict):
+            if depth > MAX_NESTING_DEPTH:
+                raise ValueError("Catalogue nested too deeply")
+            for key, child in current.items():
+                stack.append((key, depth + 1))
+                stack.append((child, depth + 1))
+        elif isinstance(current, list):
+            if depth > MAX_NESTING_DEPTH:
+                raise ValueError("Catalogue nested too deeply")
+            for child in current:
+                stack.append((child, depth + 1))
 
 
 def nonempty_string(value):
@@ -154,6 +173,10 @@ def validate(data):
         raise ValueError("Invalid catalogue")
     if type(data.get("schema")) is not int or data["schema"] != 1:
         raise ValueError("Unsupported catalogue schema")
+    # Closed top-level key set, verified against live data/catalog.json
+    # (keys: checked, dungeons, quests, schema). Anything else is hostile.
+    if set(data) - CATALOG_FIELDS:
+        raise ValueError("Unknown catalogue fields")
     if "checked" in data:
         checked = data["checked"]
         try:
@@ -167,7 +190,8 @@ def validate(data):
         if not valid:
             raise ValueError("Invalid catalogue checked date")
     quests = {}
-    if type(data.get("quests")) is not list or type(data.get("dungeons")) is not list:
+    if (type(data.get("quests")) is not list or type(data.get("dungeons")) is not list or
+            len(data["quests"]) > MAX_TOP_LEVEL_ENTRIES or len(data["dungeons"]) > MAX_TOP_LEVEL_ENTRIES):
         raise ValueError("Invalid catalogue quest/dungeon lists")
     for q in data["quests"]:
         if type(q) is not dict:
@@ -462,7 +486,8 @@ def validate(data):
                 if qid not in quests:
                     raise ValueError(f"Missing completion quest definition: {q['id']}")
                 seen_related.add(qid)
-        if "requires" in q and not q["requires"]:
+        if "requires" in q and (type(q["requires"]) is not list or
+                not 1 <= len(q["requires"]) <= 100):
             raise ValueError(f"Invalid requires list: {q['id']}")
         for g in q.get("requires", []):
             # Group membership mirrors the runtime graph budget (nodes: 80,

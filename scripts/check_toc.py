@@ -72,6 +72,8 @@ def _tracked(root):
     except subprocess.TimeoutExpired as error:
         raise RuntimeError(
             f"command timed out after {GIT_TIMEOUT_SECONDS}s: {list(args)!r}") from error
+    except (OSError, subprocess.CalledProcessError) as error:
+        raise SystemExit(f"git file enumeration failed: {error}") from error
     return {path.replace("\\", "/") for path in out}
 
 
@@ -89,11 +91,16 @@ def _untracked(root):
     except subprocess.TimeoutExpired as error:
         raise RuntimeError(
             f"command timed out after {GIT_TIMEOUT_SECONDS}s: {list(args)!r}") from error
+    except (OSError, subprocess.CalledProcessError) as error:
+        raise SystemExit(f"git file enumeration failed: {error}") from error
     return {path.replace("\\", "/") for path in out}
 
 
 def main():
-    toc = (ROOT / "DungeonPro.toc").read_text(encoding="utf-8").replace("\r\n", "\n").replace("\r", "\n")
+    try:
+        toc = (ROOT / "DungeonPro.toc").read_text(encoding="utf-8").replace("\r\n", "\n").replace("\r", "\n")
+    except (OSError, UnicodeDecodeError) as error:
+        raise SystemExit(f"DungeonPro.toc is unreadable: {error}") from error
     entries = [line.strip().replace("\\", "/") for line in toc.splitlines()
                if line.strip() and not line.strip().startswith("#")]
     # Case-fold for comparison (Windows checkout); originals stay in messages.
