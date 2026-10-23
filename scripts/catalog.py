@@ -236,7 +236,13 @@ def validate(data):
                     "itemID" in p or type(p.get("name")) is not str or not p["name"].strip()):
                     raise ValueError(f"Invalid alternative {kind} identity: {q['id']}")
                 field = "npcID" if "npcID" in p else "objectID"
-                if not integer(p[field]):
+                if not integer(p[field]) or p[field] > 2 ** 32 - 1:
+                    raise ValueError(f"Invalid alternative {kind} identity: {q['id']}")
+                try:
+                    valid_name = len(p["name"].encode("utf-8")) <= 500
+                except UnicodeEncodeError:
+                    valid_name = False
+                if not valid_name:
                     raise ValueError(f"Invalid alternative {kind} identity: {q['id']}")
                 identity = (field, p[field])
                 if identity in identities:
@@ -283,11 +289,21 @@ def validate(data):
                     raise ValueError(f"Invalid starter item container source: {q['id']}")
                 places.append(("containerSource", container))
             for field in ("name", "dropName"):
-                if field in p and not nonempty_string(p[field]):
-                    raise ValueError(f"Invalid place {field}: {q['id']}")
-            if "zoneName" in p and (type(p["zoneName"]) is not str or
-                                    not p["zoneName"].strip() or len(p["zoneName"]) > 500):
-                raise ValueError(f"Invalid place zone name: {q['id']}")
+                if field in p:
+                    try:
+                        valid = nonempty_string(p[field]) and len(p[field].encode("utf-8")) <= 500
+                    except (AttributeError, UnicodeEncodeError):
+                        valid = False
+                    if not valid:
+                        raise ValueError(f"Invalid place {field}: {q['id']}")
+            if "zoneName" in p:
+                try:
+                    valid_zone = (type(p["zoneName"]) is str and bool(p["zoneName"].strip()) and
+                                  len(p["zoneName"].encode("utf-8")) <= 500)
+                except UnicodeEncodeError:
+                    valid_zone = False
+                if not valid_zone:
+                    raise ValueError(f"Invalid place zone name: {q['id']}")
             for identity in ("npcID", "objectID", "itemID", "dropNPCID"):
                 if identity in p and (not integer(p[identity]) or p[identity] > 2 ** 32 - 1):
                     raise ValueError(f"Invalid {identity} entity ID: {q['id']}")
@@ -329,7 +345,7 @@ def validate(data):
                         raise ValueError(f"Giver portrait on an item drop source: {q['id']}")
                     if type(drop) is dict and "containerSource" in drop:
                         raise ValueError(f"Invalid container source on item drop: {q['id']}")
-                    if (type(drop) is not dict or not integer(drop.get("npcID")) or
+                    if (type(drop) is not dict or not integer(drop.get("npcID")) or drop.get("npcID", 0) > 2 ** 32 - 1 or
                         set(drop) - {"npcID", "name", "locationName", "zoneName", "mapID", "x", "y", "reportedLocations"} or
                         not nonempty_string(drop.get("name")) or not nonempty_string(drop.get("locationName"))):
                         raise ValueError(f"Invalid item drop identity: {q['id']}")
@@ -360,8 +376,14 @@ def validate(data):
                         value = point[axis]
                         if type(value) not in (int, float) or not math.isfinite(value) or not 0 <= value <= 100:
                             raise ValueError(f"Invalid reported location coordinate: {q['id']}")
-                    if "zoneName" in point and (not nonempty_string(point["zoneName"]) or len(point["zoneName"]) > 500):
-                        raise ValueError(f"Invalid reported location zone name: {q['id']}")
+                    if "zoneName" in point:
+                        try:
+                            valid_zone = (nonempty_string(point["zoneName"]) and
+                                          len(point["zoneName"].encode("utf-8")) <= 500)
+                        except (AttributeError, UnicodeEncodeError):
+                            valid_zone = False
+                        if not valid_zone:
+                            raise ValueError(f"Invalid reported location zone name: {q['id']}")
                     triple = (point["mapID"], point["x"], point["y"])
                     if triple in seen_points:
                         raise ValueError(f"Duplicate reported location: {q['id']}")

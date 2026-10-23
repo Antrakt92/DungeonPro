@@ -1317,6 +1317,95 @@ class CatalogTests(unittest.TestCase):
         self.data["quests"][0]["start"] = {"npcID": 1, "zoneName": "Alterac Mountains"}
         catalog.validate(self.data)
 
+    def test_item_drop_npc_ids_keep_uint32_boundaries(self):
+        data = self.minimal_catalog()
+        data["quests"][1]["start"] = {"itemID": 1, "dropSources": [
+            {"npcID": 2 ** 32 - 1, "name": "N", "locationName": "Z"}]}
+        catalog.validate(data)
+        for value in (2 ** 32, 2 ** 40, 2 ** 53 - 1):
+            with self.subTest(value=value):
+                data = self.minimal_catalog()
+                data["quests"][1]["start"] = {"itemID": 1, "dropSources": [
+                    {"npcID": value, "name": "N", "locationName": "Z"}]}
+                with self.assertRaisesRegex(ValueError, "item drop"):
+                    catalog.validate(data)
+
+    def test_alternative_places_keep_uint32_and_utf8_name_budget(self):
+        for field, other in (("npcID", "objectID"), ("objectID", "npcID")):
+            data = self.minimal_catalog()
+            data["quests"][1].pop("start", None)
+            data["quests"][1]["startAlternatives"] = [
+                {field: 2 ** 32 - 1, "name": "First"},
+                {other: 2, "name": "Second"}]
+            catalog.validate(data)
+            for value in (2 ** 32, 2 ** 40, 2 ** 53 - 1):
+                with self.subTest(field=field, value=value):
+                    data = self.minimal_catalog()
+                    data["quests"][1].pop("start", None)
+                    data["quests"][1]["startAlternatives"] = [
+                        {field: value, "name": "First"},
+                        {other: 2, "name": "Second"}]
+                    with self.assertRaisesRegex(ValueError, "alternative"):
+                        catalog.validate(data)
+        for name in ("x" * 500, "中" * 166, "Ж" * 250, "😀" * 125):
+            with self.subTest(valid_bytes=len(name.encode("utf-8"))):
+                data = self.minimal_catalog()
+                data["quests"][1].pop("start", None)
+                data["quests"][1]["startAlternatives"] = [
+                    {"npcID": 1, "name": name}, {"objectID": 2, "name": "Second"}]
+                catalog.validate(data)
+        for name in ("x" * 501, "中" * 167, "Ж" * 251, "😀" * 126, "\ud800"):
+            with self.subTest(invalid_name=repr(name)):
+                data = self.minimal_catalog()
+                data["quests"][1].pop("start", None)
+                data["quests"][1]["startAlternatives"] = [
+                    {"npcID": 1, "name": name}, {"objectID": 2, "name": "Second"}]
+                with self.assertRaisesRegex(ValueError, "alternative"):
+                    catalog.validate(data)
+
+    def test_place_names_and_zone_names_keep_utf8_byte_budgets(self):
+        for name in ("x" * 500, "中" * 166, "Ж" * 250, "😀" * 125):
+            with self.subTest(valid_bytes=len(name.encode("utf-8"))):
+                data = self.minimal_catalog()
+                data["quests"][1]["start"] = {"npcID": 1, "name": name}
+                catalog.validate(data)
+                data = self.minimal_catalog()
+                data["quests"][1]["start"] = {"itemID": 1, "name": "Giver",
+                                              "dropNPCID": 2, "dropName": name}
+                catalog.validate(data)
+                data = self.minimal_catalog()
+                data["quests"][1]["start"] = {"npcID": 1, "name": "Giver", "zoneName": name}
+                catalog.validate(data)
+                data = self.minimal_catalog()
+                data["quests"][1]["start"] = {"npcID": 1, "mapID": 1, "x": 10, "y": 20,
+                    "reportedLocations": [{"mapID": 1, "x": 10, "y": 20},
+                                            {"mapID": 2, "x": 30, "y": 40, "zoneName": name}]}
+                catalog.validate(data)
+        for name in ("x" * 501, "中" * 167, "Ж" * 251, "😀" * 126, "\ud800"):
+            with self.subTest(place_name=repr(name)):
+                data = self.minimal_catalog()
+                data["quests"][1]["start"] = {"npcID": 1, "name": name}
+                with self.assertRaisesRegex(ValueError, "place name"):
+                    catalog.validate(data)
+            with self.subTest(drop_name=repr(name)):
+                data = self.minimal_catalog()
+                data["quests"][1]["start"] = {"itemID": 1, "name": "Giver",
+                                              "dropNPCID": 2, "dropName": name}
+                with self.assertRaisesRegex(ValueError, "place dropName"):
+                    catalog.validate(data)
+            with self.subTest(zone_name=repr(name)):
+                data = self.minimal_catalog()
+                data["quests"][1]["start"] = {"npcID": 1, "name": "Giver", "zoneName": name}
+                with self.assertRaisesRegex(ValueError, "zone name"):
+                    catalog.validate(data)
+            with self.subTest(reported_zone=repr(name)):
+                data = self.minimal_catalog()
+                data["quests"][1]["start"] = {"npcID": 1, "mapID": 1, "x": 10, "y": 20,
+                    "reportedLocations": [{"mapID": 1, "x": 10, "y": 20},
+                                            {"mapID": 2, "x": 30, "y": 40, "zoneName": name}]}
+                with self.assertRaisesRegex(ValueError, "reported location"):
+                    catalog.validate(data)
+
     def test_storyline_groups_preserve_shared_rows_without_acceptance_edges(self):
         q, other, third = self.data["quests"][:3]
         q.pop("storyline", None)
