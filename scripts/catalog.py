@@ -171,7 +171,13 @@ def validate(data):
         if not integer(q["id"]) or q["id"] in quests:
             raise ValueError("Invalid or duplicate quest ID")
         quests[q["id"]] = q
-        if not nonempty_string(q.get("name")) or not level(q.get("minLevel")):
+        try:
+            quest_name = q.get("name")
+            valid_quest_name = (nonempty_string(quest_name) and
+                                len(quest_name.encode("utf-8")) <= 500)
+        except (AttributeError, UnicodeEncodeError):
+            valid_quest_name = False
+        if not valid_quest_name or not level(q.get("minLevel")):
             raise ValueError(f"Missing quest name/level: {q['id']}")
         if "level" in q and not level(q["level"]):
             raise ValueError(f"Invalid quest level: {q['id']}")
@@ -304,6 +310,14 @@ def validate(data):
                     valid_zone = False
                 if not valid_zone:
                     raise ValueError(f"Invalid place zone name: {q['id']}")
+            if "locationName" in p:
+                try:
+                    valid_location = (type(p["locationName"]) is str and bool(p["locationName"].strip()) and
+                                      len(p["locationName"].encode("utf-8")) <= 500)
+                except UnicodeEncodeError:
+                    valid_location = False
+                if not valid_location:
+                    raise ValueError(f"Invalid place location name: {q['id']}")
             for identity in ("npcID", "objectID", "itemID", "dropNPCID"):
                 if identity in p and (not integer(p[identity]) or p[identity] > 2 ** 32 - 1):
                     raise ValueError(f"Invalid {identity} entity ID: {q['id']}")
@@ -468,7 +482,13 @@ def validate(data):
     for d in data["dungeons"]:
         if set(d) - DUNGEON_FIELDS:
             raise ValueError("Unknown dungeon fields")
-        if not nonempty_string(d.get("key")) or not nonempty_string(d.get("name")):
+        try:
+            valid_dungeon_names = (
+                nonempty_string(d.get("key")) and len(d["key"].encode("utf-8")) <= 500 and
+                nonempty_string(d.get("name")) and len(d["name"].encode("utf-8")) <= 500)
+        except (AttributeError, UnicodeEncodeError):
+            valid_dungeon_names = False
+        if not valid_dungeon_names:
             raise ValueError("Invalid dungeon key/name")
         if "source" in d and not web_source(d["source"]):
             raise ValueError("Invalid dungeon guide source")

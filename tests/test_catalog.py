@@ -1406,6 +1406,37 @@ class CatalogTests(unittest.TestCase):
                 with self.assertRaisesRegex(ValueError, "reported location"):
                     catalog.validate(data)
 
+    def test_place_location_names_keep_utf8_byte_budgets(self):
+        def place_with(role, name):
+            data = self.minimal_catalog()
+            quest = data["quests"][1]
+            if role in ("start", "finish"):
+                quest[role] = {"npcID": 1, "name": "Giver", "locationName": name}
+            elif role in ("startAlternatives", "finishAlternatives"):
+                quest.pop("start", None)
+                quest.pop("finish", None)
+                quest[role] = [{"npcID": 1, "name": "First", "locationName": name},
+                               {"objectID": 2, "name": "Second"}]
+            else:
+                quest["start"] = {"itemID": 1, "dropSources": [
+                    {"npcID": 1, "name": "Drop NPC", "locationName": name}]}
+            return data
+        roles = ("start", "finish", "startAlternatives", "finishAlternatives", "dropSources")
+        for name in ("x" * 500, "中" * 166, "Ж" * 250, "😀" * 125):
+            for role in roles:
+                with self.subTest(role=role, valid_bytes=len(name.encode("utf-8"))):
+                    catalog.validate(place_with(role, name))
+        for name in ("x" * 501, "中" * 167, "Ж" * 251, "😀" * 126, "\ud800"):
+            for role in roles:
+                with self.subTest(role=role, place_location=repr(name)):
+                    with self.assertRaisesRegex(ValueError, "location name"):
+                        catalog.validate(place_with(role, name))
+        for name in (None, True, 1, "", " ", " \t\n"):
+            for role in roles:
+                with self.subTest(role=role, invalid=repr(name)):
+                    with self.assertRaises(ValueError):
+                        catalog.validate(place_with(role, name))
+
     def test_storyline_groups_preserve_shared_rows_without_acceptance_edges(self):
         q, other, third = self.data["quests"][:3]
         q.pop("storyline", None)
@@ -1595,6 +1626,35 @@ class CatalogTests(unittest.TestCase):
                 else:
                     data["quests"][1]["start"] = {field: invalid}
                 with self.subTest(field=field, invalid=invalid), self.assertRaises(ValueError):
+                    catalog.validate(data)
+
+    def test_quest_and_dungeon_names_keep_utf8_byte_budgets(self):
+        for name in ("x" * 500, "中" * 166, "Ж" * 250, "😀" * 125):
+            with self.subTest(valid_bytes=len(name.encode("utf-8"))):
+                data = self.minimal_catalog()
+                data["quests"][1]["name"] = name
+                catalog.validate(data)
+                data = self.minimal_catalog()
+                data["dungeons"][0]["name"] = name
+                catalog.validate(data)
+                data = self.minimal_catalog()
+                data["dungeons"][0]["key"] = name
+                catalog.validate(data)
+        for name in ("x" * 501, "中" * 167, "Ж" * 251, "😀" * 126, "\ud800"):
+            with self.subTest(quest_name=repr(name)):
+                data = self.minimal_catalog()
+                data["quests"][1]["name"] = name
+                with self.assertRaisesRegex(ValueError, "name/level"):
+                    catalog.validate(data)
+            with self.subTest(dungeon_name=repr(name)):
+                data = self.minimal_catalog()
+                data["dungeons"][0]["name"] = name
+                with self.assertRaisesRegex(ValueError, "dungeon key/name"):
+                    catalog.validate(data)
+            with self.subTest(dungeon_key=repr(name)):
+                data = self.minimal_catalog()
+                data["dungeons"][0]["key"] = name
+                with self.assertRaisesRegex(ValueError, "dungeon key/name"):
                     catalog.validate(data)
 
     def test_omitted_unknown_fields_and_legitimate_empty_lists_stay_valid(self):
