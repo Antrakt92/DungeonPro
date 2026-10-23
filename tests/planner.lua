@@ -909,4 +909,34 @@ check("Mutated catalogue entries between State and Next fail closed without thro
     local actions5, unknown5 = engine5:Next(1)
     eq(#actions5, 1); eq(actions5[1].kind, "turnin"); eq(actions5[1].place, nil); eq(unknown5, false)
 end)
+check("Nil or hostile planner context fails closed as unknown character without throwing", function()
+    -- select (not ipairs) so the leading nil case is actually exercised.
+    for index = 1, 3 do
+        local bad = select(index, nil, 5, "ctx")
+        local okNew, engine = pcall(P.New, { [1] = q(1) }, bad)
+        assert(okNew, "Planner.New with bad context threw")
+        local okState, state = pcall(function() return engine:State(1) end)
+        assert(okState, "State with bad context threw")
+        eq(state.status, "UNKNOWN"); eq(state.reason, "character")
+    end
+end)
+check("Non-table Next path fails closed without throwing and valid paths are unchanged", function()
+    local unknownQuests = { [1] = q(1, nil, { requirementsKnown = false }) }
+    local e = P.New(unknownQuests, ctx())
+    for _, bad in ipairs({ 5, "x", true }) do
+        local ok, actions, unknown = pcall(function() return e:Next(1, bad) end)
+        assert(ok, "Next with bad path threw")
+        eq(#actions, 0); eq(unknown, true)
+    end
+    local fine = P.New({ [1] = q(1) }, ctx())
+    local expected, expectedUnknown = fine:Next(1)
+    for _, bad in ipairs({ 5, "x", true }) do
+        local ok, actions, unknown = pcall(function() return fine:Next(1, bad) end)
+        assert(ok, "Next with bad path threw on available quest")
+        eq(#actions, #expected); eq(actions[1].id, expected[1].id)
+        eq(actions[1].kind, expected[1].kind); eq(unknown, expectedUnknown)
+    end
+    local valid, validUnknown = fine:Next(1, {})
+    eq(#valid, #expected); eq(validUnknown, expectedUnknown)
+end)
 print("Planner checks passed: " .. passed)

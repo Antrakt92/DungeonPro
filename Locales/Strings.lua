@@ -224,7 +224,13 @@ function addon.L(key, ...)
     if locale == "enGB" then locale = "enUS" end
     if locale == "esMX" then locale = "esES" end
     local text = (strings[locale] or strings.enUS)[key] or strings.enUS[key] or key
-    if select("#", ...) > 0 then return string.format(text, ...) end
+    if type(text) ~= "string" then text = key end
+    -- Malformed catalog-fed format args fail closed to the raw text, never an aborted UI update.
+    if select("#", ...) > 0 then
+        local ok, formatted = pcall(string.format, text, ...)
+        if ok and type(formatted) == "string" then return formatted end
+        return text
+    end
     return text
 end
 

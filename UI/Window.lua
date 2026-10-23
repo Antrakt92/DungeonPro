@@ -1148,13 +1148,15 @@ end
 
 function UI:CatalogResultNote(result, matchedName)
     local note
+    -- Hostile result levels fail closed as 0 like the catalogue copy, so the %d notes never read nil.
+    local minimum, maximum = addon.Clean(result.minimum, "number") or 0, addon.Clean(result.maximum, "number") or 0
     if result.sharedLevels then
-        note = addon.L("SM_SHARED_LEVEL_RANGE", result.minimum, result.maximum)
+        note = addon.L("SM_SHARED_LEVEL_RANGE", minimum, maximum)
         note = note .. "\n" .. (result.partialEmpty and addon.L("SM_WING_QUESTS_UNKNOWN") or
             (result.count ~= nil and addon.L("CATALOG_QUESTS", result.count) or addon.L("SM_PARTIAL_WING")))
     else
-        note = result.count ~= nil and addon.L("CATALOG_COMPACT_META", result.minimum, result.maximum, result.count) or
-            addon.L("CATALOG_LEVELS", result.minimum, result.maximum)
+        note = result.count ~= nil and addon.L("CATALOG_COMPACT_META", minimum, maximum, result.count) or
+            addon.L("CATALOG_LEVELS", minimum, maximum)
     end
     if result.sharedDiscovery then note = note .. "\n" .. addon.L("SM_SHARED_QUESTS") end
     matchedName = matchedName or result.matchedName
@@ -1350,7 +1352,9 @@ function UI:RefreshDungeons()
         local targets = type(dungeon.quests) == "table" and dungeon.quests or {}
         local discovery
         local input = { dungeon = dungeon, name = dungeon.name, key = dungeon.key, wing = dungeon.wing,
-            minimum = dungeon.minLevel, maximum = dungeon.maxLevel, targets = targets, members = {},
+            -- Hostile minLevel/maxLevel fail closed as 0 like the inert non-table
+            -- default above, so the range gate and %d notes never read nil.
+            minimum = cleaner(dungeon.minLevel, "number") or 0, maximum = cleaner(dungeon.maxLevel, "number") or 0, targets = targets, members = {},
             activityID = rawget(dungeon, "activityID"), instanceID = rawget(dungeon, "instanceID"),
             complexKey = rawget(dungeon, "complexKey"), levelScope = rawget(dungeon, "levelScope"),
             coverage = rawget(dungeon, "coverage"), discovery = discovery,
@@ -1395,7 +1399,7 @@ function UI:RefreshDungeons()
                 -- Inert inputs own only their catalogue slot; field reads would throw on non-table entries.
                 if input.skipped then return catalogue[index] == dungeon end
                 if catalogue[index] ~= dungeon or dungeon.name ~= input.name or dungeon.key ~= input.key or dungeon.wing ~= input.wing or
-                    dungeon.minLevel ~= input.minimum or dungeon.maxLevel ~= input.maximum or dungeon.quests ~= input.targets or
+                    (cleaner(dungeon.minLevel, "number") or 0) ~= input.minimum or (cleaner(dungeon.maxLevel, "number") or 0) ~= input.maximum or dungeon.quests ~= input.targets or
                     #input.targets ~= #input.members then return false end
                 for _, key in ipairs({ "activityID", "instanceID", "complexKey", "levelScope", "coverage" }) do
                     if not rawequal(rawget(dungeon, key), input[key]) then return false end
@@ -1561,7 +1565,7 @@ function UI:RefreshDungeons()
             if input.skipped then return catalogue[index] == input.dungeon end
             local dungeon = input.dungeon
             return baseCurrent(true) and catalogue[index] == dungeon and dungeon.name == input.name and
-                dungeon.key == input.key and dungeon.minLevel == input.minimum and dungeon.maxLevel == input.maximum and
+                dungeon.key == input.key and (cleaner(dungeon.minLevel, "number") or 0) == input.minimum and (cleaner(dungeon.maxLevel, "number") or 0) == input.maximum and
                 dungeon.quests == input.targets and #input.targets == #input.members and
                 rawequal(rawget(dungeon, "activityID"), input.activityID) and
                 rawequal(rawget(dungeon, "instanceID"), input.instanceID) and

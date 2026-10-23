@@ -57,4 +57,13 @@ for locale, strings in pairs(addon.locales) do
         end
     end
 end
+-- Fail-closed: malformed format args return the raw text without throwing;
+-- valid formatting is unchanged.
+do
+    local template = addon.locales.enUS.SUMMARY
+    assert(addon.L("SUMMARY", 1, 2, 3, 4) == template:format(1, 2, 3, 4))
+    assert(addon.L("SUMMARY", 1) == template, "missing format args must return raw text")
+    assert(addon.L("SUMMARY", {}, {}, {}, {}) == template, "unformattable args must return raw text")
+    assert(addon.L("SEARCH_QUEST_MATCH", "Example quest (#166)"):find("Example quest (#166)", 1, true))
+end
 print("Localization checks passed: " .. n .. " dictionaries, esMX/enGB aliases; visual review pending")

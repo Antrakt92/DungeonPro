@@ -14,6 +14,7 @@ end
 -- Only search keys are folded. Display strings and their UTF-8 byte sequences stay intact.
 function addon.SearchFold(value)
     value = addon.Clean(value, "string")
+    if type(fold) ~= "table" then return nil end
     if not value or #value > 16384 then return nil end
     local result, i, bytes = {}, 1, 0
     while i <= #value do

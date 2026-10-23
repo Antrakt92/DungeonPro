@@ -28,6 +28,24 @@ do
 end
 collect(); assert(count(watched) == 0, "retired entries must not retain native tooltip identities")
 do
+    -- Fail-closed: nil or non-table tooltip/lease never throws.
+    local ok = pcall(leases.Retain, nil, nil, nil)
+    assert(ok, "Retain(nil, nil) must not throw")
+    ok = pcall(leases.Retire, nil, nil)
+    assert(ok, "Retire(nil, nil) must not throw")
+    ok = pcall(leases.Restore, nil, nil)
+    assert(ok, "Restore(nil, nil) must not throw")
+    ok = pcall(leases.Retain, {}, nil, nil)
+    assert(ok, "Retain with nil lease must not throw")
+    ok = pcall(leases.Retire, {}, nil)
+    assert(ok, "Retire with nil lease must not throw")
+    local tooltip, lease = {}, {}
+    ok = pcall(leases.Retain, tooltip, lease, function() end)
+    assert(ok and lease.sharedTooltipEntry ~= nil, "valid Retain still registers")
+    ok = pcall(leases.Retire, tooltip, lease)
+    assert(ok and lease.sharedTooltipEntry == nil, "valid Retire still clears")
+end
+do
     local tooltip, lease, restores = {}, {}, 0
     leases.Retain(tooltip, lease, function()
         restores = restores + 1; leases.Restore(tooltip, {})

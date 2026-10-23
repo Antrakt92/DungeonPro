@@ -245,4 +245,18 @@ check("Mutated result array proof stops after exceeding its original term count"
     next = original
     assert(ok and valid == false and visits <= 2, "visited keys: " .. visits)
 end)
+check("Hostile case-fold table fails closed without throwing", function()
+    local saved = addon.searchCaseFold
+    -- select (not ipairs) so the leading nil case is actually exercised.
+    for index = 1, 3 do
+        local bad = select(index, nil, 5, "fold")
+        addon.searchCaseFold = bad
+        assert(loadfile("Core/Search.lua"))("DungeonPro", addon)
+        local ok, result = pcall(addon.SearchFold, "Deadmines")
+        assert(ok and result == nil, "hostile fold must fail closed")
+    end
+    addon.searchCaseFold = saved
+    assert(loadfile("Core/Search.lua"))("DungeonPro", addon)
+    assert(addon.SearchFold("DeAdMiNeS") == "deadmines")
+end)
 print("Unicode, quest-ID and recorded source search checks passed: " .. passed .. " cases")

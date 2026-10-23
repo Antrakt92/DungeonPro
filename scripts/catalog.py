@@ -150,6 +150,8 @@ def objective_item_source_places(quest):
 
 
 def validate(data):
+    if type(data) is not dict:
+        raise ValueError("Invalid catalogue")
     if type(data.get("schema")) is not int or data["schema"] != 1:
         raise ValueError("Unsupported catalogue schema")
     if "checked" in data:
@@ -165,12 +167,16 @@ def validate(data):
         if not valid:
             raise ValueError("Invalid catalogue checked date")
     quests = {}
+    if type(data.get("quests")) is not list or type(data.get("dungeons")) is not list:
+        raise ValueError("Invalid catalogue quest/dungeon lists")
     for q in data["quests"]:
+        if type(q) is not dict:
+            raise ValueError("Invalid quest entry")
         if set(q) - QUEST_FIELDS:
             raise ValueError("Unknown quest fields")
-        if not integer(q["id"]) or q["id"] in quests:
+        if not integer(q.get("id")) or q.get("id") in quests:
             raise ValueError("Invalid or duplicate quest ID")
-        quests[q["id"]] = q
+        quests[q.get("id")] = q
         try:
             quest_name = q.get("name")
             valid_quest_name = (nonempty_string(quest_name) and
@@ -480,6 +486,8 @@ def validate(data):
         visit(qid)
     keys, instance_wings, scarlet = set(), {}, []
     for d in data["dungeons"]:
+        if type(d) is not dict:
+            raise ValueError("Invalid dungeon entry")
         if set(d) - DUNGEON_FIELDS:
             raise ValueError("Unknown dungeon fields")
         try:
@@ -492,10 +500,10 @@ def validate(data):
             raise ValueError("Invalid dungeon key/name")
         if "source" in d and not web_source(d["source"]):
             raise ValueError("Invalid dungeon guide source")
-        if d["key"] in keys:
+        if d.get("key") in keys:
             raise ValueError("Duplicate dungeon")
-        keys.add(d["key"])
-        if ("instanceID" in d and not integer(d["instanceID"])) or not level(d["minLevel"]) or not level(d["maxLevel"]) or d["maxLevel"] < d["minLevel"]:
+        keys.add(d.get("key"))
+        if ("instanceID" in d and not integer(d["instanceID"])) or not level(d.get("minLevel")) or not level(d.get("maxLevel")) or d.get("maxLevel") < d.get("minLevel"):
             raise ValueError("Invalid dungeon identity/levels")
         if "wing" in d and (type(d["wing"]) is not str or
                 d["wing"] not in ({"lower", "upper"} | SCARLET_WINGS) or "instanceID" not in d):

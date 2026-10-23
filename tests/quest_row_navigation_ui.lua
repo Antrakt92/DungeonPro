@@ -2341,4 +2341,62 @@ do
  ui.search, ui.range, ui.dungeon, ui.quest = savedSearch, savedRange, savedDungeon, savedQuest
  ui:RefreshDungeons()
 end
+-- A27 HOSTILE-DUNGEON-LEVELS: a missing or non-numeric minLevel/maxLevel fails
+-- closed as 0 at the catalogue copy (:1353) instead of throwing in the range
+-- gate (:1810); the SM-complex %d note (:1152) paints 0-0 instead of raw %d
+-- text. A valid numeric band keeps its exact note.
+do
+ local savedDungeons=addon.dungeons
+ local savedDungeon,savedQuest=ui.dungeon,ui.quest
+ local savedSearch,savedRange,savedUnavailable=ui.search,ui.range,ui.includeUnavailable
+ local savedScope=ui.ScarletDiscoveryScope
+ addon.quests[990931]={id=990931,name="Hostile level quest",minLevel=1,requirementsKnown=true}
+ local nilDungeon={key="hostile-level-nil",name="Hostile nil dungeon",quests={990931}}
+ local strDungeon={key="hostile-level-str",name="Hostile str dungeon",minLevel="high",maxLevel={},quests={990931}}
+ local smDungeon={key="hostile-level-sm",name="Hostile SM dungeon",complexKey="sm",levelScope="complex",quests={990931}}
+ local goodDungeon={key="hostile-level-good",name="Good band dungeon",minLevel=1,maxLevel=80,quests={990931}}
+ local function shownNotes()
+  local out={}
+  for _,card in ipairs(ui.cards)do if card:IsShown()then out[#out+1]=card.note.text end end
+  return out
+ end
+ -- The real discovery scope cannot certify a hostile wing row, so the SM note
+ -- path runs with the scope getter parked like the scarlet retirement guard.
+ ui.ScarletDiscoveryScope=nil
+ -- (a) range filter on: hostile bands read as 0-0, so level 20 filters them
+ -- out without throwing; the valid band keeps its exact card.
+ addon.dungeons={nilDungeon,strDungeon,goodDungeon}
+ ui.search="";ui.range=true;ui.includeUnavailable=true;ui.frame:Show()
+ local ok,err=pcall(function() ui:RefreshDungeons() end)
+ assert(ok,"hostile dungeon levels threw under range filter: "..tostring(err))
+ local notes=shownNotes()
+ assert(#notes==1,"range filter keeps only the valid band, kept "..#notes)
+ assert(notes[1]==addon.L("CATALOG_COMPACT_META",1,80,1),"valid band lost its note: "..tostring(notes[1]))
+ -- range filter off: hostile bands publish with 0-0 levels and no raw %d text.
+ ui.range=false
+ ok,err=pcall(function() ui:RefreshDungeons() end)
+ assert(ok,"hostile dungeon levels threw without range filter: "..tostring(err))
+ notes=shownNotes()
+ assert(#notes==3,"unfiltered refresh publishes every band, kept "..#notes)
+ local zero,zeroCount=addon.L("CATALOG_COMPACT_META",0,0,1),0
+ for _,note in ipairs(notes)do
+  assert(not note:find("%d",1,true),"hostile band painted raw format text: "..tostring(note))
+  if note==zero then zeroCount=zeroCount+1 end
+ end
+ assert(zeroCount==2,"both hostile bands read as 0-0")
+ -- (b) SM-complex note path with nil levels paints 0-0 without throwing.
+ addon.dungeons={smDungeon}
+ ui.search="";ui.range=false;ui.includeUnavailable=true;ui.frame:Show()
+ ok,err=pcall(function() ui:RefreshDungeons() end)
+ assert(ok,"SM-complex nil levels threw: "..tostring(err))
+ notes=shownNotes()
+ assert(#notes==1,"SM-complex dungeon publishes one card")
+ assert(notes[1]==addon.L("SM_SHARED_LEVEL_RANGE",0,0).."\n"..addon.L("CATALOG_QUESTS",1),"SM-complex note lost its 0-0 band: "..tostring(notes[1]))
+ ui.ScarletDiscoveryScope=savedScope
+ addon.quests[990931]=nil
+ addon.dungeons=savedDungeons
+ ui.dungeon,ui.quest=savedDungeon,savedQuest
+ ui.search,ui.range,ui.includeUnavailable=savedSearch,savedRange,savedUnavailable
+ ui.frame:Show();ui:Refresh()
+end
 print("Middle quest navigation checks passed (modeled, no native input or layout proof)")

@@ -51,6 +51,9 @@ function Planner.Eligible(q, context)
 end
 
 function Planner.New(quests, context, choices)
+    -- A hostile or missing context fails closed through the expired-context
+    -- path so States return UNKNOWN/character instead of throwing.
+    if type(context) ~= "table" then context = { current = function() return false end } end
     local engine = { quests = quests, context = context, choices = choices, states = {}, visiting = {} }
 
     function engine:Current()
@@ -218,7 +221,7 @@ function Planner.New(quests, context, choices)
             path[id] = nil
             return publish(actions, uncertain)
         end
-        local actions, unknown = resolve(id, path or {})
+        local actions, unknown = resolve(id, type(path) == "table" and path or {})
         return actions, unknown
     end
 
