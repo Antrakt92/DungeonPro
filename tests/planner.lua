@@ -840,6 +840,21 @@ check("Non-table quest entries fail closed as unknown requirements without throw
         eq(#readyActions, 1); eq(readyActions[1].kind, "turnin"); eq(readyActions[1].place, nil)
     end
 end)
+check("Non-numeric quest IDs fail closed as missing without throwing", function()
+    local e = P.New({ [1] = q(1) }, ctx())
+    -- select (not ipairs) so the leading nil case is actually exercised.
+    for i = 1, 4 do
+        local bad = select(i, nil, "1", true, 0 / 0)
+        local ok, state = pcall(function() return e:State(bad) end)
+        assert(ok, "non-numeric ID threw in State")
+        assert(state.status == "UNKNOWN" and state.reason == "missing", "non-numeric ID must fail closed as missing")
+        local okNext, actions, unknown = pcall(function() return e:Next(bad) end)
+        assert(okNext, "non-numeric ID threw in Next")
+        assert(#actions == 0 and unknown == true, "non-numeric ID must fail closed as unknown")
+        assert(#e:CompletionSteps(bad) == 0, "non-numeric ID must have no completion steps")
+    end
+    eq(e:State(1).status, "AVAILABLE")
+end)
 check("Non-table quest catalogues fail closed as unknown without throwing", function()
     for _, bad in ipairs({ nil, 5, "bad", true }) do
         local e = P.New(bad, ctx())

@@ -61,6 +61,10 @@ function Planner.New(quests, context, choices)
     end
 
     function engine:State(id)
+        -- A non-numeric ID cannot index the state cache; fail closed as
+        -- missing without throwing, mirroring CompletionSteps below.
+        id = addon.Clean(id, "number")
+        if not id then return { status = "UNKNOWN", reason = "missing", id = nil, completedHistory = false } end
         local completedHistory = false
         local function save(status, reason)
             if not self:Current() then status, reason, completedHistory = "UNKNOWN", "character", false end
@@ -130,6 +134,10 @@ function Planner.New(quests, context, choices)
     function engine:Next(id, path)
         -- Share only cycle-free subresults inside this one synchronous request.
         -- A new call always resolves fresh choices and produces fresh actions.
+        -- A non-numeric ID cannot index memo/path caches; fail closed as
+        -- unknown without throwing, mirroring State above.
+        id = addon.Clean(id, "number")
+        if not id then return {}, true end
         local memo = {}
         local function resolve(id, path)
             if path[id] then return {}, true, true end
