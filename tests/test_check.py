@@ -1,10 +1,14 @@
 """Exercise the verification runner syntax phase; other gates are mocked."""
+import contextlib
 import importlib.util
+import io
 from pathlib import Path
 import shutil
 import subprocess
 import tempfile
+import time
 import unittest
+from unittest import mock
 
 
 RUNNER = Path(__file__).resolve().parents[1] / "scripts" / "check.py"
@@ -481,6 +485,58 @@ class BaselineShimTests(unittest.TestCase):
     def test_current_baseline_loads_art_and_diagnostics_from_baseline(self):
         with tempfile.TemporaryDirectory(prefix="quest baseline current ") as folder:
             self._run_baseline(self._baseline(folder, legacy=False))
+
+
+class SubprocessTimeoutTests(unittest.TestCase):
+    # A hung tests/*.lua child must fail the gate instead of hanging it
+    # forever. The timeout itself is never waited out here: subprocess.run is
+    # mocked to raise TimeoutExpired immediately.
+    def load(self, root):
+        spec = importlib.util.spec_from_file_location("check_timeout_under_test", RUNNER)
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        module.ROOT = root
+        return module
+
+    def test_execute_passes_bounded_timeout_to_subprocess(self):
+        with tempfile.TemporaryDirectory(prefix="quest runner timeout kwarg ") as folder:
+            module = self.load(Path(folder))
+            seen = {}
+
+            def fake_run(args, **kwargs):
+                seen.update(kwargs)
+                return subprocess.CompletedProcess(args, 0, b"ok")
+
+            with mock.patch.object(module.subprocess, "run", side_effect=fake_run):
+                module.execute(("lua", "tests/hung.lua"))
+            self.assertEqual(seen.get("timeout"), module.COMMAND_TIMEOUT_SECONDS)
+
+    def test_execute_timeout_fails_closed_naming_the_file(self):
+        with tempfile.TemporaryDirectory(prefix="quest runner timeout ") as folder:
+            module = self.load(Path(folder))
+            args = ("lua", "tests/hung.lua")
+            expired = subprocess.TimeoutExpired(args, module.COMMAND_TIMEOUT_SECONDS)
+            started = time.monotonic()
+            with mock.patch.object(module.subprocess, "run", side_effect=expired):
+                with self.assertRaisesRegex(RuntimeError, "hung\\.lua"):
+                    module.execute(args)
+            self.assertLess(time.monotonic() - started, 30,
+                            "mocked expiry must not wait out the real timeout")
+
+    def test_run_lua_checks_timeout_fails_cleanly_without_hang(self):
+        with tempfile.TemporaryDirectory(prefix="quest worker timeout ") as folder:
+            module = self.load(Path(folder))
+            args = ("lua", "tests/hung.lua")
+            expired = subprocess.TimeoutExpired(list(args), module.COMMAND_TIMEOUT_SECONDS)
+            output = io.StringIO()
+            started = time.monotonic()
+            with mock.patch.object(module.subprocess, "run", side_effect=expired), \
+                    contextlib.redirect_stdout(output):
+                with self.assertRaisesRegex(RuntimeError, "hung\\.lua"):
+                    module.run_lua_checks([args], 1)
+            self.assertLess(time.monotonic() - started, 30,
+                            "mocked expiry must not wait out the real timeout")
+            self.assertIn("hung.lua", output.getvalue())
 
 
 if __name__ == "__main__":

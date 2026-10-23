@@ -15,9 +15,20 @@ ROOT = Path(__file__).resolve().parents[1]
 TIMINGS = []
 
 
+# Generous per-invocation bound: the slowest Lua suites (beta_giver_names)
+# take ~50s, so 600s never trips on a healthy tree but a hung tests/*.lua
+# child fails the gate instead of hanging it forever.
+COMMAND_TIMEOUT_SECONDS = 600
+
+
 def execute(args):
     started = time.perf_counter()
-    result = subprocess.run(args, cwd=ROOT, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    try:
+        result = subprocess.run(args, cwd=ROOT, stdout=subprocess.PIPE,
+                                stderr=subprocess.STDOUT, timeout=COMMAND_TIMEOUT_SECONDS)
+    except subprocess.TimeoutExpired as error:
+        raise RuntimeError(
+            f"command timed out after {COMMAND_TIMEOUT_SECONDS}s: {list(args)!r}") from error
     return result, time.perf_counter() - started
 
 
