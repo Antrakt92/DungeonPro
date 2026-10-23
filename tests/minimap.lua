@@ -629,5 +629,43 @@ check("Hostile icon methods fail closed without throwing",function()
     local m=reset();assert(m:Initialize())
     assert(m.button.icon.texture=="Interface\\Icons\\INV_Misc_Map_01" and m.button.icon.shown and m.button.shown)
 end)
+check("Hostile SetScript fails closed without throwing",function()
+    for _,mode in ipairs({"throw","missing"})do
+        local m=reset();local factory=CreateFrame
+        CreateFrame=function(...)
+            local b=factory(...)
+            if mode=="throw"then b.SetScript=function() error("script unavailable") end
+            else b.SetScript=false end
+            return b
+        end
+        local ok,result=pcall(m.Initialize,m)
+        assert(ok and result==false,mode.." Initialize must fail closed without throwing")
+        local okToggle=pcall(m.ToggleVisibility,m)
+        assert(okToggle,mode.." ToggleVisibility must not throw")
+        local okReset=pcall(m.Reset,m)
+        assert(okReset,mode.." Reset must not throw")
+        m.drag={button=m.button,parent=m.parent}
+        local okStop,stopResult=pcall(m.StopDrag,m,false)
+        assert(okStop,mode.." StopDrag must not throw")
+        assert(not stopResult,mode.." StopDrag must fail closed")
+        assert(not m.drag,mode.." StopDrag must clear drag state")
+        local live=reset();assert(live:Initialize())
+        if mode=="throw"then live.button.SetScript=function() error("script unavailable") end
+        else live.button.SetScript=false end
+        local okStart=pcall(live.StartDrag,live,"LeftButton")
+        assert(okStart,mode.." StartDrag must not throw")
+        assert(not live.drag,mode.." StartDrag must fail closed without a ticker")
+    end
+    local m=reset();assert(m:Initialize())
+    assert(type(m.button.scripts.OnMouseDown)=="function")
+    assert(type(m.button.scripts.OnClick)=="function")
+    assert(type(m.button.scripts.OnDragStart)=="function")
+    assert(type(m.button.scripts.OnDragStop)=="function")
+    assert(type(m.button.scripts.OnEnter)=="function")
+    assert(type(m.button.scripts.OnLeave)=="function")
+    assert(type(m.button.scripts.OnHide)=="function")
+    m:StartDrag("LeftButton");assert(m.button.scripts.OnUpdate)
+    m:StopDrag(false);assert(m.button.scripts.OnUpdate==nil and not m.drag)
+end)
 issecretvalue=nil
 print("Minimap modeled checks passed: "..total.." (native client unverified)")

@@ -29,6 +29,9 @@ def execute(args):
     except subprocess.TimeoutExpired as error:
         raise RuntimeError(
             f"command timed out after {COMMAND_TIMEOUT_SECONDS}s: {list(args)!r}") from error
+    except OSError as error:
+        raise RuntimeError(
+            f"could not run {list(args)!r}: {error}") from error
     return result, time.perf_counter() - started
 
 

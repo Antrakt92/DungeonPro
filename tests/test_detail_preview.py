@@ -201,4 +201,26 @@ class MalformedSnapshotPreview(unittest.TestCase):
     self.assertEqual(stopped.exception.code,2)
     self.assertIn('Invalid preview',err.getvalue())
     self.assertNotIn('Traceback',err.getvalue())
+class OSErrorPreviewTests(unittest.TestCase):
+ def test_bad_lua_path_fails_clean_without_traceback(self):
+  import tempfile
+  with tempfile.TemporaryDirectory()as tmp:
+   r=subprocess.run([sys.executable,RUN,'--lua',str(Path(tmp)/'no-such-lua-xyz'),'--output',str(Path(tmp)/'out'),'--quest','4764'],cwd=ROOT,text=True,encoding='utf-8',capture_output=True)
+   self.assertEqual(r.returncode,2,(r.stdout,r.stderr));self.assertIn('Invalid preview',r.stderr);self.assertNotIn('Traceback',r.stderr)
+ def test_unwritable_output_fails_clean_without_traceback(self):
+  try:__import__('PIL')
+  except ImportError:self.skipTest('Pillow is required for preview rendering')
+  import tempfile
+  with tempfile.TemporaryDirectory()as tmp:
+   blocker=Path(tmp)/'blocker';blocker.write_text('x',encoding='utf-8')
+   r=subprocess.run([sys.executable,RUN,'--lua',LUA,'--output',str(blocker),'--quest','4764'],cwd=ROOT,text=True,encoding='utf-8',capture_output=True)
+   self.assertEqual(r.returncode,2,(r.stdout,r.stderr));self.assertIn('Invalid preview',r.stderr);self.assertNotIn('Traceback',r.stderr)
+ def test_unexecutable_lua_capture_fails_clean_without_traceback(self):
+  try:__import__('PIL')
+  except ImportError:self.skipTest('Pillow is required for preview rendering')
+  import tempfile
+  with tempfile.TemporaryDirectory()as tmp:
+   fake=Path(tmp)/'notlua.exe';fake.write_text('not an exe',encoding='utf-8')
+   r=subprocess.run([sys.executable,RUN,'--lua',str(fake),'--output',str(Path(tmp)/'out'),'--quest','4764'],cwd=ROOT,text=True,encoding='utf-8',capture_output=True)
+   self.assertEqual(r.returncode,2,(r.stdout,r.stderr));self.assertIn('Invalid preview',r.stderr);self.assertNotIn('Traceback',r.stderr)
 if __name__=='__main__':unittest.main()

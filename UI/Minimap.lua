@@ -10,6 +10,12 @@ local function method(value, key)
     return addon.Read(function() return value[key] end, "function")
 end
 
+local function setScript(button, name, fn)
+    local setter = method(button, "SetScript")
+    if not setter then return false end
+    return pcall(setter, button, name, fn)
+end
+
 local function angle(value)
     value = addon.Clean(value, "number")
     if value then return value % 360 end
@@ -107,9 +113,9 @@ function M:Tooltip()
     self:ReleaseTooltip()
     if self.tooltip or not self:Current() then return end
     self.tooltip = held
-    held.button:SetScript("OnLeave", function()
+    if not setScript(held.button, "OnLeave", function()
         if self.tooltip == held then self:ReleaseTooltip(held) end
-    end)
+    end) then self:ReleaseTooltip(held); return end
     local function current()
         return self.tooltip == held and self.button == held.button and self.parent == held.parent and
             self.db == db and self.persisted == config and self.session == session and addon.L == localize and
@@ -285,7 +291,7 @@ function M:StopDrag(save, expected)
     local held = self.drag
     if not held or (expected and expected ~= held) then return end
     self.drag = nil
-    held.button:SetScript("OnUpdate", nil)
+    if not setScript(held.button, "OnUpdate", nil) then return false end
     if save and self:Current() and self.button == held.button and self.parent == held.parent then
         local value = angle(self.angle)
         if value then self.config.angle = value end
@@ -304,14 +310,18 @@ function M:StartDrag(mouse)
         atan = addon.Clean(math.atan2, "function"), checker = issecretvalue }
     if not held.cursor or not held.scale or not held.center or not held.atan then return end
     self.drag, self.suppressClick = held, true
-    button:SetScript("OnDragStop", function() self:StopDrag(true, held) end)
+    if not setScript(button, "OnDragStop", function() self:StopDrag(true, held) end) then
+        self.drag, self.suppressClick = nil, nil
+        setScript(button, "OnDragStop", nil)
+        return
+    end
     local function current()
         return self.drag == held and self:Current() and self.parent == parent and self.button == button and
             addon.Clean(GetCursorPosition, "function") == held.cursor and method(parent, "GetEffectiveScale") == held.scale and
             method(parent, "GetCenter") == held.center and addon.Clean(math.atan2, "function") == held.atan and
             issecretvalue == held.checker and addon.Read(button.IsShown, "boolean", button) == true
     end
-    button:SetScript("OnUpdate", function()
+    if not setScript(button, "OnUpdate", function()
         if not current() then self:StopDrag(false, held); return end
         local ok, x, y = pcall(held.cursor)
         x, y = addon.Clean(x, "number"), addon.Clean(y, "number")
@@ -326,7 +336,12 @@ function M:StartDrag(mouse)
         if x == 0 and y == 0 then return end
         local result = addon.Read(held.atan, "number", y, x)
         if not result or not current() or not self:Place(math.deg(result)) then self:StopDrag(false, held) end
-    end)
+    end) then
+        self.drag, self.suppressClick = nil, nil
+        setScript(button, "OnDragStop", nil)
+        setScript(button, "OnUpdate", nil)
+        return
+    end
 end
 
 function M:Initialize(retry)
@@ -444,26 +459,26 @@ function M:Initialize(retry)
     self.session = session
     if retry then retry.session, retry.parent = session, parent end
     local function current() return addon.Minimap == self and self.session == session and self.button == button and self:Current() end
-    button:SetScript("OnMouseDown", function(_, mouse)
+    if not setScript(button, "OnMouseDown", function(_, mouse)
         if current() and mouse == "LeftButton" and not self.drag then self.suppressClick = nil end
-    end)
-    button:SetScript("OnClick", function(_, mouse)
+    end) then return false end
+    if not setScript(button, "OnClick", function(_, mouse)
         if not current() then return end
         if self.suppressClick then self.suppressClick = nil; return end
         if mouse == "LeftButton" and addon.UI and type(addon.UI.Toggle) == "function" then addon.UI:Toggle() end
-    end)
-    button:SetScript("OnDragStart", function(_, mouse) if current() then self:StartDrag(mouse) end end)
-    button:SetScript("OnDragStop", function() if current() then self:StopDrag(true) end end)
-    button:SetScript("OnEnter", function() if current() then self:Tooltip() end end)
-    button:SetScript("OnLeave", function() if current() then self:ReleaseTooltip() end end)
-    button:SetScript("OnHide", function()
+    end) then return false end
+    if not setScript(button, "OnDragStart", function(_, mouse) if current() then self:StartDrag(mouse) end end) then return false end
+    if not setScript(button, "OnDragStop", function() if current() then self:StopDrag(true) end end) then return false end
+    if not setScript(button, "OnEnter", function() if current() then self:Tooltip() end end) then return false end
+    if not setScript(button, "OnLeave", function() if current() then self:ReleaseTooltip() end end) then return false end
+    if not setScript(button, "OnHide", function()
         if not button.launcherVisibilityWriting or button.launcherVisibilityWriting == 0 then
             button.launcherVisibility = nil
         end
         if self.session == session and self.button == button then
             self:StopDrag(false); self:ReleaseTooltip(); self.suppressClick = nil
         end
-    end)
+    end) then return false end
     if not self:StyleLauncher() or not current() then return false end
     if not self:WatchSize() or not current() then return false end
     local placed, reason = self:Place(angle(self.config.angle) or 225)

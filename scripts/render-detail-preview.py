@@ -94,6 +94,8 @@ def capture(lua: str, quest: int, locale: str, metrics_path: Path | None = None,
 def capture_error_detail(error) -> str:
     if isinstance(error, subprocess.TimeoutExpired):
         return f"Lua capture timed out after {CAPTURE_TIMEOUT_SECONDS}s: {list(error.cmd or [])!r}"
+    if isinstance(error, OSError):
+        return f"Invalid preview Lua capture failed: {error}"
     detail = (getattr(error, "stderr", None) or "").strip()
     return detail or str(error)
 
@@ -356,12 +358,18 @@ def main() -> None:
         args.quest = list(dict.fromkeys(args.quest))
     if not args.lua:
         parser.error("Lua 5.1 is required; pass --lua with the existing executable")
+    if not Path(args.lua).is_file():
+        resolved = shutil.which(args.lua)
+        if resolved:
+            args.lua = resolved
+        else:
+            parser.error(f"Invalid preview Lua executable: {args.lua!r}")
     first_overview = None
     if args.overview:
         try:
             first_overview = capture(args.lua, 0, "enUS", catalog_collapsed=args.catalog_collapsed,
                                      overview=args.overview, ready_quests=tuple(args.ready_quest))
-        except (subprocess.CalledProcessError, subprocess.TimeoutExpired, ValueError) as error:
+        except (subprocess.CalledProcessError, subprocess.TimeoutExpired, ValueError, OSError) as error:
             parser.error(capture_error_detail(error))
 
     global Image, ImageDraw, ImageFont
@@ -369,13 +377,16 @@ def main() -> None:
         from PIL import Image, ImageDraw, ImageFont
     except ImportError:
         raise SystemExit("Optional preview rendering requires Pillow. Use an existing Pillow-enabled Python interpreter; no installation is performed.") from None
-    args.output.mkdir(parents=True, exist_ok=True)
+    try:
+        args.output.mkdir(parents=True, exist_ok=True)
+    except OSError as error:
+        parser.error(f"Invalid preview output directory: {error}")
     for quest in ([0] if args.overview else args.quest or (4764, 4766)):
         stem = "overview-" + args.overview if args.overview else str(quest)
         for locale in ("enUS", "ruRU"):
             try:
                 snapshot = first_overview if args.overview and locale == "enUS" else capture(args.lua, quest, locale, catalog_collapsed=args.catalog_collapsed, detail_tab=args.detail_tab or "quest", overview=args.overview, ready_quests=tuple(args.ready_quest))
-            except (subprocess.CalledProcessError, subprocess.TimeoutExpired, ValueError) as error:
+            except (subprocess.CalledProcessError, subprocess.TimeoutExpired, ValueError, OSError) as error:
                 parser.error(capture_error_detail(error))
             metrics = snapshot.get("metrics")
             if type(metrics) is not dict:
@@ -390,17 +401,25 @@ def main() -> None:
                     parser.error(str(error))
                 entries.append(f"[{lua_quote(key)}]={{height={height},width={width}}}")
             metrics_path = args.output / f"{stem}-{locale}-metrics.lua"
-            metrics_path.write_text("return {" + ",".join(entries) + "}", encoding="utf-8")
+            try:
+                metrics_path.write_text("return {" + ",".join(entries) + "}", encoding="utf-8")
+            except OSError as error:
+                parser.error(f"Invalid preview metrics output: {error}")
             try:
                 snapshot = capture(args.lua, quest, locale, metrics_path, catalog_collapsed=args.catalog_collapsed, detail_tab=args.detail_tab or "quest", overview=args.overview, ready_quests=tuple(args.ready_quest))
-            except (subprocess.CalledProcessError, subprocess.TimeoutExpired, ValueError) as error:
+            except (subprocess.CalledProcessError, subprocess.TimeoutExpired, ValueError, OSError) as error:
                 parser.error(capture_error_detail(error))
-            (args.output / f"{stem}-{locale}.json").write_text(json.dumps(snapshot, ensure_ascii=False, indent=2), encoding="utf-8")
+            try:
+                (args.output / f"{stem}-{locale}.json").write_text(json.dumps(snapshot, ensure_ascii=False, indent=2), encoding="utf-8")
+            except OSError as error:
+                parser.error(f"Invalid preview snapshot output: {error}")
             target = args.output / f"{stem}-{locale}.png"
             try:
                 render(snapshot, target)
             except ValueError as error:
                 parser.error(str(error))
+            except OSError as error:
+                parser.error(f"Invalid preview image output: {error}")
             print(target)
 
 

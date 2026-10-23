@@ -120,8 +120,9 @@ class IsolatedWorkerTests(unittest.TestCase):
             next_marker = root / "must-not-start"
             commands = [(str(root / "absent executable.exe"),),
                         (sys.executable, "-c", "from pathlib import Path;import sys;Path(sys.argv[1]).touch()", str(next_marker))]
-            with contextlib.redirect_stdout(io.StringIO()), self.assertRaises(OSError):
+            with contextlib.redirect_stdout(io.StringIO()), self.assertRaises(RuntimeError) as caught:
                 module.run_lua_checks(commands, 1)
+            self.assertIsInstance(caught.exception.__cause__, OSError)
             self.assertFalse(next_marker.exists())
 
     def test_first_failure_stops_new_work_and_waits_for_already_running_peer(self):
