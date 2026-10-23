@@ -420,6 +420,49 @@ class NamesTests(unittest.TestCase):
         self.assertNotIn("https://", expected)
         self.assertNotIn("tooltip", expected)
 
+    def test_generate_fails_closed_on_hostile_shapes_without_touching_valid_bytes(self):
+        data, catalog = fixture()
+        valid = names.generate(names.validate(data, catalog))
+        self.assertIn('[166] = { source = "The Defias Brotherhood", name = "Братство Справедливости" }', valid)
+        for hostile in (None, [], {}, {"schema": 1}, {"locales": None}, {"locales": []},
+                        {"locales": {locale: {} for locale in names.LOCALES}}):
+            with self.subTest(hostile=repr(hostile)), self.assertRaises(ValueError):
+                names.generate(hostile)
+        merged = names.load_data()
+        control = names.generate(merged)
+        self.assertEqual((ROOT / "Database/NameTranslations.lua").read_bytes(), control.encode("utf-8"))
+        hostile_keys = ("0", "00", "01", "+166", "166 ",
+                        '1] = { source = "x", name = "y" } --', "166\n166")
+        for evil in hostile_keys:
+            with self.subTest(key=evil):
+                candidate = copy.deepcopy(merged)
+                candidate["locales"]["ruRU"]["quests"][evil] = {"source": "x", "name": "y"}
+                with self.assertRaises(ValueError):
+                    names.generate(candidate)
+        for evil in (166, None, ("166",)):
+            with self.subTest(key=repr(evil)):
+                candidate = copy.deepcopy(merged)
+                candidate["locales"]["ruRU"]["quests"][evil] = {"source": "x", "name": "y"}
+                with self.assertRaises(ValueError):
+                    names.generate(candidate)
+        for mutation in (
+            lambda d: d["locales"]["ruRU"]["quests"].update({"167": []}),
+            lambda d: d["locales"]["ruRU"]["quests"].update({"167": {"name": "y"}}),
+            lambda d: d["locales"]["ruRU"]["quests"].update({"167": {"source": "x", "name": 1}}),
+            lambda d: d["locales"]["ruRU"].update({"quests": []}),
+            lambda d: d["locales"].pop("koKR"),
+            lambda d: d.update({"sourceAreas": []}),
+            lambda d: d.update({"sourceAreas": {1: [47]}}),
+        ):
+            with self.subTest(mutation=mutation), self.assertRaises(ValueError):
+                candidate = copy.deepcopy(merged)
+                mutation(candidate)
+                names.generate(candidate)
+        candidate = copy.deepcopy(merged)
+        candidate["locales"]["ruRU"]["dungeons"][167] = {"source": "x", "name": "y"}
+        with self.assertRaises(ValueError):
+            names.generate(candidate)
+
     def test_saved_dataset_and_generated_bytes_remain_consistent(self):
         path = ROOT / "data/name_translations.json"
         self.assertTrue(path.exists(), "Title source data is required")

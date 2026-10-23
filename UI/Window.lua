@@ -600,7 +600,12 @@ function UI:CopyLink(id)
         self.copyReturn = offset and offset >= 0 and { quest = id, offset = offset } or nil
     end
     if not box then
-        local made = CreateFrame("EditBox", nil, detail, "InputBoxTemplate")
+        -- A throwing or nil global CreateFrame fails closed with false like the
+        -- PreparationOverview overview-button claim instead of escaping CopyLink.
+        local okCreate, fresh = pcall(CreateFrame, "EditBox", nil, detail, "InputBoxTemplate")
+        if not okCreate then return false end
+        local made = addon.Clean(fresh, "table") or addon.Clean(fresh, "userdata")
+        if not made then return false end
         if not requestCurrent() then return false end
         made:SetSize(326, 26); setInputFont(made); made:SetAutoFocus(false)
         if not requestCurrent() then return false end
@@ -695,14 +700,43 @@ end
 function UI:MakeRow(parent, pool, index, height, ownerCurrent, staged)
     local row = pool[index]
     if not row then
-        row = CreateFrame("Button", nil, parent)
-        row:SetSize(parent:GetWidth() - 4, height)
-        row.bg = row:CreateTexture(nil, "BACKGROUND")
-        row.bg:SetAllPoints()
-        row.bg:SetColorTexture(0.13, 0.16, 0.20, 1)
-        row:SetHighlightTexture("Interface\\QuestFrame\\UI-QuestTitleHighlight")
-        row.title = label(row, "", 8, -7, parent:GetWidth() - 22, 17)
-        row.note = label(row, "", 8, -29, parent:GetWidth() - 22, 14)
+        local function current() return not ownerCurrent or ownerCurrent() end
+        -- A throwing or nil global CreateFrame fails closed with nil like the
+        -- PreparationOverview overview-button claim instead of escaping render.
+        local okCreate, fresh = pcall(CreateFrame, "Button", nil, parent)
+        if not okCreate then return nil end
+        row = addon.Clean(fresh, "table") or addon.Clean(fresh, "userdata")
+        if not row then return nil end
+        -- A half-built row is unpublished and unpooled: hide it before
+        -- failing closed so a reentrant render that showed it mid-build
+        -- cannot leave a visible orphan behind. The closure keeps the
+        -- method read inside pcall for hostile frames.
+        local function abandon()
+            pcall(function() fresh:Hide() end)
+            return nil
+        end
+        if not current() then return abandon() end
+        local okWidth, width = pcall(parent.GetWidth, parent)
+        width = okWidth and addon.Clean(width, "number") or nil
+        if not width then return abandon() end
+        if not current() then return abandon() end
+        if not pcall(row.SetSize, row, width - 4, height) then return abandon() end
+        local okBg, bg = pcall(row.CreateTexture, row, nil, "BACKGROUND")
+        bg = okBg and (addon.Clean(bg, "table") or addon.Clean(bg, "userdata")) or nil
+        if not bg then return abandon() end
+        if not current() then return abandon() end
+        row.bg = bg
+        if not pcall(bg.SetAllPoints, bg) then return abandon() end
+        if not pcall(bg.SetColorTexture, bg, 0.13, 0.16, 0.20, 1) then return abandon() end
+        if not pcall(row.SetHighlightTexture, row, "Interface\\QuestFrame\\UI-QuestTitleHighlight") then return abandon() end
+        local okTitle, title = pcall(label, row, "", 8, -7, width - 22, 17)
+        if not okTitle or not title then return abandon() end
+        if not current() then return abandon() end
+        row.title = title
+        local okNote, note = pcall(label, row, "", 8, -29, width - 22, 14)
+        if not okNote or not note then return abandon() end
+        if not current() then return abandon() end
+        row.note = note
         pool[index] = row
     end
     if ownerCurrent then self:QuestListWrite(row, staged and "Hide" or "Show", ownerCurrent) else row:Show() end
@@ -2058,6 +2092,7 @@ function UI:RefreshDungeons()
         local dungeon = result.dungeon
         renderInput = inputByDungeon[dungeon]
         local row = self:MakeRow(self.catalog, self.cards, index, 76, current, true)
+        if not row then return end
         row.catalogCard = true
         local theme = addon.Clean(addon.Theme, "table")
         if theme then addon.Read(theme.ApplyFont, "boolean", row.note, 12) end
@@ -2070,22 +2105,37 @@ function UI:RefreshDungeons()
             if not write(row.art, "SetSize", 56, 60) or not write(row.art, "SetPoint", "TOPLEFT", 8, -8) then return end
         end
         if not row.entranceControl then
-            local control = CreateFrame("Button", nil, row)
-            row.entranceControl = control
-            control:SetSize(28, 28); control:SetPoint("TOPRIGHT", row, "TOPRIGHT", -4, -6)
-            if type(control.SetMotionScriptsWhileDisabled) == "function" then control:SetMotionScriptsWhileDisabled(true) end
-            local icon = control:CreateTexture(nil, "ARTWORK"); control.footerIcon = icon
-            icon:SetSize(20, 20); icon:SetPoint("CENTER", control, "CENTER", 0, 0)
+            -- A throwing or nil global CreateFrame fails closed like the
+            -- PreparationOverview overview-button claim instead of escaping render.
+            -- The control publishes only after the full icon chain succeeds so a
+            -- hostile factory never leaves a half-built pooled control behind.
+            local okCreate, fresh = pcall(CreateFrame, "Button", nil, row)
+            if not okCreate then return end
+            local control = addon.Clean(fresh, "table") or addon.Clean(fresh, "userdata")
+            if not control then return end
+            if not current() then return end
+            if not pcall(control.SetSize, control, 28, 28) then return end
+            if not pcall(control.SetPoint, control, "TOPRIGHT", row, "TOPRIGHT", -4, -6) then return end
+            if type(control.SetMotionScriptsWhileDisabled) == "function" then pcall(control.SetMotionScriptsWhileDisabled, control, true) end
+            local okIcon, icon = pcall(control.CreateTexture, control, nil, "ARTWORK")
+            icon = okIcon and (addon.Clean(icon, "table") or addon.Clean(icon, "userdata")) or nil
+            if not icon then return end
+            if not current() then return end
+            control.footerIcon = icon
+            if not pcall(icon.SetSize, icon, 20, 20) then return end
+            if not pcall(icon.SetPoint, icon, "CENTER", control, "CENTER", 0, 0) then return end
             local atlas = "Dungeon"
             local loaded, accepted
             if type(icon.SetAtlas) == "function" then loaded, accepted = pcall(icon.SetAtlas, icon, atlas) end
             if not loaded or addon.Clean(accepted, "boolean") == false or addon.Read(icon.GetAtlas, "string", icon) ~= atlas then
                 if not write(icon, "SetTexture", "Interface\\Icons\\INV_Misc_Map_01") then return end
             end
-            icon:Show()
-            control:SetScript("OnEnter", function() if self.catalogCollapsed then return end; control.footerHovered = true; self:RefreshFooterIcon(control); self:CatalogEntranceHint(row) end)
-            control:SetScript("OnLeave", function() control.footerHovered = false; self:RefreshFooterIcon(control); self:HideNavigationHint(control) end)
-            control:SetScript("OnHide", function() control.footerHovered = false; self:RefreshFooterIcon(control); self:HideNavigationHint(control) end)
+            if not pcall(icon.Show, icon) then return end
+            if not pcall(control.SetScript, control, "OnEnter", function() if self.catalogCollapsed then return end; control.footerHovered = true; self:RefreshFooterIcon(control); self:CatalogEntranceHint(row) end) then return end
+            if not pcall(control.SetScript, control, "OnLeave", function() control.footerHovered = false; self:RefreshFooterIcon(control); self:HideNavigationHint(control) end) then return end
+            if not pcall(control.SetScript, control, "OnHide", function() control.footerHovered = false; self:RefreshFooterIcon(control); self:HideNavigationHint(control) end) then return end
+            if not current() then return end
+            row.entranceControl = control
         end
         -- The separate icon rail never overlaps title or metadata wrapping.
         local textWidth = math.max(1, row:GetWidth() - 76 - 36)
@@ -2110,15 +2160,30 @@ function UI:RefreshDungeons()
         if type(icon.SetAlpha) == "function" and not write(icon, "SetAlpha", alpha) then return end
         if type(icon.SetDesaturated) == "function" and not write(icon, "SetDesaturated", not enabled) then return end
         if not row.dungeonStatusControl then
-            local statusControl = CreateFrame("Frame", nil, row)
+            -- A throwing or nil global CreateFrame fails closed like the entrance
+            -- control above instead of escaping render. The control publishes only
+            -- after the full icon chain succeeds so a hostile factory never leaves
+            -- a half-built pooled control behind.
+            local okCreate, fresh = pcall(CreateFrame, "Frame", nil, row)
+            if not okCreate then return end
+            local statusControl = addon.Clean(fresh, "table") or addon.Clean(fresh, "userdata")
+            if not statusControl then return end
+            if not current() then return end
+            if not pcall(statusControl.SetSize, statusControl, 28, 28) then return end
+            if not pcall(statusControl.SetPoint, statusControl, "TOPRIGHT", row, "TOPRIGHT", -4, -44) then return end
+            if not pcall(statusControl.EnableMouse, statusControl, true) then return end
+            local okIcon, freshIcon = pcall(statusControl.CreateTexture, statusControl, nil, "ARTWORK")
+            local statusIcon = okIcon and (addon.Clean(freshIcon, "table") or addon.Clean(freshIcon, "userdata")) or nil
+            if not statusIcon then return end
+            if not current() then return end
+            statusControl.statusIcon = statusIcon
+            if not pcall(statusIcon.SetSize, statusIcon, 20, 20) then return end
+            if not pcall(statusIcon.SetPoint, statusIcon, "CENTER", statusControl, "CENTER", 0, 0) then return end
+            if not pcall(statusControl.SetScript, statusControl, "OnEnter", function() if not self.catalogCollapsed then self:CatalogStatusHint(row) end end) then return end
+            if not pcall(statusControl.SetScript, statusControl, "OnLeave", function() self:HideNavigationHint(statusControl) end) then return end
+            if not pcall(statusControl.SetScript, statusControl, "OnHide", function() self:HideNavigationHint(statusControl) end) then return end
+            if not current() then return end
             row.dungeonStatusControl = statusControl
-            statusControl:SetSize(28, 28); statusControl:SetPoint("TOPRIGHT", row, "TOPRIGHT", -4, -44)
-            statusControl:EnableMouse(true)
-            local statusIcon = statusControl:CreateTexture(nil, "ARTWORK"); statusControl.statusIcon = statusIcon
-            statusIcon:SetSize(20, 20); statusIcon:SetPoint("CENTER", statusControl, "CENTER", 0, 0)
-            statusControl:SetScript("OnEnter", function() if not self.catalogCollapsed then self:CatalogStatusHint(row) end end)
-            statusControl:SetScript("OnLeave", function() self:HideNavigationHint(statusControl) end)
-            statusControl:SetScript("OnHide", function() self:HideNavigationHint(statusControl) end)
         end
         local dto, statusCurrent = result.statusDTO, result.statusCurrent
         local function statusOwned()
@@ -2508,15 +2573,22 @@ function UI:RefreshQuests()
         if not current() then return false end
         local binding = { current = current, value = value }
         fs.questListText = binding
-        fs:SetText(value)
-        if current() then return true end
-        local newer = fs.questListText
-        if newer ~= binding and newer and newer.current() and not fs.questListTextRepair then
-            fs.questListTextRepair = true
-            if fs.questListText == newer and newer.current() then pcall(fs.SetText, fs, newer.value) end
-            fs.questListTextRepair = nil
+        -- Guard the initial write like the repair write below: a hostile or
+        -- missing setter fails closed with false instead of throwing. The pcall
+        -- reports success explicitly because a native SetText returns nil, which
+        -- would read as failure under a direct "boolean" Read and break the
+        -- valid path. Exactly one write runs on the valid path, as before.
+        local ok = pcall(fs.SetText, fs, value)
+        if not ok or not current() then
+            local newer = fs.questListText
+            if newer ~= binding and newer and newer.current() and not fs.questListTextRepair then
+                fs.questListTextRepair = true
+                if fs.questListText == newer and newer.current() then pcall(fs.SetText, fs, newer.value) end
+                fs.questListTextRepair = nil
+            end
+            return false
         end
-        return false
+        return true
     end
     -- Hidden rows use local source guards while building. Prove the complete
     -- hierarchy at publication boundaries; retained input always rechecks it.
@@ -2750,7 +2822,7 @@ function UI:RefreshQuests()
             if not current() then return end
             n = n + 1
             local row = self:MakeRow(self.questList, self.rows, n, entry.heading and 32 or 30, current, true)
-            if not current() then return end
+            if not row or not current() then return end
             row.sharedDiscovery = false
             row.heading, row.questID, row.compact = entry.heading, id, not entry.heading and not preparation
             row.anchorQuestID = entry.anchorID
@@ -2844,9 +2916,19 @@ function UI:RefreshQuests()
             local branch = entry.tree and entry.tree.relation == "required" and (entry.tree.alternatives or 0) > 1 and entry.tree or nil
             local branchControl = row.branchControl
             if branch and not branchControl then
-                branchControl = CreateFrame("Button", nil, row)
-                branchControl.icon = branchControl:CreateTexture(nil, "ARTWORK")
-                branchControl.icon:SetAllPoints()
+                -- A throwing or nil global CreateFrame fails closed like the
+                -- PreparationOverview overview-button claim instead of escaping render.
+                local okCreate, fresh = pcall(CreateFrame, "Button", nil, row)
+                if not okCreate then return end
+                branchControl = addon.Clean(fresh, "table") or addon.Clean(fresh, "userdata")
+                if not branchControl then return end
+                if not current() then return end
+                local okIcon, freshIcon = pcall(branchControl.CreateTexture, branchControl, nil, "ARTWORK")
+                local icon = okIcon and (addon.Clean(freshIcon, "table") or addon.Clean(freshIcon, "userdata")) or nil
+                if not icon then return end
+                if not current() then return end
+                branchControl.icon = icon
+                if not pcall(icon.SetAllPoints, icon) then return end
                 if not current() then return end
                 row.branchControl = branchControl
             end
@@ -3015,6 +3097,7 @@ function UI:RefreshQuests()
         end
     else
         local row = self:MakeRow(self.questList, self.rows, 1, 32, current, true)
+        if not row then return end
         row.sharedDiscovery = false
         n = 1; row.heading, row.questID, row.compact = scopeLegacy and "SM_CHOOSE_WING" or "PICK", nil, false
         row.questTreeNode, row.questTreeIndent, row.questTreeInset = false, 0, 0
@@ -3047,7 +3130,7 @@ function UI:RefreshQuests()
         for _, id in ipairs(discovery) do
             n = n + 1
             local row = self:MakeRow(self.questList, self.rows, n, 32, current, true)
-            if not current() then return end
+            if not row or not current() then return end
             row.heading, row.questID, row.compact = not id and "SM_SHARED_QUESTS" or nil, id or nil, false
             row.sharedDiscovery = id and true or false
             row.sharedOverview = sharedOverview and not id or false
@@ -4491,7 +4574,7 @@ function UI:RefreshDetail(sourceFocus)
             if not current() then return false end
             toggleIndex = toggleIndex + 1
             local toggle = self:MakeRow(self.detail, self.reportedToggles, toggleIndex, 40, sourceCallback(current), true)
-            if not current() then return false end
+            if not toggle or not current() then return false end
             toggle.locationKey, toggle.heading = key, true
             local expanded = self.reportedExpanded[key] == true
             if not locationWrite(current, toggle.title, "SetText", (expanded and "- " or "+ ") .. addon.L("REPORTED_POSITIONS", parentName, #places)) or
@@ -4527,7 +4610,7 @@ function UI:RefreshDetail(sourceFocus)
                 if not current() then return false end
                 reportIndex = reportIndex + 1
                 local row = self:MakeRow(self.detail, self.reportedRows, reportIndex, 59, sourceCallback(current), true)
-                if not current() then return false end
+                if not row or not current() then return false end
                 row.locationKey, row.destination, row.heading = key, point, nil
                 local x, py = addon.Clean(point.x, "number"), addon.Clean(point.y, "number")
                 local coordinates = x ~= nil and py ~= nil and x >= 0 and x <= 100 and py >= 0 and py <= 100
@@ -4639,7 +4722,7 @@ function UI:RefreshDetail(sourceFocus)
                 end
                 if not current() then return false end
                 local row = self:MakeRow(self.detail, buttons, (offset or 0) + index, 59, sourceCallback(current), true)
-                if not current() then return false end
+                if not row or not current() then return false end
                 if not write(row.title, "SetText", title) or
                     not write(row.note, "SetText", note) or
                     not write(row, "SetEnabled", validMap) then return false end
@@ -5821,7 +5904,7 @@ function UI:RefreshDetail(sourceFocus)
                 if not existing then
                     local staged={}
                     existing=make(self,self.detail,staged,1,52,sourceCallback(current),true)
-                    if not current() or contactPool[index] then
+                    if not existing or not current() or contactPool[index] then
                         if staged[1]==existing and type(nativeHide)=="function" then pcall(nativeHide,existing) end
                         return false
                     end

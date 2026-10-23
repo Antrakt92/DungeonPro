@@ -195,7 +195,7 @@ child = rows()[1]
 local nativeText, savedSource = child.title.SetText, addon.quests[4241].requires
 child.title.SetText = function() error("native title failure") end
 local success = pcall(ui.RefreshQuests, ui)
-assert(not success)
+assert(success, "native title failure fails closed without escaping (writeText guard: callers retire on false)")
 child.title.SetText = nativeText
 addon.quests[4241].requires = { { ids = { 65 } } }
 for _, row in ipairs(ui.rows) do assert(not row:IsShown(), "native failure retires staged rows") end

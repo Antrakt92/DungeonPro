@@ -10321,4 +10321,188 @@ check("Explicit overview component hidden-tail copy stays neutral across held an
     ui.dungeon, ui.quest = savedDungeon, savedQuest
     ui:Refresh()
 end)
+check("Hostile card factories fail closed without throwing on catalogue creation paths", function()
+    local factory = CreateFrame
+    local dungeons, search, range = addon.dungeons, ui.search, ui.range
+    local dungeon, quest, preparation, history = ui.dungeon, ui.quest, ui.preparation, ui.detailHistory
+    local cards = ui.cards
+    addon.dungeons = { { key = "card-a", name = "Card A", minLevel = 1, maxLevel = 60, quests = {} } }
+    ui.search, ui.range, ui.dungeon, ui.quest, ui.preparation, ui.detailHistory = "", false, nil, nil, false, {}
+    ui:RefreshDungeons()
+    assert(ui.cards[1].shown and ui.cards[1].title.text == "Card A")
+    assert(ui.cards[1].entranceControl and ui.cards[1].entranceControl.footerIcon)
+    assert(ui.cards[1].dungeonStatusControl and ui.cards[1].dungeonStatusControl.statusIcon)
+    for _, mode in ipairs({ "throw", "nil" }) do
+        -- Fresh pools exercise MakeRow creation; pooled rows exercise the
+        -- entrance and status control blocks. Both must return closed, never throw.
+        ui.cards = {}
+        CreateFrame = mode == "throw" and function() error("card factory unavailable") end or function() return nil end
+        local ok = pcall(ui.RefreshDungeons, ui)
+        CreateFrame = factory
+        assert(ok, mode .. " MakeRow must not escape RefreshDungeons")
+        ui.cards = cards
+        ui:RefreshDungeons()
+        assert(ui.cards[1].shown and ui.cards[1].title.text == "Card A", mode .. " valid catalogue render must recover")
+        ui.cards[1].entranceControl, ui.cards[1].dungeonStatusControl = nil, nil
+        CreateFrame = mode == "throw" and function() error("card factory unavailable") end or function() return nil end
+        ok = pcall(ui.RefreshDungeons, ui)
+        CreateFrame = factory
+        assert(ok, mode .. " entrance/status creation must not escape RefreshDungeons")
+        assert(ui.cards[1].entranceControl == nil and ui.cards[1].dungeonStatusControl == nil,
+            mode .. " must publish no half-built pooled control")
+        ui:RefreshDungeons()
+        assert(ui.cards[1].entranceControl and ui.cards[1].entranceControl.footerIcon, mode .. " entrance control must rebuild")
+        assert(ui.cards[1].dungeonStatusControl and ui.cards[1].dungeonStatusControl.statusIcon, mode .. " status control must rebuild")
+    end
+    addon.dungeons, ui.search, ui.range = dungeons, search, range
+    ui.dungeon, ui.quest, ui.preparation, ui.detailHistory = dungeon, quest, preparation, history
+    ui.cards = cards; ui:Refresh()
+end)
+check("Hostile card textures fail closed without throwing on creation paths", function()
+    local factory, texture = CreateFrame, methods.CreateTexture
+    local dungeons, search, range = addon.dungeons, ui.search, ui.range
+    local dungeon, quest, preparation, history = ui.dungeon, ui.quest, ui.preparation, ui.detailHistory
+    local cards = ui.cards
+    addon.dungeons = { { key = "card-b", name = "Card B", minLevel = 1, maxLevel = 60, quests = {} } }
+    ui.search, ui.range, ui.dungeon, ui.quest, ui.preparation, ui.detailHistory = "", false, nil, nil, false, {}
+    ui:RefreshDungeons()
+    assert(ui.cards[1].entranceControl and ui.cards[1].dungeonStatusControl)
+    for _, mode in ipairs({ "throw", "nil" }) do
+        ui.cards = {}
+        methods.CreateTexture = mode == "throw" and function() error("texture unavailable") end or function() return nil end
+        local ok = pcall(ui.RefreshDungeons, ui)
+        methods.CreateTexture = texture
+        assert(ok, mode .. " MakeRow texture must not escape RefreshDungeons")
+        ui.cards = cards
+        ui:RefreshDungeons()
+        assert(ui.cards[1].shown, mode .. " valid catalogue render must recover")
+        ui.cards[1].entranceControl, ui.cards[1].dungeonStatusControl = nil, nil
+        methods.CreateTexture = mode == "throw" and function() error("texture unavailable") end or function() return nil end
+        ok = pcall(ui.RefreshDungeons, ui)
+        methods.CreateTexture = texture
+        assert(ok, mode .. " control textures must not escape RefreshDungeons")
+        assert(ui.cards[1].entranceControl == nil and ui.cards[1].dungeonStatusControl == nil,
+            mode .. " must publish no half-built pooled control")
+        ui:RefreshDungeons()
+        assert(ui.cards[1].entranceControl.footerIcon and ui.cards[1].dungeonStatusControl.statusIcon,
+            mode .. " control icons must rebuild")
+    end
+    CreateFrame = factory
+    addon.dungeons, ui.search, ui.range = dungeons, search, range
+    ui.dungeon, ui.quest, ui.preparation, ui.detailHistory = dungeon, quest, preparation, history
+    ui.cards = cards; ui:Refresh()
+end)
+check("Hostile branch and row factories fail closed without throwing on quest-list creation paths", function()
+    local factory, texture = CreateFrame, methods.CreateTexture
+    local quests, context, dungeon = addon.quests, addon.Context, ui.dungeon
+    local quest, preparation, history, treeRoot, treeDungeon = ui.quest, ui.preparation, ui.detailHistory, ui.questTreeRoot, ui.questTreeDungeon
+    local rows = ui.rows
+    addon.quests = {}
+    for _, id in ipairs({ 61300, 61301, 61302 }) do
+        addon.quests[id] = { id = id, minLevel = 1, requirementsKnown = true }
+    end
+    addon.quests[61300].requires = { { ids = { 61301, 61302 } } }
+    addon.Context = function() return { level = 60, active = function() return false end, completed = function() return false end } end
+    ui.dungeon = { name = "Branch card fixture", coverage = "reviewed", quests = { 61300 } }
+    ui.preparation, ui.quest = false, 61300
+    ui.questTreeRoot, ui.questTreeDungeon, ui.detailHistory = 61300, ui.dungeon, {}
+    ui:RefreshQuests()
+    local function branchRow()
+        for _, row in ipairs(ui.rows) do if row.shown and row.branchControl and row.branchControl.shown then return row end end
+    end
+    assert(branchRow(), "branch fixture must publish a branch control")
+    for _, mode in ipairs({ "throw", "nil" }) do
+        ui.rows = {}
+        CreateFrame = mode == "throw" and function() error("row factory unavailable") end or function() return nil end
+        local ok = pcall(ui.RefreshQuests, ui)
+        CreateFrame = factory
+        assert(ok, mode .. " MakeRow must not escape RefreshQuests")
+        ui.rows = rows
+        ui:RefreshQuests()
+        assert(branchRow(), mode .. " valid quest-list render must recover")
+        for _, row in ipairs(ui.rows) do row.branchControl = nil end
+        CreateFrame = mode == "throw" and function() error("row factory unavailable") end or function() return nil end
+        ok = pcall(ui.RefreshQuests, ui)
+        CreateFrame = factory
+        assert(ok, mode .. " branch creation must not escape RefreshQuests")
+        ui:RefreshQuests()
+        assert(branchRow(), mode .. " branch control must rebuild")
+        for _, row in ipairs(ui.rows) do row.branchControl = nil end
+        methods.CreateTexture = mode == "throw" and function() error("texture unavailable") end or function() return nil end
+        ok = pcall(ui.RefreshQuests, ui)
+        methods.CreateTexture = texture
+        assert(ok, mode .. " branch texture must not escape RefreshQuests")
+        ui:RefreshQuests()
+        assert(branchRow(), mode .. " branch icon must rebuild")
+    end
+    CreateFrame, methods.CreateTexture = factory, texture
+    addon.quests, addon.Context, ui.dungeon = quests, context, dungeon
+    ui.quest, ui.preparation, ui.detailHistory = quest, preparation, history
+    ui.questTreeRoot, ui.questTreeDungeon, ui.rows = treeRoot, treeDungeon, rows
+    ui:Refresh()
+end)
+check("Hostile quest-list text writes fail closed without throwing and write once", function()
+    local quests, context, dungeon = addon.quests, addon.Context, ui.dungeon
+    local quest, preparation, history, treeRoot, treeDungeon = ui.quest, ui.preparation, ui.detailHistory, ui.questTreeRoot, ui.questTreeDungeon
+    addon.quests = {}
+    for _, id in ipairs({ 61501, 61502 }) do
+        addon.quests[id] = { id = id, minLevel = 1, requirementsKnown = true }
+    end
+    addon.Context = function() return { level = 60, active = function() return false end, completed = function() return false end } end
+    ui.dungeon = { name = "Text fixture", coverage = "reviewed", quests = { 61501, 61502 } }
+    ui.preparation, ui.quest, ui.detailHistory = false, nil, {}
+    ui.questTreeRoot, ui.questTreeDungeon = nil, nil
+    ui:RefreshQuests()
+    assert(ui.heading.text ~= nil and ui.rows[1].shown, "text fixture must render before hostile writes")
+    for _, mode in ipairs({ "throw", "missing" }) do
+        ui.heading.SetText = mode == "throw" and function() error("text unavailable") end or false
+        local ok = pcall(ui.RefreshQuests, ui)
+        ui.heading.SetText = nil
+        assert(ok, mode .. " heading write must not escape RefreshQuests")
+        assert(not ui.rows[1].shown, mode .. " failed text must leave the list closed, not published")
+        ui:RefreshQuests()
+        assert(ui.rows[1].shown, mode .. " valid quest-list render must recover")
+        local target
+        for _, row in ipairs(ui.rows) do if row.shown and not row.heading then target = row; break end end
+        assert(target, "text fixture must publish a quest row")
+        target.title.SetText = mode == "throw" and function() error("text unavailable") end or false
+        ok = pcall(ui.RefreshQuests, ui)
+        target.title.SetText = nil
+        assert(ok, mode .. " row write must not escape RefreshQuests")
+        ui:RefreshQuests()
+        assert(target.title.text ~= nil, mode .. " valid row text must recover")
+    end
+    local writes, native = 0, methods.SetText
+    ui.heading.SetText = function(self, value) writes = writes + 1; return native(self, value) end
+    ui:RefreshQuests()
+    ui.heading.SetText = nil
+    assert(writes == 1, "valid heading write must run exactly once, got " .. writes)
+    addon.quests, addon.Context, ui.dungeon = quests, context, dungeon
+    ui.quest, ui.preparation, ui.detailHistory = quest, preparation, history
+    ui.questTreeRoot, ui.questTreeDungeon = treeRoot, treeDungeon
+    ui:Refresh()
+end)
+check("Hostile copy-link factory fails closed without throwing", function()
+    local factory = CreateFrame
+    local quests, context, dungeon = addon.quests, addon.Context, ui.dungeon
+    local quest, history, copy, hint, copyQuest, copyReturn = ui.quest, ui.detailHistory, ui.copy, ui.copyHint, ui.copyQuest, ui.copyReturn
+    addon.quests = { [61401] = { id = 61401, minLevel = 1, requirementsKnown = true,
+        start = { mapID = 1, x = 10, y = 20, name = "Giver 61401" } } }
+    addon.Context = function() return { level = 60, active = function() return false end, completed = function() return false end } end
+    ui.dungeon = { name = "Copy fixture", coverage = "reviewed", quests = { 61401 } }
+    ui.detailHistory = {}; showDetail(61401)
+    ui.copy, ui.copyHint, ui.copyQuest = nil, nil, nil
+    for _, mode in ipairs({ "throw", "nil" }) do
+        CreateFrame = mode == "throw" and function() error("copy factory unavailable") end or function() return nil end
+        local ok, result = pcall(ui.CopyLink, ui, 61401)
+        CreateFrame = factory
+        assert(ok and result == false, mode .. " copy creation must return false, not throw")
+        assert(ui.copy == nil, mode .. " must publish no half-built copy box")
+    end
+    assert(ui:CopyLink(61401) and ui.copy.shown, "valid copy creation must recover")
+    addon.quests, addon.Context, ui.dungeon = quests, context, dungeon
+    ui.quest, ui.detailHistory = quest, history
+    ui.copy, ui.copyHint, ui.copyQuest, ui.copyReturn = copy, hint, copyQuest, copyReturn
+    ui:Refresh()
+end)
 print("Preparation UI modeled checks passed: " .. total .. " (no native layout validation)")

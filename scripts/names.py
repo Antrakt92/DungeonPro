@@ -380,6 +380,36 @@ def load_data(root=ROOT):
 
 
 def generate(data):
+    if type(data) is not dict or type(data.get("locales")) is not dict:
+        raise ValueError("Invalid localized-name data")
+    locales = data["locales"]
+    for locale in LOCALES:
+        if (locale not in locales or type(locales[locale]) is not dict or
+                "quests" not in locales[locale] or "dungeons" not in locales[locale]):
+            raise ValueError("Invalid localized-name locale coverage")
+    source_areas = data.get("sourceAreas", {})
+    if type(source_areas) is not dict:
+        raise ValueError("Invalid localized source areas")
+    for source in source_areas:
+        if type(source) is not str:
+            raise ValueError("Invalid localized source-area identity")
+    for locale in sorted(LOCALES):
+        payload = locales[locale]
+        for kind in ("quests", "dungeons", "objects", "npcs", "areas"):
+            if kind not in payload:
+                continue
+            entries = payload[kind]
+            if type(entries) is not dict:
+                raise ValueError("Invalid localized-name entries")
+            for key, entry in entries.items():
+                if kind in ("dungeons", "areas"):
+                    if type(key) is not str:
+                        raise ValueError("Invalid localized name identity")
+                elif type(key) is not str or re.fullmatch(r"[1-9][0-9]*", key) is None:
+                    raise ValueError("Invalid localized name identity")
+                if (type(entry) is not dict or type(entry.get("source")) is not str or
+                        type(entry.get("name")) is not str):
+                    raise ValueError("Invalid localized name entry")
     lines = ["-- Localized names from public records and authored titles; runtime remains offline.",
              "local _, addon = ...", "addon.sourceAreaNames = {"]
     for source in sorted(data.get("sourceAreas", {})):

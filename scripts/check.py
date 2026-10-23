@@ -333,11 +333,14 @@ def main(argv=()):
         passed = True
     finally:
         if options.timings:
-            options.timings.write_text(json.dumps({"jobs": options.jobs,
-                "elapsed_seconds": time.perf_counter() - started,
-                "passed": passed,
-                "lua_elapsed_seconds": getattr(options, "lua_elapsed_seconds", None),
-                "commands": TIMINGS}, indent=2) + "\n", encoding="utf-8")
+            try:
+                options.timings.write_text(json.dumps({"jobs": options.jobs,
+                    "elapsed_seconds": time.perf_counter() - started,
+                    "passed": passed,
+                    "lua_elapsed_seconds": getattr(options, "lua_elapsed_seconds", None),
+                    "commands": TIMINGS}, indent=2) + "\n", encoding="utf-8")
+            except OSError as error:
+                print(f"Could not write timings: {error}", flush=True)
 
 
 def check(options):
