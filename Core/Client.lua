@@ -256,7 +256,7 @@ function addon.DialogueRewards(id)
             end
             name = addon.Clean(name, "string")
             amount, itemID = dialogueInteger(amount, 1, 9007199254740991), dialogueInteger(itemID, 1, 4294967295)
-            if not name or name == "" or #name > 30000 or not amount or not itemID then return nil end
+            if not name or name == "" or #name > 30000 or not name:find("%S") or not amount or not itemID then return nil end
             local row = { id = itemID, name = name, count = amount }
             local icon = addon.Clean(texture, "string")
             if icon and icon ~= "" and #icon <= 1024 then row.texture = icon
@@ -294,7 +294,7 @@ function addon.DialogueObjectiveText(id)
     -- Offered summary text is separate from accepted quest objective counters.
     local text = addon.Read(getter, "string")
     if not live() then return nil end
-    if text and text ~= "" and #text <= 30000 then return text end
+    if text and text ~= "" and #text <= 30000 and text:find("%S") then return text end
 end
 
 function addon.DialoguePortrait(id)
@@ -1460,7 +1460,7 @@ function addon.QuestRewards(id)
             end
             name = addon.Clean(name, "string")
             amount, itemID = integer(amount, 1, 9007199254740991), integer(itemID, 1, 4294967295)
-            if not name or name == "" or #name > 30000 or not amount or not itemID then return nil end
+            if not name or name == "" or #name > 30000 or not name:find("%S") or not amount or not itemID then return nil end
             local row = { id = itemID, name = name, count = amount }
             local icon = addon.Clean(texture, "string")
             if icon and icon ~= "" and #icon <= 1024 then row.texture = icon
@@ -1575,7 +1575,7 @@ function addon.CachedQuestRewards(id)
             end
             name = addon.Clean(name, "string")
             amount, itemID = dialogueInteger(amount, 1, 9007199254740991), dialogueInteger(itemID, 1, 4294967295)
-            if not name or name == "" or #name > 30000 or not amount or not itemID then return nil end
+            if not name or name == "" or #name > 30000 or not name:find("%S") or not amount or not itemID then return nil end
             local row = { id = itemID, name = name, count = amount }
             local icon = addon.Clean(texture, "string")
             if icon and icon ~= "" and #icon <= 1024 then row.texture = icon
@@ -1715,7 +1715,7 @@ function addon.QuestPortrait(id)
     if not displayID then return nil end
     local result = { displayID = displayID }
     name = addon.Clean(name, "string")
-    if name and name ~= "" and #name <= 1024 then result.name = name end
+    if name and name ~= "" and #name <= 1024 and name:find("%S") then result.name = name end
     if current() then return result end
 end
 

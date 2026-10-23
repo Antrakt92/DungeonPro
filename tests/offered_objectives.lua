@@ -172,4 +172,13 @@ check("Visibility callbacks cannot dispatch an expired objective getter",functio
     open();armed=true
     assert(addon.DialogueObjectiveText(132)==nil and state.calls==0)
 end)
+check("Whitespace-only objective summaries stay unknown instead of blank text", function()
+    open()
+    for _, value in ipairs({ "   ", "\t\n ", "  \r " }) do
+        state.text = value
+        assert(addon.DialogueObjectiveText(132) == nil)
+    end
+    state.text = "Локальная цель задания"
+    assert(addon.DialogueObjectiveText(132) == state.text)
+end)
 print("Offered objective modeled checks passed: " .. total .. " (native client unverified)")

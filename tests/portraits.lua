@@ -82,6 +82,13 @@ check("Optional restricted or oversized name is omitted without rejecting a clea
     name = nil; assert(addon.QuestPortrait(95036).name == nil)
     name = string.rep("N", 1024); assert(addon.QuestPortrait(95036).name == name)
 end)
+check("Whitespace-only portrait giver names are omitted without rejecting a clean display", function()
+    for _, value in ipairs({ "   ", "\t\n ", "  \r " }) do
+        name = value
+        local p = addon.QuestPortrait(95036)
+        assert(p.displayID == 12345 and p.name == nil)
+    end
+end)
 check("Unused secret text mount and model scene fields are never inspected or returned", function()
     C_QuestLog.GetQuestLogPortraitGiver = function(logIndex)
         assert(logIndex == 7)
@@ -550,4 +557,45 @@ check("Fractional and oversized objective counters fail closed while 2^53-1 stay
     end
 end)
 issecretvalue = nil
+check("Whitespace-only reward item names stay unknown instead of blank rows", function()
+    addon.quests = { [65] = {} }
+    GetQuestID = function() return 65 end
+    UnitGUID = function(unit) assert(unit == "player"); return "Player-1-ABC" end
+    QuestFrame = { IsShown = function() return true end }
+    QuestFrameDetailPanel = { IsShown = function() return true end }
+    C_QuestLog = { ShouldShowQuestRewards = function(id) assert(id == 65); return true end }
+    GetNumQuestRewards = function() return 1 end
+    GetNumQuestChoices = function() return 0 end
+    GetRewardMoney = function() return 0 end
+    GetRewardXP = function() return 0 end
+    GetQuestItemInfo = function(kind, index)
+        assert(kind == "reward" and index == 1)
+        return "   ", 123, 1, 2, true, 7001
+    end
+    addon.DialogueRewardEvent("QUEST_DETAIL")
+    assert(addon.DialogueRewards(65) == nil, "blank dialogue reward name kept a row")
+    addon.DialogueRewardEvent("QUEST_FINISHED")
+    C_QuestLog = { GetSelectedQuest = function() return 65 end,
+        GetLogIndexForQuestID = function(id) assert(id == 65); return 1 end }
+    GetNumQuestLogRewards = function() return 1 end
+    GetNumQuestLogChoices = function() return 0 end
+    GetQuestLogRewardMoney = function() return 0 end
+    GetQuestLogChoiceInfo = function() error("no choices expected") end
+    GetQuestLogRewardInfo = function(index)
+        assert(index == 1)
+        return "\t\n ", 123, 1, 2, true, 7001
+    end
+    assert(addon.QuestRewards(65) == nil, "blank selected-log reward name kept a row")
+    addon.quests = { [65] = { id = 65 } }
+    HaveQuestRewardData = function(id) assert(id == 65); return true end
+    GetNumQuestLogRewards = function(id) assert(id == 65); return 1 end
+    GetNumQuestLogChoices = function(id) assert(id == 65); return 0 end
+    GetQuestLogRewardMoney = function(id) assert(id == 65); return 0 end
+    GetQuestLogChoiceInfo = nil
+    GetQuestLogRewardInfo = function(index, id)
+        assert(index == 1 and id == 65)
+        return "  \r ", 123, 1, 2, true, 7001
+    end
+    assert(addon.CachedQuestRewards(65) == nil, "blank cached reward name kept a row")
+end)
 print("Quest portrait adapter modeled checks passed: " .. total .. " (native client unverified)")
