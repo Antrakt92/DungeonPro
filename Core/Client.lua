@@ -1025,7 +1025,7 @@ function addon.ItemName(id, ownerCurrent)
     local name = addon.Read(nameGetter, "string", id)
     if not current() then return nil end
     local request = requestedItems[id]
-    if name and name ~= "" and #name <= 1024 then
+    if name and #name <= 1024 and name:find("%S") then
         if request then request.pending, request.waiting, request.finished = false, false, true end
         return name
     end

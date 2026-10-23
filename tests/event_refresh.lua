@@ -3,12 +3,14 @@ local total = 0
 local function check(name, callback)
     callback(); total = total + 1; print("PASS " .. name)
 end
-local function model(timerMode)
+local function model(timerMode, buildMode)
     local frame = { scripts = {} }
     function frame:RegisterEvent() end
     function frame:SetScript(key, value) self.scripts[key] = value end
     CreateFrame = function() return frame end
-    GetBuildInfo = function() return "1.60.1", "70450", "", 16001 end
+    if buildMode == "missing" then GetBuildInfo = nil
+    elseif buildMode == "throwing" then GetBuildInfo = function() error("build unavailable") end
+    else GetBuildInfo = function() return "1.60.1", "70450", "", 16001 end end
     WOW_PROJECT_ID, SlashCmdList, issecretvalue = 18, {}, nil
     local addon, queue, reasons = {}, {}, {}
     assert(loadfile("Core/Namespace.lua"))("DungeonPro", addon)
@@ -111,5 +113,12 @@ check("Actual TOC data events retain catalogue status while quest changes rebuil
     assert(calls == #addon.dungeons, "quest-state invalidation must rebuild every catalogue status")
     calls = 0; addon.Notify(); drain()
     assert(calls == #addon.dungeons, "ordinary Notify remains a full refresh")
+end)
+check("Missing or throwing GetBuildInfo fails closed without throwing", function()
+    for _, mode in ipairs({ "missing", "throwing" }) do
+        local m = model("queued", mode)
+        m.event("QUEST_LOG_UPDATE"); m.drain()
+        assert(#m.reasons == 0, "uninitialized client must not notify for build mode " .. mode)
+    end
 end)
 print("Event refresh checks passed: " .. total)

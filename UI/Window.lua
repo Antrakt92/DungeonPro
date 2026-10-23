@@ -580,7 +580,7 @@ function UI:CopyLink(id)
             issecretvalue == checker and self.QuestListWrite == writer and self.RefreshDetail == refresh and frame and frame.IsShown == initialShown
     end
     id = clean(id, "number")
-    if not initial() or not id or id < 1 or id % 1 ~= 0 or id ~= quest or read(initialShown, "boolean", frame) ~= true or not initial() then return false end
+    if not initial() or not id or id < 1 or id > 9007199254740991 or id % 1 ~= 0 or id ~= quest or read(initialShown, "boolean", frame) ~= true or not initial() then return false end
     local revision = {}; self.copyRevision = revision
     local copyQuest, box, hint = self.copyQuest, self.copy, self.copyHint
     local function requestCurrent()
@@ -608,6 +608,7 @@ function UI:CopyLink(id)
         self.copy, self.copyHint = box, hint
     end
     copyQuest = id; self.copyQuest = id
+    if clean(id, "number") ~= id or not requestCurrent() then return false end
     if not writer(self, box, "SetText", requestCurrent, "https://www.wowhead.com/forever/quest=" .. id) then return false end
     refresh(self)
     if not requestCurrent() then return false end
@@ -800,7 +801,7 @@ end
 
 function UI:ChooseBranch(id, index, parent)
     id, index = addon.Clean(id, "number"), addon.Clean(index, "number")
-    if not id or id <= 0 or id ~= math.floor(id) or not index or index <= 0 or index ~= math.floor(index) then return false end
+    if not id or id <= 0 or id > 9007199254740991 or id ~= math.floor(id) or not index or index <= 0 or index > 9007199254740991 or index ~= math.floor(index) then return false end
     local catalogue = addon.Clean(addon.quests, "table")
     local q = catalogue and addon.Clean(rawget(catalogue, id), "table")
     local requires = q and addon.Clean(rawget(q, "requires"), "table")
@@ -811,7 +812,7 @@ function UI:ChooseBranch(id, index, parent)
     if type(addon.char) ~= "table" then return false end
     if type(parent) ~= "nil" then
         parent = addon.Clean(parent, "number")
-        if not parent or parent <= 0 or parent ~= math.floor(parent) then return false end
+        if not parent or parent <= 0 or parent > 9007199254740991 or parent ~= math.floor(parent) then return false end
         local member = false
         for _, candidate in ipairs(ids) do if candidate == parent then member = true end end
         if not member then return false end
@@ -1865,7 +1866,8 @@ function UI:RefreshDungeons()
                         local found = searchText(entry.text):find(needle, 1, true)
                         if found then
                             local title = addon.Clean(member.name, "string")
-                            matchedName = title and title ~= "" and title or (memo[member.id] and memo[member.id].name) or ("#" .. member.id)
+                            local safeID = addon.Clean(member.id, "number") or addon.Clean(member.id, "string")
+                            matchedName = title and title ~= "" and title or (memo[member.id] and memo[member.id].name) or (safeID and ("#" .. safeID) or nil)
                             matchedID, sourceMatch = member.id, entry
                             if not cached.matched then cached.matched = true; sourceMatches[#sourceMatches + 1] = cached end
                             break
@@ -4248,7 +4250,8 @@ function UI:RefreshDetail(sourceFocus)
             if not titleCurrent() then return end
             if not title then
                 local sourceName = addon.Clean(q.name, "string")
-                title = sourceName and #sourceName <= 1024 and sourceName:find("%S") and sourceName or ("#" .. id)
+                local safeID = addon.Clean(id, "number") or addon.Clean(id, "string")
+                title = sourceName and #sourceName <= 1024 and sourceName:find("%S") and sourceName or (safeID and ("#" .. safeID) or "#?")
             end
             if not titleCurrent() or line(title, "title", nil, nil, titleCurrent) == false then return end
         end
@@ -4500,11 +4503,16 @@ function UI:RefreshDetail(sourceFocus)
                 local areaProofs = {}
                 local function current() return parentCurrent() and namesCurrent(areaProofs) end
                 local zoneName = areaName(point.zoneName, current, areaProofs)
+                if zoneName and (#zoneName > 500 or not zoneName:find("%S")) then zoneName = nil end
                 if not current() then return false end
                 if not zoneName then
                     local zone = addon.Read(C_Map and C_Map.GetMapInfo, "table", point.mapID)
                     if not current() then return false end
-                    zoneName = (zone and addon.Clean(zone.name, "string")) or point.zoneName or addon.L("UNKNOWN_PLACE")
+                    local nativeZone = zone and addon.Clean(zone.name, "string")
+                    if nativeZone and (#nativeZone > 500 or not nativeZone:find("%S")) then nativeZone = nil end
+                    local catalogZone = addon.Clean(point.zoneName, "string")
+                    if catalogZone and (#catalogZone > 500 or not catalogZone:find("%S")) then catalogZone = nil end
+                    zoneName = nativeZone or catalogZone or addon.L("UNKNOWN_PLACE")
                 end
                 if not current() then return false end
                 reportIndex = reportIndex + 1
@@ -4535,12 +4543,16 @@ function UI:RefreshDetail(sourceFocus)
             local function current() return locationCurrent() and (not ownerCurrent or ownerCurrent()) end
             if not p then return addon.L("UNKNOWN_PLACE") end
             local canonical = addon.Clean(p.zoneName, "string")
+            if canonical and (#canonical > 500 or not canonical:find("%S")) then canonical = nil end
             local zoneName = areaName(canonical, current, nameProofs)
+            if zoneName and (#zoneName > 500 or not zoneName:find("%S")) then zoneName = nil end
             if not current() then return nil end
             if not zoneName then
                 local zone = p.mapID and addon.Read(C_Map and C_Map.GetMapInfo, "table", p.mapID)
                 if not current() then return nil end
-                zoneName = (zone and addon.Clean(zone.name, "string")) or canonical
+                local nativeZone = zone and addon.Clean(zone.name, "string")
+                if nativeZone and (#nativeZone > 500 or not nativeZone:find("%S")) then nativeZone = nil end
+                zoneName = nativeZone or canonical
             end
             local name = giverName(p, current, nameProofs)
             if not current() then return nil end
@@ -4588,12 +4600,18 @@ function UI:RefreshDetail(sourceFocus)
                 local mapID = addon.Clean(destination.mapID, "number")
                 local validMap = mapID ~= nil and mapID > 0 and mapID <= 9007199254740991 and mapID % 1 == 0
                 local canonical = addon.Clean(destination.zoneName, "string")
+                if canonical and (#canonical > 500 or not canonical:find("%S")) then canonical = nil end
                 local area = areaName(canonical, current, nameProofs)
+                if area and (#area > 500 or not area:find("%S")) then area = nil end
                 if not current() then return false end
                 if not area then
                     local zone = validMap and reader(mapGetter, "table", mapID)
                     if not current() then return false end
-                    area = (zone and addon.Clean(zone.name, "string")) or canonical or addon.Clean(destination.locationName, "string")
+                    local nativeZone = zone and addon.Clean(zone.name, "string")
+                    if nativeZone and (#nativeZone > 500 or not nativeZone:find("%S")) then nativeZone = nil end
+                    local locationZone = addon.Clean(destination.locationName, "string")
+                    if locationZone and (#locationZone > 500 or not locationZone:find("%S")) then locationZone = nil end
+                    area = nativeZone or canonical or locationZone
                 end
                 local x, py = addon.Clean(destination.x, "number"), addon.Clean(destination.y, "number")
                 local coordinates = validMap and x ~= nil and py ~= nil and x >= 0 and x <= 100 and py >= 0 and py <= 100

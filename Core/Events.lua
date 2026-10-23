@@ -50,7 +50,11 @@ events:RegisterEvent("ADDON_LOADED")
 events:SetScript("OnEvent", function(_, event, arg1, arg2)
     if event == "ADDON_LOADED" then
         if arg1 ~= name or initialized then return end
-        local _, _, _, interface = GetBuildInfo()
+        local interface
+        if type(GetBuildInfo) == "function" then
+            local ok, _, _, _, toc = pcall(GetBuildInfo)
+            if ok then interface = toc end
+        end
         if interface ~= 16001 or WOW_PROJECT_ID ~= 18 then
             print("Dungeon Pro: " .. addon.L("UNSUPPORTED")); return
         end

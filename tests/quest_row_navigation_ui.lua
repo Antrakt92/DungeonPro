@@ -1207,4 +1207,197 @@ do
  ui.dungeon, ui.quest = savedDungeon, savedQuest
  ui.search = ""; ui.questTreeRoot = nil; ui.questTreeDungeon = nil; ui.frame:Show(); ui:Refresh()
 end
+-- A12 ITEMNAME-BLANK-GUARD: a whitespace-only native name stays unknown like
+-- empty and oversized names, mirroring every sibling %S producer guard.
+do
+ local savedItem = C_Item
+ local nativeNames = { [880101] = "   ", [880102] = ("n"):rep(1025), [880103] = ("n"):rep(1024), [880104] = "Real item" }
+ C_Item = { GetItemNameByID = function(id) return nativeNames[id] end }
+ assert(addon.ItemName(880104) == "Real item", "valid native name keeps its producer value")
+ assert(addon.ItemName(880103) == ("n"):rep(1024), "1024-char native name keeps its producer value")
+ assert(addon.ItemName(880101) == nil, "whitespace-only native name stays unknown")
+ assert(addon.ItemName(880102) == nil, "overlong native name stays unknown")
+ C_Item = savedItem
+end
+-- A12 ZONE-DISPLAY-CAPS: overlong or blank native zone names fall back to the
+-- catalogue zone instead of painting, mirroring the 500-char report budget.
+do
+ local savedMap = C_Map
+ local savedDungeons = addon.dungeons
+ local savedDungeon, savedQuest = ui.dungeon, ui.quest
+ local savedExpanded = ui.reportedExpanded.start
+ addon.quests[990901] = { id = 990901, name = "Zone cap quest", minLevel = 1, requirementsKnown = true,
+  start = { npcID = 91, name = "Zone giver", mapID = 1453, x = 10, y = 20, zoneName = "ZZZ nowhere vale 9909",
+   reportedLocations = { { mapID = 1453, x = 10, y = 20, zoneName = "ZZZ nowhere vale 9909" }, { mapID = 1453, x = 40, y = 50, zoneName = "ZZZ far vale 9910" } } } }
+ local capDungeon = { key = "zone-cap", name = "Zone cap dungeon", minLevel = 1, maxLevel = 80, quests = { 990901 } }
+ addon.dungeons = { capDungeon }
+ ui.dungeon, ui.quest, ui.questTreeRoot, ui.questTreeDungeon = capDungeon, 990901, nil, nil
+ ui.search = ""; ui.includeUnavailable = true; ui.frame:Show()
+ if type(ui.SetDetailTab) == "function" then ui:SetDetailTab("sources") end
+ ui.reportedExpanded.start = true
+ local function startTitles()
+  local out = {}
+  for _, row in ipairs(ui.reportedRows or {}) do
+   if row.locationKey == "start" and row.title and row.title.text then out[#out + 1] = row.title.text end
+  end
+  return out
+ end
+ -- The first paint binds the toggle (a quest change resets expansion), so
+ -- re-arm expansion before hostile natives render the reported rows.
+ ui:Refresh()
+ ui.reportedExpanded.start = true
+ for _, native in ipairs({ ("n"):rep(501), "   " }) do
+  C_Map = { GetMapInfo = function() return { name = native } end }
+  local ok, err = pcall(function() ui:Refresh() end)
+  assert(ok, "hostile native zone threw in Refresh: " .. tostring(err))
+  local titles = startTitles()
+  assert(#titles == 2, "reported rows stay bound with a hostile native zone")
+  for _, title in ipairs(titles) do
+   assert(not title:find(("n"):rep(100), 1, true), "overlong native zone stays unpainted")
+  end
+  assert(titles[1]:find("ZZZ nowhere vale 9909", 1, true) and titles[2]:find("ZZZ far vale 9910", 1, true),
+   "hostile native zone falls back to the catalogue zone")
+ end
+ C_Map = savedMap
+ ui.reportedExpanded.start = savedExpanded
+ addon.quests[990901] = nil
+ addon.dungeons = savedDungeons
+ ui.dungeon, ui.quest = savedDungeon, savedQuest
+ ui.search = ""; ui.questTreeRoot = nil; ui.questTreeDungeon = nil; ui.frame:Show(); ui:Refresh()
+end
+-- A12 ALTERNATIVE-ZONE-CAPS: overlong or blank catalogue and location zones
+-- fall back instead of painting in alternative rows, mirroring giver names.
+do
+ local savedMap = C_Map
+ local savedDungeons = addon.dungeons
+ local savedDungeon, savedQuest = ui.dungeon, ui.quest
+ addon.quests[990902] = { id = 990902, name = "Alternative zone quest", minLevel = 1, requirementsKnown = true,
+  start = { npcID = 92, name = "Alternative zone giver", mapID = 1453, x = 10, y = 20 } }
+ local altDungeon = { key = "alternative-zone-cap", name = "Alternative zone cap dungeon", minLevel = 1, maxLevel = 80, quests = { 990902 } }
+ addon.dungeons = { altDungeon }
+ ui.dungeon, ui.quest, ui.questTreeRoot, ui.questTreeDungeon = altDungeon, 990902, nil, nil
+ ui.search = ""; ui.includeUnavailable = true; ui.frame:Show()
+ if type(ui.SetDetailTab) == "function" then ui:SetDetailTab("sources") end
+ local function startNotes()
+  local out = {}
+  for _, row in ipairs(ui.startButtons or {}) do
+   if row:IsShown() and row.note and row.note.text then out[#out + 1] = row.note.text end
+  end
+  return out
+ end
+ local cases = {
+  { label = "overlong canonical", zoneName = ("z"):rep(501), locationName = "Short vale", native = nil, want = "Short vale" },
+  { label = "blank canonical", zoneName = "   ", locationName = "Short vale", native = nil, want = "Short vale" },
+  { label = "overlong native", zoneName = "Plain vale", locationName = nil, native = ("n"):rep(501), want = "Plain vale" },
+  { label = "overlong location", zoneName = nil, locationName = ("l"):rep(501), native = nil, want = addon.L("UNKNOWN_PLACE") },
+ }
+ for _, case in ipairs(cases) do
+  addon.quests[990902].startAlternatives = {
+   { name = "Alt giver one", mapID = 1453, x = 10, y = 20, zoneName = case.zoneName, locationName = case.locationName },
+   { name = "Alt giver two", mapID = 1453, x = 40, y = 50, zoneName = case.zoneName, locationName = case.locationName } }
+  if case.native then C_Map = { GetMapInfo = function() return { name = case.native } end }
+  else C_Map = nil end
+  local ok, err = pcall(function() ui:Refresh() end)
+  assert(ok, case.label .. " threw in Refresh: " .. tostring(err))
+  local notes = startNotes()
+  assert(#notes == 2, case.label .. " keeps both alternative rows")
+  for _, note in ipairs(notes) do
+   assert(not note:find(("z"):rep(100), 1, true) and not note:find(("n"):rep(100), 1, true) and not note:find(("l"):rep(100), 1, true),
+    case.label .. " stays unpainted")
+   assert(note:find(case.want, 1, true), case.label .. " falls back to " .. tostring(case.want))
+  end
+ end
+ C_Map = savedMap
+ addon.quests[990902] = nil
+ addon.dungeons = savedDungeons
+ ui.dungeon, ui.quest = savedDungeon, savedQuest
+ ui.search = ""; ui.questTreeRoot = nil; ui.questTreeDungeon = nil; ui.frame:Show(); ui:Refresh()
+end
+-- A12 CHOOSE-BRANCH-ID-BOUNDS: ids beyond 2^53 fail closed without writing choices.
+do
+ local savedChoices = addon.char.choices
+ local HUGE = 9007199254740992
+ addon.char.choices = {}
+ addon.quests[990301] = { id = 990301, name = "Branch A", minLevel = 1, requirementsKnown = true }
+ addon.quests[990302] = { id = 990302, name = "Branch B", minLevel = 1, requirementsKnown = true }
+ addon.quests[990303] = { id = 990303, name = "Branch root", minLevel = 1, requirementsKnown = true, requires = { { ids = { 990301, 990302 } } } }
+ addon.quests[HUGE] = { id = HUGE, name = "Huge root", minLevel = 1, requirementsKnown = true, requires = { { ids = { 990301, 990302 } } } }
+ local ok, result = pcall(function() return ui:ChooseBranch(HUGE, 1, nil) end)
+ assert(ok and result == false, "huge branch id must fail closed without throwing")
+ assert(addon.char.choices[HUGE] == nil, "huge branch id must not write choices")
+ ok, result = pcall(function() return ui:ChooseBranch(990303, HUGE, nil) end)
+ assert(ok and result == false, "huge branch index must fail closed without throwing")
+ ok, result = pcall(function() return ui:ChooseBranch(990303, 1, HUGE) end)
+ assert(ok and result == false, "huge branch parent must fail closed without throwing")
+ ok, result = pcall(function() return ui:ChooseBranch(990303, 1, nil) end)
+ assert(ok and result == true, "ordinary branch clear keeps working")
+ assert(addon.char.choices[HUGE] == nil, "failed branch choices must not leak")
+ for _, id in ipairs({ 990301, 990302, 990303, HUGE }) do addon.quests[id] = nil end
+ addon.char.choices = savedChoices
+end
+-- A12 COPYLINK-ID-BOUND: a huge link id fails closed before touching copy UI.
+do
+ local HUGE = 9007199254740992
+ local savedQuest, savedBox = ui.quest, ui.copy
+ ui.quest = HUGE
+ local ok, result = pcall(function() return ui:CopyLink(HUGE) end)
+ ui.quest = savedQuest
+ assert(ok, "huge copy id threw: " .. tostring(result))
+ assert(result == false, "huge copy id must fail closed")
+ assert(ui.copy == savedBox, "huge copy id must not touch copy UI")
+ ui.search = ""; ui.questTreeRoot = nil; ui.questTreeDungeon = nil; ui.frame:Show(); ui:Refresh()
+end
+-- A12 CATALOG-SEARCH-ID-FALLBACK: a hostile catalogue id fails the source
+-- match closed instead of throwing in the "#" fallback concatenation.
+do
+ local savedDungeons = addon.dungeons
+ local savedGetter = addon.QuestSourceSearchTerms
+ local hostileID = {}
+ addon.quests[hostileID] = { id = hostileID }
+ local hostileDungeon = { key = "hostile-search", name = "Hostile search dungeon", minLevel = 1, maxLevel = 80, quests = { hostileID } }
+ addon.QuestSourceSearchTerms = function(quest)
+  if quest and quest.id == hostileID then
+   return { { kind = "npc", text = "zzzqqq hostile match" } }, function() return true end, function() return true end
+  end
+  return savedGetter(quest)
+ end
+ addon.dungeons = { hostileDungeon }
+ local function shownCards()
+  local count = 0
+  for _, card in ipairs(ui.cards) do if card:IsShown() then count = count + 1 end end
+  return count
+ end
+ ui.search = "zzzqqq"; ui.questTreeRoot = nil; ui.questTreeDungeon = nil; ui.includeUnavailable = true; ui.frame:Show()
+ local ok, err = pcall(function() ui:RefreshDungeons() end)
+ addon.dungeons = savedDungeons
+ addon.quests[hostileID] = nil
+ addon.QuestSourceSearchTerms = savedGetter
+ assert(ok, "hostile catalogue id threw in RefreshDungeons: " .. tostring(err))
+ assert(shownCards() == 0, "hostile catalogue id publishes no card")
+ ui.search = ""; ui.frame:Show(); ui:RefreshDungeons()
+ assert(shownCards() > 0, "valid catalogue restores dungeon cards")
+end
+-- A12 DETAIL-TITLE-ID-FALLBACK: a hostile selected id falls back to "#?"
+-- instead of throwing in the "#" fallback concatenation.
+do
+ local savedQuestName = addon.QuestName
+ local savedQuest = ui.quest
+ local hostileID = {}
+ addon.QuestName = function(id)
+  if id == hostileID then return nil end
+  return savedQuestName(id)
+ end
+ ui.quest = hostileID
+ if type(ui.SetDetailTab) == "function" then ui:SetDetailTab("quest") end
+ local ok, err = pcall(function() ui:RefreshDetail() end)
+ local found = false
+ for _, fs in ipairs(ui.details) do
+  if fs.shown and fs.text == "#?" then found = true end
+ end
+ addon.QuestName = savedQuestName
+ ui.quest = savedQuest
+ assert(ok, "hostile selected id threw in RefreshDetail: " .. tostring(err))
+ assert(found, "hostile selected id falls back to #?")
+ ui.search = ""; ui.questTreeRoot = nil; ui.questTreeDungeon = nil; ui.frame:Show(); ui:Refresh()
+end
 print("Middle quest navigation checks passed (modeled, no native input or layout proof)")
