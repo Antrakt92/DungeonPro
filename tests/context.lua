@@ -220,4 +220,78 @@ check("Huge native creature and race IDs fail closed at 2^53-1", function()
     end }
     assert(addon.GiverName(place) == "Native name" and nameReads == 1, "matching creature ID lost its name")
 end)
+check("Probe client caps huge line and quest IDs at 2^53-1 without membership reads", function()
+    GetBuildInfo = function() return "11.0.0", "60000", "", "110000" end
+    local reads = 0
+    local function forbidden()
+        reads = reads + 1
+        error("huge line ID reached the membership reader")
+    end
+    C_QuestLine = {
+        GetQuestLineInfo = function() return { questLineID = 9007199254740992 } end,
+        GetQuestLineQuests = forbidden,
+    }
+    assert(next(addon.ProbeClient().questLines) == nil, "huge line ID published a quest line")
+    assert(reads == 0, "huge line ID reached the membership reader")
+    C_QuestLine = {
+        GetQuestLineInfo = function() return { questLineID = 9007199254740991 } end,
+        GetQuestLineQuests = function() return { 9007199254740991, 9007199254740992, 7 } end,
+    }
+    local line = addon.ProbeClient().questLines[166]
+    assert(line and line.lineID == 9007199254740991, "2^53-1 line ID lost its probe")
+    assert(#line.quests == 2 and line.quests[1] == 9007199254740991 and line.quests[2] == 7, "valid member IDs lost their probe")
+    assert(line.invalidMembers, "huge member ID did not flag invalid members")
+end)
+check("Probe client keeps short clean build strings and drops absurd build identity", function()
+    C_QuestLine = nil
+    GetBuildInfo = function() return "11.0.0", "60000", "", "110000" end
+    local r = addon.ProbeClient()
+    assert(r.build == "11.0.0" and r.interface == "110000", "valid build strings lost their probe")
+    GetBuildInfo = function() return "11.0.0", "60000", "", 16001 end
+    r = addon.ProbeClient()
+    assert(r.build == "11.0.0" and r.interface == 16001, "numeric interface version lost its probe")
+    GetBuildInfo = function() return string.rep("a", 200), "60000", "", string.rep("b", 200) end
+    r = addon.ProbeClient()
+    assert(r.build == string.rep("a", 200) and r.interface == string.rep("b", 200), "200-character build strings lost their probe")
+    GetBuildInfo = function() return string.rep("a", 201), "60000", "", string.rep("b", 500) end
+    r = addon.ProbeClient()
+    assert(r.build == nil and r.interface == nil, "overlong build strings reached SavedVariables")
+    GetBuildInfo = function() return 12345, "60000", "", 9007199254740992 end
+    r = addon.ProbeClient()
+    assert(r.build == nil and r.interface == nil, "absurd build identity reached SavedVariables")
+    for _, absurd in ipairs({ 1.5, -1, math.huge, 0 / 0, secret, false, {} }) do
+        GetBuildInfo = function() return "11.0.0", "60000", "", absurd end
+        r = addon.ProbeClient()
+        assert(r.interface == nil, "absurd interface identity reached SavedVariables")
+    end
+    GetBuildInfo = function() return secret, "60000", "", "110000" end
+    r = addon.ProbeClient()
+    assert(r.build == nil and r.interface == "110000", "restricted build did not fail closed")
+    GetBuildInfo = nil
+    r = addon.ProbeClient()
+    assert(r.build == nil and r.interface == nil, "missing build reader did not fail closed")
+end)
+check("RestoreDB drops malformed texts members while keeping valid quest texts", function()
+    local savedPro, savedChar, savedPrep, savedPrepChar = DungeonProDB, DungeonProCharDB, DungeonPrepDB, DungeonPrepCharDB
+    DungeonProDB, DungeonProCharDB, DungeonPrepDB, DungeonPrepCharDB = nil, nil, nil, nil
+    local keep, edge = { text = "Valid text", locale = "enUS" }, { text = "Edge text", locale = "enUS" }
+    DungeonProCharDB = { texts = {
+        [7] = keep, [9007199254740991] = edge, [9007199254740992] = { text = "Huge", locale = "enUS" },
+        [0] = { text = "Zero", locale = "enUS" }, [-3] = { text = "Negative", locale = "enUS" },
+        [1.5] = { text = "Fractional", locale = "enUS" },
+        [8] = "not a table", [9] = 42, [11] = secret,
+        filters = {},
+    }, filters = {} }
+    DungeonProCharDB.texts["7"] = { text = "String key", locale = "enUS" }
+    assert(addon.RestoreDB() == true)
+    local texts = addon.char.texts
+    assert(texts[7] == keep and texts[9007199254740991] == edge, "valid quest texts lost their retention")
+    assert(texts[9007199254740992] == nil and texts[0] == nil and texts[-3] == nil and texts[1.5] == nil,
+        "absurd text IDs survived retention")
+    assert(texts["7"] == nil and texts[8] == nil and texts[9] == nil and texts[11] == nil,
+        "malformed text members survived retention")
+    DungeonProCharDB = { texts = "not a table", filters = {} }
+    assert(addon.RestoreDB() == true and type(addon.char.texts) == "table" and next(addon.char.texts) == nil)
+    DungeonProDB, DungeonProCharDB, DungeonPrepDB, DungeonPrepCharDB = savedPro, savedChar, savedPrep, savedPrepChar
+end)
 print("Character context modeled checks passed: " .. total .. " (no native character validation)")

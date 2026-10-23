@@ -976,7 +976,7 @@ function addon.CarriedItemCount(id)
     if not before or not current() or not before() then return nil end
     local count = addon.Read(getter, "number", id, false, false, false, false)
     local after = linked()
-    if not count or count < 0 or count > 9007199254740991 or count % 1 ~= 0 or not after or not current() or not after() then return nil end
+    if not count or count < 0 or count % 1 ~= 0 or not after or not current() or not after() then return nil end
     return count
 end
 
@@ -1778,6 +1778,19 @@ function addon.RestoreDB()
     db.locale = supported[locale or ""] and locale or "auto"
     if type(db.window) ~= "table" then db.window = {} end
     if type(char.texts) ~= "table" then char.texts = {} end
+    do
+        -- Retention hygiene only: reads already validate each member, so drop
+        -- absurd retained members (non-integer or huge IDs, non-table values)
+        -- while keeping every legitimate quest text untouched.
+        local invalid = {}
+        for key, value in pairs(char.texts) do
+            local id = addon.Clean(key, "number")
+            if not id or id < 1 or id % 1 ~= 0 or id > 9007199254740991 or addon.Clean(value, "table") == nil then
+                invalid[#invalid + 1] = key
+            end
+        end
+        for _, key in ipairs(invalid) do char.texts[key] = nil end
+    end
     if type(char.filters) ~= "table" then char.filters = {} end
     addon.db, addon.char = db, char
     DungeonProDB, DungeonProCharDB = db, char
@@ -1785,7 +1798,23 @@ function addon.RestoreDB()
 end
 
 function addon.ProbeClient()
-    local build, _, _, interface = GetBuildInfo()
+    local build, interface
+    if type(GetBuildInfo) == "function" then
+        local ok, version, _, _, toc = pcall(GetBuildInfo)
+        if ok then build, interface = version, toc end
+    end
+    -- Probe identity stays out of SavedVariables unless it is short and clean.
+    -- Build is a version string; the interface version is numeric in the
+    -- native client, so a finite capped number is legitimate data too.
+    build = addon.Clean(build, "string")
+    if build and #build > 200 then build = nil end
+    if type(interface) == "string" then
+        interface = addon.Clean(interface, "string")
+        if interface and #interface > 200 then interface = nil end
+    else
+        interface = addon.Clean(interface, "number")
+        if interface and (interface < 0 or interface % 1 ~= 0 or interface > 9007199254740991) then interface = nil end
+    end
     local line = C_QuestLine or {}
     -- Object presence does not establish that a dialogue is open or readable.
     local function panelPresent(frame)
@@ -1812,12 +1841,13 @@ function addon.ProbeClient()
     for _, id in ipairs({ 166, 5728, 96393, 92753 }) do
         local info = addon.Read(line.GetQuestLineInfo, "table", id, nil, false)
         local lineID = info and addon.Clean(info.questLineID, "number")
-        if lineID and lineID > 0 and lineID % 1 == 0 then
+        -- Cap IDs at 2^53 so huge doubles cannot wrap into another valid line ID in the membership reader.
+        if lineID and lineID > 0 and lineID % 1 == 0 and lineID <= 9007199254740991 then
             local ids = addon.Read(line.GetQuestLineQuests, "table", lineID)
             local clean, seen, invalid = {}, {}, false
             for i = 1, math.min(100, ids and #ids or 0) do
                 local qid = addon.Clean(ids[i], "number")
-                if qid and qid > 0 and qid % 1 == 0 then
+                if qid and qid > 0 and qid % 1 == 0 and qid <= 9007199254740991 then
                     if not seen[qid] then clean[#clean + 1] = qid; seen[qid] = true end
                 else invalid = true end
             end

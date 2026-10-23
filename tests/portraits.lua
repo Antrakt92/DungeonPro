@@ -320,7 +320,10 @@ check("Oversized dialogue numeric textures fail safe while a valid file ID passe
     end
     addon.DialogueRewardEvent("QUEST_FINISHED")
 end)
-check("Huge carried counts fail closed while 2^53-1 stays live", function()
+check("Carried counts report raw native values without authorizing quest actions", function()
+    -- Pinned display contract (tests/ui_preparation.lua "Carried item counts show
+    -- real zero ..."): the producer reports the native bag count verbatim,
+    -- including huge values; only negative/fractional counts fail closed.
     local native, calls = 3, 0
     addon.quests = { [68] = { id = 68, objectiveItems = { { itemID = 20606 } } } }
     C_Item = { GetItemCount = function(id, bank, uses, reagent, account)
@@ -330,11 +333,15 @@ check("Huge carried counts fail closed while 2^53-1 stays live", function()
     assert(addon.CarriedItemCount(20606) == 3 and calls == 1)
     native = 9007199254740991
     assert(addon.CarriedItemCount(20606) == 9007199254740991 and calls == 2)
-    for _, huge in ipairs({ 9007199254740992, 1e18 }) do
+    for _, huge in ipairs({ 9007199254740992, 1e20 }) do
         native = huge
-        assert(addon.CarriedItemCount(20606) == nil, "huge carried count reached display")
+        assert(addon.CarriedItemCount(20606) == huge, "raw native carried count lost")
     end
-    assert(calls == 4)
+    native = -1
+    assert(addon.CarriedItemCount(20606) == nil, "negative carried count passed through")
+    native = 1.5
+    assert(addon.CarriedItemCount(20606) == nil, "fractional carried count passed through")
+    assert(calls == 6)
 end)
 check("Uncapped display amounts fail closed while 2^53-1 stays live", function()
     local MAX = 9007199254740991
