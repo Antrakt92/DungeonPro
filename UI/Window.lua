@@ -306,7 +306,7 @@ local function giverName(place, ownerCurrent, proofs, fallback)
     local npcID = addon.Clean(place.npcID, "number")
     if npcID and npcID > 0 and npcID % 1 == 0 and not place.itemID and not place.objectID then
         local current = addon.Read(addon.GiverName, "string", place)
-        if current and current ~= "" and #current <= 1024 then return current end
+        if current and current ~= "" and #current <= 1024 and current:find("%S") then return current end
     end
     local name = addon.Clean(place.name, "string")
     if name and #name <= 1024 and name:find("%S") then return name end
@@ -4002,7 +4002,7 @@ function UI:RefreshDetail(sourceFocus)
         end
         local itemID = reward and addon.Clean(reward.item.id, "number")
         local texture = reward and (addon.Clean(reward.item.texture, "string") or addon.Clean(reward.item.texture, "number"))
-        local validTexture = type(texture) == "string" and texture ~= "" and #texture <= 1024 or
+        local validTexture = type(texture) == "string" and texture ~= "" and #texture <= 1024 and texture:find("%S") or
             type(texture) == "number" and texture > 0 and texture <= 9007199254740991 and texture % 1 == 0
         if itemID and itemID > 0 and itemID <= 4294967295 and itemID % 1 == 0 and validTexture and rewardIndex < 200 and not self.rewardTextureBusy then
             rewardIndex = rewardIndex + 1
@@ -4044,7 +4044,7 @@ function UI:RefreshDetail(sourceFocus)
         end
         -- Journal objective textures render only under the same bounds as reward icons.
         local objectiveTexture = type(objective) == "table" and (addon.Clean(objective.texture, "string") or addon.Clean(objective.texture, "number")) or nil
-        local validObjectiveTexture = type(objectiveTexture) == "string" and objectiveTexture ~= "" and #objectiveTexture <= 1024 or
+        local validObjectiveTexture = type(objectiveTexture) == "string" and objectiveTexture ~= "" and #objectiveTexture <= 1024 and objectiveTexture:find("%S") or
             type(objectiveTexture) == "number" and objectiveTexture > 0 and objectiveTexture <= 9007199254740991 and objectiveTexture % 1 == 0
         if type(objective) == "table" and validObjectiveTexture and not self.rewardTextureBusy then
             objectiveIndex = objectiveIndex + 1
@@ -4879,7 +4879,7 @@ function UI:RefreshDetail(sourceFocus)
             end
             local dialogueObjective = addon.Read(dialogueGetter, "string", id)
             if not objectivesCurrent() then return end
-            if dialogueObjective and dialogueObjective ~= "" and #dialogueObjective <= 30000 then
+            if dialogueObjective and dialogueObjective ~= "" and #dialogueObjective <= 30000 and dialogueObjective:find("%S") then
                 if line(addon.L("OBJECTIVE_DIALOGUE"), "section", nil, nil, objectivesCurrent) == false or
                     line(dialogueObjective, nil, nil, nil, objectivesCurrent) == false then return end
             end

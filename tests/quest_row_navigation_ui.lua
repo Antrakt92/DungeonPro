@@ -1988,4 +1988,143 @@ do
  ui.search,ui.pendingSearch,ui.catalogCollapsed=savedSearch,savedPending,savedCollapsed
  ui.search="";ui.frame:Show();ui:Refresh()
 end
+-- A25 GIVERNAME-WHITESPACE-GUARD: a whitespace-only native giver name falls
+-- back to the catalogue drop name (or the #id label without one) instead of
+-- painting, mirroring the %S guards at :301/:312. The dropNPCID acquisition
+-- route owns its line (item starts render no contact card), so a hostile
+-- SourceName/GiverName pair reaches the :309 branch directly.
+do
+ local savedDungeons=addon.dungeons
+ local savedDungeon,savedQuest=ui.dungeon,ui.quest
+ local savedSource,savedGiver=addon.SourceName,addon.GiverName
+ addon.quests[990832]={id=990832,name="Whitespace drop quest",minLevel=1,requirementsKnown=true,
+  start={itemID=801,name="Bound starter",dropNPCID=9,dropName="Dropper"}}
+ addon.quests[990833]={id=990833,name="Nameless whitespace drop quest",minLevel=1,requirementsKnown=true,
+  start={itemID=801,name="Bound starter",dropNPCID=9}}
+ local wsDungeon={key="givername-whitespace",name="Givername whitespace dungeon",minLevel=1,maxLevel=80,quests={990832,990833}}
+ addon.dungeons={wsDungeon}
+ ui.dungeon=wsDungeon;ui.questTreeRoot,ui.questTreeDungeon=nil,nil
+ ui.search="";ui.includeUnavailable=true;ui.frame:Show()
+ if type(ui.SetDetailTab)=="function" then ui:SetDetailTab("quest") end
+ local function fieldShown(fs)
+  if fs.shown~=nil then return fs.shown==true end
+  if type(fs.IsShown)=="function" then local ok,v=pcall(function()return fs:IsShown()end);return ok and v==true end
+  return false
+ end
+ local function hasText(want)
+  for _,fs in ipairs(ui.details)do if fieldShown(fs) and fs.text and fs.text:find(want,1,true)then return true end end
+  return false
+ end
+ addon.SourceName=function()return nil end
+ for _,blank in ipairs({"   ","\t"})do
+  addon.GiverName=function()return blank end
+  ui.quest=990832;ui:Refresh()
+  assert(hasText("Drops from Dropper"),"whitespace native drop name falls back to the catalogue name")
+  assert(not hasText("Drops from "..blank),"whitespace native drop name stays unpainted")
+  ui.quest=990833;ui:Refresh()
+  assert(hasText("Drops from #9"),"nameless whitespace native drop falls back to the id label")
+ end
+ addon.GiverName=function()return"Native dropper"end
+ ui.quest=990832;ui:Refresh()
+ assert(hasText("Drops from Native dropper"),"valid native drop name keeps its acquisition line")
+ addon.SourceName,addon.GiverName=savedSource,savedGiver
+ addon.quests[990832]=nil;addon.quests[990833]=nil
+ addon.dungeons=savedDungeons
+ ui.dungeon,ui.quest=savedDungeon,savedQuest
+ ui.search="";ui.questTreeRoot=nil;ui.questTreeDungeon=nil;ui.frame:Show();ui:Refresh()
+end
+-- A25 REWARD-ICON-WHITESPACE-GUARD: whitespace-only string textures paint no
+-- detail icon like empty and overlong strings, mirroring the %S texture
+-- guards in QuestListRewards and DungeonArt; a valid string texture keeps its
+-- icon. The objective gate keeps the same bounds per the :4045 comment: icons
+-- resolve through the number-only ItemIcon read, so a hostile string icon
+-- binds no objective button under either gate revision.
+do
+ local savedDialogue,savedLog,savedCache=addon.DialogueRewards,addon.QuestRewards,addon.CachedQuestRewards
+ local savedIcon=addon.ItemIcon
+ local savedDungeons=addon.dungeons
+ addon.quests[990404]={id=990404,name="Whitespace texture quest",minLevel=1,requirementsKnown=true}
+ local wsDungeon={key="texture-whitespace",name="Texture whitespace dungeon",minLevel=1,maxLevel=80,quests={990404}}
+ addon.dungeons={wsDungeon}
+ ui.dungeon,ui.quest,ui.questTreeRoot,ui.questTreeDungeon=wsDungeon,990404,nil,nil
+ ui.search="";ui.includeUnavailable=true;ui.frame:Show()
+ local function visibleRewardCount()
+  local n=0
+  for _,b in ipairs(ui.rewardButtons or {})do if b:IsShown()then n=n+1 end end
+  return n
+ end
+ local function renderWith(item)
+  addon.DialogueRewards=function(id)if id==990404 then return {source="dialogue",items={item},choices={}} end end
+  addon.QuestRewards=function()return nil end
+  addon.CachedQuestRewards=function()return nil end
+  ui:Refresh()
+  return visibleRewardCount()
+ end
+ for _,blank in ipairs({"   ","\t"})do
+  assert(renderWith({id=801,name="Blank texture",count=1,texture=blank})==0,"whitespace string texture must not paint a detail icon")
+ end
+ assert(renderWith({id=801,name="Empty texture",count=1,texture=""})==0,"empty string texture must not paint a detail icon")
+ assert(renderWith({id=801,name="Long texture",count=1,texture=("x"):rep(1025)})==0,"overlong string texture must not paint a detail icon")
+ assert(renderWith({id=801,name="Good texture",count=1,texture="Interface\\Icons\\INV_Misc_Map_01"})==1,"valid string texture keeps its detail icon")
+ assert(renderWith({id=801,name="Num texture",count=1,texture=134400})==1,"valid numeric texture keeps its detail icon")
+ addon.ItemIcon=function()return"   "end
+ addon.quests[990404].objectiveItems={{itemID=801,name="Bound item",quantity=1}}
+ ui:Refresh()
+ local shown=0
+ for _,b in ipairs(ui.objectiveButtons or {})do if b:IsShown()then shown=shown+1 end end
+ assert(shown==0,"whitespace string objective icon must not paint")
+ addon.ItemIcon=savedIcon
+ addon.DialogueRewards,addon.QuestRewards,addon.CachedQuestRewards=savedDialogue,savedLog,savedCache
+ addon.dungeons=savedDungeons
+ addon.quests[990404]=nil
+ ui.dungeon,ui.quest=dungeon,990104
+ ui.search="";ui.questTreeRoot=nil;ui.questTreeDungeon=nil;ui.frame:Show();ui:Refresh()
+end
+-- A25 DIALOGUE-OBJECTIVE-WHITESPACE-GUARD: a whitespace-only dialogue
+-- objective paints no section or line like a missing objective, mirroring the
+-- %S guards on payment formatting at :4865 and waypoint text at :4929; a
+-- valid objective keeps its section.
+do
+ local savedObjectives,savedDialogue=addon.QuestObjectives,addon.DialogueObjectiveText
+ local savedSecret=issecretvalue
+ local savedDungeons=addon.dungeons
+ local savedDungeon,savedQuest=ui.dungeon,ui.quest
+ issecretvalue=function()return false end
+ addon.quests[990406]={id=990406,name="Whitespace dialogue quest",minLevel=1,requirementsKnown=true}
+ local dlgDungeon={key="dialogue-whitespace",name="Dialogue whitespace dungeon",minLevel=1,maxLevel=80,quests={990406}}
+ addon.dungeons={dlgDungeon}
+ ui.dungeon,ui.quest,ui.questTreeRoot,ui.questTreeDungeon=dlgDungeon,990406,nil,nil
+ ui.search="";ui.includeUnavailable=true;ui.frame:Show()
+ if type(ui.SetDetailTab)=="function" then ui:SetDetailTab("quest") end
+ local function fieldShown(fs)
+  if fs.shown~=nil then return fs.shown==true end
+  if type(fs.IsShown)=="function" then local ok,v=pcall(function()return fs:IsShown()end);return ok and v==true end
+  return false
+ end
+ local function hasText(want)
+  for _,fs in ipairs(ui.details)do if fieldShown(fs) and fs.text and fs.text:find(want,1,true)then return true end end
+  return false
+ end
+ local function blankPainted()
+  for _,fs in ipairs(ui.details)do if fieldShown(fs) and (fs.text=="   " or fs.text=="\t")then return true end end
+  return false
+ end
+ addon.QuestObjectives=function()return nil end
+ for _,blank in ipairs({"   ","\t"})do
+  addon.DialogueObjectiveText=function(id)if id==990406 then return blank end end
+  ui:Refresh()
+  assert(not blankPainted(),"whitespace dialogue objective stays unpainted")
+  assert(not hasText(addon.L("OBJECTIVE_DIALOGUE")),"whitespace dialogue objective publishes no section")
+ end
+ addon.DialogueObjectiveText=function(id)if id==990406 then return"Real dialogue objective"end end
+ ui:Refresh()
+ assert(hasText("Real dialogue objective"),"valid dialogue objective keeps its detail line")
+ assert(hasText(addon.L("OBJECTIVE_DIALOGUE")),"valid dialogue objective keeps its section")
+ addon.QuestObjectives,addon.DialogueObjectiveText=savedObjectives,savedDialogue
+ issecretvalue=savedSecret
+ addon.quests[990406]=nil
+ addon.dungeons=savedDungeons
+ ui.dungeon,ui.quest=savedDungeon,savedQuest
+ ui.search="";ui.questTreeRoot=nil;ui.questTreeDungeon=nil;ui.frame:Show();ui:Refresh()
+end
 print("Middle quest navigation checks passed (modeled, no native input or layout proof)")
