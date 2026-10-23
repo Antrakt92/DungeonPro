@@ -270,6 +270,27 @@ class PackageTests(unittest.TestCase):
                     with self.assertRaisesRegex(ValueError, "Unreadable package input"):
                         packager.package(root=root, output=root / "dist" / "addon.zip")
 
+    def test_undecodable_toc_fails_with_value_error(self):
+        # A TOC that exact_path resolves but utf-8 cannot decode must fail as
+        # ValueError naming the entry (the file's "Unreadable package input"
+        # idiom), never as an escaped UnicodeDecodeError traceback, and must
+        # publish no archive.
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "DungeonPro.toc").write_bytes(b"\xff\xfe invalid \x00 bytes")
+            for name in ("README.md", "CHANGELOG.md", "LICENSE", "Core.lua"):
+                (root / name).write_text("fixture\n", encoding="utf-8")
+            (root / "Media" / "Fonts").mkdir(parents=True)
+            for name in ("NotoSans-Regular.ttf", "OFL.txt", "NOTICE.txt"):
+                (root / "Media" / "Fonts" / name).write_bytes(b"fixture")
+            (root / "Media" / "Icons").mkdir()
+            for name in ("Wowhead.tga", "Language.tga", "NOTICE.txt"):
+                (root / "Media" / "Icons" / name).write_bytes(b"fixture")
+            output = root / "dist" / "addon.zip"
+            with self.assertRaisesRegex(ValueError, "Unreadable package input: DungeonPro.toc"):
+                packager.package(root=root, output=output)
+            self.assertFalse(output.exists())
+
 
 if __name__ == "__main__":
     unittest.main()

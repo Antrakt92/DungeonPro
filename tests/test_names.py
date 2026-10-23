@@ -570,6 +570,72 @@ class NamesTests(unittest.TestCase):
                 self.assertIn(b"name_translations.json is unreadable", result.stderr)
                 self.assertEqual(target.read_bytes(), expected)
 
+    def test_deeply_nested_json_fails_as_system_exit_without_traceback(self):
+        # 20k-nested JSON input must fail as a clean SystemExit naming the
+        # input file: RecursionError is a RuntimeError, not a ValueError, so
+        # _load must map it explicitly. Never a bare traceback, and never
+        # touch the output.
+        data, catalog = fixture()
+        authored = authored_fixture(data, catalog)
+        italian = copy.deepcopy(authored)
+        italian["locales"] = {"itIT": italian["locales"]["itIT"]}
+        authored["locales"].pop("itIT")
+        inputs = {"area_name_translations.json": dict(area_fixture(), sources={}, locales={}),
+                  "source_name_translations.json": dict(source_fixture(), locales={}), "catalog.json": catalog,
+                  "name_translations.json": data, "name_translation_supplements.json": authored,
+                  "name_translation_itIT.json": italian}
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            for name in ("scripts", "data", "Database"):
+                (root / name).mkdir()
+            shutil.copy2(ROOT / "scripts/names.py", root / "scripts/names.py")
+            target = root / "Database/NameTranslations.lua"
+            expected = b"previous verified localized titles\n"
+            for payload in ("[" * 20000 + "]" * 20000, '{"x":' * 20000):
+                with self.subTest(payload=payload[:5]):
+                    for name, content in inputs.items():
+                        (root / "data" / name).write_text(json.dumps(content), encoding="utf-8")
+                    (root / "data/name_translations.json").write_text(payload, encoding="utf-8")
+                    with self.assertRaisesRegex(SystemExit, "name_translations.json is invalid"):
+                        names._load("data/name_translations.json", root / "data/name_translations.json")
+                    for options in ([], ["--check"]):
+                        target.write_bytes(expected)
+                        result = subprocess.run([sys.executable, str(root / "scripts/names.py"), *options],
+                                                capture_output=True)
+                        self.assertNotEqual(result.returncode, 0)
+                        self.assertNotIn(b"Traceback", result.stderr)
+                        self.assertIn(b"name_translations.json is invalid", result.stderr)
+                        self.assertEqual(target.read_bytes(), expected)
+
+    def test_check_with_unreadable_output_fails_closed_without_traceback(self):
+        # An unreadable Database/NameTranslations.lua in --check mode must
+        # fail as a clean SystemExit ("generated output differs"), never a raw
+        # OSError traceback (no exists()/read TOCTOU).
+        data, catalog = fixture()
+        authored = authored_fixture(data, catalog)
+        italian = copy.deepcopy(authored)
+        italian["locales"] = {"itIT": italian["locales"]["itIT"]}
+        authored["locales"].pop("itIT")
+        inputs = {"area_name_translations.json": dict(area_fixture(), sources={}, locales={}),
+                  "source_name_translations.json": dict(source_fixture(), locales={}), "catalog.json": catalog,
+                  "name_translations.json": data, "name_translation_supplements.json": authored,
+                  "name_translation_itIT.json": italian}
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            for name in ("scripts", "data", "Database"):
+                (root / name).mkdir()
+            shutil.copy2(ROOT / "scripts/names.py", root / "scripts/names.py")
+            for name, payload in inputs.items():
+                (root / "data" / name).write_text(json.dumps(payload), encoding="utf-8")
+            target = root / "Database/NameTranslations.lua"
+            target.mkdir()
+            result = subprocess.run([sys.executable, str(root / "scripts/names.py"), "--check"],
+                                    capture_output=True)
+            self.assertNotEqual(result.returncode, 0)
+            self.assertNotIn(b"Traceback", result.stderr)
+            self.assertIn(b"Localized-name generated output differs", result.stderr)
+            self.assertTrue(target.is_dir())
+
     def test_saved_dataset_and_generated_bytes_remain_consistent(self):
         path = ROOT / "data/name_translations.json"
         self.assertTrue(path.exists(), "Title source data is required")

@@ -34,7 +34,10 @@ def _read_bytes(path, name):
 def package(root=ROOT, output=None):
     toc_name = f"{ADDON_NAME}.toc"
     toc_bytes = _read_bytes(exact_path(root, toc_name), toc_name)
-    toc = toc_bytes.decode("utf-8").replace("\r\n", "\n").replace("\r", "\n")
+    try:
+        toc = toc_bytes.decode("utf-8").replace("\r\n", "\n").replace("\r", "\n")
+    except UnicodeDecodeError as error:
+        raise ValueError(f"Unreadable package input: {toc_name}") from error
     version_match = re.search(r"^## Version: ([0-9]+\.[0-9]+\.[0-9]+)$", toc, re.MULTILINE)
     if not version_match:
         raise ValueError(f"{toc_name} is missing a valid ## Version: X.Y.Z line")

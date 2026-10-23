@@ -372,7 +372,7 @@ def _read(name, path):
 def _load(name, path):
     try:
         return json.loads(_read(name, path), object_pairs_hook=unique_fields)
-    except ValueError as error:
+    except (ValueError, RecursionError) as error:
         raise SystemExit(f"{name} is invalid: {error}") from error
 
 
@@ -467,7 +467,11 @@ def main():
     content = generate(data)
     target = ROOT / "Database/NameTranslations.lua"
     if args.check:
-        if not target.exists() or target.read_bytes() != content.encode("utf-8"):
+        try:
+            current = target.read_bytes()
+        except OSError:
+            raise SystemExit("Localized-name generated output differs") from None
+        if current != content.encode("utf-8"):
             raise SystemExit("Localized-name generated output differs")
     else:
         target.parent.mkdir(exist_ok=True)

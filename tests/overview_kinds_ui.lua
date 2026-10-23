@@ -846,6 +846,24 @@ do
   assert(finishThrow == nil, "throwing CreateFrame fails closed, kept " .. tostring(finishThrow))
   assert(u.overviewBinding == nil, "throwing CreateFrame publishes no overview binding")
  end
+ -- HOSTILE-ROW-GUARD: a cold row pool with throwing CreateFrame fails closed
+ -- without escaping. MakeRow returns nil on a throwing CreateFrame without
+ -- falsifying binding.current(), so the row caller must check the row before
+ -- indexing it. The guard above misses this: it warm-renders first, so the
+ -- row pool hits and CreateFrame is never reached for rows.
+ do
+  local coldSteps = { { id = 9001, kind = "pickup", status = "AVAILABLE", listedTarget = true } }
+  local coldModel = modelWith(coldSteps, counts())
+  u:ReleasePreparationOverview()
+  u.actionInspectButtons = {}
+  local realCreateRow = CreateFrame
+  CreateFrame = function() error("CreateFrame unavailable") end
+  local okCold, finishCold = renderWith(coldModel)
+  CreateFrame = realCreateRow
+  assert(okCold, "throwing CreateFrame on a cold row pool escaped RenderPreparationOverview: " .. tostring(finishCold))
+  assert(finishCold == nil, "cold row-pool CreateFrame failure fails closed, kept " .. tostring(finishCold))
+  assert(u.overviewBinding == nil, "cold row-pool CreateFrame failure publishes no overview binding")
+ end
  local ok, finish = renderWith(modelWith(goodSteps, counts()))
  assert(ok and finish ~= nil and finish ~= startOffset, "valid model renders past its input offset")
  assert(u.overviewBinding and u.overviewBinding.current(), "valid model keeps a current overview binding")

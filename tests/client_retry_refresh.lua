@@ -193,6 +193,27 @@ test("RestoreDB rejects metatable-carrying nested roots and oversized texts",fun
     DungeonProDB,DungeonProCharDB,DungeonPrepDB,DungeonPrepCharDB=savedPro,savedChar,savedPrep,savedPrepChar
     f.addon.db,f.addon.char=activeDB,activeChar
 end)
+test("RestoreDB rejects metatable-carrying choices root without throwing",function()
+    local f=fixture()
+    local savedPro,savedChar,savedPrep,savedPrepChar=DungeonProDB,DungeonProCharDB,DungeonPrepDB,DungeonPrepCharDB
+    local activeDB,activeChar=f.addon.db,f.addon.char
+    local hostile=setmetatable({[1]={[1]=1}},{
+        __index=function() error("hostile choices index") end,
+        __newindex=function() error("hostile choices newindex") end,
+        __pairs=function() error("hostile choices pairs") end})
+    DungeonProDB,DungeonProCharDB,DungeonPrepDB,DungeonPrepCharDB={},{texts={},filters={},choices=hostile},nil,nil
+    local ok,result=pcall(f.addon.RestoreDB)
+    assert(ok,"choices root threw instead of failing closed: "..tostring(result))
+    assert(result==false,"choices root adopted a metatable-carrying choices table")
+    assert(f.addon.db==activeDB and f.addon.char==activeChar,"choices root replaced active state on rejection")
+    assert(DungeonProDB.schema==nil,"choices root normalized schema before failing closed")
+    DungeonProDB,DungeonProCharDB={},{texts={},filters={},choices={[1]={[1]=1}}}
+    local okPlain,plainResult=pcall(f.addon.RestoreDB)
+    assert(okPlain and plainResult==true,"plain-table choices path changed")
+    assert(f.addon.char.choices[1][1]==1,"plain choices entry changed")
+    DungeonProDB,DungeonProCharDB,DungeonPrepDB,DungeonPrepCharDB=savedPro,savedChar,savedPrep,savedPrepChar
+    f.addon.db,f.addon.char=activeDB,activeChar
+end)
 test("RestoreDB drops metatable-carrying texts entries while keeping valid minimap configs",function()
     local f=fixture()
     local savedPro,savedChar,savedPrep,savedPrepChar=DungeonProDB,DungeonProCharDB,DungeonPrepDB,DungeonPrepCharDB

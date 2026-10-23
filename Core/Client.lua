@@ -1784,6 +1784,8 @@ function addon.RestoreDB()
     if type(filtersValue) == "table" and getmetatable(filtersValue) ~= nil then return false end
     local minimapValue = rawget(db, "minimap")
     if type(minimapValue) == "table" and getmetatable(minimapValue) ~= nil then return false end
+    local choicesValue = rawget(char, "choices")
+    if type(choicesValue) == "table" and getmetatable(choicesValue) ~= nil then return false end
     -- Census retained quest texts before normalizing anything: legitimate
     -- retention holds a handful of viewed quests, so fail closed well above
     -- any plausible size to keep the hygiene loop below bounded every login.

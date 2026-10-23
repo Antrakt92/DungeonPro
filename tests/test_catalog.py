@@ -654,6 +654,61 @@ class CatalogTests(unittest.TestCase):
                     self.assertIn(b"data/catalog.json is unreadable", result.stderr)
                     self.assertEqual(output.read_bytes(), expected)
 
+    def test_deeply_nested_json_fails_as_system_exit_without_traceback(self):
+        # 20k-nested JSON input must fail as a clean SystemExit naming
+        # data/catalog.json: RecursionError is a RuntimeError, not a
+        # ValueError, so _load must map it explicitly. Never a bare
+        # traceback, and never touch the output.
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            for name in ("scripts", "data", "Database"):
+                (root / name).mkdir()
+            shutil.copy2(ROOT / "scripts/catalog.py", root / "scripts/catalog.py")
+            source = root / "data/catalog.json"
+            output = root / "Database/Catalog.lua"
+            expected = b"previous verified catalogue\n"
+            for payload in ("[" * 20000 + "]" * 20000, '{"x":' * 20000):
+                with self.subTest(payload=payload[:5]):
+                    source.write_text(payload, encoding="utf-8")
+                    with self.assertRaisesRegex(SystemExit, "data/catalog.json is invalid"):
+                        catalog._load("data/catalog.json", source)
+                    for args in ([], ["--check"]):
+                        output.write_bytes(expected)
+                        result = subprocess.run([sys.executable, str(root / "scripts/catalog.py"), *args],
+                                                capture_output=True)
+                        self.assertNotEqual(result.returncode, 0)
+                        self.assertNotIn(b"Traceback", result.stderr)
+                        self.assertIn(b"data/catalog.json is invalid", result.stderr)
+                        self.assertEqual(output.read_bytes(), expected)
+
+    def test_check_with_unreadable_output_fails_closed_without_traceback(self):
+        # An unreadable/undecodable Database/Catalog.lua in --check mode must
+        # fail as a clean SystemExit ("Generated catalogue differs"), never a
+        # raw OSError/UnicodeDecodeError traceback (no exists()/read TOCTOU).
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            for name in ("scripts", "data", "Database"):
+                (root / name).mkdir()
+            shutil.copy2(ROOT / "scripts/catalog.py", root / "scripts/catalog.py")
+            shutil.copy2(ROOT / "data/catalog.json", root / "data/catalog.json")
+            target = root / "Database/Catalog.lua"
+            shutil.copy2(ROOT / "Database/Catalog.lua", target)
+            expected = target.read_bytes()
+            target.write_bytes(b"\xff\xfe invalid \x00 bytes")
+            result = subprocess.run([sys.executable, str(root / "scripts/catalog.py"), "--check"],
+                                    capture_output=True)
+            self.assertNotEqual(result.returncode, 0)
+            self.assertNotIn(b"Traceback", result.stderr)
+            self.assertIn(b"Generated catalogue differs", result.stderr)
+            self.assertEqual(target.read_bytes(), b"\xff\xfe invalid \x00 bytes")
+            target.unlink()
+            result = subprocess.run([sys.executable, str(root / "scripts/catalog.py"), "--check"],
+                                    capture_output=True)
+            self.assertNotEqual(result.returncode, 0)
+            self.assertNotIn(b"Traceback", result.stderr)
+            self.assertIn(b"Generated catalogue differs", result.stderr)
+            self.assertFalse(target.exists())
+
     def test_objective_kills_preserve_sourced_counts_without_requirement_inference(self):
         data = copy.deepcopy(self.data)
         quest = data["quests"][0]

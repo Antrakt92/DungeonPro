@@ -284,6 +284,53 @@ assert(addon.SearchFold('')=='')
                     self.assertIn(b"search_casefold.json", result.stderr)
                     self.assertEqual(output.read_bytes(), expected)
 
+    def test_deeply_nested_json_fails_as_system_exit_without_traceback(self):
+        # 20k-nested JSON input must fail as a clean SystemExit naming the
+        # input file: RecursionError is a RuntimeError, not a ValueError, so
+        # _load must map it explicitly. Never a bare traceback, and never
+        # touch the output.
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            for directory in ("scripts", "data", "Database"):
+                (root / directory).mkdir()
+            shutil.copy2(ROOT / "scripts/casefold.py", root / "scripts/casefold.py")
+            source = root / "data/search_casefold.json"
+            output = root / "Database/SearchCaseFold.lua"
+            expected = casefold.generate({**copy.deepcopy(self.data), "mappings": {"65": "a"}}).encode("utf-8")
+            for payload in ("[" * 20000 + "]" * 20000, '{"x":' * 20000):
+                with self.subTest(payload=payload[:5]):
+                    source.write_text(payload, encoding="utf-8")
+                    with self.assertRaisesRegex(SystemExit, "search_casefold.json is invalid"):
+                        casefold._load("data/search_casefold.json", source)
+                    for args in (["--check"], []):
+                        output.write_bytes(expected)
+                        result = subprocess.run([sys.executable, "scripts/casefold.py", *args],
+                                                cwd=root, capture_output=True, timeout=30)
+                        self.assertNotEqual(result.returncode, 0)
+                        self.assertNotIn(b"Traceback", result.stderr)
+                        self.assertIn(b"search_casefold.json is invalid", result.stderr)
+                        self.assertEqual(output.read_bytes(), expected)
+
+    def test_check_with_unreadable_output_fails_closed_without_traceback(self):
+        # An unreadable/undecodable Database/SearchCaseFold.lua in --check
+        # mode must fail as a clean SystemExit ("Generated case-fold table
+        # differs"), never a raw OSError/UnicodeDecodeError traceback (no
+        # exists()/read TOCTOU).
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            for directory in ("scripts", "data", "Database"):
+                (root / directory).mkdir()
+            shutil.copy2(ROOT / "scripts/casefold.py", root / "scripts/casefold.py")
+            shutil.copy2(ROOT / "data/search_casefold.json", root / "data/search_casefold.json")
+            output = root / "Database/SearchCaseFold.lua"
+            output.write_bytes(b"\xff\xfe invalid \x00 bytes")
+            result = subprocess.run([sys.executable, "scripts/casefold.py", "--check"],
+                                    cwd=root, capture_output=True, timeout=30)
+            self.assertNotEqual(result.returncode, 0)
+            self.assertNotIn(b"Traceback", result.stderr)
+            self.assertIn(b"Generated case-fold table differs", result.stderr)
+            self.assertEqual(output.read_bytes(), b"\xff\xfe invalid \x00 bytes")
+
 
 if __name__ == "__main__":
     unittest.main()

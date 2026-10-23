@@ -236,8 +236,8 @@ function Planner.New(quests, context, choices)
                 end
                 if not satisfied then
                     local best, bestUnknown, bestScore
-                    local selected = type(self.choices) == "table" and self.choices[id]
-                    selected = type(selected) == "table" and addon.Clean(selected[groupIndex], "number") or nil
+                    local selected = type(self.choices) == "table" and rawget(self.choices, id) or nil
+                    selected = type(selected) == "table" and addon.Clean(rawget(selected, groupIndex), "number") or nil
                     if selected and (not contains(group.ids, selected) or self:State(selected).status == "UNAVAILABLE") then
                         selected = nil
                     end

@@ -27,7 +27,7 @@ def _read(name, path):
 def _load(name, path):
     try:
         return json.loads(_read(name, path), object_pairs_hook=unique_fields)
-    except ValueError as error:
+    except (ValueError, RecursionError) as error:
         raise SystemExit(f"{name} is invalid: {error}") from error
 
 
@@ -70,7 +70,11 @@ def main():
     generated = generate(data)
     output = ROOT / "Database/SearchCaseFold.lua"
     if args.check:
-        if not output.exists() or output.read_text(encoding="utf-8") != generated:
+        try:
+            current = output.read_text(encoding="utf-8")
+        except (OSError, UnicodeDecodeError):
+            raise SystemExit("Generated case-fold table differs; run python scripts/casefold.py") from None
+        if current != generated:
             raise SystemExit("Generated case-fold table differs; run python scripts/casefold.py")
     else:
         output.parent.mkdir(exist_ok=True)

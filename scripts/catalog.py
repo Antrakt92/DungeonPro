@@ -722,7 +722,7 @@ def _read(name, path):
 def _load(name, path):
     try:
         return json.loads(_read(name, path), object_pairs_hook=unique_fields)
-    except ValueError as error:
+    except (ValueError, RecursionError) as error:
         raise SystemExit(f"{name} is invalid: {error}") from error
 
 
@@ -734,7 +734,11 @@ def main():
     content = generate(data)
     target = ROOT / "Database/Catalog.lua"
     if args.check:
-        if not target.exists() or target.read_text(encoding="utf-8") != content:
+        try:
+            current = target.read_text(encoding="utf-8")
+        except (OSError, UnicodeDecodeError):
+            raise SystemExit("Generated catalogue differs; run python scripts/catalog.py") from None
+        if current != content:
             raise SystemExit("Generated catalogue differs; run python scripts/catalog.py")
     else:
         target.parent.mkdir(exist_ok=True)

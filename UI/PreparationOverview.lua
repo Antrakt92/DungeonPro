@@ -318,6 +318,14 @@ function UI:RenderPreparationOverview(ownerCurrent, width, offset, presentation)
                 end
                 local stepID=step.id
                 local row=self:MakeRow(self.detail,self.actionInspectButtons,index,48,binding.current,true)
+                -- Unpublish only our own binding: a nil row from a stale
+                -- current() must not clobber a newer live binding that a
+                -- reentrant render may have published meanwhile.
+                if not row then
+                    if binding.current() then binding.released = true end
+                    if self.overviewBinding == binding then self.overviewBinding = nil end
+                    return
+                end
                 if not binding.current() then return end
                 local listedTarget, stepStatus=step.listedTarget, step.status
                 row.questID,row.overviewStep=step.id,step
@@ -395,9 +403,19 @@ function UI:RenderPreparationOverview(ownerCurrent, width, offset, presentation)
                 local control = self[key]
                 if not control then
                     local okCreate, fresh = pcall(CreateFrame, "Button", nil, self.detail)
-                    if not okCreate then binding.released = true; self.overviewBinding = nil; return end
+                    -- Conditional unpublish (same reentrancy reason as the
+                    -- row guard above): never clear a newer live binding.
+                    if not okCreate then
+                        if binding.current() then binding.released = true end
+                        if self.overviewBinding == binding then self.overviewBinding = nil end
+                        return
+                    end
                     control = addon.Clean(fresh, "table") or addon.Clean(fresh, "userdata")
-                    if not control then binding.released = true; self.overviewBinding = nil; return end
+                    if not control then
+                        if binding.current() then binding.released = true end
+                        if self.overviewBinding == binding then self.overviewBinding = nil end
+                        return
+                    end
                     if not binding.current() then return end
                     self[key]=control
                     control.label=label(control,"",4,-4,contentWidth-8,13)

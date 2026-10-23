@@ -1056,4 +1056,35 @@ check("Sparse requires lists fail closed without throwing or silently dropping A
     eq(e:State(2).reason, "requirements")
     eq(P.New(denseQuests, done):State(2).status, "LOCKED")
 end)
+check("Hostile metatable choices fail closed to no override without throwing", function()
+    local quests = { [1] = q(1), [2] = q(2, nil, { factions = { "Horde" } }),
+        [3] = q(3, { { ids = { 1, 2 } } }) }
+    local baseline = P.New(quests, ctx()):Next(3)
+    eq(baseline[1].id, 1)
+    -- Every Next/Dungeon call with an explicit ID misses in choices, so a
+    -- throwing __index on the choices root fires without rawget hardening.
+    local hostile = setmetatable({}, { __index = function() error("hostile choices") end })
+    local ok, actions, unknown = pcall(function() return P.New(quests, ctx(), hostile):Next(3) end)
+    assert(ok, "Next with hostile choices threw")
+    eq(#actions, #baseline); eq(actions[1].id, 1); eq(unknown, false)
+    -- A throwing __index on the per-quest row fires on the group read.
+    local nested = { [3] = setmetatable({}, { __index = function() error("hostile choices row") end }) }
+    local okNested, nestedActions, nestedUnknown = pcall(function()
+        return P.New(quests, ctx(), nested):Next(3)
+    end)
+    assert(okNested, "Next with hostile choices row threw")
+    eq(nestedActions[1].id, 1); eq(nestedUnknown, false)
+    local okDungeon, plan = pcall(function()
+        return P.New(quests, ctx(), hostile):Dungeon({ quests = { 3 }, coverage = "reviewed" })
+    end)
+    assert(okDungeon, "Dungeon with hostile choices threw")
+    eq(plan.actions[1].id, 1)
+    -- Valid choices are unchanged: an available override still applies.
+    -- Both parents are available here, so the baseline resolves parent 1
+    -- while an explicit override for parent 2 resolves parent 2: the
+    -- assertion below fails if the override is ignored.
+    local open = { [1] = q(1), [2] = q(2), [3] = q(3, { { ids = { 1, 2 } } }) }
+    eq(P.New(open, ctx()):Next(3)[1].id, 1)
+    eq(P.New(open, ctx(), { [3] = { [1] = 2 } }):Next(3)[1].id, 2)
+end)
 print("Planner checks passed: " .. passed)
