@@ -49,6 +49,38 @@ assert(loadfile('Core/Search.lua'))('DungeonPro',addon)
                                 capture_output=True, timeout=30)
         self.assertEqual(result.returncode, 0, result.stderr.decode(errors="replace"))
 
+    def test_check_with_missing_output_fails_closed_without_traceback(self):
+        # Missing Database/SearchCaseFold.lua must fail as a clean SystemExit
+        # ("Generated case-fold table differs"), never a FileNotFoundError
+        # traceback. Mirrors catalog.py/names.py exists-guarded --check.
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            for directory in ("scripts", "data", "Database"):
+                (root / directory).mkdir()
+            shutil.copy2(ROOT / "scripts/casefold.py", root / "scripts/casefold.py")
+            shutil.copy2(ROOT / "data/search_casefold.json", root / "data/search_casefold.json")
+            self.assertFalse((root / "Database/SearchCaseFold.lua").exists())
+            result = subprocess.run([sys.executable, "scripts/casefold.py", "--check"], cwd=root,
+                                    capture_output=True, timeout=30)
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn(b"Generated case-fold table differs", result.stderr)
+            self.assertNotIn(b"Traceback", result.stderr)
+
+    def test_generate_creates_missing_database_directory(self):
+        # Generate mode must create Database/ when absent, mirroring
+        # catalog.py target.parent.mkdir(exist_ok=True).
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            for directory in ("scripts", "data"):
+                (root / directory).mkdir()
+            shutil.copy2(ROOT / "scripts/casefold.py", root / "scripts/casefold.py")
+            shutil.copy2(ROOT / "data/search_casefold.json", root / "data/search_casefold.json")
+            result = subprocess.run([sys.executable, "scripts/casefold.py"], cwd=root,
+                                    capture_output=True, timeout=30)
+            self.assertEqual(result.returncode, 0, result.stderr.decode(errors="replace"))
+            self.assertEqual((root / "Database/SearchCaseFold.lua").read_text(encoding="utf-8"),
+                             casefold.generate(self.data))
+
     def test_generator_rejects_invalid_sources_and_unsafe_license(self):
         for key, value in [("unicodeVersion", "15.0.0"), ("source", "https://example.org/CaseFolding.txt"),
                            ("license", None), ("license", "UNICODE LICENSE V3 Copyright ]] malicious")]:

@@ -1031,4 +1031,29 @@ check("Sparse dungeon quest lists fail closed without throwing or silently dropp
     local dense = P.New(quests, done):Dungeon({ quests = { 1 }, coverage = "reviewed" })
     eq(#dense.rows, 1); eq(dense.unknown, false); eq(dense.ready, true)
 end)
+check("Sparse requires lists fail closed without throwing or silently dropping AND-groups", function()
+    -- Group 1 is satisfied (parent 1 completed), group 2 is not (parent 5 fresh):
+    -- dense traversal is LOCKED, so a sparse catalogue must never resolve AVAILABLE.
+    local denseQuests = { [1] = q(1), [2] = q(2, { { ids = { 1 } }, { ids = { 5 } } }), [5] = q(5) }
+    local sparseQuests = { [1] = q(1), [2] = q(2, { [1] = { ids = { 1 } }, [3] = { ids = { 5 } } }), [5] = q(5) }
+    local holeCount = 0
+    for _ in pairs(sparseQuests[2].requires) do holeCount = holeCount + 1 end
+    eq(holeCount, 2)
+    local done = ctx({ [1] = true })
+    local denseState = P.New(denseQuests, done):State(2)
+    eq(denseState.status, "LOCKED"); eq(denseState.reason, "requirements")
+    local denseActions, denseUnknown = P.New(denseQuests, done):Next(2)
+    eq(#denseActions, 1); eq(denseActions[1].id, 5); eq(denseActions[1].kind, "pickup"); eq(denseUnknown, false)
+    local e = P.New(sparseQuests, done)
+    local okState, sparseState = pcall(function() return e:State(2) end)
+    assert(okState, "State with sparse requires threw")
+    eq(sparseState.status, "UNKNOWN"); eq(sparseState.reason, "requirements")
+    eq(e.visiting[2], nil)
+    local okNext, actions, unknown = pcall(function() return e:Next(2) end)
+    assert(okNext, "Next with sparse requires threw")
+    eq(#actions, 0); eq(unknown, true)
+    e.states[2] = nil
+    eq(e:State(2).reason, "requirements")
+    eq(P.New(denseQuests, done):State(2).status, "LOCKED")
+end)
 print("Planner checks passed: " .. passed)

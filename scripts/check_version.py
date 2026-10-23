@@ -25,10 +25,17 @@ def _single_version(name, pattern, text):
     return found[0]
 
 
+def _read(name, path):
+    try:
+        return (path.read_text(encoding="utf-8").replace("\r\n", "\n").replace("\r", "\n"))
+    except (OSError, UnicodeDecodeError) as error:
+        raise SystemExit(f"{name} is unreadable: {error}") from error
+
+
 def main():
-    toc = (ROOT / "DungeonPro.toc").read_text(encoding="utf-8").replace("\r\n", "\n").replace("\r", "\n")
-    namespace = (ROOT / "Core" / "Namespace.lua").read_text(encoding="utf-8").replace("\r\n", "\n").replace("\r", "\n")
-    changelog = (ROOT / "CHANGELOG.md").read_text(encoding="utf-8").replace("\r\n", "\n").replace("\r", "\n")
+    toc = _read("DungeonPro.toc", ROOT / "DungeonPro.toc")
+    namespace = _read("Core/Namespace.lua", ROOT / "Core" / "Namespace.lua")
+    changelog = _read("CHANGELOG.md", ROOT / "CHANGELOG.md")
     versions = {
         "DungeonPro.toc ## Version": _single_version("DungeonPro.toc ## Version", TOC_PATTERN, toc),
         "Core/Namespace.lua addon.version": _single_version(

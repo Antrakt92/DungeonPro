@@ -414,6 +414,7 @@ def main():
         if not target.exists() or target.read_bytes() != content.encode("utf-8"):
             raise SystemExit("Localized-name generated output differs")
     else:
+        target.parent.mkdir(exist_ok=True)
         target.write_bytes(content.encode("utf-8"))
     counts = {locale: {kind: len(entries) for kind, entries in payload.items()} for locale, payload in data["locales"].items()}
     print("Localized names valid: " + json.dumps(counts, sort_keys=True))

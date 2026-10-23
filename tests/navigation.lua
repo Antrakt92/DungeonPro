@@ -1736,4 +1736,87 @@ check("Quest detail dispatch rejects non-table actions without throwing", functi
     ui.frame = saved
     assert(ok and result == false, "DispatchDetail must fail closed for a non-table action")
 end)
+local function freshArrowNavigation()
+    local fresh = {}
+    assert(loadfile("Core/Namespace.lua"))("DungeonPro", fresh)
+    fresh.L, fresh.QuestName, fresh.Theme = addon.L, addon.QuestName, addon.Theme
+    assert(loadfile("UI/Navigation.lua"))("DungeonPro", fresh)
+    return fresh
+end
+check("Throwing or malformed arrow-frame constructor fails closed without a Lua error", function()
+    for _, hostile in ipairs({ "throw", "nil", "false" }) do
+        reset()
+        local saved = CreateFrame
+        if hostile == "throw" then CreateFrame = function() error("hostile frame") end
+        elseif hostile == "nil" then CreateFrame = nil
+        else CreateFrame = function() return false end end
+        local fresh = freshArrowNavigation()
+        local first = #frames
+        local ok, started = pcall(fresh.Navigation.Start, action)
+        CreateFrame = saved
+        assert(ok and started == false, hostile .. " constructor must fail closed")
+        for index = first + 1, #frames do
+            assert(not frames[index].scripts.OnUpdate, hostile .. " must not leave a live HUD")
+        end
+        assert(fresh.Navigation.Start(action), hostile .. " must rebuild once construction works")
+        local card
+        for index = first + 1, #frames do if frames[index].scripts.OnUpdate then card = frames[index] end end
+        assert(card and card.shown)
+        fresh.Navigation.Stop()
+    end
+end)
+check("Missing UIParent fails closed without a Lua error", function()
+    local savedCreate, savedParent = CreateFrame, UIParent
+    CreateFrame = function(...) assert(select(3, ...) ~= nil, "missing parent"); return object(...) end
+    UIParent = nil
+    local fresh = freshArrowNavigation()
+    local first = #frames
+    local ok, started = pcall(fresh.Navigation.Start, action)
+    CreateFrame, UIParent = savedCreate, savedParent
+    assert(ok and started == false)
+    for index = first + 1, #frames do assert(not frames[index].scripts.OnUpdate) end
+    assert(fresh.Navigation.Start(action))
+    fresh.Navigation.Stop()
+end)
+check("Throwing arrow-frame setter fails closed and rebuilds on retry", function()
+    local saved = CreateFrame
+    CreateFrame = function(...) local built = object(...); function built:SetSize() error("hostile size") end; return built end
+    local fresh = freshArrowNavigation()
+    local first = #frames
+    local ok, started = pcall(fresh.Navigation.Start, action)
+    CreateFrame = saved
+    assert(ok and started == false)
+    for index = first + 1, #frames do
+        local candidate = frames[index]
+        assert(not candidate.scripts.OnUpdate or not candidate.shown, "abandoned frame must stay hidden")
+    end
+    assert(fresh.Navigation.Start(action))
+    local card
+    for index = first + 1, #frames do if frames[index].scripts.OnUpdate then card = frames[index] end end
+    assert(card and card.shown and card.width == 354)
+    fresh.Navigation.Stop()
+end)
+check("Valid arrow-frame construction keeps its exact layout and handlers", function()
+    local fresh = freshArrowNavigation()
+    local first = #frames
+    assert(fresh.Navigation.Start(action))
+    local card, close
+    for index = first + 1, #frames do
+        if frames[index].scripts.OnUpdate then card = frames[index] end
+        if frames[index].scripts.OnClick == fresh.Navigation.Stop then close = frames[index] end
+    end
+    assert(card and card.shown)
+    assert(card.width == 354 and card.height == 88)
+    assert(card.point[1] == "TOP" and card.point[2] == 0 and card.point[3] == -90)
+    assert(card.clamped == true)
+    assert(card.scripts.OnDragStart == card.StartMoving and card.scripts.OnDragStop == card.StopMovingOrSizing)
+    assert(card.arrow and card.arrow.width == 42 and card.arrow.height == 42)
+    assert(card.arrow.point[1] == "TOPLEFT" and card.arrow.point[2] == 12 and card.arrow.point[3] == -16)
+    assert(card.title and card.note and card.label and card.title.text == "Quest")
+    assert(card.skinned)
+    assert(close and close.width == 22 and close.height == 22 and close.point[1] == "TOPRIGHT")
+    assert(close.scripts.OnClick == fresh.Navigation.Stop)
+    fresh.Navigation.Stop()
+    assert(not card.shown)
+end)
 print("Navigation modeled checks passed: " .. total .. " (no native map validation)")

@@ -57,9 +57,10 @@ def main():
     generated = generate(data)
     output = ROOT / "Database/SearchCaseFold.lua"
     if args.check:
-        if output.read_text(encoding="utf-8") != generated:
+        if not output.exists() or output.read_text(encoding="utf-8") != generated:
             raise SystemExit("Generated case-fold table differs; run python scripts/casefold.py")
     else:
+        output.parent.mkdir(exist_ok=True)
         output.write_text(generated, encoding="utf-8")
     print(f"Unicode case-fold mappings: {len(data['mappings'])}; valid")
 

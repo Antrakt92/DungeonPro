@@ -1049,35 +1049,103 @@ function N.Start(action, markerRole, ownerCurrent)
         end
     end
     if not frame then
-        frame = CreateFrame("Frame", nil, UIParent)
-        frame:SetSize(354, 104); frame:SetPoint("TOP", 0, -90)
-        frame:SetMovable(true); frame:EnableMouse(true); frame:RegisterForDrag("LeftButton")
-        if frame.SetClampedToScreen then frame:SetClampedToScreen(true) end
-        frame:SetScript("OnDragStart", frame.StartMoving)
-        frame:SetScript("OnDragStop", frame.StopMovingOrSizing)
-        frame.arrow = frame:CreateTexture(nil, "ARTWORK")
-        frame.arrow:SetSize(42, 42); frame.arrow:SetPoint("TOPLEFT", 12, -16)
-        frame.arrow:SetTexture("Interface\\Minimap\\MinimapArrow")
+        local createOK, created = pcall(CreateFrame, "Frame", nil, UIParent)
+        if not current() then return false end
+        created = createOK and markerObject(created) or nil
+        if not current() then return false end
+        if not created then
+            if current() then N.Stop() end
+            return false
+        end
+        frame = created
+        local function built()
+            return current() and rawequal(frame, created)
+        end
+        -- A half-built arrow frame must never be reused: hide it, drop the
+        -- slot so the next Start rebuilds, and release waypoint ownership.
+        local function abandon()
+            if current() then
+                pcall(function() created:Hide() end)
+                if rawequal(frame, created) then frame = nil end
+                N.Stop()
+            end
+            return false
+        end
+        local function createChild(factory, ...)
+            if not built() then return nil end
+            local make = markerMethod(created, factory)
+            if not built() then return nil end
+            if not make then return nil end
+            local ok, child = pcall(make, created, ...)
+            if not built() then return nil end
+            return ok and markerObject(child) or nil
+        end
+        local function attachField(key, child)
+            if not child or not built() then return nil end
+            local ok = pcall(function() frame[key] = child end)
+            if not ok or not built() then return nil end
+            return child
+        end
+        if not markerWrite(created, "SetSize", built, 354, 104) then return abandon() end
+        if not markerWrite(created, "SetPoint", built, "TOP", 0, -90) then return abandon() end
+        if not markerWrite(created, "SetMovable", built, true) then return abandon() end
+        if not markerWrite(created, "EnableMouse", built, true) then return abandon() end
+        if not markerWrite(created, "RegisterForDrag", built, "LeftButton") then return abandon() end
+        local clamp = markerMethod(created, "SetClampedToScreen")
+        if not built() then return abandon() end
+        if clamp and not markerWriteUsing(created, "SetClampedToScreen", built, clamp, true) then return abandon() end
+        local dragStart = markerMethod(created, "StartMoving")
+        if not built() then return abandon() end
+        local dragStop = markerMethod(created, "StopMovingOrSizing")
+        if not built() then return abandon() end
+        if not dragStart or not dragStop then return abandon() end
+        if not markerWrite(created, "SetScript", built, "OnDragStart", dragStart) then return abandon() end
+        if not markerWrite(created, "SetScript", built, "OnDragStop", dragStop) then return abandon() end
+        local arrow = attachField("arrow", createChild("CreateTexture", nil, "ARTWORK"))
+        if not arrow then return abandon() end
+        if not markerWrite(arrow, "SetSize", built, 42, 42) then return abandon() end
+        if not markerWrite(arrow, "SetPoint", built, "TOPLEFT", 12, -16) then return abandon() end
+        if not markerWrite(arrow, "SetTexture", built, "Interface\\Minimap\\MinimapArrow") then return abandon() end
         local font = (addon.Clean(ChatFontNormal, "table") or addon.Clean(ChatFontNormal, "userdata")) and "ChatFontNormal" or "GameFontNormal"
-        frame.title = frame:CreateFontString(nil, "OVERLAY", font)
-        frame.title:SetPoint("TOPLEFT", 66, -12); frame.title:SetWidth(258); frame.title:SetJustifyH("LEFT")
-        frame.note = frame:CreateFontString(nil, "OVERLAY", font)
-        frame.note:SetWidth(258); frame.note:SetJustifyH("LEFT")
-        frame.label = frame:CreateFontString(nil, "OVERLAY", font)
-        frame.label:SetWidth(258); frame.label:SetJustifyH("LEFT")
+        if not built() then return abandon() end
+        local title = attachField("title", createChild("CreateFontString", nil, "OVERLAY", font))
+        if not title then return abandon() end
+        if not markerWrite(title, "SetPoint", built, "TOPLEFT", 66, -12) then return abandon() end
+        if not markerWrite(title, "SetWidth", built, 258) then return abandon() end
+        if not markerWrite(title, "SetJustifyH", built, "LEFT") then return abandon() end
+        local note = attachField("note", createChild("CreateFontString", nil, "OVERLAY", font))
+        if not note then return abandon() end
+        if not markerWrite(note, "SetWidth", built, 258) then return abandon() end
+        if not markerWrite(note, "SetJustifyH", built, "LEFT") then return abandon() end
+        local label = attachField("label", createChild("CreateFontString", nil, "OVERLAY", font))
+        if not label then return abandon() end
+        if not markerWrite(label, "SetWidth", built, 258) then return abandon() end
+        if not markerWrite(label, "SetJustifyH", built, "LEFT") then return abandon() end
         local theme = addon.Clean(addon.Theme, "table")
+        if not built() then return abandon() end
         if theme then
             if addon.Clean(theme.ApplyFont, "function") then
-                pcall(theme.ApplyFont, frame.title, 16)
-                pcall(theme.ApplyFont, frame.note, 14)
-                pcall(theme.ApplyFont, frame.label, 14)
+                pcall(theme.ApplyFont, title, 16)
+                pcall(theme.ApplyFont, note, 14)
+                pcall(theme.ApplyFont, label, 14)
             end
+            if not built() then return abandon() end
             addon.Read(theme.StyleRow, "boolean", frame, { kind = "section" })
+            if not built() then return abandon() end
         end
-        local close = CreateFrame("Button", nil, frame, "UIPanelCloseButton")
-        close:SetSize(22, 22); close:SetPoint("TOPRIGHT"); close:SetScript("OnClick", N.Stop)
-        if theme then addon.Read(theme.StyleCloseButton, "boolean", close) end
-        frame:SetScript("OnUpdate", update)
+        local closeOK, close = pcall(CreateFrame, "Button", nil, created, "UIPanelCloseButton")
+        if not built() then return abandon() end
+        close = closeOK and markerObject(close) or nil
+        if not built() then return abandon() end
+        if not close then return abandon() end
+        if not markerWrite(close, "SetSize", built, 22, 22) then return abandon() end
+        if not markerWrite(close, "SetPoint", built, "TOPRIGHT") then return abandon() end
+        if not markerWrite(close, "SetScript", built, "OnClick", N.Stop) then return abandon() end
+        if theme then
+            addon.Read(theme.StyleCloseButton, "boolean", close)
+            if not built() then return abandon() end
+        end
+        if not markerWrite(created, "SetScript", built, "OnUpdate", update) then return abandon() end
     end
     if not current() then return false end
     local combatGetter = addon.Clean(InCombatLockdown, "function")

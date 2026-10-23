@@ -29,6 +29,24 @@ local function prerequisiteSatisfied(state, mode)
         (state.status == "ACTIVE" or state.status == "READY"))
 end
 
+-- A sparse `requires` list would silently drop AND-groups under ipairs while
+-- resolving AVAILABLE (fail-open). Census the integer keys via next, mirroring
+-- the Dungeon() sparse guard and DungeonOverview.sequence, so a
+-- malformed/hand-edited catalogue fails closed. Dense arrays pass through
+-- unchanged. Side-effect-free raw integer-key census only, never addon.Clean()
+-- element walks in these ownership-sensitive paths. Sparse group.ids needs no
+-- guard: dropping OR alternatives can only hide satisfaction (LOCKED/UNKNOWN),
+-- never manufacture it.
+local function denseSequence(value)
+    local length = #value
+    local count = 0
+    for key in next, value do
+        count = count + 1
+        if type(key) ~= "number" or key % 1 ~= 0 or key < 1 or key > length then return false end
+    end
+    return count == length
+end
+
 -- Root membership is independent of readiness, level, and prerequisite progress.
 function Planner.RelevantToCharacter(eligible, status)
     return eligible ~= false or status == "ACTIVE" or status == "READY"
@@ -128,6 +146,10 @@ function Planner.New(quests, context, choices)
             self.visiting[id] = nil
             return save("UNKNOWN", "requirements")
         end
+        if type(q.requires) == "table" and not denseSequence(q.requires) then
+            self.visiting[id] = nil
+            return save("UNKNOWN", "requirements")
+        end
         for _, group in ipairs(q.requires or {}) do
             if type(group) ~= "table" or type(group.ids) ~= "table" then
                 self.visiting[id] = nil
@@ -203,6 +225,7 @@ function Planner.New(quests, context, choices)
             path[id] = true
             local actions, uncertain, seen = {}, state.status == "UNKNOWN" and q.requirementsKnown ~= true, {}
             if q.requires ~= nil and type(q.requires) ~= "table" then path[id] = nil; return publish({}, true) end
+            if type(q.requires) == "table" and not denseSequence(q.requires) then path[id] = nil; return publish({}, true) end
             for groupIndex, group in ipairs(q.requires or {}) do
                 if type(group) ~= "table" or type(group.ids) ~= "table" then path[id] = nil; return publish({}, true) end
                 local satisfied = false

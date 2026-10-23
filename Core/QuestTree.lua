@@ -93,6 +93,20 @@ function Tree.Build(quests, engine, rootID)
         sources[#sources + 1] = source
         if not quest then return source end
         local requirements = list(source, quest, "requires")
+        if requirements then
+            -- A sparse requires list would silently drop AND-groups under 1..#
+            -- while still publishing a partial hierarchy (fail-open). Census the
+            -- integer keys via next, mirroring DungeonOverview.sequence, so a
+            -- malformed/hand-edited catalogue fails closed as source. Dense
+            -- arrays pass through unchanged. Sparse group.ids needs no guard:
+            -- dropping OR alternatives can only omit nodes, never invent them.
+            local length, count = #requirements, 0
+            for key in next, requirements do
+                count = count + 1
+                if type(key) ~= "number" or key % 1 ~= 0 or key < 1 or key > length then failed = "source"; return end
+            end
+            if count ~= length then failed = "source"; return end
+        end
         for index = 1, requirements and #requirements or 0 do
             local group = keep(source, requirements, index)
             if not clean(group, "table") then failed = "source"; return end

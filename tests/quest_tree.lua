@@ -375,4 +375,18 @@ check("A callback after dynamic hierarchy preflight cannot authorize an older ra
     local function finalCallback() quests[1].storyline = {}; return true end
     assert(finalCallback() and not tree.rawCurrent())
 end)
+check("Sparse requires lists fail closed as source without throwing", function()
+    -- Group 1 names parent 2, group 2 names parent 3: dense traversal visits
+    -- both, so a sparse catalogue must never publish a partial hierarchy.
+    local sparse = { [1] = { requires = { [1] = { ids = { 2 } }, [3] = { ids = { 3 } } } }, [2] = {}, [3] = {} }
+    local holeCount = 0
+    for _ in pairs(sparse[1].requires) do holeCount = holeCount + 1 end
+    assert(holeCount == 2, "sparse fixture must carry two groups around the hole")
+    local ok, tree, reason = pcall(addon.QuestTree.Build, sparse, fixture(sparse), 1)
+    assert(ok, "sparse requires threw")
+    assert(tree == nil and reason == "source", "sparse requires must fail closed as source")
+    local dense = { [1] = { requires = { { ids = { 2 } }, { ids = { 3 } } } }, [2] = {}, [3] = {} }
+    local built = assert(addon.QuestTree.Build(dense, fixture(dense), 1))
+    assert(ids(built) == "2,3,1" and built.current(), "dense valid requires unchanged")
+end)
 print("Quest hierarchy modeled checks passed: "..total)

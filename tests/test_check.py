@@ -526,6 +526,31 @@ class VersionSyncTests(unittest.TestCase):
                 handle.write("\n## 0.2.0 - 19-Oct-2026 — Fixture history\n")
             self.assertIsNone(module.main())
 
+    def test_missing_and_undecodable_sources_fail_closed_as_system_exit_without_traceback(self):
+        # Missing/unreadable/mis-encoded TOC, Namespace or CHANGELOG must fail
+        # as a clean SystemExit ("unreadable"), never a raw OSError or
+        # UnicodeDecodeError traceback. Mirrors check_toc.py:100-103.
+        cases = [
+            ("DungeonPro.toc", None),
+            ("Core/Namespace.lua", None),
+            ("CHANGELOG.md", None),
+            ("DungeonPro.toc", b"## Version: 0.3.0\n\xff\xfe\n"),
+            ("Core/Namespace.lua", b'local name, addon = ...\naddon.version = "0.3.0"\n\xff\n'),
+            ("CHANGELOG.md", b"# Changelog\n\n## 0.3.0 - 20-Oct-2026\n\xff\n"),
+        ]
+        for name, bad_bytes in cases:
+            with self.subTest(name=name, missing=bad_bytes is None), tempfile.TemporaryDirectory(
+                    prefix="quest version unreadable ") as folder:
+                root = Path(folder)
+                module = self.fixture(root)
+                target = root / name
+                if bad_bytes is None:
+                    target.unlink()
+                else:
+                    target.write_bytes(bad_bytes)
+                with self.assertRaisesRegex(SystemExit, "unreadable"):
+                    module.main()
+
     def test_real_tree_versions_are_synchronized(self):
         spec = importlib.util.spec_from_file_location(
             "check_version_real_tree", RUNNER.parent / "check_version.py")
