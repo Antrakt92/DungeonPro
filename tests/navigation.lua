@@ -1661,4 +1661,22 @@ check("Context map bound rejects zero and fractional without native reads", func
         assert(card.note.text == "Recorded giver · Recorded zone", "mapID " .. tostring(bad))
     end
 end)
+check("Hostile non-table namespaces never throw and never claim native ownership", function()
+    for _, hostile in ipairs({ 42, true, "hostile", function() end }) do
+        reset()
+        TomTom, C_Map, UiMapPoint, C_SuperTrack = hostile, hostile, hostile, hostile
+        local ok, started = pcall(nav.Start, action)
+        assert(ok and started, "hostile namespace must not throw or cancel the guide")
+        nav.Stop(); assert(clears == 0 and nativeCalls == 0)
+    end
+end)
+check("Hostile map namespace keeps a TomTom-owned guide without native claims", function()
+    TomTom = tomtom({ AddWaypoint = function(self, map, x, y, options)
+        return { dungeonProOwner = options.dungeonProOwner }
+    end })
+    C_Map, UiMapPoint = 42, 42
+    local ok, started = pcall(nav.Start, action)
+    assert(ok and started and nativeCalls == 0)
+    nav.Stop()
+end)
 print("Navigation modeled checks passed: " .. total .. " (no native map validation)")

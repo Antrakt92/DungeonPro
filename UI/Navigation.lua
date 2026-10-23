@@ -682,7 +682,7 @@ local function context(action, generation)
     local zone, npc = addon.Clean(place.zoneName, "string"), addon.Clean(place.npcID, "number")
     local x, y, objectID = addon.Clean(place.x, "number"), addon.Clean(place.y, "number"), addon.Clean(place.objectID, "number")
     local library, checker, localeGetter = C_Map, issecretvalue, GetLocale
-    local mapGetter = library and addon.Clean(library.GetMapInfo, "function")
+    local mapGetter = type(library) == "table" and addon.Clean(library.GetMapInfo, "function")
     local giverGetter, questGetter = addon.Clean(addon.GiverName, "function"), addon.Clean(addon.QuestName, "function")
     local sourceGetter, sourceProof = addon.SourceName, nil
     local areaGetter, areaProof = addon.SourceAreaName, nil
@@ -705,7 +705,7 @@ local function context(action, generation)
             addon.Clean(place.name, "string") == name and addon.Clean(place.zoneName, "string") == zone and
             addon.Clean(place.npcID, "number") == npc and addon.Clean(place.x, "number") == x and
             addon.Clean(place.y, "number") == y and addon.Clean(place.objectID, "number") == objectID and C_Map == library and issecretvalue == checker and
-            GetLocale == localeGetter and (not library or addon.Clean(library.GetMapInfo, "function") == mapGetter) and
+            GetLocale == localeGetter and (type(library) ~= "table" or addon.Clean(library.GetMapInfo, "function") == mapGetter) and
             addon.Clean(addon.GiverName, "function") == giverGetter and addon.Clean(addon.QuestName, "function") == questGetter and
             addon.Clean(addon.db, "table") == database and (not database or addon.Clean(database.locale, "string") == choice) and
             (not sourceProof or addon.Read(sourceProof, "boolean") == true) and addon.SourceName == sourceGetter and
@@ -951,7 +951,7 @@ function N.Start(action, markerRole, ownerCurrent)
         return false
     end
     if not current() then return false end
-    if owner and type(owner.AddWaypoint) == "function" then
+    if type(owner) == "table" and type(owner.AddWaypoint) == "function" then
         local add, exists, remove, checker = owner.AddWaypoint, addon.Clean(owner.WaypointExists, "function"),
             addon.Clean(owner.RemoveWaypoint, "function"), issecretvalue
         local mapID, pointX, pointY = addon.Clean(p.mapID, "number"), addon.Clean(p.x, "number"), addon.Clean(p.y, "number")
@@ -982,7 +982,7 @@ function N.Start(action, markerRole, ownerCurrent)
             if created then tomtomOwner, tomtomUID, tomtomRemoval = owner, valid, remove end
         end
     end
-    if not tomtomUID and N.Valid(p) and C_Map and type(C_Map.SetUserWaypoint) == "function" and UiMapPoint and
+    if not tomtomUID and N.Valid(p) and type(C_Map) == "table" and type(C_Map.SetUserWaypoint) == "function" and type(UiMapPoint) == "table" and
         type(UiMapPoint.CreateFromCoordinates) == "function" then
         local mapOwner, factory, checker = C_Map, UiMapPoint, issecretvalue
         local clean, read = addon.Clean, addon.Read
@@ -1039,7 +1039,7 @@ function N.Start(action, markerRole, ownerCurrent)
                         owned = false
                     end
                     if owned then nativePoint, pendingNativeCleanup = pin, nil end
-                    if owned and C_SuperTrack and C_SuperTrack.SetSuperTrackedUserWaypoint then
+                    if owned and type(C_SuperTrack) == "table" and C_SuperTrack.SetSuperTrackedUserWaypoint then
                         pcall(C_SuperTrack.SetSuperTrackedUserWaypoint, true)
                         if not current() then return false end
                     end
