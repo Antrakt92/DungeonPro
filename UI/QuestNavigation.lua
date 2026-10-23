@@ -571,8 +571,15 @@ function UI:StarterAcquisitionHint(definition, ownerCurrent)
         local npc,object=id(rawget(point,"npcID")),id(rawget(point,"objectID"))
         if rawget(point,"itemID")~=nil or(container and(not object or rawget(point,"npcID")~=nil)or not container and(not npc or rawget(point,"objectID")~=nil))then return valid()end
         local name=call(sourceName,point,current)or(not container and call(npcName,point))or clean(rawget(point,"name"),"string")
-        local canonical=clean(rawget(point,"zoneName"),"string")or clean(rawget(point,"locationName"),"string")
-        local zone=ownedZone or(canonical and(call(areaName,canonical,current)or canonical))or dungeonLabel(clean(rawget(point,"dungeonKey"),"string"))
+        local canonicalZone=clean(rawget(point,"zoneName"),"string")
+        if canonicalZone and(#canonicalZone>500 or not canonicalZone:find("%S"))then canonicalZone=nil end
+        local fallbackZone=clean(rawget(point,"locationName"),"string")
+        if fallbackZone and(#fallbackZone>500 or not fallbackZone:find("%S"))then fallbackZone=nil end
+        local canonical=canonicalZone or fallbackZone
+        local area=canonical and call(areaName,canonical,current)
+        if area and(#area>500 or not area:find("%S"))then area=nil end
+        local zone=ownedZone or area or canonical or dungeonLabel(clean(rawget(point,"dungeonKey"),"string"))
+        if zone and(#zone>500 or not zone:find("%S"))then zone=nil end
         if not name or not name:find("%S")or #name>1024 or not valid()then return valid()end
         zone=zone or call(localize,"UNKNOWN_PLACE")
         if not zone then return false end
@@ -655,8 +662,9 @@ function UI:QuestRowNavigationHint(row, binding)
         if not text or #text > 1024 or not text:find("%S") then text = addon.Clean(rawget(point, "name"), "string") end
         if not text or #text > 1024 or not text:find("%S") then text = addon.Read(localize, "string", "UNKNOWN_PLACE") end
         local canonical = addon.Clean(rawget(point, "zoneName"), "string")
+        if canonical and (#canonical > 500 or not canonical:find("%S")) then canonical = nil end
         local zone
-        if type(areaGetter) == "function" then
+        if canonical and type(areaGetter) == "function" then
             local ok, label, proof = pcall(areaGetter, canonical, current)
             if not current() then return end
             proof = addon.Clean(proof, "function")
@@ -665,14 +673,18 @@ function UI:QuestRowNavigationHint(row, binding)
                 areaProof = proof
             end
             if ok then zone = addon.Clean(label, "string") end
+            if zone and (#zone > 500 or not zone:find("%S")) then zone = nil end
         end
-        zone = zone or canonical or addon.Clean(rawget(point, "locationName"), "string")
+        local fallbackZone = addon.Clean(rawget(point, "locationName"), "string")
+        if fallbackZone and (#fallbackZone > 500 or not fallbackZone:find("%S")) then fallbackZone = nil end
+        zone = zone or canonical or fallbackZone
         if not zone then
             local info = addon.Read(mapGetter, "table", binding.map)
             if not current() then return end
             zone = info and addon.Clean(rawget(info, "name"), "string")
+            if zone and (#zone > 500 or not zone:find("%S")) then zone = nil end
         end
-        if text and zone then text = text .. " — " .. zone end
+        if text and zone and zone:find("%S") then text = text .. " — " .. zone end
         if text and not binding.mapOnly then text = text .. string.format(" (%.1f, %.1f)", binding.x, binding.y) end
     end
     if binding.inspect and binding.reason=="START_ITEM_NAVIGATION"and type(acquisitionGetter)=="function"then
@@ -968,7 +980,12 @@ function UI:CatalogEntranceHint(row)
     local point = binding and binding.current() and binding.point
     if not current() then return end
     if point then
-        local zone = addon.Clean(point.zoneName, "string") or addon.Clean(point.name, "string")
+        local zone = addon.Clean(point.zoneName, "string")
+        if zone and (#zone > 500 or not zone:find("%S")) then zone = nil end
+        if not zone then
+            zone = addon.Clean(point.name, "string")
+            if zone and (#zone > 500 or not zone:find("%S")) then zone = nil end
+        end
         if zone then text = text .. "\n" .. zone end
         local x, y = addon.Clean(point.x, "number"), addon.Clean(point.y, "number")
         if not x or not y or x < 0 or x > 100 or y < 0 or y > 100 or not binding.current() or not current() then return end

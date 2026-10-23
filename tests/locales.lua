@@ -31,6 +31,19 @@ addon.db.locale = "esMX"
 assert(addon.L("NEXT") == addon.locales.esES.NEXT)
 addon.db.locale = "enGB"
 assert(addon.L("NEXT") == addon.locales.enUS.NEXT)
+-- Fail-closed: hostile or missing GetLocale never throws; auto falls back to enUS.
+addon.db.locale = "auto"
+local savedGetLocale = GetLocale
+GetLocale = nil
+assert(addon.L("NEXT") == addon.locales.enUS.NEXT)
+GetLocale = "hostile"
+assert(addon.L("NEXT") == addon.locales.enUS.NEXT)
+GetLocale = function() error("hostile GetLocale") end
+assert(addon.L("NEXT") == addon.locales.enUS.NEXT)
+GetLocale = function() return nil end
+assert(addon.L("NEXT") == addon.locales.enUS.NEXT)
+GetLocale = savedGetLocale
+assert(addon.L("NEXT") == addon.locales.enUS.NEXT)
 -- Reverse coverage: keys present in any locale but absent from enUS are dead
 -- (or untranslated-new) and fail closed. Live exceptions belong in
 -- LOCALE_EXTRA_ALLOW with a one-line reason each; empty is preferred.

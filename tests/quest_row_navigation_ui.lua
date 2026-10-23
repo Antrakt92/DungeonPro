@@ -1521,4 +1521,115 @@ do
  addon.quests[990101].start=savedStart
  ui.search="";ui.questTreeRoot=nil;ui.questTreeDungeon=nil;ui.quest=990104;ui.frame:Show();ui:Refresh()
 end
+-- A18 ROW-HINT-ZONE-CAPS: QuestRowNavigationHint mirrors the A17 500-char
+-- giver-tooltip caps; overlong or blank zone sources never reach the row hint.
+do
+ local savedStart=addon.quests[990101].start
+ local savedArea=addon.SourceAreaName
+ local savedMap=C_Map
+ local function rowTip()
+  ui.search="";ui.questTreeRoot=nil;ui.questTreeDungeon=nil;ui.dungeon=dungeon;ui.quest=990104;ui.frame:Show();ui:Refresh()
+  tip.shown=false;tip.owner=nil;tip.title=nil;tip.body=nil
+  local target=row(990101)
+  local ok,err=pcall(target.navigationControl.scripts.OnEnter)
+  assert(ok,"row hint threw: "..tostring(err))
+  assert(tip.shown and tip.owner==target.navigationControl and tip.body,"row hint stays owned without a crash")
+  return tip.body
+ end
+ addon.SourceAreaName=function(canonical,owner) if owner and not owner() then return nil end; return canonical end
+ addon.quests[990101].start={npcID=1,name="Own distant giver",mapID=1453,x=10,y=20,zoneName="   ",locationName="Short vale"}
+ C_Map=nil
+ local body=rowTip()
+ assert(body:find("Own distant giver",1,true),"blank canonical keeps the giver name")
+ assert(body:find("Short vale",1,true),"blank canonical falls back to the recorded location")
+ addon.quests[990101].start={npcID=1,name="Own distant giver",mapID=1453,x=10,y=20,zoneName=("z"):rep(501),locationName=("l"):rep(501)}
+ C_Map=nil
+ body=rowTip()
+ assert(body:find("Own distant giver",1,true),"overlong zone keeps the giver name")
+ assert(not body:find(("z"):rep(100),1,true),"overlong canonical stays unpainted")
+ assert(not body:find(("l"):rep(100),1,true),"overlong location stays unpainted")
+ addon.SourceAreaName=function(canonical,owner) if owner and not owner() then return nil end; return ("n"):rep(501) end
+ addon.quests[990101].start={npcID=1,name="Own distant giver",mapID=1453,x=10,y=20,zoneName="Stormwind City"}
+ C_Map=nil
+ body=rowTip()
+ assert(not body:find(("n"):rep(100),1,true),"overlong area label stays unpainted")
+ assert(body:find("Stormwind City",1,true),"overlong area label falls back to the catalogue zone")
+ addon.SourceAreaName=function(canonical,owner) if owner and not owner() then return nil end; return nil end
+ addon.quests[990101].start={npcID=1,name="Own distant giver",mapID=1453,x=10,y=20}
+ C_Map={GetMapInfo=function(id) assert(id==1453); return {name=("m"):rep(501)} end}
+ body=rowTip()
+ assert(body:find("Own distant giver",1,true),"overlong native keeps the giver name")
+ assert(not body:find(("m"):rep(100),1,true),"overlong native zone stays unpainted")
+ addon.SourceAreaName=savedArea
+ C_Map={GetMapInfo=function(id) assert(id==1453); return {name="Stormwind City"} end}
+ addon.quests[990101].start={npcID=1,name="Own distant giver",mapID=1453,x=10,y=20,zoneName="Stormwind City"}
+ body=rowTip()
+ assert(body:find("Stormwind City",1,true),"valid zone keeps its row-hint place")
+ addon.quests[990101].start=savedStart
+ C_Map=savedMap
+ ui.search="";ui.questTreeRoot=nil;ui.questTreeDungeon=nil;ui.quest=990104;ui.frame:Show();ui:Refresh()
+end
+-- A18 ACQUISITION-ZONE-CAPS: StarterAcquisitionHint drop zones mirror the
+-- A17 500-char giver-tooltip caps; overlong or blank zone sources fall back
+-- to the recorded location or UNKNOWN_PLACE instead of painting.
+do
+ local savedSource,savedArea=addon.SourceName,addon.SourceAreaName
+ local function linesWith(start)
+  addon.quests[990801]={id=990801,name="Acquisition bound quest",minLevel=1,requirementsKnown=true,start=start}
+  local ok,result=pcall(ui.StarterAcquisitionHint,ui,addon.quests[990801],function()return true end)
+  assert(ok,"acquisition hint threw: "..tostring(result))
+  assert(result and result.lines,"acquisition hint stays available without a crash")
+  return table.concat(result.lines,"\n")
+ end
+ addon.SourceName=function(point,owner) if owner and not owner() then return nil end; return point.name end
+ addon.SourceAreaName=function(canonical,owner) if owner and not owner() then return nil end; return canonical end
+ local over=linesWith({itemID=801,name="Bound starter",dropSources={{npcID=9,name="Dropper",zoneName=("z"):rep(501)}}})
+ assert(not over:find(("z"):rep(100),1,true),"overlong drop zone stays unpainted")
+ assert(over:find(addon.L("UNKNOWN_PLACE"),1,true),"overlong drop zone falls back to unknown place")
+ local blank=linesWith({itemID=801,name="Bound starter",dropSources={{npcID=9,name="Dropper",zoneName="   ",locationName="Short vale"}}})
+ assert(blank:find("Short vale",1,true),"blank drop zone falls back to the recorded location")
+ addon.SourceAreaName=function(canonical,owner) if owner and not owner() then return nil end; return ("n"):rep(501) end
+ local native=linesWith({itemID=801,name="Bound starter",dropSources={{npcID=9,name="Dropper",zoneName="Plain vale"}}})
+ assert(not native:find(("n"):rep(100),1,true),"overlong area label stays unpainted")
+ assert(native:find("Plain vale",1,true),"overlong area label falls back to the catalogue zone")
+ addon.SourceAreaName=function(canonical,owner) if owner and not owner() then return nil end; return canonical end
+ local valid=linesWith({itemID=801,name="Bound starter",dropSources={{npcID=9,name="Dropper",zoneName="Plain vale"}}})
+ assert(valid:find("Plain vale",1,true),"valid drop zone keeps its acquisition place")
+ addon.SourceName,addon.SourceAreaName=savedSource,savedArea
+ addon.quests[990801]=nil
+end
+-- A18 ENTRANCE-ZONE-BLANK-GUARD: a blank or overlong catalogue entrance
+-- zone falls back to the recorded point name instead of painting an empty or
+-- unbounded line; upstream producers already bound names at 500 chars.
+do
+ local savedEntrances=addon.Entrances
+ local savedQuest=ui.quest
+ local function entranceBody(point)
+  addon.Entrances={Get=function(d)
+   if d~=dungeon then return nil end
+   return point,function()return true end
+  end}
+  ui.search="";ui.questTreeRoot=nil;ui.questTreeDungeon=nil;ui.quest=nil;ui.frame:Show();ui:RefreshDungeons()
+  local card
+  for _,c in ipairs(ui.cards)do if c:IsShown() and c.entranceDungeon==dungeon then card=c end end
+  assert(card and card.entranceBinding,"catalogue card keeps its entrance binding")
+  tip.shown=false;tip.owner=nil;tip.title=nil;tip.body=nil
+  local ok,err=pcall(ui.CatalogEntranceHint,ui,card)
+  assert(ok,"entrance hint threw: "..tostring(err))
+  assert(tip.shown and tip.body,"entrance hint stays owned without a crash")
+  return tip.body
+ end
+ local body=entranceBody({mapID=1453,x=30,y=40,zoneName="   ",name="Stone vault mouth"})
+ assert(body:find("Stone vault mouth",1,true),"blank entrance zone falls back to the recorded point name")
+ body=entranceBody({mapID=1453,x=30,y=40,zoneName="   ",name="   "})
+ assert(not body:find("\n",1,true),"blank entrance zone and name paint no empty line")
+ body=entranceBody({mapID=1453,x=30,y=40,zoneName=("z"):rep(501),name="Stone vault mouth"})
+ assert(body:find("Stone vault mouth",1,true),"overlong entrance zone falls back to the recorded point name")
+ assert(not body:find(("z"):rep(100),1,true),"overlong entrance zone paints no unbounded line")
+ body=entranceBody({mapID=1453,x=30,y=40,zoneName="Ember vault",name="Stone vault mouth"})
+ assert(body:find("Ember vault",1,true),"valid entrance zone keeps its catalogue place")
+ addon.Entrances=savedEntrances
+ ui.quest=savedQuest
+ ui.search="";ui.questTreeRoot=nil;ui.questTreeDungeon=nil;ui.frame:Show();ui:Refresh()
+end
 print("Middle quest navigation checks passed (modeled, no native input or layout proof)")

@@ -213,7 +213,14 @@ function addon.L(key, ...)
     local language = addon.Clean and addon.Clean(addon.Language, "table")
     local preview = language and addon.Read(language.GetSelection, "string", language)
     if preview then locale = preview end
-    if locale == "auto" then locale = GetLocale() end
+    if locale == "auto" then
+        if type(GetLocale) == "function" then
+            local ok, detected = pcall(GetLocale)
+            if ok and type(detected) == "string" then locale = detected else locale = "enUS" end
+        else
+            locale = "enUS"
+        end
+    end
     if locale == "enGB" then locale = "enUS" end
     if locale == "esMX" then locale = "esES" end
     local text = (strings[locale] or strings.enUS)[key] or strings.enUS[key] or key
