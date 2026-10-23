@@ -2727,7 +2727,7 @@ function UI:RefreshQuests()
                     note = addon.L("level") .. (guardedMinimum and (" " .. guardedMinimum) or "")
                 end
                 if not current() then return end
-                note = "|cff" .. COLOR[state.status] .. statusLabel(state, note) .. "|r"
+                note = "|cff" .. (COLOR[state.status] or COLOR.UNKNOWN) .. statusLabel(state, note) .. "|r"
                 if entry.tree and not entry.tree.root then
                     if entry.tree.requirementScope == "story" then
                         local parentName = addon.Read(addon.QuestName, "string", entry.tree.parentID)
@@ -6076,7 +6076,7 @@ function UI:RefreshDetail(sourceFocus)
         pendingAction = action
         if detailTab == "quest" then
         if (state.status == "ACTIVE" or state.status == "READY" or state.status == "COMPLETED" or state.status == "AVAILABLE") then
-            if line("|cff" .. COLOR[state.status] .. statusLabel(state) .. "|r", nil, nil, nil, portraitCardCurrent) == false then return end
+            if line("|cff" .. (COLOR[state.status] or COLOR.UNKNOWN) .. statusLabel(state) .. "|r", nil, nil, nil, portraitCardCurrent) == false then return end
         end
         if state.reason and state.reason ~= "level" then
             local key = state.reason == "requirements" and state.status == "UNKNOWN" and "REASON_requirementsUnknown" or "REASON_" .. state.reason
@@ -6822,7 +6822,7 @@ function UI:RefreshDetail(sourceFocus)
                 local other, itemID = addon.Clean(entry.id,"number"), addon.Clean(entry.itemID,"number")
                 local state = addon.Clean(entry.state,"table")
                 local status = state and addon.Clean(state.status,"string")
-                if not other or other <= 0 or other % 1 ~= 0 or not itemID or itemID <= 0 or itemID % 1 ~= 0 or not COLOR[status] then return end
+                if not other or other <= 0 or other % 1 ~= 0 or not itemID or itemID <= 0 or itemID % 1 ~= 0 or not state or not status then return end
                 local relation = false
                 for _, source in ipairs(materialSnapshots) do if source.questID == other and source.item == itemID then relation = true; break end end
                 if not relation then return end
@@ -6838,7 +6838,7 @@ function UI:RefreshDetail(sourceFocus)
                 if not entryCurrent() then return end
                 local itemName = addon.Read(itemGetter, "string", itemID) or addon.L("MATERIAL_ITEM", itemID)
                 if not entryCurrent() then return end
-                local note = "|cff" .. COLOR[status] .. statusLabel(state) .. "|r\n" .. itemName ..
+                local note = "|cff" .. (COLOR[status] or COLOR.UNKNOWN) .. statusLabel(state) .. "|r\n" .. itemName ..
                     (addon.Clean(rawUnknown,"boolean") == true and status ~= "UNKNOWN" and (" — " .. addon.L("UNKNOWN")) or "") ..
                     (count and ("\n" .. count) or "")
                 if line(title,"caption",nil,nil,entryCurrent)==false or line(note,nil,nil,nil,entryCurrent)==false then return end
@@ -7203,10 +7203,20 @@ function UI:Create()
     search:SetSize(330, 26); search:SetPoint("TOPRIGHT", -190, -14); search:SetAutoFocus(false)
     self.searchBox = search
     if type(search.SetTextInsets) == "function" then search:SetTextInsets(28, 30, 0, 0) end
+    if addon.Clean(search.SetMaxLetters, "function") then pcall(search.SetMaxLetters, search, 1024) end
     setInputFont(search)
     self.searchPlaceholder = label(search, "", 28, -6, 268, 13)
     search:SetScript("OnTextChanged", function(b, userInput)
-        self.search = addon.Read(b.GetText, "string", b) or ""
+        local text = addon.Read(b.GetText, "string", b) or ""
+        if #text > 1024 then
+            -- Truncate a kilobyte paste at the 1024-char slash-input
+            -- budget instead of dropping it: the repair write reenters
+            -- once capped, while the fixture (no native reentry) falls
+            -- through to the capped path below.
+            text = text:sub(1, 1024)
+            pcall(b.SetText, b, text)
+        end
+        self.search = text
         if self.searchPlaceholder then self.searchPlaceholder:SetShown(self.search == "") end
         if self.clearSearch then self.clearSearch:SetEnabled(self.search ~= "") end
         if addon.Clean(userInput, "boolean") == true then self:QueueSearch() else self:RefreshDungeons() end

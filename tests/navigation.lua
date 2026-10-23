@@ -1694,4 +1694,46 @@ check("Hostile __eq metamethods never decide TomTom ownership", function()
     assert(started, "guide must start via native fallback")
     nav.Stop()
 end)
+check("Non-table navigation actions fail closed without throwing", function()
+    for _, bad in ipairs({ 5, "visit", true }) do
+        local ok, started = pcall(nav.Start, bad)
+        assert(ok and started == false, "Start must fail closed for " .. tostring(bad))
+    end
+    local ok, started = pcall(nav.Start, nil)
+    assert(ok and started == false)
+    assert(nativeCalls == 0)
+end)
+check("Throwing guide painters cannot escape the tick", function()
+    local cases = {
+        { region = "title", setter = "SetText" },
+        { region = "note", setter = "SetText" },
+        { region = "label", setter = "SetText" },
+        { region = "note", setter = "ClearAllPoints" },
+        { region = "note", setter = "SetPoint" },
+        { region = "label", setter = "SetPoint" },
+        { region = "frame", setter = "SetHeight" },
+    }
+    for _, case in ipairs(cases) do
+        reset()
+        assert(nav.Start(action))
+        local card = hud()
+        local region = case.region == "frame" and card or card[case.region]
+        region[case.setter] = function() error("painter unavailable") end
+        local ok = pcall(card.scripts.OnUpdate, card, 0.2)
+        region[case.setter] = nil
+        assert(ok, case.region .. "." .. case.setter .. " must not escape the guide tick")
+        card.scripts.OnUpdate(card, 0.2)
+        assert(card.shown and card.title.text == "Quest", case.region .. "." .. case.setter .. " recovers")
+        nav.Stop()
+    end
+end)
+check("Quest detail dispatch rejects non-table actions without throwing", function()
+    assert(loadfile("UI/QuestNavigation.lua"))("DungeonPro", addon)
+    local ui = addon.QuestNavigation
+    local saved = ui.frame
+    ui.frame = object()
+    local ok, result = pcall(ui.DispatchDetail, ui, 5)
+    ui.frame = saved
+    assert(ok and result == false, "DispatchDetail must fail closed for a non-table action")
+end)
 print("Navigation modeled checks passed: " .. total .. " (no native map validation)")

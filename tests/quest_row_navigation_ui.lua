@@ -2287,4 +2287,58 @@ do
  ui.dungeon, ui.quest = savedDungeon, savedQuest
  ui.search = ""; ui.questTreeRoot = nil; ui.questTreeDungeon = nil; ui.frame:Show(); ui:Refresh()
 end
+-- A27 STATUS-COLOR-FALLBACK: an engine state with an unknown status paints
+-- the UNKNOWN color instead of throwing on a nil COLOR lookup (:2730).
+do
+ local savedNew, savedSearch = addon.Planner.New, ui.search
+ addon.Planner.New = function(...)
+  local engine = savedNew(...)
+  local realState = engine.State
+  engine.State = function(self, id, ...)
+   local state = realState(self, id, ...)
+   if id == 990101 and type(state) == "table" then return { status = "BOGUS", reason = state.reason } end
+   return state
+  end
+  return engine
+ end
+ local ok, err = pcall(function() ui:Refresh() end)
+ addon.Planner.New = savedNew
+ assert(ok, "unknown quest status threw in Refresh: " .. tostring(err))
+ local painted = false
+ for _, r in ipairs(ui.rows) do
+  if r:IsShown() and r.questID == 990101 and r.note and r.note.text then
+   assert(r.note.text:find("b4aacd", 1, true), "unknown status keeps the UNKNOWN color: " .. r.note.text:sub(1, 80))
+   painted = true
+  end
+ end
+ assert(painted, "bogus-status row painted no note")
+ ui.search = savedSearch; ui:Refresh()
+end
+-- A27 SEARCH-INPUT-CAP: a kilobyte paste truncates to the 1024-char
+-- slash-input budget at the box instead of persisting a long key, so the
+-- painted view.query stays capped before the (#query) note; a direct
+-- overlong assignment stays bounded and ordinary search keeps working.
+do
+ local savedSearch, savedRange, savedDungeon, savedQuest = ui.search, ui.range, ui.dungeon, ui.quest
+ local box = assert(ui.searchBox, "search box missing")
+ ui.dungeon, ui.quest = dungeon, 990101
+ ui.frame:Show()
+ box:SetText(("x"):rep(5000))
+ local ok, err = pcall(box.scripts.OnTextChanged, box, true)
+ assert(ok, "overlong paste threw in OnTextChanged: " .. tostring(err))
+ assert(#ui.search == 1024, "overlong paste keeps 1024 chars, kept " .. #ui.search)
+ assert(box:GetText() == ui.search, "box mirrors the truncated key instead of a long payload")
+ local view = ui.catalogLanguageView
+ assert(view and #view.query <= 1024, "view.query stays capped before the painted note")
+ ui.search = ("y"):rep(5000)
+ ok, err = pcall(function() ui:RefreshDungeons() end)
+ assert(ok, "direct overlong query threw in RefreshDungeons: " .. tostring(err))
+ ui.search = "990101"; ui.includeUnavailable = true; ui.range = false
+ ui:RefreshDungeons()
+ local found = false
+ for _, card in ipairs(ui.cards) do if card:IsShown() and card.matchQuestID == 990101 then found = true; break end end
+ assert(found, "ordinary numeric search still matches after the cap")
+ ui.search, ui.range, ui.dungeon, ui.quest = savedSearch, savedRange, savedDungeon, savedQuest
+ ui:RefreshDungeons()
+end
 print("Middle quest navigation checks passed (modeled, no native input or layout proof)")
