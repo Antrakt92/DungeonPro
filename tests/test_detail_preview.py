@@ -90,4 +90,19 @@ runpy.run_path('scripts/render-detail-preview.py',run_name='__main__')
 """
   r=subprocess.run([sys.executable,'-c',code,'--lua',LUA,'--overview','dm','--ready-quest','155','--ready-quest','155'],cwd=ROOT,text=True,encoding='utf-8',capture_output=True)
   self.assertNotEqual(r.returncode,0);self.assertIn('CAPTURE_READY_IDS=155\n',r.stderr);self.assertIn('EXPECTED_PIL_STOP',r.stderr)
+ def test_repeat_quest_ids_normalized(self):
+  code="""import subprocess,runpy,sys
+original_run=subprocess.run
+def run(args,*a,**kw):
+ if isinstance(args,list)and any(str(v).endswith('detail_visual.lua')for v in args):print('CAPTURE_QUEST='+str(args[2]),file=sys.stderr)
+ return original_run(args,*a,**kw)
+subprocess.run=run
+runpy.run_path('scripts/render-detail-preview.py',run_name='__main__')
+"""
+  import tempfile
+  with tempfile.TemporaryDirectory()as tmp:
+   r=subprocess.run([sys.executable,'-c',code,'--lua',LUA,'--output',tmp,'--quest','4764','--quest','4764'],cwd=ROOT,text=True,encoding='utf-8',capture_output=True)
+   self.assertEqual(r.returncode,0,(r.stdout,r.stderr))
+   lines=[line for line in r.stderr.splitlines()if line.startswith('CAPTURE_QUEST=')]
+   self.assertEqual(len(lines),4,lines);self.assertEqual(set(lines),{'CAPTURE_QUEST=4764'})
 if __name__=='__main__':unittest.main()

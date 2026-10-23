@@ -5,6 +5,12 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 
+# Generous per-call bound mirroring scripts/check.py (COMMAND_TIMEOUT_SECONDS)
+# and scripts/render-detail-preview.py (CAPTURE_TIMEOUT_SECONDS): healthy
+# git ls-files calls finish in seconds, so 600s never trips on a healthy
+# tree but a hung git child fails the gate instead of hanging it forever.
+GIT_TIMEOUT_SECONDS = 600
+
 # Live TOC enumeration shows the only non-Core/UI runtime files are
 # Locales/Strings.lua, Locales/Translations.lua, Database/Catalog.lua,
 # Database/NameTranslations.lua and Database/SearchCaseFold.lua. The scope
@@ -56,21 +62,33 @@ def _check_ui_order(entries):
 
 
 def _tracked(root):
-    out = subprocess.run(
-        ["git", "ls-files", "--", *RUNTIME_DIRS],
-        cwd=root, capture_output=True, text=True, check=True,
-    ).stdout.splitlines()
+    args = ["git", "ls-files", "--", *RUNTIME_DIRS]
+    try:
+        out = subprocess.run(
+            args,
+            cwd=root, capture_output=True, text=True, check=True,
+            timeout=GIT_TIMEOUT_SECONDS,
+        ).stdout.splitlines()
+    except subprocess.TimeoutExpired as error:
+        raise RuntimeError(
+            f"command timed out after {GIT_TIMEOUT_SECONDS}s: {list(args)!r}") from error
     return {path.replace("\\", "/") for path in out}
 
 
 def _untracked(root):
     # The real "forgot to git-add" hole: files on disk but not yet tracked.
     # The pathspec keeps unrelated WIP elsewhere in the tree out of scope.
-    out = subprocess.run(
-        ["git", "ls-files", "--others", "--exclude-standard",
-         "--", *RUNTIME_DIRS],
-        cwd=root, capture_output=True, text=True, check=True,
-    ).stdout.splitlines()
+    args = ["git", "ls-files", "--others", "--exclude-standard",
+            "--", *RUNTIME_DIRS]
+    try:
+        out = subprocess.run(
+            args,
+            cwd=root, capture_output=True, text=True, check=True,
+            timeout=GIT_TIMEOUT_SECONDS,
+        ).stdout.splitlines()
+    except subprocess.TimeoutExpired as error:
+        raise RuntimeError(
+            f"command timed out after {GIT_TIMEOUT_SECONDS}s: {list(args)!r}") from error
     return {path.replace("\\", "/") for path in out}
 
 

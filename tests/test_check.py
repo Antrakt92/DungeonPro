@@ -334,6 +334,62 @@ class TocParityTests(unittest.TestCase):
             with self.assertRaisesRegex(SystemExit, "(?i)order"):
                 module.main()
 
+    def test_tracked_git_timeout_fails_closed_naming_command_without_hang(self):
+        # git ls-files must carry the same 600s per-call bound as
+        # scripts/check.py and scripts/render-detail-preview.py: a hung git
+        # child fails the gate instead of hanging it forever. The timeout is
+        # never waited out here: subprocess.run is mocked to raise
+        # TimeoutExpired immediately.
+        with tempfile.TemporaryDirectory(prefix="quest toc timeout ") as folder:
+            module = self.fixture(Path(folder), ["Core/A.lua"], ["Core/A.lua"])
+            args = ["git", "ls-files", "--", *module.RUNTIME_DIRS]
+            expired = subprocess.TimeoutExpired(args, module.GIT_TIMEOUT_SECONDS)
+            started = time.monotonic()
+            with mock.patch.object(module.subprocess, "run", side_effect=expired):
+                with self.assertRaisesRegex(RuntimeError, r"git.*ls-files"):
+                    module._tracked(Path(folder))
+            self.assertLess(time.monotonic() - started, 30,
+                            "mocked expiry must not wait out the real timeout")
+
+    def test_untracked_git_timeout_fails_closed_naming_command_without_hang(self):
+        with tempfile.TemporaryDirectory(prefix="quest toc untracked timeout ") as folder:
+            module = self.fixture(Path(folder), ["Core/A.lua"], ["Core/A.lua"])
+            args = ["git", "ls-files", "--others", "--exclude-standard",
+                    "--", *module.RUNTIME_DIRS]
+            expired = subprocess.TimeoutExpired(args, module.GIT_TIMEOUT_SECONDS)
+            started = time.monotonic()
+            with mock.patch.object(module.subprocess, "run", side_effect=expired):
+                with self.assertRaisesRegex(RuntimeError, r"git.*ls-files"):
+                    module._untracked(Path(folder))
+            self.assertLess(time.monotonic() - started, 30,
+                            "mocked expiry must not wait out the real timeout")
+
+    def test_tracked_git_call_passes_bounded_timeout_to_subprocess(self):
+        with tempfile.TemporaryDirectory(prefix="quest toc timeout kwarg ") as folder:
+            module = self.fixture(Path(folder), ["Core/A.lua"], ["Core/A.lua"])
+            seen = {}
+
+            def fake_run(*args, **kwargs):
+                seen.update(kwargs)
+                return subprocess.CompletedProcess(args, 0, "Core/A.lua\n")
+
+            with mock.patch.object(module.subprocess, "run", side_effect=fake_run):
+                module._tracked(Path(folder))
+            self.assertEqual(seen.get("timeout"), module.GIT_TIMEOUT_SECONDS)
+
+    def test_untracked_git_call_passes_bounded_timeout_to_subprocess(self):
+        with tempfile.TemporaryDirectory(prefix="quest toc untracked kwarg ") as folder:
+            module = self.fixture(Path(folder), ["Core/A.lua"], ["Core/A.lua"])
+            seen = {}
+
+            def fake_run(*args, **kwargs):
+                seen.update(kwargs)
+                return subprocess.CompletedProcess(args, 0, "")
+
+            with mock.patch.object(module.subprocess, "run", side_effect=fake_run):
+                module._untracked(Path(folder))
+            self.assertEqual(seen.get("timeout"), module.GIT_TIMEOUT_SECONDS)
+
 
 class VersionSyncTests(unittest.TestCase):
     def fixture(self, root, toc="0.3.0", namespace="0.3.0", changelog="0.3.0"):

@@ -193,6 +193,8 @@ def main() -> None:
     if args.quest and any(q <= 0 or q > 4294967295 for q in args.quest):
         parser.error("--quest IDs must be positive uint32 values")
     args.ready_quest = list(dict.fromkeys(args.ready_quest))
+    if args.quest:
+        args.quest = list(dict.fromkeys(args.quest))
     if not args.lua:
         parser.error("Lua 5.1 is required; pass --lua with the existing executable")
     first_overview = None
