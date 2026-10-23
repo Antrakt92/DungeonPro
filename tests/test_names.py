@@ -329,6 +329,35 @@ class NamesTests(unittest.TestCase):
                 names.merge(data, catalog, supplement)
         with self.assertRaises(ValueError):
             names.validate_supplement(supplement, catalog, {"itIT"})
+    def test_hostile_catalogue_shapes_fail_closed_as_value_error(self):
+        data, catalog = fixture()
+        supplement = authored_fixture(data, catalog)
+        sparse_sources = dict(source_fixture(), locales={})
+        empty_areas = dict(area_fixture(), sources={}, locales={})
+        calls = (
+            lambda c: names.validate(data, c),
+            lambda c: names.validate_sources(sparse_sources, c),
+            lambda c: names.validate_areas(empty_areas, c),
+            lambda c: names.validate_supplement(supplement, c),
+        )
+        for call in calls:
+            self.assertIsNotNone(call(copy.deepcopy(catalog)))
+        hostile = [
+            [], None, "x", 123, {},
+            {"quests": {}, "dungeons": []},
+            {"quests": [], "dungeons": {}},
+            {"quests": [{}], "dungeons": []},
+            {"quests": [], "dungeons": [{}]},
+            {"quests": [123], "dungeons": []},
+            {"quests": [], "dungeons": [123]},
+            {"quests": [{"id": 166}], "dungeons": [{"key": "dm", "name": "The Deadmines"}]},
+            {"quests": [{"id": 166, "name": "The Defias Brotherhood"}], "dungeons": [{"key": "dm"}]},
+        ]
+        for bad in hostile:
+            for index, call in enumerate(calls):
+                with self.subTest(catalog=repr(bad), validator=index), self.assertRaises(ValueError):
+                    call(copy.deepcopy(bad))
+
     def test_exact_id_source_and_primary_locale_url(self):
         data, catalog = fixture()
         self.assertIs(names.validate(data, catalog), data)

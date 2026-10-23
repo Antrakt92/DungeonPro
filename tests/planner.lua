@@ -979,4 +979,32 @@ check("Partial table contexts without log probes fail closed as unknown characte
     eq(linkedSteps[1].unknown, true)
     eq(P.New(quests, ctx()):State(1).status, "AVAILABLE")
 end)
+check("Truthy non-function ready values fail closed as unknown character without throwing", function()
+    local quests = { [1] = q(1) }
+    for _, bad in ipairs({ true, {}, "yes", 5 }) do
+        local c = ctx({}, { [1] = true }); c.ready = bad
+        local engine = P.New(quests, c)
+        local okState, state = pcall(function() return engine:State(1) end)
+        assert(okState, "State with truthy non-function ready threw")
+        eq(state.status, "UNKNOWN"); eq(state.reason, "character")
+        local okNext, actions, unknown = pcall(function() return engine:Next(1) end)
+        assert(okNext, "Next with truthy non-function ready threw")
+        eq(#actions, 0); eq(unknown, true)
+    end
+    -- Nil/false ready stay optional: a valid active quest falls to the ACTIVE path.
+    for _, ready in ipairs({ nil, false }) do
+        local c = ctx({}, { [1] = true }); c.ready = ready
+        local engine = P.New(quests, c)
+        local state = engine:State(1)
+        eq(state.status, "ACTIVE")
+        local actions, unknown = engine:Next(1)
+        eq(#actions, 1); eq(actions[1].kind, "complete"); eq(unknown, false)
+    end
+    -- Full-context behavior unchanged: function ready still selects READY vs ACTIVE.
+    for _, ready in ipairs({ false, true }) do
+        local c = ctx({}, { [1] = true }); c.ready = function() return ready end
+        local engine = P.New(quests, c)
+        eq(engine:State(1).status, ready and "READY" or "ACTIVE")
+    end
+end)
 print("Planner checks passed: " .. passed)

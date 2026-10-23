@@ -18,6 +18,8 @@ def unique_fields(pairs):
 
 
 def generate(data):
+    if type(data) is not dict:
+        raise ValueError("Invalid case-fold document")
     if (data.get("unicodeVersion") != "16.0.0" or
             data.get("source") != "https://www.unicode.org/Public/16.0.0/ucd/CaseFolding.txt"):
         raise ValueError("Unsupported case-fold source")

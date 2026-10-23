@@ -49,9 +49,24 @@ def title(value):
             "|" not in value and "<" not in value and ">" not in value)
 
 
+def catalog_lists(catalog):
+    """Fail closed on hostile catalogue shapes before indexing quest/dungeon rows."""
+    if (type(catalog) is not dict or type(catalog.get("quests")) is not list or
+            type(catalog.get("dungeons")) is not list):
+        raise ValueError("Invalid catalogue shape")
+    for q in catalog["quests"]:
+        if type(q) is not dict or "id" not in q or "name" not in q:
+            raise ValueError("Invalid catalogue quest entry")
+    for d in catalog["dungeons"]:
+        if type(d) is not dict or "key" not in d or "name" not in d:
+            raise ValueError("Invalid catalogue dungeon entry")
+    return catalog["quests"], catalog["dungeons"]
+
+
 def validate(data, catalog):
     validate_unicode(data)
     validate_unicode(catalog)
+    quest_rows, dungeon_rows = catalog_lists(catalog)
     if (type(data) is not dict or set(data) != {"schema", "checked", "provenance", "locales"} or
             type(data["schema"]) is not int or data["schema"] != 1):
         raise ValueError("Invalid localized-name schema")
@@ -64,8 +79,8 @@ def validate(data, catalog):
             provenance.get("localeIDs") != LOCALES or type(provenance.get("dungeonSources")) is not dict or
             any(type(value) is not int for value in provenance["localeIDs"].values())):
         raise ValueError("Invalid localized-name provenance")
-    quests = {str(q["id"]): q for q in catalog["quests"]}
-    dungeons = {d["key"]: d for d in catalog["dungeons"]}
+    quests = {str(q["id"]): q for q in quest_rows}
+    dungeons = {d["key"]: d for d in dungeon_rows}
     if (type(provenance.get("catalogueQuestCount")) is not int or provenance.get("catalogueQuestCount") != len(quests) or
             type(provenance.get("englishVerifiedCount")) is not int or provenance["englishVerifiedCount"] != len(quests)):
         raise ValueError("Localized-name catalogue coverage changed")
@@ -129,6 +144,7 @@ def quoted(value):
 def validate_sources(data, catalog):
     """Sparse typed labels never replace quest titles or establish source roles."""
     validate_unicode(data)
+    quest_rows, _ = catalog_lists(catalog)
     if (type(data) is not dict or set(data) != {"schema", "checked", "provenance", "locales"} or
             type(data["schema"]) is not int or data["schema"] != 1):
         raise ValueError("Invalid source-name schema")
@@ -154,7 +170,7 @@ def validate_sources(data, catalog):
             for child in value:
                 visit(child)
 
-    visit(catalog["quests"])
+    visit(quest_rows)
     locales = data["locales"]
     if type(locales) is not dict or not set(locales) <= set(LOCALES):
         raise ValueError("Invalid source-name locales")
@@ -183,6 +199,7 @@ def validate_sources(data, catalog):
 def validate_areas(data, catalog):
     """A shared text alias requires agreement across every reviewed homonym."""
     validate_unicode(data)
+    quest_rows, dungeon_rows = catalog_lists(catalog)
     if (type(data) is not dict or set(data) != {"schema", "checked", "provenance", "sources", "locales"} or
             type(data["schema"]) is not int or data["schema"] != 1):
         raise ValueError("Invalid area-name schema")
@@ -209,9 +226,9 @@ def validate_areas(data, catalog):
             for child in value:
                 visit(child)
 
-    visit(catalog["quests"])
+    visit(quest_rows)
     sources, seen = data["sources"], set()
-    dungeon_names = {d["name"] for d in catalog["dungeons"]}
+    dungeon_names = {d["name"] for d in dungeon_rows}
     if type(sources) is not dict:
         raise ValueError("Invalid area-name sources")
     for source, identities in sources.items():
@@ -255,6 +272,7 @@ def validate_areas(data, catalog):
 
 def validate_supplement(data, catalog, expected_locales=None):
     validate_unicode(data)
+    quest_rows, dungeon_rows = catalog_lists(catalog)
     if (type(data) is not dict or set(data) != {"schema", "provenance", "locales"} or
             type(data["schema"]) is not int or data["schema"] != 1 or
             data["provenance"] != {"provider": "Dungeon Pro", "extraction": "authored-title-translation"}):
@@ -263,8 +281,8 @@ def validate_supplement(data, catalog, expected_locales=None):
     if (type(locales) is not dict or not locales or not set(locales) <= set(LOCALES) or
             (expected_locales is not None and set(locales) != set(expected_locales))):
         raise ValueError("Invalid authored-title supplement locale coverage")
-    definitions = {"quests": {str(q["id"]): q for q in catalog["quests"]},
-                   "dungeons": {d["key"]: d for d in catalog["dungeons"]}}
+    definitions = {"quests": {str(q["id"]): q for q in quest_rows},
+                   "dungeons": {d["key"]: d for d in dungeon_rows}}
     for payload in locales.values():
         if type(payload) is not dict or set(payload) != {"quests", "dungeons"}:
             raise ValueError("Invalid authored-title supplement payload")

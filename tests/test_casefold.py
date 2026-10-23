@@ -58,6 +58,12 @@ assert(loadfile('Core/Search.lua'))('DungeonPro',addon)
                 with self.assertRaises(ValueError):
                     casefold.generate(data)
 
+    def test_generator_rejects_non_dict_documents_fail_closed(self):
+        for hostile in ([], None, "x", 123):
+            with self.subTest(hostile=repr(hostile)), self.assertRaises(ValueError):
+                casefold.generate(hostile)
+        self.assertIsInstance(casefold.generate(copy.deepcopy(self.data)), str)
+
     def test_cli_rejects_duplicate_root_and_mapping_keys_before_writing(self):
         data = copy.deepcopy(self.data)
         data["mappings"] = {"65": "a"}

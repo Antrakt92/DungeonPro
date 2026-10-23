@@ -87,6 +87,11 @@ function Planner.New(quests, context, choices)
         if type(self.context.completed) ~= "function" or type(self.context.active) ~= "function" then
             return save("UNKNOWN", "character")
         end
+        -- A truthy non-function ready would throw at the active branch below;
+        -- fail closed as unknown character. Nil/false stay optional (ACTIVE path).
+        if self.context.ready and type(self.context.ready) ~= "function" then
+            return save("UNKNOWN", "character")
+        end
         local done = self.context.completed(id)
         -- Past completion can satisfy a prerequisite while a new run remains active.
         completedHistory = done == true
