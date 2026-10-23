@@ -132,4 +132,49 @@ check("Truthy non-table C_Timer fails closed to inline refresh without throwing"
         assert(#m.reasons == 1 and m.reasons[1] == "full", "non-table C_Timer lost its inline refresh")
     end
 end)
+check("Hostile SlashCmdList fails closed at init without throwing", function()
+    local frame = { scripts = {} }
+    function frame:RegisterEvent() end
+    function frame:SetScript(key, value) self.scripts[key] = value end
+    CreateFrame = function() return frame end
+    GetBuildInfo = function() return "1.60.1", "70450", "", 16001 end
+    WOW_PROJECT_ID, issecretvalue = 18, nil
+    local addon = {}
+    assert(loadfile("Core/Namespace.lua"))("DungeonPro", addon)
+    addon.Diagnostics = { Navigation = function() end, Minimap = function() end }
+    addon.UI = { Toggle = function() error("must not toggle") end }
+    addon.RestoreDB = function() return true end
+    addon.InvalidateContext = function() return true end
+    addon.L = function(key) return key end
+    for _, key in ipairs({ "OfferEvent", "QuestDataResult", "ItemDataResult", "CaptureQuestText" }) do addon[key] = function() end end
+    C_Timer = { After = function() end }
+    for _, bad in ipairs({ "hostile", true, 1 }) do
+        SlashCmdList = bad
+        assert(loadfile("Core/Events.lua"))("DungeonPro", addon)
+        local ok, err = pcall(frame.scripts.OnEvent, frame, "ADDON_LOADED", "DungeonPro")
+        assert(ok, "hostile SlashCmdList threw: " .. tostring(err))
+    end
+end)
+check("Missing UI fails closed on slash dispatch without throwing", function()
+    local frame = { scripts = {} }
+    function frame:RegisterEvent() end
+    function frame:SetScript(key, value) self.scripts[key] = value end
+    CreateFrame = function() return frame end
+    GetBuildInfo = function() return "1.60.1", "70450", "", 16001 end
+    WOW_PROJECT_ID, issecretvalue = 18, nil
+    local addon = {}
+    assert(loadfile("Core/Namespace.lua"))("DungeonPro", addon)
+    addon.Diagnostics = { Navigation = function() end, Minimap = function() end }
+    addon.UI = nil
+    addon.RestoreDB = function() return true end
+    addon.InvalidateContext = function() return true end
+    addon.L = function(key) return key end
+    for _, key in ipairs({ "OfferEvent", "QuestDataResult", "ItemDataResult", "CaptureQuestText" }) do addon[key] = function() end end
+    C_Timer = { After = function() end }
+    SlashCmdList = {}
+    assert(loadfile("Core/Events.lua"))("DungeonPro", addon)
+    frame.scripts.OnEvent(frame, "ADDON_LOADED", "DungeonPro")
+    local ok, err = pcall(SlashCmdList.DUNGEONPRO, "")
+    assert(ok, "missing UI threw on slash dispatch: " .. tostring(err))
+end)
 print("Event refresh checks passed: " .. total)

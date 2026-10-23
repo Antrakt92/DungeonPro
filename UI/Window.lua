@@ -2071,7 +2071,7 @@ function UI:RefreshDungeons()
             local loaded, accepted
             if type(icon.SetAtlas) == "function" then loaded, accepted = pcall(icon.SetAtlas, icon, atlas) end
             if not loaded or addon.Clean(accepted, "boolean") == false or addon.Read(icon.GetAtlas, "string", icon) ~= atlas then
-                icon:SetTexture("Interface\\Icons\\INV_Misc_Map_01")
+                if not write(icon, "SetTexture", "Interface\\Icons\\INV_Misc_Map_01") then return end
             end
             icon:Show()
             control:SetScript("OnEnter", function() if self.catalogCollapsed then return end; control.footerHovered = true; self:RefreshFooterIcon(control); self:CatalogEntranceHint(row) end)

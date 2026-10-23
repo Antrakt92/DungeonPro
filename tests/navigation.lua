@@ -1679,4 +1679,19 @@ check("Hostile map namespace keeps a TomTom-owned guide without native claims", 
     assert(ok and started and nativeCalls == 0)
     nav.Stop()
 end)
+check("Hostile __eq metamethods never decide TomTom ownership", function()
+    reset()
+    local mt = { __eq = function() error("hostile __eq") end }
+    local owner = tomtom({ AddWaypoint = function() return "serial" end })
+    owner.WaypointExists = function()
+        TomTom = setmetatable({}, mt)
+        return false
+    end
+    setmetatable(owner, mt)
+    TomTom = owner
+    local ok, started = pcall(nav.Start, action)
+    assert(ok, "hostile __eq threw during Start")
+    assert(started, "guide must start via native fallback")
+    nav.Stop()
+end)
 print("Navigation modeled checks passed: " .. total .. " (no native map validation)")

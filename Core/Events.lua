@@ -67,24 +67,30 @@ events:SetScript("OnEvent", function(_, event, arg1, arg2)
             "QUEST_PROGRESS", "QUEST_COMPLETE", "QUEST_ITEM_UPDATE", "BAG_UPDATE_DELAYED", "PLAYER_LEAVING_WORLD" }) do
             events:RegisterEvent(e)
         end
-        SLASH_DUNGEONPRO1 = "/DP"
-        SLASH_DUNGEONPRO2 = "/DungeonPro"
-        SLASH_DUNGEONPRO3 = "/dprep"
-        SLASH_DUNGEONPRO4 = "/dungeonprep"
-        SLASH_DUNGEONPRORELOAD1 = "/rl"
-        SlashCmdList.DUNGEONPRORELOAD = function()
-            local reload = addon.Clean(ReloadUI, "function")
-            if reload then reload() end
-        end
-        SlashCmdList.DUNGEONPRO = function(msg)
-            msg = (addon.Clean(msg, "string") or ""):match("^%s*(.-)%s*$"):lower():gsub("%s+", " ")
-            if msg == "clear" then addon.Navigation.Stop()
-            elseif msg == "probe" then addon.ProbeClient()
-            elseif msg == "probe nav" then probeNavigation()
-            elseif msg == "probe minimap" then probeMinimap()
-            elseif msg == "minimap" and addon.Minimap then addon.Minimap:ToggleVisibility()
-            elseif msg == "minimap reset" and addon.Minimap then addon.Minimap:Reset()
-            else addon.UI:Toggle() end
+        if type(SlashCmdList) == "table" then
+            SLASH_DUNGEONPRO1 = "/DP"
+            SLASH_DUNGEONPRO2 = "/DungeonPro"
+            SLASH_DUNGEONPRO3 = "/dprep"
+            SLASH_DUNGEONPRO4 = "/dungeonprep"
+            SLASH_DUNGEONPRORELOAD1 = "/rl"
+            SlashCmdList.DUNGEONPRORELOAD = function()
+                local reload = addon.Clean(ReloadUI, "function")
+                if reload then reload() end
+            end
+            SlashCmdList.DUNGEONPRO = function(msg)
+                msg = (addon.Clean(msg, "string") or ""):match("^%s*(.-)%s*$"):lower():gsub("%s+", " ")
+                if msg == "clear" then addon.Navigation.Stop()
+                elseif msg == "probe" then addon.ProbeClient()
+                elseif msg == "probe nav" then probeNavigation()
+                elseif msg == "probe minimap" then probeMinimap()
+                elseif msg == "minimap" and addon.Minimap then addon.Minimap:ToggleVisibility()
+                elseif msg == "minimap reset" and addon.Minimap then addon.Minimap:Reset()
+                else
+                    local ui = addon.Clean(addon.UI, "table")
+                    local toggle = ui and addon.Clean(ui.Toggle, "function")
+                    if toggle then toggle(ui) end
+                end
+            end
         end
         return
     end

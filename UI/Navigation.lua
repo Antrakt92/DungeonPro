@@ -959,7 +959,7 @@ function N.Start(action, markerRole, ownerCurrent)
         local absent = mapID and x and y and N.Valid({ mapID = mapID, x = pointX, y = pointY }) and
             addon.Read(exists, "boolean", owner, mapID, x, y, title) == false
         if not current() then return false end
-        if absent and remove and TomTom == owner and issecretvalue == checker and owner.AddWaypoint == add and
+        if absent and remove and rawequal(TomTom, owner) and issecretvalue == checker and owner.AddWaypoint == add and
             owner.WaypointExists == exists and owner.RemoveWaypoint == remove and action.place == p and
             rawequal(rawget(p, "mapID"), mapID) and rawequal(rawget(p, "x"), pointX) and
             rawequal(rawget(p, "y"), pointY) and current() then
