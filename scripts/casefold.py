@@ -17,6 +17,20 @@ def unique_fields(pairs):
     return fields
 
 
+def _read(name, path):
+    try:
+        return path.read_text(encoding="utf-8")
+    except (OSError, UnicodeDecodeError) as error:
+        raise SystemExit(f"{name} is unreadable: {error}") from error
+
+
+def _load(name, path):
+    try:
+        return json.loads(_read(name, path), object_pairs_hook=unique_fields)
+    except ValueError as error:
+        raise SystemExit(f"{name} is invalid: {error}") from error
+
+
 def generate(data):
     if type(data) is not dict:
         raise ValueError("Invalid case-fold document")
@@ -52,8 +66,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--check", action="store_true")
     args = parser.parse_args()
-    data = json.loads((ROOT / "data/search_casefold.json").read_text(encoding="utf-8"),
-                      object_pairs_hook=unique_fields)
+    data = _load("data/search_casefold.json", ROOT / "data/search_casefold.json")
     generated = generate(data)
     output = ROOT / "Database/SearchCaseFold.lua"
     if args.check:

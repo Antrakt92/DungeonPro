@@ -397,8 +397,8 @@ def main() -> None:
                     parser.error("Invalid preview metrics from Lua capture")
                 try:
                     _, height, width = layout(row.get("text"), row.get("size"), row.get("width"))
-                except ValueError as error:
-                    parser.error(str(error))
+                except (ValueError, OSError) as error:
+                    parser.error(f"Invalid preview metrics: {error}")
                 entries.append(f"[{lua_quote(key)}]={{height={height},width={width}}}")
             metrics_path = args.output / f"{stem}-{locale}-metrics.lua"
             try:

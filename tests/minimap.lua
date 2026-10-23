@@ -76,6 +76,18 @@ check("Left click opens existing UI and drag suppresses its release click",funct
     b.scripts.OnClick(b,"LeftButton"); assert(clicks==1)
     b.scripts.OnClick(b,"LeftButton"); assert(clicks==2)
 end)
+check("Throwing UI toggle fails closed on click without escaping",function()
+    for _,mode in ipairs({"throw","nilframe"})do
+        local m=reset(); assert(m:Initialize()); local b=m.button; local before=clicks
+        if mode=="throw" then addon.UI.Toggle=function() error("window unavailable") end
+        else addon.UI.Toggle=function() local frame=nil; frame:SetSize(1,1) end end
+        local ok=pcall(b.scripts.OnClick,b,"LeftButton")
+        assert(ok,mode.." click must not escape")
+        assert(clicks==before,mode.." failed click must not toggle")
+        addon.UI.Toggle=function() clicks=clicks+1 end
+        b.scripts.OnClick(b,"LeftButton"); assert(clicks==before+1,mode.." valid click must still toggle")
+    end
+end)
 check("Scaled cursor geometry preserves all quadrants and exact saved angle",function()
     local m=reset({angle=90}); assert(m:Initialize()); near(m.button.point[4],0); near(m.button.point[5],108)
     for _,entry in ipairs({{200,400,90},{0,200,180},{200,0,270}}) do

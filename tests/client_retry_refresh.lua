@@ -141,6 +141,57 @@ test("RestoreDB rejects metatable-carrying saved variables without throwing",fun
     assert(DungeonProDB.schema==1 and DungeonProDB.locale=="auto")
     DungeonProDB,DungeonProCharDB,DungeonPrepDB,DungeonPrepCharDB=savedPro,savedChar,savedPrep,savedPrepChar
 end)
+test("RestoreDB rejects metatable-carrying nested roots and oversized texts",function()
+    local f=fixture()
+    local savedPro,savedChar,savedPrep,savedPrepChar=DungeonProDB,DungeonProCharDB,DungeonPrepDB,DungeonPrepCharDB
+    local activeDB,activeChar=f.addon.db,f.addon.char
+    local function hostileNested(payload)
+        return setmetatable(payload or {},{
+            __index=function() error("hostile nested index") end,
+            __newindex=function() error("hostile nested newindex") end,
+            __pairs=function() error("hostile nested pairs") end})
+    end
+    local function checkRoots(label,setupDB,setupChar)
+        DungeonProDB,DungeonProCharDB,DungeonPrepDB,DungeonPrepCharDB=setupDB,setupChar,nil,nil
+        local ok,result=pcall(f.addon.RestoreDB)
+        assert(ok,label.." threw instead of failing closed: "..tostring(result))
+        assert(result==false,label.." adopted a metatable-carrying nested root")
+        assert(f.addon.db==activeDB and f.addon.char==activeChar,label.." replaced active state on rejection")
+        assert(DungeonProDB==setupDB and DungeonProCharDB==setupChar,label.." mutated saved roots on rejection")
+    end
+    for _,pair in ipairs({
+        {"texts",function(h) return {},{texts=h,filters={}} end},
+        {"window",function(h) return {window=h},{texts={},filters={}} end},
+        {"filters",function(h) return {},{texts={},filters=h} end},
+    }) do
+        local label,nest=pair[1],pair[2]
+        local db,char=nest(hostileNested({[0]={text="Bad",locale="enUS"}}))
+        checkRoots("new "..label,db,char)
+        local legacyDB,legacyChar=nest(hostileNested({}))
+        DungeonProDB,DungeonProCharDB=nil,nil
+        DungeonPrepDB,DungeonPrepCharDB=legacyDB,legacyChar
+        local okLegacy,legacyResult=pcall(f.addon.RestoreDB)
+        assert(okLegacy,"legacy "..label.." threw instead of failing closed: "..tostring(legacyResult))
+        assert(legacyResult==false,"legacy "..label.." adopted a metatable-carrying nested root")
+        assert(f.addon.db==activeDB and f.addon.char==activeChar,"legacy "..label.." replaced active state")
+        assert(DungeonPrepDB==legacyDB and DungeonPrepCharDB==legacyChar,"legacy "..label.." mutated saved roots")
+        assert(legacyDB.schema==nil,"legacy "..label.." normalized schema before failing closed")
+    end
+    local bloated={};for id=1,10001 do bloated[id]={text="Quest "..id,locale="enUS"} end
+    DungeonProDB,DungeonProCharDB={},{texts=bloated,filters={}}
+    DungeonPrepDB,DungeonPrepCharDB=nil,nil
+    local okBig,bigResult=pcall(f.addon.RestoreDB)
+    assert(okBig,"oversized texts threw instead of failing closed: "..tostring(bigResult))
+    assert(bigResult==false,"oversized texts did not fail closed")
+    assert(f.addon.db==activeDB and f.addon.char==activeChar,"oversized texts replaced active state")
+    local capped={};for id=1,10000 do capped[id]={text="Quest "..id,locale="enUS"} end
+    DungeonProDB,DungeonProCharDB={},{texts=capped,filters={}}
+    local okCap,capResult=pcall(f.addon.RestoreDB)
+    assert(okCap and capResult==true,"10000 retained texts must still restore")
+    assert(f.addon.char.texts==capped and f.addon.char.texts[10000].text=="Quest 10000","capped retention lost entries")
+    DungeonProDB,DungeonProCharDB,DungeonPrepDB,DungeonPrepCharDB=savedPro,savedChar,savedPrep,savedPrepChar
+    f.addon.db,f.addon.char=activeDB,activeChar
+end)
 test("Hostile throwing-index timer fails closed in the event refresh probe",function()
     local f=fixture()
     local savedTimer,savedLog,savedItem=C_Timer,C_QuestLog,C_Item

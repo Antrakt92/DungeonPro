@@ -1773,6 +1773,25 @@ function addon.RestoreDB()
     if type(db) ~= "nil" and (not addon.Clean(db, "table") or getmetatable(db) ~= nil) then return false end
     if type(char) ~= "nil" and (not addon.Clean(char, "table") or getmetatable(char) ~= nil) then return false end
     db, char = db or {}, char or {}
+    -- SavedVariables serialize as bare tables, so a metatable on a nested
+    -- root arrives only via hand-edited or cross-addon state executed as Lua
+    -- before ADDON_LOADED. Reject such roots exactly like hostile top-level
+    -- roots above: adopting them would let __pairs/__newindex throw in the
+    -- hygiene loop below or in later quest-text/filter writes.
+    local windowValue, textsValue, filtersValue = rawget(db, "window"), rawget(char, "texts"), rawget(char, "filters")
+    if type(windowValue) == "table" and getmetatable(windowValue) ~= nil then return false end
+    if type(textsValue) == "table" and getmetatable(textsValue) ~= nil then return false end
+    if type(filtersValue) == "table" and getmetatable(filtersValue) ~= nil then return false end
+    -- Census retained quest texts before normalizing anything: legitimate
+    -- retention holds a handful of viewed quests, so fail closed well above
+    -- any plausible size to keep the hygiene loop below bounded every login.
+    if type(textsValue) == "table" then
+        local census = 0
+        for _ in pairs(textsValue) do
+            census = census + 1
+            if census > 10000 then return false end
+        end
+    end
     local schemaValue = rawget(db, "schema")
     if type(schemaValue) ~= "nil" then
         local schema = addon.Clean(schemaValue, "number")
@@ -1789,6 +1808,7 @@ function addon.RestoreDB()
         -- Retention hygiene only: reads already validate each member, so drop
         -- absurd retained members (non-integer or huge IDs, non-table values)
         -- while keeping every legitimate quest text untouched.
+        -- Bounded by the census above (same table, no interleaving writes).
         local texts = rawget(char, "texts")
         local invalid = {}
         for key, value in pairs(texts) do

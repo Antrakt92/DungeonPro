@@ -240,5 +240,50 @@ assert(addon.SearchFold('')=='')
         self.assertNotEqual(pairs[-2][1], pairs[-1][1], "no accent stripping or normalization promise")
 
 
+    def test_cli_rejects_missing_and_corrupt_input_without_traceback(self):
+        # Missing/corrupt data/search_casefold.json must fail as a clean
+        # SystemExit naming the input, never an OSError/UnicodeDecodeError/
+        # JSONDecodeError traceback. Mirrors check_version.py _read.
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            for directory in ("scripts", "data", "Database"):
+                (root / directory).mkdir()
+            shutil.copy2(ROOT / "scripts/casefold.py", root / "scripts/casefold.py")
+            shutil.copy2(ROOT / "data/search_casefold.json", root / "data/search_casefold.json")
+            shutil.copy2(ROOT / "Database/SearchCaseFold.lua", root / "Database/SearchCaseFold.lua")
+            source = root / "data/search_casefold.json"
+            output = root / "Database/SearchCaseFold.lua"
+            expected = output.read_bytes()
+            for content in ("{", "not json at all", '{"mappings": {"65": "a",}}'):
+                for args in ([], ["--check"]):
+                    with self.subTest(content=content[:12], args=args):
+                        source.write_text(content, encoding="utf-8")
+                        output.write_bytes(expected)
+                        result = subprocess.run([sys.executable, "scripts/casefold.py", *args],
+                                                cwd=root, capture_output=True, timeout=30)
+                        self.assertNotEqual(result.returncode, 0)
+                        self.assertNotIn(b"Traceback", result.stderr)
+                        self.assertIn(b"search_casefold.json", result.stderr)
+                        self.assertEqual(output.read_bytes(), expected)
+            with self.subTest(content="undecodable bytes"):
+                source.write_bytes(b"\xff\xfe invalid \x00 bytes")
+                result = subprocess.run([sys.executable, "scripts/casefold.py"],
+                                        cwd=root, capture_output=True, timeout=30)
+                self.assertNotEqual(result.returncode, 0)
+                self.assertNotIn(b"Traceback", result.stderr)
+                self.assertIn(b"search_casefold.json", result.stderr)
+                self.assertEqual(output.read_bytes(), expected)
+            source.unlink()
+            for args in ([], ["--check"]):
+                with self.subTest(missing=True, args=args):
+                    output.write_bytes(expected)
+                    result = subprocess.run([sys.executable, "scripts/casefold.py", *args],
+                                            cwd=root, capture_output=True, timeout=30)
+                    self.assertNotEqual(result.returncode, 0)
+                    self.assertNotIn(b"Traceback", result.stderr)
+                    self.assertIn(b"search_casefold.json", result.stderr)
+                    self.assertEqual(output.read_bytes(), expected)
+
+
 if __name__ == "__main__":
     unittest.main()

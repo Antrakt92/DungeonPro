@@ -90,7 +90,8 @@ def validate_unicode(value):
 
 
 def nonempty_string(value):
-    return type(value) is str and bool(value.strip())
+    return (type(value) is str and bool(value.strip()) and
+            not any(ord(c) < 32 or ord(c) == 127 for c in value))
 
 
 def web_source(value):
@@ -275,7 +276,7 @@ def validate(data):
             for p in alternatives:
                 if (type(p) is not dict or
                     sum(field in p for field in ("npcID", "objectID", "itemID")) != 1 or
-                    "itemID" in p or type(p.get("name")) is not str or not p["name"].strip()):
+                    "itemID" in p or not nonempty_string(p.get("name"))):
                     raise ValueError(f"Invalid alternative {kind} identity: {q['id']}")
                 field = "npcID" if "npcID" in p else "objectID"
                 if not integer(p[field]) or p[field] > 2 ** 32 - 1:
@@ -340,7 +341,7 @@ def validate(data):
                         raise ValueError(f"Invalid place {field}: {q['id']}")
             if "zoneName" in p:
                 try:
-                    valid_zone = (type(p["zoneName"]) is str and bool(p["zoneName"].strip()) and
+                    valid_zone = (nonempty_string(p["zoneName"]) and
                                   len(p["zoneName"].encode("utf-8")) <= 500)
                 except UnicodeEncodeError:
                     valid_zone = False
@@ -348,7 +349,7 @@ def validate(data):
                     raise ValueError(f"Invalid place zone name: {q['id']}")
             if "locationName" in p:
                 try:
-                    valid_location = (type(p["locationName"]) is str and bool(p["locationName"].strip()) and
+                    valid_location = (nonempty_string(p["locationName"]) and
                                       len(p["locationName"].encode("utf-8")) <= 500)
                 except UnicodeEncodeError:
                     valid_location = False
@@ -681,7 +682,14 @@ def lua(value):
     if value is False:
         return "false"
     if isinstance(value, str):
-        return '"' + value.replace("\\", "\\\\").replace('"', '\\"').replace("\n", "\\n").replace("\r", "\\r").replace("\t", "\\t") + '"'
+        escaped = (value.replace("\\", "\\\\").replace('"', '\\"')
+                   .replace("\n", "\\n").replace("\r", "\\r").replace("\t", "\\t"))
+        # Decimal byte escapes (cf. scripts/casefold.py) for any remaining
+        # C0 control or DEL: a hostile name that bypasses validation must
+        # still emit a parseable Lua short string, never a raw control byte.
+        escaped = "".join("\\%03d" % ord(c) if ord(c) < 32 or ord(c) == 127 else c
+                          for c in escaped)
+        return '"' + escaped + '"'
     if isinstance(value, (int, float)):
         if isinstance(value, int) and abs(value) > 2 ** 53 - 1:
             raise ValueError("Lua integer exceeds exact numeric range")

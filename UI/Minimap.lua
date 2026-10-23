@@ -465,7 +465,7 @@ function M:Initialize(retry)
     if not setScript(button, "OnClick", function(_, mouse)
         if not current() then return end
         if self.suppressClick then self.suppressClick = nil; return end
-        if mouse == "LeftButton" and addon.UI and type(addon.UI.Toggle) == "function" then addon.UI:Toggle() end
+        if mouse == "LeftButton" and addon.UI and type(addon.UI.Toggle) == "function" then pcall(addon.UI.Toggle, addon.UI) end
     end) then return false end
     if not setScript(button, "OnDragStart", function(_, mouse) if current() then self:StartDrag(mouse) end end) then return false end
     if not setScript(button, "OnDragStop", function() if current() then self:StopDrag(true) end end) then return false end

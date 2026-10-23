@@ -2016,6 +2016,130 @@ class CatalogTests(unittest.TestCase):
                     catalog.validate(data)
 
 
+    def test_control_characters_are_rejected_in_free_text_names(self):
+        # A hostile C0/DEL byte must fail validation (ValueError), never reach
+        # the Lua emitter as a raw byte inside a short string.
+        controls = ["Bad\x00Name", "Bad\x07Name", "Bad\x1fName", "Bad\x7fName",
+                    "Bad\nName", "Bad\tName", "Bad\rName", "Bad\x1bName"]
+        for hostile in controls:
+            with self.subTest(field="quest name", hostile=ascii(hostile)):
+                data = self.minimal_catalog()
+                data["quests"][1]["name"] = hostile
+                with self.assertRaises(ValueError):
+                    catalog.validate(data)
+            with self.subTest(field="dungeon name", hostile=ascii(hostile)):
+                data = self.minimal_catalog()
+                data["dungeons"][0]["name"] = hostile
+                with self.assertRaises(ValueError):
+                    catalog.validate(data)
+            with self.subTest(field="dungeon key", hostile=ascii(hostile)):
+                data = self.minimal_catalog()
+                data["dungeons"][0]["key"] = hostile
+                with self.assertRaises(ValueError):
+                    catalog.validate(data)
+            with self.subTest(field="place name", hostile=ascii(hostile)):
+                data = self.minimal_catalog()
+                data["quests"][1]["start"] = {"npcID": 1, "name": hostile}
+                with self.assertRaises(ValueError):
+                    catalog.validate(data)
+            with self.subTest(field="dropName", hostile=ascii(hostile)):
+                data = self.minimal_catalog()
+                data["quests"][1]["start"] = {"itemID": 1, "name": "Giver",
+                                              "dropNPCID": 2, "dropName": hostile}
+                with self.assertRaises(ValueError):
+                    catalog.validate(data)
+            with self.subTest(field="zoneName", hostile=ascii(hostile)):
+                data = self.minimal_catalog()
+                data["quests"][1]["start"] = {"npcID": 1, "name": "Giver", "zoneName": hostile}
+                with self.assertRaises(ValueError):
+                    catalog.validate(data)
+            with self.subTest(field="locationName", hostile=ascii(hostile)):
+                data = self.minimal_catalog()
+                data["quests"][1]["start"] = {"npcID": 1, "name": "Giver", "locationName": hostile}
+                with self.assertRaises(ValueError):
+                    catalog.validate(data)
+            with self.subTest(field="alternative name", hostile=ascii(hostile)):
+                data = self.minimal_catalog()
+                data["quests"][1].pop("start", None)
+                data["quests"][1]["startAlternatives"] = [
+                    {"npcID": 1, "name": hostile}, {"objectID": 2, "name": "Second"}]
+                with self.assertRaises(ValueError):
+                    catalog.validate(data)
+            with self.subTest(field="summon tool name", hostile=ascii(hostile)):
+                data = self.minimal_catalog()
+                data["quests"][1]["start"] = {"objectID": 1,
+                                              "summonItem": {"itemID": 2, "name": hostile}}
+                with self.assertRaises(ValueError):
+                    catalog.validate(data)
+            with self.subTest(field="container name", hostile=ascii(hostile)):
+                data = self.minimal_catalog()
+                data["quests"][1]["start"] = {"itemID": 5791, "containerSource": {
+                    "objectID": 19861, "name": hostile}}
+                with self.assertRaises(ValueError):
+                    catalog.validate(data)
+            with self.subTest(field="drop source name", hostile=ascii(hostile)):
+                data = self.minimal_catalog()
+                data["quests"][1]["start"] = {"itemID": 1, "dropSources": [
+                    {"npcID": 1, "name": hostile, "locationName": "Zone"}]}
+                with self.assertRaises(ValueError):
+                    catalog.validate(data)
+            with self.subTest(field="drop source location", hostile=ascii(hostile)):
+                data = self.minimal_catalog()
+                data["quests"][1]["start"] = {"itemID": 1, "dropSources": [
+                    {"npcID": 1, "name": "Drop", "locationName": hostile}]}
+                with self.assertRaises(ValueError):
+                    catalog.validate(data)
+            with self.subTest(field="reported zone", hostile=ascii(hostile)):
+                data = self.minimal_catalog()
+                data["quests"][1]["start"] = {"npcID": 1, "mapID": 1, "x": 10, "y": 20,
+                    "reportedLocations": [{"mapID": 1, "x": 10, "y": 20},
+                                            {"mapID": 2, "x": 30, "y": 40, "zoneName": hostile}]}
+                with self.assertRaises(ValueError):
+                    catalog.validate(data)
+            with self.subTest(field="objective kill name", hostile=ascii(hostile)):
+                data = self.minimal_catalog()
+                data["quests"][1]["objectiveKills"] = [{"npcID": 1, "name": hostile}]
+                with self.assertRaises(ValueError):
+                    catalog.validate(data)
+        for name in ("Accrued Sanity", "Grüße aus Köln", "死亡礦坑",
+                     "죽음의 폐광", "École des Morts", "探検😀é"):
+            with self.subTest(valid=name):
+                data = self.minimal_catalog()
+                data["quests"][1]["name"] = name
+                catalog.validate(data)
+                data = self.minimal_catalog()
+                data["dungeons"][0]["name"] = name
+                catalog.validate(data)
+                data = self.minimal_catalog()
+                data["quests"][1]["start"] = {"npcID": 1, "name": name, "zoneName": name}
+                catalog.validate(data)
+
+    def test_lua_serializer_escapes_control_characters_without_raw_bytes(self):
+        # Defense in depth: even a direct lua() call with controls must emit
+        # decimal byte escapes (cf. scripts/casefold.py), never raw bytes.
+        for code in list(range(0x20)) + [0x7f]:
+            with self.subTest(code=code):
+                emitted = catalog.lua("A" + chr(code) + "B")
+                self.assertNotIn(chr(code), emitted)
+                if code in (0x0a, 0x0d, 0x09):
+                    self.assertIn({0x0a: "\\n", 0x0d: "\\r", 0x09: "\\t"}[code], emitted)
+                else:
+                    self.assertIn("\\%03d" % code, emitted)
+        # Valid emission is unchanged: printable, unicode, quotes, backslash.
+        self.assertEqual(catalog.lua("Aé探検😀"), '"Aé探検😀"')
+        self.assertEqual(catalog.lua('a"b\\c'), '"a\\"b\\\\c"')
+        self.assertEqual(catalog.lua("a\nb"), '"a\\nb"')
+        lua = shutil.which("lua5.1")
+        self.assertIsNotNone(lua, "Lua 5.1 is required for control-escape verification")
+        payload = "".join(chr(code) for code in list(range(0x20)) + [0x7f])
+        script = ('local s = ' + catalog.lua(payload) + '\n'
+                  'assert(#s == ' + str(len(payload)) + ')\n'
+                  'for i = 1, ' + str(len(payload)) + ' do\n'
+                  '  assert(string.byte(s, i) == ((i <= 32) and (i - 1) or 127))\n'
+                  'end\n')
+        result = subprocess.run([lua, "-"], input=script, text=True, capture_output=True)
+        self.assertEqual(result.returncode, 0, result.stderr)
+
 
 class ObjectiveAcquisitionTests(unittest.TestCase):
     def fixture(self):
@@ -2223,6 +2347,8 @@ class GeneralRecordedEntranceTests(unittest.TestCase):
             entry[field] = "fixture"
             with self.subTest(field=field), self.assertRaisesRegex(ValueError, "entrance"):
                 catalog.validate(data)
+
+
 
 
 if __name__ == "__main__":

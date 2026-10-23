@@ -169,6 +169,21 @@ class MalformedSnapshotPreview(unittest.TestCase):
      self.assertEqual(stopped.exception.code,2,label)
      self.assertIn('Invalid preview',err.getvalue(),label)
      self.assertNotIn('Traceback',err.getvalue(),label)
+ def test_missing_font_metrics_fails_clean_without_traceback(self):
+  import contextlib,io,tempfile
+  from unittest import mock
+  from PIL import ImageFont
+  snapshot=self._snapshot()
+  def missing(*a,**kw):raise OSError('missing font')
+  with tempfile.TemporaryDirectory()as tmp:
+   err=io.StringIO()
+   with mock.patch.object(ImageFont,'truetype',missing):
+    with self.assertRaises(SystemExit)as stopped:
+     with contextlib.redirect_stderr(err):
+      self._run_preview_main(tmp,snapshot,['--quest','4764'])
+   self.assertEqual(stopped.exception.code,2)
+   self.assertIn('Invalid preview',err.getvalue())
+   self.assertNotIn('Traceback',err.getvalue())
  def run_with_fake(self,tmp,fake,err):
   import contextlib
   from unittest import mock
