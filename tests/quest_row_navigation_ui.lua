@@ -1866,4 +1866,29 @@ do
  ui.dungeon,ui.quest=savedDungeon,savedQuest
  ui.search="";ui.questTreeRoot=nil;ui.questTreeDungeon=nil;ui.frame:Show();ui:Refresh()
 end
+-- A20 GIVER-RECORDED-URL-CONTROL-GUARD: a recorded source carrying control
+-- characters or a pipe never splits the giver hint, mirroring the [|%c]
+-- guard in QuestNavigation (no colon so https:// still paints); a clean URL
+-- still paints.
+do
+ local savedStart=addon.quests[990101].start
+ local function giverBody(source)
+  addon.quests[990101].start={npcID=1,name="Own distant giver",mapID=1453,x=10,y=20,zoneName="Ember vault",origin="recorded",source=source}
+  ui.search="";ui.questTreeRoot=nil;ui.questTreeDungeon=nil;ui.dungeon=dungeon;ui.quest=990101;ui.frame:Show();ui:Refresh()
+  tip.shown=false;tip.owner=nil;tip.title=nil;tip.body=nil
+  local ok,err=pcall(ui.giver.scripts.OnEnter)
+  assert(ok,"giver recorded hint threw: "..tostring(err))
+  assert(tip.shown and tip.owner==ui.giver and tip.body,"giver recorded hint stays owned without a crash")
+  return tip.body
+ end
+ local body=giverBody("https://example.com/mouth\nINJECTED")
+ assert(not body:find("INJECTED",1,true),"control-char recorded source stays unpainted in giver tooltip")
+ assert(body:find("Own distant giver",1,true),"giver recorded hint keeps its name")
+ local piped=giverBody("https://example.com/a|T134400:18|t")
+ assert(not piped:find("|T134400",1,true),"pipe recorded source stays unpainted in giver tooltip")
+ body=giverBody("https://example.com/safe")
+ assert(body:find("https://example.com/safe",1,true),"clean recorded source keeps its giver hint line")
+ addon.quests[990101].start=savedStart
+ ui.search="";ui.questTreeRoot=nil;ui.questTreeDungeon=nil;ui.quest=990104;ui.frame:Show();ui:Refresh()
+end
 print("Middle quest navigation checks passed (modeled, no native input or layout proof)")
