@@ -79,6 +79,7 @@ events:SetScript("OnEvent", function(_, event, arg1, arg2)
             end
             SlashCmdList.DUNGEONPRO = function(msg)
                 msg = (addon.Clean(msg, "string") or ""):match("^%s*(.-)%s*$"):lower():gsub("%s+", " ")
+                if #msg > 1024 then return end
                 if msg == "clear" then addon.Navigation.Stop()
                 elseif msg == "probe" then addon.ProbeClient()
                 elseif msg == "probe nav" then probeNavigation()

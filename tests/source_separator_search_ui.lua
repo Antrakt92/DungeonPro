@@ -51,9 +51,12 @@ for _,query in ipairs({"1654·","1654‧","\194\1601654\194\160"})do
  assert(a.SearchQuestID(query)==nil,"separator normalization cannot extend raw numeric-ID syntax")
  local _,shown=results(query);assert(#shown==0)
 end
-for _,query in ipairs({"提里奧‧弗丁\194","艾芭·皎月\237\160\128","Tirion-Fordring"})do
- local _,shown=results(query);assert(#shown==0,"unrelated punctuation or invalid bytes cannot acquire a match")
+local emptySignature,emptyRows=results("")
+for _,query in ipairs({"提里奧‧弗丁\194","艾芭·皎月\237\160\128"})do
+ local signature,shown=results(query)
+ assert(signature==emptySignature and #shown==#emptyRows,"invalid bytes fail closed as empty")
 end
+do local _,shown=results("Tirion-Fordring");assert(#shown==0,"unrelated punctuation cannot acquire a match") end
 for d,n in pairs(counts)do assert(#d.quests==n)end
 a.Navigation.Start=start
 print("Source separator search UI: PASS (two actual reviewed names,both dot directions,display/ID/UTF-8 boundaries)")

@@ -3242,7 +3242,19 @@ check("Actual catalogue browsing folds localized Unicode case while preserving a
         assert(ui.searchHint.text == strings.SEARCH_HELP and strings.SEARCH_HELP:find("A–Z", 1, true) == nil)
     end
     local bad = string.char(255) .. "A"; native.sfk = bad
-    searchFor(bad, bad); searchFor(string.char(255) .. "a", nil)
+    local function shownSet(value)
+        ui.searchBox:SetText(value); ui.searchBox.scripts.OnTextChanged(ui.searchBox)
+        local cards = {}; for _, card in ipairs(ui.cards) do if card.shown then cards[#cards + 1] = card.title.text end end
+        table.sort(cards)
+        assert(ui.dungeon == selected and ui.quest == quest and addon.char.selectedDungeon == savedSelection)
+        return table.concat(cards, "\n"), #cards
+    end
+    local emptyShown, emptyCount = shownSet("")
+    assert(emptyCount > 1, "empty search lists every dungeon")
+    for _, hostile in ipairs({ bad, string.char(255) .. "a" }) do
+        local actual, count = shownSet(hostile)
+        assert(count == emptyCount and actual == emptyShown, "invalid bytes fail closed as empty")
+    end
     addon.dungeons,addon.DungeonName,ui.search,ui.range,addon.db.locale,addon.quests=dungeons,dungeonName,search,range,locale,quests
     ui.searchBox:SetText(search); ui:Refresh()
 end)

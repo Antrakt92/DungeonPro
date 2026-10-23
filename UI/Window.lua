@@ -360,7 +360,7 @@ local function searchText(value)
     if type(value) ~= "string" then return "" end
     if type(addon.SearchFold) == "function" then
         local folded = addon.Clean(addon.SearchFold(value), "string")
-        if not folded then return value end
+        if not folded then return "" end
         -- Normalize common pasted typography in search keys, never displayed names.
         return folded:gsub("’", "'"):gsub("‧", "·"):gsub("\194\160", " "):gsub("\227\128\128", " "):gsub("^%s+", ""):gsub("%s+$", "")
     end

@@ -46,8 +46,9 @@ for _, padding in ipairs({ nbsp, wide }) do
     local _, matches = results(padding .. "1654" .. padding)
     assert(matches == 0, "a normalized text key never silently becomes an exact-ID lookup")
 end
+local emptyResults, emptyCount = results("")
 for _, malformed in ipairs({ "Zul'Farrak\194", "Zul" .. curly .. "Farrak\237\160\128" }) do
-    local _, matches = results(malformed)
-    assert(matches == 0, "invalid UTF-8 cannot become a partial valid match")
+    local actual, matches = results(malformed)
+    assert(matches == emptyCount and actual == emptyResults, "invalid UTF-8 fails closed as empty")
 end
 print("Search typography: PASS (five actual queries, three locales, display preservation, UTF-8 and exact-ID boundaries)")

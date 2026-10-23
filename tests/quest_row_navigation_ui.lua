@@ -888,7 +888,7 @@ do
  ui.search="";ui.questTreeRoot=nil;ui.questTreeDungeon=nil;ui.quest=990104;ui.includeUnavailable=true;ui.frame:Show();ui:Refresh()
  assert(row(990101).navigationControl.enabled,"recreated window restores navigation rows")
 end
--- A9 SEARCHFOLD-NONSTRING-GUARD: hostile SearchFold returning a truthy non-string falls back to the raw value without throwing.
+-- A9 SEARCHFOLD-NONSTRING-GUARD: hostile SearchFold returning a truthy non-string fails closed as empty without throwing.
 do
  local savedFold=addon.SearchFold
  local function shownCards()
@@ -915,8 +915,8 @@ do
   end
   addon.SearchFold=savedFold
   assert(ok,"hostile SearchFold "..type(bad).." threw: "..tostring(err))
-  -- Fallback keeps the raw value without case folding, so hostile matching is a
-  -- case-sensitive subset of the folded baseline: never throws, never invents rows.
+  -- Fallback fails closed as empty like the non-string guard, so hostile
+  -- matching never throws and never invents rows (an empty needle matches all).
   local known={}
   for _,key in ipairs(expected)do known[key]=true end
   for _,key in ipairs(actual)do assert(known[key],"hostile SearchFold "..type(bad).." invented a row: "..key) end
@@ -1890,5 +1890,29 @@ do
  assert(body:find("https://example.com/safe",1,true),"clean recorded source keeps its giver hint line")
  addon.quests[990101].start=savedStart
  ui.search="";ui.questTreeRoot=nil;ui.questTreeDungeon=nil;ui.quest=990104;ui.frame:Show();ui:Refresh()
+end
+-- A23 SEARCHFOLD-FAIL-CLOSED: an overlong (>16384B) or invalid-UTF-8 search key
+-- folds to empty instead of leaking the raw value, mirroring the non-string guard.
+do
+ local function shownCards()
+  local count=0
+  for _,card in ipairs(ui.cards)do if card:IsShown()then count=count+1 end end
+  return count
+ end
+ ui.search="";ui.questTreeRoot=nil;ui.questTreeDungeon=nil;ui.includeUnavailable=true;ui.frame:Show();ui:RefreshDungeons()
+ local baseline=shownCards()
+ assert(baseline>0,"valid catalogue publishes dungeon cards")
+ for _,hostile in ipairs({("x"):rep(20480),"\255\254 broken"})do
+  ui.search=hostile
+  local ok,err=pcall(function() ui:RefreshDungeons() end)
+  assert(ok,"hostile search threw in RefreshDungeons: "..tostring(err))
+  assert(shownCards()==baseline,"hostile search must fail closed as empty")
+ end
+ ui.search="own"
+ local ok,err=pcall(function() ui:RefreshDungeons() end)
+ assert(ok,"valid search threw in RefreshDungeons: "..tostring(err))
+ assert(shownCards()==baseline,"valid search keeps its baseline cards")
+ ui.search="";ui.frame:Show();ui:RefreshDungeons()
+ assert(shownCards()==baseline,"valid catalogue restores dungeon cards")
 end
 print("Middle quest navigation checks passed (modeled, no native input or layout proof)")

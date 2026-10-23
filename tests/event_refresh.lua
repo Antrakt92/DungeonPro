@@ -177,4 +177,22 @@ check("Missing UI fails closed on slash dispatch without throwing", function()
     local ok, err = pcall(SlashCmdList.DUNGEONPRO, "")
     assert(ok, "missing UI threw on slash dispatch: " .. tostring(err))
 end)
+check("Overlong slash input is a no-op without throwing or toggling", function()
+    local m = model()
+    local toggled, stopped, probed = 0, 0, 0
+    m.addon.UI.Toggle = function() toggled = toggled + 1 end
+    m.addon.Navigation = { Stop = function() stopped = stopped + 1 end }
+    m.addon.ProbeClient = function() probed = probed + 1 end
+    local ok, err = pcall(SlashCmdList.DUNGEONPRO, ("x"):rep(2048))
+    assert(ok, "overlong slash threw: " .. tostring(err))
+    assert(toggled == 0, "overlong slash must not toggle")
+    ok, err = pcall(SlashCmdList.DUNGEONPRO, ("y"):rep(1025))
+    assert(ok and toggled == 0, "1025-char slash must stay a no-op: " .. tostring(err))
+    ok, err = pcall(SlashCmdList.DUNGEONPRO, ("z"):rep(1024))
+    assert(ok and toggled == 1, "1024-char slash keeps ordinary dispatch: " .. tostring(err))
+    ok, err = pcall(SlashCmdList.DUNGEONPRO, "clear")
+    assert(ok and stopped == 1, "ordinary clear stopped working: " .. tostring(err))
+    ok, err = pcall(SlashCmdList.DUNGEONPRO, "probe")
+    assert(ok and probed == 1, "ordinary probe stopped working: " .. tostring(err))
+end)
 print("Event refresh checks passed: " .. total)
