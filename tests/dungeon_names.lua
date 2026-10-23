@@ -260,4 +260,28 @@ check("Translated dungeon sanitization cannot leak detached locale data or renam
         assert(addon.DungeonName(d)==(mode==3 and "New source" or "Source dungeon"))
     end
 end)
+check("Hostile dungeon metatables fall back without throwing", function()
+    GetRealZoneText = function() return "Native label" end
+    local boom = function() error("hostile __index") end
+    -- Throwing __index with raw identity fields present: native flow survives.
+    assert(addon.DungeonName(setmetatable({ name = "Source", instanceID = 230 }, { __index = boom })) == "Native label")
+    -- Throwing __index with no raw name: source fallback stays fail-closed.
+    local noName = setmetatable({ instanceID = 230 }, { __index = boom })
+    local ok, nameless = pcall(addon.DungeonName, noName)
+    assert(ok and type(nameless) == "string", "nameless hostile dungeon must not throw")
+    -- Artwork table without raw fields: identity stays silent, source fallback.
+    local artMissing = setmetatable({}, { __index = boom })
+    assert(addon.DungeonName({ name = "Source", art = artMissing }) == "Source")
+    -- Artwork table with raw fields behind a throwing metatable: art-only path.
+    local artRaw = setmetatable({ fileID = 7963781, gameMapID = 3065 }, { __index = boom })
+    GetRealZoneText = function(id) assert(id == 3065); return "Native label 3065" end
+    assert(addon.DungeonName({ name = "Source", art = artRaw }) == "Native label 3065")
+    -- SavedVariables without a raw locale: locale scope falls back, no throw.
+    addon.db = setmetatable({}, { __index = boom })
+    GetRealZoneText = function() return "Native label" end
+    assert(addon.DungeonName({ name = "Source", instanceID = 230 }) == "Native label")
+    -- No identity at all behind a throwing metatable: exact fail-closed "".
+    addon.db = { locale = "enUS" }
+    assert(addon.DungeonName(setmetatable({}, { __index = boom })) == "")
+end)
 print("Dungeon name checks passed: " .. total)

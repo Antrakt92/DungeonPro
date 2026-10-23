@@ -1129,4 +1129,72 @@ check("Hostile metatable choices fail closed to no override without throwing", f
     eq(P.New(open, ctx()):Next(3)[1].id, 1)
     eq(P.New(open, ctx(), { [3] = { [1] = 2 } }):Next(3)[1].id, 2)
 end)
+check("Deep linear requires chains fail closed past the traversal budget without throwing", function()
+    -- Stock lua5.1 overflows near ~18k links here. Pre-fix failure mode
+    -- depends on C-stack depth at entry: standalone State/Next/Dungeon throw
+    -- `stack overflow`, while in-suite the overflow lands inside
+    -- contextCurrent's pcall firewall and misreports UNKNOWN/character.
+    -- Post-fix every entry below aborts deterministically with unknown
+    -- requirements in milliseconds.
+    local count = 20000
+    local quests = { [1] = q(1) }
+    for id = 2, count do quests[id] = q(id, { { ids = { id - 1 } } }) end
+    local engine = P.New(quests, ctx())
+    local started = os.clock()
+    local okState, state = pcall(function() return engine:State(count) end)
+    assert(okState, "State on a deep chain threw")
+    eq(state.status, "UNKNOWN"); eq(state.reason, "requirements")
+    eq(engine.visiting[count], nil)
+    local fresh = P.New(quests, ctx())
+    local okNext, actions, unknown = pcall(function() return fresh:Next(count) end)
+    assert(okNext, "Next on a deep chain threw")
+    eq(#actions, 0); eq(unknown, true)
+    local dungeonEngine = P.New(quests, ctx())
+    local okDungeon, plan = pcall(function()
+        return dungeonEngine:Dungeon({ quests = { count }, coverage = "reviewed" })
+    end)
+    assert(okDungeon, "Dungeon on a deep chain threw")
+    eq(plan.unknown, true); eq(plan.ready, false)
+    assert(os.clock() - started < 5, "deep chain traversal must abort quickly")
+end)
+check("Traversal budget boundary keeps short chains exact", function()
+    -- Depth is counted per link from the entry on a cold cache: a 51-link
+    -- chain bottoms out at depth 50 and still resolves, while link 52 aborts
+    -- as unknown requirements. Separate fresh engines avoid state-cache
+    -- ordering effects (a warm cache legitimately short-circuits recursion).
+    local quests = { [1] = q(1) }
+    for id = 2, 52 do quests[id] = q(id, { { ids = { id - 1 } } }) end
+    local engine = P.New(quests, ctx())
+    eq(engine:State(51).status, "LOCKED")
+    local actions, unknown = engine:Next(51)
+    eq(#actions, 1); eq(actions[1].id, 1); eq(unknown, false)
+    local over = P.New(quests, ctx())
+    local overState = over:State(52)
+    eq(overState.status, "UNKNOWN"); eq(overState.reason, "requirements")
+    local overActions, overUnknown = over:Next(52)
+    eq(#overActions, 0); eq(overUnknown, true)
+end)
+check("Cyclic pathological graphs terminate quickly without availability", function()
+    local count = 300
+    local ring = {}
+    for id = 1, count do ring[id] = q(id, { { ids = { id % count + 1 } } }) end
+    local engine = P.New(ring, ctx())
+    local started = os.clock()
+    local okState, state = pcall(function() return engine:State(1) end)
+    assert(okState, "State on a cyclic ring threw")
+    eq(state.status, "UNKNOWN")
+    local okNext, actions, unknown = pcall(function() return engine:Next(1) end)
+    assert(okNext, "Next on a cyclic ring threw")
+    eq(unknown, true)
+    -- Fan-out cycles re-walk shared nodes; the budget plus sentinels keep this fast.
+    local fan = {}
+    for id = 1, 60 do
+        fan[id] = q(id, { { ids = { id % 60 + 1, (id + 1) % 60 + 1 } } })
+    end
+    local fanEngine = P.New(fan, ctx())
+    local okFan, fanActions, fanUnknown = pcall(function() return fanEngine:Next(1) end)
+    assert(okFan, "Next on a fan-out cycle threw")
+    eq(fanUnknown, true)
+    assert(os.clock() - started < 5, "cyclic traversal must terminate quickly")
+end)
 print("Planner checks passed: " .. passed)

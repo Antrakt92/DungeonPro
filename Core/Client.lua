@@ -1147,7 +1147,7 @@ function addon.DungeonName(d)
     local bundled, bundleCurrent
     local function fallback()
         if bundled and bundleCurrent and bundleCurrent() then return bundled end
-        return addon.Clean(d.name, "string") or ""
+        return addon.Clean(rawget(d, "name"), "string") or ""
     end
     local function identity()
         local instanceID = rawget(d, "instanceID")
@@ -1157,9 +1157,9 @@ function addon.DungeonName(d)
         end
         if instanceID ~= nil then return dialogueInteger(instanceID, 1) end
         -- Artwork maps may localize labels; they never become navigation or instance identities.
-        local art = addon.Clean(d.art, "table")
-        local fileID = art and dialogueInteger(art.fileID, 1)
-        local mapID = art and dialogueInteger(art.gameMapID, 1)
+        local art = addon.Clean(rawget(d, "art"), "table")
+        local fileID = art and dialogueInteger(rawget(art, "fileID"), 1)
+        local mapID = art and dialogueInteger(rawget(art, "gameMapID"), 1)
         if fileID and mapID then return mapID, art, fileID end
     end
     local mapID, art, fileID = identity()
@@ -1172,21 +1172,21 @@ function addon.DungeonName(d)
     if key then bundled, bundleCurrent = translatedName("dungeons", key, d, sourceCurrent, locale) end
     if locale ~= "enUS" and bundled and bundleCurrent and bundleCurrent() then return bundled end
     if locale ~= clientLocale then return fallback() end
-    local source = addon.Clean(d.name, "string")
+    local source = addon.Clean(rawget(d, "name"), "string")
     if not mapID then return fallback() end
-    local wing = addon.Clean(d.wing, "string")
+    local wing = addon.Clean(rawget(d, "wing"), "string")
     local getter, localize = addon.Clean(GetRealZoneText, "function"), addon.Clean(addon.L, "function")
     local database = addon.Clean(addon.db, "table")
-    local choice = database and addon.Clean(database.locale, "string")
+    local choice = database and addon.Clean(rawget(database, "locale"), "string")
     local scope = restrictionNameScope()
     local function current()
         if not sourceCurrent() or not scope or not scope() then return false end
         local currentMap, currentArt, currentFile = identity()
         return addon.Clean(GetRealZoneText, "function") == getter and
-            currentMap == mapID and currentArt == art and currentFile == fileID and addon.Clean(d.name, "string") == source and
-            addon.Clean(d.wing, "string") == wing and addon.Clean(addon.L, "function") == localize and
+            currentMap == mapID and currentArt == art and currentFile == fileID and addon.Clean(rawget(d, "name"), "string") == source and
+            addon.Clean(rawget(d, "wing"), "string") == wing and addon.Clean(addon.L, "function") == localize and
             addon.Clean(addon.db, "table") == database and
-            (not database or addon.Clean(database.locale, "string") == choice)
+            (not database or addon.Clean(rawget(database, "locale"), "string") == choice)
     end
     if not getter or not current() then return fallback() end
     local name = addon.Read(getter, "string", mapID)

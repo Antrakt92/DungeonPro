@@ -47,6 +47,16 @@ local function denseSequence(value)
     return count == length
 end
 
+-- Traversal budget: State recursion and Next:resolve each recurse once per
+-- requires link with no pcall, so a hand-edited catalogue holding thousands of
+-- links would escape as a Lua `stack overflow`. Mirror the QuestTree and
+-- SearchRelations depth cap and fail closed past 50 links instead. Shipped
+-- chains peak far below this (live probe: max depth 7), so no valid behavior
+-- changes. The cap also bounds cyclic re-walks alongside the existing
+-- visiting/path sentinels, without redesigning memoization. Plain integer
+-- counters only, side-effect-free: no Clean() element walks on these paths.
+local MAX_TRAVERSAL_DEPTH = 50
+
 -- Root membership is independent of readiness, level, and prerequisite progress.
 function Planner.RelevantToCharacter(eligible, status)
     return eligible ~= false or status == "ACTIVE" or status == "READY"
@@ -92,11 +102,13 @@ function Planner.New(quests, context, choices)
         return false
     end
 
-    function engine:State(id)
+    function engine:State(id, depth)
         -- A non-numeric ID cannot index the state cache; fail closed as
         -- missing without throwing, mirroring CompletionSteps below.
         id = addon.Clean(id, "number")
         if not id then return { status = "UNKNOWN", reason = "missing", id = nil, completedHistory = false } end
+        -- Internal recursion budget only; public callers omit it and start at 0.
+        depth = (type(depth) == "number" and depth or 0)
         local completedHistory = false
         local function save(status, reason)
             if not self:Current() then status, reason, completedHistory = "UNKNOWN", "character", false end
@@ -143,6 +155,7 @@ function Planner.New(quests, context, choices)
             if self.context.level < q.minLevel then return save("LOCKED", "level") end
         end
         if q.requirementsKnown ~= true then return save("UNKNOWN", "requirements") end
+        if depth > MAX_TRAVERSAL_DEPTH then return save("UNKNOWN", "requirements") end
         if self.visiting[id] then return save("UNKNOWN", "cycle") end
         self.visiting[id] = true
         local blocked, unknown = false, false
@@ -161,7 +174,7 @@ function Planner.New(quests, context, choices)
             end
             local satisfied, uncertain = false, false
             for _, parent in ipairs(group.ids) do
-                local state = self:State(parent)
+                local state = self:State(parent, depth + 1)
                 if prerequisiteSatisfied(state, group.mode) then satisfied = true end
                 if state.status == "UNKNOWN" then uncertain = true end
             end
@@ -186,7 +199,8 @@ function Planner.New(quests, context, choices)
         id = addon.Clean(id, "number")
         if not id then return {}, true end
         local memo = {}
-        local function resolve(id, path)
+        local function resolve(id, path, depth)
+            depth = (type(depth) == "number" and depth or 0)
             if path[id] then return {}, true, true end
             local cached = memo[id]
             if cached then
@@ -199,6 +213,7 @@ function Planner.New(quests, context, choices)
                 if not cyclic then memo[id] = { actions = actions, unknown = unknown } end
                 return actions, unknown, cyclic
             end
+            if depth > MAX_TRAVERSAL_DEPTH then return publish({}, true) end
             local state = self:State(id)
             -- A non-table catalogue fails closed as unknown, never a throw.
             local q = type(self.quests) == "table" and self.quests[id] or nil
@@ -247,7 +262,7 @@ function Planner.New(quests, context, choices)
                     end
                     for _, parent in ipairs(group.ids) do
                         if (not selected or parent == selected) and self:State(parent).status ~= "UNAVAILABLE" then
-                            local candidates, missing, cycle = resolve(parent, path)
+                            local candidates, missing, cycle = resolve(parent, path, depth + 1)
                             cyclic = cyclic or cycle == true
                             local score = missing and 10000 or 0
                             if #candidates == 0 then score = score + 5000 end

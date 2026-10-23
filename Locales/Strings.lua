@@ -213,9 +213,25 @@ function addon.L(key, ...)
     -- table index below. All live callers pass string literals; this guards
     -- the latent L(nil) path before the pcall-format guard.
     if type(key) ~= "string" then return key end
-    local locale = addon.db and addon.db.locale or "auto"
-    local language = addon.Clean and addon.Clean(addon.Language, "table")
-    local preview = language and addon.Read(language.GetSelection, "string", language)
+    -- Reader hardening: namespace reads never throw. A corrupted SavedVariables
+    -- table (DungeonProDB=5), a hostile addon.db/Clean overwrite, a throwing
+    -- language metatable, or a poisoned locale table falls back to "auto"/enUS
+    -- instead of aborting the UI update. Mirrors nameLocaleScope() in
+    -- Core/Client.lua: Clean only through a type-checked capture, rawget for
+    -- every metatable-sensitive read.
+    local clean = type(rawget(addon, "Clean")) == "function" and rawget(addon, "Clean")
+    if not clean then
+        -- Namespace adapters unavailable (standalone locale testbed) or
+        -- overwritten: plain type checks keep literal lookups working instead
+        -- of collapsing every locale to enUS. Never throws; never indexes.
+        clean = function(value, kind) if type(value) ~= kind then return nil end return value end
+    end
+    local read = type(rawget(addon, "Read")) == "function" and rawget(addon, "Read")
+    local db = clean and clean(rawget(addon, "db"), "table")
+    local locale = (db and clean(rawget(db, "locale"), "string")) or "auto"
+    local language = clean and clean(rawget(addon, "Language"), "table")
+    local previewGetter = language and clean(rawget(language, "GetSelection"), "function")
+    local preview = previewGetter and read and read(previewGetter, "string", language)
     if preview then locale = preview end
     if locale == "auto" then
         if type(GetLocale) == "function" then
@@ -227,7 +243,12 @@ function addon.L(key, ...)
     end
     if locale == "enGB" then locale = "enUS" end
     if locale == "esMX" then locale = "esES" end
-    local text = (strings[locale] or strings.enUS)[key] or strings.enUS[key] or key
+    -- Poisoned locale tables (strings.deDE=5) fall back to enUS, never throw.
+    local catalog = (type(strings) == "table" and type(locale) == "string") and rawget(strings, locale) or nil
+    if type(catalog) ~= "table" then catalog = nil end
+    local fallback = type(strings) == "table" and rawget(strings, "enUS") or nil
+    if type(fallback) ~= "table" then fallback = nil end
+    local text = (catalog and rawget(catalog, key)) or (fallback and rawget(fallback, key)) or key
     if type(text) ~= "string" then text = key end
     -- Malformed catalog-fed format args fail closed to the raw text, never an aborted UI update.
     if select("#", ...) > 0 then

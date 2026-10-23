@@ -76,4 +76,50 @@ do
     assert(addon.L(nil, "x") == nil, "non-string key with format args must not throw")
     assert(addon.L("NEXT") == addon.locales.enUS.NEXT, "valid keys byte-identical")
 end
+-- Reader hardening: hostile namespaces never throw; results fall back to the
+-- key/enUS text. Mirrors the nameLocaleScope() rawget discipline.
+do
+    addon.db = { locale = "enUS" }
+    local expected = addon.L("NEXT")
+    local savedDb, savedClean, savedRead, savedLanguage = addon.db, addon.Clean, addon.Read, addon.Language
+    local savedDeDE = addon.locales.deDE
+    -- The locale testbed loads no Namespace adapters; install faithful local
+    -- stand-ins so the language-metatable probes exercise the rawget path.
+    addon.Clean = function(value, kind) if type(value) ~= kind then return nil end return value end
+    addon.Read = function(fn, kind, ...)
+        if type(fn) ~= "function" then return nil end
+        local ok, value = pcall(fn, ...)
+        if not ok then return nil end
+        return addon.Clean(value, kind)
+    end
+    local function hardened(label, setup, key)
+        setup()
+        local ok, result = pcall(addon.L, key or "NEXT")
+        assert(ok, label .. " threw: " .. tostring(result))
+        assert(type(result) == "string", label .. " must return a string, got " .. type(result))
+        return result
+    end
+    hardened("db=5", function() addon.db = 5 end)
+    addon.Clean = "x"
+    hardened("Clean overwrite", function() addon.db = { locale = "enUS" } end)
+    addon.Clean = savedClean == nil and (function(value, kind) if type(value) ~= kind then return nil end return value end) or savedClean
+    hardened("throwing language metatable", function()
+        addon.db = { locale = "enUS" }
+        addon.Language = setmetatable({}, { __index = function() error("hostile __index") end })
+    end)
+    addon.Language = setmetatable({ GetSelection = function() return "ruRU" end },
+        { __index = function() error("hostile __index") end })
+    addon.db = { locale = "enUS" }
+    assert(addon.L("NEXT") == addon.locales.ruRU.NEXT, "raw preview selection must survive a hostile language metatable")
+    hardened("poisoned deDE table", function()
+        addon.Language = nil
+        addon.db = { locale = "deDE" }
+        addon.locales.deDE = 5
+    end)
+    assert(hardened("poisoned lookup of missing key", function() end, "NO_SUCH_KEY_XYZ") == "NO_SUCH_KEY_XYZ")
+    addon.db, addon.Clean, addon.Read, addon.Language = savedDb, savedClean, savedRead, savedLanguage
+    addon.locales.deDE = savedDeDE
+    addon.db = { locale = "enUS" }
+    assert(addon.L("NEXT") == expected, "valid path must stay byte-identical")
+end
 print("Localization checks passed: " .. n .. " dictionaries, esMX/enGB aliases; visual review pending")
