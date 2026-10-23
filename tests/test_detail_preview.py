@@ -105,4 +105,67 @@ runpy.run_path('scripts/render-detail-preview.py',run_name='__main__')
    self.assertEqual(r.returncode,0,(r.stdout,r.stderr))
    lines=[line for line in r.stderr.splitlines()if line.startswith('CAPTURE_QUEST=')]
    self.assertEqual(len(lines),4,lines);self.assertEqual(set(lines),{'CAPTURE_QUEST=4764'})
+class MalformedSnapshotPreview(unittest.TestCase):
+ def _snapshot(self):
+  result=lua(CAPTURE,'4764','enUS')
+  self.assertEqual(result.returncode,0,result.stderr)
+  return json.loads(result.stdout)
+ def _preview_module(self):
+  import importlib.util
+  from PIL import Image,ImageDraw,ImageFont
+  spec=importlib.util.spec_from_file_location('render_detail_preview',ROOT/'scripts/render-detail-preview.py')
+  module=importlib.util.module_from_spec(spec);spec.loader.exec_module(module)
+  module.Image,module.ImageDraw,module.ImageFont=Image,ImageDraw,ImageFont
+  return module
+ def _run_preview_main(self,tmp,snapshot,args):
+  import runpy
+  from unittest import mock
+  real_run=subprocess.run
+  def fake_run(cmd,*a,**kw):
+   if isinstance(cmd,list)and any(str(v).endswith('detail_visual.lua')for v in cmd):
+    return subprocess.CompletedProcess(cmd,0,stdout=json.dumps(snapshot),stderr='')
+   return real_run(cmd,*a,**kw)
+  argv=['render-detail-preview.py','--lua',LUA,'--output',tmp,*args]
+  with mock.patch.object(sys,'argv',argv),mock.patch.object(subprocess,'run',fake_run):
+   runpy.run_path(str(ROOT/RUN),run_name='__main__')
+ def test_valid_capture_renders_byte_identical_to_direct_render(self):
+  import tempfile
+  try:__import__('PIL')
+  except ImportError:self.skipTest('Pillow is required for preview rendering')
+  snapshot=self._snapshot()
+  module=self._preview_module()
+  with tempfile.TemporaryDirectory()as tmp:
+   direct=Path(tmp)/'direct.png'
+   module.render(snapshot,direct)
+   expected=direct.read_bytes()
+   self._run_preview_main(tmp,snapshot,['--quest','4764'])
+   for name in ('4764-enUS.png','4764-ruRU.png','4764-enUS-metrics.lua','4764-ruRU-metrics.lua'):
+    self.assertTrue((Path(tmp)/name).exists(),name)
+   for name in ('4764-enUS.png','4764-ruRU.png'):
+    self.assertEqual((Path(tmp)/name).read_bytes(),expected,name)
+ def test_malformed_snapshot_rejected_without_traceback(self):
+  import contextlib,copy,io,tempfile
+  snapshot=self._snapshot()
+  key=next(iter(snapshot['metrics']))
+  cases=(
+   ('metrics size',lambda s:s['metrics'][key].update(size='big')),
+   ('metrics width',lambda s:s['metrics'][key].update(width='wide')),
+   ('row id',lambda s:s['objects'][0].pop('id')),
+   ('frame role',lambda s:s['roles'].pop('frame')),
+   ('quest identity',lambda s:s.pop('questID')),
+   ('anchor offset',lambda s:next(row for row in s['objects']if row.get('points'))['points'][0].update(x='bad')),
+   ('font size huge',lambda s:s['objects'][0].update(text='hi',size=10**12,width=100)),
+   ('text huge',lambda s:s['objects'][0].update(text='x'*200000,size=14,width=100)),
+  )
+  for label,mutate in cases:
+   with self.subTest(label):
+    bad=copy.deepcopy(snapshot)
+    mutate(bad)
+    with tempfile.TemporaryDirectory()as tmp:
+     err=io.StringIO()
+     with contextlib.redirect_stderr(err),self.assertRaises(SystemExit)as stopped:
+      self._run_preview_main(tmp,bad,['--quest','4764'])
+     self.assertEqual(stopped.exception.code,2,label)
+     self.assertIn('Invalid preview',err.getvalue(),label)
+     self.assertNotIn('Traceback',err.getvalue(),label)
 if __name__=='__main__':unittest.main()

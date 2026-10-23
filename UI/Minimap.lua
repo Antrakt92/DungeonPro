@@ -372,8 +372,31 @@ function M:Initialize(retry)
         ok, button = pcall(CreateFrame, "Button", "DungeonProMinimapButton", parent)
         if not ok or not cleanFrame(button) then return false end
         self.button = button
-        button:SetSize(32, 32); button:EnableMouse(true); button:RegisterForClicks("LeftButtonUp")
-        button:RegisterForDrag("LeftButton")
+        do
+            local sizeFn = method(button, "SetSize")
+            local mouseFn = method(button, "EnableMouse")
+            local clicksFn = method(button, "RegisterForClicks")
+            local dragFn = method(button, "RegisterForDrag")
+            if not sizeFn or not mouseFn or not clicksFn or not dragFn then return false end
+            if not pcall(sizeFn, button, 32, 32) then return false end
+            if not pcall(mouseFn, button, true) then return false end
+            if not pcall(clicksFn, button, "LeftButtonUp") then return false end
+            if not pcall(dragFn, button, "LeftButton") then return false end
+        end
+        local function fallbackLabel()
+            local create = method(button, "CreateFontString")
+            if not create then return false end
+            local okF, text = pcall(create, button, nil, "OVERLAY", "GameFontNormal")
+            if not okF or not cleanFrame(text) then return false end
+            local points = method(text, "SetAllPoints")
+            local setText = method(text, "SetText")
+            local show = method(text, "Show")
+            if not points or not setText or not show then return false end
+            if not pcall(points, text) then return false end
+            if not pcall(setText, text, "DP") then return false end
+            if not pcall(show, text) then return false end
+            return true
+        end
         local okC, icon = pcall(button.CreateTexture, button, nil, "ARTWORK")
         if okC and cleanFrame(icon) then
             button.icon = icon
@@ -381,13 +404,12 @@ function M:Initialize(retry)
             local rendered, success = pcall(icon.SetTexture, icon, "Interface\\Icons\\INV_Misc_Map_01")
             if rendered and addon.Clean(success, "boolean") == true then icon:Show()
             else
-                icon:Hide()
-                local text = button:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-                text:SetAllPoints(); text:SetText("DP"); text:Show()
+                local hide = method(icon, "Hide")
+                if not hide or not pcall(hide, icon) then return false end
+                if not fallbackLabel() then return false end
             end
         else
-            local text = button:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-            text:SetAllPoints(); text:SetText("DP"); text:Show()
+            if not fallbackLabel() then return false end
         end
         pcall(function()
             local createMask, addMask = method(button, "CreateMaskTexture"), method(icon, "AddMaskTexture")

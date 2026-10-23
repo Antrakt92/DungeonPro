@@ -2399,4 +2399,39 @@ do
  ui.search,ui.range,ui.includeUnavailable=savedSearch,savedRange,savedUnavailable
  ui.frame:Show();ui:Refresh()
 end
+-- A27 HOSTILE-CREATEFRAME-GUARD: a throwing global CreateFrame (or a throwing
+-- SetSize) fails the row bind closed (:830) instead of escaping to the
+-- Window.lua callers, mirroring the pcall guards at Window.lua:2800 and
+-- Minimap.lua:372; a valid bind keeps its 24x24 control and row binding.
+do
+ local target=row(990101)
+ local savedControl=target.navigationControl
+ local savedCreate=CreateFrame
+ local liveOwner=function() return true end
+ target.navigationControl=nil
+ CreateFrame=function() error("hostile CreateFrame") end
+ local ok,bound=pcall(function() return ui:BindQuestRowNavigation(target,990101,liveOwner) end)
+ assert(ok,"hostile CreateFrame threw out of BindQuestRowNavigation: "..tostring(bound))
+ assert(bound==false,"hostile CreateFrame keeps no row binding")
+ CreateFrame=function(...)
+  local frame=savedCreate(...)
+  frame.SetSize=function() error("hostile SetSize") end
+  return frame
+ end
+ target.navigationControl=nil
+ ok,bound=pcall(function() return ui:BindQuestRowNavigation(target,990101,liveOwner) end)
+ assert(ok,"hostile SetSize threw out of BindQuestRowNavigation: "..tostring(bound))
+ assert(bound==false,"hostile SetSize keeps no row binding")
+ CreateFrame=savedCreate
+ target.navigationControl=nil
+ ok,bound=pcall(function() return ui:BindQuestRowNavigation(target,990101,liveOwner) end)
+ assert(ok and bound,"valid bind threw or failed: "..tostring(bound))
+ local control=target.navigationControl
+ assert(control and control.width==24 and control.height==24,"valid bind keeps its 24x24 control")
+ assert(target.navigationBinding~=nil,"valid bind publishes its row binding")
+ CreateFrame=savedCreate
+ target.navigationControl=savedControl
+ ui:Refresh()
+ assert(row(990101).navigationControl.enabled,"restored row keeps its navigation control")
+end
 print("Middle quest navigation checks passed (modeled, no native input or layout proof)")

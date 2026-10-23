@@ -522,5 +522,56 @@ check("Unavailable resize geometry schedules bounded retry like explicit recover
     assert(m.button.shown and not m.retry and #queue==1 and not m.button.scripts.OnUpdate)
     assert(config.hide==false and config.angle==17)
 end)
+check("Hostile fresh-button setup methods fail closed without throwing",function()
+    for _,key in ipairs({"SetSize","EnableMouse","RegisterForClicks","RegisterForDrag"})do
+        local m=reset();local factory=CreateFrame
+        CreateFrame=function(...)
+            local b=factory(...)
+            b[key]=function() error("setup unavailable") end
+            return b
+        end
+        local ok,result=pcall(m.Initialize,m)
+        assert(ok and result==false,key.." must fail closed without throwing")
+    end
+    for _,key in ipairs({"SetSize","EnableMouse","RegisterForClicks","RegisterForDrag"})do
+        local m=reset();local factory=CreateFrame
+        CreateFrame=function(...)
+            local b=factory(...)
+            b[key]=false
+            return b
+        end
+        local ok,result=pcall(m.Initialize,m)
+        assert(ok and result==false,key.." missing must fail closed without throwing")
+    end
+    local m=reset();assert(m:Initialize())
+    assert(m.button.width==32 and m.button.height==32 and m.button.shown)
+end)
+check("Hostile fallback font creation fails closed without throwing",function()
+    for _,mode in ipairs({"throw","nil"})do
+        local m=reset();local factory=CreateFrame
+        CreateFrame=function(...)
+            local b=factory(...)
+            b.CreateTexture=function() return nil end
+            if mode=="throw"then b.CreateFontString=function() error("font unavailable") end
+            else b.CreateFontString=function() return nil end end
+            return b
+        end
+        local ok,result=pcall(m.Initialize,m)
+        assert(ok and result==false,mode.." texture-nil fallback must fail closed without throwing")
+    end
+    for _,mode in ipairs({"throw","nil"})do
+        local m=reset();textureResult=false;local factory=CreateFrame
+        CreateFrame=function(...)
+            local b=factory(...)
+            if mode=="throw"then b.CreateFontString=function() error("font unavailable") end
+            else b.CreateFontString=function() return nil end end
+            return b
+        end
+        local ok,result=pcall(m.Initialize,m)
+        assert(ok and result==false,mode.." texture-fallback must fail closed without throwing")
+    end
+    local m=reset();textureResult=false;assert(m:Initialize())
+    assert(m.button.label and m.button.label.text=="DP" and m.button.label.shown and m.button.shown)
+end)
 issecretvalue=nil
 print("Minimap modeled checks passed: "..total.." (native client unverified)")

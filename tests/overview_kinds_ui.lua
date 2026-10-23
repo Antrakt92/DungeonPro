@@ -774,4 +774,66 @@ do
  render(emptySingleDungeon)
  assert(noteOf(9731):find(itemMark, 1, true) and not noteOf(9731):find(outsideMark, 1, true), "restored helpers recover the item mark")
 end
+-- HOSTILE-MODEL-GUARD: malformed producer models fail closed with the input
+-- offset and no binding instead of throwing, mirroring the shape validation
+-- on every neighboring input; a valid model keeps its rows.
+do
+ local provider = assert(a.DungeonOverview)
+ local realGet = provider.Get
+ local savedDungeon, savedQuest = u.dungeon, u.quest
+ u.dungeon, u.quest, u.includeUnavailable, u.range = kindsDungeon, nil, false, false
+ u.questTreeRoot, u.questTreeDungeon = nil, nil
+ u:Refresh()
+ assert(u.quest == nil and u.engine and u.currentPlan)
+ local dungeon, engine, plan, generation = u.dungeon, u.engine, u.currentPlan, u.rewardGeneration
+ local function current()
+  return a.UI == u and u.dungeon == dungeon and u.quest == nil and u.engine == engine and
+   u.currentPlan == plan and u.rewardGeneration == generation
+ end
+ local function setFont(field, size) field:SetFont(STANDARD_TEXT_FONT, size, "") end
+ local function label(parent, value, x, y, width, size)
+  local field = parent:CreateFontString(nil, "OVERLAY")
+  field:SetPoint("TOPLEFT", x, y); field:SetWidth(width); setFont(field, size); field:SetText(value); field:Show(); return field
+ end
+ local function measured(field, minimum) return math.max(minimum, field:GetStringHeight()) end
+ local startOffset = u.detail:GetHeight()
+ local function renderWith(model)
+  local stubCurrent = function() return true end
+  provider.Get = function() return model, stubCurrent, stubCurrent end
+  u:ReleasePreparationOverview()
+  return pcall(function()
+   return u:RenderPreparationOverview(current, u.detail:GetWidth() - 8, startOffset, {
+    label = label, setFont = setFont, measuredHeight = measured,
+    styles = { body = { size = 15, minimum = 20, gap = 8, color = { 1, 1, 1 } },
+     caption = { size = 13, minimum = 18, gap = 8, color = { 1, 1, 1 } },
+     warning = { size = 15, minimum = 20, gap = 8, color = { 1, 1, 1 } } } })
+  end)
+ end
+ local function counts() return { READY = 0, ACTIVE = 1, COMPLETED = 0, UNKNOWN = 0, LOCKED = 0, AVAILABLE = 1, UNAVAILABLE = 0 } end
+ local function modelWith(steps, modelCounts)
+  return { counts = modelCounts, shownRoots = 1, unknown = false, knownPrepared = false, steps = steps, remainingSteps = 0 }
+ end
+ local goodSteps = { { id = 9001, kind = "pickup", status = "AVAILABLE", listedTarget = true } }
+ for index, case in ipairs({
+  { name = "nil steps", steps = nil, modelCounts = counts() },
+  { name = "non-table steps", steps = 5, modelCounts = counts() },
+  { name = "non-table step", steps = { 5 }, modelCounts = counts() },
+  { name = "nil step id", steps = { { kind = "pickup", status = "AVAILABLE", listedTarget = true } }, modelCounts = counts() },
+  { name = "table step id", steps = { { id = {}, kind = "pickup", status = "AVAILABLE", listedTarget = true } }, modelCounts = counts() },
+  { name = "nil counts", steps = goodSteps, modelCounts = nil },
+  { name = "non-finite count", steps = goodSteps, modelCounts = (function() local c = counts(); c.AVAILABLE = 0 / 0; return c end)() },
+ }) do
+  local ok, finish = renderWith(modelWith(case.steps, case.modelCounts))
+  assert(ok, "hostile model threw in RenderPreparationOverview (" .. case.name .. "): " .. tostring(finish))
+  assert(finish == startOffset, "hostile model fails closed with the input offset (" .. case.name .. "), kept " .. tostring(finish))
+  assert(u.overviewBinding == nil, "hostile model publishes no overview binding (" .. case.name .. ")")
+ end
+ local ok, finish = renderWith(modelWith(goodSteps, counts()))
+ assert(ok and finish ~= nil and finish ~= startOffset, "valid model renders past its input offset")
+ assert(u.overviewBinding and u.overviewBinding.current(), "valid model keeps a current overview binding")
+ assert(noteOf(9001):find(a.L("PREP_outside"), 1, true), "valid model keeps its kind mark")
+ provider.Get = realGet
+ u.dungeon, u.quest = savedDungeon, savedQuest
+ u:Refresh()
+end
 print("Overview kinds compatibility component: PASS (explicit real renderer, compact default preserved; pickup/inside distinct + order + clicks; level/unknown under NEXT without availability or green; More/Fewer and dungeon-switch ownership; supporting-kind composition without doubles)")

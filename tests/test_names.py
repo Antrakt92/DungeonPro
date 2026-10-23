@@ -352,6 +352,15 @@ class NamesTests(unittest.TestCase):
             {"quests": [], "dungeons": [123]},
             {"quests": [{"id": 166}], "dungeons": [{"key": "dm", "name": "The Deadmines"}]},
             {"quests": [{"id": 166, "name": "The Defias Brotherhood"}], "dungeons": [{"key": "dm"}]},
+            {"quests": [{"id": 166, "name": ["x"]}], "dungeons": [{"key": "dm", "name": "The Deadmines"}]},
+            {"quests": [{"id": 166, "name": {"a": 1}}], "dungeons": [{"key": "dm", "name": "The Deadmines"}]},
+            {"quests": [{"id": 166, "name": 123}], "dungeons": [{"key": "dm", "name": "The Deadmines"}]},
+            {"quests": [{"id": 166, "name": "The Defias Brotherhood"}], "dungeons": [{"key": ["x"], "name": "The Deadmines"}]},
+            {"quests": [{"id": 166, "name": "The Defias Brotherhood"}], "dungeons": [{"key": {"a": 1}, "name": "The Deadmines"}]},
+            {"quests": [{"id": 166, "name": "The Defias Brotherhood"}], "dungeons": [{"key": 123, "name": "The Deadmines"}]},
+            {"quests": [{"id": 166, "name": "The Defias Brotherhood"}], "dungeons": [{"key": "dm", "name": ["x"]}]},
+            {"quests": [{"id": 166, "name": "The Defias Brotherhood"}], "dungeons": [{"key": "dm", "name": {"a": 1}}]},
+            {"quests": [{"id": 166, "name": "The Defias Brotherhood"}], "dungeons": [{"key": "dm", "name": 123}]},
         ]
         for bad in hostile:
             for index, call in enumerate(calls):

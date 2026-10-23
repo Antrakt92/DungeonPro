@@ -827,11 +827,17 @@ function UI:BindQuestRowNavigation(row, id, ownerCurrent)
     if control and (not write(control, "Hide") or not write(control, "SetEnabled", false) or not write(control, "SetScript", "OnClick", nil)) then return false end
     if not id then return ownerCurrent() end
     if not control then
-        control = CreateFrame("Button", nil, row)
+        -- A throwing global CreateFrame escapes to the Window.lua callers,
+        -- which only check the return value, so claim and validate the frame
+        -- under pcall like Window.lua:2800 and Minimap.lua:372 before sizing.
+        local okCreate, fresh = pcall(CreateFrame, "Button", nil, row)
+        if not okCreate then return false end
+        control = addon.Clean(fresh, "table") or addon.Clean(fresh, "userdata")
+        if not control then return false end
         if not ownerCurrent() then return false end
         row.navigationControl = control
-        control:SetSize(24, 24)
-        if type(control.SetMotionScriptsWhileDisabled) == "function" then control:SetMotionScriptsWhileDisabled(true) end
+        if not pcall(control.SetSize, control, 24, 24) then return false end
+        if type(control.SetMotionScriptsWhileDisabled) == "function" then pcall(control.SetMotionScriptsWhileDisabled, control, true) end
         control.footerIcon = self:CreateGoldNavigationIcon(control)
         if not ownerCurrent() then return false end
         control.sourceInspect = false

@@ -169,7 +169,29 @@ function UI:RenderPreparationOverview(ownerCurrent, width, offset, presentation)
             if not binding.current() then return end
             if locale ~= "enUS" and type(dictionaryGetter)=="function" then read(dictionaryGetter,"table",locale,binding.current) end
             if not binding.current() then return end
-            for _, step in ipairs(model.steps) do
+            local rawSteps, rawCounts, rawRemaining = rawget(model,"steps"), rawget(model,"counts"), rawget(model,"remainingSteps")
+            local function finiteCount(value)
+                return type(value) == "number" and value == value and value ~= math.huge and value ~= -math.huge
+            end
+            local countsClosed = type(rawCounts) == "table"
+            if countsClosed then
+                for _, key in ipairs({ "READY", "ACTIVE", "COMPLETED", "UNKNOWN", "LOCKED", "AVAILABLE", "UNAVAILABLE" }) do
+                    if not finiteCount(rawget(rawCounts,key)) then countsClosed = false; break end
+                end
+            end
+            -- Malformed producer shapes fail closed with the input offset and
+            -- no binding, mirroring the invalid-model branch below; every
+            -- neighboring input is already shape-validated the same way.
+            local function closed()
+                binding.released = true
+                self.overviewBinding = nil
+                return offset
+            end
+            if type(rawSteps) ~= "table" or not countsClosed or not finiteCount(rawRemaining) then return closed() end
+            for _, step in ipairs(rawSteps) do
+                if type(step) ~= "table" then return closed() end
+                local stepID = rawget(step,"id")
+                if type(stepID) ~= "number" or stepID ~= stepID or stepID == math.huge or stepID == -math.huge or stepID % 1 ~= 0 then return closed() end
                 local definition = rawget(definitions,step.id)
                 if type(definition) ~= "table" then return end
                 local root = addon.nameTranslations

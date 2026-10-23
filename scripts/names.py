@@ -55,10 +55,12 @@ def catalog_lists(catalog):
             type(catalog.get("dungeons")) is not list):
         raise ValueError("Invalid catalogue shape")
     for q in catalog["quests"]:
-        if type(q) is not dict or "id" not in q or "name" not in q:
+        if (type(q) is not dict or "id" not in q or "name" not in q or
+                type(q["name"]) is not str):
             raise ValueError("Invalid catalogue quest entry")
     for d in catalog["dungeons"]:
-        if type(d) is not dict or "key" not in d or "name" not in d:
+        if (type(d) is not dict or "key" not in d or "name" not in d or
+                type(d["key"]) is not str or type(d["name"]) is not str):
             raise ValueError("Invalid catalogue dungeon entry")
     return catalog["quests"], catalog["dungeons"]
 
