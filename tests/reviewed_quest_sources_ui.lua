@@ -210,8 +210,8 @@ end
 -- Standalone definitions are inspected in an explicit pane context, without adding dungeon targets.
 local roleInspection = {
     [2203]=assert(owners[2201]), [2440]=assert(owners[2439]), [2501]=assert(owners[2500]),
-    [3374]=assert(owners[1424]), [4701]=assert(owners[4742]),
-    [4724]=assert(owners[4742]), [4729]=assert(owners[4742]),
+    [3374]=assert(owners[1424]),
+    [4729]=assert(owners[4742]),
     [4734]=assert(owners[4765]), [4788]=assert(owners[4742]), [4862]=assert(owners[4742]),
     [4867]=assert(owners[4742]), [4982]=assert(owners[4742]), [4983]=assert(owners[4742]),
     [5065]=assert(owners[1424]),
