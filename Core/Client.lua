@@ -1367,8 +1367,8 @@ function addon.Description(id)
     character = addon.Clean(addon.char, "table")
     texts = character and addon.Clean(character.texts, "table")
     local data = texts and addon.Clean(texts[id], "table")
-    if data and locale and #locale <= 32 and locale:find("%S") and addon.Clean(data.locale, "string") == locale then
-        local text = addon.Clean(data.text, "string")
+    if data and locale and #locale <= 32 and locale:find("%S") and addon.Clean(rawget(data, "locale"), "string") == locale then
+        local text = addon.Clean(rawget(data, "text"), "string")
         if text and #text <= 30000 and text:find("%S") and
             addon.Read(localeGetter, "string") == locale and addon.Clean(GetLocale, "function") == localeGetter and
             issecretvalue == checker and addon.Clean(addon.char, "table") == character and
@@ -1782,6 +1782,8 @@ function addon.RestoreDB()
     if type(windowValue) == "table" and getmetatable(windowValue) ~= nil then return false end
     if type(textsValue) == "table" and getmetatable(textsValue) ~= nil then return false end
     if type(filtersValue) == "table" and getmetatable(filtersValue) ~= nil then return false end
+    local minimapValue = rawget(db, "minimap")
+    if type(minimapValue) == "table" and getmetatable(minimapValue) ~= nil then return false end
     -- Census retained quest texts before normalizing anything: legitimate
     -- retention holds a handful of viewed quests, so fail closed well above
     -- any plausible size to keep the hygiene loop below bounded every login.
@@ -1813,7 +1815,7 @@ function addon.RestoreDB()
         local invalid = {}
         for key, value in pairs(texts) do
             local id = addon.Clean(key, "number")
-            if not id or id < 1 or id % 1 ~= 0 or id > 9007199254740991 or addon.Clean(value, "table") == nil then
+            if not id or id < 1 or id % 1 ~= 0 or id > 9007199254740991 or addon.Clean(value, "table") == nil or getmetatable(value) ~= nil then
                 invalid[#invalid + 1] = key
             end
         end

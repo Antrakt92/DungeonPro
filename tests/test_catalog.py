@@ -603,10 +603,56 @@ class CatalogTests(unittest.TestCase):
                     target = root / "Database/Catalog.lua"
                     target.write_bytes(b"existing generated catalogue\n")
                     arguments = ["catalog.py"] + (["--check"] if check else [])
+                    # Unreadable/invalid JSON input fails as a clean SystemExit
+                    # naming data/catalog.json (cf. scripts/casefold.py _load),
+                    # never a raw traceback, and never touches the output.
                     with patch.object(catalog, "ROOT", root), patch("sys.argv", arguments):
-                        with self.assertRaisesRegex(ValueError, "Duplicate catalogue key"):
+                        with self.assertRaisesRegex(SystemExit, "Duplicate catalogue key"):
                             catalog.main()
                     self.assertEqual(target.read_bytes(), b"existing generated catalogue\n")
+
+    def test_cli_rejects_missing_and_corrupt_input_without_traceback(self):
+        # Missing/corrupt/undecodable data/catalog.json must fail as a clean
+        # SystemExit naming the input (cf. scripts/casefold.py _read/_load),
+        # never a raw traceback, and never touch the output.
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            for name in ("scripts", "data", "Database"):
+                (root / name).mkdir()
+            shutil.copy2(ROOT / "scripts/catalog.py", root / "scripts/catalog.py")
+            source = root / "data/catalog.json"
+            output = root / "Database/Catalog.lua"
+            expected = b"previous verified catalogue\n"
+            for content in ("{", "not json at all"):
+                for args in ([], ["--check"]):
+                    with self.subTest(content=content[:12], args=args):
+                        source.write_text(content, encoding="utf-8")
+                        output.write_bytes(expected)
+                        result = subprocess.run([sys.executable, str(root / "scripts/catalog.py"), *args],
+                                                capture_output=True)
+                        self.assertNotEqual(result.returncode, 0)
+                        self.assertNotIn(b"Traceback", result.stderr)
+                        self.assertIn(b"data/catalog.json is invalid", result.stderr)
+                        self.assertEqual(output.read_bytes(), expected)
+            with self.subTest(content="undecodable bytes"):
+                source.write_bytes(b"\xff\xfe invalid \x00 bytes")
+                output.write_bytes(expected)
+                result = subprocess.run([sys.executable, str(root / "scripts/catalog.py")],
+                                        capture_output=True)
+                self.assertNotEqual(result.returncode, 0)
+                self.assertNotIn(b"Traceback", result.stderr)
+                self.assertIn(b"data/catalog.json is unreadable", result.stderr)
+                self.assertEqual(output.read_bytes(), expected)
+            source.unlink()
+            for args in ([], ["--check"]):
+                with self.subTest(missing=True, args=args):
+                    output.write_bytes(expected)
+                    result = subprocess.run([sys.executable, str(root / "scripts/catalog.py"), *args],
+                                            capture_output=True)
+                    self.assertNotEqual(result.returncode, 0)
+                    self.assertNotIn(b"Traceback", result.stderr)
+                    self.assertIn(b"data/catalog.json is unreadable", result.stderr)
+                    self.assertEqual(output.read_bytes(), expected)
 
     def test_objective_kills_preserve_sourced_counts_without_requirement_inference(self):
         data = copy.deepcopy(self.data)

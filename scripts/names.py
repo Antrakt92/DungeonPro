@@ -150,7 +150,14 @@ def validate(data, catalog):
 
 
 def quoted(value):
-    return '"' + value.replace("\\", "\\\\").replace('"', '\\"') + '"'
+    escaped = (value.replace("\\", "\\\\").replace('"', '\\"')
+               .replace("\n", "\\n").replace("\r", "\\r").replace("\t", "\\t"))
+    # Decimal byte escapes (cf. scripts/catalog.py lua()) for any remaining
+    # C0 control or DEL: a hostile title that bypasses validation must still
+    # emit a parseable Lua short string, never a raw control byte.
+    escaped = "".join("\\%03d" % ord(c) if ord(c) < 32 or ord(c) == 127 else c
+                      for c in escaped)
+    return '"' + escaped + '"'
 
 
 def validate_sources(data, catalog):
@@ -355,9 +362,23 @@ def merge(data, catalog, *supplements):
     return merged
 
 
+def _read(name, path):
+    try:
+        return path.read_text(encoding="utf-8")
+    except (OSError, UnicodeDecodeError) as error:
+        raise SystemExit(f"{name} is unreadable: {error}") from error
+
+
+def _load(name, path):
+    try:
+        return json.loads(_read(name, path), object_pairs_hook=unique_fields)
+    except ValueError as error:
+        raise SystemExit(f"{name} is invalid: {error}") from error
+
+
 def load_data(root=ROOT):
     def read(name):
-        document = json.loads((root / "data" / name).read_text(encoding="utf-8"), object_pairs_hook=unique_fields)
+        document = _load(f"data/{name}", root / "data" / name)
         validate_unicode(document)
         return document
     data, catalog = read("name_translations.json"), read("catalog.json")
@@ -405,10 +426,15 @@ def generate(data):
                 if kind in ("dungeons", "areas"):
                     if type(key) is not str:
                         raise ValueError("Invalid localized name identity")
-                elif type(key) is not str or re.fullmatch(r"[1-9][0-9]*", key) is None:
+                elif (type(key) is not str or re.fullmatch(r"[1-9][0-9]*", key) is None or
+                        int(key) > 2 ** 53 - 1):
+                    # Numeric identities are emitted bare and must survive the Lua
+                    # 5.1 number round-trip exactly (cf. scripts/catalog.py
+                    # integer()); live quest IDs peak near 98824, so the 2**53-1
+                    # bound only rejects hostile input.
                     raise ValueError("Invalid localized name identity")
-                if (type(entry) is not dict or type(entry.get("source")) is not str or
-                        type(entry.get("name")) is not str):
+                if (type(entry) is not dict or not title(entry.get("source")) or
+                        not title(entry.get("name"))):
                     raise ValueError("Invalid localized name entry")
     lines = ["-- Localized names from public records and authored titles; runtime remains offline.",
              "local _, addon = ...", "addon.sourceAreaNames = {"]

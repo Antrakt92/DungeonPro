@@ -163,6 +163,7 @@ test("RestoreDB rejects metatable-carrying nested roots and oversized texts",fun
         {"texts",function(h) return {},{texts=h,filters={}} end},
         {"window",function(h) return {window=h},{texts={},filters={}} end},
         {"filters",function(h) return {},{texts={},filters=h} end},
+        {"minimap",function(h) return {minimap=h},{texts={},filters={}} end},
     }) do
         local label,nest=pair[1],pair[2]
         local db,char=nest(hostileNested({[0]={text="Bad",locale="enUS"}}))
@@ -189,6 +190,32 @@ test("RestoreDB rejects metatable-carrying nested roots and oversized texts",fun
     local okCap,capResult=pcall(f.addon.RestoreDB)
     assert(okCap and capResult==true,"10000 retained texts must still restore")
     assert(f.addon.char.texts==capped and f.addon.char.texts[10000].text=="Quest 10000","capped retention lost entries")
+    DungeonProDB,DungeonProCharDB,DungeonPrepDB,DungeonPrepCharDB=savedPro,savedChar,savedPrep,savedPrepChar
+    f.addon.db,f.addon.char=activeDB,activeChar
+end)
+test("RestoreDB drops metatable-carrying texts entries while keeping valid minimap configs",function()
+    local f=fixture()
+    local savedPro,savedChar,savedPrep,savedPrepChar=DungeonProDB,DungeonProCharDB,DungeonPrepDB,DungeonPrepCharDB
+    local activeDB,activeChar=f.addon.db,f.addon.char
+    f.addon.L=function(key) return key end
+    local function hostileEntry(payload)
+        return setmetatable(payload or {},{
+            __index=function() error("hostile entry index") end,
+            __newindex=function() error("hostile entry newindex") end})
+    end
+    local config={hide=false,angle=225}
+    DungeonProDB,DungeonProCharDB,DungeonPrepDB,DungeonPrepCharDB=
+        {minimap=config},{texts={[1]=hostileEntry(),[2]=hostileEntry({text="Bad",locale="enUS"}),[3]={text="Good",locale="enUS"}},filters={}},nil,nil
+    local ok,result=pcall(f.addon.RestoreDB)
+    assert(ok,"entry hygiene threw instead of failing closed: "..tostring(result))
+    assert(result==true,"valid roots with hostile entries did not restore")
+    assert(f.addon.char.texts[1]==nil and f.addon.char.texts[2]==nil,"hygiene retained a metatable-carrying entry")
+    assert(f.addon.char.texts[3] and f.addon.char.texts[3].text=="Good","hygiene dropped a valid entry")
+    assert(f.addon.db.minimap==config and f.addon.db.minimap.hide==false and f.addon.db.minimap.angle==225,"valid minimap config changed")
+    local okGone,gone=pcall(f.addon.Description,1)
+    assert(okGone and gone=="NO_TEXT","dropped entry did not fail closed: "..tostring(gone))
+    local okGood,good=pcall(f.addon.Description,3)
+    assert(okGood and good=="Good","valid entry path changed: "..tostring(good))
     DungeonProDB,DungeonProCharDB,DungeonPrepDB,DungeonPrepCharDB=savedPro,savedChar,savedPrep,savedPrepChar
     f.addon.db,f.addon.char=activeDB,activeChar
 end)

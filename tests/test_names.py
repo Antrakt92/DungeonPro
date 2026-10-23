@@ -263,7 +263,7 @@ class NamesTests(unittest.TestCase):
                 first = next(iter(payload))
                 duplicate = json.dumps({first: payload[first]}, ensure_ascii=False)[1:-1]
                 path.write_text("{" + duplicate + "," + original[1:], encoding="utf-8")
-                with self.subTest(file=name), self.assertRaisesRegex(ValueError, "Duplicate"):
+                with self.subTest(file=name), self.assertRaisesRegex(SystemExit, "Duplicate"):
                     names.load_data(root)
                 path.write_text(original, encoding="utf-8")
             path = root / "data/name_translations.json"
@@ -271,7 +271,7 @@ class NamesTests(unittest.TestCase):
             title = '"name": "Братство Справедливости"'
             self.assertIn(title, original)
             path.write_text(original.replace(title, '"name": "Скрытая подмена", ' + title, 1), encoding="utf-8")
-            with self.assertRaisesRegex(ValueError, "Duplicate"):
+            with self.assertRaisesRegex(SystemExit, "Duplicate"):
                 names.load_data(root)
 
     def test_authored_entries_fill_every_hole_without_overriding_primary_sources(self):
@@ -462,6 +462,113 @@ class NamesTests(unittest.TestCase):
         candidate["locales"]["ruRU"]["dungeons"][167] = {"source": "x", "name": "y"}
         with self.assertRaises(ValueError):
             names.generate(candidate)
+
+    def test_quoted_escapes_controls_to_parseable_lua(self):
+        # Defense in depth (cf. scripts/catalog.py lua()): any C0 control or
+        # DEL must emit as an escape, never a raw byte, so generated output
+        # stays parseable even for hostile direct input.
+        cases = ("Bad\nName", "Bad\rName", "Bad\tName", "Bad\x00Name",
+                 "Bad\x07Name\x1b", "Bad\x7fName", 'quote " and backslash \\')
+        lua = shutil.which("lua5.1")
+        self.assertIsNotNone(lua, "Lua 5.1 is required for emitter escape verification")
+        for hostile in cases:
+            with self.subTest(hostile=repr(hostile)):
+                emitted = names.quoted(hostile)
+                self.assertTrue(emitted.startswith('"') and emitted.endswith('"'))
+                self.assertNotIn("\n", emitted)
+                for char in set(hostile):
+                    code = ord(char)
+                    if code < 32 or code == 127:
+                        self.assertIn({"\n": "\\n", "\r": "\\r", "\t": "\\t"}.get(char, "\\%03d" % code), emitted)
+                script = ("local value = " + emitted + "\nassert(value == \"" +
+                          "".join("\\%03d" % byte for byte in hostile.encode("utf-8")) + "\")\n")
+                result = subprocess.run([lua, "-"], input=script, text=True, encoding="utf-8", capture_output=True)
+                self.assertEqual(result.returncode, 0, result.stderr)
+
+    def test_generate_rejects_unsafe_titles_and_oversized_identities_fail_closed(self):
+        data, _ = fixture()
+        for hostile in ("Bad\nName", "Bad\x00Name", "Bad\x7fName", "Bad\tName",
+                        " Bad", "Bad ", "", " ", "|cffffffffName", "<b>Name</b>"):
+            for field in ("source", "name"):
+                with self.subTest(hostile=repr(hostile), field=field):
+                    candidate = copy.deepcopy(data)
+                    candidate["locales"]["ruRU"]["quests"]["166"][field] = hostile
+                    with self.assertRaises(ValueError):
+                        names.generate(candidate)
+        boundary = str(2 ** 53 - 1)
+        candidate = copy.deepcopy(data)
+        candidate["locales"]["ruRU"]["quests"][boundary] = {"source": "Valid Source", "name": "Valid Name"}
+        names.generate(candidate)
+        for evil in (str(2 ** 53), "9" * 100):
+            for kind in ("quests", "objects", "npcs"):
+                with self.subTest(key=evil[:12], kind=kind):
+                    bad = copy.deepcopy(data)
+                    if kind not in bad["locales"]["ruRU"]:
+                        bad["locales"]["ruRU"][kind] = {}
+                    bad["locales"]["ruRU"][kind][evil] = {"source": "Valid Source", "name": "Valid Name"}
+                    with self.assertRaises(ValueError):
+                        names.generate(bad)
+
+    def test_cli_rejects_missing_and_corrupt_input_without_traceback(self):
+        # Missing/corrupt/undecodable localized-name inputs must fail as a
+        # clean SystemExit naming the input file (cf. scripts/casefold.py
+        # _read/_load), never a raw traceback, and never touch the output.
+        data, catalog = fixture()
+        authored = authored_fixture(data, catalog)
+        italian = copy.deepcopy(authored)
+        italian["locales"] = {"itIT": italian["locales"]["itIT"]}
+        authored["locales"].pop("itIT")
+        inputs = {"area_name_translations.json": dict(area_fixture(), sources={}, locales={}),
+                  "source_name_translations.json": dict(source_fixture(), locales={}), "catalog.json": catalog,
+                  "name_translations.json": data, "name_translation_supplements.json": authored,
+                  "name_translation_itIT.json": italian}
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            for name in ("scripts", "data", "Database"):
+                (root / name).mkdir()
+            shutil.copy2(ROOT / "scripts/names.py", root / "scripts/names.py")
+            target = root / "Database/NameTranslations.lua"
+            expected = b"previous verified localized titles\n"
+
+            def run(options):
+                return subprocess.run([sys.executable, str(root / "scripts/names.py"), *options],
+                                      capture_output=True)
+
+            for filename in inputs:
+                for options in ([], ["--check"]):
+                    with self.subTest(filename=filename, options=options, case="missing"):
+                        for name, payload in inputs.items():
+                            if name != filename:
+                                (root / "data" / name).write_text(json.dumps(payload), encoding="utf-8")
+                        missing = root / "data" / filename
+                        if missing.exists():
+                            missing.unlink()
+                        target.write_bytes(expected)
+                        result = run(options)
+                        self.assertNotEqual(result.returncode, 0)
+                        self.assertNotIn(b"Traceback", result.stderr)
+                        self.assertIn(filename.encode("utf-8") + b" is unreadable", result.stderr)
+                        self.assertEqual(target.read_bytes(), expected)
+                    with self.subTest(filename=filename, options=options, case="corrupt"):
+                        for name, payload in inputs.items():
+                            (root / "data" / name).write_text(json.dumps(payload), encoding="utf-8")
+                        (root / "data" / filename).write_text("{", encoding="utf-8")
+                        target.write_bytes(expected)
+                        result = run(options)
+                        self.assertNotEqual(result.returncode, 0)
+                        self.assertNotIn(b"Traceback", result.stderr)
+                        self.assertIn(filename.encode("utf-8") + b" is invalid", result.stderr)
+                        self.assertEqual(target.read_bytes(), expected)
+            with self.subTest(case="undecodable"):
+                for name, payload in inputs.items():
+                    (root / "data" / name).write_text(json.dumps(payload), encoding="utf-8")
+                (root / "data/name_translations.json").write_bytes(b"\xff\xfe invalid \x00 bytes")
+                target.write_bytes(expected)
+                result = run([])
+                self.assertNotEqual(result.returncode, 0)
+                self.assertNotIn(b"Traceback", result.stderr)
+                self.assertIn(b"name_translations.json is unreadable", result.stderr)
+                self.assertEqual(target.read_bytes(), expected)
 
     def test_saved_dataset_and_generated_bytes_remain_consistent(self):
         path = ROOT / "data/name_translations.json"

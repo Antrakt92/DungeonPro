@@ -712,12 +712,25 @@ def generate(data):
     return "\n".join(lines + ["}", ""])
 
 
+def _read(name, path):
+    try:
+        return path.read_text(encoding="utf-8")
+    except (OSError, UnicodeDecodeError) as error:
+        raise SystemExit(f"{name} is unreadable: {error}") from error
+
+
+def _load(name, path):
+    try:
+        return json.loads(_read(name, path), object_pairs_hook=unique_fields)
+    except ValueError as error:
+        raise SystemExit(f"{name} is invalid: {error}") from error
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--check", action="store_true")
     args = parser.parse_args()
-    data = json.loads((ROOT / "data/catalog.json").read_text(encoding="utf-8"),
-                      object_pairs_hook=unique_fields)
+    data = _load("data/catalog.json", ROOT / "data/catalog.json")
     content = generate(data)
     target = ROOT / "Database/Catalog.lua"
     if args.check:
