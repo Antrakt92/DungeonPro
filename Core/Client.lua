@@ -142,8 +142,8 @@ local function dialogueScope()
     local locale = addon.Read(GetLocale, "string")
     local catalogue = addon.Clean(addon.quests, "table")
     local definition = id and catalogue and addon.Clean(rawget(catalogue, id), "table")
-    if not definition or not player or player == "" or #player > 256 or
-        not locale or locale == "" or #locale > 32 then return nil end
+    if not definition or not player or #player > 256 or not player:find("%S") or
+        not locale or #locale > 32 or not locale:find("%S") then return nil end
     return id, player, locale
 end
 
@@ -259,7 +259,7 @@ function addon.DialogueRewards(id)
             if not name or name == "" or #name > 30000 or not name:find("%S") or not amount or not itemID then return nil end
             local row = { id = itemID, name = name, count = amount }
             local icon = addon.Clean(texture, "string")
-            if icon and icon ~= "" and #icon <= 1024 then row.texture = icon
+            if icon and icon ~= "" and #icon <= 1024 and icon:find("%S") then row.texture = icon
             else row.texture = dialogueInteger(texture, 1, 9007199254740991) end
             row.quality = dialogueInteger(quality, 0)
             row.usable = addon.Clean(usable, "boolean")
@@ -325,8 +325,8 @@ local function offerScope()
     local now = addon.Read(GetTime, "number")
     local player = addon.Read(UnitGUID, "string", "player")
     local npc = addon.Read(UnitGUID, "string", "npc")
-    if not now or now < 0 or not player or player == "" or #player > 256 or
-        not npc or npc == "" or #npc > 256 then return nil end
+    if not now or now < 0 or not player or #player > 256 or not player:find("%S") or
+        not npc or #npc > 256 or not npc:find("%S") then return nil end
     return now, player, npc
 end
 
@@ -1403,7 +1403,7 @@ function addon.QuestObjectives(id)
         local finished = addon.Clean(row.finished, "boolean")
         local fulfilled = dialogueInteger(row.numFulfilled, 0, 9007199254740991)
         local required = dialogueInteger(row.numRequired, 0, 9007199254740991)
-        if not text or #text > 30000 or not kind or #kind > 200 or finished == nil
+        if not text or #text > 30000 or not text:find("%S") or not kind or #kind > 200 or not kind:find("%S") or finished == nil
             or not fulfilled or not required then return nil end
         result[i] = { text = text, type = kind, finished = finished,
             numFulfilled = fulfilled, numRequired = required,
@@ -1463,7 +1463,7 @@ function addon.QuestRewards(id)
             if not name or name == "" or #name > 30000 or not name:find("%S") or not amount or not itemID then return nil end
             local row = { id = itemID, name = name, count = amount }
             local icon = addon.Clean(texture, "string")
-            if icon and icon ~= "" and #icon <= 1024 then row.texture = icon
+            if icon and icon ~= "" and #icon <= 1024 and icon:find("%S") then row.texture = icon
             else row.texture = integer(texture, 1, 9007199254740991) end
             row.quality = integer(quality, 0)
             row.usable = addon.Clean(usable, "boolean")
@@ -1578,7 +1578,7 @@ function addon.CachedQuestRewards(id)
             if not name or name == "" or #name > 30000 or not name:find("%S") or not amount or not itemID then return nil end
             local row = { id = itemID, name = name, count = amount }
             local icon = addon.Clean(texture, "string")
-            if icon and icon ~= "" and #icon <= 1024 then row.texture = icon
+            if icon and icon ~= "" and #icon <= 1024 and icon:find("%S") then row.texture = icon
             else row.texture = dialogueInteger(texture, 1, 9007199254740991) end
             row.quality, row.usable = dialogueInteger(quality, 0), addon.Clean(usable, "boolean")
             result[index] = row
@@ -1807,10 +1807,10 @@ function addon.ProbeClient()
     -- Build is a version string; the interface version is numeric in the
     -- native client, so a finite capped number is legitimate data too.
     build = addon.Clean(build, "string")
-    if build and #build > 200 then build = nil end
+    if build and (#build > 200 or not build:find("%S")) then build = nil end
     if type(interface) == "string" then
         interface = addon.Clean(interface, "string")
-        if interface and #interface > 200 then interface = nil end
+        if interface and (#interface > 200 or not interface:find("%S")) then interface = nil end
     else
         interface = addon.Clean(interface, "number")
         if interface and (interface < 0 or interface % 1 ~= 0 or interface > 9007199254740991) then interface = nil end

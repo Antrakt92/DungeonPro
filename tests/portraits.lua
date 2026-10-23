@@ -556,6 +556,21 @@ check("Fractional and oversized objective counters fail closed while 2^53-1 stay
         assert(addon.QuestObjectives(65) == nil, "fractional required reached display")
     end
 end)
+check("Whitespace-only quest objective text and kind stay unknown instead of blank rows", function()
+    local function withObjectives(text, kind)
+        C_QuestLog.GetQuestObjectives = function(id)
+            assert(id == 65)
+            return { { text = text, type = kind, finished = false, numFulfilled = 1, numRequired = 3 } }
+        end
+        return addon.QuestObjectives(65)
+    end
+    for _, value in ipairs({ "", "   ", "\t\n ", "  \r " }) do
+        assert(withObjectives(value, "monster") == nil, "blank objective text kept a row")
+        assert(withObjectives("Defias defeated", value) == nil, "blank objective kind kept a row")
+    end
+    local r = withObjectives("Defias defeated", "monster")
+    assert(r and r[1].text == "Defias defeated" and r[1].type == "monster", "valid objective row lost")
+end)
 issecretvalue = nil
 check("Whitespace-only reward item names stay unknown instead of blank rows", function()
     addon.quests = { [65] = {} }
@@ -597,5 +612,71 @@ check("Whitespace-only reward item names stay unknown instead of blank rows", fu
         return "  \r ", 123, 1, 2, true, 7001
     end
     assert(addon.CachedQuestRewards(65) == nil, "blank cached reward name kept a row")
+end)
+check("Whitespace-only reward textures are omitted without rejecting clean rows", function()
+    addon.quests = { [65] = {} }
+    GetQuestID = function() return 65 end
+    UnitGUID = function(unit) assert(unit == "player"); return "Player-1-ABC" end
+    QuestFrame = { IsShown = function() return true end }
+    QuestFrameDetailPanel = { IsShown = function() return true end }
+    C_QuestLog = { ShouldShowQuestRewards = function(id) assert(id == 65); return true end }
+    GetNumQuestRewards = function() return 1 end
+    GetNumQuestChoices = function() return 0 end
+    GetRewardMoney = function() return 0 end
+    GetRewardXP = function() return 0 end
+    local function dialogueWith(texture)
+        GetQuestItemInfo = function(kind, index)
+            assert(kind == "reward" and index == 1)
+            return "Reward", texture, 1, 2, true, 7001
+        end
+        return addon.DialogueRewards(65)
+    end
+    addon.DialogueRewardEvent("QUEST_DETAIL")
+    local r = dialogueWith("Interface\\Icons\\INV_Sword")
+    assert(r and r.items[1].texture == "Interface\\Icons\\INV_Sword", "valid dialogue texture lost")
+    for _, blank in ipairs({ "", "   ", "\t\n ", "  \r " }) do
+        r = dialogueWith(blank)
+        assert(r and r.items[1].name == "Reward" and r.items[1].texture == nil, "blank dialogue texture kept an icon")
+    end
+    assert(dialogueWith(123).items[1].texture == 123, "numeric dialogue texture lost")
+    addon.DialogueRewardEvent("QUEST_FINISHED")
+    C_QuestLog = { GetSelectedQuest = function() return 65 end,
+        GetLogIndexForQuestID = function(id) assert(id == 65); return 1 end }
+    GetNumQuestLogRewards = function() return 1 end
+    GetNumQuestLogChoices = function() return 0 end
+    GetQuestLogRewardMoney = function() return 0 end
+    GetQuestLogChoiceInfo = function() error("no choices expected") end
+    local function selectedWith(texture)
+        GetQuestLogRewardInfo = function(index)
+            assert(index == 1)
+            return "Reward", texture, 1, 2, true, 7001
+        end
+        return addon.QuestRewards(65)
+    end
+    r = selectedWith("Interface\\Icons\\INV_Sword")
+    assert(r and r.items[1].texture == "Interface\\Icons\\INV_Sword", "valid selected-log texture lost")
+    for _, blank in ipairs({ "", "   ", "\t\n ", "  \r " }) do
+        r = selectedWith(blank)
+        assert(r and r.items[1].name == "Reward" and r.items[1].texture == nil, "blank selected-log texture kept an icon")
+    end
+    addon.quests = { [65] = { id = 65 } }
+    HaveQuestRewardData = function(id) assert(id == 65); return true end
+    GetNumQuestLogRewards = function(id) assert(id == 65); return 1 end
+    GetNumQuestLogChoices = function(id) assert(id == 65); return 0 end
+    GetQuestLogRewardMoney = function(id) assert(id == 65); return 0 end
+    GetQuestLogChoiceInfo = nil
+    local function cachedWith(texture)
+        GetQuestLogRewardInfo = function(index, id)
+            assert(index == 1 and id == 65)
+            return "Reward", texture, 1, 2, true, 7001
+        end
+        return addon.CachedQuestRewards(65)
+    end
+    r = cachedWith("Interface\\Icons\\INV_Sword")
+    assert(r and r.items[1].texture == "Interface\\Icons\\INV_Sword", "valid cached texture lost")
+    for _, blank in ipairs({ "", "   ", "\t\n ", "  \r " }) do
+        r = cachedWith(blank)
+        assert(r and r.items[1].name == "Reward" and r.items[1].texture == nil, "blank cached texture kept an icon")
+    end
 end)
 print("Quest portrait adapter modeled checks passed: " .. total .. " (native client unverified)")

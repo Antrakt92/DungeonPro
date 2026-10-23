@@ -271,6 +271,72 @@ check("Probe client keeps short clean build strings and drops absurd build ident
     r = addon.ProbeClient()
     assert(r.build == nil and r.interface == nil, "missing build reader did not fail closed")
 end)
+check("Probe client drops whitespace-only build identity instead of saving blanks", function()
+    C_QuestLine = nil
+    for _, blank in ipairs({ "", "   ", "\t\n ", "  \r " }) do
+        GetBuildInfo = function() return blank, "60000", "", "110000" end
+        local r = addon.ProbeClient()
+        assert(r.build == nil and r.interface == "110000", "blank build reached SavedVariables")
+        GetBuildInfo = function() return "11.0.0", "60000", "", blank end
+        r = addon.ProbeClient()
+        assert(r.build == "11.0.0" and r.interface == nil, "blank interface reached SavedVariables")
+    end
+    GetBuildInfo = function() return "11.0.0", "60000", "", "110000" end
+    local r = addon.ProbeClient()
+    assert(r.build == "11.0.0" and r.interface == "110000", "valid build strings lost their probe")
+end)
+check("Whitespace-only dialogue and offer scope identities stay unknown", function()
+    local savedQuests, savedLog, savedGossip, savedTimer, savedNotify, savedTime, savedGUID,
+        savedQuestID, savedLocale, savedFrame, savedPanel, savedObjective =
+        addon.quests, C_QuestLog, C_GossipInfo, C_Timer, addon.Notify, GetTime, UnitGUID,
+        GetQuestID, GetLocale, QuestFrame, QuestFrameDetailPanel, GetObjectiveText
+    local now, player, npc = 100, "Player-one", "Creature-one"
+    GetTime = function() return now end
+    UnitGUID = function(unit) return unit == "player" and player or npc end
+    addon.quests = { [1] = { id = 1 } }
+    C_GossipInfo = { GetAvailableQuests = function() return { { questID = 1 } } end }
+    C_Timer = nil
+    addon.Notify = function() end
+    addon.ClearOffers()
+    addon.CaptureOffers()
+    assert(addon.CurrentOffer(1) ~= nil, "valid offer scope lost its capture")
+    for _, blank in ipairs({ "   ", "\t\n ", "  \r " }) do
+        player = blank
+        addon.ClearOffers(); addon.CaptureOffers()
+        assert(addon.CurrentOffer(1) == nil, "blank offer player kept a capture")
+        player = "Player-one"; npc = blank
+        addon.ClearOffers(); addon.CaptureOffers()
+        assert(addon.CurrentOffer(1) == nil, "blank offer NPC kept a capture")
+        npc = "Creature-one"
+    end
+    addon.quests = { [132] = {} }
+    player = "Player-1-ABC"
+    local locale = "enUS"
+    GetQuestID = function() return 132 end
+    UnitGUID = function(unit) assert(unit == "player"); return player end
+    GetLocale = function() return locale end
+    QuestFrame = { IsShown = function() return true end }
+    QuestFrameDetailPanel = { IsShown = function() return true end }
+    GetObjectiveText = function() return "Summary" end
+    C_QuestLog = {}
+    addon.DialogueRewardEvent("QUEST_FINISHED")
+    addon.DialogueRewardEvent("QUEST_DETAIL")
+    assert(addon.DialogueObjectiveText(132) == "Summary", "valid dialogue scope lost its text")
+    for _, blank in ipairs({ "   ", "\t\n ", "  \r " }) do
+        player = blank; locale = "enUS"
+        addon.DialogueRewardEvent("QUEST_FINISHED"); addon.DialogueRewardEvent("QUEST_DETAIL")
+        assert(addon.DialogueObjectiveText(132) == nil, "blank dialogue player kept a text")
+        player = "Player-1-ABC"; locale = blank
+        addon.DialogueRewardEvent("QUEST_FINISHED"); addon.DialogueRewardEvent("QUEST_DETAIL")
+        assert(addon.DialogueObjectiveText(132) == nil, "blank dialogue locale kept a text")
+    end
+    addon.DialogueRewardEvent("QUEST_FINISHED")
+    addon.ClearOffers()
+    addon.quests, C_QuestLog, C_GossipInfo, C_Timer, addon.Notify, GetTime, UnitGUID,
+        GetQuestID, GetLocale, QuestFrame, QuestFrameDetailPanel, GetObjectiveText =
+        savedQuests, savedLog, savedGossip, savedTimer, savedNotify, savedTime, savedGUID,
+        savedQuestID, savedLocale, savedFrame, savedPanel, savedObjective
+end)
 check("RestoreDB drops malformed texts members while keeping valid quest texts", function()
     local savedPro, savedChar, savedPrep, savedPrepChar = DungeonProDB, DungeonProCharDB, DungeonPrepDB, DungeonPrepCharDB
     DungeonProDB, DungeonProCharDB, DungeonPrepDB, DungeonPrepCharDB = nil, nil, nil, nil
