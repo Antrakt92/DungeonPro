@@ -8906,6 +8906,16 @@ do
             f:close()
         end
     end)
+    check("Objective acquisition rejects an overlong container source without hiding the ordinary goals",function()
+        local f,q=acquisitionFixture();local point=q.objectiveItemSources[1].containerSources[1]
+        point.source="https://www.wowhead.com/forever/object=21277/"..("x"):rep(2048)
+        f:refresh()
+        assert(#sourceRows()==0 and not detailHas(addon.L("OBJECTIVE_ITEM_SOURCES")))
+        assert(ui:SetDetailTab("quest"))
+        assert(detailHas(addon.L("OBJECTIVE_ITEM","Blueleaf Tuber",6)))
+        assert(#f.calls==0 and ui.engine:State(1221).status=="UNKNOWN" and q.objectiveItems[2].quantity==nil)
+        f:close()
+    end)
 end
 check("Compact selected giver stays visible before the mandatory chain and never routes to its ancestor",function()
     local quest,dungeon,navigation=ui.quest,ui.dungeon,addon.Navigation

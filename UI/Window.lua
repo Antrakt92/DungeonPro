@@ -6482,7 +6482,8 @@ function UI:RefreshDetail(sourceFocus)
                         local allowed = { objectID = true, name = true, source = true, zoneName = true, mapID = true, x = true, y = true }
                         for key in next, point do local cleanKey = addon.Clean(key, "string"); if not cleanKey or not allowed[cleanKey] then valid = false; break end end
                         local prefix = object and ("https://www.wowhead.com/forever/object=" .. string.format("%.0f", object))
-                        local matched = prefix and source and (source == prefix or
+                        local sourceBounded = source and #source <= 2048
+                        local matched = prefix and sourceBounded and source and (source == prefix or
                             (source:sub(1, #prefix + 1) == prefix .. "/" and source:sub(#prefix + 2):match("^[^%s/?#]+$")))
                         local cleanMap = map == nil or positive(map, 9007199254740991)
                         local cleanX, cleanY = addon.Clean(x, "number"), addon.Clean(py, "number")
