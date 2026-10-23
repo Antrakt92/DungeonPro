@@ -636,6 +636,60 @@ class NamesTests(unittest.TestCase):
             self.assertIn(b"Localized-name generated output differs", result.stderr)
             self.assertTrue(target.is_dir())
 
+    def test_generate_with_unwritable_output_fails_closed_without_traceback(self):
+        # Generate mode with an unwritable Database/NameTranslations.lua
+        # target must fail as a clean SystemExit naming the output
+        # ("localized-name output is unwritable"), never a raw OSError
+        # traceback. Mirrors scripts/casefold.py unwritable-output handling.
+        data, catalog = fixture()
+        authored = authored_fixture(data, catalog)
+        italian = copy.deepcopy(authored)
+        italian["locales"] = {"itIT": italian["locales"]["itIT"]}
+        authored["locales"].pop("itIT")
+        inputs = {"area_name_translations.json": dict(area_fixture(), sources={}, locales={}),
+                  "source_name_translations.json": dict(source_fixture(), locales={}), "catalog.json": catalog,
+                  "name_translations.json": data, "name_translation_supplements.json": authored,
+                  "name_translation_itIT.json": italian}
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            for name in ("scripts", "data"):
+                (root / name).mkdir()
+            shutil.copy2(ROOT / "scripts/names.py", root / "scripts/names.py")
+            for name, payload in inputs.items():
+                (root / "data" / name).write_text(json.dumps(payload), encoding="utf-8")
+            database = root / "Database"
+            # Case 1: Database/ blocked by a regular file, so mkdir fails.
+            database.write_bytes(b"blocking file")
+            result = subprocess.run([sys.executable, str(root / "scripts/names.py")],
+                                    capture_output=True)
+            self.assertNotEqual(result.returncode, 0)
+            self.assertNotIn(b"Traceback", result.stderr)
+            self.assertIn(b"localized-name output is unwritable", result.stderr)
+            self.assertEqual(database.read_bytes(), b"blocking file")
+            database.unlink()
+            # Case 2: output path blocked by a directory, so write_bytes fails.
+            output = database / "NameTranslations.lua"
+            database.mkdir()
+            output.mkdir()
+            result = subprocess.run([sys.executable, str(root / "scripts/names.py")],
+                                    capture_output=True)
+            self.assertNotEqual(result.returncode, 0)
+            self.assertNotIn(b"Traceback", result.stderr)
+            self.assertIn(b"localized-name output is unwritable", result.stderr)
+            self.assertTrue(output.is_dir())
+            self.assertEqual(list(output.iterdir()), [])
+            # Valid generate in the same layout stays byte-identical.
+            shutil.rmtree(database)
+            result = subprocess.run([sys.executable, str(root / "scripts/names.py")],
+                                    capture_output=True)
+            self.assertEqual(result.returncode, 0, result.stderr.decode(errors="replace"))
+            sandbox = importlib.util.spec_from_file_location(
+                "names_sandbox_generate", root / "scripts/names.py")
+            sandbox_module = importlib.util.module_from_spec(sandbox)
+            sandbox.loader.exec_module(sandbox_module)
+            self.assertEqual((root / "Database/NameTranslations.lua").read_bytes(),
+                             sandbox_module.generate(sandbox_module.load_data()).encode("utf-8"))
+
     def test_saved_dataset_and_generated_bytes_remain_consistent(self):
         path = ROOT / "data/name_translations.json"
         self.assertTrue(path.exists(), "Title source data is required")

@@ -31,7 +31,10 @@ def draw():
 
 
 if __name__ == "__main__":
-    output = ROOT / "Media/Icons/Language.tga"
-    output.parent.mkdir(parents=True, exist_ok=True)
-    output.write_bytes(draw())
+    try:
+        output = ROOT / "Media/Icons/Language.tga"
+        output.parent.mkdir(parents=True, exist_ok=True)
+        output.write_bytes(draw())
+    except OSError as error:
+        raise SystemExit(f"language icon output is unwritable: {error}") from error
     print("Generated neutral language globe")

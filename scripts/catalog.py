@@ -741,8 +741,11 @@ def main():
         if current != content:
             raise SystemExit("Generated catalogue differs; run python scripts/catalog.py")
     else:
-        target.parent.mkdir(exist_ok=True)
-        target.write_bytes(content.encode("utf-8"))
+        try:
+            target.parent.mkdir(exist_ok=True)
+            target.write_bytes(content.encode("utf-8"))
+        except OSError as error:
+            raise SystemExit(f"catalogue output is unwritable: {error}") from error
     print(f"Catalogue: {len(data['dungeons'])} dungeons, {len(data['quests'])} quests; valid")
 
 

@@ -709,6 +709,46 @@ class CatalogTests(unittest.TestCase):
             self.assertIn(b"Generated catalogue differs", result.stderr)
             self.assertFalse(target.exists())
 
+    def test_generate_with_unwritable_output_fails_closed_without_traceback(self):
+        # Generate mode with an unwritable Database/Catalog.lua target must
+        # fail as a clean SystemExit naming the output ("catalogue output is
+        # unwritable"), never a raw OSError traceback. Mirrors
+        # scripts/casefold.py unwritable-output handling.
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            for name in ("scripts", "data"):
+                (root / name).mkdir()
+            shutil.copy2(ROOT / "scripts/catalog.py", root / "scripts/catalog.py")
+            shutil.copy2(ROOT / "data/catalog.json", root / "data/catalog.json")
+            database = root / "Database"
+            # Case 1: Database/ blocked by a regular file, so mkdir fails.
+            database.write_bytes(b"blocking file")
+            result = subprocess.run([sys.executable, str(root / "scripts/catalog.py")],
+                                    capture_output=True)
+            self.assertNotEqual(result.returncode, 0)
+            self.assertNotIn(b"Traceback", result.stderr)
+            self.assertIn(b"catalogue output is unwritable", result.stderr)
+            self.assertEqual(database.read_bytes(), b"blocking file")
+            database.unlink()
+            # Case 2: output path blocked by a directory, so write_bytes fails.
+            output = database / "Catalog.lua"
+            database.mkdir()
+            output.mkdir()
+            result = subprocess.run([sys.executable, str(root / "scripts/catalog.py")],
+                                    capture_output=True)
+            self.assertNotEqual(result.returncode, 0)
+            self.assertNotIn(b"Traceback", result.stderr)
+            self.assertIn(b"catalogue output is unwritable", result.stderr)
+            self.assertTrue(output.is_dir())
+            self.assertEqual(list(output.iterdir()), [])
+            # Valid generate in the same layout stays byte-identical.
+            shutil.rmtree(database)
+            result = subprocess.run([sys.executable, str(root / "scripts/catalog.py")],
+                                    capture_output=True)
+            self.assertEqual(result.returncode, 0, result.stderr.decode(errors="replace"))
+            self.assertEqual((root / "Database/Catalog.lua").read_bytes(),
+                             catalog.generate(self.data).encode("utf-8"))
+
     def test_objective_kills_preserve_sourced_counts_without_requirement_inference(self):
         data = copy.deepcopy(self.data)
         quest = data["quests"][0]

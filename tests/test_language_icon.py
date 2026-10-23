@@ -1,6 +1,9 @@
 """Verify the neutral globe resource, reproducibility, and installable boundary."""
 import importlib.util
+import shutil
 import struct
+import subprocess
+import sys
 import tempfile
 import unittest
 import zipfile
@@ -72,6 +75,43 @@ class LanguageIconTests(unittest.TestCase):
                 packager.package(output=output)
             self.assertEqual(output.read_bytes(), previous)
             self.assertEqual(list(Path(tmp).iterdir()), [output])
+
+    def test_generate_with_unwritable_output_fails_closed_without_traceback(self):
+        # A blocked Media/Icons/Language.tga target must fail as a clean
+        # SystemExit naming the output ("language icon output is
+        # unwritable"), never a raw OSError traceback. Mirrors
+        # scripts/casefold.py unwritable-output handling.
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            (root / "scripts").mkdir()
+            shutil.copy2(ROOT / "scripts/generate_language_icon.py",
+                         root / "scripts/generate_language_icon.py")
+            script = str(root / "scripts/generate_language_icon.py")
+            # Case 1: Media/ blocked by a regular file, so mkdir fails.
+            media = root / "Media"
+            media.write_bytes(b"blocking file")
+            result = subprocess.run([sys.executable, script], capture_output=True, timeout=30)
+            self.assertNotEqual(result.returncode, 0)
+            self.assertNotIn(b"Traceback", result.stderr)
+            self.assertIn(b"language icon output is unwritable", result.stderr)
+            self.assertEqual(media.read_bytes(), b"blocking file")
+            media.unlink()
+            # Case 2: output path blocked by a directory, so write_bytes fails.
+            output = root / "Media/Icons/Language.tga"
+            output.parent.mkdir(parents=True)
+            output.mkdir()
+            result = subprocess.run([sys.executable, script], capture_output=True, timeout=30)
+            self.assertNotEqual(result.returncode, 0)
+            self.assertNotIn(b"Traceback", result.stderr)
+            self.assertIn(b"language icon output is unwritable", result.stderr)
+            self.assertTrue(output.is_dir())
+            self.assertEqual(list(output.iterdir()), [])
+            # Valid generate in the same layout stays byte-identical.
+            shutil.rmtree(root / "Media")
+            result = subprocess.run([sys.executable, script], capture_output=True, timeout=30)
+            self.assertEqual(result.returncode, 0, result.stderr.decode(errors="replace"))
+            generator = module("language_icon_valid_generator", "scripts/generate_language_icon.py")
+            self.assertEqual((root / "Media/Icons/Language.tga").read_bytes(), generator.draw())
 
 
 if __name__ == "__main__":
