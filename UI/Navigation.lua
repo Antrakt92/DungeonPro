@@ -770,8 +770,8 @@ local function present(action, generation, status)
         if not current() then return false end
         local binding = { current = current, value = value, apply = apply }
         object[key] = binding
-        apply(object, value, current)
-        if current() then return true end
+        local ok = pcall(apply, object, value, current)
+        if ok and current() then return true end
         -- A setter wrapper may resume its old write after rendering a new guide.
         -- Restore only that newer owned value, once, without rerender/navigation.
         local newer = object[key]
@@ -920,7 +920,8 @@ function N.Start(action, markerRole, ownerCurrent)
         purpose, purposeCurrent = questMarkerPurpose(questSources, rolePlace, purpose, roleQuestID, roleClean, roleCurrent)
         if not roleCurrent() then return false end
     end
-    if not action or not N.Valid(action.place) then return false end
+    if type(action) ~= "table" then return false end
+    if not N.Valid(action.place) then return false end
     local generation = N.Stop()
     if not N.Valid(action.place) or target or navigationGeneration ~= generation or (purposeCurrent and not purposeCurrent()) then return false end
     target = action

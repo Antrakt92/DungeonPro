@@ -29,7 +29,7 @@ function UI:NavigationDestination(coordinates)
 end
 
 function UI:DispatchDetail(action, mapOnly, giver, ownerCurrent, markerPurpose)
-    if not action then return false end
+    if type(action) ~= "table" then return false end
     local frame, quest, dungeon, engine, character, generation = self.frame, self.quest, self.dungeon, self.engine, addon.char, self.rewardGeneration
     local navigation = addon.Clean(addon.Navigation, "table")
     local method = navigation and addon.Clean(navigation[mapOnly and "Map" or "Start"], "function")
