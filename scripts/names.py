@@ -28,19 +28,29 @@ def unique_fields(pairs):
     return fields
 
 
+MAX_NESTING_DEPTH = 100
+
+
 def validate_unicode(value):
-    if isinstance(value, str):
-        try:
-            value.encode("utf-8")
-        except UnicodeEncodeError:
-            raise ValueError("Invalid Unicode scalar in localized-name input") from None
-    elif isinstance(value, dict):
-        for key, child in value.items():
-            validate_unicode(key)
-            validate_unicode(child)
-    elif isinstance(value, list):
-        for child in value:
-            validate_unicode(child)
+    stack = [(value, 0)]
+    while stack:
+        current, depth = stack.pop()
+        if isinstance(current, str):
+            try:
+                current.encode("utf-8")
+            except UnicodeEncodeError:
+                raise ValueError("Invalid Unicode scalar in localized-name input") from None
+        elif isinstance(current, dict):
+            if depth > MAX_NESTING_DEPTH:
+                raise ValueError("Localized input nested too deeply")
+            for key, child in current.items():
+                stack.append((key, depth + 1))
+                stack.append((child, depth + 1))
+        elif isinstance(current, list):
+            if depth > MAX_NESTING_DEPTH:
+                raise ValueError("Localized input nested too deeply")
+            for child in current:
+                stack.append((child, depth + 1))
 
 
 def title(value):
@@ -159,18 +169,25 @@ def validate_sources(data, catalog):
         raise ValueError("Invalid source-name provenance")
     definitions = {"objects": {}, "npcs": {}}
 
-    def visit(value):
-        if isinstance(value, dict):
-            for kind, field, other in (("objects", "objectID", "npcID"), ("npcs", "npcID", "objectID")):
-                identity, name = value.get(field), value.get("name")
-                if (type(identity) is int and 0 < identity <= 4294967295 and title(name) and
-                        value.get(other) is None and value.get("itemID") is None and value.get("dropNPCID") is None):
-                    definitions[kind].setdefault(str(identity), set()).add(name)
-            for child in value.values():
-                visit(child)
-        elif isinstance(value, list):
-            for child in value:
-                visit(child)
+    def visit(root):
+        stack = [(root, 0)]
+        while stack:
+            value, depth = stack.pop()
+            if isinstance(value, dict):
+                if depth > MAX_NESTING_DEPTH:
+                    raise ValueError("Catalogue extra fields nested too deeply")
+                for kind, field, other in (("objects", "objectID", "npcID"), ("npcs", "npcID", "objectID")):
+                    identity, name = value.get(field), value.get("name")
+                    if (type(identity) is int and 0 < identity <= 4294967295 and title(name) and
+                            value.get(other) is None and value.get("itemID") is None and value.get("dropNPCID") is None):
+                        definitions[kind].setdefault(str(identity), set()).add(name)
+                for child in value.values():
+                    stack.append((child, depth + 1))
+            elif isinstance(value, list):
+                if depth > MAX_NESTING_DEPTH:
+                    raise ValueError("Catalogue extra fields nested too deeply")
+                for child in value:
+                    stack.append((child, depth + 1))
 
     visit(quest_rows)
     locales = data["locales"]
@@ -217,16 +234,23 @@ def validate_areas(data, catalog):
         raise ValueError("Invalid area-name provenance")
     recorded = set()
 
-    def visit(value):
-        if isinstance(value, dict):
-            for field in ("zoneName", "locationName"):
-                if title(value.get(field)):
-                    recorded.add(value[field])
-            for child in value.values():
-                visit(child)
-        elif isinstance(value, list):
-            for child in value:
-                visit(child)
+    def visit(root):
+        stack = [(root, 0)]
+        while stack:
+            value, depth = stack.pop()
+            if isinstance(value, dict):
+                if depth > MAX_NESTING_DEPTH:
+                    raise ValueError("Catalogue extra fields nested too deeply")
+                for field in ("zoneName", "locationName"):
+                    if title(value.get(field)):
+                        recorded.add(value[field])
+                for child in value.values():
+                    stack.append((child, depth + 1))
+            elif isinstance(value, list):
+                if depth > MAX_NESTING_DEPTH:
+                    raise ValueError("Catalogue extra fields nested too deeply")
+                for child in value:
+                    stack.append((child, depth + 1))
 
     visit(quest_rows)
     sources, seen = data["sources"], set()

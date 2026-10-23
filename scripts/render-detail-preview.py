@@ -80,9 +80,15 @@ def capture(lua: str, quest: int, locale: str, metrics_path: Path | None = None,
         while len(args) < 7:
             args.append("")
         args.append(",".join(map(str, ready_quests)))
-    completed = subprocess.run(args, cwd=ROOT, check=True, capture_output=True,
-                                 encoding="utf-8", timeout=CAPTURE_TIMEOUT_SECONDS)
-    return json.loads(completed.stdout)
+    try:
+        completed = subprocess.run(args, cwd=ROOT, check=True, capture_output=True,
+                                   encoding="utf-8", timeout=CAPTURE_TIMEOUT_SECONDS)
+    except (UnicodeDecodeError, ValueError) as error:
+        raise ValueError("Invalid preview snapshot from Lua capture") from error
+    try:
+        return json.loads(completed.stdout)
+    except (json.JSONDecodeError, UnicodeDecodeError, ValueError) as error:
+        raise ValueError("Invalid preview snapshot from Lua capture") from error
 
 
 def capture_error_detail(error) -> str:
@@ -347,7 +353,7 @@ def main() -> None:
         try:
             first_overview = capture(args.lua, 0, "enUS", catalog_collapsed=args.catalog_collapsed,
                                      overview=args.overview, ready_quests=tuple(args.ready_quest))
-        except (subprocess.CalledProcessError, subprocess.TimeoutExpired) as error:
+        except (subprocess.CalledProcessError, subprocess.TimeoutExpired, ValueError) as error:
             parser.error(capture_error_detail(error))
 
     global Image, ImageDraw, ImageFont
@@ -361,7 +367,7 @@ def main() -> None:
         for locale in ("enUS", "ruRU"):
             try:
                 snapshot = first_overview if args.overview and locale == "enUS" else capture(args.lua, quest, locale, catalog_collapsed=args.catalog_collapsed, detail_tab=args.detail_tab or "quest", overview=args.overview, ready_quests=tuple(args.ready_quest))
-            except (subprocess.CalledProcessError, subprocess.TimeoutExpired) as error:
+            except (subprocess.CalledProcessError, subprocess.TimeoutExpired, ValueError) as error:
                 parser.error(capture_error_detail(error))
             metrics = snapshot.get("metrics")
             if type(metrics) is not dict:
@@ -379,7 +385,7 @@ def main() -> None:
             metrics_path.write_text("return {" + ",".join(entries) + "}", encoding="utf-8")
             try:
                 snapshot = capture(args.lua, quest, locale, metrics_path, catalog_collapsed=args.catalog_collapsed, detail_tab=args.detail_tab or "quest", overview=args.overview, ready_quests=tuple(args.ready_quest))
-            except (subprocess.CalledProcessError, subprocess.TimeoutExpired) as error:
+            except (subprocess.CalledProcessError, subprocess.TimeoutExpired, ValueError) as error:
                 parser.error(capture_error_detail(error))
             (args.output / f"{stem}-{locale}.json").write_text(json.dumps(snapshot, ensure_ascii=False, indent=2), encoding="utf-8")
             target = args.output / f"{stem}-{locale}.png"

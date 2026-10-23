@@ -168,4 +168,36 @@ class MalformedSnapshotPreview(unittest.TestCase):
      self.assertEqual(stopped.exception.code,2,label)
      self.assertIn('Invalid preview',err.getvalue(),label)
      self.assertNotIn('Traceback',err.getvalue(),label)
+ def run_with_fake(self,tmp,fake,err):
+  import contextlib
+  from unittest import mock
+  import runpy
+  real_run=subprocess.run
+  def dispatch(cmd,*a,**kw):
+   if isinstance(cmd,list)and any(str(v).endswith('detail_visual.lua')for v in cmd):return fake(cmd,*a,**kw)
+   return real_run(cmd,*a,**kw)
+  argv=['render-detail-preview.py','--lua',LUA,'--output',tmp,'--quest','4764']
+  with mock.patch.object(sys,'argv',argv),mock.patch.object(subprocess,'run',dispatch),contextlib.redirect_stderr(err):
+   runpy.run_path(str(ROOT/RUN),run_name='__main__')
+ def test_malformed_stdout_rejected_without_traceback(self):
+  import io,tempfile
+  for label,stdout in (('non-JSON','NOT JSON{{{'),('truncated JSON','{"objects": [{"id": 1'),('empty stdout','')):
+   with self.subTest(label):
+    def fake(cmd,*a,_stdout=stdout,**kw):return subprocess.CompletedProcess(cmd,0,stdout=_stdout,stderr='')
+    with tempfile.TemporaryDirectory()as tmp:
+     err=io.StringIO()
+     with self.assertRaises(SystemExit)as stopped:
+      self.run_with_fake(tmp,fake,err)
+     self.assertEqual(stopped.exception.code,2,label)
+     self.assertIn('Invalid preview',err.getvalue(),label)
+     self.assertNotIn('Traceback',err.getvalue(),label)
+  with self.subTest('non-UTF-8 bytes'):
+   def fake_decode(cmd,*a,**kw):raise UnicodeDecodeError('utf-8',b'\xff',0,1,'invalid start byte')
+   with tempfile.TemporaryDirectory()as tmp:
+    err=io.StringIO()
+    with self.assertRaises(SystemExit)as stopped:
+     self.run_with_fake(tmp,fake_decode,err)
+    self.assertEqual(stopped.exception.code,2)
+    self.assertIn('Invalid preview',err.getvalue())
+    self.assertNotIn('Traceback',err.getvalue())
 if __name__=='__main__':unittest.main()

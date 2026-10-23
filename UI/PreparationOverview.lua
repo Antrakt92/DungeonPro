@@ -394,7 +394,10 @@ function UI:RenderPreparationOverview(ownerCurrent, width, offset, presentation)
                 local key, nextLimit = entry.key, entry.limit
                 local control = self[key]
                 if not control then
-                    control=CreateFrame("Button",nil,self.detail)
+                    local okCreate, fresh = pcall(CreateFrame, "Button", nil, self.detail)
+                    if not okCreate then binding.released = true; self.overviewBinding = nil; return end
+                    control = addon.Clean(fresh, "table") or addon.Clean(fresh, "userdata")
+                    if not control then binding.released = true; self.overviewBinding = nil; return end
                     if not binding.current() then return end
                     self[key]=control
                     control.label=label(control,"",4,-4,contentWidth-8,13)

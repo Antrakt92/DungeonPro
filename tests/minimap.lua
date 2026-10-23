@@ -573,5 +573,61 @@ check("Hostile fallback font creation fails closed without throwing",function()
     local m=reset();textureResult=false;assert(m:Initialize())
     assert(m.button.label and m.button.label.text=="DP" and m.button.label.shown and m.button.shown)
 end)
+check("Hostile icon methods fail closed without throwing",function()
+    for _,key in ipairs({"SetSize","ClearAllPoints","SetPoint","Show"})do
+        for _,mode in ipairs({"throw","nil"})do
+            local m=reset();local factory=CreateFrame
+            CreateFrame=function(...)
+                local b=factory(...)
+                local orig=b.CreateTexture
+                b.CreateTexture=function(self2,...)
+                    local icon=orig(self2,...)
+                    if mode=="throw"then icon[key]=function() error("icon unavailable") end
+                    else icon[key]=false end
+                    return icon
+                end
+                return b
+            end
+            local ok,result=pcall(m.Initialize,m)
+            assert(ok and result==false,key.."/"..mode.." must fail closed without throwing")
+        end
+    end
+    for _,key in ipairs({"SetSize","ClearAllPoints","SetPoint","Show","SetTexture"})do
+        local m=reset();local factory=CreateFrame
+        CreateFrame=function(...)
+            local b=factory(...)
+            local orig=b.CreateTexture
+            b.CreateTexture=function(self2,...)
+                local icon=orig(self2,...)
+                setmetatable(icon,{__index=function(_,k)
+                    if k==key then error("hostile icon index") end
+                    return methods[k]
+                end})
+                return icon
+            end
+            return b
+        end
+        local ok,result=pcall(m.Initialize,m)
+        assert(ok,key.." hostile __index must not throw")
+        if key=="SetTexture"then assert(result==true,key.." SetTexture fallback must keep a visible text launcher")
+        else assert(result==false,key.." hostile __index must fail closed") end
+    end
+    do
+        local m=reset();local factory=CreateFrame
+        CreateFrame=function(...)
+            local b=factory(...)
+            setmetatable(b,{__index=function(_,k)
+                if k=="CreateTexture"then error("hostile button index")end
+                return methods[k]
+            end})
+            return b
+        end
+        local ok,result=pcall(m.Initialize,m)
+        assert(ok and result==true,"hostile button CreateTexture must fall back without throwing")
+        assert(m.button.label and m.button.label.text=="DP" and m.button.label.shown)
+    end
+    local m=reset();assert(m:Initialize())
+    assert(m.button.icon.texture=="Interface\\Icons\\INV_Misc_Map_01" and m.button.icon.shown and m.button.shown)
+end)
 issecretvalue=nil
 print("Minimap modeled checks passed: "..total.." (native client unverified)")

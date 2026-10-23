@@ -397,12 +397,24 @@ function M:Initialize(retry)
             if not pcall(show, text) then return false end
             return true
         end
-        local okC, icon = pcall(button.CreateTexture, button, nil, "ARTWORK")
+        local create = method(button, "CreateTexture")
+        local okC, icon
+        if create then okC, icon = pcall(create, button, nil, "ARTWORK") end
         if okC and cleanFrame(icon) then
             button.icon = icon
-            icon:SetSize(26, 26); icon:ClearAllPoints(); icon:SetPoint("CENTER", button, "CENTER", 0, 0)
-            local rendered, success = pcall(icon.SetTexture, icon, "Interface\\Icons\\INV_Misc_Map_01")
-            if rendered and addon.Clean(success, "boolean") == true then icon:Show()
+            local setSize = method(icon, "SetSize")
+            local clearPoints = method(icon, "ClearAllPoints")
+            local setPoint = method(icon, "SetPoint")
+            if not setSize or not clearPoints or not setPoint then return false end
+            if not pcall(setSize, icon, 26, 26) then return false end
+            if not pcall(clearPoints, icon) then return false end
+            if not pcall(setPoint, icon, "CENTER", button, "CENTER", 0, 0) then return false end
+            local setTexture = method(icon, "SetTexture")
+            local rendered, success
+            if setTexture then rendered, success = pcall(setTexture, icon, "Interface\\Icons\\INV_Misc_Map_01") end
+            if rendered and addon.Clean(success, "boolean") == true then
+                local show = method(icon, "Show")
+                if not show or not pcall(show, icon) then return false end
             else
                 local hide = method(icon, "Hide")
                 if not hide or not pcall(hide, icon) then return false end

@@ -828,6 +828,24 @@ do
   assert(finish == startOffset, "hostile model fails closed with the input offset (" .. case.name .. "), kept " .. tostring(finish))
   assert(u.overviewBinding == nil, "hostile model publishes no overview binding (" .. case.name .. ")")
  end
+ -- HOSTILE-CREATEFRAME-GUARD: a throwing global CreateFrame fails closed
+ -- without escaping to callers that only check the return value.
+ do
+  local paged = modelWith({ { id = 9001, kind = "pickup", status = "AVAILABLE", listedTarget = true } }, counts())
+  paged.remainingSteps = 3
+  local okWarm, warmFinish = renderWith(paged)
+  assert(okWarm and warmFinish ~= startOffset, "warm paged render must populate rows")
+  assert(u.overviewMoreButton, "warm paged render must create the More control")
+  u:ReleasePreparationOverview()
+  u.overviewMoreButton, u.overviewFewerButton = nil, nil
+  local realCreate = CreateFrame
+  CreateFrame = function() error("CreateFrame unavailable") end
+  local okThrow, finishThrow = renderWith(paged)
+  CreateFrame = realCreate
+  assert(okThrow, "throwing CreateFrame escaped RenderPreparationOverview: " .. tostring(finishThrow))
+  assert(finishThrow == nil, "throwing CreateFrame fails closed, kept " .. tostring(finishThrow))
+  assert(u.overviewBinding == nil, "throwing CreateFrame publishes no overview binding")
+ end
  local ok, finish = renderWith(modelWith(goodSteps, counts()))
  assert(ok and finish ~= nil and finish ~= startOffset, "valid model renders past its input offset")
  assert(u.overviewBinding and u.overviewBinding.current(), "valid model keeps a current overview binding")

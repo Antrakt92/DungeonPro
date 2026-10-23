@@ -464,6 +464,69 @@ class NamesTests(unittest.TestCase):
         result = subprocess.run([lua, "-"], input="\n".join(lines), text=True, encoding="utf-8", capture_output=True)
         self.assertEqual(result.returncode, 0, result.stderr)
 
+    def test_deeply_nested_inputs_raise_value_error_not_recursion_error(self):
+        def deep_list(depth=2000):
+            nested = "x"
+            for _ in range(depth):
+                nested = [nested]
+            return nested
+
+        def deep_dict(depth=2000):
+            nested = "x"
+            for _ in range(depth):
+                nested = {"k": nested}
+            return nested
+
+        for label, hostile in (("list", deep_list()), ("dict", deep_dict())):
+            with self.subTest(kind=label):
+                with self.assertRaises(ValueError):
+                    names.validate_unicode(hostile)
+        # Valid shallow nesting still passes.
+        self.assertIsNone(names.validate_unicode({"a": ["x", {"b": "y"}]}))
+        data, catalog = fixture()
+        valid_sources = source_fixture()
+        catalog["quests"][0]["start"] = {"objectID": 142702, "name": "Venom Bottle"}
+        valid_areas = area_fixture()
+        valid_areas_catalog = copy.deepcopy(catalog)
+        valid_areas_catalog["quests"][0]["start"] = {"zoneName": "The Hinterlands"}
+        self.assertIs(names.validate(data, catalog), data)
+        supplement = authored_fixture(*fixture())
+        for label, hostile in (("list", deep_list()), ("dict", deep_dict())):
+            with self.subTest(validator="validate", kind=label):
+                with self.assertRaises(ValueError):
+                    names.validate(hostile, catalog)
+            with self.subTest(validator="validate_sources", kind=label):
+                with self.assertRaises(ValueError):
+                    names.validate_sources(hostile, catalog)
+            with self.subTest(validator="validate_areas", kind=label):
+                with self.assertRaises(ValueError):
+                    names.validate_areas(hostile, catalog)
+            with self.subTest(validator="validate_supplement", kind=label):
+                with self.assertRaises(ValueError):
+                    names.validate_supplement(hostile, catalog)
+
+    def test_deeply_nested_catalog_extra_fields_raise_value_error(self):
+        def deep_payload(depth=2000):
+            nested = "leaf"
+            for _ in range(depth):
+                nested = {"k": nested}
+            return nested
+
+        data, _ = fixture()
+        sources = source_fixture()
+        sources["locales"] = {}
+        areas = dict(area_fixture(), sources={}, locales={})
+        hostile = {"quests": [{"id": 1, "name": "x", "start": deep_payload()}],
+                   "dungeons": [{"key": "dm", "name": "The Deadmines"}]}
+        for validator in ("validate", "validate_sources", "validate_areas"):
+            call = {"validate": names.validate,
+                    "validate_sources": names.validate_sources,
+                    "validate_areas": names.validate_areas}[validator]
+            payload = data if validator == "validate" else (sources if validator == "validate_sources" else areas)
+            with self.subTest(validator=validator):
+                with self.assertRaises(ValueError):
+                    call(copy.deepcopy(payload), hostile)
+
 
 if __name__ == "__main__":
     unittest.main()
