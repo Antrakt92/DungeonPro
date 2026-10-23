@@ -105,4 +105,14 @@ test("Final caller validation cannot publish a dictionary whose validated sectio
     dictionary={quests={},dungeons={}}
     assert(a.GetNameTranslations("ruRU",current)==dictionary)
 end)
+test("Missing Clean or Read helper fails dictionary loads closed without throwing",function(a)
+    for _,field in ipairs({"Clean","Read"})do
+        local saved=a[field]
+        a[field]=nil
+        local ok,result=pcall(a.GetNameTranslations,"ruRU",current)
+        a[field]=saved
+        assert(ok and result==nil,field.."=nil must fail closed without throwing")
+    end
+    assert(a.GetNameTranslations("ruRU",current))
+end)
 print("Lazy localized dictionaries: "..total.." checks passed")

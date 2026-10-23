@@ -272,4 +272,24 @@ check("Hostile per-value fold entries fall back to the raw byte without throwing
     addon.searchCaseFold[point] = original
     assert(addon.SearchFold("DeAdMiNeS") == before, "valid folding stays byte-identical")
 end)
+check("Hostile throwing-index case-fold table fails closed without throwing", function()
+    local saved = addon.searchCaseFold
+    addon.searchCaseFold = setmetatable({}, { __index = function() error("hostile fold index") end })
+    assert(loadfile("Core/Search.lua"))("DungeonPro", addon)
+    local ok, result = pcall(addon.SearchFold, "Deadmines")
+    addon.searchCaseFold = saved
+    assert(loadfile("Core/Search.lua"))("DungeonPro", addon)
+    assert(ok and result == "Deadmines", "throwing fold metatable must never fire")
+    assert(addon.SearchFold("DeAdMiNeS") == "deadmines", "valid folding stays byte-identical")
+end)
+check("Missing Clean helper fails quest-ID and fold lookups closed without throwing", function()
+    local saved = addon.Clean
+    addon.Clean = nil
+    local okID, idResult = pcall(addon.SearchQuestID, "166")
+    local okFold, foldResult = pcall(addon.SearchFold, "Deadmines")
+    addon.Clean = saved
+    assert(okID and idResult == nil, "SearchQuestID must fail closed without Clean")
+    assert(okFold and foldResult == nil, "SearchFold must fail closed without Clean")
+    assert(addon.SearchQuestID("166") == 166 and addon.SearchFold("DeAdMiNeS") == "deadmines")
+end)
 print("Unicode, quest-ID and recorded source search checks passed: " .. passed .. " cases")

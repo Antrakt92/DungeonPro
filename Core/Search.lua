@@ -3,6 +3,7 @@ local fold = addon.searchCaseFold
 
 -- Match canonical decimal IDs without accepting rounded integers or Lua numeric syntax.
 function addon.SearchQuestID(value)
+    if type(addon.Clean) ~= "function" then return nil end
     value = addon.Clean(value, "string")
     if not value or #value > 16384 then return nil end
     value = value:gsub("^%s+", ""):gsub("%s+$", "")
@@ -13,6 +14,7 @@ end
 
 -- Only search keys are folded. Display strings and their UTF-8 byte sequences stay intact.
 function addon.SearchFold(value)
+    if type(addon.Clean) ~= "function" then return nil end
     value = addon.Clean(value, "string")
     if type(fold) ~= "table" then return nil end
     if not value or #value > 16384 then return nil end
@@ -31,7 +33,7 @@ function addon.SearchFold(value)
             point = point * 64 + nextByte - 128
         end
         i = i + size
-        local folded = fold[point]
+        local folded = rawget(fold, point)
         if type(folded) ~= "string" then folded = value:sub(start, i - 1) end
         bytes = bytes + #folded
         if bytes > 16384 then return nil end

@@ -268,4 +268,40 @@ test("Hostile throwing-index timer fails closed in the event refresh probe",func
     SLASH_DUNGEONPRO1,SLASH_DUNGEONPRO2,SLASH_DUNGEONPRO3,SLASH_DUNGEONPRO4,SLASH_DUNGEONPRORELOAD1=nil,nil,nil,nil,nil
     CreateFrame=nil
 end)
+test("RestoreDB never throws on a hostile _G namespace",function()
+    local f=fixture()
+    local savedPro,savedChar,savedPrep,savedPrepChar=DungeonProDB,DungeonProCharDB,DungeonPrepDB,DungeonPrepCharDB
+    local activeDB,activeChar=f.addon.db,f.addon.char
+    local savedG=_G
+    -- A throwing _G __index cannot break the rawget snapshot: missing SVs restore fresh.
+    DungeonProDB,DungeonProCharDB,DungeonPrepDB,DungeonPrepCharDB=nil,nil,nil,nil
+    setmetatable(_G,{__index=function(_,key) error("hostile _G index: "..tostring(key)) end})
+    local okFresh,freshResult=pcall(f.addon.RestoreDB)
+    setmetatable(_G,nil)
+    assert(okFresh and freshResult==true,"throwing _G __index threw instead of being bypassed")
+    assert(DungeonProDB.schema==1 and DungeonProDB.locale=="auto")
+    -- Hostile SVs are still rejected while the throwing _G __index is active.
+    local function hostileSV() return setmetatable({},{__index=function() error("hostile SV") end}) end
+    DungeonProDB,DungeonProCharDB=hostileSV(),hostileSV()
+    setmetatable(_G,{__index=function(_,key) error("hostile _G index: "..tostring(key)) end})
+    local okHostile,hostileResult=pcall(f.addon.RestoreDB)
+    setmetatable(_G,nil)
+    assert(okHostile and hostileResult==false,"hostile SVs under a throwing _G __index did not fail closed")
+    -- A corrupt non-table _G fails the snapshot closed instead of throwing.
+    DungeonProDB,DungeonProCharDB,DungeonPrepDB,DungeonPrepCharDB=nil,nil,nil,nil
+    local curDB,curChar=f.addon.db,f.addon.char
+    _G=5
+    local okCorrupt,corruptResult=pcall(f.addon.RestoreDB)
+    _G=savedG
+    assert(okCorrupt and corruptResult==false,"corrupt _G threw instead of failing closed")
+    assert(_G==savedG and f.addon.db==curDB and f.addon.char==curChar)
+    -- rawset publish bypasses a hostile _G __newindex, so valid restores still publish.
+    setmetatable(_G,{__newindex=function(_,key) error("hostile _G newindex: "..tostring(key)) end})
+    local okWrite,writeResult=pcall(f.addon.RestoreDB)
+    setmetatable(_G,nil)
+    assert(okWrite and writeResult==true,"rawset publish must bypass a hostile _G __newindex")
+    assert(DungeonProDB.schema==1 and DungeonProDB.locale=="auto")
+    DungeonProDB,DungeonProCharDB,DungeonPrepDB,DungeonPrepCharDB=savedPro,savedChar,savedPrep,savedPrepChar
+    f.addon.db,f.addon.char=activeDB,activeChar
+end)
 print("Client retry refresh: "..total.." checks passed")

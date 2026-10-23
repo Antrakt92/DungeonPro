@@ -538,6 +538,7 @@ end
 
 local function nameDictionary(locale, ownerCurrent)
     local clean, read, checker = addon.Clean, addon.Read, issecretvalue
+    if type(clean) ~= "function" or type(read) ~= "function" then return nil end
     locale, ownerCurrent = clean(locale, "string"), clean(ownerCurrent, "function")
     local root = clean(addon.nameTranslations, "table")
     if not root or not locale or not ownerCurrent then return nil end
@@ -1767,9 +1768,15 @@ function addon.CaptureQuestText()
 end
 
 function addon.RestoreDB()
-    local db, char = DungeonProDB, DungeonProCharDB
-    if type(db) == "nil" then db = DungeonPrepDB end
-    if type(char) == "nil" then char = DungeonPrepCharDB end
+    -- Snapshot the published roots without invoking _G metamethods: a throwing
+    -- _G metatable must fail closed here instead of escaping the OnEvent caller.
+    local snapshot, db, char, legacyDB, legacyChar = pcall(function()
+        return rawget(_G, "DungeonProDB"), rawget(_G, "DungeonProCharDB"),
+            rawget(_G, "DungeonPrepDB"), rawget(_G, "DungeonPrepCharDB")
+    end)
+    if not snapshot then return false end
+    if type(db) == "nil" then db = legacyDB end
+    if type(char) == "nil" then char = legacyChar end
     if type(db) ~= "nil" and (not addon.Clean(db, "table") or getmetatable(db) ~= nil) then return false end
     if type(char) ~= "nil" and (not addon.Clean(char, "table") or getmetatable(char) ~= nil) then return false end
     db, char = db or {}, char or {}
@@ -1825,7 +1832,13 @@ function addon.RestoreDB()
     end
     if type(rawget(char, "filters")) ~= "table" then char.filters = {} end
     addon.db, addon.char = db, char
-    DungeonProDB, DungeonProCharDB = db, char
+    -- Publish without invoking _G metamethods; a throwing _G metatable fails
+    -- closed instead of escaping the OnEvent caller.
+    local published = pcall(function()
+        rawset(_G, "DungeonProDB", db)
+        rawset(_G, "DungeonProCharDB", char)
+    end)
+    if not published then return false end
     return true
 end
 
