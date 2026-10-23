@@ -47,9 +47,12 @@ def package(root=ROOT, output=None):
     names += ["Media/Icons/Wowhead.tga", "Media/Icons/Language.tga", "Media/Icons/NOTICE.txt"]
     names += [line.strip().replace("\\", "/") for line in toc.splitlines() if line.strip() and not line.strip().startswith("#")]
     output = output or root / "dist" / f"{ADDON_NAME}-{version}-Forever-dev.zip"
-    output.parent.mkdir(parents=True, exist_ok=True)
     staged = None
     try:
+        try:
+            output.parent.mkdir(parents=True, exist_ok=True)
+        except OSError as error:
+            raise ValueError(f"package output is unwritable: {error}") from error
         with tempfile.NamedTemporaryFile(prefix=".DungeonPro-", suffix=".zip", dir=output.parent, delete=False) as handle:
             staged = Path(handle.name)
         with zipfile.ZipFile(staged, "w", compression=zipfile.ZIP_DEFLATED) as archive:

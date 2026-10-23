@@ -30,9 +30,9 @@ local function styleRow(row, kind, selected)
     end
 end
 
-for name, method in pairs(addon.QuestNavigation) do UI[name] = method end
-for name, method in pairs(addon.QuestHistory) do UI[name] = method end
-for name, method in pairs(addon.PreparationOverviewUI) do UI[name] = method end
+for name, method in pairs(addon.QuestNavigation or {}) do UI[name] = method end
+for name, method in pairs(addon.QuestHistory or {}) do UI[name] = method end
+for name, method in pairs(addon.PreparationOverviewUI or {}) do UI[name] = method end
 for name, method in pairs(addon.DungeonMapUI or {}) do UI[name] = method end
 
 function UI:QuestLevelPalette(questLevel, ownerCurrent)
@@ -402,7 +402,12 @@ local function text(parent, size, color)
 end
 
 local function button(parent, label, width, callback)
-    local b = CreateFrame("Button", nil, parent, "UIPanelButtonTemplate")
+    -- A throwing or nil global CreateFrame fails closed with nil like the
+    -- hardened render sites instead of escaping window construction.
+    local okCreate, fresh = pcall(CreateFrame, "Button", nil, parent, "UIPanelButtonTemplate")
+    if not okCreate then return nil end
+    local b = addon.Clean(fresh, "table") or addon.Clean(fresh, "userdata")
+    if not b then return nil end
     b:SetSize(width, 25)
     b:SetText(label)
     b:SetScript("OnClick", callback)
@@ -410,12 +415,20 @@ local function button(parent, label, width, callback)
 end
 
 local function scrolling(parent, x, y, width, height)
-    local scroll = CreateFrame("ScrollFrame", nil, parent, "UIPanelScrollFrameTemplate")
+    -- A throwing or nil global CreateFrame fails closed with nil like the
+    -- hardened render sites instead of escaping window construction.
+    local okScroll, freshScroll = pcall(CreateFrame, "ScrollFrame", nil, parent, "UIPanelScrollFrameTemplate")
+    if not okScroll then return nil end
+    local scroll = addon.Clean(freshScroll, "table") or addon.Clean(freshScroll, "userdata")
+    if not scroll then return nil end
     scroll.scrollBarHideable = true
     if scroll.ScrollBar then scroll.ScrollBar:Hide() end
     scroll:SetPoint("TOPLEFT", x, y)
     scroll:SetSize(width, height)
-    local child = CreateFrame("Frame", nil, scroll)
+    local okChild, freshChild = pcall(CreateFrame, "Frame", nil, scroll)
+    if not okChild then return nil end
+    local child = addon.Clean(freshChild, "table") or addon.Clean(freshChild, "userdata")
+    if not child then return nil end
     child:SetSize(width - 4, 1)
     scroll:SetScrollChild(child)
     return child, scroll
@@ -7334,9 +7347,23 @@ end
 function UI:Create()
     self:LoadFilters()
     FONT = STANDARD_TEXT_FONT or "Fonts\\ARIALN.TTF"
-    local frame = CreateFrame("Frame", "DungeonProWindow", UIParent, "BackdropTemplate")
-    frame:SetSize(1100, 700); frame:SetPoint("CENTER")
+    -- A throwing or nil global CreateFrame fails closed without publishing
+    -- self.frame like the hardened render sites instead of escaping the
+    -- slash-triggered Toggle path.
+    local okFrame, freshFrame = pcall(CreateFrame, "Frame", "DungeonProWindow", UIParent, "BackdropTemplate")
+    if not okFrame then return end
+    local frame = addon.Clean(freshFrame, "table") or addon.Clean(freshFrame, "userdata")
+    if not frame then return end
     self.frame = frame
+    -- Later factory failures abandon the half-built window: hide it so no
+    -- visible orphan remains and unpublish self.frame so Toggle retries
+    -- cleanly instead of operating on a partial build.
+    local function abandon()
+        pcall(frame.Hide, frame)
+        self.frame = nil
+        return nil
+    end
+    frame:SetSize(1100, 700); frame:SetPoint("CENTER")
     self:Fit()
     if frame.SetClampedToScreen then frame:SetClampedToScreen(true) end
     frame:SetFrameStrata("DIALOG"); frame:EnableMouse(true); frame:SetMovable(true)
@@ -7371,10 +7398,17 @@ function UI:Create()
     frame:SetBackdropColor(0.045, 0.065, 0.085, 0.98)
     frame:SetBackdropBorderColor(0.7, 0.55, 0.27, 1)
     self.title = label(frame, addon.L("TITLE"), 16, -10, 145, 22)
-    local close = CreateFrame("Button", nil, frame, "UIPanelCloseButton"); close:SetPoint("TOPRIGHT", -4, -4)
+    local okClose, freshClose = pcall(CreateFrame, "Button", nil, frame, "UIPanelCloseButton")
+    if not okClose then return abandon() end
+    local close = addon.Clean(freshClose, "table") or addon.Clean(freshClose, "userdata")
+    if not close then return abandon() end
+    close:SetPoint("TOPRIGHT", -4, -4)
     local closeTheme = addon.Clean(addon.Theme, "table")
     if closeTheme then addon.Read(closeTheme.StyleCloseButton, "boolean", close) end
-    local search = CreateFrame("EditBox", nil, frame, "InputBoxTemplate")
+    local okSearch, freshSearch = pcall(CreateFrame, "EditBox", nil, frame, "InputBoxTemplate")
+    if not okSearch then return abandon() end
+    local search = addon.Clean(freshSearch, "table") or addon.Clean(freshSearch, "userdata")
+    if not search then return abandon() end
     search:SetSize(330, 26); search:SetPoint("TOPRIGHT", -190, -14); search:SetAutoFocus(false)
     self.searchBox = search
     if type(search.SetTextInsets) == "function" then search:SetTextInsets(28, 30, 0, 0) end
@@ -7403,6 +7437,7 @@ function UI:Create()
         self.search = ""; self.searchBox:SetText("")
         if self.catalogGeneration == generation then self:RefreshDungeons() end
     end)
+    if not self.clearSearch then return abandon() end
     self.clearSearch:SetSize(24, 24); self.clearSearch:SetPoint("RIGHT", search, "RIGHT", -3, 0)
     local function filterCurrent(control, field)
         local shown = addon.Read(frame.IsShown, "boolean", frame)
@@ -7413,6 +7448,7 @@ function UI:Create()
         if not filterCurrent(rangeControl, "rangeButton") then return end
         self.range = not self.range; self:SaveFilters(); self:Refresh()
     end)
+    if not rangeControl then return abandon() end
     self.rangeButton = rangeControl
     self.rangeButton:SetSize(160, 32); self.rangeButton:SetPoint("TOPLEFT", 178, -14)
     self.rangeButton.filterHeadingKey = "LEVEL_FILTER"
@@ -7421,6 +7457,7 @@ function UI:Create()
         if not filterCurrent(characterControl, "characterButton") then return end
         self.includeUnavailable = not self.includeUnavailable; self:SaveFilters(); self:Refresh()
     end)
+    if not characterControl then return abandon() end
     self.characterButton = characterControl
     self.characterButton:SetSize(100, 32); self.characterButton:SetPoint("TOPLEFT", 548, -66)
     local portrait = characterControl:CreateTexture(nil, "ARTWORK"); characterControl.filterIcon = portrait
@@ -7435,13 +7472,18 @@ function UI:Create()
         control:SetScript("OnLeave", function() self:HideNavigationHint(control) end)
     end
     local language = button(frame, "", 64, function() self:OpenLanguageMenu() end)
+    if not language then return abandon() end
     self.language = language
     language:SetPoint("TOPRIGHT", -116, -14)
     local languageModule = addon.Clean(addon.Language, "table")
     if languageModule then addon.Read(languageModule.Attach, "boolean", languageModule, language, self) end
     for _, entry in ipairs({ { "issue", -80 }, { "support", -48 } }) do
         local key = entry[1]
-        local control = CreateFrame("Button", nil, frame); self[key .. "Link"] = control
+        local okControl, freshControl = pcall(CreateFrame, "Button", nil, frame)
+        if not okControl then return abandon() end
+        local control = addon.Clean(freshControl, "table") or addon.Clean(freshControl, "userdata")
+        if not control then return abandon() end
+        self[key .. "Link"] = control
         control:SetSize(24, 24); control:SetPoint("TOPRIGHT", entry[2], -14)
         local icon = control:CreateTexture(nil, "ARTWORK"); control.icon = icon
         icon:SetSize(16, 16); icon:SetPoint("CENTER", control, "CENTER", 0, key == "support" and 3 or 0)
@@ -7460,6 +7502,7 @@ function UI:Create()
     end
     self.heading = label(frame, "", 278, -66, 226, 26)
     self.questEntrance = button(frame, "", 28, nil)
+    if not self.questEntrance then return abandon() end
     self.questEntrance:SetSize(28, 28); self.questEntrance:SetPoint("TOPLEFT", 510, -66)
     self.questEntrance.entranceControl = self.questEntrance
     if type(self.questEntrance.SetMotionScriptsWhileDisabled) == "function" then self.questEntrance:SetMotionScriptsWhileDisabled(true) end
@@ -7472,24 +7515,32 @@ function UI:Create()
     end
     self.questEntrance:SetScript("OnLeave", leaveQuestEntrance); self.questEntrance:SetScript("OnHide", leaveQuestEntrance)
     self.catalog, self.catalogScroll = scrolling(frame, 12, -66, 238, 622)
+    if not self.catalog or not self.catalogScroll then self.catalog, self.catalogScroll = nil, nil; return abandon() end
     self.searchHint = label(self.catalog, "", 4, 0, 202, 13)
     self.catalogNotice = label(self.catalog, "", 4, 0, 202, 13)
     self.questList, self.questScroll = scrolling(frame, 278, -100, 370, 588)
+    if not self.questList or not self.questScroll then self.questList, self.questScroll = nil, nil; return abandon() end
     self.detail, self.detailScroll = scrolling(frame, 674, -66, 400, 622)
+    if not self.detail or not self.detailScroll then self.detail, self.detailScroll = nil, nil; return abandon() end
     self.detailBackButton = button(self.detail, "", 28, nil)
+    if not self.detailBackButton then return abandon() end
     self.detailBackButton.label = label(self.detailBackButton,"",0,-2,28,20)
     self.detailBackButton.label:SetJustifyH("CENTER")
     self.detailBackButton.footerLabelKey = "BACK"
     self.detailBackButton:Hide()
     self.overviewMapControl = button(self.detail, "", 392, nil)
+    if not self.overviewMapControl then return abandon() end
     self.overviewMapControl:SetHeight(32)
     self.overviewMapControl.filterCaption = label(self.overviewMapControl, "", 8, -6, 376, 15)
     self.overviewMapControl:Hide()
     if addon.Theme and addon.Theme.StyleFilter then addon.Theme.StyleFilter(self.overviewMapControl, false) end
     self.source = button(self.detail, "", 32, function() if self.quest then self:CopyLink(self.quest) end end)
+    if not self.source then return abandon() end
     self.source:SetPoint("TOPRIGHT", self.detail, "TOPRIGHT", -4, 0)
     self.giver = button(self.detail, "", 32, function() end)
+    if not self.giver then return abandon() end
     self.turnin = button(self.detail, "", 24, function() end)
+    if not self.turnin then return abandon() end
     self:SetFooterLabel(self.turnin, "VISIT_TURNIN")
     self.turnin:Hide(); self.turnin:SetEnabled(false)
     self.giver:SetPoint("TOPLEFT", self.detail, "TOPLEFT", 4, -80)
@@ -7517,6 +7568,7 @@ function UI:Create()
             self:SetCatalogCollapsed(not self.catalogCollapsed)
         end
     end)
+    if not catalogToggle then return abandon() end
     self.catalogToggle = catalogToggle
     catalogToggle:SetSize(24,24)
     catalogToggle.label = label(catalogToggle,"",2,-1,20,20)
@@ -7691,6 +7743,7 @@ end
 
 function UI:Toggle()
     if not self.frame then self:Create() end
+    if not self.frame then return end
     self.frame:SetShown(not self.frame:IsShown())
 end
 addon.listeners[#addon.listeners + 1] = function(reason) UI:Refresh(nil, reason == "data") end

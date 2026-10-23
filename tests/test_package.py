@@ -292,5 +292,27 @@ class PackageTests(unittest.TestCase):
             self.assertFalse(output.exists())
 
 
+    def test_unwritable_output_directory_fails_with_value_error(self):
+        # output.parent.mkdir sits inside the build gate: an unwritable dist
+        # must fail as ValueError naming the output, never as an escaped
+        # OSError traceback, and must publish no archive.
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "DungeonPro.toc").write_text("## Version: 1.2.3\nCore.lua\n", encoding="utf-8")
+            for name in ("README.md", "CHANGELOG.md", "LICENSE", "Core.lua"):
+                (root / name).write_text("fixture\n", encoding="utf-8")
+            (root / "Media" / "Fonts").mkdir(parents=True)
+            for name in ("NotoSans-Regular.ttf", "OFL.txt", "NOTICE.txt"):
+                (root / "Media" / "Fonts" / name).write_bytes(b"fixture")
+            (root / "Media" / "Icons").mkdir()
+            for name in ("Wowhead.tga", "Language.tga", "NOTICE.txt"):
+                (root / "Media" / "Icons" / name).write_bytes(b"fixture")
+            output = root / "dist" / "addon.zip"
+            output.parent.write_bytes(b"a file blocks the output directory")
+            with self.assertRaisesRegex(ValueError, "unwritable"):
+                packager.package(root=root, output=output)
+            self.assertFalse(output.exists())
+
+
 if __name__ == "__main__":
     unittest.main()

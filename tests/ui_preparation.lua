@@ -10689,4 +10689,40 @@ check("Window render hardening: hostile detail factories fail closed without thr
     end
     CreateFrame, methods.CreateTexture, methods.SetHighlightTexture = factory, texture, highlight
 end)
+check("Window file scope tolerates missing namespace mixins", function()
+    local chunk = assert(loadfile("UI/Window.lua"))
+    local probe = { listeners = {} }
+    local ok, err = pcall(chunk, "DungeonPro", probe)
+    assert(ok, "nil mixin namespaces must not escape file scope: " .. tostring(err))
+    assert(type(probe.UI) == "table")
+    for _, key in ipairs({ "QuestNavigation", "QuestHistory", "PreparationOverviewUI", "DungeonMapUI" }) do
+        probe = { listeners = {}, [key] = { ["MIXIN_" .. key] = function() end } }
+        ok, err = pcall(chunk, "DungeonPro", probe)
+        assert(ok, key .. " mixin must still apply: " .. tostring(err))
+        assert(probe.UI["MIXIN_" .. key] ~= nil)
+    end
+end)
+check("Window creation fails closed when frame factories are hostile", function()
+    local factory = CreateFrame
+    local savedSpecials = #UISpecialFrames
+    for _, mode in ipairs({ "throw", "nil" }) do
+        CreateFrame = mode == "throw" and function() error("factory unavailable") end or function() return nil end
+        ui.frame = nil
+        local ok = pcall(ui.Create, ui)
+        assert(ok, mode .. " window creation must not escape")
+        assert(ui.frame == nil, mode .. " must publish no half-built frame")
+        ui.frame = nil
+        ok = pcall(ui.Toggle, ui)
+        assert(ok, mode .. " window toggle must not escape")
+        assert(ui.frame == nil, mode .. " toggle must publish no half-built frame")
+        CreateFrame = factory
+    end
+    CreateFrame = factory
+    ui.frame = nil
+    ui:Create()
+    assert(ui.frame ~= nil and ui.frame.name == "DungeonProWindow", "valid window creation must rebuild")
+    while #UISpecialFrames > savedSpecials do UISpecialFrames[#UISpecialFrames] = nil end
+    ui.frame:Show()
+    assert(ui.frame:IsShown(), "rebuilt window must accept Show")
+end)
 print("Preparation UI modeled checks passed: " .. total .. " (no native layout validation)")
