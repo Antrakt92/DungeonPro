@@ -1487,4 +1487,38 @@ do
  ui.search = ""; ui.frame:Show(); ui:RefreshDungeons()
  assert(shownCards() > 0, "valid catalogue restores dungeon cards")
 end
+-- A17 TOOLTIP-ZONE-CAPS: overlong or blank zone names never reach the giver
+-- tooltip, mirroring the 500-char detail-row caps at :4512-4515/:4546-4549;
+-- a valid zone still paints.
+do
+ local savedStart=addon.quests[990101].start
+ local savedArea=addon.SourceAreaName
+ local function giverTip()
+  ui.search="";ui.questTreeRoot=nil;ui.questTreeDungeon=nil;ui.dungeon=dungeon;ui.quest=990101;ui.frame:Show();ui:Refresh()
+  tip.shown=false;tip.owner=nil;tip.title=nil;tip.body=nil
+  local ok,err=pcall(ui.giver.scripts.OnEnter)
+  assert(ok,"giver tooltip threw: "..tostring(err))
+  assert(tip.shown and tip.owner==ui.giver and tip.body,"giver tooltip stays owned without a crash")
+  return tip.body
+ end
+ addon.quests[990101].start={npcID=1,name="Own distant giver",mapID=1453,x=10,y=20,zoneName="   "}
+ local body=giverTip()
+ assert(body:find("Own distant giver",1,true),"blank zone keeps the giver name")
+ assert(not body:find("   ",1,true),"blank zone stays unpainted")
+ addon.quests[990101].start={npcID=1,name="Own distant giver",mapID=1453,x=10,y=20,zoneName=("z"):rep(10240)}
+ body=giverTip()
+ assert(body:find("Own distant giver",1,true),"overlong zone keeps the giver name")
+ assert(not body:find(("z"):rep(100),1,true),"overlong zone stays unpainted")
+ addon.SourceAreaName=function(name,owner) if owner and not owner() then return nil end; return ("n"):rep(10240) end
+ addon.quests[990101].start={npcID=1,name="Own distant giver",mapID=1453,x=10,y=20,zoneName="Stormwind City"}
+ body=giverTip()
+ assert(not body:find(("n"):rep(100),1,true),"overlong area label stays unpainted")
+ assert(body:find("Stormwind City",1,true),"overlong area label falls back to the catalogue zone")
+ addon.SourceAreaName=savedArea
+ addon.quests[990101].start={npcID=1,name="Own distant giver",mapID=1453,x=10,y=20,zoneName="Stormwind City"}
+ body=giverTip()
+ assert(body:find("Stormwind City",1,true),"valid zone keeps its tooltip place")
+ addon.quests[990101].start=savedStart
+ ui.search="";ui.questTreeRoot=nil;ui.questTreeDungeon=nil;ui.quest=990104;ui.frame:Show();ui:Refresh()
+end
 print("Middle quest navigation checks passed (modeled, no native input or layout proof)")

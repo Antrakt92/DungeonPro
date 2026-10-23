@@ -7364,6 +7364,7 @@ function UI:Create()
             if not tip or (not point and not resolvedBodyKey and not reason) or not current() then return end
             local text = (resolvedBodyKey or reason) and addon.L(resolvedBodyKey or reason) or addon.Read(giverName, "string", point, current, nameProofs)
             local canonical = point and addon.Clean(point.zoneName, "string")
+            if canonical and (#canonical > 500 or not canonical:find("%S")) then canonical = nil end
             local zone
             if canonical and type(areaGetter) == "function" then
                 local ok, label, proof = pcall(areaGetter, canonical, current)
@@ -7374,6 +7375,7 @@ function UI:Create()
                     if addon.Read(proof, "boolean") ~= true or not current() then return end
                 end
                 if ok then zone = addon.Clean(label, "string") end
+                if zone and (#zone > 500 or not zone:find("%S")) then zone = nil end
             end
             zone = zone or canonical
             local x, y = point and addon.Clean(point.x, "number"), point and addon.Clean(point.y, "number")
