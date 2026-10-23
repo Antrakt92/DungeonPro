@@ -502,4 +502,16 @@ check("Failed and superseded overview paints never publish a positive kind or as
     assert(ok==false and kind==nil and aspect==nil)
 end)
 
+check("Malformed paint targets fail closed without throwing", function()
+    local ok, result = pcall(addon.PaintDungeonArt, nil, {})
+    assert(ok and result == false, "nil texture must return false without throwing")
+    for _, bad in ipairs({ secret, false, true, 5, "tex" }) do
+        ok, result = pcall(addon.PaintDungeonArt, bad, {})
+        assert(ok, "malformed texture threw")
+        assert(result == false, "malformed texture must return false")
+    end
+    local icon = canvas()
+    assert(addon.PaintDungeonArt(icon, {}) == true and icon.texture == generic)
+end)
+
 print("Dungeon art checks passed: " .. total)

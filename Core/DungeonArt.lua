@@ -89,6 +89,11 @@ end
 
 local dungeonArtPaints = setmetatable({}, { __mode = "k" })
 function addon.PaintDungeonArt(texture, dungeon, mode, showOwned)
+    -- Raw type check (not Clean): Clean would invoke issecretvalue here,
+    -- consuming one-shot classifiers before token registration and inverting
+    -- newer-wins ownership. Previously-non-throwing inputs keep their exact
+    -- classifier-call sequence; only throwing shapes fail closed early.
+    if type(texture) ~= "table" and type(texture) ~= "userdata" then return false end
     local token = {}
     dungeonArtPaints[texture] = token
     local checker = issecretvalue

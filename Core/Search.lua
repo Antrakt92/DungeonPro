@@ -31,7 +31,8 @@ function addon.SearchFold(value)
             point = point * 64 + nextByte - 128
         end
         i = i + size
-        local folded = fold[point] or value:sub(start, i - 1)
+        local folded = fold[point]
+        if type(folded) ~= "string" then folded = value:sub(start, i - 1) end
         bytes = bytes + #folded
         if bytes > 16384 then return nil end
         result[#result + 1] = folded

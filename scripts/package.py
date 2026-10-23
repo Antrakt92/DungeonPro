@@ -14,7 +14,11 @@ ADDON_NAME = "DungeonPro"
 def exact_path(root, name):
     path = root
     for part in PurePosixPath(name).parts:
-        if part not in {p.name for p in path.iterdir()}:
+        try:
+            entries = {p.name for p in path.iterdir()}
+        except OSError:
+            raise ValueError(f"Missing path or incorrect filename case: {name}")
+        if part not in entries:
             raise ValueError(f"Missing path or incorrect filename case: {name}")
         path = path / part
     return path

@@ -3,6 +3,9 @@ local Planner = {}
 addon.Planner = Planner
 
 local function contextCurrent(context)
+    -- A non-table context carries no current predicate; fail closed as
+    -- expired so public Eligible and engine Current never throw on it.
+    if type(context) ~= "table" then return false end
     local fn = context.current
     if type(issecretvalue) == "function" then
         local ok, restricted = pcall(issecretvalue, fn)
@@ -32,6 +35,10 @@ function Planner.RelevantToCharacter(eligible, status)
 end
 
 function Planner.Eligible(q, context)
+    -- A non-table context fails closed as unknown character, never a throw
+    -- or a fail-open eligibility: contextCurrent also guards, but this entry
+    -- indexes context directly below, so the contract is stated here too.
+    if type(context) ~= "table" then return nil, "character" end
     if not contextCurrent(context) then return nil, "character" end
     -- A non-table quest entry is unknown requirements, never a throw.
     if type(q) ~= "table" then return nil, "requirements" end
@@ -270,6 +277,18 @@ function Planner.New(quests, context, choices)
 
     function engine:Dungeon(dungeon, options)
         if type(dungeon) ~= "table" or type(dungeon.quests) ~= "table" then
+            return { rows = {}, actions = {}, counts = {}, unknown = true, ready = false }
+        end
+        -- A sparse quest list would silently drop entries under ipairs while
+        -- leaving ready possibly true (fail-open). Count the sequence keys
+        -- like DungeonStatus so a malformed/hand-edited catalogue entry fails
+        -- closed instead. Dense arrays pass through unchanged.
+        local listed, dense = 0, #dungeon.quests
+        for key in pairs(dungeon.quests) do
+            if type(key) ~= "number" or key % 1 ~= 0 or key < 1 then dense = -1 break end
+            listed = listed + 1
+        end
+        if listed ~= dense then
             return { rows = {}, actions = {}, counts = {}, unknown = true, ready = false }
         end
         -- Non-table options carry no includeUnavailable flag; treat them as absent.

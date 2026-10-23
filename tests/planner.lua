@@ -1007,4 +1007,28 @@ check("Truthy non-function ready values fail closed as unknown character without
         eq(engine:State(1).status, ready and "READY" or "ACTIVE")
     end
 end)
+check("Non-table Eligible contexts fail closed as unknown character without throwing", function()
+    -- select (not ipairs) so the leading nil case is actually exercised.
+    for index = 1, 3 do
+        local bad = select(index, nil, 5, "ctx")
+        local ok, eligible, reason = pcall(function() return P.Eligible(q(1), bad) end)
+        assert(ok, "Eligible with bad context threw")
+        eq(eligible, nil); eq(reason, "character")
+    end
+    eq(P.Eligible(q(1), ctx()), true)
+end)
+check("Sparse dungeon quest lists fail closed without throwing or silently dropping entries", function()
+    local quests = { [1] = q(1), [3] = q(3) }
+    local done = ctx({ [1] = true })
+    local sparse = { quests = { [1] = 1, [3] = 3 }, coverage = "reviewed" }
+    local count = 0
+    for _ in pairs(sparse.quests) do count = count + 1 end
+    eq(count, 2)
+    local ok, plan = pcall(function() return P.New(quests, done):Dungeon(sparse) end)
+    assert(ok, "Dungeon with sparse quest list threw")
+    eq(#plan.rows, 0); eq(#plan.actions, 0)
+    eq(plan.unknown, true); eq(plan.ready, false)
+    local dense = P.New(quests, done):Dungeon({ quests = { 1 }, coverage = "reviewed" })
+    eq(#dense.rows, 1); eq(dense.unknown, false); eq(dense.ready, true)
+end)
 print("Planner checks passed: " .. passed)

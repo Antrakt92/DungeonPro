@@ -156,6 +156,7 @@ class MalformedSnapshotPreview(unittest.TestCase):
    ('anchor offset',lambda s:next(row for row in s['objects']if row.get('points'))['points'][0].update(x='bad')),
    ('font size huge',lambda s:s['objects'][0].update(text='hi',size=10**12,width=100)),
    ('text huge',lambda s:s['objects'][0].update(text='x'*200000,size=14,width=100)),
+   ('anchor type',lambda s:next(row for row in s['objects']if row.get('points')and row['id']!=s['roles']['frame'])['points'][0].update(anchor=['evil'])),
   )
   for label,mutate in cases:
    with self.subTest(label):

@@ -179,6 +179,10 @@ def render(snapshot: dict, target: Path) -> None:
                 relative = point.get("relative")
                 if relative is not None and type(relative) is not int:
                     raise ValueError("Invalid preview object link")
+                for field in ("anchor", "relativeAnchor"):
+                    name = point.get(field)
+                    if name is not None and type(name) is not str:
+                        raise ValueError("Invalid preview anchor")
     rects: dict[int, tuple[float, float, float, float]] = {root: (0, 0, 1100, 700)}
     resolving: set[int] = set()
 
@@ -236,6 +240,10 @@ def render(snapshot: dict, target: Path) -> None:
                 relative = point.get("relative")
                 if relative is not None and type(relative) is not int:
                     raise ValueError("Invalid preview object link")
+                for field in ("anchor", "relativeAnchor"):
+                    name = point.get(field)
+                    if name is not None and type(name) is not str:
+                        raise ValueError("Invalid preview anchor")
                 parent = row.get("parent")
                 if parent is not None and type(parent) is not int:
                     raise ValueError("Invalid preview object link")

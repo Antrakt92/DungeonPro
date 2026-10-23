@@ -80,7 +80,10 @@ events:SetScript("OnEvent", function(_, event, arg1, arg2)
             SlashCmdList.DUNGEONPRO = function(msg)
                 msg = (addon.Clean(msg, "string") or ""):match("^%s*(.-)%s*$"):lower():gsub("%s+", " ")
                 if #msg > 1024 then return end
-                if msg == "clear" then addon.Navigation.Stop()
+                if msg == "clear" then
+                    local nav = addon.Clean(addon.Navigation, "table")
+                    local stop = nav and addon.Clean(nav.Stop, "function")
+                    if stop then addon.Read(stop, "table") end
                 elseif msg == "probe" then addon.ProbeClient()
                 elseif msg == "probe nav" then probeNavigation()
                 elseif msg == "probe minimap" then probeMinimap()
@@ -107,7 +110,9 @@ events:SetScript("OnEvent", function(_, event, arg1, arg2)
     if event == "ITEM_DATA_LOAD_RESULT" then addon.ItemDataResult(arg1, arg2) end
     if event == "QUEST_DETAIL" then addon.CaptureQuestText() end
     if event == "QUEST_ACCEPTED" or event == "QUEST_TURNED_IN" or event == "QUEST_REMOVED" then
-        addon.Navigation.QuestChanged(arg1)
+        local nav = addon.Clean(addon.Navigation, "table")
+        local changed = nav and addon.Clean(nav.QuestChanged, "function")
+        if changed then addon.Read(changed, "boolean", arg1) end
     end
     refresh(dataEvents[event] == true)
 end)

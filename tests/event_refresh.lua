@@ -195,4 +195,34 @@ check("Overlong slash input is a no-op without throwing or toggling", function()
     ok, err = pcall(SlashCmdList.DUNGEONPRO, "probe")
     assert(ok and probed == 1, "ordinary probe stopped working: " .. tostring(err))
 end)
+check("Missing or malformed Navigation fails closed while valid callbacks still fire", function()
+    local m0 = model()
+    for _, name in ipairs({ "QUEST_ACCEPTED", "QUEST_TURNED_IN", "QUEST_REMOVED" }) do
+        local ok, err = pcall(m0.event, name)
+        assert(ok, name .. " threw without Navigation: " .. tostring(err))
+    end
+    m0.drain()
+    assert(#m0.reasons == 1 and m0.reasons[1] == "full", "quest events without Navigation lost their refresh")
+    for _, bad in ipairs({ false, 5, "nav", { QuestChanged = true }, { Stop = 5 } }) do
+        local m = model()
+        m.addon.Navigation = bad
+        local ok, err = pcall(m.event, "QUEST_ACCEPTED")
+        assert(ok, "quest event threw for malformed Navigation: " .. tostring(err))
+        m.drain()
+        assert(#m.reasons == 1 and m.reasons[1] == "full", "refresh skipped for malformed Navigation")
+        ok, err = pcall(SlashCmdList.DUNGEONPRO, "clear")
+        assert(ok, "clear slash threw for malformed Navigation: " .. tostring(err))
+    end
+    local m = model()
+    local changed, stopped = {}, 0
+    m.addon.Navigation = {
+        QuestChanged = function(id) changed[#changed + 1] = id end,
+        Stop = function() stopped = stopped + 1 end,
+    }
+    m.event("QUEST_ACCEPTED"); m.drain()
+    assert(#changed == 1 and changed[1] == 166, "valid QuestChanged did not fire with the quest id")
+    assert(#m.reasons == 1 and m.reasons[1] == "full")
+    local ok, err = pcall(SlashCmdList.DUNGEONPRO, "clear")
+    assert(ok and stopped == 1, "valid Stop did not fire on clear: " .. tostring(err))
+end)
 print("Event refresh checks passed: " .. total)

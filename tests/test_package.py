@@ -16,6 +16,10 @@ class PackageTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "filename case"):
             packager.exact_path(ROOT, "database/Catalog.lua")
 
+    def test_nested_path_under_file_fails_with_value_error(self):
+        with self.assertRaisesRegex(ValueError, "filename case"):
+            packager.exact_path(ROOT, "README.md/evil.lua")
+
     def test_archive_is_installable_and_contains_only_runtime_and_player_docs(self):
         with tempfile.TemporaryDirectory() as tmp:
             path, _ = packager.package(output=Path(tmp) / "addon.zip")

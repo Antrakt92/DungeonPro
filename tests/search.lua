@@ -259,4 +259,17 @@ check("Hostile case-fold table fails closed without throwing", function()
     assert(loadfile("Core/Search.lua"))("DungeonPro", addon)
     assert(addon.SearchFold("DeAdMiNeS") == "deadmines")
 end)
+check("Hostile per-value fold entries fall back to the raw byte without throwing", function()
+    local before = addon.SearchFold("DeAdMiNeS")
+    assert(before == "deadmines")
+    local point = string.byte("A")
+    local original = addon.searchCaseFold[point]
+    for _, hostile in ipairs({ 5, {}, true }) do
+        addon.searchCaseFold[point] = hostile
+        local ok, result = pcall(addon.SearchFold, "DeAdMiNeS")
+        assert(ok and result == "deAdmines", "hostile per-value entry must fall back without throwing")
+    end
+    addon.searchCaseFold[point] = original
+    assert(addon.SearchFold("DeAdMiNeS") == before, "valid folding stays byte-identical")
+end)
 print("Unicode, quest-ID and recorded source search checks passed: " .. passed .. " cases")
