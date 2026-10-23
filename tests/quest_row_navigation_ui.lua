@@ -1093,4 +1093,118 @@ do
  ui.dungeon,ui.preparation=savedDungeon,savedPrep
  ui.search="";ui.questTreeRoot=nil;ui.questTreeDungeon=nil;ui.includeUnavailable=true;ui.frame:Show();ui:RefreshQuests()
 end
+-- A11 ROW-MINLEVEL-CLEAN-GUARD: a hostile catalogue minLevel drops the row
+-- suffix instead of throwing in concatenation, mirroring the Clean-guarded
+-- action level suffix at :2684.
+do
+ local savedDungeons = addon.dungeons
+ local savedDungeon, savedPrep = ui.dungeon, ui.preparation
+ local savedLevel = context.level
+ addon.quests[990803] = { id = 990803, name = "Hostile minLevel quest", minLevel = {}, requirementsKnown = true,
+  start = { npcID = 42, name = "Guard giver", mapID = 1453, x = 10, y = 20 } }
+ addon.quests[990804] = { id = 990804, name = "Plain minLevel quest", minLevel = 1, requirementsKnown = true,
+  start = { npcID = 43, name = "Plain giver", mapID = 1453, x = 10, y = 20 } }
+ local guardDungeon = { key = "row-minlevel-guard", name = "Row minLevel guard dungeon", minLevel = 1, maxLevel = 80, quests = { 990803, 990804 } }
+ addon.dungeons = { guardDungeon }
+ ui.dungeon = guardDungeon; ui.preparation = false; ui.includeUnavailable = true
+ ui.search = ""; ui.questTreeRoot = nil; ui.questTreeDungeon = nil; ui.quest = 990804; ui.frame:Show()
+ -- A hostile character level forces UNKNOWN/level rows without reading any
+ -- catalogue minimum, so the row render alone faces the hostile minLevel.
+ context.level = {}
+ local function noteOf(id)
+  for _, r in ipairs(ui.rows) do if r:IsShown() and not r.heading and r.questID == id and r.note then return r.note.text end end
+ end
+ local ok, err = pcall(function() ui:RefreshQuests() end)
+ assert(ok, "hostile row minLevel threw in RefreshQuests: " .. tostring(err))
+ local hostile = noteOf(990803)
+ assert(hostile and hostile:find(addon.L("level"), 1, true), "hostile row minLevel keeps its kind label")
+ assert(hostile and not hostile:find("table:", 1, true), "hostile row minLevel drops the suffix instead of concatenating a table")
+ local plain = noteOf(990804)
+ assert(plain and plain:find("1", 1, true), "plain row minLevel keeps its suffix")
+ context.level = savedLevel
+ addon.quests[990803] = nil; addon.quests[990804] = nil
+ addon.dungeons = savedDungeons
+ ui.dungeon, ui.preparation = savedDungeon, savedPrep
+ ui.search = ""; ui.questTreeRoot = nil; ui.questTreeDungeon = nil; ui.includeUnavailable = true; ui.frame:Show(); ui:RefreshQuests()
+end
+-- A11 GIVER-FALLBACK-CAP: an overlong or blank place name falls back to
+-- UNKNOWN_PLACE instead of painting, mirroring the 1024-char reviewed-name
+-- guards at :297-301 and :308-309.
+do
+ local savedDungeons = addon.dungeons
+ local savedDungeon, savedQuest = ui.dungeon, ui.quest
+ addon.quests[990805] = { id = 990805, name = "Long giver quest", minLevel = 1, requirementsKnown = true,
+  start = { name = ("n"):rep(1025) } }
+ addon.quests[990806] = { id = 990806, name = "Blank giver quest", minLevel = 1, requirementsKnown = true,
+  start = { name = "   " } }
+ local capDungeon = { key = "giver-fallback-cap", name = "Giver fallback cap dungeon", minLevel = 1, maxLevel = 80, quests = { 990805, 990806 } }
+ addon.dungeons = { capDungeon }
+ ui.dungeon = capDungeon; ui.questTreeRoot, ui.questTreeDungeon = nil, nil
+ ui.search = ""; ui.includeUnavailable = true; ui.frame:Show()
+ if type(ui.SetDetailTab) == "function" then ui:SetDetailTab("quest") end
+ local function fieldShown(fs)
+  if fs.shown ~= nil then return fs.shown == true end
+  if type(fs.IsShown) == "function" then local ok, v = pcall(function() return fs:IsShown() end); return ok and v == true end
+  return false
+ end
+ local function hasText(want)
+  for _, fs in ipairs(ui.details) do if fieldShown(fs) and fs.text and fs.text:find(want, 1, true) then return true end end
+  return false
+ end
+ ui.quest = 990805; ui:Refresh()
+ assert(not hasText(("n"):rep(100)), "overlong giver name stays unpainted")
+ ui.quest = 990806; ui:Refresh()
+ local blank = false
+ for _, fs in ipairs(ui.details) do if fieldShown(fs) and fs.text == "   " then blank = true end end
+ assert(not blank, "blank giver name stays unpainted")
+ addon.quests[990805] = nil; addon.quests[990806] = nil
+ addon.dungeons = savedDungeons
+ ui.dungeon, ui.quest = savedDungeon, savedQuest
+ ui.search = ""; ui.questTreeRoot = nil; ui.questTreeDungeon = nil; ui.frame:Show(); ui:Refresh()
+end
+-- A11 REPORTED-PLACES-BOUNDS: reported places mirror scripts/catalog.py with
+-- uint32 npc/object identity, 2^53-1 report mapIDs (pinned DP-5 REPORTED-MAP-BOUND
+-- in tests/ui_preparation.lua), 500-char report zone names and the 1024-char giver
+-- name budget; hostile identities stay unbound while boundary values bind.
+do
+ local savedDungeons = addon.dungeons
+ local savedDungeon, savedQuest = ui.dungeon, ui.quest
+ local function validStart(overrides)
+  local s = { npcID = 5, name = "Reported giver", mapID = 1453, x = 10, y = 20, zoneName = "Stormwind City",
+   reportedLocations = { { mapID = 1453, x = 10, y = 20, zoneName = "Stormwind City" }, { mapID = 1453, x = 40, y = 50, zoneName = "Stormwind City" } } }
+  if overrides then for k, v in pairs(overrides) do s[k] = v end end
+  return s
+ end
+ local cases = {
+  { label = "valid", start = validStart(), bound = true },
+  { label = "max-uint32 report mapID", start = { npcID = 5, name = "Reported giver", mapID = 1453, x = 10, y = 20, zoneName = "Stormwind City",
+    reportedLocations = { { mapID = 4294967295, x = 10, y = 20, zoneName = "Far away" }, { mapID = 1453, x = 40, y = 50, zoneName = "Near" } } }, bound = true },
+  { label = "max-safe report mapID", start = { npcID = 5, name = "Reported giver", mapID = 1453, x = 10, y = 20, zoneName = "Stormwind City",
+    reportedLocations = { { mapID = 9007199254740991, x = 10, y = 20, zoneName = "Far away" }, { mapID = 1453, x = 40, y = 50, zoneName = "Near" } } }, bound = true },
+  { label = "huge report mapID", start = { npcID = 5, name = "Reported giver", mapID = 1453, x = 10, y = 20, zoneName = "Stormwind City",
+    reportedLocations = { { mapID = 9007199254740992, x = 10, y = 20, zoneName = "Far away" }, { mapID = 1453, x = 40, y = 50, zoneName = "Near" } } }, bound = false },
+  { label = "huge npcID", start = validStart({ npcID = 4294967296 }), bound = false },
+  { label = "overlong report zone", start = { npcID = 5, name = "Reported giver", mapID = 1453, x = 10, y = 20, zoneName = "Stormwind City",
+    reportedLocations = { { mapID = 1453, x = 10, y = 20, zoneName = ("z"):rep(501) }, { mapID = 1453, x = 40, y = 50, zoneName = "Near" } } }, bound = false },
+  { label = "overlong parent name", start = validStart({ name = ("n"):rep(1025) }), bound = true },
+ }
+ for index, case in ipairs(cases) do
+  local qid = 990808 + index
+  addon.quests[qid] = { id = qid, name = "Reported bound quest " .. index, minLevel = 1, requirementsKnown = true, start = case.start }
+  local boundDungeon = { key = "reported-bound-" .. index, name = "Reported bound dungeon " .. index, minLevel = 1, maxLevel = 80, quests = { qid } }
+  addon.dungeons = { boundDungeon }
+  ui.dungeon, ui.quest, ui.questTreeRoot, ui.questTreeDungeon = boundDungeon, qid, nil, nil
+  ui.search = ""; ui.includeUnavailable = true; ui.frame:Show()
+  if type(ui.SetDetailTab) == "function" then ui:SetDetailTab("sources") end
+  local ok, err = pcall(function() ui:Refresh() end)
+  assert(ok, case.label .. " threw in Refresh: " .. tostring(err))
+  local toggle = nil
+  for _, row in ipairs(ui.reportedToggles or {}) do if row.shown and row.locationKey == "start" then toggle = row end end
+  assert((toggle ~= nil) == case.bound, case.label .. " must " .. (case.bound and "bind" or "stay unbound"))
+  addon.quests[qid] = nil
+ end
+ addon.dungeons = savedDungeons
+ ui.dungeon, ui.quest = savedDungeon, savedQuest
+ ui.search = ""; ui.questTreeRoot = nil; ui.questTreeDungeon = nil; ui.frame:Show(); ui:Refresh()
+end
 print("Middle quest navigation checks passed (modeled, no native input or layout proof)")

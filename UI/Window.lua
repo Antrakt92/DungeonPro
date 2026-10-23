@@ -309,7 +309,8 @@ local function giverName(place, ownerCurrent, proofs, fallback)
         if current and current ~= "" and #current <= 1024 then return current end
     end
     local name = addon.Clean(place.name, "string")
-    return name and name ~= "" and name or addon.L("UNKNOWN_PLACE")
+    if name and #name <= 1024 and name:find("%S") then return name end
+    return addon.L("UNKNOWN_PLACE")
 end
 
 local function reportedPlaces(parent)
@@ -325,9 +326,18 @@ local function reportedPlaces(parent)
     end
     if last ~= count then return nil end
     local npcID, objectID = addon.Clean(parent.npcID, "number"), addon.Clean(parent.objectID, "number")
-    if npcID and (npcID <= 0 or npcID % 1 ~= 0) then npcID = nil end
-    if objectID and (objectID <= 0 or objectID % 1 ~= 0) then objectID = nil end
+    if npcID and (npcID <= 0 or npcID > 4294967295 or npcID % 1 ~= 0) then npcID = nil end
+    if objectID and (objectID <= 0 or objectID > 4294967295 or objectID % 1 ~= 0) then objectID = nil end
     if not npcID and not objectID then return nil end
+    -- Catalogue-reported places mirror scripts/catalog.py: identity mapIDs are
+    -- uint32, report zone names are nonempty and capped at 500 chars, and the
+    -- carried parent name follows the 1024-char giver display budget.
+    local parentName = addon.Clean(parent.name, "string")
+    if parentName and (#parentName > 1024 or not parentName:find("%S")) then parentName = nil end
+    local parentMapID = addon.Clean(parent.mapID, "number")
+    if parentMapID and (parentMapID <= 0 or parentMapID > 4294967295 or parentMapID % 1 ~= 0) then parentMapID = nil end
+    local parentZone = addon.Clean(parent.zoneName, "string")
+    if parentZone and (#parentZone > 500 or not parentZone:find("%S")) then parentZone = nil end
     local result = {}
     for i = 1, #locations do
         local report = addon.Clean(locations[i], "table")
@@ -336,9 +346,11 @@ local function reportedPlaces(parent)
         local x, y = addon.Clean(report.x, "number"), addon.Clean(report.y, "number")
         if not mapID or mapID <= 0 or mapID > 9007199254740991 or mapID % 1 ~= 0 or not x or not y or
             x < 0 or x > 100 or y < 0 or y > 100 then return nil end
-        result[i] = { npcID = npcID, objectID = objectID, name = addon.Clean(parent.name, "string"),
-            mapID = mapID, x = x, y = y, zoneName = addon.Clean(report.zoneName, "string") or
-                (addon.Clean(parent.mapID, "number") == mapID and addon.Clean(parent.zoneName, "string") or nil) }
+        local reportZone = addon.Clean(report.zoneName, "string")
+        if reportZone and (#reportZone > 500 or not reportZone:find("%S")) then return nil end
+        result[i] = { npcID = npcID, objectID = objectID, name = parentName,
+            mapID = mapID, x = x, y = y, zoneName = reportZone or
+                (parentMapID == mapID and parentZone or nil) }
     end
     return result
 end
@@ -2701,7 +2713,14 @@ function UI:RefreshQuests()
                         end
                     end
                 elseif state.reason == "level" then
-                    note = addon.L("level") .. " " .. addon.quests[id].minLevel
+                    -- Read the catalogue minimum through Clean like the action
+                    -- level suffix above, so a mutated minLevel drops the
+                    -- suffix instead of concatenating a hostile value.
+                    local catalogue = addon.Clean(addon.quests, "table")
+                    local definition = catalogue and addon.Clean(rawget(catalogue, id), "table")
+                    local rawMinimum = definition and rawget(definition, "minLevel") or nil
+                    local guardedMinimum = addon.Clean(rawMinimum, "number")
+                    note = addon.L("level") .. (guardedMinimum and (" " .. guardedMinimum) or "")
                 end
                 if not current() then return end
                 note = "|cff" .. COLOR[state.status] .. statusLabel(state, note) .. "|r"
