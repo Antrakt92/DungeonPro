@@ -4,16 +4,37 @@
 
 <h1 align="center">Dungeon Pro</h1>
 
+<p align="center">
+  Know which quests to prepare before the run.
+</p>
+
+<p align="center">
+  <a href="https://github.com/Antrakt92/DungeonPro/releases"><strong>Download the Forever beta</strong></a>
+  · <a href="https://www.curseforge.com/wow/addons/dungeon-pro"><strong>CurseForge</strong></a>
+  · <a href="https://github.com/Antrakt92/DungeonPro/issues"><strong>Report a problem</strong></a>
+</p>
+
+<p align="center">
+  <a href="https://github.com/Antrakt92/DungeonPro/releases"><img src="https://img.shields.io/github/v/release/Antrakt92/DungeonPro?include_prereleases&amp;label=beta&amp;color=22c55e" alt="Latest beta release"></a>
+  <img src="https://img.shields.io/badge/WoW-Forever%20beta-3b82f6" alt="WoW: Forever beta">
+  <img src="https://img.shields.io/badge/TomTom-optional-64748b" alt="TomTom: optional">
+</p>
+
 Get your dungeon quests sorted before the run. Browse quests for your character,
 follow their prerequisites and find the next pickup or turn-in.
 
-[Download the Forever beta](https://github.com/Antrakt92/DungeonPro/releases)
-· [CurseForge](https://www.curseforge.com/wow/addons/dungeon-pro)
-· [Report a problem](https://github.com/Antrakt92/DungeonPro/issues)
-
 **For WoW Forever. Early beta. TomTom is optional.**
 
-Screenshots below show an earlier beta.
+<p align="center">
+  <a href="#plan-your-next-dungeon">Features</a>
+  · <a href="#installation">Install</a>
+  · <a href="#commands">Commands</a>
+  · <a href="#languages">Languages</a>
+  · <a href="#still-in-beta">Beta status</a>
+  · <a href="#help--links">Help</a>
+</p>
+
+*Screenshots below show an earlier beta.*
 
 ![Earlier dungeon browser with character quest filtering](https://raw.githubusercontent.com/Antrakt92/DungeonPro/main/screenshots/dungeon-browser.png)
 
@@ -65,18 +86,30 @@ dungeon-entrance directions remain separate navigation actions.
 
 </details>
 
-## Open the planner
+## Installation
 
-Click the minimap button or type `/DP` and pick a dungeon.
+Download the packaged beta ZIP from [GitHub Releases](https://github.com/Antrakt92/DungeonPro/releases)
+or install through [CurseForge](https://www.curseforge.com/wow/addons/dungeon-pro).
+Extract the `DungeonPro` folder into your Forever client's `Interface/AddOns`
+folder. Use the addon archive under **Assets**, rather than the automatic
+source-code ZIP.
+
+1. Restart WoW or reload the interface and enable **Dungeon Pro**.
+2. Click the minimap button or type `/DP`.
+3. Pick a dungeon and select a quest to see its chain and known locations.
+
+TomTom is optional; the addon includes its own direction arrow.
 
 ## Commands
 
-- `/DP` or `/DungeonPro` — open or close the planner.
-- `/dprep` or `/dungeonprep` — legacy aliases that do the same.
-- `/DP clear` — stop the current guide and remove the waypoint it created.
-- `/DP minimap` — hide or show the minimap button.
-- `/DP minimap reset` — show the button at its default position.
-- `/rl` — reload the interface, like `/reload`.
+| Command | Action |
+|---|---|
+| `/DP` or `/DungeonPro` | Open or close the planner. |
+| `/DP clear` | Stop the current guide and remove its waypoint. |
+| `/DP minimap` | Hide or show the minimap button. |
+| `/DP minimap reset` | Show the button at its default position. |
+| `/rl` | Reload the interface, like `/reload`. |
+| `/dprep` or `/dungeonprep` | Legacy aliases for opening or closing the planner. |
 
 Drag the minimap button to reposition it. If the button is hidden, use
 `/DP minimap` to show it again; use `/DP minimap reset` to restore its position.
@@ -149,15 +182,13 @@ Noto Sans retains its SIL Open Font License, and Unicode data retains its separa
 notice. See [font credits](Media/Fonts/NOTICE.txt), [icon credits](Media/Icons/NOTICE.txt)
 and [Unicode attribution](Database/SearchCaseFold.lua). Game assets belong to Blizzard.
 
-## More by antrakt92
+## More by Antrakt
 
-- [StatsPro](https://www.curseforge.com/wow/addons/statspro) — character stats and
-  gear information on screen.
-- [ApplicantScout](https://www.curseforge.com/wow/addons/applicantscout-lfg-overlay)
-  — Warcraft Logs and RaiderIO for applicants and your group; requires the
-  Windows Companion.
-- [Do You Need It?](https://www.curseforge.com/wow/addons/do-you-need-it) — compare
-  group loot and ask for items.
+| Addon | What it does |
+|---|---|
+| [StatsPro](https://github.com/Antrakt92/StatsPro) | Character stats and gear HUD for Retail and Forever beta. |
+| [ApplicantScout](https://github.com/Antrakt92/ApplicantScout-Addon) | Warcraft Logs and RaiderIO for applicants and groups; Windows companion required. |
+| [Do You Need It?](https://github.com/Antrakt92/Do-You-Need-It-) | Group loot comparisons, history and optional whispers for Retail and Forever beta. |
 
 If you enjoy Dungeon Pro, add it to your favorites and follow it on CurseForge.
 You can also [support my work on Ko-fi](https://ko-fi.com/antrakt92) or find my

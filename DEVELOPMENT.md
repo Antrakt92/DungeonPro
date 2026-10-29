@@ -1,5 +1,7 @@
 # Development
 
+[Overview](README.md) · [Checks](#local-checks) · [Quest data](#quest-data) · [Packages](#development-packages)
+
 Dungeon Pro targets WoW Forever. The runtime uses Lua 5.1; a different WoW
 client needs its own API and data validation, not just a different TOC value.
 
