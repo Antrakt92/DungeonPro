@@ -5,7 +5,7 @@
 <h1 align="center">Dungeon Pro</h1>
 
 <p align="center">
-  Know which quests to prepare before the run.
+  Dungeon quest preparation and navigation for WoW Forever.
 </p>
 
 <p align="center">
@@ -190,6 +190,5 @@ and [Unicode attribution](Database/SearchCaseFold.lua). Game assets belong to Bl
 | [ApplicantScout](https://github.com/Antrakt92/ApplicantScout-Addon) | Warcraft Logs and RaiderIO for applicants and groups; Windows companion required. |
 | [Do You Need It?](https://github.com/Antrakt92/Do-You-Need-It-) | Group loot comparisons, history and optional whispers for Retail and Forever beta. |
 
-If you enjoy Dungeon Pro, add it to your favorites and follow it on CurseForge.
-You can also [support my work on Ko-fi](https://ko-fi.com/antrakt92) or find my
-other mods on [Nexus Mods](https://www.nexusmods.com/profile/Antrakt92).
+[Optional support on Ko-fi](https://ko-fi.com/antrakt92)
+· [Other mods on Nexus Mods](https://www.nexusmods.com/profile/Antrakt92)

@@ -25,24 +25,9 @@ the repository root:
 python scripts/check.py
 ```
 
-Lua suites run in separate processes: half the reported logical CPU count,
-rounded down, with a minimum of one and a maximum of four. Each suite keeps
-its own Lua 5.1 state; generated-data checks, syntax checks, Python tests and
-packaging remain ordered phases. Use `--jobs 1` for sequential troubleshooting or
-`--jobs 4` for at most four concurrent Lua suites. No test is skipped.
-
-For per-command durations, exit codes and complete argument lists:
-
-```text
-python scripts/check.py --timings dist/check-timings.json
-```
-
-The JSON report includes total and Lua-phase wall time and a `passed` flag.
-Failed runs retain completed-command results; an unavailable executable is
-reported as an error. Command output is grouped by process, in completion order.
-After a failure, no more suites are scheduled; already running suites finish
-before the runner exits, and later phases do not run. Reports require an
-existing parent directory and are excluded from installable packages.
+Use `--jobs 1` for sequential troubleshooting or `--jobs 4` for up to four
+isolated Lua processes. To write command timings, pass
+`--timings dist/check-timings.json` with an existing output directory.
 
 This checks Lua syntax, modeled behavior, translations, catalogue consistency,
 generated-file drift and deterministic packaging. It does not install tools,
@@ -95,7 +80,8 @@ root. Only TOC-listed runtime files, player documentation and required resources
 and notices are included. Repository screenshots, branding, tests, raw data and
 tools stay out. This command builds locally; it does not publish a release.
 
-## Optional layout preview
+<details>
+<summary>Optional layout preview</summary>
 
 `scripts/render-detail-preview.py` renders modeled UI anchors with sample data.
 It needs Pillow 8.2 or newer in addition to the tools above. Pillow is not
@@ -115,6 +101,8 @@ can be repeated with `--ready-quest`; they do not add catalogue associations.
 Overview previews omit game artwork and approximate font metrics. Native fonts,
 icons, interface scale and gameplay still require in-game verification.
 
+</details>
+
 ## Reports and permissions
 
 Use the issue templates for quest/source observations and reproducible interface
@@ -124,6 +112,6 @@ window size and interface scale. Redact account and character identifiers; do no
 attach SavedVariables or character settings files.
 
 Original code uses the Antrakt Attribution and CurseForge Rewards
-License 1.3. Forks and substantial reuse require attribution, with reward-sharing
+License 1.4. Forks and substantial reuse require attribution, with reward-sharing
 conditions for derivatives that earn CurseForge Reward Points; see the
 [full license](LICENSE). Third-party material retains its separate terms.
