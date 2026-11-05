@@ -1,8 +1,16 @@
 # Changelog
 
-## Unreleased
+## 0.3.2 - 05-Nov-2026 — Reliable window controls and quest browsing Beta
 
-- Keep the close button above the planner and close the window directly, independently of Blizzard panel handling.
+- Keep the close button clickable above the planner and close the window directly.
+- Improve recovery when quest, item, map or minimap information is unavailable,
+  and prevent failed interface updates from leaving partially built controls.
+- Handle malformed quest requirements, character data and localized names more
+  safely; preserve unknown status instead of suggesting an unverified next step.
+- Include quests 4724, 4701 and 4866 in the Lower Blackrock Spire quest list.
+  These use existing quest records with reviewed Forever dungeon membership.
+- Clarify the license and development guides, and expand catalogue, interface
+  and package checks.
 
 ## 0.3.1 - 22-Oct-2026 — Compact quest contacts Beta
 
