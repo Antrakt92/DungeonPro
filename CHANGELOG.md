@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- Keep the close button above the planner and close the window directly, independently of Blizzard panel handling.
+
 ## 0.3.1 - 22-Oct-2026 — Compact quest contacts Beta
 
 ### Quest contacts and layout

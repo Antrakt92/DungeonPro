@@ -8027,13 +8027,65 @@ check("Source scan rejects replaced members before calling their source helper",
     end
 end)
 
-check("Main close styling is optional and preserves native close tooltip geometry Escape registration and reopening",function()
+check("Planner close owns dismissal without invoking absent blocked or failing native handlers",function()
+    for _,mode in ipairs({"absent","noop","throw","blocked"})do
+        local fresh={};for key,value in pairs(addon)do fresh[key]=value end
+        fresh.listeners={};local close,nativeClick,themeSawOwned
+        local nativeCalls,hideCalls=0,0
+        fresh.Theme={StyleCloseButton=function(button)
+            themeSawOwned=type(button.scripts.OnClick)=="function" and button.scripts.OnClick~=nativeClick
+            return true
+        end}
+        local create,global,specialCount=CreateFrame,_G.DungeonProWindow,#UISpecialFrames
+        CreateFrame=function(kind,name,parent,template)
+            local result=create(kind,name,parent,template)
+            if name=="DungeonProWindow"then
+                local hide=result.Hide
+                result.Hide=function(self)
+                    local shown=self.shown;hide(self)
+                    if shown and self.scripts.OnHide then hideCalls=hideCalls+1;self.scripts.OnHide(self)end
+                end
+            elseif template=="UIPanelCloseButton"then
+                close=result
+                if mode~="absent"then nativeClick=function()
+                    nativeCalls=nativeCalls+1
+                    if mode=="throw"then error("native panel-manager close rejected")end
+                    return mode~="blocked"
+                end end
+                result:SetScript("OnClick",nativeClick)
+            end
+            return result
+        end
+        assert(loadfile("UI/QuestHistory.lua"))("DungeonPro",fresh)
+        assert(loadfile("UI/PreparationOverview.lua"))("DungeonPro",fresh)
+        assert(loadfile("UI/Window.lua"))("DungeonPro",fresh)
+        fresh.UI:Create();CreateFrame=create
+        local current,frame=fresh.UI,fresh.UI.frame
+        local click=close.scripts.OnClick
+        assert(type(click)=="function" and click~=nativeClick and themeSawOwned,"window installs its owned close handler before optional styling")
+        frame:Show();local before=hideCalls;local revision=current.detailTabRevision
+        click(close)
+        assert(not frame.shown and hideCalls==before+1 and current.detailTabRevision~=revision,"owned close hides its unprotected window and invokes owned OnHide cleanup")
+        assert(nativeCalls==0,"owned close never delegates to a rejected native panel-manager handler")
+        frame:Show()
+        local foreign={shown=true,Hide=function()error("foreign replacement cannot be hidden")end}
+        fresh.UI={frame=foreign};click(close)
+        assert(frame.shown and foreign.shown and hideCalls==before+1,"stale UI callback cannot hide the old or replacement window")
+        fresh.UI=current;current.frame=foreign;click(close)
+        assert(frame.shown and foreign.shown and hideCalls==before+1,"replaced frame invalidates the old close callback")
+        current.frame=frame
+        _G.DungeonProWindow=global
+        for index=#UISpecialFrames,specialCount+1,-1 do UISpecialFrames[index]=nil end
+    end
+end)
+check("Main close styling is optional and preserves window-owned close native tooltip geometry Escape registration and reopening",function()
     for _,mode in ipairs({"style","false","throw","missing"})do
         local fresh={};for key,value in pairs(addon)do fresh[key]=value end
-        fresh.listeners={};local calls,tooltip=0,0;local close,nativeClick,nativeEnter
+        fresh.listeners={};local calls,tooltip=0,0;local close,nativeClick,nativeEnter,ownedClick
         fresh.Theme={}
         if mode~="missing"then fresh.Theme.StyleCloseButton=function(button)
-            calls=calls+1;assert(button==close and button.scripts.OnClick==nativeClick and button.scripts.OnEnter==nativeEnter)
+            calls=calls+1;ownedClick=button.scripts.OnClick
+            assert(button==close and type(ownedClick)=="function" and ownedClick~=nativeClick and button.scripts.OnEnter==nativeEnter)
             assert(button.point[1]=="TOPRIGHT"and button.point[2]==-4 and button.point[3]==-4)
             if mode=="throw"then error("optional style unavailable")end
             return mode=="style"
@@ -8052,7 +8104,8 @@ check("Main close styling is optional and preserves native close tooltip geometr
         assert(loadfile("UI/Window.lua"))("DungeonPro",fresh);fresh.UI:Create();CreateFrame=create
         local current=fresh.UI;current.search="retained close query";current.quest=ui.quest;current.dungeon=ui.dungeon
         local selected,dungeon=current.quest,current.dungeon
-        assert(calls==(mode=="missing"and 0 or 1)and close.scripts.OnClick==nativeClick and close.scripts.OnEnter==nativeEnter)
+        assert(calls==(mode=="missing"and 0 or 1) and type(close.scripts.OnClick)=="function" and close.scripts.OnClick~=nativeClick and close.scripts.OnEnter==nativeEnter)
+        assert(mode=="missing" or close.scripts.OnClick==ownedClick,"optional styling preserves the previously installed owned close handler")
         assert(UISpecialFrames[#UISpecialFrames]=="DungeonProWindow")
         close.scripts.OnEnter();assert(tooltip==1)
         current.frame:Show();close.scripts.OnClick();assert(not current.frame.shown)
@@ -10895,5 +10948,64 @@ check("Catalog card art claim fails closed on hostile CreateTexture and rebuilds
     assert(card.art ~= nil, "card art must rebuild after restore")
     ui.search = savedSearch
     ui:RefreshDungeons()
+end)
+check("Native fixed-level close remains above its planner after every owned raise and reopen",function()
+    local fresh={};for key,value in pairs(addon)do fresh[key]=value end
+    fresh.listeners={};fresh.Theme={}
+    local create,global,specialCount=CreateFrame,_G.DungeonProWindow,#UISpecialFrames
+    local close,nativeClick,nativeEnter,tooltip,raises=nil,nil,nil,0,0
+    CreateFrame=function(kind,name,parent,template)
+        local result=create(kind,name,parent,template)
+        if name=="DungeonProWindow"then
+            result.nativeLevel=500
+            result.GetFrameLevel=function(self)return self.nativeLevel end
+            result.Raise=function(self)self.nativeLevel=self.nativeLevel+100;raises=raises+1 end
+        elseif template=="UIPanelCloseButton"then
+            close=result;result.nativeLevel=510
+            result.SetFrameLevel=function(self,value)self.nativeLevel=value end
+            result.GetFrameLevel=function(self)return self.nativeLevel end
+            nativeClick=function()
+                parent:Hide()
+                if parent.scripts.OnHide then parent.scripts.OnHide(parent)end
+            end
+            nativeEnter=function()tooltip=tooltip+1 end
+            result:SetScript("OnClick",nativeClick);result:SetScript("OnEnter",nativeEnter)
+        end
+        return result
+    end
+    assert(loadfile("UI/QuestHistory.lua"))("DungeonPro",fresh)
+    assert(loadfile("UI/PreparationOverview.lua"))("DungeonPro",fresh)
+    assert(loadfile("UI/Window.lua"))("DungeonPro",fresh)
+    fresh.UI:Create();CreateFrame=create
+    local current,frame=fresh.UI,fresh.UI.frame
+    local ownedClick=close.scripts.OnClick
+    local hide=frame.Hide
+    frame.Hide=function(self)
+        local shown=self.shown;hide(self)
+        if shown and self.scripts.OnHide then self.scripts.OnHide(self)end
+    end
+    assert(type(ownedClick)=="function" and ownedClick~=nativeClick,"layered close uses the window-owned handler")
+    assert(close and close:GetFrameLevel()>frame:GetFrameLevel(),"created close is above its planner")
+    current.Fit=function()end;current.Refresh=function()end
+    local function above()
+        assert(frame:GetFrameLevel()>510,"fixture raises planner above the fixed native close template level")
+        assert(close:GetFrameLevel()>frame:GetFrameLevel(),"raised planner close remains above its own opaque parent")
+        assert(close.scripts.OnClick==ownedClick and close.scripts.OnEnter==nativeEnter,"close layer repair preserves owned click and inherited native tooltip")
+    end
+    frame:Show();frame.scripts.OnShow(frame);above()
+    frame.scripts.OnMouseDown(frame,"LeftButton");above()
+    local moved=false;frame.StartMoving=function()moved=true end
+    frame.scripts.OnDragStart(frame);assert(moved);above()
+    local before=raises
+    frame.scripts.OnMouseDown({Raise=function()error("foreign window cannot be raised")end},"LeftButton")
+    assert(raises==before,"foreign frame cannot change the planner order")
+    local revision=current.detailTabRevision
+    close.scripts.OnEnter();assert(tooltip==1)
+    close.scripts.OnClick(close)
+    assert(not frame.shown and current.detailTabRevision~=revision,"owned close still hides the planner and runs owned OnHide cleanup")
+    current:Toggle();frame.scripts.OnShow(frame);above()
+    assert(frame.shown,"planner reopens with its close above the background")
+    _G.DungeonProWindow=global
+    for index=#UISpecialFrames,specialCount+1,-1 do UISpecialFrames[index]=nil end
 end)
 print("Preparation UI modeled checks passed: " .. total .. " (no native layout validation)")

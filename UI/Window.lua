@@ -7405,8 +7405,20 @@ function UI:Create()
     if frame.SetClampedToScreen then frame:SetClampedToScreen(true) end
     frame:SetFrameStrata("DIALOG"); frame:EnableMouse(true); frame:SetMovable(true)
     if type(frame.SetToplevel) == "function" then pcall(frame.SetToplevel, frame, true) end
+    local close
+    local function syncCloseLayer(f)
+        if self.frame ~= f or not close then return end
+        local level = addon.Read(f.GetFrameLevel, "number", f)
+        if not level or level < 0 or level > 100000 or level % 1 ~= 0 then return end
+        local setter = addon.Clean(close.SetFrameLevel, "function")
+        if setter and self.frame == f then pcall(setter, close, level + 10) end
+    end
     local function raiseWindow(f)
-        if self.frame == f and type(f.Raise) == "function" then pcall(f.Raise, f) end
+        if self.frame ~= f then return end
+        if type(f.Raise) == "function" then pcall(f.Raise, f) end
+        -- Blizzard's close template has a fixed level; keep it above this window
+        -- after native focus raises instead of leaving it behind the backdrop.
+        syncCloseLayer(f)
     end
     frame:SetScript("OnMouseDown", raiseWindow)
     frame:RegisterForDrag("LeftButton")
@@ -7437,11 +7449,16 @@ function UI:Create()
     self.title = label(frame, addon.L("TITLE"), 16, -10, 145, 22)
     local okClose, freshClose = pcall(CreateFrame, "Button", nil, frame, "UIPanelCloseButton")
     if not okClose then return abandon() end
-    local close = addon.Clean(freshClose, "table") or addon.Clean(freshClose, "userdata")
+    close = addon.Clean(freshClose, "table") or addon.Clean(freshClose, "userdata")
     if not close then return abandon() end
     close:SetPoint("TOPRIGHT", -4, -4)
+    -- This is our ordinary window, not a protected Blizzard UI panel.
+    close:SetScript("OnClick", function()
+        if addon.UI == self and self.frame == frame then frame:Hide() end
+    end)
     local closeTheme = addon.Clean(addon.Theme, "table")
     if closeTheme then addon.Read(closeTheme.StyleCloseButton, "boolean", close) end
+    syncCloseLayer(frame)
     local okSearch, freshSearch = pcall(CreateFrame, "EditBox", nil, frame, "InputBoxTemplate")
     if not okSearch then return abandon() end
     local search = addon.Clean(freshSearch, "table") or addon.Clean(freshSearch, "userdata")
