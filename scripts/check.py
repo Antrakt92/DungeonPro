@@ -86,6 +86,9 @@ def run_lua_checks(commands, jobs):
 
 
 def lua_checks(lua, run):
+    run(lua, "tests/fonts.lua")
+    run(lua, "tests/font_picker_ui.lua")
+    run(lua, "tests/shared_fonts_theme.lua")
     run(lua, "tests/planner.lua")
     run(lua, "tests/dungeon_overview.lua")
     run(lua, "tests/preparation_priority_model.lua")

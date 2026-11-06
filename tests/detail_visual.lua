@@ -30,7 +30,7 @@ local function metric(self)
     return metrics[key], text, size, width
 end
 function methods:SetFont(path, size, flags) self.fontPath, self.fontSize, self.fontFlags = path, size, flags; return true end
-function methods:GetFont() return self.fontPath or "Media/Fonts/NotoSans-Regular.ttf", self.fontSize or 14, self.fontFlags end
+function methods:GetFont() return self.fontPath or "Media/Fonts/AntraktUISans.ttf", self.fontSize or 14, self.fontFlags end
 function methods:GetStringHeight()
     local result, text, size, width = metric(self)
     return result and result.height or math.max(size * 1.4, math.ceil(#text * size * .5 / math.max(1, width)) * size * 1.4)

@@ -3187,7 +3187,7 @@ check("Detail typography uses explicit title section and body styles and resets 
         if fs.shown and fs.text == addon.L("DETAIL_STORY") and fs.fontSize == 16 then body = fs end
     end
     assert(body and body.fontResetBeforeText, "native prose matching a heading stays body text without a redundant caption")
-    assert(title.fontPath:find("NotoSans-Regular.ttf",1,true) and headingPath==title.fontPath and body.fontPath==title.fontPath)
+    assert(title.fontPath:find("AntraktUISans.ttf",1,true) and headingPath==title.fontPath and body.fontPath==title.fontPath)
     local titleColor = title.textColor[1]
     title:SetTextColor(0.125,0.25,0.5) -- A recycled body must restore journal ink after an unrelated prior tint.
     title.measuredHeight = 90; measurement = function() error("cold measurement after style change") end
@@ -3583,6 +3583,11 @@ check("Middle OR inspection remains separate from preference and foreign-charact
 end)
 check("Native font families retain alphabet fallback while detail sizes and pooled styles stay explicit", function()
     local previous, family, getter = ChatFontNormal, {}, GetLocale
+    local assetSetter = methods.SetFont
+    methods.SetFont = function(self, path, ...)
+        if path:find("AntraktUISans.ttf", 1, true) then return false end
+        return assetSetter(self, path, ...)
+    end
     GetLocale=function()return "koKR"end
     ChatFontNormal = family
     local row = ui:MakeRow(ui.questList, {}, 1, 59)
@@ -3598,7 +3603,7 @@ check("Native font families retain alphabet fallback while detail sizes and pool
     assert(title.measuredHeight ~= 777 and title.fontResetBeforeText)
     ui.source.scripts.OnClick(ui.source, "LeftButton", false)
     assert(ui.copyHint.fontFamily == ChatFontNormal and ui.copyHint.fontSize == 13)
-    ui:CloseCopyLink(); row:Hide(); ChatFontNormal = previous; GetLocale=getter; ui:Refresh()
+    ui:CloseCopyLink(); row:Hide(); ChatFontNormal = previous; GetLocale=getter; methods.SetFont=assetSetter; ui:Refresh()
 end)
 check("Missing restricted and failing optional family setters retain the working font path", function()
     local previous, objectSetter, heightSetter, checker = ChatFontNormal, methods.SetFontObject, methods.SetFontHeight, issecretvalue
@@ -4000,7 +4005,7 @@ check("Same-card location redraw and character loss preserve only the newly owne
         addon.char=character;restore()
     end
 end)
-check("Noto and probed CJK assets retain actual sizes and unscaled reusable rows",function()
+check("baseline and probed CJK assets retain actual sizes and unscaled reusable rows",function()
     local old,locale=ChatFontNormal,addon.db.locale
     assert(ui.searchBox.fontSize==14 and not ui.searchBox.scaledText and ui.searchBox.SetFontHeight==false)
     assert(ui.copy and ui.copy.fontSize==14 and ui.copy.SetFontHeight==false)
@@ -4010,14 +4015,12 @@ check("Noto and probed CJK assets retain actual sizes and unscaled reusable rows
     for code in pairs(addon.locales)do
         addon.db.locale=code;showDetail(1)
         local title=ui.details[1]
-        local cjk={koKR="Fonts\\2002.ttf",zhCN="Fonts\\ARKai_T.ttf",zhTW="Fonts\\bHEI00M.ttf"}
-        if cjk[code]then assert(title.fontPath==cjk[code] and title.fontFamily==nil)
-        else assert(title.fontPath:find("NotoSans-Regular.ttf",1,true) and title.fontFamily==nil)end
+        assert(title.fontPath:find("AntraktUISans.ttf",1,true) and title.fontFamily==nil)
         assert(title.fontSize==27 and not title.scaledText and title.shadow[1]==0 and title.shadow[2]==0)
     end
     addon.db.locale="enUS"
     local row=ui:MakeRow(ui.questList,{},1,59)
-    assert(row.title.fontPath:find("NotoSans-Regular.ttf",1,true) and row.title.fontSize==17 and row.note.fontSize==14)
+    assert(row.title.fontPath:find("AntraktUISans.ttf",1,true) and row.title.fontSize==17 and row.note.fontSize==14)
     assert(not row.title.scaledText and not row.note.scaledText and not ChatFontNormal.fontSize and ChatFontNormal.unchanged)
     row:Hide();ChatFontNormal,addon.db.locale=old,locale;ui:Refresh()
 end)
@@ -7687,12 +7690,10 @@ check("existing header catalogue detail and input roles update on UI language fo
     for _,code in ipairs({"enUS","ruRU","zhCN","enUS"})do
         addon.db.locale=code;ui:Refresh()
         for _,fs in ipairs({ui.title,ui.heading,ui.capacityStatus,ui.searchPlaceholder,row.title,row.note})do
-            if code=="zhCN"then assert(fs.fontPath=="Fonts\\ARKai_T.ttf" and fs.fontFamily==nil)
-            else assert(fs.fontPath and fs.fontPath:find("NotoSans-Regular.ttf",1,true))end
+            assert(fs.fontPath and fs.fontPath:find("AntraktUISans.ttf",1,true))
         end
         local font=ui.searchBox.fontFamily
-        if code=="zhCN"then assert(font.fontPath=="Fonts\\ARKai_T.ttf" and font.family==nil)
-        else assert(font.fontPath:find("NotoSans-Regular.ttf",1,true))end
+        assert(font.fontPath:find("AntraktUISans.ttf",1,true))
         assert(ui.searchBox.fontSize==14 and row.title.fontSize==17 and row.note.fontSize==14)
     end
     local before=made;ui:Refresh();assert(made==before)
@@ -7723,7 +7724,7 @@ check("main title is repainted after an existing font setter clears its text",fu
 end)
 
 
-check("from-creation owned text fonts avoid a sticky direct Noto override across English Chinese and Russian",function()
+check("from-creation owned text fonts avoid a sticky direct baseline override across English Chinese and Russian",function()
     local locale,getter,creator=addon.db.locale,GetLocale,CreateFont
     local asset,inherit=methods.SetFont,methods.SetFontObject
     local direct=0
@@ -7742,8 +7743,7 @@ check("from-creation owned text fonts avoid a sticky direct Noto override across
         addon.db.locale=code;ui:Refresh()
         assert(direct==atCreation,"ordinary FontStrings must inherit owned fonts instead of setting a local asset")
         assert(ui.title.text==addon.L("TITLE")and row.title.fontSize==17 and row.note.fontSize==14)
-        if code=="zhCN"then assert(row.title.fontPath=="Fonts\\ARKai_T.ttf" and row.title.fontFamily==nil)
-        else assert(row.title.fontPath and row.title.fontPath:find("NotoSans-Regular.ttf",1,true))end
+        assert(row.title.fontPath and row.title.fontPath:find("AntraktUISans.ttf",1,true))
     end
     row:Hide();methods.SetFont,methods.SetFontObject=asset,inherit
     addon.db.locale,GetLocale,CreateFont=locale,getter,creator;ui:Refresh()

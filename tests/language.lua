@@ -195,7 +195,11 @@ check("Cancelling from a hidden planner restores the actual tracked HUD font con
     local family = {}; ChatFontNormal = family
     local function font()
         return {
-            SetFont = function(self, path, size) self.path, self.height, self.family = path, size, nil end,
+            SetFont = function(self, path, size)
+                -- Exercise fallback/cancel with the bundled all-language face unavailable.
+                if addon.Language:GetSelection() == "zhCN" and path:find("AntraktUISans.ttf", 1, true) then return false end
+                self.path, self.height, self.family = path, size, nil
+            end,
             GetFont = function(self) return self.path, self.height, "" end,
             SetFontObject = function(self, value) self.family, self.path = value, nil end,
             SetFontHeight = function(self, value) self.height = value end,
@@ -211,14 +215,14 @@ check("Cancelling from a hidden planner restores the actual tracked HUD font con
         if not self.frame:IsShown() then return end
         addon.Theme.RefreshFonts(); return refresh(self)
     end
-    assert(addon.Theme.ApplyFont(hud, 16) and path(hud):find("NotoSans", 1, true))
+    assert(addon.Theme.ApplyFont(hud, 16) and path(hud):find("AntraktUISans", 1, true))
     local database = addon.db
     ui.language.scripts.OnEnter(); local state = addon.Language.session
     state.rows[10].scripts.OnEnter()
     assert(addon.Language:GetSelection() == "zhCN" and path(hud) == "Fonts\\ARKai_T.ttf" and addon.db == database and database.locale == "enUS")
     ui.frame:Hide(); addon.Language:Cancel(ui)
     local restored = path(hud)
-    assert(not addon.Language:GetSelection() and restored and restored:find("NotoSans", 1, true) and
+    assert(not addon.Language:GetSelection() and restored and restored:find("AntraktUISans", 1, true) and
         addon.db == database and database.locale == "enUS", "hidden planner cancellation must restore the committed HUD font")
     ChatFontNormal, CreateFont = chat, creator
 end)

@@ -323,6 +323,9 @@ for _, ownedFonts in ipairs({ false, true }) do
         calls[method] = (calls[method] or 0) + 1
     end
     function fontMethods:SetFont(path, height, flags)
+        -- Explicitly test native CJK fallback when the bundled face cannot load.
+        local selection = fontAddon.Language:GetSelection() or (fontAddon.db and fontAddon.db.locale)
+        if path:find("AntraktUISans.ttf",1,true) and (selection=="zhCN" or selection=="koKR" or selection=="zhTW") then return false end
         native(self, "SetFont")
         self.fontPath, self.fontHeight, self.fontFlags = path, height, flags
         if self.kind ~= "FontObject" then return true end
@@ -382,7 +385,7 @@ for _, ownedFonts in ipairs({ false, true }) do
     check(fontUI.heading:GetFont() == "Fonts\\ARKai_T.ttf" and fontAddon.db.locale == "enUS",
         "font optimization retains Chinese rendering without saving preview selection")
     fontAddon.Language:Cancel(fontUI)
-    check(fontUI.heading:GetFont() == "Interface\\AddOns\\DungeonPro\\Media\\Fonts\\NotoSans-Regular.ttf",
+    check(fontUI.heading:GetFont() == "Interface\\AddOns\\DungeonPro\\Media\\Fonts\\AntraktUISans.ttf",
         "CJK cancel restores the committed Latin/Cyrillic font")
     CreateFont, ChatFontNormal, GameFontHighlight = oldCreator, oldFamily, oldHighlight
 end

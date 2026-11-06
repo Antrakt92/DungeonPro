@@ -27,7 +27,7 @@ class PackageTests(unittest.TestCase):
                 names = archive.namelist()
                 self.assertIn("DungeonPro/DungeonPro.toc", names)
                 self.assertIn("DungeonPro/Database/Catalog.lua", names)
-                for resource in ("NotoSans-Regular.ttf", "OFL.txt", "NOTICE.txt"):
+                for resource in ("AntraktUISans.ttf", "NotoSans-OFL.txt", "NOTICE.txt", "Apache-2.0.txt", "Droid-NOTICE.txt", "Droid-README.txt"):
                     self.assertIn("DungeonPro/Media/Fonts/" + resource, names)
                 for resource in ("Wowhead.tga", "Language.tga", "NOTICE.txt"):
                     name = "Media/Icons/" + resource
@@ -46,7 +46,7 @@ class PackageTests(unittest.TestCase):
                 (root / name).write_text("fixture\n", encoding="utf-8")
             media = root / "Media" / "Fonts"
             media.mkdir(parents=True)
-            for name in ("NotoSans-Regular.ttf", "OFL.txt", "NOTICE.txt"):
+            for name in ("AntraktUISans.ttf", "NotoSans-OFL.txt", "NOTICE.txt", "Apache-2.0.txt", "Droid-NOTICE.txt", "Droid-README.txt"):
                 (media / name).write_bytes(b"fixture")
             icons = root / "Media" / "Icons"
             icons.mkdir()
@@ -100,7 +100,8 @@ class PackageTests(unittest.TestCase):
                 original_toc = "## Version: 1.2.3\nCore.lua\n"
                 toc.write_text(original_toc, encoding="utf-8")
                 for name in ("README.md", "CHANGELOG.md", "LICENSE", "Core.lua", "Extra.lua",
-                             "Media/Fonts/NotoSans-Regular.ttf", "Media/Fonts/OFL.txt", "Media/Fonts/NOTICE.txt",
+                             "Media/Fonts/AntraktUISans.ttf", "Media/Fonts/NotoSans-OFL.txt", "Media/Fonts/NOTICE.txt",
+                             "Media/Fonts/Apache-2.0.txt", "Media/Fonts/Droid-NOTICE.txt", "Media/Fonts/Droid-README.txt",
                              "Media/Icons/Wowhead.tga", "Media/Icons/Language.tga", "Media/Icons/NOTICE.txt"):
                     path = root / name
                     path.parent.mkdir(parents=True, exist_ok=True)
@@ -199,7 +200,7 @@ class PackageTests(unittest.TestCase):
                 (root / name).write_text("fixture\n", encoding="utf-8")
             media = root / "Media" / "Fonts"
             media.mkdir(parents=True)
-            for name in ("NotoSans-Regular.ttf", "OFL.txt", "NOTICE.txt"):
+            for name in ("AntraktUISans.ttf", "NotoSans-OFL.txt", "NOTICE.txt", "Apache-2.0.txt", "Droid-NOTICE.txt", "Droid-README.txt"):
                 (media / name).write_bytes(b"fixture")
             icons = root / "Media" / "Icons"
             icons.mkdir()
@@ -217,7 +218,7 @@ class PackageTests(unittest.TestCase):
                 (root / name).write_text("fixture\n", encoding="utf-8")
             media = root / "Media" / "Fonts"
             media.mkdir(parents=True)
-            for name in ("NotoSans-Regular.ttf", "OFL.txt", "NOTICE.txt"):
+            for name in ("AntraktUISans.ttf", "NotoSans-OFL.txt", "NOTICE.txt", "Apache-2.0.txt", "Droid-NOTICE.txt", "Droid-README.txt"):
                 (media / name).write_bytes(b"fixture")
             icons = root / "Media" / "Icons"
             icons.mkdir()
@@ -245,7 +246,7 @@ class PackageTests(unittest.TestCase):
                 for name in ("README.md", "CHANGELOG.md", "LICENSE", "Core.lua"):
                     (root / name).write_text("fixture\n", encoding="utf-8")
                 (root / "Media" / "Fonts").mkdir(parents=True)
-                for name in ("NotoSans-Regular.ttf", "OFL.txt", "NOTICE.txt"):
+                for name in ("AntraktUISans.ttf", "NotoSans-OFL.txt", "NOTICE.txt", "Apache-2.0.txt", "Droid-NOTICE.txt", "Droid-README.txt"):
                     (root / "Media" / "Fonts" / name).write_bytes(b"fixture")
                 (root / "Media" / "Icons").mkdir()
                 for name in ("Wowhead.tga", "Language.tga", "NOTICE.txt"):
@@ -281,7 +282,7 @@ class PackageTests(unittest.TestCase):
             for name in ("README.md", "CHANGELOG.md", "LICENSE", "Core.lua"):
                 (root / name).write_text("fixture\n", encoding="utf-8")
             (root / "Media" / "Fonts").mkdir(parents=True)
-            for name in ("NotoSans-Regular.ttf", "OFL.txt", "NOTICE.txt"):
+            for name in ("AntraktUISans.ttf", "NotoSans-OFL.txt", "NOTICE.txt", "Apache-2.0.txt", "Droid-NOTICE.txt", "Droid-README.txt"):
                 (root / "Media" / "Fonts" / name).write_bytes(b"fixture")
             (root / "Media" / "Icons").mkdir()
             for name in ("Wowhead.tga", "Language.tga", "NOTICE.txt"):
@@ -302,7 +303,7 @@ class PackageTests(unittest.TestCase):
             for name in ("README.md", "CHANGELOG.md", "LICENSE", "Core.lua"):
                 (root / name).write_text("fixture\n", encoding="utf-8")
             (root / "Media" / "Fonts").mkdir(parents=True)
-            for name in ("NotoSans-Regular.ttf", "OFL.txt", "NOTICE.txt"):
+            for name in ("AntraktUISans.ttf", "NotoSans-OFL.txt", "NOTICE.txt", "Apache-2.0.txt", "Droid-NOTICE.txt", "Droid-README.txt"):
                 (root / "Media" / "Fonts" / name).write_bytes(b"fixture")
             (root / "Media" / "Icons").mkdir()
             for name in ("Wowhead.tga", "Language.tga", "NOTICE.txt"):

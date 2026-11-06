@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.4.0 - 06-Nov-2026 — Shared fonts Beta
+
+- Use Antrakt UI Sans as the built-in default font, with combined Latin,
+  Cyrillic, Chinese, Japanese and Korean character coverage.
+- Add a font picker beside the language menu. Install Antrakt Fonts for Forever
+  to choose from its shared collection; only fonts matching both the interface
+  language and the game language are shown.
+- Save your font choice and apply it to planner text, controls and search.
+  Keep that preference when the collection is unavailable or the language changes,
+  and use a readable fallback until the selected font is usable again.
+- Antrakt Fonts is an installation dependency on CurseForge. Manual installations
+  can use the built-in default without it.
+
 ## 0.3.2 - 05-Nov-2026 — Reliable window controls and quest browsing Beta
 
 - Keep the close button clickable above the planner and close the window directly.

@@ -86,7 +86,9 @@ local level, character = ui.range, ui.includeUnavailable
 assert(ui.footer == nil, "development notice does not reserve a bottom band")
 assert(ui.rangeButton.point[2] >= ui.title.point[2] + ui.title:GetWidth(), "level filter follows the app title")
 assert(ui.capacityStatus.point[2] > ui.rangeButton.point[2] + ui.rangeButton:GetWidth(), "capacity follows the level tab")
-assert(ui.capacityStatus.point[2] + ui.capacityStatus:GetWidth() < ui.frame:GetWidth() + ui.searchBox.point[2] - ui.searchBox:GetWidth(),
+local searchLeft = ui.frame:GetWidth() + ui.fontButton.point[2] - ui.fontButton:GetWidth() +
+    ui.searchBox.point[4] - ui.searchBox:GetWidth()
+assert(ui.capacityStatus.point[2] + ui.capacityStatus:GetWidth() < searchLeft,
     "capacity stays left of the search field")
 assert(-ui.rangeButton.point[3] + ui.rangeButton:GetHeight() < -ui.catalogScroll.point[3], "dungeon level tab sits in the top bar")
 assert(ui.heading.point[2] + ui.heading:GetWidth() < ui.characterButton.point[2])

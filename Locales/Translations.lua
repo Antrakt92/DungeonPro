@@ -235,6 +235,20 @@ for locale, values in pairs(cardStrings) do
     for index, key in ipairs(cardKeys) do addon.locales[locale][key] = values[index] end
 end
 
+local noCompatibleFonts = {
+    enUS = "No shared font supports both languages. The built-in default is available.",
+    ruRU = "В наборе нет шрифта для обоих языков. Доступен встроенный шрифт.",
+    deDE = "Keine gemeinsame Schrift unterstützt beide Sprachen. Die Standardschrift ist verfügbar.",
+    frFR = "Aucune police partagée ne couvre les deux langues. La police par défaut reste disponible.",
+    esES = "Ninguna fuente compartida admite ambos idiomas. La predeterminada sigue disponible.",
+    itIT = "Nessun carattere condiviso supporta entrambe le lingue. Il predefinito resta disponibile.",
+    ptBR = "Nenhuma fonte compartilhada oferece suporte aos dois idiomas. A padrão está disponível.",
+    koKR = "두 언어를 모두 지원하는 공유 글꼴이 없습니다. 내장 기본 글꼴을 사용할 수 있습니다.",
+    zhCN = "没有共享字体同时支持这两种语言。仍可使用内置默认字体。",
+    zhTW = "沒有共用字型同時支援這兩種語言。仍可使用內建預設字型。",
+}
+for locale, value in pairs(noCompatibleFonts) do addon.locales[locale].FONT_NO_COMPATIBLE = value end
+
 local detailStrings = {
     enUS = { "Quest level: %d", "Required level: %d", "Quest giver", "Rewards", "Story", "Text not recorded yet", "Read story", "Collapse story" },
     ruRU = { "Уровень задания: %d", "Минимальный уровень: %d", "Кто выдаёт", "Награды", "История", "Текст пока не сохранён", "Читать историю", "Свернуть историю" },
@@ -755,3 +769,22 @@ addon.locales.zhCN.PROFESSION_BLACKSMITHING = "锻造"
 
 addon.locales.zhTW.PROFESSION = "專業：%s"
 addon.locales.zhTW.PROFESSION_BLACKSMITHING = "鍛造"
+
+local fontLabels = {
+    enUS = { "Font", "Default", "Unavailable", "Choose a font that supports the interface and game languages.", "Install and enable Antrakt Fonts for Forever, then reload to see compatible fonts." },
+    ruRU = { "Шрифт", "По умолчанию", "Недоступен", "Выберите шрифт для языка интерфейса и языка игры.", "Установите и включите Antrakt Fonts для Forever, затем перезагрузите интерфейс." },
+    deDE = { "Schrift", "Standard", "Nicht verfügbar", "Wähle eine Schrift für die Sprache der Oberfläche und des Spiels.", "Installiere und aktiviere Antrakt Fonts für Forever und lade die Oberfläche neu." },
+    frFR = { "Police", "Par défaut", "Indisponible", "Choisissez une police compatible avec les langues de l'interface et du jeu.", "Installez et activez Antrakt Fonts pour Forever, puis rechargez l'interface." },
+    esES = { "Fuente", "Predeterminada", "No disponible", "Elige una fuente compatible con los idiomas de la interfaz y del juego.", "Instala y activa Antrakt Fonts para Forever y recarga la interfaz." },
+    itIT = { "Carattere", "Predefinito", "Non disponibile", "Scegli un carattere per le lingue dell'interfaccia e del gioco.", "Installa e attiva Antrakt Fonts per Forever, poi ricarica l'interfaccia." },
+    ptBR = { "Fonte", "Padrão", "Indisponível", "Escolha uma fonte para os idiomas da interface e do jogo.", "Instale e ative Antrakt Fonts para Forever e recarregue a interface." },
+    koKR = { "글꼴", "기본값", "사용 불가", "인터페이스와 게임 언어를 지원하는 글꼴을 선택하세요.", "Forever용 Antrakt Fonts를 설치하고 활성화한 뒤 인터페이스를 다시 불러오세요." },
+    zhCN = { "字体", "默认", "不可用", "选择支持界面语言和游戏语言的字体。", "安装并启用 Forever 版 Antrakt Fonts，然后重新加载界面。" },
+    zhTW = { "字型", "預設", "無法使用", "選擇支援介面語言及遊戲語言的字型。", "安裝並啟用 Forever 版 Antrakt Fonts，然後重新載入介面。" },
+}
+for locale, values in pairs(fontLabels) do
+    local strings = addon.locales[locale]
+    for index, key in ipairs({ "FONT_LABEL", "FONT_DEFAULT", "FONT_UNAVAILABLE", "FONT_HELP", "FONT_INSTALL" }) do
+        strings[key] = values[index]
+    end
+end

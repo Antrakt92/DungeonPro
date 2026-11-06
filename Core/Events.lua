@@ -49,6 +49,11 @@ end
 events:RegisterEvent("ADDON_LOADED")
 events:SetScript("OnEvent", function(_, event, arg1, arg2)
     if event == "ADDON_LOADED" then
+        if arg1 == "AntraktFonts" and addon.Fonts then
+            addon.Fonts:Refresh()
+            if initialized then refresh(true) end
+            return
+        end
         if arg1 ~= name or initialized then return end
         local interface
         if type(GetBuildInfo) == "function" then
@@ -59,6 +64,7 @@ events:SetScript("OnEvent", function(_, event, arg1, arg2)
             print("Dungeon Pro: " .. addon.L("UNSUPPORTED")); return
         end
         if not addon.RestoreDB() then print("Dungeon Pro: unsupported saved data version"); return end
+        if addon.Fonts then addon.Fonts:Refresh() end
         initialized = true
         if addon.Minimap then addon.Minimap:Initialize() end
         for _, e in ipairs({ "QUEST_LOG_UPDATE", "QUEST_DATA_LOAD_RESULT", "ITEM_DATA_LOAD_RESULT", "QUEST_ACCEPTED", "QUEST_REMOVED",

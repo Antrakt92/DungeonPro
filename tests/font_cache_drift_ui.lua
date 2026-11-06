@@ -2,7 +2,10 @@ local cases=0
 for _,objects in ipairs({true})do
  local f=assert(loadfile("tests/client_ui.lua"))("fixture")
  local a,event,m=f.addon,f.eventFrame,f.methods
- function m:SetFont(path,size,flags)self.fontPath,self.fontSize,self.fontFlags=path,size,flags;if self.kind~="FontObject"then return true end end
+ -- Exercise native-script cache ownership with the bundled baseline unavailable.
+ function m:SetFont(path,size,flags)
+  if path:find("AntraktUISans.ttf",1,true) then return false end
+  self.fontPath,self.fontSize,self.fontFlags=path,size,flags;if self.kind~="FontObject"then return true end end
  function m:GetFont()
   if self.fontPath then return self.fontPath,self.fontSize,self.fontFlags end
   if self.fontObject then local path,size,flags=self.fontObject:GetFont();return path,self.fontSize or size,flags end

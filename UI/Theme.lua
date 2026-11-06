@@ -45,7 +45,7 @@ end
 local fontSerial = 0
 local styledButtons = setmetatable({}, { __mode = "k" })
 local fontRegions, inputRegions = setmetatable({}, { __mode = "k" }), setmetatable({}, { __mode = "k" })
-local NOTO_FONT = "Interface\\AddOns\\DungeonPro\\Media\\Fonts\\NotoSans-Regular.ttf"
+local BASELINE_FONT = "Interface\\AddOns\\DungeonPro\\Media\\Fonts\\AntraktUISans.ttf"
 local FONT_LOCALES = { enUS = true, enGB = true, ruRU = true, deDE = true, frFR = true,
     esES = true, esMX = true, itIT = true, ptBR = true, koKR = true, zhCN = true, zhTW = true }
 local CJK_FONTS = {
@@ -66,12 +66,14 @@ local function fontContext(explicitLocale)
     local locale = selection == "auto" and game or selection
     if locale == "enGB" then locale = "enUS" elseif locale == "esMX" then locale = "esES" end
     if not FONT_LOCALES[locale or ""] then locale = "enUS" end
-    local cjk = { koKR = true, zhCN = true, zhTW = true }
-    local path = game and FONT_LOCALES[game] and not cjk[game] and not cjk[locale] and NOTO_FONT or nil
+    local path = BASELINE_FONT
     local candidates = CJK_FONTS[locale]
-    return { family = family, path = path, candidates = candidates,
-        source = candidates and locale or path or "native",
-        key = (path or locale) .. ":" .. selection .. ":" .. (game or "?") }
+    local fonts = addon.Clean(addon.Fonts, "table")
+    local selected = fonts and addon.Read(fonts.Resolve, "string", fonts, locale, game)
+    return { family = family, path = path, candidates = candidates, preferred = selected, requested = selected,
+        source = selected and (selected .. ":" .. ((candidates and locale) or path or "native")) or
+            (candidates and locale) or path or "native",
+        key = (selected or path or locale) .. ":" .. selection .. ":" .. (game or "?") }
 end
 
 local function setFontAsset(region, path, size, fontObject)
@@ -85,22 +87,52 @@ local function setFontAsset(region, path, size, fontObject)
         currentPath:gsub(string.char(92), "/"):lower() == path:gsub(string.char(92), "/"):lower() then return path end
 end
 
+local activator, activationHolder
+local function activateFont(path, size)
+    if not activator or not activationHolder then
+        local parent = cleanObject(UIParent)
+        local creator = addon.Clean(CreateFont, "function")
+        if not parent or not creator then return false end
+        fontSerial = fontSerial + 1
+        local ok, made = pcall(creator, "DungeonProFontActivator" .. fontSerial)
+        local object = ok and cleanObject(made)
+        local holder = object and objectResult(parent, "CreateFontString", nil, "OVERLAY")
+        if not holder or not invoke(holder, "SetFontObject", object) then return false end
+        invoke(holder, "Hide")
+        activator, activationHolder = object, holder
+    end
+    -- Keep this holder continuously inherited: a direct SetFont override on it
+    -- prevents later cold assets from activating through the attached object.
+    return invoke(activator, "SetFont", path, size, "")
+end
+
+local pendingSources = {}
 local function applyFontSource(region, size, context, fontObject)
+    if context.preferred then
+        activateFont(context.preferred, size)
+        local applied = setFontAsset(region, context.preferred, size, true)
+        local ok, _, _, flags = invoke(region, "GetFont")
+        if applied and ok and addon.Clean(flags, "string") == "" then return applied end
+        pendingSources[context.source] = true
+    end
+    if context.path then
+        activateFont(context.path, size)
+        if setFontAsset(region, context.path, size, fontObject) then return context.path end
+    end
     if context.candidates then
         for _, path in ipairs(context.candidates) do
             if setFontAsset(region, path, size, fontObject) then return path end
         end
     end
-    if context.path and setFontAsset(region, context.path, size, fontObject) then return context.path end
     if context.family and invoke(region, "SetFontObject", context.family) and invoke(region, "SetFontHeight", size) then
         return context.family
     end
-    if context.path then return nil end
     local path = addon.Clean(STANDARD_TEXT_FONT, "string") or "Fonts\\ARIALN.TTF"
     return setFontAsset(region, path, size, fontObject)
 end
 
 local function compatibleSource(context, source)
+    if source == context.path or (context.preferred and source == context.preferred) then return true end
     if not context.candidates then return true end
     for _, path in ipairs(context.candidates) do if source == path then return true end end
     return false
@@ -168,6 +200,7 @@ local function paintTextFont(region, size, locale)
     local previous = fontRegions[region]
     if previous and previous.size == size and previous.locale == locale and previous.source == context.source and
         previous.family == context.family and previous.creator == creator and previous.compatible and
+        (not context.requested or previous.path == context.requested or pendingSources[context.source]) and
         matchingFont(region, previous.path, size, previous.applied) then
         -- A font readback may release the preview or replace its native family.
         local fresh = fontContext(locale)
@@ -222,6 +255,28 @@ function Theme.ApplyFont(region, size)
     return applyTextFont(region, size)
 end
 
+-- Only picker-owned samples get a direct override; ordinary labels continue
+-- inheriting their owned theme font objects.
+function Theme.ApplyFontPreview(region, path, size)
+    region, path, size = cleanObject(region), addon.Clean(path, "string"), addon.Clean(size, "number")
+    if not region or not path or not size or size < 1 or size > 72 then return nil end
+    local fonts = addon.Clean(addon.Fonts, "table")
+    local choices = fonts and addon.Read(fonts.Choices, "table", fonts)
+    local allowed = false
+    for _, font in ipairs(choices or {}) do
+        if font.path == path then allowed = true; break end
+    end
+    if not allowed then return nil end
+    applyTextFont(region, size)
+    activateFont(path, size)
+    if setFontAsset(region, path, size, true) and matchingFontAsset(region, path, size) then
+        -- General UI refreshes must not replace an open picker's sample faces.
+        fontRegions[region] = nil
+        return path
+    end
+    applyTextFont(region, size)
+end
+
 -- Each language label retains its own script while the rest of the UI previews another locale.
 function Theme.ApplyLanguageFont(region, locale, size)
     locale = addon.Clean(locale, "string")
@@ -237,7 +292,8 @@ local function paintInputFont(region)
     local creator = addon.Clean(CreateFont, "function")
     local previous = inputRegions[region]
     if previous and previous.source == context.source and previous.family == context.family and
-        previous.creator == creator and matchingFont(region, previous.path, 14, previous.applied) then
+        previous.creator == creator and (not context.requested or previous.path == context.requested or pendingSources[context.source]) and
+        matchingFont(region, previous.path, 14, previous.applied) then
         local fresh = fontContext()
         if fresh.key ~= context.key or fresh.source ~= context.source or fresh.family ~= context.family or
             addon.Clean(CreateFont, "function") ~= creator then return nil end
@@ -434,11 +490,18 @@ function Theme.StyleCloseButton(button)
 end
 
 function Theme.RefreshFonts()
+    -- Retry an inconclusive selected asset once per refresh, sharing its new
+    -- fallback objects across all labels instead of allocating for each draw.
+    for source in pairs(pendingSources) do
+        if fontCaches then fontCaches[source] = nil end
+    end
+    pendingSources = {}
     local context, creator = fontContext(), addon.Clean(CreateFont, "function")
     for region, previous in pairs(fontRegions) do
         local intent = fontUpdates[region]
         local target = previous.locale and fontContext(previous.locale) or context
         local repair = previous.key ~= target.key or previous.family ~= target.family or previous.creator ~= creator or
+            (target.requested and previous.path ~= target.requested) or
             (previous.path and not matchingFont(region, previous.path, previous.size, previous.applied))
         if repair and fontUpdates[region] == intent and fontRegions[region] == previous then
             applyTextFont(region, previous.size, previous.locale)
@@ -447,6 +510,7 @@ function Theme.RefreshFonts()
     for region, previous in pairs(inputRegions) do
         local intent = fontUpdates[region]
         local repair = previous.key ~= context.key or previous.family ~= context.family or previous.creator ~= creator or
+            (context.requested and previous.path ~= context.requested) or
             (previous.path and not matchingFont(region, previous.path, 14, previous.applied))
         if repair and fontUpdates[region] == intent and inputRegions[region] == previous then Theme.ApplyInputFont(region) end
     end
@@ -454,6 +518,7 @@ function Theme.RefreshFonts()
         local intent = fontUpdates[button]
         local target = previous.locale and fontContext(previous.locale) or context
         local repair = previous.key ~= target.key or previous.family ~= target.family or previous.creator ~= creator or
+            (target.requested and previous.fonts.pathNormal ~= target.requested) or
             not matchingControlFonts(button, previous.fonts)
         if repair and fontUpdates[button] == intent and styledButtons[button] == previous then styleButtonFonts(button, previous.locale) end
     end
@@ -1136,7 +1201,7 @@ function Theme.Apply(ui)
     textColor(ui.coverage, palette.quiet)
     textColor(ui.capacityStatus, palette.muted); textColor(ui.searchPlaceholder, palette.quiet)
     if cleanObject(ui.searchBox) then Theme.StyleSearch(ui.searchBox, ui.clearSearch) end
-    for _, key in ipairs({ "back", "rangeButton", "preparationButton", "characterButton", "language", "map", "guide", "source", "giver" }) do
+    for _, key in ipairs({ "back", "rangeButton", "preparationButton", "characterButton", "language", "fontButton", "map", "guide", "source", "giver" }) do
         local button = cleanObject(ui[key])
         if button then
             if key == "rangeButton" or key == "characterButton" or cleanObject(button.filterIcon) then Theme.StyleFilter(button, button.filterSelected)

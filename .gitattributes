@@ -1,1 +1,5 @@
 * text=auto eol=lf
+*.ttf binary
+# Preserve the original upstream notices, including their whitespace.
+Media/Fonts/Droid-NOTICE.txt whitespace=-blank-at-eol,-blank-at-eof
+Media/Fonts/Droid-README.txt whitespace=-blank-at-eol,-blank-at-eof

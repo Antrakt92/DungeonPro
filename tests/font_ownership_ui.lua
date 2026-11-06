@@ -2,7 +2,11 @@ local cases=0
 for _,objects in ipairs({false,true})do
  local f=assert(loadfile("tests/client_ui.lua"))("fixture")
  local a,event,m=f.addon,f.eventFrame,f.methods
- function m:SetFont(path,size,flags)self.fontPath,self.fontSize,self.fontFlags=path,size,flags;if self.kind~="FontObject"then return true end end
+ local forceFallback=false
+ -- Reentry uses native script fallbacks only when the bundled face is unavailable.
+ function m:SetFont(path,size,flags)
+  if path:find("AntraktUISans.ttf",1,true) and (forceFallback or (a.db and a.db.locale=="zhCN")) then return false end
+  self.fontPath,self.fontSize,self.fontFlags=path,size,flags;if self.kind~="FontObject"then return true end end
  function m:GetFont()
   if self.fontPath then return self.fontPath,self.fontSize,self.fontFlags end
   if self.fontObject then local path,size,flags=self.fontObject:GetFont();return path,self.fontSize or size,flags end
@@ -24,7 +28,7 @@ for _,objects in ipairs({false,true})do
  ui.heading[key]=function(self,value,...)
   depth=depth+1;maxDepth=math.max(maxDepth,depth);assert(depth<5,"font repair bounded")
   local path=objects and value:GetFont()or value
-  if not fired and path:find("NotoSans",1,true)then fired=true;a.db.locale="zhCN";ui:Refresh(true)end
+  if not fired and path:find("AntraktUISans",1,true)then fired=true;a.db.locale="zhCN";ui:Refresh(true)end
   local result=native(self,value,...);depth=depth-1;return result
  end
  a.db.locale="enUS";ui:Refresh(true)
@@ -41,7 +45,7 @@ for _,objects in ipairs({false,true})do
   assert(input:GetFont()=="Fonts\\ARKai_T.ttf")
   local set=input.SetFontObject;local fired=false
   input.SetFontObject=function(self,value)
-   if not fired and value:GetFont():find("NotoSans",1,true)then
+   if not fired and value:GetFont():find("AntraktUISans",1,true)then
     fired=true;a.db.locale="zhCN";a.Theme.ApplyInputFont(input)
    end
    return set(self,value)
@@ -57,7 +61,7 @@ for _,objects in ipairs({false,true})do
   a.db.locale="zhCN";assert(a.Theme.StyleButtonFonts(button))
   local normal=button.SetNormalFontObject;local fired=false
   button.SetNormalFontObject=function(self,value)
-   if not fired and value:GetFont():find("NotoSans",1,true)then
+   if not fired and value:GetFont():find("AntraktUISans",1,true)then
     fired=true;a.db.locale="zhCN";a.Theme.StyleButtonFonts(button)
    end
    return normal(self,value)
@@ -67,6 +71,7 @@ for _,objects in ipairs({false,true})do
   for _,role in ipairs({"Normal","Highlight","Disabled"})do
    assert(button.roles[role]:GetFont()=="Fonts\\ARKai_T.ttf","all template roles retain newer CJK font")
   end
+  forceFallback=true
   assert(a.Theme.StyleLanguageRow(button,"koKR"))
   a.db.locale="enUS";a.Theme.RefreshFonts()
   for _,role in ipairs({"Normal","Highlight","Disabled"})do assert(button.roles[role]:GetFont()=="Fonts\\2002.ttf")end

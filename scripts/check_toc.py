@@ -31,6 +31,7 @@ CANONICAL_UI_ORDER = (
     "UI/TooltipLease.lua",
     "UI/Theme.lua",
     "UI/Language.lua",
+    "UI/Fonts.lua",
     "UI/QuestStatus.lua",
     "UI/QuestListRewards.lua",
     "UI/RewardCache.lua",

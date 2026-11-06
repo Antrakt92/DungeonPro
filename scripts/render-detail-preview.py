@@ -10,7 +10,7 @@ import shutil
 import subprocess
 
 ROOT = Path(__file__).resolve().parents[1]
-FONT = ROOT / "Media/Fonts/NotoSans-Regular.ttf"
+FONT = ROOT / "Media/Fonts/AntraktUISans.ttf"
 # Generous per-capture bound mirroring scripts/check.py: healthy captures finish
 # in seconds, so a hung tests/detail_visual.lua child fails cleanly via
 # parser.error instead of hanging the preview forever.

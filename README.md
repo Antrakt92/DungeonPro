@@ -100,6 +100,11 @@ source-code ZIP.
 
 TomTom is optional; the addon includes its own direction arrow.
 
+The CurseForge app installs [Antrakt Fonts](https://www.curseforge.com/wow/addons/antrakt-fonts)
+with this version. For manual installs, add its **Forever** build separately if
+you want the extra font choices. Dungeon Pro includes its own default font and
+works without the collection.
+
 ## Commands
 
 | Command | Action |
@@ -127,6 +132,18 @@ Latin American Spanish use the English and Spanish translations.
 Dungeon, quest, NPC and place names use reviewed translations where available.
 Missing translations fall back to original names. Item names, map and floor
 names, and quest text supplied by the game stay in your client's language.
+
+Click **Font** beside the language menu to choose a typeface. **Default** uses
+the built-in Antrakt UI Sans, also used by StatsPro and Do You Need It?, with
+combined Latin, Cyrillic, Chinese, Japanese and Korean character coverage.
+The extra choices come from an enabled Antrakt Fonts installation. Only faces
+whose declared coverage supports both your selected interface language and your
+game language appear. Use the arrows or mouse wheel to browse the list.
+
+Your choice is saved for Dungeon Pro. If a language change or an unavailable
+collection prevents its use, the addon keeps the preference and uses a readable
+fallback. Select **Default** to clear the custom choice. Character coverage
+varies by font; it does not guarantee every Unicode character.
 
 ## Still in beta
 
@@ -178,7 +195,8 @@ Players only need the release ZIP.
 
 You may modify and share my original work under the [Antrakt Attribution and CurseForge Rewards License 1.4](https://github.com/Antrakt92/DungeonPro/blob/main/LICENSE) without asking first. Substantial reuse requires credit, a link to [Dungeon Pro](https://www.curseforge.com/wow/addons/dungeon-pro) and a positive share of the derivative project's CurseForge Reward Points if it earns them. You choose the percentage; there is no fixed minimum. See the full license for exceptions and third-party terms.
 
-Noto Sans retains its SIL Open Font License, and Unicode data retains its separate
+Antrakt UI Sans retains its SIL Open Font License, with the original Droid portions
+retaining their Apache License 2.0 terms and notices. Unicode data retains its separate
 notice. See [font credits](Media/Fonts/NOTICE.txt), [icon credits](Media/Icons/NOTICE.txt)
 and [Unicode attribution](Database/SearchCaseFold.lua). Game assets belong to Blizzard.
 

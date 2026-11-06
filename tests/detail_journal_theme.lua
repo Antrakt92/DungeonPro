@@ -2,12 +2,16 @@
 local addon = {}
 assert(loadfile("Core/Namespace.lua"))("DungeonPro", addon)
 local methods, all = {}, {}
+local missingBaseline = false
 local function region()
  local value=setmetatable({shown=true,points={},textures={}}, {__index=methods});all[#all+1]=value;return value
 end
 function methods:SetColorTexture(...)self.color={...}end
 function methods:SetTextColor(...)self.ink={...}end
-function methods:SetFont(path,size,flags)self.fontPath,self.fontSize,self.fontFlags=path,size,flags;return true end
+function methods:SetFont(path,size,flags)
+ if missingBaseline and path:find("AntraktUISans",1,true) then return false end
+ self.fontPath,self.fontSize,self.fontFlags=path,size,flags;return true
+end
 function methods:GetFont()return self.fontPath,self.fontSize,self.fontFlags end
 function methods:SetShadowOffset()end
 function methods:SetText(v)self.text=v end
@@ -43,7 +47,11 @@ for role,size in pairs({title=27,body=16,caption=11,section=12,contactName=15,co
  else rgb(v.ink,170,166,164)end
 end
 local text=region();assert(not t.StyleDetailText(text,"invalid")and not text.fontSize)
-addon.db.locale="zhCN";assert(t.StyleDetailText(text,"body"));assert(text.fontPath=="Fonts\\ARKai_T.ttf"and text.fontSize==16,"native Chinese font selection remains available")
+addon.db.locale="zhCN";assert(t.StyleDetailText(text,"body"))
+assert(text.fontPath:find("AntraktUISans",1,true) and text.fontSize==16,"Chinese uses multilingual baseline")
+missingBaseline=true;text=region();assert(t.StyleDetailText(text,"body"))
+assert(text.fontPath=="Fonts\\ARKai_T.ttf"and text.fontSize==16,"unavailable baseline retains native Chinese fallback")
+missingBaseline=false
 addon.db.locale="enUS"
 -- A returning native color setter must not overwrite a newer complete style.
 local setter=text.SetTextColor;local armed=true

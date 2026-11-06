@@ -492,14 +492,15 @@ test("missing rotation hook capabilities and partial hook failures preserve orig
     assert(not addon.Theme.StyleScrollBar({}))
 end)
 
-local function notoFixture(allowCJK)
+local function baselineFixture(allowCJK)
     local previous={game=GetLocale,db=addon.db,chat=ChatFontNormal,creator=CreateFont}
     local family={shared=true};ChatFontNormal=family;addon.db={locale="enUS"};GetLocale=function()return"enUS"end
-    local made=0
+    local made, baselineUnavailable=0,false
     local function font()
         return{
             SetFont=function(self,path,size,flags)
-                if not allowCJK and not path:find("NotoSans-Regular.ttf",1,true) and path ~= "Fonts\\ARIALN.TTF" then return false end
+                if baselineUnavailable and path:find("AntraktUISans.ttf",1,true) then return false end
+                if not allowCJK and not path:find("AntraktUISans.ttf",1,true) and path ~= "Fonts\\ARIALN.TTF" then return false end
                 self.path,self.height,self.flags=path,size,flags;self.family=nil
             end,
             GetFont=function(self)
@@ -520,30 +521,30 @@ local function notoFixture(allowCJK)
         button["Get"..role.."FontObject"]=function(self)return self[role]end
         button["Set"..role.."FontObject"]=function(self,value)self[role]=value end
     end
-    return{font=font,button=button,family=family,made=function()return made end,finish=function()
+    return{font=font,button=button,family=family,failBaseline=function(value)baselineUnavailable=value end,made=function()return made end,finish=function()
         GetLocale,addon.db,ChatFontNormal,CreateFont=previous.game,previous.db,previous.chat,previous.creator
     end}
 end
-test("bundled static Noto is selected only for supported non-CJK client and UI contexts",function()
-    local f=notoFixture();local r=f.font()
+test("bundled Antrakt UI Sans supports all client and UI languages",function()
+    local f=baselineFixture();local r=f.font()
     for _,code in ipairs({"enUS","enGB","ruRU","deDE","frFR","esES","esMX","itIT","ptBR"})do
         GetLocale=function()return code end;addon.db.locale=code
-        assert(addon.Theme.ApplyFont(r,26) and resolvedPath(r):find("NotoSans-Regular.ttf",1,true) and resolvedHeight(r)==26)
+        assert(addon.Theme.ApplyFont(r,26) and resolvedPath(r):find("AntraktUISans.ttf",1,true) and resolvedHeight(r)==26)
     end
     GetLocale=function()return"enUS"end
     for _,code in ipairs({"koKR","zhCN","zhTW"})do
-        addon.db.locale=code;assert(addon.Theme.ApplyFont(r,14) and resolvedFamily(r,f.family) and not resolvedPath(r))
+        addon.db.locale=code;assert(addon.Theme.ApplyFont(r,14) and resolvedPath(r):find("AntraktUISans.ttf",1,true))
         addon.db.locale="enUS";GetLocale=function()return code end
-        assert(addon.Theme.ApplyFont(r,14) and resolvedFamily(r,f.family) and not resolvedPath(r))
+        assert(addon.Theme.ApplyFont(r,14) and resolvedPath(r):find("AntraktUISans.ttf",1,true))
         GetLocale=function()return"enUS"end
     end
     addon.db.locale="unsupported";assert(addon.Theme.ApplyFont(r,14) and resolvedPath(r))
-    GetLocale=function()return"unknown-client"end;assert(addon.Theme.ApplyFont(r,14) and resolvedFamily(r,f.family))
-    GetLocale=function()error("unavailable")end;assert(addon.Theme.ApplyFont(r,14) and resolvedFamily(r,f.family))
+    GetLocale=function()return"unknown-client"end;assert(addon.Theme.ApplyFont(r,14) and resolvedPath(r):find("AntraktUISans.ttf",1,true))
+    GetLocale=function()error("unavailable")end;assert(addon.Theme.ApplyFont(r,14) and resolvedPath(r):find("AntraktUISans.ttf",1,true))
     assert(f.family.shared and not f.family.height and not f.family.path);f.finish()
 end)
 test("failed bundled font loads fall back to the native family rather than claiming success",function()
-    local f=notoFixture();CreateFont=nil
+    local f=baselineFixture();CreateFont=nil
     for _,mode in ipairs({"false","nil","throw"})do
         local r=f.font();r.SetFont=function()if mode=="throw"then error("no asset")end;return mode=="false"and false or nil end
         assert(addon.Theme.ApplyFont(r,14)==f.family and r.family==f.family and r.height==14)
@@ -551,14 +552,14 @@ test("failed bundled font loads fall back to the native family rather than claim
     f.finish()
 end)
 test("existing FontStrings inputs and all button states switch font context without mutating shared families",function()
-    local f=notoFixture();local r=f.font();local input={SetFontObject=function(self,value)self.font=value end}
+    local f=baselineFixture();local r=f.font();local input={SetFontObject=function(self,value)self.font=value end}
     assert(addon.Theme.ApplyFont(r,16));assert(addon.Theme.ApplyInputFont(input));assert(addon.Theme.StyleButtonFonts(f.button))
     assert(resolvedPath(r) and input.font.path and f.button.Normal.path and f.button.Disabled.path)
     local original=input.font
-    addon.db.locale="zhCN";addon.Theme.RefreshFonts()
+    f.failBaseline(true);addon.db.locale="zhCN";addon.Theme.RefreshFonts()
     assert(not resolvedPath(r) and resolvedFamily(r,f.family) and not input.font.path and input.font.family==f.family and input.font~=original)
     assert(not f.button.Normal.path and f.button.Normal.family==f.family and f.button.Disabled.color[1]<f.button.Normal.color[1])
-    addon.db.locale="ruRU";addon.Theme.RefreshFonts()
+    f.failBaseline(false);addon.db.locale="ruRU";addon.Theme.RefreshFonts()
     assert(resolvedPath(r) and input.font.path and f.button.Normal.path and resolvedHeight(r)==16 and input.font.height==14)
     local made=f.made();for i=1,20 do addon.Theme.RefreshFonts()end;assert(f.made()==made)
     original=input.font;addon.db.locale="enGB";addon.Theme.RefreshFonts();assert(input.font==original and input.font.path)
@@ -567,7 +568,7 @@ end)
 
 
 test("input and button clones require successful asset loads and retain native fallback on failure",function()
-    local f=notoFixture();local creator=CreateFont
+    local f=baselineFixture();local creator=CreateFont
     CreateFont=function(name)local font=creator(name);font.SetFont=function()return false end;return font end
     local input={SetFontObject=function(self,value)self.font=value end}
     assert(addon.Theme.ApplyInputFont(input) and input.font.family==f.family and not input.font.path and input.font.height==14)
@@ -580,35 +581,35 @@ end)
 
 
 test("font asset paths retain exact runtime separators for the packaged file and native fallback",function()
-    local f=notoFixture();local r=f.font()
-    local expected=table.concat({"Interface","AddOns","DungeonPro","Media","Fonts","NotoSans-Regular.ttf"},string.char(92))
+    local f=baselineFixture();local r=f.font()
+    local expected=table.concat({"Interface","AddOns","DungeonPro","Media","Fonts","AntraktUISans.ttf"},string.char(92))
     assert(addon.Theme.ApplyFont(r,14) and resolvedPath(r)==expected,"packaged font runtime path must keep directory separators")
     local chat,highlight,standard=ChatFontNormal,GameFontHighlight,STANDARD_TEXT_FONT
-    ChatFontNormal,GameFontHighlight,STANDARD_TEXT_FONT=nil,nil,nil;GetLocale=function()return"unknown-client"end
+    f.failBaseline(true);ChatFontNormal,GameFontHighlight,STANDARD_TEXT_FONT=nil,nil,nil;GetLocale=function()return"unknown-client"end
     expected="Fonts"..string.char(92).."ARIALN.TTF"
     assert(addon.Theme.ApplyFont(r,14) and resolvedPath(r)==expected,"native fallback path must keep its directory separator")
     ChatFontNormal,GameFontHighlight,STANDARD_TEXT_FONT=chat,highlight,standard;f.finish()
 end)
 
 
-test("ordinary FontStrings switch from Noto to native CJK through clean owned font objects",function()
-    local f=notoFixture();local direct=0
+test("ordinary FontStrings switch from baseline to native CJK through clean owned font objects",function()
+    local f=baselineFixture();local direct=0
     local fs={SetFont=function(self,path,size)direct=direct+1;self.localPath=path;return true end,
         SetFontObject=function(self,font)self.inherited=font end,
         SetFontHeight=function(self,height)self.localHeight=height end,SetShadowOffset=function()end}
     local font=addon.Theme.ApplyFont(fs,16)
-    assert(direct==0 and fs.localPath==nil and fs.inherited==font and font.path:find("NotoSans-Regular.ttf",1,true))
+    assert(direct==0 and fs.localPath==nil and fs.inherited==font and font.path:find("AntraktUISans.ttf",1,true))
     local same={SetFontObject=function(self,value)self.inherited=value end,SetShadowOffset=function()end}
     assert(addon.Theme.ApplyFont(same,16)==font)
     local made=f.made();for i=1,20 do addon.Theme.ApplyFont(fs,16)end;assert(f.made()==made)
-    addon.db.locale="zhCN";addon.Theme.RefreshFonts()
+    f.failBaseline(true);addon.db.locale="zhCN";addon.Theme.RefreshFonts()
     assert(direct==0 and not fs.localPath and fs.inherited~=font and fs.inherited.family==f.family and not fs.inherited.path)
-    addon.db.locale="ruRU";addon.Theme.RefreshFonts()
+    f.failBaseline(false);addon.db.locale="ruRU";addon.Theme.RefreshFonts()
     assert(direct==0 and fs.inherited.path and fs.inherited.height==16)
     assert(not f.family.path and not f.family.height);f.finish()
 end)
 test("void SimpleFont setters are verified by current clean font path and height for every owned role",function()
-    local f=notoFixture();local creator=CreateFont
+    local f=baselineFixture();local creator=CreateFont
     for _,mode in ipairs({"valid","wrong-path","wrong-height","throw"})do
         CreateFont=function(name)
             local font=creator(name)
@@ -630,24 +631,24 @@ end)
 
 
 test("repeated locale selections keep bounded per-script source caches while preserving family and creator identity",function()
-    local f=notoFixture();local r=f.font();local input={SetFontObject=function(self,font)self.font=font end}
+    local f=baselineFixture();local r=f.font();local input={SetFontObject=function(self,font)self.font=font end}
     local function paint()
         addon.Theme.ApplyFont(r,14);addon.Theme.ApplyInputFont(input);addon.Theme.StyleButtonFonts(f.button)
     end
-    paint();local noto=input.font;local original=f.made()
-    addon.db.locale="zhCN";paint();local native=input.font
-    assert(native~=noto)
+    paint();local baseline=input.font;local original=f.made()
+    f.failBaseline(true);addon.db.locale="zhCN";paint();local native=input.font
+    assert(native~=baseline)
     local sources={zhCN=native}
     for _,locale in ipairs({"zhTW","koKR"})do addon.db.locale=locale;paint();sources[locale]=input.font end
     local warmed=f.made()
     for i=1,20 do
         for _,locale in ipairs({"ruRU","enGB","zhTW","koKR","zhCN","enUS"})do
             addon.db.locale=locale;paint()
-            assert(input.font==((locale=="ruRU"or locale=="enGB"or locale=="enUS")and noto or sources[locale]))
+            assert(input.font==((locale=="ruRU"or locale=="enGB"or locale=="enUS")and baseline or sources[locale]))
         end
     end
     assert(f.made()==warmed and warmed==original*4)
-    ChatFontNormal={newFamily=true};paint();assert(input.font~=noto and f.made()>warmed)
+    ChatFontNormal={newFamily=true};paint();assert(input.font~=baseline and f.made()>warmed)
     local last=input.font;local maker=CreateFont;CreateFont=function(name)return maker(name)end
     paint();assert(input.font~=last)
     f.finish()
@@ -740,15 +741,15 @@ test("Close setup cannot paint visible optional regions when their initial Hide 
 end)
 
 test("transient language preview switches existing font roles without changing the committed locale", function()
-    local f = notoFixture(); local previous = addon.Language; local selection
+    local f = baselineFixture(); local previous = addon.Language; local selection
     addon.Language = { GetSelection = function() return selection end }
     local text, input = f.font(), { SetFontObject = function(self, value) self.font = value end }
     assert(addon.Theme.ApplyFont(text, 16) and addon.Theme.ApplyInputFont(input) and addon.Theme.StyleButtonFonts(f.button))
     assert(resolvedPath(text) and input.font.path and f.button.Normal.path)
-    selection = "zhCN"; addon.Theme.RefreshFonts()
+    f.failBaseline(true); selection = "zhCN"; addon.Theme.RefreshFonts()
     assert(resolvedFamily(text, f.family) and resolvedFamily(input.font, f.family) and resolvedFamily(f.button.Normal, f.family))
     assert(addon.db.locale == "enUS" and not f.family.path and not f.family.height)
-    selection = "ruRU"; addon.Theme.RefreshFonts()
+    f.failBaseline(false); selection = "ruRU"; addon.Theme.RefreshFonts()
     assert(resolvedPath(text) and input.font.path and f.button.Normal.path and addon.db.locale == "enUS")
     selection = nil; addon.Theme.RefreshFonts()
     assert(resolvedPath(text) and addon.db.locale == "enUS")
@@ -757,15 +758,15 @@ test("transient language preview switches existing font roles without changing t
     addon.Language = previous; f.finish()
 end)
 
-test("cross-client CJK UI text inputs and controls keep distinct compatible scripts then restore Noto", function()
-    local f = notoFixture(true)
+test("cross-client CJK UI text inputs and controls keep distinct compatible scripts then restore baseline", function()
+    local f = baselineFixture(true)
     local text, input = f.font(), { SetFontObject = function(self, value) self.font = value end }
     local paths = { zhCN = "Fonts\\ARKai_T.ttf", zhTW = "Fonts\\bHEI00M.ttf", koKR = "Fonts\\2002.ttf" }
     local sources = {}
     for _, locale in ipairs({ "ruRU", "zhCN", "koKR", "zhTW", "enUS" }) do
-        addon.db.locale = locale
+        f.failBaseline(paths[locale] ~= nil); addon.db.locale = locale
         assert(addon.Theme.ApplyFont(text, 16) and addon.Theme.ApplyInputFont(input) and addon.Theme.StyleButtonFonts(f.button))
-        local expected = paths[locale] or "Interface\\AddOns\\DungeonPro\\Media\\Fonts\\NotoSans-Regular.ttf"
+        local expected = paths[locale] or "Interface\\AddOns\\DungeonPro\\Media\\Fonts\\AntraktUISans.ttf"
         assert(resolvedPath(text) == expected and input.font.path == expected and f.button.Highlight.path == expected)
         sources[locale] = input.font
     end
@@ -779,7 +780,7 @@ test("cross-client CJK UI text inputs and controls keep distinct compatible scri
 end)
 
 test("language row labels and all button states retain their own script during another language preview", function()
-    local f = notoFixture(true)
+    local f = baselineFixture(true); f.failBaseline(true)
     local text = f.font()
     assert(addon.Theme.ApplyLanguageFont(text, "zhCN", 14) and addon.Theme.StyleLanguageRow(f.button, "koKR"))
     local rowFont, labelFont = f.button.Normal, text.family
@@ -787,14 +788,14 @@ test("language row labels and all button states retain their own script during a
     assert(text.family == labelFont and resolvedPath(text) == "Fonts\\ARKai_T.ttf")
     for _, role in ipairs({ "Normal", "Highlight", "Disabled" }) do assert(f.button[role].path == "Fonts\\2002.ttf") end
     assert(f.button.Normal == rowFont)
-    assert(addon.Theme.ApplyLanguageFont(text, "ruRU", 14) and resolvedPath(text):find("NotoSans-Regular.ttf", 1, true))
+    f.failBaseline(false); assert(addon.Theme.ApplyLanguageFont(text, "ruRU", 14) and resolvedPath(text):find("AntraktUISans.ttf", 1, true))
     assert(not addon.Theme.ApplyLanguageFont(text, secret, 14) and not addon.Theme.StyleLanguageRow(f.button, secret))
     f.finish()
 end)
 
 test("CJK probing skips failed candidates and reports unavailable scripts without losing native fallback", function()
     for _, mode in ipairs({ "false", "throw", "second" }) do
-        local f = notoFixture(true); local creator = CreateFont
+        local f = baselineFixture(true); local creator = CreateFont
         CreateFont = function(name)
             local font = creator(name); local setter = font.SetFont
             font.SetFont = function(self, path, size, flags)
@@ -828,7 +829,7 @@ test("Window base is opaque so lower windows cannot read through the planner",fu
     assert(found)
 end)
 test("warm CJK refresh followed by row repaint writes each changed text font only once", function()
-    local f = notoFixture(true)
+    local f = baselineFixture(true)
     local text, input = f.font(), f.font()
     local textSet, inputSet = text.SetFontObject, input.SetFontObject
     local textWrites, inputWrites = 0, 0
@@ -837,7 +838,7 @@ test("warm CJK refresh followed by row repaint writes each changed text font onl
     assert(addon.Theme.ApplyFont(text, 16) and addon.Theme.ApplyInputFont(input))
     for _, locale in ipairs({ "zhCN", "zhTW", "koKR", "ruRU", "enUS" }) do
         local beforeText, beforeInput = textWrites, inputWrites
-        addon.db.locale = locale
+        f.failBaseline(locale == "zhCN" or locale == "zhTW" or locale == "koKR"); addon.db.locale = locale
         addon.Theme.RefreshFonts()
         local refreshedText, refreshedInput = textWrites, inputWrites
         for _ = 1, 20 do
@@ -853,7 +854,7 @@ end)
 
 test("warm font dedup requires clean effective readback and repairs detached overrides", function()
     for _, mode in ipairs({ "path", "height", "flags", "secret-path", "secret-height", "secret-flags", "throw", "missing" }) do
-        local f = notoFixture(true); addon.db.locale = "zhCN"
+        local f = baselineFixture(true); addon.db.locale = "zhCN"
         local text = f.font(); local originalSet = text.SetFontObject; local writes = 0
         text.SetFontObject = function(self, value) writes = writes + 1; return originalSet(self, value) end
         assert(addon.Theme.ApplyFont(text, 16)); local before = writes
@@ -878,7 +879,7 @@ test("warm font dedup requires clean effective readback and repairs detached ove
 end)
 
 test("shared font sources retain independent main-window and fixed-language button contexts", function()
-    local f = notoFixture(true)
+    local f = baselineFixture(true)
     local uiButton, languageButton = f.button, {}
     for _, role in ipairs({ "Normal", "Highlight", "Disabled" }) do
         languageButton[role] = f.font()
@@ -886,13 +887,13 @@ test("shared font sources retain independent main-window and fixed-language butt
         languageButton["Set" .. role .. "FontObject"] = uiButton["Set" .. role .. "FontObject"]
     end
     assert(addon.Theme.StyleButtonFonts(uiButton) and addon.Theme.StyleLanguageRow(languageButton, "ruRU"))
-    assert(uiButton.Normal == languageButton.Normal, "identical Noto roles share a cache")
+    assert(uiButton.Normal == languageButton.Normal, "identical baseline roles share a cache")
     local fixed = languageButton.Normal
     for _, locale in ipairs({ "zhCN", "zhTW", "koKR", "enUS", "zhCN" }) do
-        addon.db.locale = locale; addon.Theme.RefreshFonts()
-        assert(languageButton.Normal == fixed and resolvedPath(languageButton.Normal):find("NotoSans-Regular.ttf", 1, true))
+        f.failBaseline(locale ~= "enUS"); addon.db.locale = locale; addon.Theme.RefreshFonts()
+        assert(languageButton.Normal == fixed and resolvedPath(languageButton.Normal):find("AntraktUISans.ttf", 1, true))
         local expected = ({ zhCN = "Fonts\\ARKai_T.ttf", zhTW = "Fonts\\bHEI00M.ttf", koKR = "Fonts\\2002.ttf" })[locale]
-            or "Interface\\AddOns\\DungeonPro\\Media\\Fonts\\NotoSans-Regular.ttf"
+            or "Interface\\AddOns\\DungeonPro\\Media\\Fonts\\AntraktUISans.ttf"
         for _, role in ipairs({ "Normal", "Highlight", "Disabled" }) do assert(resolvedPath(uiButton[role]) == expected) end
     end
     local original = uiButton.Normal
@@ -903,7 +904,7 @@ end)
 
 test("warm readback cannot commit an expired locale or native creator context", function()
     for _, mode in ipairs({ "locale", "family", "creator" }) do
-        local f = notoFixture(true); local text = f.font()
+        local f = baselineFixture(true); local text = f.font()
         assert(addon.Theme.ApplyFont(text, 16))
         local read = text.GetFont; local armed = true; local oldCreator = CreateFont
         text.GetFont = function(self)

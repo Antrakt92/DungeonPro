@@ -7346,6 +7346,7 @@ function UI:Refresh(languageOnly, dataOnly)
     if not self.frame or not self.frame:IsShown() then return end
     if languageOnly ~= true and dataOnly ~= true then self.preparation = false end
     if addon.Theme and addon.Theme.RefreshFonts then addon.Theme.RefreshFonts() end
+    if addon.FontMenu then addon.FontMenu:Refresh(self) end
     self.title:SetText(addon.L("TITLE"))
     if not self:RefreshLanguageLabel() then return end
     self:RefreshFilterControls()
@@ -7529,6 +7530,7 @@ function UI:Create()
     if not language then return abandon() end
     self.language = language
     language:SetPoint("TOPRIGHT", -116, -14)
+    if addon.FontMenu then addon.FontMenu:Attach(self) end
     local languageModule = addon.Clean(addon.Language, "table")
     if languageModule then addon.Read(languageModule.Attach, "boolean", languageModule, language, self) end
     for _, entry in ipairs({ { "issue", -80 }, { "support", -48 } }) do
@@ -7770,6 +7772,8 @@ function UI:Create()
             if not current() then return end
         end
         self:HideNavigationHint()
+        if not current() then return end
+        if addon.FontMenu then addon.FontMenu:Refresh(self) end
         if not current() then return end
         local language = clean(addon.Language, "table")
         if not current() then return end
