@@ -76,14 +76,28 @@ local function fontContext(explicitLocale)
         key = (selected or path or locale) .. ":" .. selection .. ":" .. (game or "?") }
 end
 
+local function emptyFontFlags(value)
+    if type(issecretvalue) == "function" then
+        local ok, secret = pcall(issecretvalue, value)
+        if not ok or secret ~= false then return false end
+    end
+    if value == nil then return true end
+    return type(value) == "string" and #value <= 128 and value:match("^%s*$") ~= nil
+end
+
+local function matchingFontSize(actual, expected)
+    actual = addon.Clean(actual, "number")
+    return actual ~= nil and math.abs(actual - expected) <= .01
+end
+
 local function setFontAsset(region, path, size, fontObject)
     local ok, result = invoke(region, "SetFont", path, size, "")
-    if not ok or addon.Clean(result, "boolean") == false then return nil end
+    if not ok then return nil end
     if not fontObject then return addon.Clean(result, "boolean") == true and path or nil end
-    -- Font objects have a void SetFont setter; verify the resulting asset and size.
+    -- Native setter results vary; the effective asset and size are authoritative.
     local inspected, currentPath, height = invoke(region, "GetFont")
     currentPath, height = addon.Clean(currentPath, "string"), addon.Clean(height, "number")
-    if inspected and currentPath and #currentPath <= 4096 and height == size and
+    if inspected and currentPath and #currentPath <= 4096 and matchingFontSize(height, size) and
         currentPath:gsub(string.char(92), "/"):lower() == path:gsub(string.char(92), "/"):lower() then return path end
 end
 
@@ -112,7 +126,7 @@ local function applyFontSource(region, size, context, fontObject)
         activateFont(context.preferred, size)
         local applied = setFontAsset(region, context.preferred, size, true)
         local ok, _, _, flags = invoke(region, "GetFont")
-        if applied and ok and addon.Clean(flags, "string") == "" then return applied end
+        if applied and ok and emptyFontFlags(flags) then return applied end
         pendingSources[context.source] = true
     end
     if context.path then
@@ -142,8 +156,7 @@ local function matchingFontAsset(region, path, size)
     if not path then return false end
     local ok, currentPath, height, flags = invoke(region, "GetFont")
     currentPath, height = addon.Clean(currentPath, "string"), addon.Clean(height, "number")
-    flags = addon.Clean(flags, "string")
-    return ok and currentPath and #currentPath <= 4096 and height == size and flags == "" and
+    return ok and currentPath and #currentPath <= 4096 and matchingFontSize(height, size) and emptyFontFlags(flags) and
         currentPath:gsub(string.char(92), "/"):lower() == path:gsub(string.char(92), "/"):lower()
 end
 

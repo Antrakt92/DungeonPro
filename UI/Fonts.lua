@@ -219,7 +219,8 @@ end
 function Menu:Build(ui)
     self.serial = self.serial+1
     local name = "DungeonProFontPicker"..self.serial
-    local popup = CreateFrame("Frame",name,UIParent,"BackdropTemplate")
+    -- Keep the dropdown in the planner window's native stacking family.
+    local popup = CreateFrame("Frame",name,ui.frame,"BackdropTemplate")
     self.popup,self.owner,self.parent = popup,ui,ui.frame
     popup:Hide(); popup:SetFrameStrata("DIALOG"); popup:SetFrameLevel(ui.frame:GetFrameLevel()+50)
     popup:SetClampedToScreen(true); popup:EnableMouse(true)
@@ -242,7 +243,7 @@ function Menu:Build(ui)
     end)
     help:SetScript("OnLeave",function() if ui.HideNavigationHint then ui:HideNavigationHint(help) end end)
     popup.help=help
-    local catcher=CreateFrame("Frame",nil,UIParent)
+    local catcher=CreateFrame("Frame",nil,ui.frame)
     catcher:SetFrameStrata("DIALOG"); catcher:SetFrameLevel(popup:GetFrameLevel()-1)
     catcher:SetAllPoints(UIParent); catcher:EnableMouse(true); catcher:Hide()
     catcher:SetScript("OnMouseDown",function() self:Close() end); self.catcher=catcher

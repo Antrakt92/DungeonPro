@@ -6,6 +6,13 @@ local total, pending, unavailable, combat, mouse = 0, {}, {}, false, nil
 local function check(ok, why) assert(ok, why); total = total + 1 end
 function m:GetFrameLevel() return self.level or 1 end
 function m:SetFrameLevel(v) self.level = v end
+function m:SetFrameStrata(v) self.strata = v end
+function m:GetFrameStrata() return self.strata or "MEDIUM" end
+function m:SetToplevel(v) self.topLevel = v end
+function m:IsToplevel() return self.topLevel == true end
+function m:IsVisible()
+    return self:IsShown() and (not self.parent or self.parent:IsVisible())
+end
 function m:EnableMouseWheel(v) self.mouseWheel = v end
 function m:SetClampedToScreen(v) self.clamped = v end
 function m:EnableKeyboard(v) self.keyboard = v end
@@ -52,6 +59,7 @@ function m:HookScript(name, fn) local old = self.scripts[name]; self.scripts[nam
 local nativeCreate = CreateFrame
 CreateFrame = function(kind, name, parent, template)
     local frame = nativeCreate(kind, name); frame.parent, frame.template = parent, template
+    frame:Show()
     if kind == "ScrollFrame" and template then
         frame.ScrollBar = nativeCreate("Slider")
         frame.ScrollBar:SetScript("OnValueChanged", function(_, value) frame:SetVerticalScroll(value) end)
@@ -61,6 +69,7 @@ end
 CreateFont = function() return nativeCreate("FontObject") end
 ChatFontNormal = CreateFont(); ChatFontNormal:SetFont("Fonts\\ARIALN.TTF", 14, "")
 UIParent.width, UIParent.height = 1920, 1080
+UIParent:Show()
 InCombatLockdown = function() return combat end
 MouseIsOver = function(region) return mouse == region end
 local function flush() local queue = pending; pending = {}; for _, fn in ipairs(queue) do fn() end end
@@ -88,7 +97,18 @@ local sl, sr = bounds(ui.searchBox); local fl, fr = bounds(ui.fontButton); local
 check(ui.searchBox.width == 256 and sr + 8 <= fl and fr + 8 <= ll, "search and compact controls have separate hit areas")
 check(sl > ui.capacityStatus.point[2] + ui.capacityStatus.width, "search avoids level/filter text")
 click(ui.fontButton)
+check(menu.popup:GetParent() == ui.frame and menu.catcher:GetParent() == ui.frame and
+    menu.popup:GetFrameStrata() == ui.frame:GetFrameStrata() and menu.popup:GetFrameLevel() > ui.frame:GetFrameLevel(),
+    "picker and outside catcher belong to the planner hierarchy above its content")
 check(menu.popup:IsShown() and #menu.choices == 1, "absent provider and unavailable native assets retain baseline")
+local ownerHide = ui.frame.scripts.OnHide
+ui.frame.scripts.OnHide = nil
+ui.frame:Hide()
+check(menu.popup:IsShown() and menu.catcher:IsShown() and not menu.popup:IsVisible() and not menu.catcher:IsVisible(),
+    "owner hide natively suppresses child popup and catcher before cleanup callbacks")
+ui.frame.scripts.OnHide = ownerHide
+ui.frame:Show()
+check(menu.popup:IsVisible() and menu.catcher:IsVisible(), "child visibility follows owner visibility")
 menu.popup:Hide()
 local fonts = {}
 for i = 1, 48 do
@@ -120,8 +140,9 @@ check(ui.heading:GetFont() == BASE and a.Fonts.preview == nil and a.db.fontId ==
 check(#menu.choices == 49 and menu.rows == menu.popup.rows, "all compatible faces are grid rows without pagination")
 check(menu.columns == 3 and menu.metrics.cols == 3, "wide screen uses three columns")
 check(menu.scroll and menu.content and menu.scrollBar and menu.catcher, "native scroll frame, scrollbar and outside catcher exist")
-check(menu.popup.parent == UIParent and menu.popup.clamped and menu.catcher.level < menu.popup.level,
-    "popup clamps independently above its outside catcher")
+check(menu.popup:GetParent() == ui.frame and menu.catcher:GetParent() == ui.frame and menu.popup.clamped and
+    menu.catcher.level < menu.popup.level and menu.catcher.level > ui.frame:GetFrameLevel(),
+    "clamped child popup stays above its catcher within the planner hierarchy")
 check(menu.popup.previous == nil and menu.popup.next == nil and menu.popup.position == nil, "no numbered page controls")
 check(menu.maxScroll > 0, "long collection has overflow")
 local before = menu.scroll:GetVerticalScroll(); menu.popup.scripts.OnMouseWheel(menu.popup, -1)
@@ -249,7 +270,8 @@ menu.popup:Hide(); a.db.locale = "ruRU"; ui:RefreshLanguagePreview(); click(ui.f
 event.scripts.OnEvent(event, "ADDON_LOADED", "AntraktFonts"); flush()
 check(not menu.popup:IsShown() and a.Fonts.preview == nil, "provider revision retires preview and old choices")
 click(ui.fontButton); enter(row("face-01")); ui.frame:Hide()
-check(not menu.popup:IsShown() and a.Fonts.preview == nil, "planner hide retires UIParent popup")
+check(not menu.popup:IsShown() and not menu.popup:IsVisible() and not menu.catcher:IsVisible() and a.Fonts.preview == nil,
+    "planner hide retires child popup, catcher and preview")
 ui.frame:Show(); check(not menu.popup:IsShown(), "planner reopen does not resurrect picker")
 
 -- Shared media arriving after opening is coalesced, with the same snapshot and

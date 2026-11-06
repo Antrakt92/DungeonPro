@@ -20,12 +20,16 @@ local function fixture(options)
             if options.noop then return true end
         end
         self.path, self.size, self.flags, self.family = path, size, flags, nil
+        if path == SHARED and options.falseReturn then return false end
         if self.kind ~= "object" then return true end
     end
     function methods:GetFont()
         if self.family then
             local path, size, flags = self.family:GetFont()
             return path, self.size or size, flags
+        end
+        if self.path == SHARED and options.readback then
+            return options.readback(self.path, self.size, self.flags, self)
         end
         return self.path, self.size, self.flags
     end
@@ -139,6 +143,76 @@ test("failed and misleading sample setters restore the readable baseline", funct
         end
         assert(not addon.Theme.ApplyFontPreview(f.text, SHARED, 16))
         assert(f.text:GetFont() == BASELINE and f.input:GetFont() == BASELINE)
+    end
+end)
+test("native no-effect flags and tiny height rounding permit availability and selected fonts", function()
+    for _, mode in ipairs({ { none = true, delta = .009 }, { flags = "", delta = -.009 },
+        { flags = " \t ", delta = .004 } }) do
+        local f = fixture({ readback = function(path, size)
+            return path, size + mode.delta, mode.none and nil or mode.flags
+        end })
+        assert(addon.Theme.FontAvailable(SHARED), "native-equivalent readback must keep shared face available")
+        f:paint(); f:expect(SHARED)
+        local made, writes = f.made, f.writes
+        for _ = 1, 5 do addon.Theme.RefreshFonts(); f:paint() end
+        assert(f.made == made and f.writes == writes, "accepted rounding must not trigger perpetual font repair")
+    end
+end)
+
+test("native-equivalent preview readback changes only the sample and restores baseline", function()
+    for _, mode in ipairs({ { none = true, delta = -.004 }, { flags = " \t", delta = .009 } }) do
+        local f = fixture({ default = true, readback = function(path, size)
+            return path, size + mode.delta, mode.none and nil or mode.flags
+        end })
+        f:paint()
+        local inherited = f.text:GetFontObject()
+        assert(addon.Theme.ApplyFontPreview(f.text, SHARED, 16) == SHARED,
+            "preview must accept nil/whitespace no-effect flags and small native rounding")
+        assert(f.text:GetFont() == SHARED and inherited:GetFont() == BASELINE and f.input:GetFont() == BASELINE)
+        addon.Theme.ApplyFont(f.text, 16)
+        assert(f.text:GetFont() == BASELINE, "preview exit restores its committed font object")
+    end
+end)
+
+test("availability selected rendering and previews reject incorrect or restricted readback", function()
+    local restricted = {}
+    local modes = {
+        function(path, size) return path, size, "OUTLINE" end,
+        function(path, size) return path, size, "UNKNOWN" end,
+        function(_, size) return "Interface\\AddOns\\Other\\Wrong.ttf", size, nil end,
+        function(path, size) return path, size + .02, nil end,
+        function(path, size) return path, size, restricted end,
+        function(path) return path, restricted, nil end,
+    }
+    local savedSecret = issecretvalue
+    issecretvalue = function(value) return value == restricted end
+    for _, readback in ipairs(modes) do
+        local f = fixture({ readback = readback })
+        assert(not addon.Theme.FontAvailable(SHARED), "invalid readback cannot certify native availability")
+        f:paint(); f:expect(BASELINE)
+        assert(not addon.Theme.ApplyFontPreview(f.text, SHARED, 16), "invalid preview cannot be accepted")
+        assert(f.text:GetFont() == BASELINE and f.input:GetFont() == BASELINE,
+            "invalid native readback leaves readable committed fallback")
+    end
+    issecretvalue = savedSecret
+end)
+test("matching native readback wins over a false SetFont pseudo-return", function()
+    local f = fixture({ falseReturn = true })
+    assert(addon.Theme.FontAvailable(SHARED), "matching readback must certify asset despite false pseudo-return")
+    f:paint(); f:expect(SHARED)
+    local preview = fixture({ default = true, falseReturn = true })
+    preview:paint()
+    assert(addon.Theme.ApplyFontPreview(preview.text, SHARED, 16) == SHARED and preview.text:GetFont() == SHARED,
+        "matching preview readback must win over false pseudo-return")
+    addon.Theme.ApplyFont(preview.text, 16); preview:expect(BASELINE)
+    for _, options in ipairs({ { default = true, unavailable = true },
+        { default = true, falseReturn = true, readback = function(_, size, flags)
+            return "Interface\\AddOns\\Other\\Wrong.ttf", size, flags
+        end } }) do
+        local invalid = fixture(options); invalid:paint()
+        assert(not addon.Theme.FontAvailable(SHARED), "false return with missing or wrong readback cannot certify asset")
+        assert(not addon.Theme.ApplyFontPreview(invalid.text, SHARED, 16))
+        invalid:expect(BASELINE)
     end
 end)
 print("Shared font renderer tests passed: " .. total)
