@@ -7,6 +7,7 @@ local COLOR = { COMPLETED = "66dd99", READY = "ffe066", ACTIVE = "88bfff", AVAIL
 local DEVELOPER_LINKS = {
     issue = { label = "REPORT_ISSUE", url = "https://github.com/Antrakt92/DungeonPro/issues" },
     support = { label = "SUPPORT_AUTHOR", url = "https://ko-fi.com/antrakt92" },
+    fonts = { label = "FONT_COLLECTION", url = "https://www.curseforge.com/wow/addons/antrakt-fonts" },
 }
 
 local FONT

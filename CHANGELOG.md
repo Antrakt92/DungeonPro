@@ -7,6 +7,11 @@
 - Add a font picker beside the language menu. Install Antrakt Fonts for Forever
   to choose from its shared collection; only fonts matching both the interface
   language and the game language are shown.
+- Preview fonts across the planner on hover, restore your saved choice on leave,
+  and click to keep a face. Browse a scrollable three-column grid, keep favorites
+  at the top, and choose compatible game or shared-media fonts too.
+- Keep list labels readable during previews, verify native font loading, and
+  provide contextual collection status and an official download link.
 - Save your font choice and apply it to planner text, controls and search.
   Keep that preference when the collection is unavailable or the language changes,
   and use a readable fallback until the selected font is usable again.

@@ -255,6 +255,37 @@ function Theme.ApplyFont(region, size)
     return applyTextFont(region, size)
 end
 
+-- Picker labels stay readable while the actual planner previews another face.
+function Theme.ApplyBaselineFont(region, size)
+    activateFont(BASELINE_FONT, size)
+    if setFontAsset(region, BASELINE_FONT, size, true) and matchingFontAsset(region, BASELINE_FONT, size) then
+        fontRegions[region] = nil
+        return BASELINE_FONT
+    end
+    return applyTextFont(region, size)
+end
+
+local availableFontProbe
+function Theme.FontAvailable(path)
+    path = addon.Clean(path, "string")
+    if not path or #path > 4096 then return false end
+    local allowed = path == BASELINE_FONT
+    if not allowed then
+        local fonts = addon.Clean(addon.Fonts, "table")
+        for _, choice in ipairs(fonts and fonts:Choices() or {}) do
+            if choice.path == path then allowed = true; break end
+        end
+    end
+    if not allowed then return false end
+    if not availableFontProbe then
+        availableFontProbe = objectResult(UIParent, "CreateFontString", nil, "OVERLAY")
+        if availableFontProbe then invoke(availableFontProbe, "Hide") end
+    end
+    if not availableFontProbe then return false end
+    activateFont(path, 14)
+    return setFontAsset(availableFontProbe, path, 14, true) ~= nil and matchingFontAsset(availableFontProbe, path, 14)
+end
+
 -- Only picker-owned samples get a direct override; ordinary labels continue
 -- inheriting their owned theme font objects.
 function Theme.ApplyFontPreview(region, path, size)

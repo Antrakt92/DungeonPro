@@ -133,16 +133,25 @@ Dungeon, quest, NPC and place names use reviewed translations where available.
 Missing translations fall back to original names. Item names, map and floor
 names, and quest text supplied by the game stay in your client's language.
 
-Click **Font** beside the language menu to choose a typeface. **Default** uses
+Click **Aa** beside the language menu to choose a typeface. **Antrakt UI Sans** uses
 the built-in Antrakt UI Sans, also used by StatsPro and Do You Need It?, with
 combined Latin, Cyrillic, Chinese, Japanese and Korean character coverage.
-The extra choices come from an enabled Antrakt Fonts installation. Only faces
+The extra choices come from an enabled Antrakt Fonts installation, compatible
+game fonts and available shared-media fonts. Only faces
 whose declared coverage supports both your selected interface language and your
-game language appear. Use the arrows or mouse wheel to browse the list.
+game language appear and successfully load in the client. Browse the three-column
+list with its scrollbar or mouse wheel. Hover a face to preview it across the
+planner; move away to restore your saved choice, or click to keep it. Escape,
+clicking outside the list and closing the planner cancel a temporary preview.
+The list labels keep the readable default face while you preview.
+
+Click a star to add or remove a favorite. Favorites appear first and are saved
+separately from the selected font. The **i** or **!** control explains the
+collection's state; click it to copy the official download link.
 
 Your choice is saved for Dungeon Pro. If a language change or an unavailable
 collection prevents its use, the addon keeps the preference and uses a readable
-fallback. Select **Default** to clear the custom choice. Character coverage
+fallback. Select **Antrakt UI Sans** to clear the custom choice. Character coverage
 varies by font; it does not guarantee every Unicode character.
 
 ## Still in beta
