@@ -807,3 +807,17 @@ for locale, values in pairs(pickerLabels) do
     for index, key in ipairs(pickerKeys) do addon.locales[locale][key] = values[index] end
     addon.locales[locale].FONT_COLLECTION = "Antrakt Fonts"
 end
+
+local fontCombat = {
+    enUS = "Font selection is unavailable during combat. Try again after leaving combat.",
+    ruRU = "Выбор шрифта недоступен в бою. Попробуйте после выхода из боя.",
+    deDE = "Die Schriftauswahl ist im Kampf nicht verfügbar. Versuche es nach dem Kampf erneut.",
+    frFR = "Le choix de police est indisponible en combat. Réessayez après le combat.",
+    esES = "No puedes elegir fuentes durante el combate. Inténtalo al salir del combate.",
+    itIT = "Non puoi scegliere il carattere in combattimento. Riprova dopo il combattimento.",
+    ptBR = "A seleção de fontes não está disponível em combate. Tente novamente após o combate.",
+    koKR = "전투 중에는 글꼴을 선택할 수 없습니다. 전투가 끝난 후 다시 시도하세요.",
+    zhCN = "战斗中无法选择字体。请在脱离战斗后重试。",
+    zhTW = "戰鬥中無法選擇字型。請在脫離戰鬥後重試。",
+}
+for locale, text in pairs(fontCombat) do addon.locales[locale].FONT_COMBAT = text end

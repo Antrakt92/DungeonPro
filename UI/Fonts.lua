@@ -268,7 +268,8 @@ function Menu:Build(ui)
     if type(UISpecialFrames)=="table" then UISpecialFrames[#UISpecialFrames+1]=name end
 end
 function Menu:Open(ui)
-    if addon.UI~=ui or not ui.frame or not ui.frame:IsShown() or combat() then return false end
+    if addon.UI~=ui or not ui.frame or not ui.frame:IsShown() then return false end
+    if combat() then print("Dungeon Pro: " .. addon.L("FONT_COMBAT")); return false end
     if self.popup and self.popup:IsShown() and self.owner==ui then self:Close(); return false end
     self:Close()
     if addon.Language then addon.Language:Cancel(ui) end
@@ -326,7 +327,7 @@ function Menu:Attach(ui)
         if ui.DetailContactHint then
             local selected = addon.db.fontId
             local caption = selected and addon.Fonts:Caption() or "Antrakt UI Sans"
-            ui:DetailContactHint(control, addon.L("FONT_LABEL"), caption, addon.L("FONT_HELP"), function()
+            ui:DetailContactHint(control, addon.L("FONT_LABEL"), caption, addon.L(combat() and "FONT_COMBAT" or "FONT_HELP"), function()
                 return addon.UI == ui and ui.fontButton == control and ui.frame:IsShown() and addon.db.fontId == selected
             end)
         end

@@ -12,6 +12,8 @@
   at the top, and choose compatible game or shared-media fonts too.
 - Keep list labels readable during previews, verify native font loading, and
   provide contextual collection status and an official download link.
+- Explain the combat restriction when opening the font picker instead of
+  silently ignoring the click.
 - Save your font choice and apply it to planner text, controls and search.
   Keep that preference when the collection is unavailable or the language changes,
   and use a readable fallback until the selected font is usable again.

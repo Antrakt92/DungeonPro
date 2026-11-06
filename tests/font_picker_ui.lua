@@ -221,7 +221,20 @@ check(menu.popup.events.PLAYER_REGEN_DISABLED and menu.popup.scripts.OnEvent,
     "picker independently listens for combat entry")
 menu.popup.scripts.OnEvent(menu.popup, "PLAYER_REGEN_DISABLED")
 check(not menu.popup:IsShown() and a.Fonts.preview == nil and a.db.fontId == "face-48", "combat retires hover without changing preference")
-combat = false; click(ui.fontButton); enter(row("face-01")); a.db.locale = "koKR"; ui:RefreshLanguagePreview()
+local oldPrint, blocked = print, nil
+print = function(message) blocked = message end
+click(ui.fontButton)
+print = oldPrint
+check(not menu.popup:IsShown() and blocked and blocked:find(a.L("FONT_COMBAT"), 1, true),
+    "combat click explains the restriction instead of silently ignoring input")
+local originalHint, combatHint = ui.DetailContactHint, nil
+ui.DetailContactHint = function(_, _, _, _, description) combatHint = description end
+ui.fontButton.scripts.OnEnter(ui.fontButton)
+ui.DetailContactHint = originalHint
+check(combatHint == a.L("FONT_COMBAT"), "combat hover explains why selection is unavailable")
+combat = false; click(ui.fontButton)
+check(menu.popup:IsShown(), "the same header click opens normally once combat ends")
+enter(row("face-01")); a.db.locale = "koKR"; ui:RefreshLanguagePreview()
 check(not menu.popup:IsShown() and a.Fonts.preview == nil and a.db.fontId == "face-48", "locale change retires preview without losing preference")
 click(ui.fontButton)
 check(#menu.choices == 1 and row(nil).choice.name == "Antrakt UI Sans" and menu.popup.note.text == a.L("FONT_NO_COMPATIBLE"), "empty language intersection retains baseline and explains compatibility")

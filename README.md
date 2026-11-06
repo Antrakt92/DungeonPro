@@ -144,6 +144,8 @@ list with its scrollbar or mouse wheel. Hover a face to preview it across the
 planner; move away to restore your saved choice, or click to keep it. Escape,
 clicking outside the list and closing the planner cancel a temporary preview.
 The list labels keep the readable default face while you preview.
+Font selection is available outside combat; the button explains the restriction
+if you try to open it during combat.
 
 Click a star to add or remove a favorite. Favorites appear first and are saved
 separately from the selected font. The **i** or **!** control explains the
